@@ -43,6 +43,12 @@ OutputBuffer		= 2048
 # Input buffer size in kilobytes. Minimum value is 32KB. */
 InputBuffer		= 512
 
+# How much to fill the input buffer before playing (in kilobytes)?
+# This can't be more than InputBuffer value.
+# Remember that for network streams beside the positive effect this also causes
+# delay between what you can hear and what is broadcasted.
+Prebuffering		= 64
+
 # Sound driver - OSS, ALSA, or null (only for debugging)
 SoundDriver		= OSS
 
