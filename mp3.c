@@ -429,7 +429,6 @@ void mp3_play (const char *file, struct buf *out_buf)
 		written = write_output (&synth.pcm, &frame.header);
 				
 		if ((request = get_request()) != PR_NOTHING) {
-			buf_stop (out_buf);
 			buf_reset (out_buf);
 
 			if (request == PR_STOP) {
