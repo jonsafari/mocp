@@ -16,6 +16,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
+#include <assert.h>
 #include "playlist.h"
 #include "playlist_file.h"
 #include "log.h"
@@ -68,13 +69,27 @@ static char *read_line (FILE *file)
 	return line;
 }
 
+static void make_path (char *buf, const int buf_size,
+		const char *cwd, char *path)
+{
+	if (path[0] != '/')
+		strcpy (buf, cwd);
+	else
+		strcpy (buf, "/");
+
+	resolve_path (buf, buf_size, path);
+}
+
 /* Load M3U file into plist. Return number of items read. */
-int plist_load_m3u (struct plist *plist, const char *fname)
+static int plist_load_m3u (struct plist *plist, const char *fname,
+		const char *cwd)
 {
 	FILE *file;
 	char *line;
 	int last_added = -1;
 	int after_extinf = 0;
+
+	/* FIXME: don't allow to have a file more than once */
 
 	if (!(file = fopen(fname, "r"))) {
 		interface_error ("Can't open playlist file: %s",
@@ -82,7 +97,7 @@ int plist_load_m3u (struct plist *plist, const char *fname)
 		return 0;
 	}
 
-	while ((line == read_line(file))) {
+	while ((line = read_line(file))) {
 		if (!strncmp(line, "#EXTINF:", sizeof("#EXTINF:")-1)) {
 			char *comma;
 
@@ -105,10 +120,14 @@ int plist_load_m3u (struct plist *plist, const char *fname)
 			plist_set_title (plist, last_added, comma + 1);
 		}
 		if (line[0] != '#') {
+			char path[2*PATH_MAX];
+
+			make_path (path, sizeof(path), cwd, line);
+			
 			if (after_extinf)
-				plist_set_file (plist, last_added, line);
+				plist_set_file (plist, last_added, path);
 			else
-				plist_add (plist, line);
+				plist_add (plist, path);
 			after_extinf = 0;
 		}
 		free (line);
@@ -117,4 +136,33 @@ int plist_load_m3u (struct plist *plist, const char *fname)
 	fclose (file);
 
 	return plist->num;
+}
+
+/* Load a playlist into plist. Return the number of items on the list. */
+int plist_load (struct plist *plist, const char *fname, const char *cwd)
+{
+	int num;
+	int i;
+
+	assert (plist->num == 0); /* must be that, because of return values
+				     from load function. */
+
+	num = plist_load_m3u (plist, fname, cwd);
+
+	/* make titles if not present */
+	for (i = 0; i < plist->num; i++)
+		if (!plist_deleted(plist, i) && !plist->items[i].title) {
+			if (!plist->items[i].tags)
+				plist->items[i].tags = read_file_tags (
+						plist->items[i].file);
+			if (plist->items[i].tags)
+				plist->items[i].title = build_title (
+						plist->items[i].tags);
+			else
+				plist->items[i].title = xstrdup (
+						strrchr(plist->items[i].file,
+							'/') + 1);
+		}
+
+	return num;
 }
