@@ -91,6 +91,63 @@ static char *get_file (const char *path, const int strip_ext)
 	return fname;
 }
 
+/* Make a title from tags for the item. If hide extension != 0, strip the file
+ * name from extension. */
+void make_file_title (struct plist *plist, const int num,
+		const int hide_extension)
+{
+	char *fname;
+	
+	assert (plist != NULL);
+	assert (num >= 0 && num < plist->num);
+	assert (!plist_deleted(plist, num));
+
+	fname = get_file (plist->items[num].file, hide_extension);
+	fname = iconv_str (fname);
+	plist_set_title_file (plist, num, fname);
+	free (fname);
+}
+
+/* Make a title from file name for the item. */
+void make_tags_title (struct plist *plist, const int num)
+{
+	assert (plist != NULL);
+	assert (num >= 0 && num < plist->num);
+	assert (!plist_deleted(plist, num));
+
+	if (!plist->items[num].title_tags) {
+		char *title;
+		assert (plist->items[num].file != NULL);
+
+		plist->items[num].tags = read_file_tags (
+				plist->items[num].file,
+				plist->items[num].tags,
+				TAGS_COMMENTS);
+		
+		if (plist->items[num].tags->title) {
+			title = build_title (plist->items[num].tags);
+			plist_set_title_tags (plist, num, title);
+			free (title);
+
+			plist->items[num].title = plist->items[num].title_tags;
+		}
+		else {
+			char *fname;
+					
+			fname = get_file (plist->items[num].file,
+					options_get_int("HideFileExtension"));
+			fname = iconv_str (fname);
+			plist_set_title_file (plist, num, fname);
+			free (fname);
+
+			plist->items[num].title = plist->items[num].title_file;
+		}
+	}
+	else
+		plist->items[num].title = plist->items[num].title_tags;
+
+}
+
 /* Make titles for the playlist items from the file names. */
 void make_titles_file (struct plist *plist)
 {
@@ -98,14 +155,8 @@ void make_titles_file (struct plist *plist)
 	int i;
 
 	for (i = 0; i < plist->num; i++)
-		if (!plist_deleted(plist, i)) {
-			char *fname;
-
-			fname = get_file(plist->items[i].file, hide_extension);
-			fname = iconv_str (fname);
-			plist_set_title_file (plist, i, fname);
-			free (fname);
-		}
+		if (!plist_deleted(plist, i))
+			make_file_title (plist, i, hide_extension);
 }
 
 /* Read TAGS_COMMENTS for items that neither TAGS_COMMENTS nor title_tags 
