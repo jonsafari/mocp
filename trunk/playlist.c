@@ -342,7 +342,8 @@ int plist_find_fname (struct plist *plist, const char *file)
 
 	LOCK (plist->mutex);
 	for (i = 0; i < plist->num; i++) {
-		assert (plist->items[i].file_hash != -1);
+		assert (!plist->items[i].file
+				|| plist->items[i].file_hash != -1);
 		if (!plist->items[i].deleted && plist->items[i].file
 				&& plist->items[i].file_hash == hash
 				&& !strcmp(plist->items[i].file, file)) {
