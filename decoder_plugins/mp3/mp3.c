@@ -659,7 +659,7 @@ static struct decoder mp3_decoder = {
 	mp3_get_name
 };
 
-struct decoder *mp3_get_funcs ()
+struct decoder *plugin_init ()
 {
 	return &mp3_decoder;
 }

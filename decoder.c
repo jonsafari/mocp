@@ -18,6 +18,7 @@
 #include <stdarg.h>
 #include <errno.h>
 #include <assert.h>
+#include <ltdl.h>
 
 #include "main.h"
 #include "decoder.h"
@@ -40,8 +41,12 @@
 # include "sndfile_formats.h"
 #endif
 
-static struct decoder *decoders[8];
-static int types_num = 0;
+static struct plugin {
+	lt_dlhandle handle;
+	struct decoder *decoder;
+} plugins[8];
+
+static int plugins_num = 0;
 
 /* Find the index in table types for the given file. Return -1 if not found. */
 static int find_type (const char *file)
@@ -50,8 +55,8 @@ static int find_type (const char *file)
 	int i;
 
 	if (ext)
-		for (i = 0; i < types_num; i++)
-			if (decoders[i]->our_format_ext(ext))
+		for (i = 0; i < plugins_num; i++)
+			if (plugins[i].decoder->our_format_ext(ext))
 				return i;
 	return -1;
 }
@@ -69,7 +74,7 @@ char *file_type_name (const char *file)
 	static char buf[4];
 	
 	if ((i = find_type(file)) != -1) {
-		decoders[i]->get_name(file, buf);
+		plugins[i].decoder->get_name(file, buf);
 		return buf;
 	}
 
@@ -81,32 +86,75 @@ struct decoder *get_decoder (const char *file)
 	int i;
 	
 	if ((i = find_type(file)) != -1)
-		return decoders[i];
+		return plugins[i].decoder;
 
 	return NULL;
 }
 
+/* Check if this handle is already presend in the plugins table.
+ * Returns 1 if so. */
+static int present_handle (const lt_dlhandle h)
+{
+	int i;
+
+	for (i = 0; i < plugins_num; i++)
+		if (plugins[i].handle == h)
+			return 1;
+	return 0;
+}
+
+static int lt_load_plugin (const char *file, lt_ptr data ATTR_UNUSED)
+{
+	const char *name = strrchr (file, '/') ? strrchr(file, '/') + 1 : file;
+	
+	printf ("Loading plugin %s...\n", name);
+	
+	if (plugins_num == sizeof(plugins)/sizeof(plugins[0]))
+		fprintf (stderr, "Can't load plugin, besause maximum number "
+				"of plugins reached!\n");
+	else {
+		if (!(plugins[plugins_num].handle = lt_dlopenext(file))) {
+			fprintf (stderr, "Can't load plugin %s: %s\n", name,
+					lt_dlerror());
+		}
+		else if (!present_handle(plugins[plugins_num].handle)) {
+			plugin_init_func init_func;
+
+			if (!(init_func = lt_dlsym(plugins[plugins_num].handle,
+							"plugin_init")))
+				fprintf (stderr, "No init function in the "
+						"plugin!\n");
+			else {
+				plugins[plugins_num].decoder = init_func ();
+				if (!plugins[plugins_num].decoder)
+					fprintf (stderr, "NULL decoder!\n");
+				else {
+					plugins_num++;
+					printf ("OK\n");
+				}
+			}
+		}
+		else
+			printf ("Already loaded\n");
+	}
+	
+	return 0;
+}
+
 void decoder_init ()
 {
-#ifdef HAVE_MAD
-	decoders[types_num++] = mp3_get_funcs ();
-#endif
+	printf ("Loading plugins from %s...\n", PLUGIN_DIR);
+	if (lt_dlinit())
+		fatal ("lt_dlinit() failed: %s", lt_dlerror());
 
-#ifdef HAVE_VORBIS
-	decoders[types_num++] = ogg_get_funcs ();
-#endif
-
-#ifdef HAVE_FLAC
-	decoders[types_num++] = flac_get_funcs ();
-#endif
-
-#ifdef HAVE_SNDFILE
-	decoders[types_num++] = sndfile_get_funcs ();
-#endif
+	if (lt_dlforeachfile(PLUGIN_DIR, &lt_load_plugin, NULL))
+		fatal ("Can't load plugins: %s", lt_dlerror());
 }
 
 void decoder_cleanup ()
 {
+	if (lt_dlexit())
+		logit ("lt_exit() failed: %s", lt_dlerror());
 }
 
 /* Fill the error structure with an error of a given type and message.
