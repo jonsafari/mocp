@@ -27,6 +27,8 @@
 # include "ogg.h"
 #endif
 
+#include "wav.h"
+
 struct file_type {
 	char *ext;
 	struct decoder_funcs *funcs;
@@ -76,6 +78,9 @@ struct decoder_funcs *get_decoder_funcs (char *file)
 
 void file_types_init ()
 {
+	types[types_num].ext = "wav";
+	types[types_num++].funcs = wav_get_funcs ();
+
 #ifdef HAVE_MAD
 	types[types_num].ext = "mp3";
 	types[types_num++].funcs = mp3_get_funcs ();
