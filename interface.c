@@ -228,6 +228,7 @@ static char *help_text[] = {
 "      CTRL-x   Exit the entry",
 "  CTRL-t       Toggle ShowTime option",
 "  CTRL-f       Toggle ShowFormat option",
+"  i            Go to a directory"
 "  Q            Quit"
 };
 static int help_screen_top = 0;
