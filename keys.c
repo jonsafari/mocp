@@ -488,6 +488,7 @@ static void load_key_map (const char *file_name)
 		char *command;
 		char *tmp;
 		char *key;
+		int added_keys = 0;
 
 		line_num++;
 		if (line[0] == '#' || !(command = strtok(line, " \t"))) {
@@ -500,8 +501,13 @@ static void load_key_map (const char *file_name)
 		if (!(tmp = strtok(NULL, " \t")) || strcmp(tmp, "="))
 			keymap_parse_error (line_num, "expected '='");
 
-		while ((key = strtok(NULL, " \t")))
+		while ((key = strtok(NULL, " \t"))) {
 			add_key (line_num, command, key);
+			added_keys++;
+		}
+
+		if (!added_keys)
+			keymap_parse_error (line_num, "empty key list");
 
 		free (line);
 	}
