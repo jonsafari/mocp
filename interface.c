@@ -1205,9 +1205,28 @@ static void update_state ()
 	update_ctime (); /* will also update the window */
 }
 
-/* Go to the directory dir, it it is NULL, go to the cwd. Return 1 on success,
- * 0 on error. */
-static int go_to_dir (char *dir)
+/* Try to copy tags from the playlist to the plist if some files are the
+ * same. */
+static void fill_tags_from_playlist (struct plist *plist)
+{
+	int i, idx;
+
+	for (i = 0; i < plist->num; i++)
+		if (!plist_deleted(plist, i)
+				&& (idx = plist_find_fname(
+						playlist,
+						plist->items[i].file)) != -1
+				&& playlist->items[idx].tags) {
+			assert (plist->items[i].tags == NULL);
+			
+			plist->items[i].tags = tags_dup (
+					playlist->items[idx].tags);
+		}
+}
+
+/* Go to the directory dir, it it is NULL, go to the cwd. If reload == 1,
+ * dont use tags from the playlist. Return 1 on success, 0 on error. */
+static int go_to_dir (char *dir, const int reload)
 {
 	struct plist *old_curr_plist;
 	char last_dir[PATH_MAX];
@@ -1252,6 +1271,8 @@ static int go_to_dir (char *dir)
 
 	if (options_get_int("ReadTags")) {
 		set_iface_status_ref ("Reading tags...");
+		if (!reload)
+			fill_tags_from_playlist (curr_plist);
 		read_tags (curr_plist);
 		make_titles_tags (curr_plist);
 	}
@@ -1300,16 +1321,16 @@ static void enter_first_dir ()
 		
 		if ((music_dir = options_get_str("MusicDir"))) {
 			make_path (music_dir);
-			if (go_to_dir(NULL))
+			if (go_to_dir(NULL, 0))
 				return;
 		}
 		else
 			interface_error ("MusicDir is not set");
 	}
-	if (read_last_dir() && go_to_dir(NULL))
+	if (read_last_dir() && go_to_dir(NULL, 0))
 		return;
 	set_start_dir ();
-	if (!go_to_dir(NULL))
+	if (!go_to_dir(NULL, 0))
 		interface_fatal ("Can't enter any directory.");
 }
 
@@ -1351,7 +1372,7 @@ static void process_args (char **args, const int num)
 {
 	if (num == 1 && isdir(args[0]) == 1) {
 		make_path (args[0]);
-		if (!go_to_dir(NULL))
+		if (!go_to_dir(NULL, 0))
 			enter_first_dir ();
 	}
 	else {
@@ -1829,7 +1850,7 @@ static void go_file ()
 		else
 			strcpy (dir, menu_item->file);
 
-		go_to_dir (dir);
+		go_to_dir (dir, 0);
 	}
 	else if (menu_item->type == F_DIR && visible_plist == playlist)
 		
@@ -2062,7 +2083,7 @@ static void reread_dir ()
 	int selected_item = curr_menu->selected;
 	int top_item = curr_menu->top;
 
-	go_to_dir (NULL);
+	go_to_dir (NULL, 1);
 	menu_set_top_item (curr_menu, top_item);
 	menu_setcurritem (curr_menu, selected_item);
 }
@@ -2514,7 +2535,7 @@ static void menu_key (const int ch)
 			case 'm':
 				if (options_get_str("MusicDir")) {
 					go_to_dir (options_get_str(
-								"MusicDir"));
+								"MusicDir"), 0);
 					do_update_menu = 1;
 				}
 				else
