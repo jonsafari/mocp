@@ -843,6 +843,13 @@ static void get_server_options ()
 	sync_int_option ("ShowStreamErrors");
 }
 
+/* End the program if the terminal is too small. */
+static void check_term_size ()
+{
+	if (COLS < 72 || LINES < 7)
+		interface_fatal ("The terminal is too small after resizeing.");
+}
+
 /* Initialize the interface */
 void init_interface (const int sock, const int debug)
 {
@@ -863,6 +870,8 @@ void init_interface (const int sock, const int debug)
 	initscr ();
 	cbreak ();
 	noecho ();
+
+	check_term_size ();
 
 	signal (SIGQUIT, sig_quit);
 	//signal (SIGTERM, sig_quit);
@@ -971,10 +980,14 @@ static void send_playlist (struct plist *plist)
 /* Send the playlist and request playing this item. */
 static void play_it (const int plist_pos)
 {
-	send_int_to_srv (CMD_STOP);
+	char *file = plist_get_file (visible_plist, plist_pos);
+
+	assert (file != NULL);
+	
 	send_playlist (visible_plist);
 	send_int_to_srv (CMD_PLAY);
-	send_int_to_srv (plist_pos);
+	send_str_to_srv (file);
+	free (file);
 }
 
 /* Action when the user selected a file. */
@@ -1062,6 +1075,7 @@ static void add_file_plist ()
 		return;
 	}
 
+	/* TODO: dont allow to add a file that is already in the list */
 	plist_add_from_item (playlist,
 			&curr_plist->items[menu_item->plist_pos]);
 }
@@ -1098,7 +1112,9 @@ static void add_dir_plist ()
 
 	set_interface_status ("reading directories...");
 	wrefresh (info_win);
-	read_directory_recurr (dir, playlist);
+	read_directory_recurr (dir, playlist); /* TODO: don't allow to add
+						  a file if it's already
+						  on the list */
 	if (options_get_int("ReadTags")) {
 		read_tags (playlist);
 		make_titles_tags (playlist);
@@ -1230,11 +1246,11 @@ static void menu_key (const int ch)
 	}
 }
 
-
 #ifdef SIGWINCH
 /* Initialize the screen again after resizeing xterm */
 static void do_resize ()
 {
+	check_term_size ();
 	endwin ();
 	refresh ();
 	keypad (main_win, TRUE);
