@@ -2252,23 +2252,23 @@ static void go_file ()
 			return;
 		}
 
-		plist_clear (playlist);
+		send_int_to_srv (CMD_LOCK);
+		clear_playlist ();
 		set_iface_status_ref ("Loading playlist...");
 		if (plist_load(playlist, menu_item_get_file(curr_menu,
 						selected), cwd))
 			interface_message ("Playlist loaded.");
 		
 		if (options_get_int("SyncPlaylist")) {
-			send_int_to_srv (CMD_LOCK);
+			change_srv_plist_serial ();
 			send_int_to_srv (CMD_CLI_PLIST_CLEAR);
 			set_iface_status_ref ("Notifying clients...");
 			send_all_items (playlist);
 			set_iface_status_ref (NULL);
-			send_int_to_srv (CMD_UNLOCK);
 		}
+		send_int_to_srv (CMD_UNLOCK);
 
 		set_iface_status_ref (NULL);
-		toggle_plist ();
 	}
 }
 
