@@ -88,8 +88,7 @@ static int plist_load_m3u (struct plist *plist, const char *fname,
 	char *line;
 	int last_added = -1;
 	int after_extinf = 0;
-
-	/* FIXME: don't allow to have a file more than once */
+	int added = 0;
 
 	if (!(file = fopen(fname, "r"))) {
 		interface_error ("Can't open playlist file: %s",
@@ -104,7 +103,8 @@ static int plist_load_m3u (struct plist *plist, const char *fname,
 			if (after_extinf) {
 				interface_error ("Broken M3U file.");
 				free (line);
-				return plist->num;
+				plist_delete (plist, last_added);
+				return added;
 			}
 			
 			comma = strchr (line + sizeof("#EXTINF:"), ',');
@@ -112,7 +112,7 @@ static int plist_load_m3u (struct plist *plist, const char *fname,
 			if (!comma) {
 				interface_error ("Broken M3U file.");
 				free (line);
-				return plist->num;
+				return added;
 			}
 			
 			after_extinf = 1;
@@ -123,11 +123,17 @@ static int plist_load_m3u (struct plist *plist, const char *fname,
 			char path[2*PATH_MAX];
 
 			make_path (path, sizeof(path), cwd, line);
-			
-			if (after_extinf)
-				plist_set_file (plist, last_added, path);
-			else
-				plist_add (plist, path);
+
+			if (plist_find_fname(plist, path) == -1) {
+				if (after_extinf)
+					plist_set_file (plist, last_added,
+							path);
+				else
+					plist_add (plist, path);
+				added++;
+			}
+			else if (after_extinf)
+				plist_delete (plist, last_added);
 			after_extinf = 0;
 		}
 		free (line);
@@ -135,17 +141,15 @@ static int plist_load_m3u (struct plist *plist, const char *fname,
 	
 	fclose (file);
 
-	return plist->num;
+	return added;
 }
 
 /* Load a playlist into plist. Return the number of items on the list. */
+/* The playlist may have deleted items. */
 int plist_load (struct plist *plist, const char *fname, const char *cwd)
 {
 	int num;
 	int i;
-
-	assert (plist->num == 0); /* must be that, because of return values
-				     from load function. */
 
 	num = plist_load_m3u (plist, fname, cwd);
 
