@@ -102,13 +102,10 @@ void ogg_play (const char *file_name, struct buf *out_buf)
 	if (!audio_open(16, info->channels, info->rate))
 		return;
 	
-	
-	set_info_rate (info->rate);
+	set_info_rate (info->rate / 1000);
 	set_info_time (ov_time_total (&vf, -1));
-	/*if (info->channels == 2)
-		cm_set_stereo (1);
-	else
-		cm_set_stereo (0);*/
+	set_info_channels (info->channels);
+	set_info_bitrate (ov_bitrate(&vf, -1) / 1000);
 
 	while (1) {
 		int written;
@@ -129,14 +126,16 @@ void ogg_play (const char *file_name, struct buf *out_buf)
 			info = ov_info (&vf, -1);
 			if (!audio_open(16, info->channels, info->rate))
 				break;
+			set_info_rate (info->rate / 1000);
+			set_info_channels (info->channels);
 		}
 
 		written = audio_send_buf (pcm_buff, ret);
 		
 		/* Update the bitrate information */
 		bitrate = ov_bitrate_instant (&vf);
-		/*if (bitrate > 0)
-			cm_set_bitrate (bitrate / 1000, 1);*/
+		if (bitrate > 0)
+			set_info_bitrate (bitrate / 1000);
 		last_section = current_section;
 
 		if ((request = get_request()) != PR_NOTHING) {
