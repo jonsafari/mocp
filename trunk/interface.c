@@ -1079,10 +1079,6 @@ static void process_args (char **args, const int num)
 			sprintf (msg, "%d files on the list",
 					plist_count(playlist));
 			set_interface_status (msg);
-
-			send_playlist (playlist);
-			send_int_to_srv (CMD_PLAY);
-			send_str_to_srv (playlist->items[0].file);
 		}
 		else
 			enter_first_dir ();
