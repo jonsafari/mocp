@@ -118,6 +118,8 @@ static int str_hash (const char *file)
 	long h = 0;
 	int i = 0;
 
+	assert (file != NULL);
+
 	while (file[i]) {
 		h ^= i % 2 ? file[i] : file[i] << 8;
 		i++;
