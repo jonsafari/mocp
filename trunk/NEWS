@@ -6,6 +6,12 @@
 	* ALSA support.
 	* MOC remembers the playlist between runs.
 	* Small fixes and cleanups.
+2.0.1
+	* Do not allow to add '..' to the playlist.
+	* Fixed seeking when not playing.
+	* Fixed segfault when using f after creating a playlist from the
+	  command line.
+	* Fixed invoking MOC with relative path arguments
 2.0.0
 	* Split into client-server, you can detach the interface and leave
 	  the server playing songs in the background (keys: q - background,
