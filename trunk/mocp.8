@@ -89,6 +89,10 @@ Configuration file of MOC. Format is very simple, to see how to use it,
 look into example configuration file (config.example) distributed with the
 program.
 
+.SH BUGS
+Command line options that affects the server bahaviour (like --sound-driver) are
+ignored if the server is already running at the time of executing mocp. The user
+is not warned about this.
 
 .SH HOMEPAGE
 http://moc.daper.net
