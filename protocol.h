@@ -3,6 +3,19 @@
 
 #include "playlist.h"
 
+struct event
+{
+	int type;	/* type of the event (one of EV_*) */
+	void *data;	/* optional data associated with the event */
+	struct event *next;
+};
+
+struct event_queue
+{
+	struct event *head;
+	struct event *tail;
+};
+
 /* Definition of events send by server to the client */
 #define EV_STATE	0x01 /* server has changed the state */
 #define EV_CTIME	0x02 /* current time of the song has changed */
@@ -80,5 +93,11 @@ int get_time (int sock, time_t *i);
 int send_time (int sock, time_t i);
 int send_item (int sock, const struct plist_item *item);
 struct plist_item *recv_item (int sock);
+
+void event_queue_init (struct event_queue *q);
+void event_queue_free (struct event_queue *q);
+struct event *event_get_first (struct event_queue *q);
+void event_pop (struct event_queue *q);
+void event_push (struct event_queue *q, const int event, void *data);
 
 #endif

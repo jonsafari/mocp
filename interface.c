@@ -119,22 +119,7 @@ static struct file_info {
 	char *curr_file;
 } file_info;
 
-/* When we are waiting for data from the server, events can occur. We can't 
- * handle them while waiting, so we push them on the queue. */
-struct event
-{
-	int type;	/* type of the event */
-	void *data;	/* optional data associated with the event */
-	struct event *next;
-};
-
-struct event_queue
-{
-	struct event *head;
-	struct event *tail;
-};
-
-struct event_queue events = { NULL, NULL };
+struct event_queue events;
 
 enum entry_type
 {
@@ -353,32 +338,6 @@ static struct plist_item *recv_item_from_srv ()
 	return item;
 }
 
-/* Push an event on the queue if it's not already there. */
-static void event_push (const int event, void *data)
-{
-	if (!events.head) {
-		events.head = (struct event *)xmalloc (sizeof(struct event));
-		events.head->next = NULL;
-		events.head->type = event;
-		events.head->data = data;
-		events.tail = events.head;
-	}
-	else {
-		assert (events.head != NULL);
-		assert (events.tail != NULL);
-		assert (events.tail->next == NULL);
-		
-		events.tail->next = (struct event *)xmalloc (
-				sizeof(struct event));
-		events.tail = events.tail->next;
-		events.tail->next = NULL;
-		events.tail->type = event;
-		events.tail->data = data;
-	}
-
-	debug ("Added event 0x%02x to the queue", event);
-}
-
 /* Wait for EV_DATA handling other events. */
 static void wait_for_data ()
 {
@@ -388,11 +347,11 @@ static void wait_for_data ()
 		event = get_int_from_srv ();
 		
 		if (event == EV_PLIST_ADD)
-			event_push (event, recv_item_from_srv());
+			event_push (&events, event, recv_item_from_srv());
 		else if (event == EV_PLIST_DEL)
-			event_push (event, get_str_from_srv());
+			event_push (&events, event, get_str_from_srv());
 		else if (event != EV_DATA)
-			event_push (event, NULL);
+			event_push (&events, event, NULL);
 	 } while (event != EV_DATA);
 }
 
@@ -1878,6 +1837,7 @@ void init_interface (const int sock, const int logging, char **args,
 	logit ("Starting MOC interface...");
 
 	init_playlists ();
+	event_queue_init (&events);
 	iconv_init ();
 	keys_init ();
 	
@@ -3305,19 +3265,13 @@ static void do_resize ()
 /* Handle events from the queue. */
 static void dequeue_events ()
 {
+	struct event *e;
+	
 	debug ("Dequeuing events...");
 
-	while (events.head) {
-		struct event *e = events.head;
-		
+	while ((e = event_get_first(&events))) {
 		server_event (e->type, e->data);
-
-		/* Remove this event from the queue */
-		events.head = e->next;
-		if (!events.head)
-			events.tail = NULL; /* the queue is empty */
-
-		free (e);
+		event_pop (&events);
 	}
 
 	debug ("done");
@@ -3461,6 +3415,7 @@ void interface_end ()
 		menu_free (curr_plist_menu);
 	free (curr_plist);
 	free (playlist);
+	event_queue_free (&events);
 	iconv_cleanup ();
 
 	/* Make sure that the next line after we exit will be "clear". */
