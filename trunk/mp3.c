@@ -345,81 +345,66 @@ static int mp3_decode (void *void_data, char *buf, int buf_len,
 	}
 }
 
-static void mp3_seek (void *void_data, const int sec)
+static int mp3_seek (void *void_data, int sec)
 {
 	struct mp3_data *data = (struct mp3_data *)void_data;
+	int new_position;
+	int skip = 2;
 
-#if 0
-	/* Skip 2 frames after seeking */
-		if (seek_skip) {
-			int skip = 2;
+	if (sec >= data->duration)
+		return -1;
+	else if (sec < 0)
+		sec = 0;
 
-			do {
-				if (mad_frame_decode(&frame, &stream) == 0) {
-					if (--skip == 0)
-						mad_synth_frame(&synth, &frame);
-				}
-				else if (!MAD_RECOVERABLE(stream.error)) {
-					logit ("unrecoverable error after seeking: %s",
-							mad_stream_errorstr(&stream));
-					break;
-				}
-			} while (skip);
+	new_position = ((double) sec /
+			(double) data->duration) * data->size;
 
-			seek_skip = 0;
-		}
-		
-		if (seek != -1) {
-			int new_position;
-
-			if (seek >= info.duration)
-				break;
-			else if (seek < 0)
-				seek = 0;
-
-			new_position = ((double) seek /
-					(double) info.duration) * info.size;
-
-			if (new_position < 0)
-				new_position = 0;
-			else if (new_position >= info.size)
-				break;
-			
+	if (new_position < 0)
+		new_position = 0;
+	else if (new_position >= data->size)
+		return -1;
+	
 #ifdef HAVE_MMAP
-			if (info.mapped) {
-				mad_stream_buffer (&stream,
-						info.mapped + new_position,
-						info.mapped_size - new_position);
-				stream.error = 0;
-			}
-			else {
+	if (data->mapped) {
+		mad_stream_buffer (&data->stream,
+				data->mapped + new_position,
+				data->mapped_size - new_position);
+		data->stream.error = 0;
+	}
+	else {
 #endif
-				if (lseek (info.infile, new_position,
-							SEEK_SET) == -1) {
-					error ("Failed to seek to: %d",
-							new_position);
-					continue;
-				}
-				stream.error = MAD_ERROR_BUFLEN;
+		if (lseek(data->infile, new_position,
+					SEEK_SET) == -1) {
+			error ("Failed to seek to: %d",
+					new_position);
+			return -1;
+		}
+		data->stream.error = MAD_ERROR_BUFLEN;
 
-				mad_frame_mute (&frame);
-				mad_synth_mute (&synth);
+		mad_frame_mute (&data->frame);
+		mad_synth_mute (&data->synth);
 
-				stream.sync = 0;
-				stream.next_frame = NULL;
+		data->stream.sync = 0;
+		data->stream.next_frame = NULL;
 
 #ifdef HAVE_MMAP
-			}
+	}
 #endif
 
-			buf_time_set (out_buf, seek);
-
-			seek_skip = 1;
-			seek = -1;
-
-			continue;
+	/* Skip 2 frames */
+	do {
+		if (mad_frame_decode(&data->frame, &data->stream) == 0) {
+			if (--skip == 0)
+				mad_synth_frame(&data->synth, &data->frame);
 		}
-#endif
+		else if (!MAD_RECOVERABLE(data->stream.error)) {
+			logit ("unrecoverable error after seeking: %s",
+					mad_stream_errorstr(&data->stream));
+			return -1;
+		}
+	} while (skip);
+
+	return sec;
 }
 
 static void mp3_close (void *void_data)
