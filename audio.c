@@ -178,9 +178,9 @@ void audio_unpause ()
 	state_change ();
 }
 
-int audio_open (const int bits, const int channels, const int rate)
+int audio_open (struct sound_params *sound_params)
 {
-	return hw.open (bits, channels, rate);
+	return hw.open (sound_params);
 }
 
 int audio_send_buf (const char *buf, const size_t size)
@@ -251,6 +251,8 @@ void audio_exit ()
 	buf_destroy (&out_buf);
 	plist_free (&playlist);
 	player_cleanup ();
+	if (pthread_mutex_destroy(&curr_playing_mut))
+		logit ("Can't destroy curr_playing_mut: %s", strerror(errno));
 }
 
 void audio_seek (const int sec)
