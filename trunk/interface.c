@@ -229,7 +229,8 @@ static char *help_text[] = {
 "      CTRL-x   Exit the entry",
 "  CTRL-t       Toggle ShowTime option",
 "  CTRL-f       Toggle ShowFormat option",
-"  i            Go to a directory"
+"  i            Go to a directory",
+"  G            Go to a directory where the currently played file is",
 "  Q            Quit"
 };
 static int help_screen_top = 0;
@@ -2655,6 +2656,27 @@ static void toggle_show_format ()
 		menu_set_show_format (playlist_menu, show_format);
 }
 
+static void go_to_file_dir ()
+{
+	char *file;
+
+	send_int_to_srv (CMD_GET_SNAME);
+	file = get_data_str ();
+
+	if (file[0]) {
+		char *slash;
+
+		slash = strrchr (file, '/');
+		assert (slash != NULL);
+		*slash = 0;
+
+		if (strcmp(file, cwd))
+			go_to_dir (file);
+	}
+
+	free (file);
+}
+
 /* Handle key */
 static void menu_key (const int ch)
 {
@@ -2842,6 +2864,10 @@ static void menu_key (const int ch)
 				break;
 			case CTRL('f'):
 				toggle_show_format ();
+				do_update_menu = 1;
+				break;
+			case 'G':
+				go_to_file_dir ();
 				do_update_menu = 1;
 				break;
 			case 'i':
