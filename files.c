@@ -152,10 +152,22 @@ void make_titles_file (struct plist *plist)
 void make_titles_tags (struct plist *plist)
 {
 	int i;
+	int interrupt = 0;
 
-	for (i = 0; i < plist->num; i++)
+	for (i = 0; i < plist->num; i++) {
+
+		if (user_wants_interrupt()) {
+			interrupt = 1;
+			interface_error ("Reading tags interrupted");
+			break;
+		}
+		
 		if (!plist_deleted(plist, i) && !plist->items[i].title_tags)
 			make_tags_title (plist, i);
+	}
+
+	if (interrupt)
+		make_titles_file (plist);
 }
 
 /* Switch playlist titles to title_file */
@@ -176,10 +188,11 @@ void switch_titles_file (struct plist *plist)
 void switch_titles_tags (struct plist *plist)
 {
 	int i;
+
+	make_titles_tags (plist);
 	
 	for (i = 0; i < plist->num; i++)
 		if (!plist_deleted(plist, i)) {
-			make_tags_title (plist, i);
 
 			if (plist->items[i].title_tags)
 				plist->items[i].title
