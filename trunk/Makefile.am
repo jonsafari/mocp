@@ -56,8 +56,7 @@ EXTRA_mocp_SOURCES = gnugetopt.h \
 mocp_LDADD = @EXTRA_OBJS@
 mocp_DEPENDENCIES = @EXTRA_OBJS@
 man_MANS = mocp.8
-EXTRA_DIST = config.example mocp.8 THANKS
-		     config.example keymap.example
+EXTRA_DIST = config.example mocp.8 THANKS keymap.example
 
 docdir = $(datadir)/doc/$(PACKAGE)
 doc_DATA = config.example THANKS README keymap.example
