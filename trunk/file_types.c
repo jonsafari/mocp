@@ -132,11 +132,31 @@ void file_types_init ()
 #endif
 
 #ifdef HAVE_SNDFILE
-	i = add_type (1, "AU", sndfile_get_funcs());
+
+	/* Not all file types supported bu libsndfile, but I can test only
+	 * them. */
+	
+	i = add_type (2, "AU", sndfile_get_funcs());
 	add_ext (i, "au");
+	add_ext (i, "snd");
 
 	i = add_type (1, "WAV", sndfile_get_funcs());
 	add_ext (i, "wav");
+
+	i = add_type (1, "AIF", sndfile_get_funcs());
+	add_ext (i, "aif");
+
+	i = add_type (1, "SVX", sndfile_get_funcs());
+	add_ext (i, "8svx");
+
+	i = add_type (1, "SPH", sndfile_get_funcs());
+	add_ext (i, "sph");
+
+	i = add_type (1, "IRC", sndfile_get_funcs());
+	add_ext (i, "sf");
+	
+	i = add_type (1, "VOC", sndfile_get_funcs());
+	add_ext (i, "voc");
 #endif
 }
 
