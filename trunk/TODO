@@ -1,15 +1,13 @@
 Before 2.1.0:
 
-* m3u extension.
-* message when loading a playlist.
 * Displaying file time and format, something like:
   [02:54|OGG] (configurable elements)
-* option to disable mmap(). (slow on NFS - use fstatfs()?) 
 * Configuration options and command line parameters for selecting pid file and
   socket. A parameter for selecting different configuration file.
 * General procedures for reading files instead of doing this at the decoder
   level.
 * Try mmap() again if size of the file has changed.
+* option to disable mmap(). (slow on NFS - use fstatfs()?) 
 * Start to buffer another file when the decoder ends playing.
 * Configurable sorting.
 * r - also reread the playlist.
@@ -20,12 +18,13 @@ Before 2.1.0:
 * Adding the current directory to the playlist. Helps creating sorted
   playlist.
 * Update alsa mixer when changed by other application.
+* Fix cursor position in the entry field.
+* Ask if the user wants to overwrite the playlist when saving.
 
 In future:
 
-* Cache for tags in each directory.
+* Cache for tags in each directory. (.cache.m3u?)
 * True shuffle.
-* Don't use nmap() on NFS. (how to detect if a file is on NFS?)
 * 'D' command must not delete an item from the server playlist if the
   server is not playing from the playlist.
 * ESD
@@ -43,6 +42,10 @@ In future:
 * Use 24-bit output if output device supports it.
 * Seek forward using the content of the output buffer.
 * Locales.
+* special themes for xterm - after detecting xterm load XtermTheme that
+  supports xterm features.
+* fast going to a directory - when after CTRL-g user enters absolute path
+  or a path that begins with ~.
 
 Maybe never:
 
