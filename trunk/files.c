@@ -115,6 +115,8 @@ void make_tags_title (struct plist *plist, const int num)
 	assert (num >= 0 && num < plist->num);
 	assert (!plist_deleted(plist, num));
 
+	update_file (&plist->items[num]);
+
 	if (!plist->items[num].title_tags) {
 		char *title;
 		assert (plist->items[num].file != NULL);
@@ -128,24 +130,11 @@ void make_tags_title (struct plist *plist, const int num)
 			title = build_title (plist->items[num].tags);
 			plist_set_title_tags (plist, num, title);
 			free (title);
-
-			plist->items[num].title = plist->items[num].title_tags;
 		}
-		else {
-			char *fname;
-					
-			fname = get_file (plist->items[num].file,
+		else
+			make_file_title (plist, num,
 					options_get_int("HideFileExtension"));
-			fname = iconv_str (fname);
-			plist_set_title_file (plist, num, fname);
-			free (fname);
-
-			plist->items[num].title = plist->items[num].title_file;
-		}
 	}
-	else
-		plist->items[num].title = plist->items[num].title_tags;
-
 }
 
 /* Make titles for the playlist items from the file names. */
@@ -159,57 +148,14 @@ void make_titles_file (struct plist *plist)
 			make_file_title (plist, i, hide_extension);
 }
 
-/* Read TAGS_COMMENTS for items that neither TAGS_COMMENTS nor title_tags 
- * are present. */
-static void read_comments_tags (struct plist *plist)
-{
-	int i;
-	
-	for (i = 0; i < plist->num; i++)
-		if (!plist_deleted(plist, i) && !plist->items[i].title_tags) {
-			assert (plist->items[i].file != NULL);
-
-			if (user_wants_interrupt()) {
-				error ("Reading tags interrupted.");
-				break;
-			}
-			plist->items[i].tags = read_file_tags (
-					plist->items[i].file,
-					plist->items[i].tags,
-					TAGS_COMMENTS);
-		}
-}
-
 /* Make titles for the playlist items from the tags. */
 void make_titles_tags (struct plist *plist)
 {
 	int i;
-	int hide_extension = options_get_int ("HideFileExtension");
-
-	read_comments_tags (plist);
 
 	for (i = 0; i < plist->num; i++)
-		if (!plist_deleted(plist, i) && !plist->items[i].title_tags) {
-			assert (plist->items[i].file != NULL);
-
-			if (plist->items[i].tags
-					&& plist->items[i].tags->title) {
-				char *title;
-				
-				title = build_title (plist->items[i].tags);
-				plist_set_title_tags (plist, i, title);
-				free (title);
-			}
-			else {
-				char *fname;
-					
-				fname = get_file (plist->items[i].file,
-						hide_extension);
-				fname = iconv_str (fname);
-				plist_set_title_file (plist, i, fname);
-				free (fname);
-			}
-		}
+		if (!plist_deleted(plist, i) && !plist->items[i].title_tags)
+			make_tags_title (plist, i);
 }
 
 /* Switch playlist titles to title_file */
@@ -231,15 +177,10 @@ void switch_titles_tags (struct plist *plist)
 {
 	int i;
 	
-	make_titles_tags (plist);
-	
 	for (i = 0; i < plist->num; i++)
 		if (!plist_deleted(plist, i)) {
-			assert (plist->items[i].title_tags
-					|| plist->items[i].title_file);
+			make_tags_title (plist, i);
 
-			update_file (&plist->items[i]);
-			
 			if (plist->items[i].title_tags)
 				plist->items[i].title
 					= plist->items[i].title_tags;
