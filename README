@@ -104,6 +104,13 @@ page and the example configuration file).
 Please send me themes you have created.
 
 --------------------------------------------------------------------------------
+Defining keys
+--------------------------------------------------------------------------------
+
+You can redefine standard keys. See the instructions in the keymap.example
+file.
+
+--------------------------------------------------------------------------------
 Who wrote that? Where can I send bug reports, questions or comments?
 --------------------------------------------------------------------------------
 
