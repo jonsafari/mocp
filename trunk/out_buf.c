@@ -290,9 +290,9 @@ void out_buf_time_set (struct out_buf *buf, const float time)
 	UNLOCK (buf->mutex);
 }
 
-float out_buf_time_get (struct out_buf *buf)
+int out_buf_time_get (struct out_buf *buf)
 {
-	float time;
+	int time;
 	int bps = audio_get_bps ();
 	
 	LOCK (buf->mutex);

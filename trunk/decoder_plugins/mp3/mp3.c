@@ -24,16 +24,9 @@
 
 #include <unistd.h>
 #include <stdlib.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
 #include <string.h>
-#include <errno.h>
 #include <mad.h>
 #include <id3tag.h>
-#ifdef HAVE_MMAP
-# include <sys/mman.h>
-#endif
 #include <pthread.h>
 
 #define DEBUG
@@ -42,15 +35,14 @@
 #include "log.h"
 #include "xing.h"
 #include "audio.h"
-#include "options.h"
 #include "decoder.h"
+#include "io.h"
 
-/* Used only if mmap() is not available */
-#define INPUT_BUFFER	(64 * 1024)
+#define INPUT_BUFFER	(32 * 1024)
 
 struct mp3_data
 {
-	int infile; /* fd on the mp3 file */
+	struct io_stream *io_stream;
 	unsigned long bitrate;
 	unsigned int freq;
 	short channels;
@@ -58,11 +50,6 @@ struct mp3_data
 				 used for seeking. */
 	off_t size; /* Size of the file */
 
-#ifdef HAVE_MMAP
-	char *mapped;
-	int mapped_size;
-#endif
-	
 	unsigned char in_buff[INPUT_BUFFER];
 
 	struct mad_stream stream;
@@ -94,10 +81,10 @@ static size_t fill_buff (struct mp3_data *data)
 		remaining = 0;
 	}
 
-	read_size = read (data->infile, read_start, read_size);
+	read_size = io_read (data->io_stream, read_start, read_size);
 	if (read_size < 0) {
-		decoder_error (&data->error, ERROR_FATAL, 1,
-				"read() failed: ");
+		decoder_error (&data->error, ERROR_FATAL, 0,
+				"read error: %s", io_strerror(data->io_stream));
 		return 0;
 	}
 	else if (read_size == 0)
@@ -157,12 +144,6 @@ static int count_time_internal (struct mp3_data *data)
 		/* Fill the input buffer if needed */
 		if (data->stream.buffer == NULL ||
 			data->stream.error == MAD_ERROR_BUFLEN) {
-#ifdef HAVE_MMAP
-			if (data->mapped)
-				break; /* FIXME: check if the size of file
-					  has't changed */
-			else
-#endif
 			if (!fill_buff(data))
 				break;
 		}
@@ -260,9 +241,9 @@ static int count_time_internal (struct mp3_data *data)
 	return mad_timer_count (duration, MAD_UNITS_SECONDS);
 }
 
-static void *mp3_open (const char *file)
+static struct mp3_data *mp3_open_internal (const char *file,
+		const int buffered)
 {
-	struct stat stat;
 	struct mp3_data *data;
 
 	data = (struct mp3_data *)xmalloc (sizeof(struct mp3_data));
@@ -276,91 +257,55 @@ static void *mp3_open (const char *file)
 	data->bitrate = -1;
 
 	/* Open the file */
-	if ((data->infile = open(file, O_RDONLY)) == -1)
-		decoder_error (&data->error, ERROR_FATAL, errno,
-				"open() failed: ");
-	else if (fstat(data->infile, &stat) == -1) {
-		decoder_error (&data->error, ERROR_FATAL, errno,
-				"Can't stat() file: ");
-		close (data->infile);
-	}
-	else {
+	data->io_stream = io_open (file, buffered);
+	if (io_ok(data->io_stream)) {
 		data->ok = 1;
 		
-		data->size = stat.st_size;
+		data->size = io_file_size (data->io_stream);
 
 		mad_stream_init (&data->stream);
 		mad_frame_init (&data->frame);
 		mad_synth_init (&data->synth);
 		
-#ifdef HAVE_MMAP
-		if (options_get_int("UseMmap")) {
-			data->mapped_size = data->size;
-			data->mapped = mmap (0, data->mapped_size, PROT_READ,
-					MAP_SHARED, data->infile, 0);
-			if (data->mapped == MAP_FAILED) {
-				logit ("mmap() failed: %s, using standard"
-						" read()", strerror(errno));
-				data->mapped = NULL;
-			}
-			else {
-				mad_stream_buffer (&data->stream, data->mapped,
-						data->mapped_size);
-				data->stream.error = 0;
-				logit ("mmapped() %ld bytes of file",
-						(long)data->size);
-			}
-		}
-		else {
-			debug ("Not using mmap()");
-			data->mapped = NULL;
-		}
-#endif
-
 		data->duration = count_time_internal (data);
 		mad_frame_mute (&data->frame);
 		data->stream.next_frame = NULL;
 		data->stream.sync = 0;
 		data->stream.error = MAD_ERROR_NONE;
 
-#ifdef HAVE_MMAP
-		if (data->mapped)
-			mad_stream_buffer (&data->stream, data->mapped,
-					data->mapped_size);
-		else {
-#endif
-			if (lseek(data->infile, SEEK_SET, 0) == (off_t)-1) {
-				decoder_error (&data->error, ERROR_FATAL, errno,
-						"lseek() failed: ");
-				close (data->infile);
-				mad_stream_finish (&data->stream);
-				mad_frame_finish (&data->frame);
-				mad_synth_finish (&data->synth);
-				data->ok = 0;
-			}
-
-			data->stream.error = MAD_ERROR_BUFLEN;
+		if (io_seek(data->io_stream, SEEK_SET, 0) == (off_t)-1) {
+			decoder_error (&data->error, ERROR_FATAL, 0,
+						"seek failed");
+			io_close (data->io_stream);
+			mad_stream_finish (&data->stream);
+			mad_frame_finish (&data->frame);
+			mad_synth_finish (&data->synth);
+			data->ok = 0;
 		}
+
+		data->stream.error = MAD_ERROR_BUFLEN;
+	}
+	else {
+		decoder_error (&data->error, ERROR_FATAL, 0, "Can't open: %s",
+				io_strerror(data->io_stream));
+		io_close (data->io_stream);
 	}
 
 	return data;
+}
+
+static void *mp3_open (const char *file)
+{
+	return mp3_open_internal(file, 1);
 }
 
 static void mp3_close (void *void_data)
 {
 	struct mp3_data *data = (struct mp3_data *)void_data;
 
-	if (data->ok) {
-#ifdef HAVE_MMAP
-		if (data->mapped && munmap(data->mapped, data->size) == -1)
-			logit ("munmap() failed: %s", strerror(errno));
-#endif
-
-		close (data->infile);
-	}
-
+	if (data->ok)
+		io_close (data->io_stream);
 	decoder_error_clear (&data->error);
-	
 	free (data);
 }
 
@@ -373,9 +318,10 @@ static int count_time (const char *file)
 	
 	debug ("Processing file %s", file);
 
-	if (!(data = mp3_open(file)))
-		return -1;
-	time = data->duration;
+	if (!(data = mp3_open_internal(file, 0)))
+		time = -1;
+	else
+		time = data->duration;
 	mp3_close (data);
 
 	return time;
@@ -492,12 +438,6 @@ static int mp3_decode (void *void_data, char *buf, int buf_len,
 		/* Fill the input buffer if needed */
 		if (data->stream.buffer == NULL ||
 			data->stream.error == MAD_ERROR_BUFLEN) {
-#ifdef HAVE_MMAP
-			if (data->mapped)
-				return 0; /* FIXME: check if the size of file
-					  has't changed */
-			else
-#endif
 			if (!fill_buff(data))
 				return 0;
 		}
@@ -584,31 +524,18 @@ static int mp3_seek (void *void_data, int sec)
 	else if (new_position >= data->size)
 		return -1;
 	
-#ifdef HAVE_MMAP
-	if (data->mapped) {
-		mad_stream_buffer (&data->stream,
-				data->mapped + new_position,
-				data->mapped_size - new_position);
-		data->stream.error = MAD_ERROR_NONE;
+	if (io_seek(data->io_stream, new_position, SEEK_SET) == -1) {
+		logit ("seek to %d failed", new_position);
+		return -1;
 	}
-	else {
-#endif
-		if (lseek(data->infile, new_position,
-					SEEK_SET) == -1) {
-			logit ("Failed to seek to: %d", new_position);
-			return -1;
-		}
-		data->stream.error = MAD_ERROR_BUFLEN;
+	
+	data->stream.error = MAD_ERROR_BUFLEN;
 
-		mad_frame_mute (&data->frame);
-		mad_synth_mute (&data->synth);
+	mad_frame_mute (&data->frame);
+	mad_synth_mute (&data->synth);
 
-		data->stream.sync = 0;
-		data->stream.next_frame = NULL;
-
-#ifdef HAVE_MMAP
-	}
-#endif
+	data->stream.sync = 0;
+	data->stream.next_frame = NULL;
 
 	data->skip_frames = 2;
 
