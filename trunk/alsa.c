@@ -28,7 +28,7 @@
 #include "options.h"
 #include "log.h"
 
-#define DEBUG
+/*#define DEBUG*/
 
 #define BUFFER_MAX_USEC	300000
 
@@ -101,10 +101,8 @@ static void alsa_init ()
 	else {
 		snd_mixer_selem_get_playback_volume_range (mixer_elem,
 				&mixer_min, &mixer_max);
-#ifdef DEBUG
 		logit ("Opened mixer, volume range: %ld-%ld", mixer_min,
 				mixer_max);
-#endif
 	}
 }
 
@@ -167,9 +165,7 @@ static int alsa_open (struct sound_params *sound_params)
 		return 0;
 	}
 
-#ifdef DEBUG
 	logit ("Set rate to %d", rate);
-#endif
 	
 	if ((err = snd_pcm_hw_params_set_channels (handle, hw_params,
 					sound_params->channels)) < 0) {
@@ -214,10 +210,7 @@ static int alsa_open (struct sound_params *sound_params)
 
 	bytes_per_frame = sound_params->channels * sound_params->format;
 
-#ifdef DEBUG
 	logit ("Buffer time: %ldus", buffer_frames * bytes_per_frame);
-#endif
-
 
 	if (chunk_frames == buffer_frames) {
 		error ("Can't use period equal to buffer size (%lu == %lu)",
@@ -228,9 +221,7 @@ static int alsa_open (struct sound_params *sound_params)
 
 	chunk_size = chunk_frames * bytes_per_frame;
 
-#ifdef DEBUG
-	logit ("Chunk size: %d", chunk_size);
-#endif
+	debug ("Chunk size: %d", chunk_size);
 	
 	snd_pcm_hw_params_free (hw_params);
 	
@@ -240,9 +231,7 @@ static int alsa_open (struct sound_params *sound_params)
 		return 0;
 	}
 
-#ifdef DEBUG
-	logit ("ALSA device initialized");
-#endif
+	debug ("ALSA device initialized");
 	
 	params.format = sound_params->format;
 	params.channels = sound_params->channels;
@@ -258,9 +247,7 @@ static void alsa_close ()
 	params.rate = 0;
 	params.channels = 0;
 	snd_pcm_close (handle);
-#ifdef DEBUG
 	logit ("ALSA device closed");
-#endif
 	handle = NULL;
 }
 
@@ -271,9 +258,7 @@ static int alsa_play (const char *buff, const size_t size)
 
 	assert (chunk_size > 0);
 
-#ifdef DEBUG
-	logit ("Got %d bytes to play", (int)size);
-#endif
+	debug ("Got %d bytes to play", (int)size);
 
 	LOCK (buf_mutex);
 	while (to_write) {
@@ -286,10 +271,8 @@ static int alsa_play (const char *buff, const size_t size)
 		buf_pos += to_copy;
 		alsa_buf_fill += to_copy;
 
-#ifdef DEBUG
-		logit ("Copied %d bytes to alsa_buf (now is filled with %d "
+		debug ("Copied %d bytes to alsa_buf (now is filled with %d "
 				"bytes)", to_copy, alsa_buf_fill);
-#endif
 		
 		while (alsa_buf_fill >= chunk_size) {
 			int err;
@@ -339,23 +322,17 @@ static int alsa_play (const char *buff, const size_t size)
 				written += written_bytes;
 				alsa_buf_fill -= written_bytes;
 
-#ifdef DEBUG
-				logit ("Played %d bytes", written_bytes);
-#endif
+				debug ("Played %d bytes", written_bytes);
 			}
 		}
 
 		memmove (alsa_buf, alsa_buf + written, alsa_buf_fill);
 
-#ifdef DEBUG
-		logit ("%d bytes remain in alsa_buf", alsa_buf_fill);
-#endif
+		debug ("%d bytes remain in alsa_buf", alsa_buf_fill);
 	}
 	UNLOCK (buf_mutex);
 
-#ifdef DEBUG
-	logit ("Played everything");
-#endif
+	debug ("Played everything");
 
 	return size;
 }
@@ -418,9 +395,7 @@ static void alsa_set_mixer (int vol)
 		else if (vol > 100)
 			vol = 100;
 
-#ifdef DEBUG
-		logit ("Setting vol to %d%%", vol);
-#endif
+		debug ("Setting vol to %d%%", vol);
 
 		vol_alsa = (mixer_max - mixer_min) * (float)vol/100;
 		
