@@ -189,13 +189,15 @@ void menu_setcurritem (struct menu *menu, int num)
 {
 	assert (menu != NULL);
 	
-	menu->selected = num;
+	if (num < menu->nitems)
+		menu->selected = num;
+	else
+		menu->selected = menu->nitems - 1;
 
 	if (menu->selected < menu->top)
 		menu->top = menu->selected;
 	else if (menu->selected > menu->top + menu->maxy - 1)
 		menu->top = menu->selected - menu->maxy + 1;	
-
 }
 
 /* Make the item with this title selected. */
@@ -259,4 +261,16 @@ void menu_mark_plist_item (struct menu *menu, const int plist_item)
 		}
 }
 
-
+/* Set the top item to num. */
+void menu_set_top_item (struct menu *menu, const int num)
+{
+	assert (menu != NULL);
+	
+	if (num > menu->nitems - menu->maxy) {
+		menu->top = menu->nitems - menu->maxy;
+		if (menu->top < 0)
+			menu->top = 0;
+	}
+	else
+		menu->top = num;
+}
