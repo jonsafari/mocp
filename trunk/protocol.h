@@ -28,7 +28,6 @@
 #define CMD_SET_OPTION	0x07 /* set an option */
 #define CMD_GET_OPTION	0x08 /* get an option */
 #define CMD_GET_CTIME	0x0d /* get the current song time */
-#define CMD_GET_STIME	0x0e /* get the stream time */
 #define CMD_GET_SNAME	0x0f /* get the stream file name */
 #define CMD_NEXT	0x10 /* start playing next song if available */
 #define CMD_QUIT	0x11 /* shutdown the server */

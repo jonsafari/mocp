@@ -76,12 +76,10 @@ static struct {
 	int bitrate;
 	int rate;
 	int channels;
-	int time;
 } sound_info = {
 	-1,
 	-1,
-	-1,
-	0
+	-1
 };
 
 static void write_pid_file ()
@@ -558,10 +556,6 @@ static void handle_command (struct client *cli)
 			if (!req_seek(cli))
 				err = 1;
 			break;
-		case CMD_GET_STIME:
-			if (!send_data_int(cli, sound_info.time))
-				err = 1;
-			break;
 		case CMD_GET_SNAME:
 			if (!send_sname(cli))
 				err = 1;
@@ -756,12 +750,6 @@ void set_info_bitrate (const int bitrate)
 	sound_info.bitrate = bitrate;
 	if (event_throttle() || bitrate <= 0)
 		add_event_all (EV_BITRATE);
-}
-
-void set_info_time (const int time)
-{
-	sound_info.time = time;
-	add_event_all (EV_STATE);
 }
 
 void set_info_channels (const int channels)
