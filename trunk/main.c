@@ -466,8 +466,7 @@ int main (int argc, char *argv[])
 				params.dont_run_server = 1;
 				break;
 			case 'T':
-				option_set_str ("Theme", optarg);
-				option_ignore_config ("Theme");
+				option_set_str ("ForceTheme", optarg);
 				break;
 			case 'C':
 				config_file = xstrdup (optarg);
