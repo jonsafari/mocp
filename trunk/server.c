@@ -357,7 +357,8 @@ static void add_event_all (const int event, void *data)
 	if (added)
 		wake_up_server ();
 	else
-		debug ("No events were added because there are no clients.");
+		debug ("No events have been added because there are no "
+				"clients.");
 }
 
 /* Send events from the queue. Return 0 on error. */
