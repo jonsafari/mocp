@@ -1,6 +1,4 @@
 Before 2.3.0:
-* interface.c uses packet items when sending
-* Decoder plugins.
 * Complete to the matching part of a directory with the i command if a name is
   ambigous.
 * History in the i command.
@@ -22,6 +20,7 @@ Before 2.3.0:
 * Add --recursive command line option: if a command line argument is a
   directory, add files from it to the playlist recursively.
 * --next, --previous command line options.
+* interface.c uses packet items when sending
 * Ability to use all xterm colors.
 * After start load the defined playlist and switch to it.
 * When searching using /, filter out not matching items and allow to use arrow
@@ -30,6 +29,7 @@ Before 2.3.0:
 * Remember the playlist with the serial number.
 * G points to the currently played file, not only the right "view"
 * better error messages when ov_*() in ogg.c fails.
+* Describe how plugins work.
 
 In future:
 
