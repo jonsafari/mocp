@@ -49,6 +49,8 @@ struct parameters
 	int dont_run_server;
 	int stop;
 	int exit;
+	int pause;
+	int unpause;
 };
 
 /* End program with a message. Use when an error occurs and we can't recover. */
@@ -342,6 +344,8 @@ static void show_usage (const char *prg_name) {
 "			the path is not absolute.\n"
 "-C --config FILE       Use the specified config file instead of the default.\n"
 "-M --moc-dir DIR       Use the specified MOC directory instead of the default.\n"
+"-P --pause             Pause.\n"
+"-U --unpause           Unpause.\n"
 , prg_name);
 }
 
@@ -383,6 +387,16 @@ static void server_command (struct parameters *params)
 					|| !send_int(sock, CMD_DISCONNECT))
 				fatal ("Can't send commands");
 		}
+		else if (params->pause) {
+			if (!send_int(sock, CMD_PAUSE)
+					|| !send_int(sock, CMD_DISCONNECT))
+				fatal ("Can't send commands");
+		}
+		else if (params->unpause) {
+			if (!send_int(sock, CMD_UNPAUSE)
+					|| !send_int(sock, CMD_DISCONNECT))
+				fatal ("Can't send commands");
+		}
 	}
 	else
 		fatal ("Can't connect to the server.");
@@ -408,6 +422,8 @@ int main (int argc, char *argv[])
 		{ "theme",		1, NULL, 'T' },
 		{ "config",		1, NULL, 'C' },
 		{ "moc-dir",		1, NULL, 'M' },
+		{ "pause",		0, NULL, 'P' },
+		{ "unpause",		0, NULL, 'U' },
 		{ 0, 0, 0, 0 }
 	};
 	int ret, opt_index = 0;
@@ -417,7 +433,7 @@ int main (int argc, char *argv[])
 	memset (&params, 0, sizeof(params));
 	options_init ();
 
-	while ((ret = getopt_long(argc, argv, "VhDSFR:macpsxT:C:M:",
+	while ((ret = getopt_long(argc, argv, "VhDSFR:macpsxT:C:M:PU",
 					long_options, &opt_index)) != -1) {
 		switch (ret) {
 			case 'V':
@@ -463,6 +479,14 @@ int main (int argc, char *argv[])
 				break;
 			case 'x':
 				params.exit = 1;
+				params.dont_run_server = 1;
+				break;
+			case 'P':
+				params.pause = 1;
+				params.dont_run_server = 1;
+				break;
+			case 'U':
+				params.unpause = 1;
 				params.dont_run_server = 1;
 				break;
 			case 'T':
