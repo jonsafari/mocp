@@ -78,8 +78,9 @@ Bring down the server.
 
 .TP
 .I -T --theme theme
-Use a theme file. If the path is not absolute, the file will be read
-from ~/.moc/themes.
+Use a theme file. If the path is not absolute, the file will be searched in
+/usr/share/moc/themes/ (depends on installation prefix), ~/.moc/themes/ and in
+the current directory.
 
 .TP
 .I -C --config FILE
@@ -115,8 +116,9 @@ program.
 
 .TP
 .I ~/.moc/themes
+.I /usr/share/moc/themes
 
-Default directory for theme files.
+Default directories for theme files.
 
 .SH BUGS
 Command line options that affects the server bahaviour (like --sound-driver) are

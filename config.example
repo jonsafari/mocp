@@ -69,7 +69,8 @@ ShowFormat		= yes
 # time only when it was read before (often works faster)
 ShowTime		= IfAvailable
 
-# Theme file. This can be absolute path or relative to ~/.moc/themes/
+# Theme file. This can be absolute path or relative to
+# /usr/share/moc/themes/ (depends on installation prefix) or ~/.moc/themes/
 # Theme			= example_theme
 
 # MOC directory - where pid file, socket, and state files are stored.
