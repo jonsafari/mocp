@@ -1469,6 +1469,7 @@ static void print_help_screen ()
 "  ^r           Refresh the screen\n"
 "  r            Reread directory content\n"
 "  q            Detach MOC from the server\n"
+"  V            Save the playlist in the current directory\n"
 "  Q            Quit\n");
 
 	wrefresh (main_win);
