@@ -39,6 +39,7 @@
 #include "options.h"
 #include "files.h"
 #include "playlist_file.h"
+#include "log.h"
 
 #define FILE_LIST_INIT_SIZE	64
 
@@ -175,7 +176,10 @@ struct file_tags *read_file_tags (char *file)
 
 	assert (file != NULL);
 	df = get_decoder_funcs (file);
-	assert (df != NULL);
+	if (!df) {
+		logit ("Can't find decoder functions for %s", file);
+		return NULL;
+	}
 
 	tags = tags_new ();
 	df->info (file, tags);
