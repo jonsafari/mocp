@@ -773,6 +773,13 @@ static void update_info_win ()
 		wattrset (info_win, get_color(CLR_INFO_DISABLED));
 	waddstr (info_win, "[STEREO]");
 	
+	/* Network stream */
+	if (file_info.curr_file && file_type(file_info.curr_file) == F_URL)
+		wattrset (info_win, get_color(CLR_INFO_ENABLED));
+	else
+		wattrset (info_win, get_color(CLR_INFO_DISABLED));
+	waddstr (info_win, " [NET]");
+	
 	/* Shuffle & repeat */
 	wmove (info_win, 2, COLS - sizeof("[SHUFFLE] [REPEAT] [NEXT]"));
 	if (options_get_int("Shuffle"))
@@ -1220,13 +1227,6 @@ static char *find_title (char *file)
 	int idx;
 	char *title = NULL;
 
-	if (cache_file && !strcmp(cache_file, file)) {
-		debug ("Using cache");
-		return xstrdup (cache_title);
-	}
-	else
-		debug ("Getting file title for %s", file);
-
 	if (file_type(file) == F_URL) {
 		if (!file_info.tags) {
 			send_int_to_srv (CMD_GET_TAGS);
@@ -1237,8 +1237,18 @@ static char *find_title (char *file)
 		if (file_info.tags && file_info.curr_file
 				&& !strcmp(file_info.curr_file, file))
 			title = build_title (file_info.tags);
+
+		return title;
 	}
-	else if ((idx = plist_find_fname(curr_plist, file)) != -1
+	
+	if (cache_file && !strcmp(cache_file, file)) {
+		debug ("Using cache");
+		return xstrdup (cache_title);
+	}
+	else
+		debug ("Getting file title for %s", file);
+
+	if ((idx = plist_find_fname(curr_plist, file)) != -1
 			&& (curr_plist->items[idx].title_tags
 			   || (curr_plist->items[idx].tags
 				   && curr_plist->items[idx].tags->filled
