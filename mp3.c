@@ -54,7 +54,7 @@ struct mp3_data
 	unsigned int freq;
 	short channels;
 	signed long duration; /* Total time of the file in seconds.
-				 user for seeking. */
+				 used for seeking. */
 	off_t size; /* Size of the file */
 
 #ifdef HAVE_MMAP
@@ -68,7 +68,7 @@ struct mp3_data
 	struct mad_frame frame;
 	struct mad_synth synth;
 
-	int first_frame; /* Are we going to decode the first frame now? */
+	int skip_frames; /* how much frames to skip (after seeking) */
 };
 
 /* Fill in the mad buffer, return number of bytes read, 0 on eof or error */
@@ -121,82 +121,8 @@ static char *get_tag (struct id3_tag *tag, const char *what)
 	return comm;
 }
 
-static void *mp3_open (const char *file)
+static int count_time_internal (struct mp3_data *data)
 {
-	struct stat stat;
-	struct mp3_data *data;
-
-	data = (struct mp3_data *)xmalloc (sizeof(struct mp3_data));
-
-	/* Reset information about the file */
-	data->bitrate = 0;
-	data->freq = 0;
-	data->channels = 0;
-	data->duration = 0;
-	data->first_frame = 1;
-
-	/* Open the file */
-	if ((data->infile = open(file, O_RDONLY)) == -1) {
-		error ("open() failed: %s\n", strerror (errno));
-		free (data);
-		return NULL;
-	}
-
-	if (fstat(data->infile, &stat) == -1) {
-		error ("Can't stat() file: %s\n", strerror(errno));
-		close (data->infile);
-		free (data);
-		return NULL;
-	}
-
-	data->size = stat.st_size;
-
-	mad_stream_init (&data->stream);
-	mad_frame_init (&data->frame);
-	mad_synth_init (&data->synth);
-	
-#ifdef HAVE_MMAP
-	data->mapped_size = data->size;
-	data->mapped = mmap (0, data->mapped_size, PROT_READ, MAP_SHARED,
-			data->infile, 0);
-	if (data->mapped == MAP_FAILED) {
-		logit ("mmap() failed: %s, using standard read()",
-				strerror(errno));
-		data->mapped = NULL;
-	}
-	else {
-		mad_stream_buffer (&data->stream, data->mapped, data->mapped_size);
-		data->stream.error = 0;
-		logit ("mmapped() %ld bytes of file", (long)data->size);
-	}
-#endif
-
-	return data;
-}
-
-static void mp3_close (void *void_data)
-{
-	struct mp3_data *data = (struct mp3_data *)void_data;
-
-#ifdef HAVE_MMAP
-	if (data->mapped && munmap(data->mapped, data->size) == -1)
-		logit ("munmap() failed: %s", strerror(errno));
-#endif
-
-	close (data->infile);
-	
-	mad_stream_finish (&data->stream);
-	mad_frame_finish (&data->frame);
-	mad_synth_finish (&data->synth);
-
-	free (data);
-}
-
-/* Get the time for mp3 file, return -1 on error. */
-/* Adapted from mpg321. */
-static int count_time (const char *file)
-{
-	struct mp3_data *data;
 	struct xing xing;
 	unsigned long bitrate = 0;
 	int has_xing = 0;
@@ -204,11 +130,6 @@ static int count_time (const char *file)
 	int num_frames = 0;
 	mad_timer_t duration = mad_timer_zero;
 	struct mad_header header;
-
-	debug ("Processing file %s", file);
-
-	if (!(data = mp3_open(file)))
-		return -1;
 
 	mad_header_init (&header);
 	xing_init (&xing);
@@ -322,10 +243,116 @@ static int count_time (const char *file)
 	}
 
 	mad_header_finish(&header);
-	mp3_close (data);
 
 	debug ("MP3 time: %ld", mad_timer_count (duration, MAD_UNITS_SECONDS));
+
 	return mad_timer_count (duration, MAD_UNITS_SECONDS);
+}
+
+static void *mp3_open (const char *file)
+{
+	struct stat stat;
+	struct mp3_data *data;
+
+	data = (struct mp3_data *)xmalloc (sizeof(struct mp3_data));
+
+	/* Reset information about the file */
+	data->bitrate = 0;
+	data->freq = 0;
+	data->channels = 0;
+	data->skip_frames = 0;
+
+	/* Open the file */
+	if ((data->infile = open(file, O_RDONLY)) == -1) {
+		error ("open() failed: %s\n", strerror (errno));
+		free (data);
+		return NULL;
+	}
+
+	if (fstat(data->infile, &stat) == -1) {
+		error ("Can't stat() file: %s\n", strerror(errno));
+		close (data->infile);
+		free (data);
+		return NULL;
+	}
+
+	data->size = stat.st_size;
+
+	mad_stream_init (&data->stream);
+	mad_frame_init (&data->frame);
+	mad_synth_init (&data->synth);
+	
+#ifdef HAVE_MMAP
+	if (options_get_int("UseMmap")) {
+		data->mapped_size = data->size;
+		data->mapped = mmap (0, data->mapped_size, PROT_READ,
+				MAP_SHARED, data->infile, 0);
+		if (data->mapped == MAP_FAILED) {
+			logit ("mmap() failed: %s, using standard read()",
+					strerror(errno));
+			data->mapped = NULL;
+		}
+		else {
+			mad_stream_buffer (&data->stream, data->mapped,
+					data->mapped_size);
+			data->stream.error = 0;
+			logit ("mmapped() %ld bytes of file", (long)data->size);
+		}
+	}
+	else
+		debug ("Not using mmap()");
+#endif
+
+	data->duration = count_time_internal (data);
+#ifdef HAVE_MMAP
+	if (data->mapped)
+		mad_stream_buffer (&data->stream, data->mapped,
+				data->mapped_size);
+	else
+#endif
+		if (lseek(data->infile, SEEK_SET, 0) == (off_t)-1) {
+			error ("lseek() failed: %s", strerror(errno));
+			close (data->infile);
+			free (data);
+			return NULL;
+		}
+
+	return data;
+}
+
+static void mp3_close (void *void_data)
+{
+	struct mp3_data *data = (struct mp3_data *)void_data;
+
+#ifdef HAVE_MMAP
+	if (data->mapped && munmap(data->mapped, data->size) == -1)
+		logit ("munmap() failed: %s", strerror(errno));
+#endif
+
+	close (data->infile);
+	
+	mad_stream_finish (&data->stream);
+	mad_frame_finish (&data->frame);
+	mad_synth_finish (&data->synth);
+
+	free (data);
+}
+
+/* Get the time for mp3 file, return -1 on error. */
+/* Adapted from mpg321. */
+static int count_time (const char *file)
+{
+	struct mp3_data *data;
+	int time;
+	
+	debug ("Processing file %s", file);
+
+	if (!(data = mp3_open(file)))
+		return -1;
+	time = count_time_internal (data);
+	mp3_close (data);
+
+	return time;
 }
 
 /* Fill info structure with data from the id3 tag */
@@ -443,7 +470,8 @@ static int mp3_decode (void *void_data, char *buf, int buf_len,
 				if (data->stream.error == MAD_ERROR_LOSTSYNC)
 					continue;
 
-				if (options_get_int("ShowStreamErrors"))
+				if (options_get_int("ShowStreamErrors")
+						&& !data->skip_frames)
 					error ("Broken frame: %s",
 							mad_stream_errorstr(&data->stream));
 				continue;
@@ -456,6 +484,11 @@ static int mp3_decode (void *void_data, char *buf, int buf_len,
 							mad_stream_errorstr (&data->stream));
 				return 0;
 			}
+		}
+
+		if (data->skip_frames) {
+			data->skip_frames--;
+			continue;
 		}
 
 		/* Sound parameters. */
@@ -479,32 +512,6 @@ static int mp3_decode (void *void_data, char *buf, int buf_len,
 			set_info_bitrate (data->bitrate / 1000);
 		}
 		
-		if (data->first_frame) {
-
-			/* Read the time using the first frame. It's wrong
-			 * with VBR without XING, but we don't want to cause
-			 * delays. The time is only used when seeking. */
-			struct xing xing;
-			mad_timer_t duration = data->frame.header.duration;
-
-			debug ("Getting time");
-
-			if (xing_parse(&xing, data->stream.anc_ptr,
-						data->stream.anc_bitlen) != -1) {
-				xing_init (&xing);
-				mad_timer_multiply (&duration,
-						xing.frames);
-				debug ("Has xing");
-			}
-			else
-				mad_timer_multiply (&duration, data->size /
-					(data->stream.next_frame - data->stream.this_frame));
-
-			data->duration = mad_timer_count (duration,
-					MAD_UNITS_SECONDS);
-			data->first_frame = 0;
-		}
-
 		mad_synth_frame (&data->synth, &data->frame);
 		mad_stream_sync (&data->stream);
 
@@ -517,7 +524,6 @@ static int mp3_seek (void *void_data, int sec)
 {
 	struct mp3_data *data = (struct mp3_data *)void_data;
 	int new_position;
-	int skip = 2;
 
 	if (sec >= data->duration)
 		return -1;
@@ -561,18 +567,7 @@ static int mp3_seek (void *void_data, int sec)
 	}
 #endif
 
-	/* Skip 2 frames */
-	do {
-		if (mad_frame_decode(&data->frame, &data->stream) == 0) {
-			if (--skip == 0)
-				mad_synth_frame(&data->synth, &data->frame);
-		}
-		else if (!MAD_RECOVERABLE(data->stream.error)) {
-			logit ("unrecoverable error after seeking: %s",
-					mad_stream_errorstr(&data->stream));
-			return -1;
-		}
-	} while (skip);
+	data->skip_frames = 2;
 
 	return sec;
 }
