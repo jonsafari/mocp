@@ -15,6 +15,12 @@
 #define EV_OPTIONS	0x0c /* the options has changed */
 #define EV_SEND_PLIST	0x0d /* Request for sending the playlist. */
 
+/* Events caused by a client that wants to modify the playlist (see
+ * CMD_CLI_PLIST* commands. */
+#define EV_PLIST_ADD	0x0e /* add an item, followed by the file name */
+#define EV_PLIST_DEL	0x0f /* delete an item, followed by the file name */
+#define EV_PLIST_CLEAR	0x10 /* clear the playlist */
+
 /* State of the server. */
 #define STATE_PLAY	0x01
 #define STATE_STOP	0x02
@@ -51,6 +57,10 @@
 #define CMD_GET_PLIST	0x22 /* get the playlist from one of the clients */
 #define CMD_CAN_SEND_PLIST	0x23 /* mark the client as able to to send
 					playlist */
+#define CMD_CLI_PLIST_ADD	0x24 /* add an item to the clients playlist */
+#define CMD_CLI_PLIST_DEL	0x25 /* delete an item from the clients
+					playlist */
+#define CMD_CLI_PLIST_CLEAR	0x26 /* clear the clients playlist */
 
 char *socket_name ();
 int get_int (int sock, int *i);

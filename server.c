@@ -1,6 +1,6 @@
 /*
  * MOC - music on console
- * Copyright (C) 2003,2004 Damian Pietras <daper@daper.net>
+ * Copyright (C) 2003,2004,2005 Damian Pietras <daper@daper.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -723,6 +723,71 @@ static int req_send_plist (struct client *cli)
 	return 0;
 }
 
+/* Send this event followeb by the string to all clients except cli. Don't use
+ * the queue - send it now. */
+static void send_event_str_direct (struct client *cli, const int event,
+		const char *str)
+{
+	int i;
+
+	for (i = 0; i < CLIENTS_MAX; i++)
+		if (clients[i].socket != -1
+				&& clients[i].socket != cli->socket
+				&& clients[i].wants_events) {
+			if (!send_int(clients[i].socket, event)
+					|| !send_str(clients[i].socket, str)) {
+				logit ("Error while sending event,"
+						" disconnecting the client.");
+				close (clients[i].socket);
+				del_client (&clients[i]);
+			}
+		}
+}
+
+/* Send this event to all clients except cli. Don't use the queue - send it
+ * now. */
+static void send_event_direct (struct client *cli, const int event)
+{
+	int i;
+
+	for (i = 0; i < CLIENTS_MAX; i++)
+		if (clients[i].socket != -1
+				&& clients[i].socket != cli->socket
+				&& clients[i].wants_events) {
+			if (!send_int(clients[i].socket, event)) {
+				logit ("Error while sending event,"
+						" disconnecting the client.");
+				close (clients[i].socket);
+				del_client (&clients[i]);
+			}
+		}
+}
+
+/* Handle command that synchinize playlists between interfaces (except
+ * forwarding the whole list). Return 0 on error. */
+static int plist_sync_cmd (struct client *cli, const int cmd)
+{
+	if (cmd == CMD_CLI_PLIST_DEL || cmd == CMD_CLI_PLIST_ADD) {
+		char *file;
+		int event = cmd == CMD_CLI_PLIST_DEL ?
+			EV_PLIST_DEL : EV_PLIST_ADD;
+
+		debug ("Sending event %d", event);
+
+		if (!(file = get_str(cli->socket)))
+			return 0;
+		
+		send_event_str_direct (cli, event, file);
+		free (file);
+	}
+	else { /* it can be only CMD_CLI_PLIST_CLEAR */
+		debug ("Sending EV_PLIST_CLEAR");
+		send_event_direct (cli, EV_PLIST_CLEAR);
+	}
+
+	return 1;
+}
+
 /* Reveive a command from the client and execute it. */
 static void handle_command (struct client *cli)
 {
@@ -847,6 +912,12 @@ static void handle_command (struct client *cli)
 			break;
 		case CMD_CAN_SEND_PLIST:
 			cli->can_send_plist = 1;
+			break;
+		case CMD_CLI_PLIST_ADD:
+		case CMD_CLI_PLIST_DEL:
+		case CMD_CLI_PLIST_CLEAR:
+			if (!plist_sync_cmd(cli, cmd))
+				err = 1;
 			break;
 		default:
 			logit ("Bad command (0x%x) from the client.", cmd);
