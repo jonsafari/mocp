@@ -1,4 +1,4 @@
-.TH MOC 8 "30 may 2002" "Version 1.2.0" "music on console"
+.TH MOC 8 "22 september 2004" "Version 2.0.0" "music on console"
 
 .SH NAME
 MOC \- console audio player
@@ -17,75 +17,8 @@ of the files in the directory.
 .SH OPTIONS
 
 .TP
-.I -e --errors
-Show errors in streams, e.g. broken frames, CRC errors. This is default on.
-
-.TP
-.I -n --no-errors
-Do not show errors in streams (opposite to -e).
-
-.TP
-.I -m --musicdir
-Got to your music directory after startup. This directory is readed from
-config file (see FILES section).
-
-.TP
-.I -f --fullinfo
-Show titles (eg from id3tags) in the menu. It is slower than -s, bacause each
-information must be first readed from the file.
-
-.TP
-.I -s --shortinfo
-Show file names instead of file titles (opposite to -f).
-
-.TP
-.I -r --recursively
-Add files in direstories given as an argument recursively.
-
-.TP
-.I -p --priority N
-Set the priority to a given value. Works only if the moc binary has setuid bit
-or if moc is being run by root.
-
-.TP
-.I -l --dont-play
-Don't start playing files added as command line arguments.
-
-.TP
-.I -R --repeat
-Turn on repeat.
-
-.TP
-.I -E --no-repeat
-Turn off repeat.
-
-.TP
-.I -X --no-autonext
-Do not jump automatically to next playlist item after finishing first one.
-
-.TP
-.I -S --server
-Go to background after start (server mode).
-
-.TP
-.I -C --client
-Connect to a running MOC server (default if the server is running).
-
-.TP
-.I -F --foreground
-Don't go to background in server mode.
-
-.TP
-.I -D --debug
-Write server.log and client.log files with debuging information.
-
-.TP
-.I -V --version
-Show name, version number, compiled-in features and exit.
-
-.TP
-.I -h --help
-Show usage and exit.
+.I TODO
+Write this :)
 
 .SH FILES
 
@@ -94,6 +27,11 @@ Show usage and exit.
 Configuration file of MOC. Format is very simple, to see how to use it,
 look into example configuration file (config.example) distributed with the
 program.
+
+.SH BUGS
+
+You can't seek when the decoder finished decoding and the sound you hear is
+from the output buffer. This is a disadvantage of big output buffer.
 
 .SH HOMEPAGE
 http://moc.daper.net
