@@ -147,8 +147,13 @@ static int ogg_decode (void *void_data, char *buf, int buf_len,
 	int bitrate;
 
 	while (1) {
+#ifdef WORDS_BIGENDIAN
+		ret = ov_read(&data->vf, buf, buf_len, 1, 2, 1,
+				&current_section);
+#else
 		ret = ov_read(&data->vf, buf, buf_len, 0, 2, 1,
 				&current_section);
+#endif
 		if (ret == 0)
 			return 0;
 		if (ret < 0) {

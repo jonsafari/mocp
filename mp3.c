@@ -450,13 +450,24 @@ static int put_output (char *buf, int buf_len, struct mad_pcm *pcm,
 
 		/* output sample(s) in 16-bit signed little-endian PCM */
 		sample = scale (*left_ch++);
+		
+#ifdef WORDS_BIGENDIAN
+		buf[pos++] = (sample >> 8) & 0xff;
+		buf[pos++] = (sample >> 0) & 0xff;
+#else
 		buf[pos++] = (sample >> 0) & 0xff;
 		buf[pos++] = (sample >> 8) & 0xff;
+#endif
 
 		if (MAD_NCHANNELS (header) == 2) {
 			sample = scale (*right_ch++);
+#ifdef WORDS_BIGENDIAN
+			buf[pos++] = (sample >> 8) & 0xff;
+			buf[pos++] = (sample >> 0) & 0xff;
+#else
 			buf[pos++] = (sample >> 0) & 0xff;
 			buf[pos++] = (sample >> 8) & 0xff;
+#endif
 		}
 	}
 

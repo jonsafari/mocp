@@ -58,7 +58,7 @@ struct flac_data
 };
 
 /* Convert FLAC big-endian data into PCM little-endian. */
-static size_t pack_pcm_signed_little_endian (FLAC__byte *data,
+static size_t pack_pcm_signed (FLAC__byte *data,
 		const FLAC__int32 * const input[], unsigned wide_samples,
 		unsigned channels, unsigned bps)
 {
@@ -81,12 +81,25 @@ static size_t pack_pcm_signed_little_endian (FLAC__byte *data,
 				case 8:
 					data[0] = sample ^ 0x80;
 					break;
+
+#ifdef WORDS_BIGENDIAN
+				case 16:
+					data[0] = (FLAC__byte)(sample >> 8);
+					data[1] = (FLAC__byte)sample;
+					break;
+				case 24:
+					data[0] = (FLAC__byte)(sample >> 16);
+					data[1] = (FLAC__byte)(sample >> 8);
+					data[2] = (FLAC__byte)sample;
+					break;
+#else
 				case 24:
 					data[2] = (FLAC__byte)(sample >> 16);
 					/* fall through */
 				case 16:
 					data[1] = (FLAC__byte)(sample >> 8);
 					data[0] = (FLAC__byte)sample;
+#endif
 			}
 
 			data += incr;
@@ -109,7 +122,7 @@ static FLAC__StreamDecoderWriteStatus write_callback (
 	if (data->abort)
 		return FLAC__STREAM_DECODER_WRITE_STATUS_ABORT;
 
-	data->sample_buffer_fill = pack_pcm_signed_little_endian (
+	data->sample_buffer_fill = pack_pcm_signed (
 			data->sample_buffer, buffer, wide_samples,
 			data->channels, data->bits_per_sample);
 
