@@ -28,6 +28,7 @@
 #include "server.h"
 #include "options.h"
 #include "player.h"
+#include "files.h"
 
 #define PCM_BUF_SIZE	(32 * 1024)
 
@@ -184,71 +185,18 @@ void player_init ()
 	precache.ok =  0;
 }
 
-/* Open a file, decode it and put output into the buffer. At the end, start
- * precaching next_file. */
-void player (char *file, char *next_file, struct out_buf *out_buf)
+/* Decoder loop for already opened and probably running for some time decoder.
+ * next_file will be precached at eof. */
+static void decode_loop (const struct decoder *f, void *decoder_data,
+		const char *next_file, struct out_buf *out_buf,
+		struct sound_params sound_params)
 {
 	int eof = 0;
 	char buf[PCM_BUF_SIZE];
-	void *decoder_data;
 	int decoded = 0;
-	struct sound_params sound_params = { 0, 0, 0 };
 	struct sound_params new_sound_params;
-	int sound_params_change = 0;
-	struct decoder *f;
 	int bitrate = -1;
-	struct decoder_error err;
-
-	f = get_decoder (file);
-	assert (f != NULL);
-	
-	out_buf_set_notify_cond (out_buf, &request_cond, &request_cond_mutex);
-	out_buf_reset (out_buf);
-	
-	precache_wait (&precache);
-
-	if (precache.ok && strcmp(precache.file, file)) {
-		logit ("The precached file is not the file we want.");
-		precache.f->close (precache.decoder_data);
-	}
-
-	if (precache.ok && !strcmp(precache.file, file)) {
-		logit ("Using precached file");
-
-		assert (f == precache.f);
-		
-		sound_params = precache.sound_params;
-		decoder_data = precache.decoder_data;
-		set_info_channels (sound_params.channels);
-		set_info_rate (sound_params.rate / 1000);
-		if (!audio_open(&sound_params))
-			return;
-		out_buf_put (out_buf, precache.buf, precache.buf_fill);
-
-		precache.f->get_error (precache.decoder_data, &err);
-		if (err.type != ERROR_OK) {
-			if (err.type != ERROR_STREAM
-					|| options_get_int(
-						"ShowStreamErrors"))
-				error ("%s", err.err);
-			decoder_error_clear (&err);
-		}
-	}
-	else {
-		decoder_data = f->open(file);
-		f->get_error (decoder_data, &err);
-		if (err.type != ERROR_OK) {
-			f->close (decoder_data);
-			error ("%s", err.err);
-			decoder_error_clear (&err);
-			logit ("Can't open file, exiting");
-			return;
-		}
-	}
-
-	audio_plist_set_time (file, f->get_duration(decoder_data));
-	audio_state_started_playing ();
-	precache_reset (&precache);
+	int sound_params_change = 0;
 
 	while (1) {
 		debug ("loop...");
@@ -296,6 +244,7 @@ void player (char *file, char *next_file, struct out_buf *out_buf)
 					|| (eof && out_buf_get_fill(out_buf))) {
 			debug ("waiting...");
 			if (eof && !precache.file && next_file
+					&& file_type(next_file) == F_SOUND
 					&& options_get_int("Precache"))
 				start_precache (&precache, next_file);
 			pthread_cond_wait (&request_cond, &request_cond_mutex);
@@ -363,13 +312,106 @@ void player (char *file, char *next_file, struct out_buf *out_buf)
 		}
 	}
 
+}
+
+/* Open a file, decode it and put output into the buffer. At the end, start
+ * precaching next_file. */
+void player (const char *file, const char *next_file, struct out_buf *out_buf)
+{
+	void *decoder_data;
+	struct sound_params sound_params = { 0, 0, 0 };
+	struct decoder *f;
+
+	f = get_decoder (file);
+	assert (f != NULL);
+	
+	out_buf_set_notify_cond (out_buf, &request_cond, &request_cond_mutex);
+	out_buf_reset (out_buf);
+	
+	precache_wait (&precache);
+
+	if (precache.ok && strcmp(precache.file, file)) {
+		logit ("The precached file is not the file we want.");
+		precache.f->close (precache.decoder_data);
+	}
+
+	if (precache.ok && !strcmp(precache.file, file)) {
+		struct decoder_error err;
+
+		logit ("Using precached file");
+
+		assert (f == precache.f);
+		
+		sound_params = precache.sound_params;
+		decoder_data = precache.decoder_data;
+		set_info_channels (sound_params.channels);
+		set_info_rate (sound_params.rate / 1000);
+		if (!audio_open(&sound_params))
+			return;
+		out_buf_put (out_buf, precache.buf, precache.buf_fill);
+
+		precache.f->get_error (precache.decoder_data, &err);
+		if (err.type != ERROR_OK) {
+			if (err.type != ERROR_STREAM
+					|| options_get_int(
+						"ShowStreamErrors"))
+				error ("%s", err.err);
+			decoder_error_clear (&err);
+		}
+	}
+	else {
+		struct decoder_error err;
+
+		decoder_data = f->open(file);
+		f->get_error (decoder_data, &err);
+		if (err.type != ERROR_OK) {
+			f->close (decoder_data);
+			error ("%s", err.err);
+			decoder_error_clear (&err);
+			logit ("Can't open file, exiting");
+			return;
+		}
+	}
+
+	audio_plist_set_time (file, f->get_duration(decoder_data));
+	audio_state_started_playing ();
+	precache_reset (&precache);
+
+	decode_loop (f, decoder_data, next_file, out_buf, sound_params);
+
 	f->close (decoder_data);
 	out_buf_set_notify_cond (out_buf, NULL, NULL);
 	logit ("exiting");
 }
 
-void player_by_stream (struct io_stream *stream, const struct decoder *df)
+void player_by_stream (struct io_stream *stream, const struct decoder *df,
+		struct out_buf *out_buf)
 {
+	void *decoder_data;
+	struct sound_params sound_params = { 0, 0, 0 };
+	struct decoder_error err;
+
+	out_buf_set_notify_cond (out_buf, &request_cond, &request_cond_mutex);
+	out_buf_reset (out_buf);
+	
+	assert (df->open_stream != NULL);
+
+	decoder_data = df->open_stream (stream);
+	df->get_error (decoder_data, &err);
+	if (err.type != ERROR_OK) {
+		df->close (decoder_data);
+		error ("%s", err.err);
+		decoder_error_clear (&err);
+		logit ("Can't open file");
+	}
+	else {
+		audio_state_started_playing ();
+		decode_loop (df, decoder_data, NULL, out_buf, sound_params);
+		df->close (decoder_data);
+		out_buf_set_notify_cond (out_buf, NULL, NULL);
+	}
+	
+	logit ("exiting");
 }
 
 void player_cleanup ()

@@ -80,7 +80,18 @@ struct decoder *get_decoder (const char *file)
 
 struct decoder *get_decoder_by_content (struct io_stream *stream)
 {
+	char buf[8096];
+	ssize_t res;
 	int i;
+
+	/* Peek up some data to check if they are available. If not, there is
+	 * no sense to try decoders, each of them would issue an error. */
+	logit ("Testing the stream...");
+	res = io_peek (stream, buf, sizeof(buf));
+	if (res < 0) {
+		error ("Stream error: %s", io_strerror(stream));
+		return NULL;
+	}
 	
 	for (i = 0; i < plugins_num; i++)
 		if (plugins[i].decoder->can_decode

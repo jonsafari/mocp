@@ -29,7 +29,7 @@ struct decoder
 	void *(*open)(const char *uri);
 
 	/* Open for an already opened stream. Optional. */
-	void *(*open_stream)(const char *uri);
+	void *(*open_stream)(struct io_stream *stream);
 
 	/* Return 1 if the decoder is able to decode data from this stream.
 	 * Optional. */
