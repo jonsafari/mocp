@@ -1,8 +1,5 @@
 Before 2.0:
 
-* Run as server if stdin is not a terminal.
-* Option and a key to ignore hidden files.
-* Command line parameters overrideing options - more flexible solution.
 * Adding files to a playlist of detached moc using command line.
 * AUDIO_MAX_PLAY based on bps.
 * Only trying to obtain the lock for client socket when sending an event. If
