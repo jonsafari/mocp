@@ -54,6 +54,9 @@ static volatile int server_quit = 0;
 
 static int client_sock = -1;
 
+/* 1 if the client requested sending events. */
+static int client_wants_events = 0;
+
 static int event_queue[10];
 static int nevents = 0;
 static pthread_mutex_t event_queue_mut = PTHREAD_MUTEX_INITIALIZER;
@@ -544,6 +547,9 @@ static int handle_command ()
 			if (!delete_item())
 				status = EOF;
 			break;
+		case CMD_SEND_EVENTS:
+			client_wants_events = 1;
+			break;
 		default:
 			logit ("Bad command (0x%x) from the client.", cmd);
 			status = EOF;
@@ -562,6 +568,7 @@ static int handle_client (int list_sock)
 	int last_song_time = 0;
 
 	clear_events ();
+	client_wants_events = 0;
 
 	while (client_status == 0) {
 		struct timeval timeout;
@@ -595,7 +602,7 @@ static int handle_client (int list_sock)
 				last_song_time = song_time;
 				add_event (EV_CTIME);
 			}
-			if (!flush_events()) {
+			if (client_wants_events && !flush_events()) {
 				logit ("failed to send events");
 				client_status = EOF;
 			}	
