@@ -711,6 +711,7 @@ static void update_curr_file ()
 	else {
 		file_info.title[0] = 0;
 		menu_unmark_item (menu);
+		xterm_set_title ("");
 	}
 
 	free (file);
