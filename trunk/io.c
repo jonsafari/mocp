@@ -287,14 +287,15 @@ void io_close (struct io_stream *s)
 			close (s->fd);
 	}
 
+	if (pthread_mutex_destroy(&s->buf_mutex))
+		logit ("Destroying buf_mutex failed: %s",
+				strerror(errno));
+	if (pthread_mutex_destroy(&s->io_mutex))
+		logit ("Destroying io_mutex failed: %s",
+				strerror(errno));
+
 	if (s->buffered) {
 		fifo_buf_destroy (&s->buf);
-		if (pthread_mutex_destroy(&s->buf_mutex))
-			logit ("Destroying buf_mutex failed: %s",
-					strerror(errno));
-		if (pthread_mutex_destroy(&s->io_mutex))
-			logit ("Destroying io_mutex failed: %s",
-					strerror(errno));
 		if (pthread_cond_destroy(&s->buf_free_cond))
 			logit ("Destroying buf_free_cond faild: %s",
 					strerror(errno));
@@ -462,11 +463,12 @@ struct io_stream *io_open (const char *file, const int buffered)
 	s->buffered = buffered;
 	s->pos = 0;
 
+	pthread_mutex_init (&s->buf_mutex, NULL);
+	pthread_mutex_init (&s->io_mutex, NULL);
+
 	if (buffered) {
 		fifo_buf_init (&s->buf, 64 * 1024);
 		
-		pthread_mutex_init (&s->buf_mutex, NULL);
-		pthread_mutex_init (&s->io_mutex, NULL);
 		pthread_cond_init (&s->buf_free_cond, NULL);
 		pthread_cond_init (&s->buf_fill_cond, NULL);
 
