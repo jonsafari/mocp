@@ -35,6 +35,9 @@ struct decoder_funcs
 	/* Fill the tags structure for a file. */
 	void (*info)(const char *file, struct file_tags *tags,
 			const int tags_sel);
+
+	/* Return the bitrate in Kbps or -1 if not available. */
+	int (*get_bitrate)(void *date);
 };
 
 int is_sound_file (char *name);

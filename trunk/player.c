@@ -18,7 +18,7 @@
 #include <errno.h>
 #include <assert.h>
 
-#define DEBUG
+/*#define DEBUG*/
 
 #include "main.h"
 #include "log.h"
@@ -180,6 +180,7 @@ void player (char *file, char *next_file, struct buf *out_buf)
 	struct sound_params new_sound_params;
 	int sound_params_change = 0;
 	struct decoder_funcs *f;
+	int bitrate = -1;
 
 	f = get_decoder_funcs (file);
 	assert (f != NULL);
@@ -222,10 +223,18 @@ void player (char *file, char *next_file, struct buf *out_buf)
 				logit ("EOF from decoder");
 			}
 			else {
+				int new_bitrate;
+				
 				debug ("decoded %d bytes", decoded);
 				if (!sound_params_eq(new_sound_params,
 							sound_params))
 					sound_params_change = 1;
+
+				new_bitrate = f->get_bitrate (decoder_data);
+				if (bitrate != new_bitrate) {
+					bitrate = new_bitrate;
+					set_info_bitrate (bitrate);
+				}
 			}
 		}
 

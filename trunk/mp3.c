@@ -257,10 +257,10 @@ static void *mp3_open (const char *file)
 	data = (struct mp3_data *)xmalloc (sizeof(struct mp3_data));
 
 	/* Reset information about the file */
-	data->bitrate = 0;
 	data->freq = 0;
 	data->channels = 0;
 	data->skip_frames = 0;
+	data->bitrate = -1;
 
 	/* Open the file */
 	if ((data->infile = open(file, O_RDONLY)) == -1) {
@@ -355,7 +355,7 @@ static int count_time (const char *file)
 
 	if (!(data = mp3_open(file)))
 		return -1;
-	time = count_time_internal (data);
+	time = data->duration;
 	mp3_close (data);
 
 	return time;
@@ -514,8 +514,6 @@ static int mp3_decode (void *void_data, char *buf, int buf_len,
 						"be read.\n");
 				return 0;
 			}
-
-			set_info_bitrate (data->bitrate / 1000);
 		}
 		
 		mad_synth_frame (&data->synth, &data->frame);
@@ -578,12 +576,20 @@ static int mp3_seek (void *void_data, int sec)
 	return sec;
 }
 
+static int mp3_get_bitrate (void *void_data)
+{
+	struct mp3_data *data = (struct mp3_data *)void_data;
+
+	return data->bitrate / 1000;
+}
+
 static struct decoder_funcs decoder_funcs = {
 	mp3_open,
 	mp3_close,
 	mp3_decode,
 	mp3_seek,
-	mp3_info
+	mp3_info,
+	mp3_get_bitrate
 };
 
 struct decoder_funcs *mp3_get_funcs ()
