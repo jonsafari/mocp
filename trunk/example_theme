@@ -1,4 +1,6 @@
-# Example colour theme for MOC. To learn how to load a theme, see man mocp.
+# Example colour theme for MOC.
+# You can use a theme by copying it to ~/.moc/themes directory, and using
+# Theme config option or -T command line option.
 #
 # Fill free to make your own themes and send me them. If I like it
 #
