@@ -21,6 +21,7 @@
 #include <string.h>
 #include <errno.h>
 #include <stdlib.h>
+#include <iconv.h>
 
 /* Include dirent for various systems */
 #ifdef HAVE_DIRENT_H
@@ -45,6 +46,8 @@
 
 #define FILE_LIST_INIT_SIZE	64
 #define READ_LINE_INIT_SIZE	256
+
+static iconv_t iconv_desc = (iconv_t)(-1);
 
 enum file_type file_type (char *file)
 {
@@ -193,6 +196,96 @@ void resolve_path (char *buf, const int size, char *file)
 		buf[--len] = 0;
 }
 
+void iconv_init ()
+{
+	char conv_str[100];
+	char *from, *to;
+
+	if (!options_get_str("TagsIconv"))
+		return;
+
+	conv_str[sizeof(conv_str)-1] = 0;
+	strncpy (conv_str, options_get_str("TagsIconv"), sizeof(conv_str));
+
+	if (conv_str[sizeof(conv_str)-1])
+		fatal ("TagsIconv value too long!");
+
+	from = conv_str;
+	to = strchr (conv_str, ':');
+	assert (to != NULL);
+	*to = 0;
+	to++;
+
+	if ((iconv_desc = iconv_open(to, from)) == (iconv_t)(-1))
+		fatal ("Can't use specified TagsIconv value: %s",
+				strerror(errno));
+}
+
+/* Return a malloc()ed string converted using iconv(). Does free(str).
+ * For NULL returns NULL. */
+char *iconv_str (char *str)
+{
+	char buf[512];
+	char *inbuf, *outbuf;
+	size_t inbytesleft, outbytesleft;
+	char *converted;
+
+	if (!str)
+		return NULL;
+	if (iconv_desc == (iconv_t)(-1))
+		return str;
+
+	inbuf = str;
+	outbuf = buf;
+	inbytesleft = strlen(inbuf);
+	outbytesleft = sizeof(buf) - 1;
+
+	iconv (iconv_desc, NULL, NULL, NULL, NULL);
+	
+	while (inbytesleft) {
+		if (iconv(iconv_desc, &inbuf, &inbytesleft, &outbuf, &outbytesleft)
+				== (size_t)(-1)) {
+			if (errno == EILSEQ) {
+				inbuf++;
+				inbytesleft--;
+				if (!--outbytesleft) {
+					*outbuf = 0;
+					break;
+				}
+				*(outbuf++) = '#';
+			}
+			else if (errno == EINVAL) {
+				*(outbuf++) = '#';
+				*outbuf = 0;
+				break;
+			}
+			else if (errno == E2BIG) {
+				outbuf[sizeof(buf)-1] = 0;
+				break;
+			}
+		}
+	}
+
+	*outbuf = 0;
+	converted = xstrdup (buf);
+	free (str);
+	
+	return converted;
+}
+
+static void do_iconv (struct file_tags *tags)
+{
+	tags->title = iconv_str (tags->title);
+	tags->artist = iconv_str (tags->artist);
+	tags->album = iconv_str (tags->album);
+}
+
+void iconv_cleanup ()
+{
+	if (iconv_desc != (iconv_t)(-1) && iconv_close(iconv_desc) == -1)
+		logit ("iconv_close() failed: %s", strerror(errno));
+}
+
 /* Read selected tags for a file into tags structure (or create it if NULL).
  * If some tags are already present, don't read them. */
 struct file_tags *read_file_tags (char *file, struct file_tags *present_tags,
@@ -220,6 +313,8 @@ struct file_tags *read_file_tags (char *file, struct file_tags *present_tags,
 
 	if (needed_tags) {
 		df->info (file, tags, needed_tags);
+		if (needed_tags & TAGS_COMMENTS)
+			do_iconv (tags);
 		tags->filled |= tags_sel;
 	}
 	else

@@ -33,5 +33,8 @@ void file_list_free (struct file_list *list);
 struct file_list *file_list_new ();
 enum file_type file_type (char *file);
 char *read_line (FILE *file);
+void iconv_init ();
+void iconv_cleanup ();
+char *iconv_str (char *str);
 
 #endif
