@@ -401,13 +401,21 @@ static int flac_get_bitrate (void *void_data)
 	return data->bitrate;
 }
 
+static int flac_get_duration (void *void_data)
+{
+	struct flac_data *data = (struct flac_data *)void_data;
+
+	return data->length;
+}
+
 static struct decoder_funcs decoder_funcs = {
 	flac_open,
 	flac_close,
 	flac_decode,
 	flac_seek,
 	flac_info,
-	flac_get_bitrate
+	flac_get_bitrate,
+	flac_get_duration
 };
 
 struct decoder_funcs *flac_get_funcs ()

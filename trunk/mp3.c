@@ -608,17 +608,24 @@ static int mp3_get_bitrate (void *void_data)
 	return data->bitrate / 1000;
 }
 
+static int mp3_get_duration (void *void_data)
+{
+	struct mp3_data *data = (struct mp3_data *)void_data;
+	
+	return data->duration;
+}
+
 static struct decoder_funcs decoder_funcs = {
 	mp3_open,
 	mp3_close,
 	mp3_decode,
 	mp3_seek,
 	mp3_info,
-	mp3_get_bitrate
+	mp3_get_bitrate,
+	mp3_get_duration
 };
 
 struct decoder_funcs *mp3_get_funcs ()
 {
 	return &decoder_funcs;
 }
-
