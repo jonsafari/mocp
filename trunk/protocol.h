@@ -16,6 +16,14 @@ struct event_queue
 	struct event *tail;
 };
 
+/* Status of nonblock sending/receiving function. */
+enum noblock_io_status
+{
+	NB_IO_OK,
+	NB_IO_BLOCK,
+	NB_IO_ERR
+};
+
 /* Definition of events send by server to the client */
 #define EV_STATE	0x01 /* server has changed the state */
 #define EV_CTIME	0x02 /* current time of the song has changed */
@@ -99,5 +107,7 @@ void event_queue_free (struct event_queue *q);
 struct event *event_get_first (struct event_queue *q);
 void event_pop (struct event_queue *q);
 void event_push (struct event_queue *q, const int event, void *data);
+int event_queue_empty (const struct event_queue *q);
+enum noblock_io_status event_send_noblock (int sock, struct event_queue *q);
 
 #endif

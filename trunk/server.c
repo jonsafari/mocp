@@ -46,20 +46,13 @@
 #define PID_FILE	"pid"
 
 #define CLIENTS_MAX	10
-#define EVENTS_MAX	10
-
-struct events
-{
-	int queue[EVENTS_MAX];
-	int num;
-	pthread_mutex_t mutex;
-};
 
 struct client
 {
 	int socket; 		/* -1 if inactive */
 	int wants_events;	/* requested events? */
-	struct events events;
+	struct event_queue events;
+	pthread_mutex_t events_mutex;
 	int requests_plist;	/* is the client waiting for the playlist? */
 	int can_send_plist;	/* can this client send a playlist? */
 	int lock;		/* is this client locking us? */
@@ -137,7 +130,7 @@ static void clients_init ()
 
 	for (i = 0; i < CLIENTS_MAX; i++) {
 		clients[i].socket = -1;
-		pthread_mutex_init (&clients[i].events.mutex, NULL);
+		pthread_mutex_init (&clients[i].events_mutex, NULL);
 	}
 }
 
@@ -147,7 +140,7 @@ static void clients_cleanup ()
 
 	for (i = 0; i < CLIENTS_MAX; i++) {
 		clients[i].socket = -1;
-		if (pthread_mutex_destroy(&clients[i].events.mutex))
+		if (pthread_mutex_destroy(&clients[i].events_mutex))
 			logit ("Can't destroy events mutex: %s",
 					strerror(errno));
 
@@ -162,7 +155,7 @@ static int add_client (int sock)
 	for (i = 0; i < CLIENTS_MAX; i++)
 		if (clients[i].socket == -1) {
 			clients[i].wants_events = 0;
-			clients[i].events.num = 0;
+			event_queue_init (&clients[i].events);
 			clients[i].socket = sock;
 			clients[i].requests_plist = 0;
 			clients[i].can_send_plist = 0;
@@ -222,6 +215,23 @@ static int client_unlock (struct client *cli)
 static void del_client (struct client *cli)
 {
 	cli->socket = -1;
+	struct event *e;
+
+	/* Free the event queue - we can't just use event_queue_free(), because
+	 * it can't free() the event's data. */
+
+	while ((e = event_get_first(&cli->events))) {
+		if (e->type == EV_PLIST_ADD) {
+			plist_free_item_fields (e->data);
+			free (e->data);
+		}
+		else if (e->type == EV_PLIST_DEL)
+			free (e->data);
+		event_pop (&cli->events);
+	}
+	
+	/* To be sure :) */
+	event_queue_free (&cli->events);
 }
 
 /* CHeck if the process with ginen PID exists. Return != 0 if so. */
@@ -311,34 +321,36 @@ static int send_data_str (const struct client *cli, const char *str) {
 	return 1;
 }
 
-/* Add event to the queue */
-static void add_event (struct events *ev, const int event)
+/* Add event to the client's queue */
+static void add_event (struct client *cli, const int event, void *data)
 {
-	int i;
-
-	LOCK (ev->mutex);
-	for (i = 0; i < ev->num; i++)
-		if (ev->queue[i] == event) {
-			UNLOCK (ev->mutex);
-			debug ("Not adding event 0x%02x: already in the queue",
-					event);
-			return;
-		}
-	
-	assert (ev->num < EVENTS_MAX);
-
-	ev->queue[ev->num++] = event;
-	UNLOCK (ev->mutex);
+	LOCK (cli->events_mutex);
+	event_push (&cli->events, event, data);
+	UNLOCK (cli->events_mutex);
 }
 
-static void add_event_all (const int event)
+static void add_event_all (const int event, void *data)
 {
 	int i;
 	int added = 0;
 
 	for (i = 0; i < CLIENTS_MAX; i++)
 		if (clients[i].socket != -1 && clients[i].wants_events) {
-			add_event (&clients[i].events, event);
+			void *data_copy = NULL;
+
+			if (data) {
+				if (event == EV_PLIST_ADD) {
+					data_copy = plist_new_item ();
+					plist_item_copy (data_copy, data);
+				}
+				else if (event == EV_PLIST_DEL) {
+					data_copy = xstrdup (data);
+				}
+				else
+					logit ("Unhandled data!");
+			}
+			
+			add_event (&clients[i], event, data_copy);
 			added++;
 		}
 
@@ -351,19 +363,16 @@ static void add_event_all (const int event)
 /* Send events from the queue. Return 0 on error. */
 static int flush_events (struct client *cli)
 {
-	int i;
+	enum noblock_io_status st = NB_IO_OK;
 
-	LOCK (cli->events.mutex);
-	for (i = 0; i < cli->events.num; i++)
-		if (!send_int(cli->socket, cli->events.queue[i])) {
-			UNLOCK (cli->events.mutex);
-			return 0;
-		}
-	
-	cli->events.num = 0;
-	UNLOCK (cli->events.mutex);
+	LOCK (cli->events_mutex);
+	while (!event_queue_empty(&cli->events)
+			&& (st = event_send_noblock(cli->socket, &cli->events))
+			== NB_IO_OK)
+		;
+	UNLOCK (cli->events_mutex);
 
-	return 1;
+	return st != NB_IO_ERR ? 1 : 0;
 }
 
 /* Send events to clients that are ready to write. */
@@ -453,7 +462,7 @@ void server_error (const char *msg)
 	strncpy (err_msg, msg, sizeof(err_msg) - 1);
 	err_msg[sizeof(err_msg) - 1] = 0;
 	logit ("ERROR: %s", err_msg);
-	add_event_all (EV_ERROR);
+	add_event_all (EV_ERROR, NULL);
 }
 
 /* Send the song name to the client. Return 0 on error. */
@@ -524,7 +533,7 @@ static int get_set_option (struct client *cli)
 	option_set_int (name, val);
 	free (name);
 
-	add_event_all (EV_OPTIONS);
+	add_event_all (EV_OPTIONS, NULL);
 	
 	return 1;
 }
@@ -697,68 +706,6 @@ static int req_send_plist (struct client *cli)
 	return item ? 1 : 0;
 }
 
-/* Send this event followed by the item to all clients except cli. Don't use
- * the queue - send it now. */
-static void send_event_item_direct (struct client *cli, const int event,
-		const struct plist_item *item)
-{
-	int i;
-
-	for (i = 0; i < CLIENTS_MAX; i++)
-		if (clients[i].socket != -1
-				&& clients[i].socket != cli->socket
-				&& clients[i].wants_events) {
-			if (!send_int(clients[i].socket, event)
-					|| !send_item(clients[i].socket,
-						item)) {
-				logit ("Error while sending event,"
-						" disconnecting the client.");
-				close (clients[i].socket);
-				del_client (&clients[i]);
-			}
-		}
-}
-
-/* Send this event followed by the string to all clients except cli. Don't use
- * the queue - send it now. */
-static void send_event_str_direct (struct client *cli, const int event,
-		const char *str)
-{
-	int i;
-
-	for (i = 0; i < CLIENTS_MAX; i++)
-		if (clients[i].socket != -1
-				&& clients[i].socket != cli->socket
-				&& clients[i].wants_events) {
-			if (!send_int(clients[i].socket, event)
-					|| !send_str(clients[i].socket, str)) {
-				logit ("Error while sending event,"
-						" disconnecting the client.");
-				close (clients[i].socket);
-				del_client (&clients[i]);
-			}
-		}
-}
-
-/* Send this event to all clients except cli. Don't use the queue - send it
- * now. */
-static void send_event_direct (struct client *cli, const int event)
-{
-	int i;
-
-	for (i = 0; i < CLIENTS_MAX; i++)
-		if (clients[i].socket != -1
-				&& clients[i].socket != cli->socket
-				&& clients[i].wants_events) {
-			if (!send_int(clients[i].socket, event)) {
-				logit ("Error while sending event,"
-						" disconnecting the client.");
-				close (clients[i].socket);
-				del_client (&clients[i]);
-			}
-		}
-}
-
 /* Handle command that synchinize playlists between interfaces (except
  * forwarding the whole list). Return 0 on error. */
 static int plist_sync_cmd (struct client *cli, const int cmd)
@@ -773,7 +720,7 @@ static int plist_sync_cmd (struct client *cli, const int cmd)
 			return 0;
 		}
 		
-		send_event_item_direct (cli, EV_PLIST_ADD, item);
+		add_event_all (EV_PLIST_ADD, item);
 		plist_free_item_fields (item);
 		free (item);
 	}
@@ -787,12 +734,12 @@ static int plist_sync_cmd (struct client *cli, const int cmd)
 			return 0;
 		}
 
-		send_event_str_direct (cli, EV_PLIST_DEL, file);
+		add_event_all (EV_PLIST_DEL, file);
 		free (file);
 	}
 	else { /* it can be only CMD_CLI_PLIST_CLEAR */
 		debug ("Sending EV_PLIST_CLEAR");
-		send_event_direct (cli, EV_PLIST_CLEAR);
+		add_event_all (EV_PLIST_CLEAR, NULL);
 	}
 
 	return 1;
@@ -1042,8 +989,10 @@ static void add_clients_fds (fd_set *read, fd_set *write)
 		if (clients[i].socket != -1) {
 			FD_SET (clients[i].socket, read);
 
-			if (clients[i].events.num)
+			LOCK (clients[i].events_mutex);
+			if (!event_queue_empty(&clients[i].events))
 				FD_SET (clients[i].socket, write);
+			UNLOCK (clients[i].events_mutex);
 		}
 }
 
@@ -1169,28 +1118,28 @@ void set_info_bitrate (const int bitrate)
 
 	sound_info.bitrate = bitrate;
 	if (old_bitrate <= 0 || bitrate <= 0 || event_throttle())
-		add_event_all (EV_BITRATE);
+		add_event_all (EV_BITRATE, NULL);
 }
 
 void set_info_channels (const int channels)
 {
 	sound_info.channels = channels;
-	add_event_all (EV_CHANNELS);
+	add_event_all (EV_CHANNELS, NULL);
 }
 
 void set_info_rate (const int rate)
 {
 	sound_info.rate = rate;
-	add_event_all (EV_RATE);
+	add_event_all (EV_RATE, NULL);
 }
 
 /* Notify the client about change of the player state. */
 void state_change ()
 {
-	add_event_all (EV_STATE);
+	add_event_all (EV_STATE, NULL);
 }
 
 void ctime_change ()
 {
-	add_event_all (EV_CTIME);
+	add_event_all (EV_CTIME, NULL);
 }
