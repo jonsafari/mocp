@@ -16,6 +16,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <time.h>
+#include "main.h"
 
 static FILE *logfp = NULL; /* logging file stream */
 
@@ -47,7 +48,7 @@ void internal_logit (const char *file, const int line, const char *function,
 }
 
 /* fake logit() function for NDEBUG */
-void fake_logit (const char *format, ...)
+void fake_logit (const char *format ATTR_UNUSED, ...)
 {
 }
 
