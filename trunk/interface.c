@@ -804,7 +804,8 @@ static int go_to_dir (char *dir)
 	if (chdir(new_dir)) {
 		set_interface_status (NULL);
 		wrefresh (info_win);
-		interface_error ("Can't chdir(), %s", strerror(errno));
+		interface_error ("Can't chdir() to %s, %s", new_dir,
+				strerror(errno));
 		return 0;
 	}
 
