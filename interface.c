@@ -2725,11 +2725,14 @@ static int entry_search_key (const int ch)
 	
 	if (ch == '\n') {
 
-		if (entry.text[0])
-			go_file ();
-		
+	
 		entry_disable ();
 		update_info_win ();
+		wrefresh (info_win);
+
+		if (entry.text[0])
+			go_file ();
+
 		update_menu ();
 
 		return 1;
