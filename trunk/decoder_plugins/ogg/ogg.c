@@ -316,6 +316,7 @@ static void ogg_get_error (void *prv_data, struct decoder_error *error)
 }
 
 static struct decoder ogg_decoder = {
+	DECODER_API_VERSION,
 	ogg_open,
 	ogg_open_stream,
 	ogg_can_decode,

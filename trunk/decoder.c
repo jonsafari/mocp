@@ -119,34 +119,44 @@ static int lt_load_plugin (const char *file, lt_ptr data ATTR_UNUSED)
 	
 	printf ("Loading plugin %s...\n", name);
 	
-	if (plugins_num == sizeof(plugins)/sizeof(plugins[0]))
+	if (plugins_num == sizeof(plugins)/sizeof(plugins[0])) {
 		fprintf (stderr, "Can't load plugin, besause maximum number "
 				"of plugins reached!\n");
-	else {
-		if (!(plugins[plugins_num].handle = lt_dlopenext(file))) {
-			fprintf (stderr, "Can't load plugin %s: %s\n", name,
-					lt_dlerror());
-		}
-		else if (!present_handle(plugins[plugins_num].handle)) {
-			plugin_init_func init_func;
+		return 0;
+	}
 
-			if (!(init_func = lt_dlsym(plugins[plugins_num].handle,
-							"plugin_init")))
-				fprintf (stderr, "No init function in the "
-						"plugin!\n");
+	if (!(plugins[plugins_num].handle = lt_dlopenext(file))) {
+		fprintf (stderr, "Can't load plugin %s: %s\n", name,
+				lt_dlerror());
+	}
+	else if (!present_handle(plugins[plugins_num].handle)) {
+		plugin_init_func init_func;
+
+		if (!(init_func = lt_dlsym(plugins[plugins_num].handle,
+						"plugin_init")))
+			fprintf (stderr, "No init function in the "
+					"plugin!\n");
+		else {
+			plugins[plugins_num].decoder = init_func ();
+			if (!plugins[plugins_num].decoder)
+				fprintf (stderr, "NULL decoder!\n");
+			else if (plugins[plugins_num].decoder->api_version
+					!= DECODER_API_VERSION) {
+				fprintf (stderr, "Plugin uses different API "
+						"version\n");
+				if (lt_dlclose(plugins[plugins_num].handle))
+					fprintf (stderr, "Error unloading "
+							"plugin: %s\n",
+							lt_dlerror());
+			}
 			else {
-				plugins[plugins_num].decoder = init_func ();
-				if (!plugins[plugins_num].decoder)
-					fprintf (stderr, "NULL decoder!\n");
-				else {
-					plugins_num++;
-					printf ("OK\n");
-				}
+				plugins_num++;
+				printf ("OK\n");
 			}
 		}
-		else
-			printf ("Already loaded\n");
 	}
+	else
+		printf ("Already loaded\n");
 	
 	return 0;
 }

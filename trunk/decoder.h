@@ -5,6 +5,10 @@
 #include "playlist.h"
 #include "io.h"
 
+/* On every change in the decoder API this number will be changed, so MOC will
+ * not load plugins compiled with older/newer decoder.h. */
+#define DECODER_API_VERSION	1
+
 enum decoder_error_type
 {
 	ERROR_OK,
@@ -21,9 +25,10 @@ struct decoder_error
 /* Functions provided by the decoder plugin. */
 struct decoder
 {
-#if 0
+	/* Set it to DECODER_API_VERSION to recognize if MOC and the plugin can
+	 * communicate. This is the first field in the structure, so even after
+	 * changing other fields it will hopefully be always read properly. */
 	int api_version;
-#endif
 	
 	/* Open the resource and return pointer to the private decoder data. */
 	void *(*open)(const char *uri);

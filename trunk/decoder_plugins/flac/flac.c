@@ -531,6 +531,7 @@ static void flac_get_error (void *prv_data, struct decoder_error *error)
 }
 
 static struct decoder flac_decoder = {
+	DECODER_API_VERSION,
 	flac_open,
 	NULL,
 	NULL,
