@@ -121,7 +121,7 @@ static void sig_exit (int sig)
 
 static void sig_wake_up (int sig ATTR_UNUSED)
 {
-	debug ("got wake up signal");
+	/*debug ("got wake up signal");*/
 }
 
 static void clients_init ()
