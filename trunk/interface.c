@@ -786,7 +786,7 @@ static void sync_int_option (const char *name)
 {
 	send_int_to_srv (CMD_GET_OPTION);
 	send_str_to_srv (name);
-	option_set_int (name, get_int_from_srv());
+	option_set_int (name, get_data_int());
 }
 
 /* Get the server options that we show. */
