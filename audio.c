@@ -174,7 +174,7 @@ static void *play_thread (void *unused ATTR_UNUSED)
 				status_msg ("Connecting...");
 				stream = io_open (file, 1);
 				if (io_ok(stream)) {
-					status_msg ("Precaching...");
+					status_msg ("Prebuffering...");
 					df = get_decoder_by_content (stream);
 					if (!df) {
 						error ("Format not supported");
