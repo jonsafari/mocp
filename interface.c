@@ -716,6 +716,7 @@ static int go_to_dir (char *dir)
 	char last_dir[PATH_MAX];
 	char *new_dir = dir ? dir : cwd;
 	int going_up = 0;
+	char msg[50];
 
 	set_interface_status ("reading directory...");
 	wrefresh (info_win);
@@ -777,7 +778,8 @@ static int go_to_dir (char *dir)
 	set_title (cwd);
 
 	update_state ();
-	set_interface_status (NULL);
+	sprintf (msg, "%d files and directories", curr_plist->num + ndirs - 1);
+	set_interface_status (msg);
 	wrefresh (info_win);
 
 	return 1;
@@ -1032,6 +1034,53 @@ static void add_file_plist ()
 			&curr_plist->items[menu_item->plist_pos]);
 }
 
+/* Clear the playlist */
+static void clear_playlist ()
+{
+	if (visible_plist == playlist)
+		toggle_plist();
+	plist_clear (playlist);
+	interface_message ("The playlist was cleared.");
+}
+
+/* Recursively add the conted to a directory to the playlist. */
+static void add_dir_plist ()
+{
+	struct menu_item *menu_item = menu_curritem (menu);
+	char dir[PATH_MAX + 1];
+	char msg[50];
+
+	if (visible_plist == playlist) {
+		interface_error ("Can't add to the playlist a file from the "
+				"playlist.");
+		return;
+	}
+
+	if (menu_item->plist_pos != -1) {
+		interface_error ("To add a file, use the 'a' command.");
+		return;
+	}
+
+	strcpy (dir, cwd);
+	resolve_path (dir, sizeof(dir), menu_item->title);
+
+	set_interface_status ("reading directories...");
+	wrefresh (info_win);
+	read_directory_recurr (dir, playlist);
+	if (options_get_int("ReadTags")) {
+		read_tags (playlist);
+		make_titles_tags (playlist);
+	}
+	else
+		make_titles_file (playlist);
+	
+	plist_sort_fname (playlist);
+
+	sprintf (msg, "%d files on the list", playlist->num);
+	set_interface_status (msg);
+	wrefresh (info_win);
+}
+
 /* Handle key */
 static void menu_key (const int ch)
 {
@@ -1102,6 +1151,13 @@ static void menu_key (const int ch)
 		case 'a':
 			add_file_plist ();
 			break;
+		case 'C':
+			clear_playlist ();
+			update_menu = 1;
+			break;
+		case 'A':
+			add_dir_plist ();
+			break;
 		case KEY_RESIZE:
 			break;
 		default:
@@ -1168,8 +1224,10 @@ void interface_loop ()
 	}
 
 	plist_free (curr_plist);
+	plist_free (playlist);
 	menu_free (menu);
 	free (curr_plist);
+	free (playlist);
 }
 
 void interface_end ()
