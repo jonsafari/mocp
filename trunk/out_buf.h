@@ -2,12 +2,11 @@
 #define BUF_H
 
 #include <pthread.h>
+#include "fifo_buf.h"
 
-struct buf
+struct out_buf
 {
-	int size;	/* Size of the buffer. */
-	int pos;	/* Current position. */
-	int fill;	/* Current fill. */
+	struct fifo_buf buf;
 	pthread_mutex_t	mutex;
 	pthread_t tid;	/* Thread id of the reading thread. */
 
@@ -30,21 +29,20 @@ struct buf
 
 	float time;	/* Time of played sound .*/
 	int hardware_buf_fill;	/* How the sound card buffer is filled */
-
-	char *buf;	/* The buffer. */
 };
 
-void buf_init (struct buf *buf, int size);
-void buf_destroy (struct buf *buf);
-int buf_put (struct buf *buf, const char *data, int size);
-void buf_pause (struct buf *buf);
-void buf_unpause (struct buf *buf);
-void buf_stop (struct buf *buf);
-void buf_reset (struct buf *buf);
-void buf_time_set (struct buf *buf, const float time);
-float buf_time_get (struct buf *buf);
-void buf_set_notify_cond (struct buf *buf, pthread_cond_t *cond,
+void out_buf_init (struct out_buf *buf, int size);
+void out_buf_destroy (struct out_buf *buf);
+int out_buf_put (struct out_buf *buf, const char *data, int size);
+void out_buf_pause (struct out_buf *buf);
+void out_buf_unpause (struct out_buf *buf);
+void out_buf_stop (struct out_buf *buf);
+void out_buf_reset (struct out_buf *buf);
+void out_buf_time_set (struct out_buf *buf, const float time);
+float out_buf_time_get (struct out_buf *buf);
+void out_buf_set_notify_cond (struct out_buf *buf, pthread_cond_t *cond,
 		pthread_mutex_t *mutex);
-int buf_get_free (struct buf *buf);
+int out_buf_get_free (struct out_buf *buf);
+int out_buf_get_fill (struct out_buf *buf);
 
 #endif

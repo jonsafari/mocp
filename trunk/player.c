@@ -24,7 +24,7 @@
 #include "log.h"
 #include "decoder.h"
 #include "audio.h"
-#include "buf.h"
+#include "out_buf.h"
 #include "server.h"
 #include "options.h"
 #include "player.h"
@@ -174,7 +174,7 @@ void player_init ()
 
 /* Open a file, decode it and put output into the buffer. At the end, start
  * precaching next_file. */
-void player (char *file, char *next_file, struct buf *out_buf)
+void player (char *file, char *next_file, struct out_buf *out_buf)
 {
 	int eof = 0;
 	char buf[PCM_BUF_SIZE];
@@ -189,8 +189,8 @@ void player (char *file, char *next_file, struct buf *out_buf)
 	f = get_decoder (file);
 	assert (f != NULL);
 	
-	buf_set_notify_cond (out_buf, &request_cond, &request_cond_mutex);
-	buf_reset (out_buf);
+	out_buf_set_notify_cond (out_buf, &request_cond, &request_cond_mutex);
+	out_buf_reset (out_buf);
 	
 	precache_wait (&precache);
 
@@ -205,7 +205,7 @@ void player (char *file, char *next_file, struct buf *out_buf)
 		set_info_rate (sound_params.rate / 1000);
 		if (!audio_open(&sound_params))
 			return;
-		buf_put (out_buf, precache.buf, precache.buf_fill);
+		out_buf_put (out_buf, precache.buf, precache.buf_fill);
 	}
 	else {
 		struct decoder_error err;
@@ -267,8 +267,8 @@ void player (char *file, char *next_file, struct buf *out_buf)
 
 		/* Wait, if there is no space in the buffer to put the decoded
 		 * data or EOF occured and there is something in the buffer. */
-		else if (decoded > buf_get_free(out_buf)
-					|| (eof && out_buf->fill)) {
+		else if (decoded > out_buf_get_free(out_buf)
+					|| (eof && out_buf_get_fill(out_buf))) {
 			debug ("waiting...");
 			if (eof && !precache.file && next_file
 					&& options_get_int("Precache"))
@@ -286,7 +286,7 @@ void player (char *file, char *next_file, struct buf *out_buf)
 		 * the request has changed. */
 		if (request == REQ_STOP) {
 			logit ("stop");
-			buf_stop (out_buf);
+			out_buf_stop (out_buf);
 			
 			LOCK (request_cond_mutex);
 			if (request == REQ_STOP)
@@ -303,9 +303,9 @@ void player (char *file, char *next_file, struct buf *out_buf)
 					== -1)
 				logit ("error when seeking");
 			else {
-				buf_stop (out_buf);
-				buf_reset (out_buf);
-				buf_time_set (out_buf, decoder_seek);
+				out_buf_stop (out_buf);
+				out_buf_reset (out_buf);
+				out_buf_time_set (out_buf, decoder_seek);
 				eof = 0;
 				decoded = 0;
 			}
@@ -316,13 +316,14 @@ void player (char *file, char *next_file, struct buf *out_buf)
 			UNLOCK (request_cond_mutex);
 
 		}
-		else if (!eof && decoded <= buf_get_free(out_buf)
+		else if (!eof && decoded <= out_buf_get_free(out_buf)
 				&& !sound_params_change) {
 			debug ("putting into the buffer %d bytes", decoded);
-			buf_put (out_buf, buf, decoded);
+			out_buf_put (out_buf, buf, decoded);
 			decoded = 0;
 		}
-		else if (!eof && sound_params_change && out_buf->fill == 0) {
+		else if (!eof && sound_params_change
+				&& out_buf_get_fill(out_buf) == 0) {
 			logit ("sound parameters has changed.");
 			sound_params = new_sound_params;
 			sound_params_change = 0;
@@ -331,14 +332,14 @@ void player (char *file, char *next_file, struct buf *out_buf)
 			if (!audio_open(&sound_params))
 				break;
 		}
-		else if (eof && out_buf->fill == 0) {
+		else if (eof && out_buf_get_fill(out_buf) == 0) {
 			logit ("played everything");
 			break;
 		}
 	}
 
 	f->close (decoder_data);
-	buf_set_notify_cond (out_buf, NULL, NULL);
+	out_buf_set_notify_cond (out_buf, NULL, NULL);
 	logit ("exiting");
 }
 
