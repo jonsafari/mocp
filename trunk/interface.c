@@ -942,14 +942,19 @@ static int get_file_time_server (const char *file)
 
 static void read_item_time (struct plist_item *item)
 {
+	update_file (item);
+
 	if (!item->tags)
 		item->tags = tags_new ();
-	
-	if ((item->tags->time = get_file_time_server(item->file)) == -1)
-		item->tags = read_file_tags (item->file, item->tags, TAGS_TIME);
-	else {
-		logit ("Got time from the server.");
-		item->tags->filled |= TAGS_TIME;
+
+	if (!(item->tags->filled & TAGS_TIME)) {
+		if ((item->tags->time = get_file_time_server(item->file)) == -1)
+			item->tags = read_file_tags (item->file, item->tags,
+					TAGS_TIME);
+		else {
+			debug ("Got time from the server.");
+			item->tags->filled |= TAGS_TIME;
+		}
 	}
 }
 
@@ -969,47 +974,57 @@ static int read_file_time (const char *file)
 	return time;
 }
 
-/* Fill the times for the playlist items. */
-static void read_times (struct plist *plist)
+/* Fill time in tags and menu items for all items in plist. If menu is NULL,
+ * igore it. */
+static void fill_times (struct plist *plist, struct menu *menu)
 {
 	int i;
 
 	set_iface_status_ref ("Getting times...");
-
+	
 	for (i = 0; i < plist->num; i++)
-		if (!plist_deleted(plist, i)) {		
+		if (!plist_deleted(plist, i)) {
 			if (user_wants_interrupt()) {
 				error ("Getting times interrupted");
 				break;
 			}
 
-			update_file (&plist->items[i]);
+			read_item_time (&plist->items[i]);
 
-			if (!plist->items[i].tags
-					|| !(plist->items[i].tags->filled
-						& TAGS_TIME))
-				read_item_time (&plist->items[i]);
-		}
-
-	set_iface_status_ref (NULL);
-}
-
-/* Fill time in tags and menu items for all items in plist. */
-static void fill_times (struct plist *plist, struct menu *menu)
-{
-	int i;
-
-	read_times (plist);
-
-	if (menu)
-		for (i = 0; i < plist->num; i++)
-			if (!plist_deleted(plist, i)
-					&& get_item_time(plist, i) != -1) {
+			if (menu && get_item_time(plist, i)) {
 				char time_str[6];
-
 				sec_to_min (time_str, get_item_time(plist, i));
 				menu_item_set_time_plist (menu, i, time_str);
 			}
+		}
+	
+	set_iface_status_ref (NULL);
+}
+
+/* Add an item from the playlist to the menu. */
+static void add_to_menu (struct menu *menu, struct plist *plist, const int num)
+{
+	int added;
+	struct plist_item *item = &plist->items[num];
+	
+	added = menu_add (menu, item->title, num, F_SOUND, item->file);
+
+	if (item->tags && item->tags->time != -1) {
+		char time_str[6];
+		
+		sec_to_min (time_str, item->tags->time);
+		menu_item_set_time (menu, added, time_str);
+	}
+
+	menu_item_set_attr_normal (menu, added, get_color(CLR_MENU_ITEM_FILE));
+	menu_item_set_attr_sel (menu, added,
+			get_color(CLR_MENU_ITEM_FILE_SELECTED));
+	menu_item_set_attr_marked (menu, added,
+			get_color(CLR_MENU_ITEM_FILE_MARKED));
+	menu_item_set_attr_sel_marked (menu, added,
+			get_color(CLR_MENU_ITEM_FILE_MARKED_SELECTED));
+	
+	menu_item_set_format (menu, added, format_name(item->file));
 }
 
 /* Make menu using the playlist and directory table. */
@@ -1017,31 +1032,19 @@ static struct menu *make_menu (struct plist *plist, struct file_list *dirs,
 		struct file_list *playlists)
 {
 	int i;
-	int menu_pos;
-	struct menu_item **menu_items;
 	struct menu *menu;
 	int plist_items;
-	int nitems;
+	int added;
 	int read_time = !strcasecmp(options_get_str("ShowTime"), "yes");
 	
 	plist_items = plist_count (plist);
 
-	/* +1 for '..' */
-	nitems = plist_items + 1;
-	if (dirs)
-		nitems +=  dirs->num;
-	if (playlists)
-		nitems += playlists->num;
+	menu = menu_new (main_win);
 
-	menu_items = (struct menu_item **)xmalloc (sizeof(struct menu_item *)
-			* nitems);
-	
-	/* add '..' */
-	menu_items[0] = menu_newitem ("../", -1, F_DIR, "..");
-	menu_item_set_attr_normal (menu_items[0], get_color(CLR_MENU_ITEM_DIR));
-	menu_item_set_attr_sel (menu_items[0],
+	added = menu_add (menu, "../", -1, F_DIR, "..");
+	menu_item_set_attr_normal (menu, added, get_color(CLR_MENU_ITEM_DIR));
+	menu_item_set_attr_sel (menu, added,
 			get_color(CLR_MENU_ITEM_DIR_SELECTED));
-	menu_pos = 1;
 	
 	if (dirs)
 		for (i = 0; i < dirs->num; i++) {
@@ -1050,62 +1053,32 @@ static struct menu *make_menu (struct plist *plist, struct file_list *dirs,
 			strcpy (title, strrchr(dirs->items[i], '/') + 1);
 			strcat (title, "/");
 			
-			menu_items[menu_pos] =
-				menu_newitem (title, -1, F_DIR, dirs->items[i]);
-			menu_item_set_attr_normal (menu_items[menu_pos],
+			added = menu_add (menu, title, -1, F_DIR,
+					dirs->items[i]);
+			menu_item_set_attr_normal (menu, added,
 					get_color(CLR_MENU_ITEM_DIR));
-			menu_item_set_attr_sel (menu_items[menu_pos],
+			menu_item_set_attr_sel (menu, added,
 					get_color(CLR_MENU_ITEM_DIR_SELECTED));
-			menu_pos++;
 		}
 
 	if (playlists)
 		for (i = 0; i < playlists->num; i++){
-			menu_items[menu_pos] = menu_newitem (
+			added = menu_add (menu,
 					strrchr(playlists->items[i], '/') + 1,
 					-1, F_PLAYLIST,	playlists->items[i]);
-			menu_item_set_attr_normal (menu_items[menu_pos],
+			menu_item_set_attr_normal (menu, added,
 					get_color(CLR_MENU_ITEM_PLAYLIST));
-			menu_item_set_attr_sel (menu_items[menu_pos],
+			menu_item_set_attr_sel (menu, added,
 					get_color(
 					CLR_MENU_ITEM_PLAYLIST_SELECTED));
-			menu_pos++;
 		}
 	
 	/* playlist items */
 	for (i = 0; i < plist->num; i++) {
-		if (!plist_deleted(plist, i)) {
-			menu_items[menu_pos] = menu_newitem (
-					plist->items[i].title, i, F_SOUND,
-					plist->items[i].file);
-
-			if (plist->items[i].tags
-					&& plist->items[i].tags->time != -1) {
-				char time_str[6];
-				
-				sec_to_min (time_str,
-						plist->items[i].tags->time);
-				menu_item_set_time (menu_items[menu_pos],
-						time_str);
-			}
-
-			menu_item_set_attr_normal (menu_items[menu_pos],
-					get_color(CLR_MENU_ITEM_FILE));
-			menu_item_set_attr_sel (menu_items[menu_pos],
-					get_color(CLR_MENU_ITEM_FILE_SELECTED));
-			menu_item_set_attr_marked (menu_items[menu_pos],
-					get_color(CLR_MENU_ITEM_FILE_MARKED));
-			menu_item_set_attr_sel_marked (menu_items[menu_pos],
-					get_color(
-					CLR_MENU_ITEM_FILE_MARKED_SELECTED));
-			
-			menu_item_set_format (menu_items[menu_pos],
-					format_name(plist->items[i].file));
-			menu_pos++;
-		}
+		if (!plist_deleted(plist, i))
+			add_to_menu (menu, plist, i);
 	}
 	
-	menu = menu_new (main_win, menu_items, nitems);
 	menu_set_show_format (menu, options_get_int("ShowFormat"));
 	menu_set_show_time (menu,
 			strcasecmp(options_get_str("ShowTime"), "no"));
@@ -1113,7 +1086,7 @@ static struct menu *make_menu (struct plist *plist, struct file_list *dirs,
 
 	if (read_time)
 		fill_times (plist, menu);
-	
+
 	return menu;
 }
 
@@ -1888,19 +1861,30 @@ static void event_plist_add (struct plist_item *item)
 		char msg[50];
 		int item_num = plist_add_from_item (playlist, item);
 		
-		if (options_get_int("ReadTags"))
+		if (options_get_int("ReadTags")) {
 			make_tags_title (playlist, item_num);
-		else
-			make_file_title (playlist, item_num,
-					options_get_int("HideFileExtension"));
 
-		if (curr_menu == playlist_menu) {
-			/* TODO: append item to the menu */
+			if (playlist->items[item_num].title_tags)
+				playlist->items[item_num].title =
+					playlist->items[item_num].title_tags;
+			else {
+				make_file_title (playlist, item_num,
+						options_get_int(
+							"HideFileExtension"));
+				playlist->items[item_num].title =
+					playlist->items[item_num].title_file;
+			}
 		}
 		else {
-			playlist_menu = NULL;
-			menu_free (playlist_menu);
+			make_file_title (playlist, item_num,
+					options_get_int("HideFileExtension"));
+			playlist->items[item_num].title =
+				playlist->items[item_num].title_file;
 		}
+
+
+		if (playlist_menu)
+			add_to_menu (playlist_menu, playlist, item_num);
 		
 		sprintf (msg, "%d files on the list", plist_count(playlist));
 		set_iface_status_ref (msg);
@@ -2111,25 +2095,27 @@ static void go_dir_up ()
 /* Action when the user selected a file. */
 static void go_file ()
 {
-	struct menu_item *menu_item = menu_curritem (curr_menu);
+	int selected = menu_curritem (curr_menu);
 
-	if (menu_item->type == F_SOUND)
-		play_it (menu_item->plist_pos);
-	else if (menu_item->type == F_DIR && visible_plist == curr_plist) {
-		if (!strcmp(menu_item->file, ".."))
+	if (menu_item_get_type(curr_menu, selected) == F_SOUND)
+		play_it (menu_item_get_plist_pos(curr_menu, selected));
+	else if (menu_item_get_type(curr_menu, selected) == F_DIR
+			&& visible_plist == curr_plist) {
+		if (!strcmp(menu_item_get_file(curr_menu, selected), ".."))
 			go_dir_up ();
 		else {
 			char dir[PATH_MAX + 1];
 
-			strcpy (dir, menu_item->file);
+			strcpy (dir, menu_item_get_file(curr_menu, selected));
 			go_to_dir (dir);
 		}
 	}
-	else if (menu_item->type == F_DIR && visible_plist == playlist)
+	else if (menu_item_get_type(curr_menu, selected) == F_DIR
+			&& visible_plist == playlist)
 		
 		/* the only item on the playlist of type F_DIR is '..' */
 		toggle_plist ();
-	else if (menu_item->type == F_PLAYLIST) {
+	else if (menu_item_get_type(curr_menu, selected) == F_PLAYLIST) {
 		if (plist_count(playlist)) {
 			error ("Please clear the playlist, because "
 					"I'm not sure you want to do this.");
@@ -2138,7 +2124,8 @@ static void go_file ()
 
 		plist_clear (playlist);
 		set_iface_status_ref ("Loading playlist...");
-		if (plist_load(playlist, menu_item->file, cwd))
+		if (plist_load(playlist, menu_item_get_file(curr_menu,
+						selected), cwd))
 			interface_message ("Playlist loaded.");
 		set_iface_status_ref (NULL);
 		toggle_plist ();
@@ -2174,7 +2161,7 @@ static void toggle_option (const char *name)
 /* Add the current selected file to the playlist. */
 static void add_file_plist ()
 {
-	struct menu_item *menu_item = menu_curritem (curr_menu);
+	int selected = menu_curritem (curr_menu);
 
 	if (visible_plist == playlist) {
 		error ("Can't add to the playlist a file from the "
@@ -2182,23 +2169,23 @@ static void add_file_plist ()
 		return;
 	}
 
-	if (menu_item->type != F_SOUND) {
+	if (menu_item_get_type(curr_menu, selected) != F_SOUND) {
 		error ("To add a directory, use the 'A' command.");
 		return;
 	}
 
-	if (plist_find_fname(playlist, menu_item->file) == -1) {
+	if (plist_find_fname(playlist,
+				menu_item_get_file(curr_menu, selected)) == -1) {
 		struct plist_item *item = &curr_plist->items[
-			menu_item->plist_pos];
-		plist_add_from_item (playlist, item);
+			menu_item_get_plist_pos(curr_menu, selected)];
+		int added = plist_add_from_item (playlist, item);
+
 		if (options_get_int("SyncPlaylist")) {
 			send_int_to_srv (CMD_CLI_PLIST_ADD);
 			send_item_to_srv (item);
 		}
-		if (playlist_menu) {
-			menu_free (playlist_menu);
-			playlist_menu = NULL;
-		}
+		if (playlist_menu)
+			add_to_menu (playlist_menu, playlist, added);
 	}
 	else
 		error ("The file is already on the playlist.");
@@ -2207,7 +2194,7 @@ static void add_file_plist ()
 /* Recursively add the conted to a directory to the playlist. */
 static void add_dir_plist ()
 {
-	struct menu_item *menu_item = menu_curritem (curr_menu);
+	int selected = menu_curritem (curr_menu);
 	struct plist plist;
 	char msg[50];
 
@@ -2217,24 +2204,23 @@ static void add_dir_plist ()
 		return;
 	}
 
-	if (menu_item->type != F_DIR) {
+	if (menu_item_get_type(curr_menu, selected) != F_DIR) {
 		error ("To add a file, use the 'a' command.");
 		return;
 	}
 
-	if (curr_menu->selected == 0) {
+	if (selected == 0) {
 		error ("Can't add '..'.");
 		return;
 	}
 
 	set_iface_status_ref ("reading directories...");
 	plist_init (&plist);
-	read_directory_recurr (menu_item->file, &plist, 0);
+	read_directory_recurr (menu_item_get_file(curr_menu, selected), &plist,
+			0);
 	if (options_get_int("ReadTags")) {
 		set_iface_status_ref ("Getting tags...");
 		switch_titles_tags (&plist);
-		if (!strcasecmp(options_get_str("ShowTime"), "yes"))
-			read_times (&plist);
 		sync_plists_data (curr_plist, &plist);
 	}
 	else
@@ -2332,15 +2318,14 @@ static void help_screen ()
 static void update_menu_titles (struct menu *menu, struct plist *plist)
 {
 	int i;
+	int plist_pos;
 
 	assert (menu != NULL);
 
 	for (i = 0; i < menu->nitems; i++)
-		if (menu->items[i]->plist_pos != -1) {
-			free (menu->items[i]->title);
-			menu->items[i]->title = xstrdup (
-					plist->items[menu->items[i]->plist_pos].title);
-		}
+		if ((plist_pos = menu_item_get_plist_pos(menu, i)) != -1)
+			menu_item_set_title (menu, i,
+					plist->items[plist_pos].title);
 }
 
 /* Switch ReadTags options and update the menu. */
@@ -2387,8 +2372,7 @@ static void reread_dir (const int set_curr_menu)
 
 static void delete_item ()
 {
-	struct menu_item *menu_item;
-	int selected_item;
+	int selected;
 	int top_item;
 	int num;
 
@@ -2400,27 +2384,25 @@ static void delete_item ()
 
 	assert (playlist->num > 0);
 
-	selected_item = curr_menu->selected;
+	selected = menu_curritem (curr_menu);
 	top_item = curr_menu->top;
 	
-	menu_item = menu_curritem (curr_menu);
-
-	if (menu_item->plist_pos == -1) {
+	if (menu_item_get_plist_pos(curr_menu, selected) == -1) {
 		interface_error ("You can't delete '..'");
 		return;
 	}
 	
 	send_int_to_srv (CMD_CLI_PLIST_DEL);
-	send_str_to_srv (playlist->items[menu_item->plist_pos].file);
+	send_str_to_srv (menu_item_get_file(curr_menu, selected));
 
-	plist_delete (playlist, menu_item->plist_pos);
+	plist_delete (playlist, menu_item_get_plist_pos(curr_menu, selected));
 	if ((num = plist_count(playlist)) > 0) {
 		char msg[50];
 		
 		menu_free (playlist_menu);
 		playlist_menu = make_menu (playlist, NULL, 0);
 		menu_set_top_item (playlist_menu, top_item);
-		menu_setcurritem (playlist_menu, selected_item);
+		menu_setcurritem (playlist_menu, selected);
 		curr_menu = playlist_menu;
 		update_curr_file ();
 		sprintf (msg, "%d files on the list", num);
@@ -2447,7 +2429,7 @@ static int entry_search_key (const int ch)
 		sprintf (search, "%s%c", entry.text, ch);
 
 		item = menu_find_pattern_next (curr_menu, search,
-				menu_get_selected(curr_menu));
+				menu_curritem(curr_menu));
 
 		if (item != -1) {
 			menu_setcurritem (curr_menu, item);
