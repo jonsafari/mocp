@@ -32,11 +32,6 @@
 
 #define BUFFER_MAX_USEC	300000
 
-/* TODO:
- * configurable device
- * mixer
- */
-
 static snd_pcm_t *handle = NULL;
 static struct sound_params params = { 0, 0, 0 };
 static int chunk_size = -1;
@@ -45,10 +40,72 @@ static int alsa_buf_fill = 0;
 static int bytes_per_frame;
 static pthread_mutex_t buf_mutex = PTHREAD_MUTEX_INITIALIZER;
 
+static snd_mixer_t *mixer_handle = NULL;
+static snd_mixer_elem_t *mixer_elem = NULL;
+static long mixer_min = -1, mixer_max = -1;
+
+#define mixer_percent(vol) (((vol) - mixer_min)/(float)(mixer_max - \
+			mixer_min)) * 100
+
 static void alsa_shutdown ()
 {
+	int err;
+	
 	if (pthread_mutex_destroy(&buf_mutex))
 		logit ("Can't destrou mutex: %s", strerror(errno));
+	if (mixer_handle && (err = snd_mixer_close(mixer_handle)) < 0)
+		logit ("Can't close mixer: %s", snd_strerror(err));
+}
+
+static void alsa_init ()
+{
+	int err;
+	snd_mixer_selem_id_t *mixer_sid;
+
+	snd_mixer_selem_id_alloca (&mixer_sid);
+	snd_mixer_selem_id_set_index (mixer_sid, 0);
+	snd_mixer_selem_id_set_name (mixer_sid, options_get_str("AlsaMixer"));
+
+	if ((err = snd_mixer_open(&mixer_handle, 0)) < 0) {
+		error ("Can't open ALSA mixer: %s", snd_strerror(err));
+		mixer_handle = NULL;
+	}
+	else if ((err = snd_mixer_attach(mixer_handle,
+					options_get_str("AlsaDevice"))) < 0) {
+		snd_mixer_close (mixer_handle);
+		mixer_handle = NULL;
+		error ("Can't attach mixer: %s", snd_strerror(err));
+	}
+	else if ((err = snd_mixer_selem_register(mixer_handle, NULL, NULL))
+			< 0) {
+		snd_mixer_close (mixer_handle);
+		mixer_handle = NULL;
+		error ("Can't register mixer: %s", snd_strerror(err));
+	}
+	else if ((err = snd_mixer_load(mixer_handle)) < 0) {
+		snd_mixer_close (mixer_handle);
+		mixer_handle = NULL;
+		error ("Can't load mixer: %s", snd_strerror(err));
+	}
+	else if (!(mixer_elem = snd_mixer_find_selem(mixer_handle,
+					mixer_sid))) {
+		snd_mixer_close (mixer_handle);
+		mixer_handle = NULL;
+		error ("Can't find mixer: %s", snd_strerror(err));
+	}
+	else if (!snd_mixer_selem_has_playback_volume(mixer_elem)) {
+		snd_mixer_close (mixer_handle);
+		mixer_handle = NULL;
+		error ("Mixer device has no playback volume.");
+	}
+	else {
+		snd_mixer_selem_get_playback_volume_range (mixer_elem,
+				&mixer_min, &mixer_max);
+#ifdef DEBUG
+		logit ("Opened mixer, volume range: %ld-%ld", mixer_min,
+				mixer_max);
+#endif
+	}
 }
 
 static int alsa_open (struct sound_params *sound_params)
@@ -303,13 +360,84 @@ static int alsa_play (const char *buff, const size_t size)
 	return size;
 }
 
+static int alsa_read_mixer_raw ()
+{
+	if (mixer_handle) {
+		long volume = 0;
+		int nchannels = 0;
+		int i;
+
+		for (i = 0; i < SND_MIXER_SCHN_LAST; i++)
+			if (snd_mixer_selem_has_playback_channel(mixer_elem,
+						1 << i)) {
+				int err;
+				long vol;
+				
+				nchannels++;
+				if ((err = snd_mixer_selem_get_playback_volume(
+								mixer_elem,
+								1 << i,
+								&vol)) < 0) {
+					error ("Can't read mixer: %s",
+							snd_strerror(err));
+					return -1;
+						
+				}
+				/*logit ("Vol %d: %ld", i, vol);*/
+				volume += vol;
+			}
+
+		volume /= nchannels;
+
+		/*logit ("Max: %ld, Min: %ld", mixer_max, mixer_min);*/
+		return volume;
+
+	}
+	else
+		return -1;
+}
+
 static int alsa_read_mixer ()
 {
-	return 100;
+	int vol = alsa_read_mixer_raw ();
+
+	if (vol != -1)
+		return mixer_percent(vol);
+	return -1;
 }
 
 static void alsa_set_mixer (int vol)
 {
+	if (mixer_handle) {
+		int err;
+		long curr_vol = alsa_read_mixer_raw ();
+		long vol_alsa;
+
+		if (vol < 0)
+			vol = 0;
+		else if (vol > 100)
+			vol = 100;
+
+#ifdef DEBUG
+		logit ("Setting vol to %d%%", vol);
+#endif
+
+		vol_alsa = (mixer_max - mixer_min) * (float)vol/100;
+		
+		if (vol_alsa == curr_vol) {
+
+			/* Problem with ALSA mixer resolution: it could be
+			 * worse than 1% */
+			if (vol > mixer_percent(curr_vol))
+				vol_alsa++;
+			else if (vol < mixer_percent(curr_vol))
+				vol_alsa--;
+		}
+		
+		if ((err = snd_mixer_selem_set_playback_volume_all(
+						mixer_elem, vol_alsa)) < 0)
+			error ("Can't set mixer: %s", snd_strerror(err));
+	}
 }
 
 static int alsa_get_buff_fill ()
@@ -366,6 +494,7 @@ static int alsa_get_channels ()
 
 void alsa_funcs (struct hw_funcs *funcs)
 {
+	funcs->init = alsa_init;
 	funcs->shutdown = alsa_shutdown;
 	funcs->open = alsa_open;
 	funcs->close = alsa_close;
