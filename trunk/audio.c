@@ -266,8 +266,10 @@ int audio_get_time ()
 
 void audio_close ()
 {
-	hw.close ();
-	audio_opened = 0;
+	if (audio_opened) {
+		hw.close ();
+		audio_opened = 0;
+	}
 }
 
 static void find_hw_funcs (const char *driver, struct hw_funcs *funcs)
