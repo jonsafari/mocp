@@ -50,6 +50,7 @@ void menu_free (struct menu *menu);
 void menu_driver (struct menu *menu, enum menu_request req);
 struct menu_item *menu_curritem (struct menu *menu);
 void menu_setcurritem (struct menu *menu, int num);
+int menu_get_selected (const struct menu *menu);
 void menu_setcurritem_title (struct menu *menu, const char *title);
 void menu_draw (struct menu *menu);
 void menu_mark_plist_item (struct menu *menu, const int plist_item);
@@ -57,5 +58,8 @@ void set_menu_state (struct menu *menu, int selected, int top);
 void menu_update_size (struct menu *menu, WINDOW *win);
 void menu_unmark_item (struct menu *menu);
 void menu_set_top_item (struct menu *menu, const int num);
+int menu_find_pattern_next (struct menu *menu, const char *pattern,
+		const int current);
+int menu_next_turn (const struct menu *menu);
 
 #endif
