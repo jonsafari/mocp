@@ -83,7 +83,7 @@ struct file_tags *tags_new ()
 	return tags;
 }
 
-static struct file_tags *tags_dup (const struct file_tags *tags)
+struct file_tags *tags_dup (const struct file_tags *tags)
 {
 
 	struct file_tags *dtags;

@@ -54,6 +54,7 @@ void plist_sort_fname (struct plist *plist);
 int plist_find_fname (struct plist *plist, const char *file);
 struct file_tags *tags_new ();
 void tags_copy (struct file_tags *dst, const struct file_tags *src);
+struct file_tags *tags_dup (const struct file_tags *tags);
 void tags_free (struct file_tags *tags);
 char *build_title (const struct file_tags *tags);
 int plist_count (struct plist *plist);
