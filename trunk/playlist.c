@@ -319,8 +319,28 @@ void plist_sort_fname (struct plist *plist)
 			qsort_func_fname);
 }
 
-/* Find an item on the list. Return the index or -1 if not found. */
+/* Find an item on the list items. Return the index or -1 if not found. */
 int plist_find_fname (struct plist *plist, const char *file)
+{
+	int i;
+	int hash = str_hash (file);
+
+	assert (plist != NULL);
+
+	for (i = 0; i < plist->num; i++) {
+		if (!plist_deleted(plist, i) && plist->items[i].file
+				&& plist->items[i].file_hash == hash
+				&& !strcmp(plist->items[i].file, file)) {
+			return i;
+		}
+	}
+
+	return -1;
+}
+
+/* Find an item on the list, also find deleted items. Return the index or -1
+ * if not found. */
+int plist_find_del_fname (struct plist *plist, const char *file)
 {
 	int i;
 	int hash = str_hash (file);

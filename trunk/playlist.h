@@ -75,5 +75,6 @@ void plist_free_item_fields (struct plist_item *item);
 void plist_set_serial (struct plist *plist, const int serial);
 int plist_get_serial (const struct plist *plist);
 int plist_last (struct plist *plist);
+int plist_find_del_fname (struct plist *plist, const char *file);
 
 #endif
