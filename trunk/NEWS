@@ -1,3 +1,73 @@
+2.2.0
+	* Added support for FLAC audio format.
+	* Added suport for various file formats like au, aiff, voc, and more
+	  using libsndfile. This also provides better support for waves.
+	* Custom keymaps can be used.
+	* Synchronizing the playlist between clients (interface instances).
+	* Going to a directory by typing the path with file-name completion
+	  (i command).
+	* Ability to use default (transparent) and grey color.
+	* Added a theme with transparent background.
+	* Added nightly_theme.
+	* Added green_theme (Jacek Lehmann).
+	* Global theme directory.
+	* MOC should now work on big-endian processors.
+	* Added XTermTheme option to use a different theme when running on
+	  XTerm.
+	* Fixed the 'next' command when AutoNext option is turned off.
+	* Displaying the total time of files on the playlist and in directories.
+	* Faster reading and saving playlists.
+	* Added --pause and --unpause command line parameters.
+	* Added AlsaMixer and AlsaDevice options.
+	* Added G command: go to a directory when the currently played file is.
+	* Added U command: go to '..'.
+	* Recognize if a file was modified and rereading tags and time if
+	  necessary.
+	* Fast, silent seeking ('[' and ']' keys).
+	* The cursor is hidden when it's not needed.
+	* Changed the erroneous name of the time_left_frames to time_total_frames
+	  in themes.
+	* Added '/' command working as an alias for g (Kamil Tarkowski).
+	* Added CTRL-n working like CTRL-g (Kamil Tarkowski).
+	* ? key working like h (Kamil Tarkowski).
+	* Playlist time displayed in format 000:00:00 (Kamil Tarkowski).
+	* True shuffle, not a random item from the playlist.
+	* Changing the icon name when changing the xterm title (Jacek Lehmann).
+	* Arrow keys and the delete key works in the entry field.
+	* Detecting other terminals beside xterm (Jacek Lehmann).
+	* Added b (back) command (Kamil Tarkowski).
+	* A bit faster getting files time.
+	* Added SavePlaylist option.
+	* Added a bar showing time of the current file.
+	* Repeat without AutoNext plays a song in loop.
+	* Added (empty|filled)_mixer_bar, (empty|filled)_time_bar to themes.
+	* Fixed setting sound parameters while playing OGG. This caused crashes on big
+	  endian machines (Philippe De Muyter).
+	* Fixed crash on some file tags.
+	* Fixed crash when issuing some errors.
+	* Fixed the --help message.
+	* Fixed bad terminal state after exiting the client in rare cases.
+	* Fixed adding directories recursively when ReadTags is turned off.
+	* Fixed going to the root directory with the i command.
+	* Fixed getting time when nothing is played.
+	* iconv() (character set conversion) for file names.
+	* END and HOME keys working in the i command entry (go to a directory).
+	* Synchronizing adding/deleting items from the playlist with the server's
+	* playlist.
+	* Faster operations on big playlists.
+	* Fixed saving playlist when more than one client wants to do this.
+	* Fixed recursive adding file to the playlist if some directory can't be read.
+	* Fixed deleting items from the playlist.
+	* Fixed handling a playlist file as command a line argument.
+	* Fixed compilation with --disable-debug.
+	* Fixed --version information.
+	* Fixed sorting when using the A command.
+	* Position of time and format in menu is fixed.
+	* Searching for a theme in the user directory first.
+	* Fixed a memory leak when reading OGG tags.
+	* Few fixes when running MOC with file names or directories as
+	  arguments.
+	* Fixed reading track numbers for mp3 files.
 2.1.4
 	* Fixed the 'next' command when AutoNext is turned off.
 	* Sorting the files before adding them to the playlist when using the
