@@ -137,7 +137,8 @@ static void check_moc_dir ()
 }
 
 /* Run client and the server if needed. */
-static void start_moc (const struct parameters *params)
+static void start_moc (const struct parameters *params, char **args,
+		const int arg_num)
 {
 	int list_sock;
 	int server_sock = -1;
@@ -192,7 +193,8 @@ static void start_moc (const struct parameters *params)
 	if (!params->only_server) {
 		signal (SIGPIPE, SIG_IGN);
 		if (ping_server(server_sock)) {
-			init_interface (server_sock, params->debug);
+			init_interface (server_sock, params->debug,
+					args, arg_num);
 			interface_loop ();
 			interface_end ();
 		}
@@ -324,7 +326,7 @@ int main (int argc, char *argv[])
 	if (params.foreground && !params.only_server)
 		fatal ("Can't use --foreground without --server");
 
-	start_moc (&params);
+	start_moc (&params, argv + optind, argc - optind);
 
 	return 0;
 }
