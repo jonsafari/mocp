@@ -343,13 +343,31 @@ static char *make_item_packet (const struct plist_item *item, size_t *len)
 	return buf;
 }
 
+/* Send data to the socket. Return 0 on error. */
+static int send_all (int sock, const char *buf, const size_t size)
+{
+	ssize_t sent;
+	size_t send_pos = 0;
+	
+	while (send_pos < size) {
+		sent = send (sock, buf + send_pos, size - send_pos, 0);
+		if (sent < 0) {
+			logit ("Error while sending data: %s", strerror(errno));
+			return 0;
+		}
+		send_pos += sent;
+	}
+
+	return 1;
+}
+
 /* Send a playlist item to the socket. If item == NULL, send empty item mark
  * (end of playlist). Return 0 on error. */
 int send_item (int sock, const struct plist_item *item)
 {
 	char *buf;
-	ssize_t sent;
-	size_t send_pos = 0, pkt_size;
+	size_t pkt_size;
+	int res = 1;
 	
 	if (!item) {
 		if (!send_str(sock, "")) {
@@ -360,20 +378,13 @@ int send_item (int sock, const struct plist_item *item)
 	}
 
 	buf = make_item_packet (item, &pkt_size);
-	
-	while (send_pos < pkt_size) {
-		sent = send (sock, buf + send_pos, pkt_size - send_pos, 0);
-		if (sent < 0) {
-			logit ("Error while sendint item: %s", strerror(errno));
-			free (buf);
-			return 0;
-		}
-		send_pos += sent;
+	if (!send_all(sock, buf, pkt_size)) {
+		logit ("Error when sending item");
+		res = 0;
 	}
 		
 	free (buf);
-
-	return 1;
+	return res;
 }
 
 struct file_tags *recv_tags (int sock)
@@ -417,6 +428,22 @@ struct file_tags *recv_tags (int sock)
 		tags->filled |= TAGS_COMMENTS;
 
 	return tags;
+}
+
+/* Send tags. If tags == NULL, send empty tags. REturn 0 on error. */
+int send_tags (int sock, const struct file_tags *tags)
+{
+	char *packet;
+	size_t packet_size;
+	int res = 1;
+
+	packet = make_tags_packet (tags, &packet_size);
+	
+	if (!send_all(sock, packet, packet_size))
+		res = 0;
+	
+	free (packet);
+	return res;
 }
 
 /* Get a playlist item from the server. If empty item->file is an empty string,
@@ -613,18 +640,6 @@ static char *make_event_packet (struct event *e, size_t *len)
 		memcpy (buf + sizeof(e->type), item_packet, item_packet_len);
 		free (item_packet);
 	}
-	else if (e->type == EV_TAGS) {
-		size_t tags_packet_len;
-		char *tags_packet;
-
-		tags_packet = make_tags_packet (e->data, &tags_packet_len);
-		*len += tags_packet_len;
-		
-		buf = (char *)xmalloc (*len);
-		memcpy (buf, &e->type, sizeof(e->type));
-		memcpy (buf + sizeof(e->type), tags_packet, tags_packet_len);
-		free (tags_packet);
-	}
 	else {
 		if (e->data)
 			logit ("Unhandled event data!");
@@ -663,8 +678,6 @@ enum noblock_io_status event_send_noblock (int sock, struct event_queue *q)
 		}
 		else if (e->type == EV_PLIST_DEL)
 			free (e->data);
-		else if (e->type == EV_TAGS)
-			tags_free (e->data);
 		else if (e->data)
 			logit ("Unhandled event data!");
 

@@ -37,8 +37,7 @@ enum noblock_io_status
 #define EV_PONG		0x0b /* response for CMD_PING */
 #define EV_OPTIONS	0x0c /* the options has changed */
 #define EV_SEND_PLIST	0x0d /* Request for sending the playlist. */
-#define EV_TAGS		0x0e /* tags for the current file has changed, followed
-				by the new tags. */
+#define EV_TAGS		0x0e /* tags for the current file has changed. */
 
 /* Events caused by a client that wants to modify the playlist (see
  * CMD_CLI_PLIST* commands. */
@@ -93,6 +92,7 @@ enum noblock_io_status
 #define CMD_UNLOCK	0x2a /* release the lock */
 #define CMD_PLIST_GET_SERIAL	0x2b /* get the serial number of the server's
 					playlist */
+#define CMD_GET_TAGS	0x2c /* get tags for the currently played file. */
 
 char *socket_name ();
 int get_int (int sock, int *i);
@@ -105,6 +105,7 @@ int send_time (int sock, time_t i);
 int send_item (int sock, const struct plist_item *item);
 struct plist_item *recv_item (int sock);
 struct file_tags *recv_tags (int sock);
+int send_tags (int sock, const struct file_tags *tags);
 
 void event_queue_init (struct event_queue *q);
 void event_queue_free (struct event_queue *q);

@@ -377,8 +377,6 @@ static void wait_for_data ()
 			event_push (&events, event, recv_item_from_srv());
 		else if (event == EV_PLIST_DEL)
 			event_push (&events, event, get_str_from_srv());
-		else if (event == EV_TAGS)
-			event_push (&events, event, get_tags_from_srv());
 		else if (event != EV_DATA)
 			event_push (&events, event, NULL);
 	 } while (event != EV_DATA);
@@ -1230,6 +1228,12 @@ static char *find_title (char *file)
 		debug ("Getting file title for %s", file);
 
 	if (file_type(file) == F_URL) {
+		if (!file_info.tags) {
+			send_int_to_srv (CMD_GET_TAGS);
+			wait_for_data ();
+			file_info.tags = get_tags_from_srv ();
+		}
+		
 		if (file_info.tags && file_info.curr_file
 				&& !strcmp(file_info.curr_file, file))
 			title = build_title (file_info.tags);
@@ -2134,13 +2138,16 @@ static void cmd_clear_playlist ()
 }
 
 /* Use these tags for current file title. */
-static void update_curr_tags (struct file_tags *tags)
+static void update_curr_tags ()
 {
 	char *title;
 	
 	if (file_info.tags)
 		tags_free (file_info.tags);
-	file_info.tags = tags;
+
+	send_int_to_srv (CMD_GET_TAGS);
+	wait_for_data ();
+	file_info.tags = get_tags_from_srv ();
 	
 	if (file_info.curr_file) {
 		title = find_title (file_info.curr_file);
@@ -3425,8 +3432,6 @@ static void get_and_handle_event ()
 			data = recv_item_from_srv ();
 		else if (type == EV_PLIST_DEL)
 			data = get_str_from_srv ();
-		else if (type == EV_TAGS)
-			data = get_tags_from_srv ();
 		else
 			data = NULL;
 
