@@ -829,16 +829,27 @@ static void send_playlist (struct plist *plist)
 static void mark_file (const char *file)
 {
 	if (file) {
-		int i = plist_find_fname (visible_plist, file);
+		int i;
 		
-		if (i != -1) {
-			menu_mark_plist_item (curr_menu, i);
-			if (main_win_mode == WIN_MENU)
-				menu_draw (curr_menu);
-		}
+		if (curr_plist_menu
+				&& (i = plist_find_fname(curr_plist, file))
+				!= -1)
+			menu_mark_plist_item (curr_plist_menu, i);
+
+		if (playlist_menu
+				&&(i = plist_find_fname(playlist, file))
+				!= -1)
+			menu_mark_plist_item (playlist_menu, i);
+		
+		if (main_win_mode == WIN_MENU)
+			menu_draw (curr_menu);
 	}
-	else
-		menu_unmark_item (curr_menu);
+	else {
+		if (curr_plist_menu)
+			menu_unmark_item (curr_plist_menu);
+		if (playlist_menu)
+			menu_unmark_item (playlist_menu);
+	}
 }
 
 /* Update the xterm title. */
