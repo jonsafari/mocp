@@ -21,6 +21,8 @@ AC_CHECK_HEADERS([fcntl.h string.h sys/param.h unistd.h sys/un.h \
 		 AC_MSG_ERROR([Can't find required header files.]))
 AC_CHECK_HEADERS([sys/select.h])
 
+AC_C_BIGENDIAN
+
 dnl iconv()
 AC_CHECK_LIB([iconv], [iconv_open], [LIBS="$LIBS -liconv"])
 AC_CHECK_HEADERS([iconv.h],
