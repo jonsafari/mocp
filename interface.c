@@ -41,7 +41,6 @@
 
 #define STATUS_LINE_LEN	25
 #define INTERFACE_LOG	"mocp_client_log"
-#define MAX_SEARCH_STRING	(COLS - 6)
 
 /* Socket connection to the server. */
 static int srv_sock = -1;
@@ -120,13 +119,34 @@ static struct file_info {
 static int must_update_state = 0;
 static int must_update_error = 0;
 
-/* for CTRL-g - search an item */
-static int search_file_mode = 0;
-static char search_string[256];
+enum entry_type
+{
+	ENTRY_DISABLED,
+	ENTRY_SEARCH,
+	ENTRY_PLIST_SAVE
+};
+
+/* User entry. */
+static struct
+{
+	char text[512];
+	enum entry_type type;
+	char title[32];
+	int width;
+} entry = {
+	"",
+	ENTRY_DISABLED,
+	"",
+	0
+};
 
 /* ^c version of c */
 #ifndef CTRL
 # define CTRL(c) ((c) & 0x1F)
+#endif
+
+#ifndef KEY_ESCAPE
+# define KEY_ESCAPE	27
 #endif
 
 static void interface_fatal (const char *msg)
@@ -295,11 +315,26 @@ static void draw_mixer () {
 			bar + vol / 5, 20 - (vol / 5));
 }
 
-static void draw_search_entry ()
+static void entry_draw ()
 {
 	wmove (info_win, 0, 1);
 	wattrset (info_win, COLOR_PAIR(CLR_BAR));
-	wprintw (info_win, "GO: %-*s", MAX_SEARCH_STRING, search_string);
+	wprintw (info_win, "%s: %-*s", entry.title, entry.width, entry.text);
+}
+
+static void make_entry (const enum entry_type type, const char *title)
+{
+	entry.type = type;
+	entry.text[0] = 0;
+	strncpy (entry.title, title, sizeof(entry.title));
+	entry.width = COLS - strlen(title) - 4;
+	entry_draw ();
+	wrefresh (info_win);
+}
+
+static void entry_disable ()
+{
+	entry.type = ENTRY_DISABLED;
 }
 
 /* Update the info win */
@@ -381,8 +416,8 @@ static void update_info_win ()
 	
 	wattron (info_win, COLOR_PAIR(CLR_ITEM));
 
-	if (search_file_mode)
-		draw_search_entry ();
+	if (entry.type != ENTRY_DISABLED)
+		entry_draw ();
 	else {
 		/* Status line */
 		wattroff (info_win, A_BOLD);
@@ -1536,72 +1571,121 @@ static void update_menu ()
 	wrefresh (main_win);
 }
 
-/* Turn on search file mode. */
-void search_file_mode_on ()
-{
-	search_file_mode = 1;
-	search_string[0] = 0;
-	draw_search_entry ();
-	wrefresh (info_win);
-}
-
-void search_file_key (const int ch)
+static int entry_search_key (const int ch)
 {
 	if (isgraph(ch) || ch == ' ') {
 		int item;
-		int len = strlen (search_string);
+		int len = strlen (entry.text);
 	
-		if (len == MAX_SEARCH_STRING)
-			return;
-		search_string[len++] = ch;
-		search_string[len] = 0;
+		if (len == entry.width)
+			return 1;
+		entry.text[len++] = ch;
+		entry.text[len] = 0;
 
-		item = menu_find_pattern_next (menu, search_string,
+		item = menu_find_pattern_next (menu, entry.text,
 				menu_get_selected(menu));
 
 		if (item != -1) {
 			menu_setcurritem (menu, item);
 			update_menu ();
-			draw_search_entry ();
+			entry_draw ();
 		}
 		else
-			search_string[len-1] = 0;
+			entry.text[len-1] = 0;
+		return 1;
 	}
-	else if (ch == KEY_BACKSPACE) {
-
-		/* delete last character */
-		if (search_string[0] != 0) {
-			int len = strlen (search_string);
-
-			search_string[len-1] = 0;
-			draw_search_entry ();
-		}
-	}
-	else if (ch == CTRL('x')) {
-
-		/* exit file search */
-		search_file_mode = 0;
-		update_info_win ();
-	}
-	else if (ch == CTRL('g')) {
+	if (ch == CTRL('g')) {
 		int item;
 
 		/* Find next matching */
-		item = menu_find_pattern_next (menu, search_string,
+		item = menu_find_pattern_next (menu, entry.text,
 				menu_next_turn(menu));
 
 		menu_setcurritem (menu, item);
 		update_menu ();
-		draw_search_entry ();
+		return 1;
 	}
 	else if (ch == '\n') {
 
 		/* go to the file */
 		go_file ();
-		search_file_mode = 0;
+		entry_disable ();
 		update_info_win ();
 		update_menu ();
+
+		return 1;
 	}
+
+	return 0;
+}
+
+/* Handle keys specific to ENTRY_PLIST_SAVE. Return 1 if a key was handled. */
+static int entry_plist_save_key (const int ch)
+{
+	if (ch == '\n') {
+		if (strchr(entry.text, '/'))
+			interface_error ("Only file name is accepted, not a "
+					"path");
+		else {
+			char *ext = ext_pos (entry.text);
+
+			if (!ext || strcmp(ext, "m3u"))
+				strcat (entry.text, ".m3u");
+
+			if (plist_save(playlist, entry.text, cwd))
+				interface_message ("Playlist saved.");
+		}
+		entry_disable ();
+		update_info_win ();
+		return 1;
+	}
+	return 0;
+}
+
+/* Handle common entry key. REturn 1 if a key was handled. */
+static int entry_common_key (const int ch)
+{
+	if (isgraph(ch) || ch == ' ') {
+		int len = strlen (entry.text);
+	
+		if (len == entry.width)
+			return 1;
+		
+		entry.text[len++] = ch;
+		entry.text[len] = 0;
+		entry_draw ();
+		return 1;
+	}
+	if (ch == CTRL('x') || ch == KEY_ESCAPE) {
+		entry_disable ();
+		update_info_win ();
+		return 1;
+	}
+	if (ch == KEY_BACKSPACE) {
+
+		/* delete last character */
+		if (entry.text[0] != 0) {
+			int len = strlen (entry.text);
+
+			entry.text[len-1] = 0;
+			entry_draw ();
+		}
+		return 1;
+	}
+
+	return 0;
+}
+
+static void entry_key (const int ch)
+{
+	int handled = 0;
+	
+	if (entry.type == ENTRY_SEARCH)
+		handled = entry_search_key(ch);
+	if (entry.type == ENTRY_PLIST_SAVE)
+		handled = entry_plist_save_key(ch);
+	if (!handled)
+		entry_common_key (ch);
 	wrefresh (info_win);
 }
 
@@ -1623,10 +1707,8 @@ static void menu_key (const int ch)
 		
 		main_win_mode = WIN_MENU;
 	}
-	else if (search_file_mode) {
-		search_file_key (ch);
-		return;
-	}
+	else if (entry.type != ENTRY_DISABLED)
+		entry_key (ch);
 	else {
 		switch (ch) {
 			case 'q':
@@ -1765,7 +1847,15 @@ static void menu_key (const int ch)
 				do_update_menu = 1;
 				break;
 			case CTRL('g'):
-				search_file_mode_on ();
+				make_entry (ENTRY_SEARCH, "SEARCH");
+				break;
+			case 'V':
+				if (visible_plist == playlist)
+					make_entry (ENTRY_PLIST_SAVE,
+							"SAVE PLAYLIST");
+				else
+					interface_error ("You must be in "
+							"playlist to save.");
 				break;
 			case KEY_RESIZE:
 				break;
@@ -1790,6 +1880,7 @@ static void do_resize ()
 	wresize (info_win, 4, COLS);
 	mvwin (info_win, LINES - 4, 0);
 	werase (main_win);
+	entry.width = COLS - strlen(entry.title) - 4;
 
 	if (main_win_mode == WIN_MENU) {
 		main_border ();
