@@ -303,7 +303,7 @@ static int send_option ()
 	}
 
 	/* All supported options are integer type. */
-	if (!send_int(client_sock, options_get_int(name))) {
+	if (!send_data_int(options_get_int(name))) {
 		free (name);
 		return 0;
 	}
