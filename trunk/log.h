@@ -15,9 +15,16 @@
 #else
 # define logit fake_logit
 #endif
+
+#ifdef HAVE__ATTRIBUTE__
 void internal_logit (const char *file, const int line, const char *function,
 		const char *format, ...)
 	__attribute__ ((format (printf, 4, 5)));
+#else
+void internal_logit (const char *file, const int line, const char *function,
+		const char *format, ...);
+#endif
+
 void fake_logit (const char *format, ...);
 void log_init_stream (FILE *f);
 void log_close ();
