@@ -1,4 +1,4 @@
-.TH MOC 8 "31 october 2004" "Version 2.1.0" "music on console"
+.TH MOC 8 "11 February 2005" "Version 2.2.0" "music on console"
 
 .SH NAME
 MOC \- console audio player
@@ -27,6 +27,7 @@ overrides it.
 .I -D --debug
 Run in debug mode. Client and server logs much information to debug files.
 Don't use this, the server log is large.
+This is only available if MOC was compiled without --disable-debug.
 
 .TP
 .I -S --server
@@ -95,6 +96,16 @@ Use the specified config file instead of the default.
 Use the specified MOC directory instead of the default. This also causes to use
 the config file from that directory. This can be also specified in the config
 file using the MOCDir option.
+
+.TP
+.I -y --sync
+This copy of the interface will be synchronizing the playlist with other
+clients. This option is calles SyncPlaylist in the configuration file.
+
+.TP
+.I -n --nosync
+This copy of the interface will not be synchronizing its playlist with other
+clients (see above).
 
 .TP
 .I -h --help
