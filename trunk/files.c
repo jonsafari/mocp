@@ -40,7 +40,7 @@
 #include "playlist.h"
 #include "main.h"
 #include "interface.h"
-#include "file_types.h"
+#include "decoder.h"
 #include "options.h"
 #include "files.h"
 #include "playlist_file.h"
@@ -372,11 +372,11 @@ struct file_tags *read_file_tags (const char *file,
 		struct file_tags *present_tags, const int tags_sel)
 {
 	struct file_tags *tags;
-	struct decoder_funcs *df;
+	struct decoder *df;
 	int needed_tags;
 
 	assert (file != NULL);
-	df = get_decoder_funcs (file);
+	df = get_decoder (file);
 	if (present_tags) {
 		tags = present_tags;
 		needed_tags = ~tags->filled & tags_sel;

@@ -27,6 +27,7 @@
 #include "files.h"
 #include "options.h"
 #include "interface.h"
+#include "decoder.h"
 
 int is_plist_file (char *name)
 {

@@ -30,7 +30,6 @@
 #include "log.h"
 #include "options.h"
 #include "files.h"
-#include "file_types.h"
 
 /* Initial size of the table */
 #define	INIT_SIZE	64

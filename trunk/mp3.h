@@ -1,8 +1,8 @@
 #ifndef MP3_H
 #define MP3_H
 
-#include "file_types.h"
+#include "decoder.h"
 
-struct decoder_funcs *mp3_get_funcs ();
+struct decoder *mp3_get_funcs ();
 
 #endif
