@@ -40,10 +40,10 @@ struct decoder_funcs
 	int (*get_bitrate)(void *date);
 };
 
-int is_sound_file (char *name);
-struct decoder_funcs *get_decoder_funcs (char *file);
+int is_sound_file (const char *name);
+struct decoder_funcs *get_decoder_funcs (const char *file);
 void file_types_init ();
 void file_types_cleanup ();
-char *format_name (char *file);
+char *format_name (const char *file);
 
 #endif

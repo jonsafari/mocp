@@ -49,7 +49,7 @@ static struct file_type_data types[20];
 static int types_num = 0;
 
 /* Find the index in table types for the given file. Return -1 if not found. */
-static int find_type (char *file)
+static int find_type (const char *file)
 {
 	char *ext = ext_pos (file);
 	int i, j;
@@ -63,13 +63,13 @@ static int find_type (char *file)
 	return -1;
 }
 
-int is_sound_file (char *name)
+int is_sound_file (const char *name)
 {
 	return find_type(name) != -1 ? 1 : 0;
 }
 
 /* Return short format name for the given file or NULL if not found. */
-char *format_name (char *file)
+char *format_name (const char *file)
 {
 	int i;
 	
@@ -80,7 +80,7 @@ char *format_name (char *file)
 
 }
 
-struct decoder_funcs *get_decoder_funcs (char *file)
+struct decoder_funcs *get_decoder_funcs (const char *file)
 {
 	int i;
 	

@@ -759,10 +759,45 @@ static void sec_to_min (char *buff, const int seconds)
 		strcpy (buff, "!!!!!");
 }
 
-/* Fill time in tags and menu items for all items in plist. */
-static void fill_times (struct plist *plist, struct menu *menu)
+/* Get the file time from the server. */
+static int get_file_time_server (const char *file)
+{
+	send_int_to_srv (CMD_GET_FTIME);
+	send_str_to_srv (file);
+	return get_data_int ();
+}
+
+static void read_item_time (struct plist_item *item)
+{
+	if (!item->tags)
+		item->tags = tags_new ();
+	
+	if ((item->tags->time = get_file_time_server(item->file)) == -1)
+		item->tags = read_file_tags (item->file, item->tags, TAGS_TIME);
+	else
+		item->tags->filled |= TAGS_TIME;
+}
+
+static int read_file_time (const char *file)
+{
+	int time;
+	struct file_tags *tags;
+
+	if ((time = get_file_time_server(file)) == -1) {
+		tags = read_file_tags (file, NULL, TAGS_TIME);
+		time = tags->time;
+		tags_free (tags);
+	}
+
+	return time;
+}
+
+/* Fill the times for the playlist items. */
+static void read_times (struct plist *plist)
 {
 	int i;
+
+	set_iface_status_ref ("Getting times...");
 
 	for (i = 0; i < plist->num; i++)
 		if (!plist_deleted(plist, i)) {		
@@ -771,18 +806,33 @@ static void fill_times (struct plist *plist, struct menu *menu)
 				break;
 			}
 
-			plist->items[i].tags = read_file_tags(
-					plist->items[i].file,
-					plist->items[i].tags,
-					TAGS_TIME);
-			if (menu && plist->items[i].tags->time != -1) {
+			update_file (&plist->items[i]);
+
+			if (!plist->items[i].tags
+					|| !(plist->items[i].tags->filled
+						& TAGS_TIME))
+				read_item_time (&plist->items[i]);
+		}
+
+	set_iface_status_ref (NULL);
+}
+
+/* Fill time in tags and menu items for all items in plist. */
+static void fill_times (struct plist *plist, struct menu *menu)
+{
+	int i;
+
+	read_times (plist);
+
+	if (menu)
+		for (i = 0; i < plist->num; i++)
+			if (!plist_deleted(plist, i)
+					&& get_item_time(plist, i) != -1) {
 				char time_str[6];
 
-				sec_to_min (time_str,
-						plist->items[i].tags->time);
+				sec_to_min (time_str, get_item_time(plist, i));
 				menu_item_set_time_plist (menu, i, time_str);
 			}
-		}
 }
 
 /* Make menu using the playlist and directory table. */
@@ -855,13 +905,13 @@ static struct menu *make_menu (struct plist *plist, struct file_list *dirs,
 			if (plist->items[i].tags
 					&& plist->items[i].tags->time != -1) {
 				char time_str[6];
-
+				
 				sec_to_min (time_str,
 						plist->items[i].tags->time);
 				menu_item_set_time (menu_items[menu_pos],
 						time_str);
 			}
-			
+
 			menu_item_set_attr_normal (menu_items[menu_pos],
 					colors[CLR_MENU_ITEM_FILE]);
 			menu_item_set_attr_sel (menu_items[menu_pos],
@@ -884,11 +934,8 @@ static struct menu *make_menu (struct plist *plist, struct file_list *dirs,
 			strcasecmp(options_get_str("ShowTime"), "no"));
 	menu_set_info_attr (menu, colors[CLR_MENU_ITEM_INFO]);
 
-	if (read_time) {
-		set_iface_status_ref ("Getting times...");
+	if (read_time)
 		fill_times (plist, menu);
-		set_iface_status_ref (NULL);
-	}
 	
 	return menu;
 }
@@ -1029,50 +1076,16 @@ static void set_state (const int state)
 	xterm_set_state (state);
 }
 
-/* Find the item on curr_plist and playlist, return 1 if found, 0 otherwise.
- * Pointer to the plist structure and the index are filled.
- * If the file exists on both lists, choose the list where the file has
- * needed_tags. */
-static int find_item_plists (const char *file, int *index, struct plist **plist,
-		const int needed_tags)
-{
-	int curr_plist_idx, playlist_idx;
-
-	if ((curr_plist_idx = plist_find_fname(curr_plist, file)) != -1
-			&& curr_plist->items[curr_plist_idx].tags
-			&& curr_plist->items[curr_plist_idx].tags->filled
-			& needed_tags) {
-		*index = curr_plist_idx;
-		*plist = curr_plist;
-		return 1;
-	}
-	
-	if ((playlist_idx = plist_find_fname(playlist, file)) != -1) {
-		*index = playlist_idx;
-		*plist = playlist;
-		return 1;
-	}
-	else if (curr_plist_idx != -1) {
-		*index = curr_plist_idx;
-		*plist = curr_plist;
-		return 1;
-	}
-
-	return 0;
-}
-
-/* Find the title for a file. Check if it's on the playlist, if not, try to
- * make the title. Returned memory is malloc()ed. */
+/* Find the title_tags for a file. Check if it's on the playlist, if not, try
+ * to make the title. Returned memory is malloc()ed. */
 static char *find_title (char *file)
 {
 	/* remember last file to avoid probably exepensive read_file_tags() */
 	static char *cache_file = NULL;
 	static char *cache_title = NULL;
 	
-	int index;
-	struct file_tags *tags;
+	int idx;
 	char *title = NULL;
-	struct plist *plist;
 
 	if (cache_file && !strcmp(cache_file, file)) {
 		debug ("Using cache");
@@ -1080,15 +1093,32 @@ static char *find_title (char *file)
 	}
 	else
 		debug ("Getting file title for %s", file);
-	
-	if (find_item_plists(file, &index, &plist, TAGS_COMMENTS)) {
-		debug ("Found title on the playlist");
-		plist->items[index].tags = read_file_tags (file,
-				plist->items[index].tags, TAGS_COMMENTS);
-		if (plist->items[index].tags->title)
-			title = build_title (plist->items[index].tags);
+
+	if ((idx = plist_find_fname(curr_plist, file)) != -1
+			&& (curr_plist->items[idx].title_tags
+			   || curr_plist->items[idx].tags->filled
+			   & TAGS_COMMENTS)) {
+		debug ("Found title on the curr_plist");
+
+		update_file (&curr_plist->items[idx]);
+
+		if (!curr_plist->items[idx].title_tags)
+			curr_plist->items[idx].title_tags
+				= build_title (curr_plist->items[idx].tags);
+
+		title = xstrdup (curr_plist->items[idx].title_tags);
 	}
-	else if ((tags = read_file_tags(file, NULL, TAGS_COMMENTS))) {
+	else if ((idx = plist_find_fname(playlist, file)) != -1) {
+		debug ("Found title on the playlist");
+
+		update_file (&playlist->items[idx]);
+		curr_plist->items[idx].tags = read_file_tags (file,
+				curr_plist->items[idx].tags, TAGS_COMMENTS);
+	}
+	else {
+		struct file_tags *tags;
+
+		tags = read_file_tags (file, NULL, TAGS_COMMENTS);
 		if (tags->title)
 			title = build_title (tags);
 		tags_free (tags);
@@ -1186,35 +1216,27 @@ static void update_times (const char *file, const int time)
 	sec_to_min (time_str, time);
 
 	if ((i = plist_find_fname(curr_plist, file)) != -1) {
-		curr_plist->items[i].tags = read_file_tags (
-				curr_plist->items[i].file,
-				curr_plist->items[i].tags, 0);
-		curr_plist->items[i].tags->time = time;
+		update_item_time (&curr_plist->items[i], time);
 		if (curr_plist_menu)
 			menu_item_set_time_plist (curr_plist_menu, i, time_str);
 	}
 	
 	if ((i = plist_find_fname(playlist, file)) != -1) {
-		playlist->items[i].tags = read_file_tags (
-				playlist->items[i].file,
-				playlist->items[i].tags, 0);
-		playlist->items[i].tags->time = time;
+		update_item_time (&playlist->items[i], time);
+
 		if (playlist_menu)
 			menu_item_set_time_plist (playlist_menu, i, time_str);
 	}
 }
 
-/* Return the file time, or -1 on error. */
+/* Return the file time, or -1 on error. Don't use the time from the
+ * playlists. */
 static int get_file_time (char *file)
 {
 	/* To remember last file time - counting time can be expensive. */
 	static char *cache_file = NULL;
 	static int cache_time = -1;
-	
-	int index;
-	struct file_tags *tags;
 	int ftime = -1;
-	struct plist *plist;
 
 	if (cache_file && !strcmp(cache_file, file)) {
 		debug ("Using cache");
@@ -1222,23 +1244,9 @@ static int get_file_time (char *file)
 	}
 	else
 		debug ("Getting file time for %s", file);
-	
-	if (find_item_plists(file, &index, &plist, TAGS_TIME)) {
-		debug ("Found item on the playlist");
 
-		/* Make sure that the time is not read from the playlist. */
-		if (plist->items[index].tags)
-			plist->items[index].tags->filled &= ~TAGS_TIME;
-		
-		plist->items[index].tags = read_file_tags (file,
-				plist->items[index].tags, TAGS_TIME);
-		if ((ftime = plist->items[index].tags->time) != -1)
-			update_times (file, plist->items[index].tags->time);
-	}
-	else if ((tags = read_file_tags(file, NULL, TAGS_TIME))) {
-		ftime = tags->time;
-		tags_free (tags);
-	}
+	ftime = read_file_time (file);
+	update_times (file, ftime);
 
 	if (cache_file)
 		free (cache_file);
@@ -1300,30 +1308,10 @@ static void update_state ()
 	update_ctime (); /* will also update the window */
 }
 
-/* Try to copy tags from the playlist to the plist if some files are the
- * same. */
-static void fill_tags_from_playlist (struct plist *plist)
-{
-	int i, idx;
-
-	for (i = 0; i < plist->num; i++)
-		if (!plist_deleted(plist, i)
-				&& (idx = plist_find_fname(
-						playlist,
-						plist->items[i].file)) != -1
-				&& playlist->items[idx].tags) {
-			assert (plist->items[i].tags == NULL);
-			
-			plist->items[i].tags = tags_dup (
-					playlist->items[idx].tags);
-		}
-}
-
 /* Load the directory content into curr_plist and make curr_plist_menu.
  * If dir is NULL, go to the cwd.
- * If reload == 1, dont use tags from the playlist.
  * Return 1 on success, 0 on error. */
-static int load_dir (char *dir, const int reload)
+static int load_dir (char *dir)
 {
 	struct plist *old_curr_plist;
 	char last_dir[PATH_MAX];
@@ -1367,13 +1355,15 @@ static int load_dir (char *dir, const int reload)
 
 	if (options_get_int("ReadTags")) {
 		set_iface_status_ref ("Reading tags...");
-		if (!reload)
-			fill_tags_from_playlist (curr_plist);
-		read_tags (curr_plist);
+		sync_plists_data (curr_plist, playlist);
 		make_titles_tags (curr_plist);
+		sync_plists_data (playlist, curr_plist);
+		switch_titles_tags (curr_plist);
 	}
-	else
+	else {
 		make_titles_file (curr_plist);
+		switch_titles_file (curr_plist);
+	}
 	
 	plist_sort_fname (curr_plist);
 	qsort (dirs->items, dirs->num, sizeof(char *), qsort_dirs_func);
@@ -1394,7 +1384,7 @@ static int load_dir (char *dir, const int reload)
 
 static int go_to_dir (char *dir)
 {
-	if (load_dir(dir, 0)) {
+	if (load_dir(dir)) {
 		visible_plist = curr_plist;
 		curr_menu = curr_plist_menu;
 		set_title (cwd);
@@ -1508,10 +1498,8 @@ static void process_args (char **args, const int num)
 
 			visible_plist = playlist;
 			
-			if (options_get_int("ReadTags")) {
-				read_tags (playlist);
+			if (options_get_int("ReadTags"))
 				make_titles_tags (playlist);
-			}
 			else
 				make_titles_file (playlist);
 
@@ -1860,11 +1848,13 @@ void init_interface (const int sock, const int debug, char **args,
 	
 	main_border ();
 	get_server_options ();
+
 	
 	if (arg_num)
 		process_args (args, arg_num);
 	else
 		enter_first_dir ();
+
 	load_playlist ();
 	
 	menu_draw (curr_menu);
@@ -1955,7 +1945,7 @@ static void toggle_plist ()
 			set_interface_status (NULL);
 		}
 	}
-	else if (playlist && playlist->num) {
+	else if (plist_count(playlist)) {
 		char msg[50];
 
 		visible_plist = playlist;
@@ -2114,8 +2104,8 @@ static void add_dir_plist ()
 	read_directory_recurr (menu_item->file, &plist);
 	if (options_get_int("ReadTags")) {
 		set_iface_status_ref ("Getting tags...");
-		read_tags (&plist);
-		make_titles_tags (&plist);
+		switch_titles_tags (&plist);
+		sync_plists_data (curr_plist, &plist);
 	}
 	else
 		make_titles_file (&plist);
@@ -2211,17 +2201,15 @@ static void switch_read_tags ()
 {
 	if (options_get_int("ReadTags")) {
 		option_set_int("ReadTags", 0);
-		make_titles_file (curr_plist);
-		make_titles_file (playlist);
+		switch_titles_file (curr_plist);
+		switch_titles_file (playlist);
 		set_iface_status_ref ("ReadTags: no");
 	}
 	else {
 		option_set_int("ReadTags", 1);
 		set_iface_status_ref ("Reading tags...");
-		read_tags (playlist);
-		make_titles_tags (playlist);
-		read_tags (curr_plist);
-		make_titles_tags (curr_plist);
+		switch_titles_tags (curr_plist);
+		switch_titles_tags (playlist);
 		set_iface_status_ref ("ReadTags: yes");
 	}
 
@@ -2232,12 +2220,12 @@ static void switch_read_tags ()
 }
 
 /* Reread the directory. */
-static void reread_dir (const int set_curr_menu, const int clear_tags)
+static void reread_dir (const int set_curr_menu)
 {
 	int selected_item = curr_plist_menu->selected;
 	int top_item = curr_plist_menu->top;
 
-	if (load_dir(NULL, clear_tags)) {
+	if (load_dir(NULL)) {
 		if (set_curr_menu) {
 			visible_plist = curr_plist;
 			curr_menu = curr_plist_menu;
@@ -2385,7 +2373,7 @@ static int entry_plist_save_key (const int ch)
 				if (plist_save(playlist, path, cwd))
 					interface_message ("Playlist saved.");
 				set_iface_status_ref (NULL);
-				reread_dir (curr_plist == visible_plist, 0);
+				reread_dir (curr_plist == visible_plist);
 				update_menu ();
 			}
 		}
@@ -2408,7 +2396,7 @@ static int entry_plist_overwrite_key (const int key)
 		set_iface_status_ref (NULL);
 		free (file);
 		
-		reread_dir (curr_plist == visible_plist, 0);
+		reread_dir (curr_plist == visible_plist);
 		update_menu ();
 	}
 	else if (key == 'n') {
@@ -2594,7 +2582,6 @@ static void toggle_show_time ()
 			menu_set_show_time (playlist_menu, 1);
 		if (curr_plist_menu)
 			menu_set_show_time (curr_plist_menu, 1);
-		set_iface_status_ref ("Getting times...");
 		fill_times (playlist, playlist_menu);
 		fill_times (curr_plist, curr_plist_menu);
 		set_iface_status_ref ("ShowTime: yes");
@@ -2769,7 +2756,7 @@ static void menu_key (const int ch)
 				break;
 			case 'r':
 				if (visible_plist == curr_plist) {
-					reread_dir (1, 1);
+					reread_dir (1);
 					do_update_menu = 1;
 				}
 				break;
@@ -2778,7 +2765,7 @@ static void menu_key (const int ch)
 						!options_get_int(
 							"ShowHiddenFiles"));
 				if (visible_plist == curr_plist) {
-					reread_dir (1, 0);
+					reread_dir (1);
 					do_update_menu = 1;
 				}
 				break;

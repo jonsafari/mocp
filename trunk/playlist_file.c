@@ -126,21 +126,20 @@ static int plist_load_m3u (struct plist *plist, const char *fname,
 				return added;
 			}
 
-		
 			after_extinf = 1;
 			last_added = plist_add (plist, NULL);
 
 			/* We must xstrdup() here, because iconv_str()
 			 * expects malloc()ed memory */
 			title = iconv_str (xstrdup(comma + 1));
-			plist_set_title (plist, last_added, title);
+			plist_set_title_tags (plist, last_added, title);
 			free (title);
 
 			plist->items[last_added].tags = tags_new ();
 			if (*time_text) {
 				plist->items[last_added].tags->time = time_sec;
 				plist->items[last_added].tags->filled
-					= TAGS_TIME;
+					|= TAGS_TIME;
 			}
 		}
 		else if (line[0] != '#') {
@@ -181,27 +180,14 @@ static int plist_load_m3u (struct plist *plist, const char *fname,
 int plist_load (struct plist *plist, const char *fname, const char *cwd)
 {
 	int num;
-	int i;
 	int read_tags = options_get_int ("ReadTags");
 
 	num = plist_load_m3u (plist, fname, cwd);
 
-	/* make titles if not present */
-	for (i = 0; i < plist->num; i++)
-		if (!plist_deleted(plist, i) && !plist->items[i].title) {
-			if (read_tags)
-				plist->items[i].tags = read_file_tags (
-						plist->items[i].file,
-						plist->items[i].tags,
-						TAGS_COMMENTS);
-			if (plist->items[i].tags && plist->items[i].tags->title)
-				plist->items[i].title = build_title (
-						plist->items[i].tags);
-			else
-				plist->items[i].title = xstrdup (
-						strrchr(plist->items[i].file,
-							'/') + 1);
-		}
+	if (read_tags)
+		switch_titles_tags (plist);
+	else
+		switch_titles_file (plist);
 
 	return num;
 }
@@ -233,7 +219,10 @@ static int plist_save_m3u (struct plist *plist, const char *fname,
 			if (plist->items[i].tags->time != -1
 					&& fprintf(file, "#EXTINF:%d,%s\r\n",
 						plist->items[i].tags->time,
-						plist->items[i].title) < 0) {
+						plist->items[i].title_tags ?
+						plist->items[i].title_tags
+						: plist->items[i].title_file)
+					< 0) {
 				interface_error ("Error writing playlist: %s",
 						strerror(errno));
 				fclose (file);
@@ -312,6 +301,21 @@ int plist_save (struct plist *plist, const char *file, const char *cwd)
 		 * relative paths) */
 		find_common_path (common_path, sizeof(common_path), plist);
 
+	/* Make the titles */
+	for (i = 0; i < plist->num; i++)
+		if (!plist_deleted(plist, i) && !plist->items[i].title_tags) {
+			if (user_wants_interrupt()) {
+				interface_error ("Saving the playlist aborted");
+				return 0;
+			}
+			plist->items[i].tags = read_file_tags (
+					plist->items[i].file,
+					plist->items[i].tags,
+					TAGS_COMMENTS);
+		}
+	make_titles_tags (plist);
+
+	/* Get times */
 	for (i = 0; i < plist->num; i++)
 		if (!plist_deleted(plist, i)) {
 			if (user_wants_interrupt()) {
@@ -321,9 +325,8 @@ int plist_save (struct plist *plist, const char *file, const char *cwd)
 			plist->items[i].tags = read_file_tags (
 					plist->items[i].file,
 					plist->items[i].tags,
-					TAGS_COMMENTS | TAGS_TIME);
+					TAGS_TIME);
 		}
-	make_titles_tags (plist);
 
 	/* FIXME: checkif it possible to just add some directories to make
 	 * relative path working. */
