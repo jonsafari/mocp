@@ -1791,13 +1791,17 @@ static int entry_plist_save_key (const int ch)
 		else {
 			char *ext = ext_pos (entry.text);
 
+			entry_disable ();
 			if (!ext || strcmp(ext, "m3u"))
 				strcat (entry.text, ".m3u");
 
+			set_interface_status ("Saving the playlist...");
+			wrefresh (info_win);
 			if (plist_save(playlist, entry.text, cwd))
 				interface_message ("Playlist saved.");
+			set_interface_status (NULL);
+			wrefresh (info_win);
 		}
-		entry_disable ();
 		update_info_win ();
 		return 1;
 	}
@@ -2173,8 +2177,13 @@ static void save_playlist ()
 {
 	char *plist_file = create_file_name("playlist.m3u");
 
-	if (plist_count(playlist))
+	if (plist_count(playlist)) {
+		set_interface_status ("Saving the playlist...");
+		wrefresh (info_win);
 		plist_save (playlist, plist_file, NULL);
+		set_interface_status (NULL);
+		wrefresh (info_win);
+	}
 	else
 		unlink (plist_file);
 }
