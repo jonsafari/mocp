@@ -673,8 +673,6 @@ static void make_help ()
 {
 	unsigned int i;
 
-	/* TODO: add context information */
-	
 	for (i = 0; i < COMMANDS_NUM; i++) {
 		help[i] = xmalloc (sizeof(char) * 
 				(HELP_INDENT + strlen(commands[i].help) + 1));
