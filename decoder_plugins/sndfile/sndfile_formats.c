@@ -32,7 +32,6 @@ struct sndfile_data
 {
 	SNDFILE *sndfile;
 	SF_INFO snd_info;
-	int ok; /* Was this stream successfully opened? */
 	struct decoder_error error;
 };
 
@@ -59,6 +58,7 @@ static void *sndfile_open (const char *file)
 				"The file has more than 2 channels, this is"
 				" not supported.");
 		sf_close (data->sndfile);
+		data->sndfile = NULL;
 		return data;
 	}
 
@@ -74,7 +74,7 @@ static void sndfile_close (void *void_data)
 {
 	struct sndfile_data *data = (struct sndfile_data *)void_data;
 
-	if (data->ok)
+	if (data->sndfile)
 		sf_close (data->sndfile);
 	free (data);
 }
@@ -83,9 +83,9 @@ static void sndfile_info (const char *file_name, struct file_tags *info,
 		const int tags_sel)
 {
 	if (tags_sel & TAGS_TIME) {
-		struct sndfile_data *data;
+		struct sndfile_data *data = sndfile_open (file_name);
 		
-		if ((data = sndfile_open(file_name))) {
+		if (data->sndfile) {
 			
 			/* I don't know why, but this condition is in the
 			 * examples. */
@@ -93,8 +93,9 @@ static void sndfile_info (const char *file_name, struct file_tags *info,
 				info->time = data->snd_info.frames
 					/ data->snd_info.samplerate;
 			}
-			sndfile_close (data);
 		}
+
+		sndfile_close (data);
 	}
 }
 
