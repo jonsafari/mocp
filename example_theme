@@ -96,5 +96,5 @@ empty_bar		= white		blue
 filled_bar		= black		cyan
 entry			= white		blue
 entry_title		= black		cyan
-error			= red		blue
+error			= red		blue	bold
 message			= green		blue	bold
