@@ -26,6 +26,8 @@
 #define LOCK(mutex)	pthread_mutex_lock (&mutex)
 #define UNLOCK(mutex)	pthread_mutex_unlock (&mutex)
 
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
+
 void *xmalloc (const size_t size);
 void *xrealloc (void *ptr, const size_t size);
 char *xstrdup (const char *s);
