@@ -192,6 +192,13 @@ static void append_items (int sock, char **args, int num)
 
 }
 
+static void sig_chld (int sig ATTR_UNUSED)
+{
+	logit ("Got SIGCHLD");
+
+	waitpid(-1, NULL, WNOHANG);
+}
+
 /* Run client and the server if needed. */
 static void start_moc (const struct parameters *params, char **args,
 		const int arg_num)
@@ -242,6 +249,8 @@ static void start_moc (const struct parameters *params, char **args,
 		list_sock = server_init (params->debug, params->foreground);
 		server_loop (list_sock);
 	}
+
+	signal (SIGCHLD, sig_chld);
 
 	if (!params->only_server) {
 		signal (SIGPIPE, SIG_IGN);
