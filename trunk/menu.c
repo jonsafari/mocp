@@ -13,12 +13,44 @@
 #include "config.h"
 #endif
 
+#define _GNU_SOURCE
 #include <stdlib.h>
 #include <string.h>
 #include <ncurses.h>
 #include <assert.h>
+#include <ctype.h>
 #include "main.h"
 #include "menu.h"
+
+#ifndef HAVE_STRCASESTR
+/* Case insensitive version od strstr(). */
+static char *strcasestr (const char *haystack, const char *needle)
+{
+	char *haystack_i, *needle_i;
+	char *c;
+	char *res;
+
+	haystack_i = xstrdup (haystack);
+	needle_i = xstrdup (needle);
+
+	c = haystack_i;
+	while (*c) {
+		*c = tolower (*c);
+		c++;
+	}
+		
+	c = needle_i;
+	while (*c) {
+		*c = tolower (*c);
+		c++;
+	}
+
+	res = strstr (haystack_i, needle_i);
+	free (haystack_i);
+	free (needle_i);
+	return res ? res - haystack_i + (char *)haystack : NULL;
+}
+#endif
 
 void menu_draw (struct menu *menu)
 {
@@ -273,4 +305,46 @@ void menu_set_top_item (struct menu *menu, const int num)
 	}
 	else
 		menu->top = num;
+}
+
+/* Find an item that title's contain the string beginning from current. Return
+ * the item index or -1 if not found. */
+int menu_find_pattern_next (struct menu *menu, const char *pattern,
+		const int current)
+{
+	int i;
+	
+	assert (menu != NULL);
+	assert (pattern != NULL);
+	assert (current >= 0 && current < menu->nitems);
+
+	for (i = current; i < menu->nitems; i++)
+		if (strcasestr(menu->items[i]->title, pattern))
+			return i;
+
+	/* Not found? */
+	for (i = 0; i < current; i++)
+		if (strcasestr(menu->items[i]->title, pattern))
+			return i;
+
+	return -1;
+}
+
+int menu_get_selected (const struct menu *menu)
+{
+	assert (menu != NULL);
+	
+	return menu->selected;
+}
+
+/* Get index of the next item after selected. If last item is selected, return
+ * 0. */
+int menu_next_turn (const struct menu *menu)
+{
+	assert (menu != NULL);
+
+	if (menu->selected < menu->nitems - 1)
+		return menu->selected + 1;
+	else
+		return 0;
 }
