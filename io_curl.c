@@ -51,6 +51,8 @@ static size_t write_callback (void *data, size_t size, size_t nmemb,
 {
 	struct io_stream *s = (struct io_stream *)stream;
 
+	if (s->curl_buf)
+		free (s->curl_buf);
 
 	s->curl_buf_fill = size * nmemb;
 	debug ("Got %ld bytes", s->curl_buf_fill);
