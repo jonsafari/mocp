@@ -1,54 +1,60 @@
 Before 2.2.0:
-* END, DEL, and HOME keys working in the entry field.
-* History in the i command.
-* True shuffle.
-* Share the playlist between interfaces - one interface is a "master"?.
-* When adding files to the playlist, add them also to the server's playlist
+* when adding or deleting something from the playlist - send command to other
+  interfaces.
+* something wrong with i and  TAB
+* When adding files to the playlist, add them also to the server's playlist.
+* Fix deleting items from the playlist and the server playlist.
 * Shift-left and Shift-right for faster, silent seeking (10 sec. per keystroke).
-* iconv() for file names also.
-* when a file is played and modified, and reload is used - the time is not
-  updated
+* cleanup all TODO entries
 * valgrind the client and the server.
+* Test on FreeBSD.
 
-In future:
-
+Before 2.3.0:
 * Complete to the matching part of a directory with the i command if a name is
   ambigous.
+* History in the i command.
+* Decoder plugins.
 * Move interface primitives (windows, entry, etc.) to a separate file.
+* Setting volume using 1-9 keys.
 * Fake increase/decrease volume in alsa by 1% if such resolution is not
   possible.
-* Read tags for sndfile formats.
-* Number items on the playlist.
-* Command to chenge the mixer device.
-* Command to go to the previously played file.
-* Command to see all information about the file with all tags.
-* Move the playlist to see the song that is currently played.
+* A command to chenge the mixer device.
 * Show the bitrate in the right time (the playback time, not while decoding).
-* Lyrics downloaded from the Internet.
-* Do something with errors while precaching that seems to belong to the current
-  file.
 * Cache for tags in each directory. (.cache.m3u?)
 * Support for internet streams.
 * Support for Audio-CD.
 * Support for CDDB.
+* www.musepack.net (www.caddr.com)
+* http://www.speex.org
+* 'd' command must not delete an item from the server playlist if the
+  server is not playing from the playlist.
+* config and command line option to use ASCII chars for drawing lines.
+* Equalizel like in Beep Media Player
+
+In future:
+
+* WMA.
+* Read tags for sndfile formats.
+* Number items on the playlist.
+* Command to see all information about a file with all tags.
+* Command line option to show all information about a file.
+* Move the playlist to see the song that is currently played.
+* Lyrics downloaded from the Internet.
 * Better international characters handling - tags in UTF.
 * handle SIGBUS - when mmap()ed file is truncated.
 * Showing the buffer state.
 * Use pathconf() instead of PATH_MAX.
 * Binary search in options code.
-* 'D' command must not delete an item from the server playlist if the
-  server is not playing from the playlist.
 * ESD
 * Moving items on the playlist up and down.
 * Add a key for switching sort modes.
-* http://www.speex.org
 * libsidplay2
 * Use 24-bit output if the audio device supports it.
 * Seek forward using the content of the output buffer.
 * Locales.
 * Song ratings or something like Q in XMMS.
-* www.musepack.net (www.caddr.com)
 * Configurable sorting.
+* Command line option to get the current state and the title of the played file.
 
 Maybe never:
 
@@ -58,4 +64,3 @@ Maybe never:
 * Input buffer with separate thread - like output buffer.
 * Funny ASCII equalizer.
 * Mouse support
-* Command line option to get the current state and the title of the played file.
