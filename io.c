@@ -202,7 +202,7 @@ off_t io_seek (struct io_stream *s, off_t offset, int whence)
 	
 	assert (s != NULL);
 
-	if (s->source == IO_SOURCE_CURL)
+	if (s->source == IO_SOURCE_CURL || !io_ok(s))
 		return -1;
 
 	LOCK (s->io_mutex);
@@ -264,16 +264,17 @@ void io_close (struct io_stream *s)
 
 	logit ("Closing stream...");
 
-	if (s->buffered) {
-		io_abort (s);
 
-		logit ("Waiting for io_read_thread()...");
-		pthread_join (s->read_thread, NULL);
-		logit ("IO read thread exited");
-	}
-	
 	if (s->opened) {
 		
+		if (s->buffered) {
+			io_abort (s);
+
+			logit ("Waiting for io_read_thread()...");
+			pthread_join (s->read_thread, NULL);
+			logit ("IO read thread exited");
+		}
+	
 #ifdef HAVE_MMAP
 		if (s->source == IO_SOURCE_MMAP) {
 			if (s->mem && munmap(s->mem, s->size))
@@ -288,23 +289,23 @@ void io_close (struct io_stream *s)
 #endif
 		if (s->source == IO_SOURCE_FD)
 			close (s->fd);
-	}
 
-	if (pthread_mutex_destroy(&s->buf_mutex))
-		logit ("Destroying buf_mutex failed: %s",
-				strerror(errno));
-	if (pthread_mutex_destroy(&s->io_mutex))
-		logit ("Destroying io_mutex failed: %s",
-				strerror(errno));
+		if (pthread_mutex_destroy(&s->buf_mutex))
+			logit ("Destroying buf_mutex failed: %s",
+					strerror(errno));
+		if (pthread_mutex_destroy(&s->io_mutex))
+			logit ("Destroying io_mutex failed: %s",
+					strerror(errno));
 
-	if (s->buffered) {
-		fifo_buf_destroy (&s->buf);
-		if (pthread_cond_destroy(&s->buf_free_cond))
-			logit ("Destroying buf_free_cond faild: %s",
-					strerror(errno));
-		if (pthread_cond_destroy(&s->buf_fill_cond))
-			logit ("Destroying buf_fill_cond faild: %s",
-					strerror(errno));
+		if (s->buffered) {
+			fifo_buf_destroy (&s->buf);
+			if (pthread_cond_destroy(&s->buf_free_cond))
+				logit ("Destroying buf_free_cond faild: %s",
+						strerror(errno));
+			if (pthread_cond_destroy(&s->buf_fill_cond))
+				logit ("Destroying buf_fill_cond faild: %s",
+						strerror(errno));
+		}
 	}
 
 	if (s->strerror)
@@ -492,6 +493,10 @@ struct io_stream *io_open (const char *file, const int buffered)
 static int io_ok_nolock (struct io_stream *s)
 {
 	int res = 1;
+
+	if (!s->opened)
+		res = 0;
+	else
 	
 #ifdef HAVE_CURL
 	if (s->source == IO_SOURCE_CURL && !io_curl_ok(s))
