@@ -50,6 +50,7 @@ struct file_tags *tags_new ()
 	tags->album = NULL;
 	tags->track = -1;
 	tags->time = -1;
+	tags->filled = 0;
 
 	return tags;
 }

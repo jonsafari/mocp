@@ -10,6 +10,7 @@ struct file_tags
 	char *album;
 	int track;
 	int time;
+	int filled;
 };
 
 struct plist_item
