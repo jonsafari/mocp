@@ -1107,11 +1107,14 @@ static char *get_data_str ()
 	return get_str_from_srv ();
 }
 
-static void send_playlist (struct plist *plist)
+/* Send the playlist to the server. If clear != 0, clear the server's playlist
+ * before sending. */
+static void send_playlist (struct plist *plist, const int clear)
 {
 	int i;
 	
-	send_int_to_srv (CMD_LIST_CLEAR);
+	if (clear)
+		send_int_to_srv (CMD_LIST_CLEAR);
 	
 	for (i = 0; i < plist->num; i++) {
 		if (!plist_deleted(plist, i)) {
@@ -1507,6 +1510,10 @@ static int load_dir (char *dir)
 		return 0;
 	}
 
+	/* Get a new serial number */
+	send_int_to_srv (CMD_GET_SERIAL);
+	plist_set_serial (curr_plist, get_data_int());
+
 	plist_free (old_curr_plist);
 	free (old_curr_plist);
 
@@ -1716,6 +1723,8 @@ static int get_server_playlist ()
 		fatal ("Server didnt send EV_DATA when it was supposed to send"
 				" the playlist.");
 
+	plist_set_serial (playlist, get_int_from_srv());
+
 	do {
 		item = recv_item_from_srv ();
 		if (item->file[0])
@@ -1746,12 +1755,27 @@ static void forward_playlist ()
 	debug ("Forwarding the playlist...");
 	
 	send_int_to_srv (CMD_SEND_PLIST);
+	send_int_to_srv (plist_get_serial(playlist));
 
 	for (i = 0; i < playlist->num; i++)
 		if (!plist_deleted(playlist, i))
 			send_item_to_srv (&playlist->items[i]);
 
 	send_item_to_srv (NULL);
+}
+
+static void init_playlists ()
+{
+	curr_plist = (struct plist *)xmalloc (sizeof(struct plist));
+	plist_init (curr_plist);
+	playlist = (struct plist *)xmalloc (sizeof(struct plist));
+	plist_init (playlist);
+
+	/* set serial numbers for playlists */
+	send_int_to_srv (CMD_GET_SERIAL);
+	plist_set_serial (curr_plist, get_data_int());
+	send_int_to_srv (CMD_GET_SERIAL);
+	plist_set_serial (playlist, get_data_int());
 }
 
 /* Initialize the interface. args are command line file names. arg_num is the
@@ -1768,11 +1792,8 @@ void init_interface (const int sock, const int debug, char **args,
 		log_init_stream (logfp);
 	}
 	logit ("Starting MOC interface...");
-	curr_plist = (struct plist *)xmalloc (sizeof(struct plist));
-	plist_init (curr_plist);
-	playlist = (struct plist *)xmalloc (sizeof(struct plist));
-	plist_init (playlist);
 
+	init_playlists ();
 	iconv_init ();
 	keys_init ();
 	
@@ -1993,8 +2014,26 @@ static void clear_playlist (const int notify_server)
 		menu_free (playlist_menu);
 		playlist_menu = NULL;
 	}
-	if (notify_server && options_get_int("SyncPlaylist"))
-		send_int_to_srv (CMD_CLI_PLIST_CLEAR);
+
+	if (notify_server) {
+		if (options_get_int("SyncPlaylist"))
+			send_int_to_srv (CMD_CLI_PLIST_CLEAR);
+	
+		/* Assign the server's playlist different id, we don't
+		 * want to stop playing from the old playlist. */
+		send_int_to_srv (CMD_LOCK);
+		send_int_to_srv (CMD_PLIST_GET_SERIAL);
+		if (get_data_int() == plist_get_serial(playlist)) {
+			int serial;
+			
+			send_int_to_srv (CMD_GET_SERIAL);
+			serial = get_data_int ();
+			send_int_to_srv (CMD_PLIST_SET_SERIAL);
+			send_int_to_srv (serial);
+		}
+		send_int_to_srv (CMD_UNLOCK);
+	}
+	
 	interface_message ("The playlist was cleared.");
 	set_iface_status_ref (NULL);
 }
@@ -2063,17 +2102,42 @@ static void server_event (const int event, void *data)
 	}
 }
 
-/* Send the playlist and request playing this item. */
+/* Generate a unique playlist serial number. */
+/* Send the playlist to the server if necessary and request playing this
+ * item. */
 static void play_it (const int plist_pos)
 {
 	char *file = plist_get_file (visible_plist, plist_pos);
-
+	long serial; /* serial number of the playlist */
+	
 	assert (file != NULL);
 	
-	send_playlist (visible_plist);
+	send_int_to_srv (CMD_LOCK);
+
+	send_int_to_srv (CMD_PLIST_GET_SERIAL);
+	serial = get_data_int ();
+	
+	if (serial != plist_get_serial(visible_plist)) {
+
+		logit ("The server has different playlist");
+
+		/* Set the serial number for this playlist. */
+		send_int_to_srv (CMD_GET_SERIAL);
+		serial = get_data_int ();
+		plist_set_serial (visible_plist, serial);
+		send_int_to_srv (CMD_PLIST_SET_SERIAL);
+		send_int_to_srv (serial);
+	
+		send_playlist (visible_plist, 1);
+	}
+	else
+		logit ("The server already has my playlist");
+	
 	send_int_to_srv (CMD_PLAY);
 	send_str_to_srv (file);
 	free (file);
+
+	send_int_to_srv (CMD_UNLOCK);
 }
 
 static void go_dir_up ()
@@ -2184,6 +2248,17 @@ static void add_file_plist ()
 			send_int_to_srv (CMD_CLI_PLIST_ADD);
 			send_item_to_srv (item);
 		}
+
+		/* Add to the server's playlist if the server has our
+		 * playlist */
+		send_int_to_srv (CMD_LOCK);
+		send_int_to_srv (CMD_PLIST_GET_SERIAL);
+		if (get_data_int() == plist_get_serial(playlist)) {
+			send_int_to_srv (CMD_LIST_ADD);
+			send_str_to_srv (plist_get_file(playlist, added));
+		}
+		send_int_to_srv (CMD_UNLOCK);
+		
 		if (playlist_menu)
 			add_to_menu (playlist_menu, playlist, added);
 	}
@@ -2228,6 +2303,14 @@ static void add_dir_plist ()
 
 	plist_sort_fname (&plist);
 	plist_cat (playlist, &plist);
+
+	/* Add the new files to the server's playlist if the server has our
+	 * playlist */
+	send_int_to_srv (CMD_LOCK);
+	send_int_to_srv (CMD_PLIST_GET_SERIAL);
+	if (get_data_int() == plist_get_serial(playlist))
+		send_playlist (&plist, 0);
+	send_int_to_srv (CMD_UNLOCK);
 
 	if (options_get_int("SyncPlaylist")) {
 		int i;
@@ -2392,8 +2475,20 @@ static void delete_item ()
 		return;
 	}
 	
-	send_int_to_srv (CMD_CLI_PLIST_DEL);
-	send_str_to_srv (menu_item_get_file(curr_menu, selected));
+	if (options_get_int("SyncPlaylist")) {
+		send_int_to_srv (CMD_CLI_PLIST_DEL);
+		send_str_to_srv (menu_item_get_file(curr_menu, selected));
+	}
+
+	/* Delete this item from the server's playlist if it has our
+	 * playlist */
+	send_int_to_srv (CMD_LOCK);
+	send_int_to_srv (CMD_PLIST_GET_SERIAL);
+	if (get_data_int() == plist_get_serial(playlist)) {
+		send_int_to_srv (CMD_DELETE);
+		send_str_to_srv (menu_item_get_file(curr_menu, selected));
+	}
+	send_int_to_srv (CMD_UNLOCK);
 
 	plist_delete (playlist, menu_item_get_plist_pos(curr_menu, selected));
 	if ((num = plist_count(playlist)) > 0) {
