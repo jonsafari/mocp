@@ -49,7 +49,7 @@ struct command
 static struct command commands[] = {
 	{
 		KEY_CMD_QUIT_CLIENT,
-		"quit client",
+		"quit_client",
 		CON_MENU,
 		{ 'q', -1 },
 		1
@@ -63,42 +63,42 @@ static struct command commands[] = {
 	},
 	{
 		KEY_CMD_MENU_DOWN,
-		"menu down",
+		"menu_down",
 		CON_MENU,
 		{ KEY_DOWN, -1 },
 		1
 	},
 	{
 		KEY_CMD_MENU_UP,
-		"menu up",
+		"menu_up",
 		CON_MENU,
 		{ KEY_UP, -1 },
 		1
 	},
 	{
 		KEY_CMD_MENU_NPAGE,
-		"menu page down",
+		"menu_page_down",
 		CON_MENU,
 		{ KEY_NPAGE, -1},
 		1
 	},
 	{
 		KEY_CMD_MENU_PPAGE,
-		"menu page up",
+		"menu_page_up",
 		CON_MENU,
 		{ KEY_PPAGE, -1},
 		1
 	},
 	{
 		KEY_CMD_MENU_FIRST,
-		"menu first item",
+		"menu_first_item",
 		CON_MENU,
 		{ KEY_HOME, -1 },
 		1
 	},
 	{
 		KEY_CMD_MENU_LAST,
-		"menu last item",
+		"menu_last_item",
 		CON_MENU,
 		{ KEY_END, -1 },
 		1
@@ -140,98 +140,98 @@ static struct command commands[] = {
 	},
 	{
 		KEY_CMD_TOGGLE_READ_TAGS,
-		"toggle read tags",
+		"toggle_read_tags",
 		CON_MENU,
 		{ 'f', -1 },
 		1
 	},
 	{
 		KEY_CMD_TOGGLE_SHUFFLE,
-		"toggle shuffle",
+		"toggle_shuffle",
 		CON_MENU,
 		{ 'S', -1 },
 		1
 	},
 	{
 		KEY_CMD_TOGGLE_REPEAT,
-		"toggle repeat",
+		"toggle_repeat",
 		CON_MENU,
 		{ 'R', -1 },
 		1
 	},
 	{
 		KEY_CMD_TOGGLE_AUTO_NEXT,
-		"toggle auto next",
+		"toggle_auto_next",
 		CON_MENU,
 		{ 'X', -1 },
 		1
 	},
 	{
 		KEY_CMD_TOGGLE_PLAYLIST,
-		"toggle playlist",
+		"toggle_playlist",
 		CON_MENU,
 		{ 'l', -1 },
 		1
 	},
 	{
 		KEY_CMD_PLIST_ADD_FILE,
-		"add file",
+		"add_file",
 		CON_MENU,
 		{ 'a', -1 },
 		1
 	},
 	{
 		KEY_CMD_PLIST_CLEAR,
-		"clear playlist",
+		"clear_playlist",
 		CON_MENU,
 		{ 'C', -1 },
 		1
 	},
 	{
 		KEY_CMD_PLIST_ADD_DIR,
-		"add directory",
+		"add_directory",
 		CON_MENU,
 		{ 'A', -1 },
 		1
 	},
 	{
 		KEY_CMD_MIXED_DEC_1,
-		"volume down 1%",
+		"volume_down_1",
 		CON_MENU,
 		{ '<', -1 },
 		1
 	},
 	{
 		KEY_CMD_MIXER_INC_1,
-		"volume up 1%",
+		"volume_up_1",
 		CON_MENU,
 		{ '>', -1 },
 		1
 	},
 	{
 		KEY_CMD_MIXER_DEC_5,
-		"volume down 5%",
+		"volume_down_5",
 		CON_MENU,
 		{ ',', -1 },
 		1
 	},
 	{
 		KEY_CMD_MIXER_INC_5,
-		"volume up 5%",
+		"volume_up_5",
 		CON_MENU,
 		{ '.', -1 },
 		1
 	},
 	{
 		KEY_CMD_SEEK_FORWARD_1,
-		"seek forward 1s",
+		"seek_forward_1",
 		CON_MENU,
 		{ KEY_RIGHT, -1 },
 		1
 	},
 	{
 		KEY_CMD_SEEK_BACKWARD_1,
-		"seek backward 1s",
+		"seek_backward_1",
 		CON_MENU,
 		{ KEY_LEFT, -1},
 		1
@@ -245,7 +245,7 @@ static struct command commands[] = {
 	},
 	{
 		KEY_CMD_HIDE_MESSAGE,
-		"hide message",
+		"hide_message",
 		CON_MENU,
 		{ 'M', -1 },
 		1
@@ -266,77 +266,77 @@ static struct command commands[] = {
 	},
 	{
 		KEY_CMD_TOGGLE_SHOW_HIDDEN_FILES,
-		"toggle hidden files",
+		"toggle_hidden_files",
 		CON_MENU,
 		{ 'H', -1 },
 		1
 	},
 	{
 		KEY_CMD_GO_MUSIC_DIR,
-		"go to music directory",
+		"go_to_music_directory",
 		CON_MENU,
 		{ 'm', -1 },
 		1
 	},
 	{
 		KEY_CMD_PLIST_DEL,
-		"delete from playlist",
+		"delete_from_playlist",
 		CON_MENU,
 		{ 'd', -1 },
 		1
 	},
 	{
 		KEY_CMD_MENU_SEARCH,
-		"search menu",
+		"search_menu",
 		CON_MENU,
 		{ 'g', '/', -1 },
 		1
 	},
 	{
 		KEY_CMD_PLIST_SAVE,
-		"save playlist",
+		"save_playlist",
 		CON_MENU,
 		{ 'V', -1 },
 		1
 	},
 	{
 		KEY_CMD_TOGGLE_SHOW_TIME,
-		"toggle show time",
+		"toggle_show_time",
 		CON_MENU,
 		{ CTRL('t'), -1},
 		1
 	},
 	{
 		KEY_CMD_TOGGLE_SHOW_FORMAT,
-		"toggle show format",
+		"toggle_show_format",
 		CON_MENU,
 		{ CTRL('f'), -1 },
 		1
 	},
 	{
 		KEY_CMD_GO_TO_PLAYING_FILE,
-		"go to playing file",
+		"go_to_playing_file",
 		CON_MENU,
 		{ 'G', -1 },
 		1
 	},
 	{
 		KEY_CMD_GO_DIR,
-		"go to a directory",
+		"go_to_a_directory",
 		CON_MENU,
 		{ 'i', -1 },
 		1
 	},
 	{
 		KEY_CMD_GO_DIR_UP,
-		"go to '..'",
+		"go_up",
 		CON_MENU,
 		{ 'U', -1 },
 		1
 	},
 	{
 		KEY_CMD_NEXT_SEARCH,
-		"next search",
+		"next_search",
 		CON_ENTRY_SEARCH,
 		{ CTRL('g'), CTRL('n'), -1 },
 		1
