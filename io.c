@@ -522,7 +522,7 @@ static ssize_t io_peek_internal (struct io_stream *s, void *buf, size_t count)
 		pthread_cond_wait (&s->buf_fill_cond, &s->buf_mutex);
 
 	received = fifo_buf_peek (&s->buf, buf, count - received);
-	debug ("Read %d bytes so far", (int)received);
+	debug ("Read %d bytes", (int)received);
 
 	UNLOCK (s->buf_mutex);
 	
