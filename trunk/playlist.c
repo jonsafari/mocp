@@ -80,6 +80,13 @@ static struct file_tags *tags_dup (const struct file_tags *tags)
 	return dtags;
 }
 
+/* Return 1 if an item has 'deleted' flag. */
+inline int plist_deleted (const struct plist *plist, const int num)
+{
+	assert (num >=0 && num < plist->num);
+	return plist->items[num].deleted;
+}
+
 /* Copy missing tags from src to dst. */
 static void sync_tags (struct file_tags *src, struct file_tags *dst)
 {
@@ -579,13 +586,6 @@ void plist_set_file (struct plist *plist, const int num, const char *file)
 	plist->items[num].file = xstrdup (file);
 	plist->items[num].file_hash = str_hash (file);
 	plist->items[num].mtime = get_mtime (file);
-}
-
-/* Return 1 if an item has 'deleted' flag. */
-int plist_deleted (const struct plist *plist, const int num)
-{
-	assert (num >=0 && num < plist->num);
-	return plist->items[num].deleted;
 }
 
 /* Add the content of playlist b to a by copying items. */
