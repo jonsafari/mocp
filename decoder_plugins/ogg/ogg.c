@@ -286,6 +286,8 @@ static void ogg_get_error (void *prv_data, struct decoder_error *error)
 
 static struct decoder ogg_decoder = {
 	ogg_open,
+	NULL,
+	NULL,
 	ogg_close,
 	ogg_decode,
 	ogg_seek,

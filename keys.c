@@ -352,6 +352,14 @@ static struct command commands[] = {
 		1
 	},
 	{
+		KEY_CMD_GO_URL,
+		"go_url",
+		"Play from the URL",
+		CON_MENU,
+		{ 'o', -1 },
+		1
+	},
+	{
 		KEY_CMD_GO_TO_PLAYING_FILE,
 		"go_to_playing_file",
 		"Go to a directory where the currently played file is",

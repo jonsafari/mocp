@@ -53,12 +53,21 @@
 static iconv_t iconv_desc = (iconv_t)(-1);
 #endif
 
+/* Is the string an URL? */
+static int is_url (const char *str)
+{
+	return !strncmp(str, "http://", sizeof("http://")-1)
+		|| !strncmp(str, "ftp://", sizeof("ftp://")-1);
+}
+
 enum file_type file_type (char *file)
 {
 	struct stat file_stat;
 	
 	assert (file != NULL);
 
+	if (is_url(file))
+		return F_URL;
 	if (stat(file, &file_stat) == -1)
 		return F_OTHER; /* Ignore the file if stat() failed */
 	if (S_ISDIR(file_stat.st_mode))

@@ -40,7 +40,9 @@ mocp_SOURCES = log.c \
 	       ltdl.c \
 	       ltdl.h \
 	       io.c \
-	       io.h
+	       io.h \
+	       io_curl.c \
+	       io_curl.h
 EXTRA_mocp_SOURCES = gnugetopt.h \
 		     getopt.c \
 		     getopt1.c \

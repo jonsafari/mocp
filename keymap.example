@@ -81,3 +81,4 @@ go_to_a_directory =	i
 go_up =			U
 next_search =		^g ^n
 cancel =		^x ESCAPE
+go_url =		o

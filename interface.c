@@ -127,6 +127,7 @@ enum entry_type
 	ENTRY_SEARCH,
 	ENTRY_PLIST_SAVE,
 	ENTRY_GO_DIR,
+	ENTRY_GO_URL,
 	ENTRY_PLIST_OVERWRITE
 };
 
@@ -2906,12 +2907,47 @@ static int entry_go_dir_key (const int ch)
 	return 0;
 }
 
+/* Request playing from the specified URL. */
+static void play_from_url (const char *url)
+{
+	send_int_to_srv (CMD_LOCK);
+
+	change_srv_plist_serial ();
+	send_int_to_srv (CMD_LIST_CLEAR);
+	send_int_to_srv (CMD_LIST_ADD);
+	send_str_to_srv (url);
+	
+	send_int_to_srv (CMD_PLAY);
+	send_str_to_srv ("");
+
+	send_int_to_srv (CMD_UNLOCK);
+}
+
+static int entry_go_url (const int ch)
+{
+	if (ch == '\n') {
+		if (entry.text[0]) {
+			if (file_type(entry.text) == F_URL)
+				play_from_url (entry.text);
+			else
+				error ("Not a valid URL.");
+		}
+		entry_disable ();
+		update_info_win ();
+
+		return 1;
+	}
+	return 0;
+}
+
 static void entry_key (const int ch)
 {
 	int handled = 0;
 
 	if (entry.type == ENTRY_GO_DIR)
 		handled = entry_go_dir_key (ch);
+	if (entry.type == ENTRY_GO_URL)
+		handled = entry_go_url (ch);
 	if (entry.type == ENTRY_SEARCH)
 		handled = entry_search_key (ch);
 	if (entry.type == ENTRY_PLIST_SAVE)
@@ -3239,6 +3275,9 @@ static void menu_key (const int ch)
 				break;
 			case KEY_CMD_GO_DIR:
 				make_entry (ENTRY_GO_DIR, "GO");
+				break;
+			case KEY_CMD_GO_URL:
+				make_entry (ENTRY_GO_URL, "URL");
 				break;
 			case KEY_CMD_GO_DIR_UP:
 				go_dir_up ();

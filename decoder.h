@@ -3,6 +3,7 @@
 
 #include "audio.h"
 #include "playlist.h"
+#include "io.h"
 
 enum decoder_error_type
 {
@@ -26,6 +27,13 @@ struct decoder
 	
 	/* Open the resource and return pointer to the private decoder data. */
 	void *(*open)(const char *uri);
+
+	/* Open for an already opened stream. Optional. */
+	void *(*open_stream)(const char *uri);
+
+	/* Return 1 if the decoder is able to decode data from this stream.
+	 * Optional. */
+	int (*can_decode)(struct io_stream *stream);
 
 	/* Close the resource and cleanup. */
 	void (*close)(void *data);
@@ -67,6 +75,7 @@ typedef struct decoder *(*plugin_init_func)();
 
 int is_sound_file (const char *name);
 struct decoder *get_decoder (const char *file);
+struct decoder *get_decoder_by_content (struct io_stream *stream);
 void decoder_init ();
 void decoder_cleanup ();
 char *file_type_name (const char *file);

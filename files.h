@@ -7,6 +7,7 @@ enum file_type
 {
 	F_DIR,
 	F_SOUND,
+	F_URL,
 	F_PLAYLIST,
 	F_OTHER
 };
