@@ -27,7 +27,7 @@ struct hw_funcs
 };
 
 void audio_stop ();
-void audio_play (int num);
+void audio_play (const char *fname);
 void audio_next ();
 void audio_pause ();
 void audio_unpause ();
