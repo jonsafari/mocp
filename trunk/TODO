@@ -1,16 +1,11 @@
 Before 2.0:
 
-* Only trying to obtain the lock for client socket when sending an event. If
-  this would block, place the event in a queue. This should prevent blocking
-  the decoder when the socket is busy for a longer time period. The queue
-  should be checked and purged after handling the client command.
-* Don't require GCC extensions.
+* Test on FreeBSD.
 
 Before 2.1.0:
 
 * Support for multiple clients.
 * Try mmap() again if size of the file has changed.
-* Prebuffering.
 * iconv() to fix encoding.
 * Something like M-s in mc.
 * configurable colors.
@@ -23,6 +18,7 @@ Before 2.1.0:
 * Option to hide file extensions.
 * Configuration options and command line parameters for selecting pid file and
   socket. A parameter for selecting different configuration file.
+* Use pathconf() instead of PATH_MAX.
 
 In future:
 
@@ -37,6 +33,7 @@ In future:
 * libsidplay2
 * Use 24-bit output if output device supports it.
 * Seek forward using the content of the output buffer.
+* Locales.
 
 Maybe never:
 
