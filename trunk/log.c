@@ -28,6 +28,7 @@ void internal_logit (const char *file, const int line, const char *function,
 	char time_str[20];
 	time_t utc_time;
 	va_list va;
+	struct tm tm_time;
 
 	if (!logfp)
 		return;
@@ -37,8 +38,8 @@ void internal_logit (const char *file, const int line, const char *function,
 	msg[sizeof(msg) - 1] = 0;
 
 	time (&utc_time);
-	strftime (time_str, sizeof(time_str), "%b %e %T",
-			localtime(&utc_time));
+	localtime_r (&utc_time, &tm_time);
+	strftime (time_str, sizeof(time_str), "%b %e %T", &tm_time);
 
 	fprintf (logfp, "%s: %s:%d %s(): %s\n", time_str, file, line, function,
 			msg);
