@@ -33,6 +33,8 @@
 #include "protocol.h"
 #include "log.h"
 #include "file_types.h"
+#include "files.h"
+#include "playlist.h"
 
 #define CONFIG_FILE	"config"
 
@@ -41,6 +43,10 @@ struct parameters
 	int debug;
 	int only_server;
 	int foreground;
+	int append;
+	int clear;
+	int play;
+	int dont_run_iface;
 };
 
 /* End program with a message. Use when an error occurs and we can't recover. */
@@ -136,6 +142,46 @@ static void check_moc_dir ()
 	}
 }
 
+/* Return 1 if the file is a directory, 0 if not, -1 on error. */
+int isdir (const char *file)
+{
+	struct stat file_stat;
+
+	if (stat(file, &file_stat) == -1) {
+		interface_error ("Can't stat %s: %s", file, strerror(errno));
+		return -1;
+	}
+	return S_ISDIR(file_stat.st_mode) ? 1 : 0;
+}
+
+/* Append files and directories to the server playlist. */
+static void append_items (int sock, char **args, int num)
+{
+	int i;
+	struct plist plist;
+
+	plist_init (&plist);
+
+	for (i = 0; i < num; i++) {
+		int dir = isdir(args[i]);
+
+		if (dir == 1)
+			read_directory_recurr (args[i], &plist);
+		else if (dir == 0 && is_sound_file(args[i]))
+			plist_add (&plist, args[i]);
+	}
+
+	if (plist.num) {
+		for (i = 0; i < plist.num; i++)
+			if (!send_int(sock, CMD_LIST_ADD)
+					|| !send_str(sock, plist.items[i].file))
+				fatal ("Can't add an item");
+	}
+	else
+		fatal ("No files could be added");
+
+}
+
 /* Run client and the server if needed. */
 static void start_moc (const struct parameters *params, char **args,
 		const int arg_num)
@@ -193,16 +239,29 @@ static void start_moc (const struct parameters *params, char **args,
 	if (!params->only_server) {
 		signal (SIGPIPE, SIG_IGN);
 		if (ping_server(server_sock)) {
-			init_interface (server_sock, params->debug,
-					args, arg_num);
-			interface_loop ();
-			interface_end ();
+			if (!params->dont_run_iface) {
+				init_interface (server_sock, params->debug,
+						args, arg_num);
+				interface_loop ();
+				interface_end ();
+			}
 		}
 		else
 			fatal ("The server is busy (another client is "
 					"connected)");
 	}
 
+	if (params->dont_run_iface) {
+		if (params->clear && !send_int(server_sock, CMD_LIST_CLEAR))
+			fatal ("Can't clear the list");
+		if (params->append)
+			append_items (server_sock, args, arg_num);
+		if (params->play && (!send_int(server_sock, CMD_PLAY)
+					|| !send_str(server_sock, "")))
+			fatal ("Can't play");
+		send_int (server_sock, CMD_DISCONNECT);
+	}
+	
 	options_free ();
 }
 
@@ -250,6 +309,10 @@ static void show_usage (const char *prg_name) {
 "-F --foreground	Run server in foreground, log to stdout.\n"
 "-R --sound-driver NAME	Use the specified sound driver (oss, null).\n"
 "-m --music-dir		Start in MusicDir.\n"
+"-a --append		Append the files passed in command line to the server\n"
+"			playlist and exit.\n"
+"-c --clear		Clear the server playlist and exit.\n"
+"-p --play		Play first element on the server playlist and exit.\n"
 , prg_name);
 }
 
@@ -278,18 +341,25 @@ int main (int argc, char *argv[])
 		{ "foreground",		0, NULL, 'F' },
 		{ "sound-driver",	1, NULL, 'R' },
 		{ "music-dir",		0, NULL, 'm' },
+		{ "append",		0, NULL, 'a' },
+		{ "clear", 		0, NULL, 'c' },
+		{ "play", 		0, NULL, 'p' },
 		{ 0, 0, 0, 0 }
 	};
 	int ret, opt_index = 0;
 	struct parameters params = {
 		/* debug */		0,
 		/* only_server */	0,
-		/* foreground */	0
+		/* foreground */	0,
+		/* append */		0,
+		/* clear */		0,
+		/* play */		0,
+		/* dont_run_iface */	0
 	};
 
 	options_init ();
 
-	while ((ret = getopt_long(argc, argv, "VhDSFR:m", long_options,
+	while ((ret = getopt_long(argc, argv, "VhDSFR:macp", long_options,
 					&opt_index)) != -1) {
 		switch (ret) {
 			case 'V':
@@ -317,6 +387,18 @@ int main (int argc, char *argv[])
 				option_set_int ("StartInMusicDir", 1);
 				option_ignore_config ("StartInMusicDir");
 				break;
+			case 'a':
+				params.append = 1;
+				params.dont_run_iface = 1;
+				break;
+			case 'c':
+				params.clear = 1;
+				params.dont_run_iface = 1;
+				break;
+			case 'p':
+				params.play = 1;
+				params.dont_run_iface = 1;
+				break;
 			default:
 				show_usage (argv[0]);
 				return 1;
@@ -325,6 +407,8 @@ int main (int argc, char *argv[])
 	
 	if (params.foreground && !params.only_server)
 		fatal ("Can't use --foreground without --server");
+	if (params.dont_run_iface && params.only_server)
+		fatal ("-c, -a and -p options can't be used with --server");
 
 	start_moc (&params, argv + optind, argc - optind);
 
