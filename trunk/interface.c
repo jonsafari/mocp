@@ -2140,8 +2140,6 @@ static int entry_search_key (const int ch)
 		return 1;
 	}
 
-	interface_error ("Bad key");
-
 	return 0;
 }
 
