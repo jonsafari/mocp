@@ -15,6 +15,7 @@
 
 #define DEBUG
 
+#include <string.h>
 #include <sndfile.h>
 #include "sndfile_formats.h"
 #include "file_types.h"
@@ -39,6 +40,8 @@ static void *sndfile_open (const char *file)
 	struct sndfile_data *data;
 	
 	data = (struct sndfile_data *)xmalloc (sizeof(struct sndfile_data));
+
+	memset (&data->snd_info, 0, sizeof(data->snd_info));
 	
 	if (!(data->sndfile = sf_open(file, SFM_READ,
 					&data->snd_info))) {
