@@ -1,17 +1,13 @@
-Before 2.2.0:
-* valgrind the client and the server.
-* Test on FreeBSD.
-
 Before 2.3.0:
+* Decoder plugins.
 * Complete to the matching part of a directory with the i command if a name is
   ambigous.
 * History in the i command.
-* Decoder plugins.
 * Move interface primitives (windows, entry, etc.) to a separate file.
 * Setting volume using 1-9 keys.
 * Fake increase/decrease volume in alsa by 1% if such resolution is not
   possible.
-* A command to chenge the mixer device.
+* A command to change the mixer device.
 * Reread ALSA mixer to see changes made by other programs.
 * Show the bitrate in the right time (the playback time, not while decoding).
 * Cache for tags in each directory. (.cache.m3u?)
@@ -20,8 +16,6 @@ Before 2.3.0:
 * Support for CDDB.
 * www.musepack.net (www.caddr.com)
 * http://www.speex.org
-* 'd' command must not delete an item from the server playlist if the
-  server is not playing from the playlist.
 * config and command line option to use ASCII chars for drawing lines.
 * Command line option to show information about the currently played file.
 * Add --recursive command line option: if a command line argument is a
