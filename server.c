@@ -360,6 +360,19 @@ static int set_mixer ()
 	return 1;
 }
 
+/* Delete an item from the playlist. Return 0 on error. */
+static int delete_item ()
+{
+	char *file;
+	
+	if (!(file = get_str(client_sock)))
+		return 0;
+
+	audio_plist_delete (file);
+	free (file);
+	return 1;
+}
+
 /* Reveive a command from the client and execute it.
  * Return EOF on EOF or error, 1 if the client wants the server to exit,
  * otherwise 0.
@@ -454,6 +467,10 @@ static int handle_command ()
 			break;
 		case CMD_SET_MIXER:
 			if (!set_mixer())
+				status = EOF;
+			break;
+		case CMD_DELETE:
+			if (!delete_item())
 				status = EOF;
 			break;
 		default:
