@@ -1,9 +1,5 @@
 Before 2.1.0:
 
-* Commands for displaying/hiding the format and time information.
-* Ask if the user wants to overwrite the playlist when saving.
-* Configuration options and command line parameters for selecting pid file and
-  socket. A parameter for selecting different configuration file.
 * General procedures for reading files instead of doing this at the decoder
   level.
 * Try mmap() again if size of the file has changed.
@@ -19,6 +15,8 @@ Before 2.1.0:
 * Update alsa mixer when changed by other application.
 * Fix cursor position in the entry field.
 * Fix showing time bigger than 99:59.
+* Reload directory when after backing to curr_plist_menu detected that the
+  directory has changed.
 
 In future:
 
@@ -48,6 +46,7 @@ In future:
 * special themes for xterm - after detecting xterm load XtermTheme that
   supports xterm features.
 * Redefining keys.
+* Do something with big interface.c - general user interface code?
 
 Maybe never:
 
