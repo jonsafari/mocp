@@ -231,6 +231,7 @@ static char *help_text[] = {
 "  CTRL-f       Toggle ShowFormat option",
 "  i            Go to a directory",
 "  G            Go to a directory where the currently played file is",
+"  U            Go to '..'",
 "  Q            Quit"
 };
 static int help_screen_top = 0;
