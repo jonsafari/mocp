@@ -24,6 +24,7 @@ struct file_tags
 struct plist_item
 {
 	char *file;
+	long file_hash;		/* hashed file or -1 */
 	char *title;		/* points to title_file or title_tags */
 	char *title_file;	/* title based on the file name */
 	char *title_tags;	/* title based on the tags */
