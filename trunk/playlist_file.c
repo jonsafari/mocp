@@ -301,18 +301,6 @@ int plist_save (struct plist *plist, const char *file, const char *cwd)
 		 * relative paths) */
 		find_common_path (common_path, sizeof(common_path), plist);
 
-	/* Make the titles */
-	for (i = 0; i < plist->num; i++)
-		if (!plist_deleted(plist, i) && !plist->items[i].title_tags) {
-			if (user_wants_interrupt()) {
-				interface_error ("Saving the playlist aborted");
-				return 0;
-			}
-			plist->items[i].tags = read_file_tags (
-					plist->items[i].file,
-					plist->items[i].tags,
-					TAGS_COMMENTS);
-		}
 	make_titles_tags (plist);
 
 	/* Get times */
