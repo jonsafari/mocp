@@ -2042,8 +2042,6 @@ static void switch_read_tags ()
 		update_menu_titles (playlist_menu, playlist);
 	if (curr_plist_menu)
 		update_menu_titles (curr_plist_menu, curr_plist);
-
-	update_curr_file ();
 }
 
 /* Reread the directory. */
