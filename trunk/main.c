@@ -48,6 +48,9 @@ struct parameters
 	int clear;
 	int play;
 	int dont_run_iface;
+	int dont_run_server;
+	int stop;
+	int exit;
 };
 
 /* End program with a message. Use when an error occurs and we can't recover. */
@@ -195,8 +198,6 @@ static void start_moc (const struct parameters *params, char **args,
 	int list_sock;
 	int server_sock = -1;
 
-	check_moc_dir ();
-
 	options_parse (create_file_name(CONFIG_FILE));
 	file_types_init ();
 	srand (time(NULL));
@@ -319,6 +320,8 @@ static void show_usage (const char *prg_name) {
 "			playlist and exit.\n"
 "-c --clear		Clear the server playlist and exit.\n"
 "-p --play		Play first item on the server playlist and exit.\n"
+"-s --stop		Stop playing.\n"
+"-x --exit		Shutdown the server.\n"
 , prg_name);
 }
 
@@ -337,6 +340,34 @@ int proper_sound_driver (const char *driver)
 	return 0;
 }
 
+/* Send commands requested in params to the server. */
+static void server_command (struct parameters *params)
+{
+	int sock;
+
+	options_parse (create_file_name(CONFIG_FILE));
+	
+	if ((sock = server_connect()) == -1)
+		fatal ("The server is not running");
+
+	signal (SIGPIPE, SIG_IGN);
+	if (ping_server(sock)) {
+		if (params->exit) {
+			if (!send_int(sock, CMD_QUIT))
+				fatal ("Can't send command");
+		}
+		else if (params->stop) {
+			if (!send_int(sock, CMD_STOP)
+					|| !send_int(sock, CMD_DISCONNECT))
+				fatal ("Can't send commands");
+		}
+	}
+	else
+		fatal ("The server is busy (another client is connected)");
+
+	close (sock);
+}
+
 int main (int argc, char *argv[])
 {
 	struct option long_options[] = {
@@ -350,22 +381,17 @@ int main (int argc, char *argv[])
 		{ "append",		0, NULL, 'a' },
 		{ "clear", 		0, NULL, 'c' },
 		{ "play", 		0, NULL, 'p' },
+		{ "stop",		0, NULL, 's' },
+		{ "exit",		0, NULL, 'x' },
 		{ 0, 0, 0, 0 }
 	};
 	int ret, opt_index = 0;
-	struct parameters params = {
-		/* debug */		0,
-		/* only_server */	0,
-		/* foreground */	0,
-		/* append */		0,
-		/* clear */		0,
-		/* play */		0,
-		/* dont_run_iface */	0
-	};
+	struct parameters params;
 
+	memset (&params, 0, sizeof(params));
 	options_init ();
 
-	while ((ret = getopt_long(argc, argv, "VhDSFR:macp", long_options,
+	while ((ret = getopt_long(argc, argv, "VhDSFR:macpsx", long_options,
 					&opt_index)) != -1) {
 		switch (ret) {
 			case 'V':
@@ -405,6 +431,14 @@ int main (int argc, char *argv[])
 				params.play = 1;
 				params.dont_run_iface = 1;
 				break;
+			case 's':
+				params.stop = 1;
+				params.dont_run_server = 1;
+				break;
+			case 'x':
+				params.exit = 1;
+				params.dont_run_server = 1;
+				break;
 			default:
 				show_usage (argv[0]);
 				return 1;
@@ -416,7 +450,12 @@ int main (int argc, char *argv[])
 	if (params.dont_run_iface && params.only_server)
 		fatal ("-c, -a and -p options can't be used with --server");
 
-	start_moc (&params, argv + optind, argc - optind);
+	check_moc_dir ();
+
+	if (params.dont_run_server)
+		server_command (&params);
+	else
+		start_moc (&params, argv + optind, argc - optind);
 
 	return 0;
 }
