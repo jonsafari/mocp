@@ -399,7 +399,7 @@ static void mp3_info (const char *file_name, struct file_tags *info,
 				char *end;
 				
 				info->track = strtol (track, &end, 10);
-				if (!*end)
+				if (*end)
 					info->track = -1;
 				free (track);
 			}
