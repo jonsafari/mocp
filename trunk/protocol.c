@@ -19,6 +19,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <time.h>
+#include <assert.h>
 
 #include "main.h"
 #include "log.h"
@@ -393,4 +394,75 @@ struct plist_item *recv_item (int sock)
 	}
 	
 	return item;
+}
+
+/* Push an event on the queue if it's not already there. */
+void event_push (struct event_queue *q, const int event, void *data)
+{
+	assert (q != NULL);
+	
+	if (!q->head) {
+		q->head = (struct event *)xmalloc (sizeof(struct event));
+		q->head->next = NULL;
+		q->head->type = event;
+		q->head->data = data;
+		q->tail = q->head;
+	}
+	else {
+		assert (q->head != NULL);
+		assert (q->tail != NULL);
+		assert (q->tail->next == NULL);
+		
+		q->tail->next = (struct event *)xmalloc (
+				sizeof(struct event));
+		q->tail = q->tail->next;
+		q->tail->next = NULL;
+		q->tail->type = event;
+		q->tail->data = data;
+	}
+}
+
+/* Remove the first event from the queue (don't free the data field). */
+void event_pop (struct event_queue *q)
+{
+	struct event *e;
+	
+	assert (q != NULL);
+	assert (q->head != NULL);
+	assert (q->tail != NULL);
+
+	e = q->head;
+	q->head = e->next;
+	free (e);
+	
+	if (q->tail == e)
+		q->tail = NULL; /* the queue is empty */
+}
+
+/* Get the pointer to the first item in the queue or NULL if the queue is
+ * empty. */
+struct event *event_get_first (struct event_queue *q)
+{
+	assert (q != NULL);
+	
+	return q->head;
+}
+
+/* Free event queue content without the queue structure. */
+void event_queue_free (struct event_queue *q)
+{
+	struct event *e;
+	
+	assert (q != NULL);
+
+	while ((e = event_get_first(q)))
+		event_pop (q);
+}
+
+void event_queue_init (struct event_queue *q)
+{
+	assert (q != NULL);
+	
+	q->head = NULL;
+	q->tail = NULL;
 }
