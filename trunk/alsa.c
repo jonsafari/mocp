@@ -119,6 +119,23 @@ static int alsa_open (struct sound_params *sound_params)
 	int buffer_time;
 	snd_pcm_uframes_t chunk_frames;
 	snd_pcm_uframes_t buffer_frames;
+	snd_pcm_format_t format;
+
+	switch (sound_params->format) {
+		case 1:
+			format = SND_PCM_FORMAT_S8;
+			break;
+		case 2:
+			format = SND_PCM_FORMAT_S16_LE;
+			break;
+		case 3:
+			format = SND_PCM_FORMAT_S24_LE;
+			break;
+		default:
+			error ("Unknown bps value: %d",
+					sound_params->format * 8);
+			return 0;
+	}
 
 	if ((err = snd_pcm_open(&handle, options_get_str("AlsaDevice"),
 					SND_PCM_STREAM_PLAYBACK,
@@ -144,10 +161,8 @@ static int alsa_open (struct sound_params *sound_params)
 		return 0;
 	}
 
-	if ((err = snd_pcm_hw_params_set_format (handle, hw_params,
-					sound_params->format == 1 ?
-					SND_PCM_FORMAT_S8
-					: SND_PCM_FORMAT_S16_LE)) < 0) {
+	if ((err = snd_pcm_hw_params_set_format (handle, hw_params, format))
+			< 0) {
 		error ("Can't set sample format: %s", snd_strerror(err));
 		snd_pcm_hw_params_free (hw_params);
 		return 0;

@@ -86,14 +86,20 @@ static int oss_set_params ()
 	int req_rate;
 
 	/* Set format */
-	if (params.format == 1)
-		req_format = AFMT_S8;
-	else if (params.format == 2)
-		req_format = AFMT_S16_LE;
-	else {
-		error ("%dbits format is not supported by the device",
-			params.format * 8);
-		return 0;
+	switch (params.format) {
+		case 1:
+			req_format = AFMT_S8;
+			break;
+		case 2:
+			req_format = AFMT_S16_LE;
+			break;
+		case 3:
+			req_format = AFMT_S24_LE;
+			break;
+		default:
+			error ("%dbits format is not supported by the device",
+				params.format * 8);
+			return 0;
 	}
 		
 	if (ioctl(dsp_fd, SNDCTL_DSP_SETFMT, &req_format) == -1) {
