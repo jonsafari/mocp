@@ -158,9 +158,9 @@ void menu_free (struct menu *menu)
 	/* Free items */
 	for (i = 0; i < menu->nitems; i++) {
 		free (menu->items[i]->title);
-		free (menu->items[i]);
 		if (menu->items[i]->file)
 			free (menu->items[i]->file);
+		free (menu->items[i]);
 	}
 
 	free (menu->items);
