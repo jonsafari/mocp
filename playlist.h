@@ -41,4 +41,6 @@ struct file_tags *tags_new ();
 void tags_free (struct file_tags *tags);
 char *build_title (const struct file_tags *tags);
 int plist_rand (struct plist *plist);
+int plist_count (struct plist *plist);
+
 #endif
