@@ -157,6 +157,7 @@ void options_init ()
 	option_add_int ("ShowHiddenFiles", 1);
 	option_add_str ("AlsaDevice", "default");
 	option_add_str ("AlsaMixer", "PCM");
+	option_add_int ("HideFileExtension", 0);
 }
 
 /* Return 1 if a parameter to an integer option is valid. */
@@ -170,6 +171,7 @@ int check_int_option (const char *name, const int val)
 			|| !strcasecmp(name, "AutoNext")
 			|| !strcasecmp(name, "ShowHiddenFiles")
 			|| !strcasecmp(name, "StartInMusicDir")
+			|| !strcasecmp(name, "HideFileExtension")
 			) {
 		if (!(val == 1 || val == 0))
 			return 0;
