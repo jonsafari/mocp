@@ -1,11 +1,8 @@
 Before 2.0:
 
-* Don't count time at the buffer level, do it in player.c
-* Configurable pcm and mixer device.
-* config for mixer device (master, pcm etc)
-* Generic ^r, r - reread directory.
 * Run as server if stdin is not a terminal.
 * Option and a key to ignore hidden files.
+* Command line parameters overrideing options - more flexible solution.
 * Adding files to a playlist of detached moc using command line.
 * AUDIO_MAX_PLAY based on bps.
 * Only trying to obtain the lock for client socket when sending an event. If
@@ -13,6 +10,7 @@ Before 2.0:
   the decoder when the socket is busy for a longer time period. The queue
   should be checked and purged after handling the client command.
 * Update DOCS.
+* Don't require GCC extensions.
 
 Before 2.1.0:
 
