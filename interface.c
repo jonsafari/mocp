@@ -747,12 +747,9 @@ static void set_iface_status_ref (const char *msg)
 	wrefresh (info_win);
 }
 
-void interface_error (const char *format, ...)
+void interface_error (const char *msg)
 {
-	va_list va;
-
-	va_start (va, format);
-	vsnprintf (message, sizeof(message), format, va);
+	strncpy (message, msg, sizeof(message) - 1);
 	message[sizeof(message)-1] = 0;
 	msg_timeout = time(NULL) + 3;
 	msg_is_error = 1;
@@ -766,8 +763,6 @@ void interface_error (const char *format, ...)
 		fprintf (stderr, "%s\n", message);
 
 	logit ("ERROR: %s", message);
-
-	va_end (va);
 }
 
 static void interface_message (const char *format, ...)
@@ -906,7 +901,7 @@ static void read_times (struct plist *plist)
 	for (i = 0; i < plist->num; i++)
 		if (!plist_deleted(plist, i)) {		
 			if (user_wants_interrupt()) {
-				interface_error ("Getting times interrupted");
+				error ("Getting times interrupted");
 				break;
 			}
 
@@ -1539,7 +1534,7 @@ static void enter_first_dir ()
 				return;
 		}
 		else
-			interface_error ("MusicDir is not set");
+			error ("MusicDir is not set");
 	}
 	if (read_last_dir() && go_to_dir(NULL))
 		return;
@@ -2011,7 +2006,7 @@ static void update_error ()
 	
 	send_int_to_srv (CMD_GET_ERROR);
 	err = get_data_str ();
-	interface_error (err);
+	error (err);
 	free (err);
 }
 
@@ -2100,7 +2095,7 @@ static void toggle_plist ()
 		set_interface_status (msg);
 	}
 	else
-		interface_error ("The playlist is empty.");
+		error ("The playlist is empty.");
 
 	update_info_win ();
 	wrefresh (info_win);
@@ -2145,7 +2140,7 @@ static void go_file ()
 		toggle_plist ();
 	else if (menu_item->type == F_PLAYLIST) {
 		if (plist_count(playlist)) {
-			interface_error ("Please clear the playlist, because "
+			error ("Please clear the playlist, because "
 					"I'm not sure you want to do this.");
 			return;
 		}
@@ -2191,13 +2186,13 @@ static void add_file_plist ()
 	struct menu_item *menu_item = menu_curritem (curr_menu);
 
 	if (visible_plist == playlist) {
-		interface_error ("Can't add to the playlist a file from the "
+		error ("Can't add to the playlist a file from the "
 				"playlist.");
 		return;
 	}
 
 	if (menu_item->type != F_SOUND) {
-		interface_error ("To add a directory, use the 'A' command.");
+		error ("To add a directory, use the 'A' command.");
 		return;
 	}
 
@@ -2210,7 +2205,7 @@ static void add_file_plist ()
 		}
 	}
 	else
-		interface_error ("The file is already on the playlist.");
+		error ("The file is already on the playlist.");
 }
 
 /* Clear the playlist */
@@ -2234,18 +2229,18 @@ static void add_dir_plist ()
 	char msg[50];
 
 	if (visible_plist == playlist) {
-		interface_error ("Can't add to the playlist a file from the "
+		error ("Can't add to the playlist a file from the "
 				"playlist.");
 		return;
 	}
 
 	if (menu_item->type != F_DIR) {
-		interface_error ("To add a file, use the 'a' command.");
+		error ("To add a file, use the 'a' command.");
 		return;
 	}
 
 	if (curr_menu->selected == 0) {
-		interface_error ("Can't add '..'.");
+		error ("Can't add '..'.");
 		return;
 	}
 
@@ -2395,7 +2390,7 @@ static void delete_item ()
 	int top_item;
 
 	if (visible_plist != playlist) {
-		interface_error ("You can only delete an item from the "
+		error ("You can only delete an item from the "
 				"playlist.");
 		return;
 	}
@@ -2492,7 +2487,7 @@ static int entry_plist_save_key (const int ch)
 {
 	if (ch == '\n') {
 		if (strchr(entry.text, '/'))
-			interface_error ("Only file name is accepted, not a "
+			error ("Only file name is accepted, not a "
 					"path");
 		else if (!entry.text[0])
 			entry_disable ();
@@ -2510,7 +2505,7 @@ static int entry_plist_save_key (const int ch)
 			if (snprintf(path, sizeof(path), "%s/%s", cwd,
 						entry.text)
 					>= (int)sizeof(path)) {
-				interface_error ("Path too long!");
+				error ("Path too long!");
 				return 1;
 			}
 
@@ -2953,7 +2948,7 @@ static void menu_key (const int ch)
 					do_update_menu = 1;
 				}
 				else
-					interface_error ("MusicDir not "
+					error ("MusicDir not "
 							"defined");
 				break;
 			case 'd':
@@ -2969,7 +2964,7 @@ static void menu_key (const int ch)
 					make_entry (ENTRY_PLIST_SAVE,
 							"SAVE PLAYLIST");
 				else
-					interface_error ("The playlist is "
+					error ("The playlist is "
 							"empty.");
 				break;
 			case CTRL('t'):
@@ -2994,7 +2989,7 @@ static void menu_key (const int ch)
 			case KEY_RESIZE:
 				break;
 			default:
-				interface_error ("Bad key");
+				error ("Bad key");
 		}
 
 		if (do_update_menu)
@@ -3130,7 +3125,7 @@ static void save_curr_dir ()
 	FILE *dir_file;
 
 	if (!(dir_file = fopen(create_file_name("last_directory"), "w"))) {
-		interface_error ("Can't save current directory: %s",
+		error ("Can't save current directory: %s",
 				strerror(errno));
 		return;
 	}

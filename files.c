@@ -118,7 +118,7 @@ static void read_comments_tags (struct plist *plist)
 			assert (plist->items[i].file != NULL);
 
 			if (user_wants_interrupt()) {
-				interface_error ("Reading tags interrupted.");
+				error ("Reading tags interrupted.");
 				break;
 			}
 			plist->items[i].tags = read_file_tags (
@@ -453,7 +453,7 @@ int read_directory (const char *directory, struct file_list *dirs,
 	assert (plist != NULL);
 
 	if (!(dir = opendir(directory))) {
-		interface_error ("Can't read directory: %s", strerror(errno));
+		error ("Can't read directory: %s", strerror(errno));
 		return 0;
 	}
 
@@ -468,7 +468,7 @@ int read_directory (const char *directory, struct file_list *dirs,
 		enum file_type type;
 
 		if (user_wants_interrupt()) {
-			interface_error ("Interrupted! Not all files read!");
+			error ("Interrupted! Not all files read!");
 			break;
 		}
 		
@@ -479,7 +479,7 @@ int read_directory (const char *directory, struct file_list *dirs,
 		if (snprintf(file, sizeof(file), "%s/%s", dir_is_root ?
 					"" : directory,	entry->d_name)
 				>= (int)sizeof(file)) {
-			interface_error ("Path too long!");
+			error ("Path too long!");
 			return 0;
 		}
 		type = file_type (file);
@@ -507,7 +507,7 @@ int read_directory_recurr (const char *directory, struct plist *plist)
 	assert (directory != NULL);
 
 	if (!(dir = opendir(directory))) {
-		interface_error ("Can't read directory: %s", strerror(errno));
+		error ("Can't read directory: %s", strerror(errno));
 		return 1;
 	}
 	
@@ -516,7 +516,7 @@ int read_directory_recurr (const char *directory, struct plist *plist)
 		enum file_type type;
 		
 		if (user_wants_interrupt()) {
-			interface_error ("Interrupted! Not all files read!");
+			error ("Interrupted! Not all files read!");
 			break;
 		}
 			
@@ -525,7 +525,7 @@ int read_directory_recurr (const char *directory, struct plist *plist)
 		if (snprintf(file, sizeof(file), "%s/%s", directory,
 					entry->d_name)
 				>= (int)sizeof(file)) {
-			interface_error ("Path too long!");
+			error ("Path too long!");
 			continue;
 		}
 		type = file_type (file);

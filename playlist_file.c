@@ -22,10 +22,10 @@
 #include "playlist.h"
 #include "playlist_file.h"
 #include "log.h"
-#include "interface.h"
 #include "main.h"
 #include "files.h"
 #include "options.h"
+#include "interface.h"
 
 int is_plist_file (char *name)
 {
@@ -75,7 +75,7 @@ static int plist_load_m3u (struct plist *plist, const char *fname,
 	int added = 0;
 
 	if (!(file = fopen(fname, "r"))) {
-		interface_error ("Can't open playlist file: %s",
+		error ("Can't open playlist file: %s",
 				strerror(errno));
 		return 0;
 	}
@@ -89,7 +89,7 @@ static int plist_load_m3u (struct plist *plist, const char *fname,
 			char *title;
 
 			if (after_extinf) {
-				interface_error ("Broken M3U file: double "
+				error ("Broken M3U file: double "
 						"#EXTINF.");
 				free (line);
 				plist_delete (plist, last_added);
@@ -99,7 +99,7 @@ static int plist_load_m3u (struct plist *plist, const char *fname,
 			/* Find the comma */
 			comma = strchr (line + (sizeof("#EXTINF:") - 1), ',');
 			if (!comma) {
-				interface_error ("Broken M3U file: no comma "
+				error ("Broken M3U file: no comma "
 						"in #EXTINF.");
 				free (line);
 				return added;
@@ -111,7 +111,7 @@ static int plist_load_m3u (struct plist *plist, const char *fname,
 					MIN(comma - line - (sizeof("#EXTINF:")
 						- 1), sizeof(time_text)));
 			if (time_text[sizeof(time_text)-1]) {
-				interface_error ("Broken M3U file: "
+				error ("Broken M3U file: "
 						"wrong time.");
 				free (line);
 				return added;
@@ -120,7 +120,7 @@ static int plist_load_m3u (struct plist *plist, const char *fname,
 			/* Extract the time */
 			time_sec = strtol (time_text, &num_err, 10);
 			if (*num_err) {
-				interface_error ("Broken M3U file: "
+				error ("Broken M3U file: "
 						"time is not a number.");
 				free (line);
 				return added;
@@ -202,12 +202,12 @@ static int plist_save_m3u (struct plist *plist, const char *fname,
 	debug ("Saving playlist to '%s'", fname);
 
 	if (!(file = fopen(fname, "w"))) {
-		interface_error ("Can't save playlist: %s", strerror(errno));
+		error ("Can't save playlist: %s", strerror(errno));
 		return 0;
 	}
 
 	if (fprintf(file, "#EXTM3U\r\n") < 0) {
-		interface_error ("Error writing playlist: %s", strerror(errno));
+		error ("Error writing playlist: %s", strerror(errno));
 		fclose (file);
 		return 0;
 	}
@@ -223,7 +223,7 @@ static int plist_save_m3u (struct plist *plist, const char *fname,
 						plist->items[i].title_tags
 						: plist->items[i].title_file)
 					< 0) {
-				interface_error ("Error writing playlist: %s",
+				error ("Error writing playlist: %s",
 						strerror(errno));
 				fclose (file);
 				return 0;
@@ -232,7 +232,7 @@ static int plist_save_m3u (struct plist *plist, const char *fname,
 			/* file */
 			if (fprintf(file, "%s\r\n", plist->items[i].file
 						+ strip_path) < 0) {
-				interface_error ("Error writing playlist: %s",
+				error ("Error writing playlist: %s",
 						strerror(errno));
 				fclose (file);
 				return 0;
@@ -240,7 +240,7 @@ static int plist_save_m3u (struct plist *plist, const char *fname,
 		}
 				
 	if (fclose(file)) {
-		interface_error ("Error writing playlist: %s", strerror(errno));
+		error ("Error writing playlist: %s", strerror(errno));
 		return 0;
 	}
 	return 1;
@@ -304,7 +304,7 @@ int plist_save (struct plist *plist, const char *file, const char *cwd)
 	make_titles_tags (plist);
 
 	if (user_wants_interrupt()) {
-		interface_error ("Saving the playlist aborted");
+		error ("Saving the playlist aborted");
 		return 0;
 	}
 
@@ -312,7 +312,7 @@ int plist_save (struct plist *plist, const char *file, const char *cwd)
 	for (i = 0; i < plist->num; i++)
 		if (!plist_deleted(plist, i)) {
 			if (user_wants_interrupt()) {
-				interface_error ("Saving the playlist aborted");
+				error ("Saving the playlist aborted");
 				return 0;
 			}
 			plist->items[i].tags = read_file_tags (
