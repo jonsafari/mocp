@@ -294,7 +294,7 @@ int audio_send_pcm (const char *buf, const size_t size)
 /* Get current time of the song in seconds. */
 int audio_get_time ()
 {
-	return buf_time_get (&out_buf);
+	return state == STATE_PLAY ? buf_time_get (&out_buf) : 0;
 }
 
 void audio_close ()
