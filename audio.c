@@ -39,6 +39,7 @@
 #include "protocol.h"
 #include "options.h"
 #include "player.h"
+#include "audio.h"
 
 /* FIXME: is 0 a tid that never is valid? */
 static pthread_t playing_thread = 0;  /* tid of play thread */
@@ -56,6 +57,12 @@ static int state = STATE_STOP;
 static int stop_playing = 0;
 
 static struct plist playlist;
+
+/* Is the audio deice opened? */
+static int audio_opened = 0;
+
+/* Current sound parameters. */
+static struct sound_params sound_params;
 
 static void *play_thread (void *unused)
 {
@@ -124,6 +131,7 @@ static void *play_thread (void *unused)
 		state_change ();
 	}
 
+	audio_close ();
 	logit ("exiting");
 
 	return NULL;
@@ -193,9 +201,37 @@ void audio_unpause ()
 }
 
 /* Return 0 on error. */
-int audio_open (struct sound_params *sound_params)
+int audio_open (struct sound_params *req_sound_params)
 {
-	return hw.open (sound_params);
+	int res;
+	
+	if (audio_opened && sound_params_eq(*req_sound_params, sound_params)) {
+		if (audio_get_bps() < 88200) {
+			logit ("Reopening device due to low bps.");
+			
+			/* Not closing the device would cause that much
+			 * sound from the previuous file stays in the buffer
+			 * and the user will see old data, so close it. */
+			hw.close ();
+			res = hw.open (req_sound_params);
+			if (res)
+				audio_opened = 1;
+			return res;
+		}
+		else
+			logit ("Audio device already opened with such "
+					"parameters.");
+
+		return 1;
+	}
+	else if (audio_opened)
+		hw.close ();
+
+	sound_params = *req_sound_params;
+	res = hw.open (req_sound_params);
+	if (res)
+		audio_opened = 1;
+	return res;
 }
 
 int audio_send_buf (const char *buf, const size_t size)
@@ -229,6 +265,7 @@ int audio_get_time ()
 void audio_close ()
 {
 	hw.close ();
+	audio_opened = 0;
 }
 
 static void find_hw_funcs (const char *driver, struct hw_funcs *funcs)
