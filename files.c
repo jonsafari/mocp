@@ -197,7 +197,9 @@ void read_tags (struct plist *plist)
 	assert (plist != NULL);
 
 	for (i = 0; i < plist->num; i++)
-		plist->items[i].tags = read_file_tags (plist->items[i].file);
+		if (!plist->items[i].tags)
+			plist->items[i].tags = read_file_tags(
+					plist->items[i].file);
 }
 
 /* Read the content of the current directory. Fill the playlist by the sound
