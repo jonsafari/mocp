@@ -38,6 +38,7 @@
 #include "interface.h"
 #include "file_types.h"
 #include "options.h"
+#include "files.h"
 
 enum file_type
 {
@@ -119,58 +120,68 @@ void make_titles_tags (struct plist *plist)
 	}
 }
 
-/* Add file to the directory path in buf resolveing '../' and removing './'.
- * The directory cannot have trailing slash. */
+/* Add file to the directory path in buf resolveing '../' and removing './'. */
+/* buf must be absolute path. */
 void resolve_path (char *buf, const int size, char *file)
 {
-	char *f = file;
-	char *slash;
+	char *f; /* points to the char in *file we process */
+	char path[2*PATH_MAX]; /* temporary path */
+	int len = 0; /* number of vharacters in the buffer */
 
-	while (1) {
-		if (!strncmp(f, "./", 2))
-			f += 2;
-		else if (!strncmp(f, "../", 3)) {
-			if ((slash = strrchr(buf, '/'))) {
-				if (slash != buf)
-					
-					/* More than one directory in the
-					 * path */
-					*slash = 0;
-				else
+	assert (buf[0] == '/');
 
-					/* It's only '/directory' */
-					*(slash + 1) = 0;
+	if (snprintf(path, sizeof(path), "%s/%s/", buf, file)
+			>= (int)sizeof(path))
+		fatal ("Path too long");
+
+	f = path;
+	while (*f) {
+		if (!strncmp(f, "/../", 4)) {
+			char *slash = strrchr (buf, '/');
+
+			assert (slash != NULL);
+
+			if (slash == buf) {
+
+				/* make '/' from '/directory' */
+				buf[1] = 0;
+				len = 1;
 			}
-			f += 3;
-		}
-		else if (!strcmp(f, "..")) {
-			if ((slash = strrchr(buf, '/'))) {
-				if (slash != buf)
+			else {
 
-					/* More than one directory in the
-					 * path */
-					*slash = 0;
-				else
-
-					/* It's only '/directory' */
-					*(slash + 1) = 0;
+				/* strip one element */
+				*(slash) = 0;
+				len -= len - (slash - buf);
+				buf[len] = 0;
 			}
-			f += 2;
+
+			f+= 3;
 		}
-		else if (!strcmp(f, "."))
+		else if (!strncmp(f, "/./", 3))
+
+			/* skip '/.' */
+			f += 2;
+		else if (!strncmp(f, "//", 2))
+			
+			/* remove double slash */
 			f++;
-		else
-			break;
+		else if (len == size - 1)
+			fatal ("Path too long");
+		else  {
+			buf[len++] = *(f++);
+			buf[len] = 0;
+		}
 	}
 	
-	if (strcmp(buf, "/"))
-		strncat (buf, "/", size - strlen(buf) - 1);
-	strncat (buf, f, size - strlen(buf) - 1);
+	/* remove dot from '/dir/.' */
+	if (len >= 2 && buf[len-1] == '.' && buf[len-2] == '/')
+		buf[--len] = 0;
 
-	/* Strip trailing slash from the path */
-	if ((slash = strrchr (buf, '/')) && *(slash + 1) == 0 && slash != buf)
-		*slash = 0;
+	/* strip trailing slash */
+	if (len > 1 && buf[len-1] == '/')
+		buf[--len] = 0;
 }
+
 
 struct file_tags *read_file_tags (char *file)
 {
