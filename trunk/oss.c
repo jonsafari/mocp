@@ -93,9 +93,13 @@ static int oss_set_params ()
 		case 2:
 			req_format = AFMT_S16_LE;
 			break;
+
+/* AFMT_S24_LE is only sometimes present */
+#ifdef AFMT_S24_LE
 		case 3:
 			req_format = AFMT_S24_LE;
 			break;
+#endif
 		default:
 			error ("%dbits format is not supported by the device",
 				params.format * 8);
