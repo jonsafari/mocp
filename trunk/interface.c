@@ -971,7 +971,7 @@ static char *find_title (char *file)
 		debug ("Getting file title for %s", file);
 	
 	if (find_item_plists(file, &index, &plist, TAGS_COMMENTS)) {
-		debug ("Found title on playlist");
+		debug ("Found title on the playlist");
 		plist->items[index].tags = read_file_tags (file,
 				plist->items[index].tags, TAGS_COMMENTS);
 		if (plist->items[index].tags->title)
@@ -1115,7 +1115,7 @@ static int get_file_time (char *file)
 		debug ("Getting file time for %s", file);
 	
 	if (find_item_plists(file, &index, &plist, TAGS_TIME)) {
-		debug ("Found item on playlist");
+		debug ("Found item on the playlist");
 		plist->items[index].tags = read_file_tags (file,
 				plist->items[index].tags, TAGS_TIME);
 		ftime = plist->items[index].tags->time;
