@@ -310,6 +310,7 @@ void set_menu_state (struct menu *menu, int selected, int top)
 
 void menu_unmark_item (struct menu *menu)
 {
+	assert (menu != NULL);
 	menu->marked = -1;
 }
 
@@ -317,6 +318,8 @@ void menu_unmark_item (struct menu *menu)
 static int find_item_plist (const struct menu *menu, const int plist_num)
 {
 	int i;
+
+	assert (menu != NULL);
 
 	for (i = 0; i < menu->nitems; i++)
 		if (menu->items[i]->plist_pos == plist_num)
@@ -328,6 +331,8 @@ static int find_item_plist (const struct menu *menu, const int plist_num)
 void menu_mark_plist_item (struct menu *menu, const int plist_item)
 {
 	int i;
+
+	assert (menu != NULL);
 
 	if (menu->marked != -1)
 		menu_unmark_item (menu);
@@ -394,26 +399,31 @@ int menu_next_turn (const struct menu *menu)
 
 void menu_item_set_attr_normal (struct menu_item *item, const int attr)
 {
+	assert (item != NULL);
 	item->attr_normal = attr;
 }
 
 void menu_item_set_attr_sel (struct menu_item *item, const int attr)
 {
+	assert (item != NULL);
 	item->attr_sel = attr;
 }
 
 void menu_item_set_attr_sel_marked (struct menu_item *item, const int attr)
 {
+	assert (item != NULL);
 	item->attr_sel_marked = attr;
 }
 
 void menu_item_set_attr_marked (struct menu_item *item, const int attr)
 {
+	assert (item != NULL);
 	item->attr_marked = attr;
 }
 
 void menu_item_set_time (struct menu_item *item, const char *time)
 {
+	assert (item != NULL);
 	item->time[sizeof(item->time)-1] = 0;
 	strncpy (item->time, time, sizeof(item->time));
 	assert (item->time[sizeof(item->time)-1] == 0);
