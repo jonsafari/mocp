@@ -198,7 +198,7 @@ if test "x$withcurl" != "xno"
 then
 	dnl FIXME: make a better curl test
 	AC_CHECK_PROG([CURL_CONFIG], [curl-config], [yes])
-	if test "x$CURL_CONFIG" == "xyes"
+	if test "x$CURL_CONFIG" = "xyes"
 	then
 		CFLAGS="$CFLAGS `curl-config --cflags`"
 		EXTRA_LIBS="$EXTRA_LIBS `curl-config --libs`"
