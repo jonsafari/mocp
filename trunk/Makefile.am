@@ -29,7 +29,9 @@ mocp_SOURCES = log.c \
 	       player.c \
 	       player.h \
 	       playlist_file.c \
-	       playlist_file.h
+	       playlist_file.h \
+	       themes.c \
+	       themes.h
 EXTRA_mocp_SOURCES = gnugetopt.h \
 		     getopt.c \
 		     getopt1.c \
