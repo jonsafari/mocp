@@ -468,35 +468,6 @@ void plist_add_from_item (struct plist *plist, const struct plist_item *item)
 	plist_item_copy (&plist->items[pos], item);
 }
 
-/* Return a random playlist index of a not deleted item. */
-/* Return -1 if there are no items. */
-int plist_rand (struct plist *plist)
-{
-	int rnd = (rand() /(float)RAND_MAX) * (plist->num - 1);
-	int i = rnd;
-		
-	assert (plist != NULL);
-
-	if (!plist->num)
-		return -1;
-
-	LOCK (plist->mutex);
-	while (plist->items[i].deleted && i < plist->num)
-		i++;
-
-	if (i == plist->num) {
-		i = 0;
-		while (i < rnd && plist->items[i].deleted)
-			i++;
-	}
-
-	if (i == plist->num)
-		i = -1;
-	UNLOCK (plist->mutex);
-
-	return i;
-}
-
 void plist_delete (struct plist *plist, const int num)
 {
 	assert (plist != NULL);
@@ -679,4 +650,46 @@ int plist_total_time (const struct plist *plist, int *all_files)
 		}
 
 	return total_time;
+}
+
+/* Swap two items on the playlist. */
+static void plist_swap (struct plist *plist, const int a, const int b)
+{
+	assert (plist != NULL);
+	assert (a >= 0 && a < plist->num);
+	assert (b >= 0 && b < plist->num);
+
+	if (a != b) {
+		struct plist_item t;
+
+		t = plist->items[a];
+		plist->items[a] = plist->items[b];
+		plist->items[b] = t;
+	}
+}
+
+/* Shuffle the playlist. */
+void plist_shuffle (struct plist *plist)
+{
+	int i;
+
+	LOCK (plist->mutex);
+	for (i = 0; i < plist->num; i++)
+		plist_swap (plist, i,
+				(rand()/(float)RAND_MAX) * (plist->num - 1));
+	UNLOCK (plist->mutex);
+}
+
+/* Swap the first item on the playlist with the item with file fname. */
+void plist_swap_first_fname (struct plist *plist, const char *fname)
+{
+	int i;
+
+	assert (plist != NULL);
+	assert (fname != NULL);
+	
+	i = plist_find_fname (plist, fname);
+
+	if (i != -1)
+		plist_swap (plist, 0, i);
 }
