@@ -15,6 +15,7 @@
 
 #define DEBUG
 
+#include <sys/file.h>
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
@@ -79,6 +80,9 @@ static int plist_load_m3u (struct plist *plist, const char *fname,
 				strerror(errno));
 		return 0;
 	}
+
+	if (flock(fileno(file), LOCK_SH) == -1)
+		logit ("Can't flock() the playlist file: %s", strerror(errno));
 
 	while ((line = read_line(file))) {
 		if (!strncmp(line, "#EXTINF:", sizeof("#EXTINF:")-1)) {
@@ -170,6 +174,9 @@ static int plist_load_m3u (struct plist *plist, const char *fname,
 		free (line);
 	}
 	
+	if (flock(fileno(file), LOCK_UN) == -1)
+		logit ("Can't flock() (unlock) the playlist file: %s",
+				strerror(errno));
 	fclose (file);
 
 	return added;
@@ -206,6 +213,9 @@ static int plist_save_m3u (struct plist *plist, const char *fname,
 		return 0;
 	}
 
+	if (flock(fileno(file), LOCK_EX) == -1)
+		logit ("Can't flock() the playlist file: %s", strerror(errno));
+	
 	if (fprintf(file, "#EXTM3U\r\n") < 0) {
 		error ("Error writing playlist: %s", strerror(errno));
 		fclose (file);
@@ -239,6 +249,9 @@ static int plist_save_m3u (struct plist *plist, const char *fname,
 			}
 		}
 				
+	if (flock(fileno(file), LOCK_UN) == -1)
+		logit ("Can't flock() (unlock) the playlist file: %s",
+				strerror(errno));
 	if (fclose(file)) {
 		error ("Error writing playlist: %s", strerror(errno));
 		return 0;
