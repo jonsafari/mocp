@@ -4,7 +4,7 @@
 #include <stdio.h>
 
 /* __FUNCTION__ is a gcc extension */
-#ifndef __FUNCTION__
+#ifndef HAVE__FUNCTION__
 # define __FUNCTION__ "UNKNOWN_FUNC"
 #endif
 
