@@ -105,8 +105,11 @@ void menu_draw (struct menu *menu)
 		wmove (menu->win, i - menu->top + 1, info_pos);
 
 		if (menu->show_time && menu->show_format
-				&& menu->items[i]->time[0])
-			wprintw (menu->win, "[%5s|%3s]", menu->items[i]->time,
+				&& (*menu->items[i]->time
+					|| *menu->items[i]->format))
+			wprintw (menu->win, "[%5s|%3s]",
+					menu->items[i]->time
+					? menu->items[i]->time : "     ",
 					menu->items[i]->format);
 		else if (menu->show_time && menu->items[i]->time[0])
 			wprintw (menu->win, "[%5s]", menu->items[i]->time);
