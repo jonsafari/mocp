@@ -103,7 +103,12 @@ char *create_file_name (const char *file)
 {
 	char *home_dir = getenv("HOME");
 	static char fname[PATH_MAX];
-	int len = strlen(home_dir) + strlen(CONFIG_DIR) + strlen(file) + 3;
+	int len;
+	
+	if (!home_dir)
+		fatal ("No HOME environmential variable.");
+	
+	len = strlen(home_dir) + strlen(CONFIG_DIR) + strlen(file) + 3;
 
 	if (len > PATH_MAX)
 		return NULL;
@@ -138,7 +143,7 @@ static void check_moc_dir ()
 		if (errno == ENOENT) {
 			if (mkdir(dir_name, 0700) == -1)
 				fatal ("Can't create directory %s, %s",
-						strerror(errno));
+						dir_name, strerror(errno));
 		}
 		else
 			fatal ("Error trying to check for "CONFIG_DIR
