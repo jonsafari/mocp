@@ -210,7 +210,7 @@ int plist_find_fname (struct plist *plist, const char *file)
 
 	LOCK (plist->mutex);
 	for (i = 0; i < plist->num; i++)
-		if (!plist->items[i].deleted
+		if (!plist->items[i].deleted && plist->items[i].file
 				&& !strcmp(plist->items[i].file, file)) {
 			UNLOCK (plist->mutex);
 			return i;
