@@ -4,21 +4,21 @@ Before 2.0:
 
 Before 2.1.0:
 
-* Support for multiple clients.
-* Try mmap() again if size of the file has changed.
-* iconv() to fix encoding.
-* Something like M-s in mc.
-* configurable colors.
 * Showing the buffer state.
+* Option to hide file name extensions.
 * General procedures for reading files instead of doing this at the decoder
   level.
+* Try mmap() again if size of the file has changed.
 * Start to buffer another file when the decoder ends playing.
 * Configurable sorting.
 * Playlist files (m3u?).
-* Option to hide file extensions.
 * Configuration options and command line parameters for selecting pid file and
   socket. A parameter for selecting different configuration file.
+* iconv() to fix encoding.
 * Use pathconf() instead of PATH_MAX.
+* configurable colors.
+* Scrolled help.
+* Help for searching.
 
 In future:
 
