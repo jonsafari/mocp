@@ -338,6 +338,9 @@ static void *io_read_thread (void *data)
 		debug ("Read %d bytes", (int)read_buf_fill);
 		
 		LOCK (s->buf_mutex);
+
+		if (s->stop_read_thread)
+			break;
 		
 		if (read_buf_fill < 0) {
 
