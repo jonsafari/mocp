@@ -1745,7 +1745,7 @@ static void load_playlist ()
 
 /* Request the playlist from the server (given by another client). Return 0
  * if such a list doesn't exists. */
-static int get_server_playlist ()
+static int get_server_playlist (struct plist *plist)
 {
 	struct plist_item *item;
 	int end_of_list = 0;
@@ -1769,12 +1769,12 @@ static int get_server_playlist ()
 		fatal ("Server didnt send EV_DATA when it was supposed to send"
 				" the playlist.");
 
-	plist_set_serial (playlist, get_int_from_srv());
+	plist_set_serial (plist, get_int_from_srv());
 
 	do {
 		item = recv_item_from_srv ();
 		if (item->file[0])
-			plist_add_from_item (playlist, item);
+			plist_add_from_item (plist, item);
 		else
 			end_of_list = 1;
 		plist_free_item_fields (item);
@@ -1786,7 +1786,7 @@ static int get_server_playlist ()
 		switch_titles_tags (playlist);
 	}
 	else
-		switch_titles_file (playlist);
+		switch_titles_file (plist);
 
 	set_iface_status_ref (NULL);
 	
@@ -1822,6 +1822,20 @@ static void init_playlists ()
 	plist_set_serial (curr_plist, get_data_int());
 	send_int_to_srv (CMD_GET_SERIAL);
 	plist_set_serial (playlist, get_data_int());
+}
+
+/* Send all items from this playlist to other clients */
+static void send_all_items (struct plist *plist)
+{
+	int i;
+	
+	set_iface_status_ref ("Notifying clients...");
+	for (i = 0; i < plist->num; i++)
+		if (!plist_deleted(plist, i)) {
+			send_int_to_srv (CMD_CLI_PLIST_ADD);
+			send_item_to_srv (&plist->items[i]);
+		}
+	set_iface_status_ref (NULL);
 }
 
 /* Initialize the interface. args are command line file names. arg_num is the
@@ -1885,12 +1899,39 @@ void init_interface (const int sock, const int debug, char **args,
 		enter_first_dir ();
 
 	if (plist_count(playlist) == 0) {
-		if (!options_get_int("SyncPlaylist") || !get_server_playlist())
+		if (!options_get_int("SyncPlaylist")
+				|| !get_server_playlist(playlist))
 			load_playlist ();
 	}
-	else {
-		/* TODO: we have the playlist from the command line.
-		 * Playlists of other clients are bad? */
+	else if (options_get_int("SyncPlaylist")) {
+		struct plist tmp_plist;
+		
+		/* We have made the playlist from command line. */
+		
+		send_int_to_srv (CMD_CLI_PLIST_CLEAR);
+
+		/* the playlist should be now clear, but this will give us
+		 * the serial number of the playlist used by other clients. */
+		plist_init (&tmp_plist);
+		get_server_playlist (&tmp_plist);
+		plist_set_serial (playlist, plist_get_serial(&tmp_plist));
+		plist_free (&tmp_plist);
+	
+		/* Assign the server's playlist different id, we don't
+		 * want to stop playing from the old playlist. */
+		send_int_to_srv (CMD_LOCK);
+		send_int_to_srv (CMD_PLIST_GET_SERIAL);
+		if (get_data_int() == plist_get_serial(playlist)) {
+			int serial;
+			
+			send_int_to_srv (CMD_GET_SERIAL);
+			serial = get_data_int ();
+			send_int_to_srv (CMD_PLIST_SET_SERIAL);
+			send_int_to_srv (serial);
+		}
+		send_int_to_srv (CMD_UNLOCK);
+
+		send_all_items (playlist);
 	}
 	
 	send_int_to_srv (CMD_SEND_EVENTS);
@@ -2358,18 +2399,8 @@ static void add_dir_plist ()
 		send_playlist (&plist, 0);
 	send_int_to_srv (CMD_UNLOCK);
 
-	if (options_get_int("SyncPlaylist")) {
-		int i;
-
-		set_iface_status_ref ("Notifying clients...");
-		
-		/* Send the new items to the server (notify other clients) */
-		for (i = 0; i < plist.num; i++)
-			if (!plist_deleted(&plist, i)) {
-				send_int_to_srv (CMD_CLI_PLIST_ADD);
-				send_item_to_srv (&plist.items[i]);
-			}
-	}
+	if (options_get_int("SyncPlaylist"))
+		send_all_items (&plist);
 	
 	if (playlist_menu) {
 		menu_free (playlist_menu);
