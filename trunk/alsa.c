@@ -44,8 +44,7 @@ static snd_mixer_t *mixer_handle = NULL;
 static snd_mixer_elem_t *mixer_elem = NULL;
 static long mixer_min = -1, mixer_max = -1;
 
-#define mixer_percent(vol) (((vol) - mixer_min)/(float)(mixer_max - \
-			mixer_min)) * 100
+#define mixer_percent(vol) ((((vol) - mixer_min)*100)/(mixer_max - mixer_min))
 
 static void alsa_shutdown ()
 {
@@ -397,7 +396,7 @@ static void alsa_set_mixer (int vol)
 
 		debug ("Setting vol to %d%%", vol);
 
-		vol_alsa = (mixer_max - mixer_min) * (float)vol/100;
+		vol_alsa = mixer_min + (mixer_max - mixer_min) * vol/100.0;
 		
 		if (vol_alsa == curr_vol) {
 
@@ -408,6 +407,11 @@ static void alsa_set_mixer (int vol)
 			else if (vol < mixer_percent(curr_vol))
 				vol_alsa--;
 		}
+
+		if (vol_alsa > mixer_max)
+			vol_alsa = mixer_max;
+		else if (vol_alsa < mixer_min)
+			vol_alsa = mixer_min;
 		
 		if ((err = snd_mixer_selem_set_playback_volume_all(
 						mixer_elem, vol_alsa)) < 0)
