@@ -277,10 +277,10 @@ static void *mp3_open (const char *file)
 
 	/* Open the file */
 	if ((data->infile = open(file, O_RDONLY)) == -1)
-		decoder_error (&data->error, ERROR_FATAL, 1,
+		decoder_error (&data->error, ERROR_FATAL, errno,
 				"open() failed: ");
 	else if (fstat(data->infile, &stat) == -1) {
-		decoder_error (&data->error, ERROR_FATAL, 1,
+		decoder_error (&data->error, ERROR_FATAL, errno,
 				"Can't stat() file: ");
 		close (data->infile);
 	}
@@ -330,7 +330,7 @@ static void *mp3_open (const char *file)
 		else {
 #endif
 			if (lseek(data->infile, SEEK_SET, 0) == (off_t)-1) {
-				decoder_error (&data->error, ERROR_FATAL, 1,
+				decoder_error (&data->error, ERROR_FATAL, errno,
 						"lseek() failed: ");
 				close (data->infile);
 				mad_stream_finish (&data->stream);

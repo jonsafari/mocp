@@ -13,6 +13,8 @@
 # include "config.h"
 #endif
 
+#define _XOPEN_SOURCE	600 /* we need the POSIX version of strerror_r() */
+
 #include <stdio.h>
 #include <string.h>
 #include <stdarg.h>
@@ -142,14 +144,14 @@ void decoder_cleanup ()
 }
 
 /* Fill the error structure with an error of a given type and message.
- * strerror(errno) is appended at the end of the message if add_errno != 0.
+ * strerror(add_errno) is appended at the end of the message if add_errno != 0.
  * The old error message is free()ed.
  * This is thread safe, use this instead of constructions with strerror(). */
 void decoder_error (struct decoder_error *error,
 		const enum decoder_error_type type, const int add_errno,
 		const char *format, ...)
 {
-	char errno_buf[256] = "0";
+	char errno_buf[256] = "";
 	char err_str[256];
 	va_list va;
 
@@ -163,7 +165,7 @@ void decoder_error (struct decoder_error *error,
 	err_str[sizeof(err_str)-1] = 0;
 
 	if (add_errno)
-		strerror_r(errno, errno_buf, sizeof(errno_buf));
+		strerror_r(add_errno, errno_buf, sizeof(errno_buf));
 
 	error->err = (char *)xmalloc (sizeof(char) *
 			(strlen(err_str) + strlen(errno_buf) + 1));
