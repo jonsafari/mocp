@@ -1900,13 +1900,14 @@ void init_interface (const int sock, const int logging, char **args,
 		
 		/* We have made the playlist from command line. */
 		
-		send_int_to_srv (CMD_LOCK);
-		send_int_to_srv (CMD_CLI_PLIST_CLEAR);
-
 		/* the playlist should be now clear, but this will give us
 		 * the serial number of the playlist used by other clients. */
 		plist_init (&tmp_plist);
 		get_server_playlist (&tmp_plist);
+
+		send_int_to_srv (CMD_LOCK);
+		send_int_to_srv (CMD_CLI_PLIST_CLEAR);
+
 		plist_set_serial (playlist, plist_get_serial(&tmp_plist));
 		plist_free (&tmp_plist);
 
