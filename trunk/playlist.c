@@ -367,11 +367,31 @@ void plist_add_from_item (struct plist *plist, const struct plist_item *item)
 		plist->items[pos].tags = tags_dup (item->tags);
 }
 
-void plist_shuffle (struct plist *plist)
+/* Return a random playlist index of a not deleted item. */
+/* Return -1 if there are no items. */
+int plist_rand (struct plist *plist)
 {
-	
-}
+	int rnd = (rand() /(float)RAND_MAX) * (plist->num - 1);
+	int i = rnd;
+		
+	assert (plist != NULL);
 
-void plist_copy (struct plist *dst, const struct plist *src)
-{
+	if (!plist->num)
+		return -1;
+
+	LOCK (plist->mutex);
+	while (plist->items[i].deleted && i < plist->num)
+		i++;
+
+	if (i == plist->num) {
+		i = 0;
+		while (i < rnd && plist->items[i].deleted)
+			i++;
+	}
+
+	if (i == plist->num)
+		i = -1;
+	UNLOCK (plist->mutex);
+
+	return i;
 }
