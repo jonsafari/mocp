@@ -12,9 +12,10 @@ style. Features:
 	* Supports id3tag, VBR and Xing header for MP3.
 	* OSS or ALSA output.
 	* Mixer.
+	* Colour themes.
 	* Interface can be detached frm the player to play in background.
 	* Fast switching to your music directory.
-	* Playlists (without read/write to a file).
+	* Playlists (without read/write to a .m3u file).
 	* Shuffle and repeat.
 	* Output buffer in separate thread.
 	
