@@ -88,8 +88,11 @@ static char message[512] = "Welcome to "PACKAGE_NAME"! "
 							   nothing happens */
 static char interface_status[STATUS_LINE_LEN + 1] = "              ";
 
-static struct plist *curr_plist;
+static struct plist *curr_plist = NULL; /* Current directory */
+static struct plist *playlist = NULL; /* The playlist */
+static struct plist *visible_plist = NULL; /* The playlist the user sees */
 static struct menu *menu = NULL;
+static struct menu *saved_menu = NULL; /* Menu associated with curr_plist */
 
 static struct file_info {
 	char title[100];
@@ -476,7 +479,7 @@ static char *get_data_str ()
 static void mark_file (const char *file)
 {
 	if (file) {
-		int i = plist_find_fname (curr_plist, file);
+		int i = plist_find_fname (visible_plist, file);
 		
 		if (i != -1) {
 			menu_mark_plist_item (menu, i);
@@ -563,11 +566,11 @@ static char *find_title (char *file)
 	int index;
 	struct file_tags *tags;
 	
-	if ((index = plist_find_fname(curr_plist, file)) != -1) {
-		if (!curr_plist->items[index].tags)
-			curr_plist->items[index].tags = read_file_tags (file);
-		if (curr_plist->items[index].tags)
-			return build_title (curr_plist->items[index].tags);
+	if ((index = plist_find_fname(visible_plist, file)) != -1) {
+		if (!visible_plist->items[index].tags)
+			visible_plist->items[index].tags = read_file_tags (file);
+		if (visible_plist->items[index].tags)
+			return build_title (visible_plist->items[index].tags);
 	}
 	else if ((tags = read_file_tags(file))) {
 		char *title = NULL;
@@ -656,20 +659,11 @@ static void update_ctime ()
 	wrefresh (info_win);
 }
 
-/* Get and show the server state. */
-static void update_state ()
+/* Update the name of the currently played file. */
+static void update_curr_file ()
 {
 	char *file;
-	
-	/* play | stop | pause */
-	send_int_to_srv (CMD_GET_STATE);
-	set_state (get_data_int());
 
-	/* time of the song */
-	send_int_to_srv (CMD_GET_STIME);
-	set_time (get_data_int());
-	
-	/* file title */
 	send_int_to_srv (CMD_GET_SNAME);
 	file = get_data_str ();
 	if (file[0]) {
@@ -686,9 +680,25 @@ static void update_state ()
 		file_info.title[0] = 0;
 		menu_unmark_item (menu);
 	}
+
+	free (file);
+}
+
+/* Get and show the server state. */
+static void update_state ()
+{
+	/* play | stop | pause */
+	send_int_to_srv (CMD_GET_STATE);
+	set_state (get_data_int());
+
+	/* time of the song */
+	send_int_to_srv (CMD_GET_STIME);
+	set_time (get_data_int());
+	
+	update_curr_file ();
+	
 	menu_draw (menu);
 	wrefresh (main_win);
-	free (file);
 
 	update_channels ();
 	update_bitrate ();
@@ -741,6 +751,7 @@ static int go_to_dir (char *dir)
 
 	plist_free (old_curr_plist);
 	free (old_curr_plist);
+	visible_plist = curr_plist;
 
 	if (menu)
 		menu_free (menu);
@@ -812,6 +823,8 @@ void init_interface (const int sock, const int debug)
 	}
 	curr_plist = (struct plist *)xmalloc (sizeof(struct plist));
 	plist_init (curr_plist);
+	playlist = (struct plist *)xmalloc (sizeof(struct plist));
+	plist_init (playlist);
 
 	initscr ();
 	cbreak ();
@@ -925,7 +938,7 @@ static void send_playlist (struct plist *plist)
 static void play_it (const int plist_pos)
 {
 	send_int_to_srv (CMD_STOP);
-	send_playlist (curr_plist);
+	send_playlist (visible_plist);
 	send_int_to_srv (CMD_PLAY);
 	send_int_to_srv (plist_pos);
 }
@@ -975,6 +988,48 @@ static void toggle_option (const char *name)
 	sync_int_option (name);
 	update_info_win ();
 	wrefresh (info_win);
+}
+
+/* Switch between the current playlist and the playlist
+ * (curr_plist/playlist). */
+static void toggle_plist ()
+{
+	if (visible_plist == playlist) {
+		visible_plist = curr_plist;
+		menu_free (menu);
+		menu = saved_menu;
+		set_title (cwd);
+		update_curr_file ();
+	}
+	else if (playlist && playlist->num) {
+		visible_plist = playlist;
+		saved_menu = menu;
+		menu = make_menu (playlist, NULL, 0);
+		set_title ("Playlist");
+		update_curr_file ();
+	}
+	else
+		interface_error ("The playlist is empty.");
+}
+
+/* Add the current selected file to the playlist. */
+static void add_file_plist ()
+{
+	struct menu_item *menu_item = menu_curritem (menu);
+
+	if (visible_plist == playlist) {
+		interface_error ("Can't add to the playlist a file from the "
+				"playlist.");
+		return;
+	}
+
+	if (menu_item->plist_pos == -1) {
+		interface_error ("To add a directory, use the 'A' command.");
+		return;
+	}
+
+	plist_add_from_item (playlist,
+			&curr_plist->items[menu_item->plist_pos]);
 }
 
 /* Handle key */
@@ -1039,6 +1094,13 @@ static void menu_key (const int ch)
 			break;
 		case 'X':
 			toggle_option ("AutoNext");
+			break;
+		case 'l':
+			toggle_plist ();
+			update_menu = 1;
+			break;
+		case 'a':
+			add_file_plist ();
 			break;
 		case KEY_RESIZE:
 			break;
