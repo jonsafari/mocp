@@ -828,6 +828,16 @@ static struct menu *make_menu (struct plist *plist, struct file_list *dirs,
 			menu_items[menu_pos] = menu_newitem (
 					plist->items[i].title, i, F_SOUND,
 					plist->items[i].file);
+
+			if (plist->items[i].tags
+					&& plist->items[i].tags->time != -1) {
+				char time_str[6];
+
+				sec_to_min (time_str,
+						plist->items[i].tags->time);
+				menu_item_set_time (menu_items[menu_pos],
+						time_str);
+			}
 			
 			menu_item_set_attr_normal (menu_items[menu_pos],
 					colours[CLR_MENU_ITEM_FILE]);
@@ -1193,6 +1203,11 @@ static int get_file_time (char *file)
 	
 	if (find_item_plists(file, &index, &plist, TAGS_TIME)) {
 		debug ("Found item on the playlist");
+
+		/* Make sure that the time is not read from the playlist. */
+		if (plist->items[index].tags)
+			plist->items[index].tags->filled &= ~TAGS_TIME;
+		
 		plist->items[index].tags = read_file_tags (file,
 				plist->items[index].tags, TAGS_TIME);
 		if ((ftime = plist->items[index].tags->time) != -1)
