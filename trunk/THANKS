@@ -8,3 +8,4 @@ Marcin Micha³owski <marcin.mi@gmail.com> - Added default and grey colors, made
 	first nice theme.
 Elimar Riesebieter <riesebie@lxtec.de> - Tests on PPC (made working on big
 	endian architectures).
+Wim Speekenbrink <w.speek@wanadoo.nl> - Author of nightly_theme.
