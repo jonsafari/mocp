@@ -276,7 +276,7 @@ static void add_event (struct events *ev, const int event)
 		if (ev->queue[i] == event) {
 			UNLOCK (ev->mutex);
 #ifdef DEBUG
-			logit ("Not adding event 0x02%x: already in the queue",
+			logit ("Not adding event 0x%02x: already in the queue",
 					event);
 #endif
 			return;
