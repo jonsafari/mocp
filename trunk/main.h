@@ -29,7 +29,13 @@
 void *xmalloc (const size_t size);
 void *xrealloc (void *ptr, const size_t size);
 char *xstrdup (const char *s);
+
+#ifdef HAVE__ATTRIBUTE__
+void fatal (const char *format, ...) __attribute__((format (printf, 1, 2)));
+#else
 void fatal (const char *format, ...);
+#endif
+
 char *create_file_name (const char *file);
 int proper_sound_driver (const char *driver);
 int isdir (const char *file);
