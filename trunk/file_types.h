@@ -43,6 +43,7 @@ struct decoder_funcs
 int is_sound_file (char *name);
 struct decoder_funcs *get_decoder_funcs (char *file);
 void file_types_init ();
+void file_types_cleanup ();
 char *format_name (char *file);
 
 #endif
