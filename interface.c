@@ -1186,7 +1186,7 @@ static void make_path (char *path)
 		strcpy (cwd, "/"); /* for absolute path */
 	else if (!cwd[0]) {
 		if (!getcwd(cwd, sizeof(cwd)))
-			interface_fatal ("Can't get CWD");
+			interface_fatal ("Can't get CWD: %s", strerror(errno));
 	}
 
 	resolve_path (cwd, sizeof(cwd), path);
@@ -1259,7 +1259,7 @@ static void process_args (char **args, const int num)
 		char this_cwd[PATH_MAX];
 		
 		if (!getcwd(this_cwd, sizeof(cwd)))
-			interface_fatal ("Can't get CWD.");
+			interface_fatal ("Can't get CWD: %s.", strerror(errno));
 
 		for (i = 0; i < num; i++) {
 			char path[2*PATH_MAX];
@@ -2437,7 +2437,7 @@ void interface_loop ()
 			}
 		}
 		else if (ret == -1 && !want_quit && errno != EINTR)
-			interface_fatal ("select() failed");
+			interface_fatal ("select() failed: %s", strerror(errno));
 
 #ifdef SIGWINCH
 		if (want_resize)
