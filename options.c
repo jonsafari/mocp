@@ -142,6 +142,7 @@ void options_init ()
 	option_add_str ("OSSMixerDevice", "/dev/mixer");
 	option_add_str ("OSSMixerChannel", "pcm");
 	option_add_str ("SoundDriver", "OSS");
+	option_add_int ("ShowHiddenFiles", 1);
 }
 
 /* Return 1 if a parameter to an integer option is valid. */
@@ -153,6 +154,7 @@ static int check_int_option (const char *name, const int val)
 			|| !strcasecmp(name, "Repeat")
 			|| !strcasecmp(name, "Shuffle")
 			|| !strcasecmp(name, "AutoNext")
+			|| !strcasecmp(name, "ShowHiddenFiles")
 			) {
 		if (!(val == 1 || val == 0))
 			return 0;
