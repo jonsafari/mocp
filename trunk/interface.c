@@ -287,9 +287,8 @@ static void update_info_win ()
 
 	/* Show message it it didn't expire yet */
 	if (time(NULL) <= msg_timeout) {
-		if (has_colors())
-			wattron (info_win, msg_is_error ? COLOR_PAIR(CLR_ERROR)
-					: COLOR_PAIR(CLR_MESSAGE));
+		wattron (info_win, msg_is_error ? COLOR_PAIR(CLR_ERROR)
+				: COLOR_PAIR(CLR_MESSAGE));
 		mvwaddnstr (info_win, 1, 1, message, COLS - 2);
 	}
 	else {
@@ -328,7 +327,6 @@ static void update_info_win ()
 	waddstr (info_win, file_info.bitrate);
 
 	/* Channels */
-	/* FIXME: check for colors */
 	wmove (info_win, 2, 38);
 	if (file_info.channels == 2)
 		wattron (info_win, COLOR_PAIR(CLR_ITEM) | A_BOLD);
@@ -337,7 +335,6 @@ static void update_info_win ()
 	waddstr (info_win, "[STEREO]");
 	
 	/* Shuffle & repeat */
-	/* FIXME: check for colors */
 	wmove (info_win, 2, COLS - sizeof("[SHUFFLE] [REPEAT] [NEXT]"));
 	if (options_get_int("Shuffle"))
 		wattron (info_win, COLOR_PAIR(CLR_ITEM) | A_BOLD);
@@ -357,7 +354,6 @@ static void update_info_win ()
 		wattron (info_win, COLOR_PAIR(CLR_DISABLED) | A_BOLD);
 	waddstr (info_win, "[NEXT]");
 	
-	/* FIXME: check for colors */
 	wattron (info_win, COLOR_PAIR(CLR_ITEM));
 
 	/* Status line */
@@ -494,8 +490,6 @@ static int is_subdir (char *dir1, char *dir2)
 	char *slash = strrchr (dir2, '/');
 
 	assert (slash != NULL);
-
-	/* FIXME: '/dir/dir' is not subdir of '/dir' */
 
 	return !strncmp(dir1, dir2, strlen(dir1)) ? 1 : 0;
 }
@@ -781,7 +775,6 @@ static int go_to_dir (char *dir)
 
 	if (!read_directory(new_dir, curr_plist, &dirs, &ndirs)) {
 		if (chdir(cwd))
-			/* FIXME: something smarter? */
 			interface_fatal ("Can't go to the previous directory.");
 		set_interface_status (NULL);
 		wrefresh (info_win);
@@ -896,28 +889,23 @@ void init_interface (const int sock, const int debug)
 
 	detect_term ();
 
-	if (has_colors()) {
-		start_color ();
-		init_pair (CLR_ITEM, COLOR_WHITE, COLOR_BLUE);
-		init_pair (CLR_SELECTED, COLOR_WHITE, COLOR_BLACK);
-		init_pair (CLR_ERROR, COLOR_RED, COLOR_BLUE);
-		init_pair (CLR_MARKED, COLOR_GREEN, COLOR_BLUE);
-		init_pair (CLR_MARKED_SELECTED, COLOR_GREEN, COLOR_BLACK);
-		init_pair (CLR_BAR, COLOR_BLACK, COLOR_CYAN);
-		init_pair (CLR_DISABLED, COLOR_BLUE, COLOR_BLUE);
-		init_pair (CLR_MESSAGE, COLOR_GREEN, COLOR_BLUE);
-		init_pair (CLR_NUMBERS, COLOR_WHITE, COLOR_BLUE);
-	}
+	start_color ();
+	init_pair (CLR_ITEM, COLOR_WHITE, COLOR_BLUE);
+	init_pair (CLR_SELECTED, COLOR_WHITE, COLOR_BLACK);
+	init_pair (CLR_ERROR, COLOR_RED, COLOR_BLUE);
+	init_pair (CLR_MARKED, COLOR_GREEN, COLOR_BLUE);
+	init_pair (CLR_MARKED_SELECTED, COLOR_GREEN, COLOR_BLACK);
+	init_pair (CLR_BAR, COLOR_BLACK, COLOR_CYAN);
+	init_pair (CLR_DISABLED, COLOR_BLUE, COLOR_BLUE);
+	init_pair (CLR_MESSAGE, COLOR_GREEN, COLOR_BLUE);
+	init_pair (CLR_NUMBERS, COLOR_WHITE, COLOR_BLUE);
 
 	/* windows */
 	main_win = newwin (LINES - 4, COLS, 0, 0);
 	keypad (main_win, TRUE);
 	info_win = newwin (4, COLS, LINES - 4, 0);
-	if (has_colors()) {
-		wbkgd (main_win, COLOR_PAIR(CLR_ITEM));
-		wbkgd (info_win, COLOR_PAIR(CLR_ITEM));
-	}
-
+	wbkgd (main_win, COLOR_PAIR(CLR_ITEM));
+	wbkgd (info_win, COLOR_PAIR(CLR_ITEM));
 
 	msg_timeout = time(NULL) + 3;
 	reset_file_info ();
@@ -1125,9 +1113,7 @@ static void add_dir_plist ()
 
 	set_interface_status ("reading directories...");
 	wrefresh (info_win);
-	read_directory_recurr (dir, playlist); /* TODO: don't allow to add
-						  a file if it's already
-						  on the list */
+	read_directory_recurr (dir, playlist);
 	if (options_get_int("ReadTags")) {
 		read_tags (playlist);
 		make_titles_tags (playlist);
@@ -1165,8 +1151,7 @@ static void seek (const int sec)
 static void print_help_screen ()
 {
 	wclear (main_win);
-	if (has_colors())
-		wbkgd (main_win, COLOR_PAIR(CLR_ITEM));
+	wbkgd (main_win, COLOR_PAIR(CLR_ITEM));
 
 	mvwprintw (main_win, 0, 0,
 "  UP, DOWN     Move up and down in the menu\n"
