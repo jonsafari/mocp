@@ -1886,6 +1886,8 @@ static void event_plist_add (struct plist_item *item)
 {
 	if (plist_find_fname(playlist, item->file) == -1) {
 		char msg[50];
+		int selected_item = 0;
+		int top_item = 0;
 		int item_num = plist_add_from_item (playlist, item);
 		
 		if (options_get_int("ReadTags"))
@@ -1894,11 +1896,16 @@ static void event_plist_add (struct plist_item *item)
 			make_file_title (playlist, item_num,
 					options_get_int("HideFileExtension"));
 
-		if (playlist_menu)
+		if (playlist_menu) {
+			selected_item = playlist_menu->selected;
+			top_item = playlist_menu->top;
 			menu_free (playlist_menu);
+		}
 		
 		if (curr_menu == playlist_menu) {
 			playlist_menu = make_menu (playlist, NULL, NULL);
+			menu_set_top_item (playlist_menu, top_item);
+			menu_setcurritem (playlist_menu, selected_item);
 			curr_menu = playlist_menu;
 		}
 		else
