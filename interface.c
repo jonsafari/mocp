@@ -28,6 +28,9 @@
 #include <errno.h>
 #include <assert.h>
 #include <ctype.h>
+
+#define DEBUG
+
 #include "protocol.h"
 #include "main.h"
 #include "playlist.h"
@@ -781,28 +784,47 @@ static void set_state (const int state)
  * make the title. Returned memory is malloc()ed. */
 static char *find_title (char *file)
 {
+	/* remember last file to avoid probably exepensive read_file_tags() */
+	static char *cache_file = NULL;
+	static char *cache_title = NULL;
+	
 	int index;
 	struct file_tags *tags;
+	char *title = NULL;
+
+	if (cache_file && !strcmp(cache_file, file)) {
+		debug ("Using cache");
+		return xstrdup (cache_title);
+	}
+	else
+		debug ("Getting file title for %s", file);
 	
 	if ((index = plist_find_fname(visible_plist, file)) != -1) {
 		if (!visible_plist->items[index].tags)
 			visible_plist->items[index].tags = read_file_tags (file);
-		if (visible_plist->items[index].tags)
-			return build_title (visible_plist->items[index].tags);
+		if (visible_plist->items[index].tags
+				&& visible_plist->items[index].tags->title)
+			title = build_title (visible_plist->items[index].tags);
 	}
 	else if ((tags = read_file_tags(file))) {
-		char *title = NULL;
-		
 		if (tags->title)
 			title = build_title (tags);
 		tags_free (tags);
-
-		if (title)
-			return title;
 	}
 	
-	return strrchr(file, '/') ? xstrdup (strrchr(file, '/') + 1)
-		: xstrdup (file);
+	if (!title)
+		title = strrchr(file, '/') ? xstrdup (strrchr(file, '/') + 1)
+			: xstrdup (file);
+
+	if (cache_file) {
+		free (cache_file);
+		free (cache_title);
+	}
+
+	cache_file = xstrdup (file);
+	cache_title = title;
+
+	return xstrdup (title);
 }
 
 /* Convert time in second to min:sec text format. */
@@ -819,7 +841,10 @@ static void sec_to_min (char *buff, const int seconds)
 static void set_time (const int time)
 {
 	file_info.time_num = time;
-	sec_to_min (file_info.time, time);
+	if (time != -1)
+		sec_to_min (file_info.time, time);
+	else
+		strcpy (file_info.time, "00:00");
 }
 
 static void update_channels ()
@@ -869,12 +894,56 @@ static void update_ctime ()
 	send_int_to_srv (CMD_GET_CTIME);
 	ctime = get_data_int ();
 
-	left = file_info.time_num - ctime;
 	sec_to_min (file_info.curr_time, ctime);
-	sec_to_min (file_info.time_left, left > 0 ? left : 0);
+
+	if (file_info.time_num != -1) {
+		left = file_info.time_num - ctime;
+		sec_to_min (file_info.time_left, left > 0 ? left : 0);
+	}
+	else
+		file_info.time_left[0] = 0;
 
 	update_info_win ();
 	wrefresh (info_win);
+}
+
+/* Return the file time, or -1 on error. */
+static int get_file_time (char *file)
+{
+	/* To remember last file time - counting time can be expensive. */
+	static char *cache_file = NULL;
+	static int cache_time = -1;
+	
+	int index;
+	struct file_tags *tags;
+	int ftime = -1;
+
+	if (cache_file && !strcmp(cache_file, file)) {
+		debug ("Using cache");
+		return cache_time;
+	}
+	else
+		debug ("Getting file time for %s", file);
+	
+	/* TODO: common code instead of this block: search on curr_plist and
+	 * the playlist. */
+	if ((index = plist_find_fname(visible_plist, file)) != -1) {
+		if (!visible_plist->items[index].tags)
+			visible_plist->items[index].tags = read_file_tags (file);
+		if (visible_plist->items[index].tags)
+			ftime = visible_plist->items[index].tags->time;
+	}
+	else if ((tags = read_file_tags(file))) {
+		ftime = tags->time;
+		tags_free (tags);
+	}
+
+	if (cache_file)
+		free (cache_file);
+	cache_file = xstrdup (file);
+	cache_time = ftime;
+	
+	return ftime;
 }
 
 /* Update the name of the currently played file. */
@@ -890,6 +959,7 @@ static void update_curr_file ()
 		strncpy (file_info.title, title,
 				sizeof(file_info.title) - 1);
 		file_info.title[sizeof(file_info.title)-1] = 0;
+		set_time (get_file_time(file));
 		xterm_set_title (file_info.title);
 		mark_file (file);
 		free (title);
@@ -910,10 +980,6 @@ static void update_state ()
 	send_int_to_srv (CMD_GET_STATE);
 	set_state (get_data_int());
 
-	/* time of the song */
-	send_int_to_srv (CMD_GET_STIME);
-	set_time (get_data_int());
-	
 	update_curr_file ();
 	
 	if (main_win_mode == WIN_MENU) {
