@@ -16,12 +16,7 @@
 
 #include "audio.h"
 
-static struct
-{
-	int channels;
-	int rate;
-	int format;
-} params = { 0, 0, 0 };
+static struct sound_params params = { 0, 0, 0 };
 
  
 static void null_init ()
@@ -32,12 +27,9 @@ static void null_shutdown ()
 {
 }
 
-static int null_open (const int bits, const int channels, const int rate)
+static int null_open (struct sound_params *sound_params)
 {
-	params.channels = channels;
-	params.rate = rate;
-	params.format = bits / 8;
-
+	params = *sound_params;
 	return 1;
 }
 
