@@ -11,18 +11,18 @@ style. Features:
 	  without any playlist.
 	* Supports id3tag, VBR and Xing header for MP3.
 	* Simple mixer.
+	* Interface can be detached frm the player to play in background.
 	* Fast switching to your music directory.
 	* Playlists (without read/write to a file).
 	* Shuffle and repeat.
 	* Changing process priority to higher value.
-	* Playing in separate thread.
+	* Output buffer in separate thread.
 	
 
 What software is required to compile it?
 	* UNIX system with POSIX threads (Linux or FreeBSD with linuxthread
 	  port)
 	* ncurses (probably already installed in your system)
-	* libao (http://www.xiph.org/ogg/vorbis/download/)
 	* libvorbis - only for OGG (http://www.xiph.org/ogg/vorbis/download/)
 	* libmad with libid3tag only for MP3 (ftp://ftp.mars.org/pub/mpeg/)
 	* zlib for libid3tag - only MP3 (probably already installed in your
@@ -31,7 +31,6 @@ What software is required to compile it?
 What system is MOC running on?
 
 I've tested it on Linux and FreeBSD.
-
 
 How to install it?
 
@@ -43,7 +42,9 @@ And as root:
 	make install
 
 You can use config file, see comments in config.example how to do it.
-Run program with the 'moc' command. If you need help, press 'h'.
+
+Run program with the 'mocp' command. If you need help, press 'h' and read
+man mocp.
 
 If you use FreeBSD, you may have to run configure in this way:
 ./configure LDFLAGS=-L/usr/local/lib CPPFLAGS=-I/usr/local/include
