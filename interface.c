@@ -1184,6 +1184,43 @@ static void help_screen ()
 	print_help_screen ();
 }
 
+/* Make new menu titles using titles from the items. */
+static void update_menu_titles (struct menu *menu, struct plist *plist)
+{
+	int i;
+
+	assert (menu != NULL);
+
+	for (i = 0; i < menu->nitems; i++)
+		if (menu->items[i]->plist_pos != -1) {
+			free (menu->items[i]->title);
+			menu->items[i]->title = xstrdup (
+					plist->items[menu->items[i]->plist_pos].title);
+		}
+}
+
+/* Switch ReadTags options and update the menu. */
+static void switch_read_tags ()
+{
+	if (options_get_int("ReadTags")) {
+		option_set_int("ReadTags", 0);
+		make_titles_file (curr_plist);
+		make_titles_file (playlist);
+	}
+	else {
+		option_set_int("ReadTags", 1);
+		read_tags (playlist);
+		make_titles_tags (playlist);
+		read_tags (curr_plist);
+		make_titles_tags (curr_plist);
+	}
+
+	update_menu_titles (menu, curr_plist);
+	if (saved_menu)
+		update_menu_titles (saved_menu, playlist);
+	update_curr_file ();
+}
+
 /* Handle key */
 static void menu_key (const int ch)
 {
@@ -1251,7 +1288,9 @@ static void menu_key (const int ch)
 		case ' ':
 			switch_pause ();
 			break;
-		case 'f': /* TODO */
+		case 'f':
+			switch_read_tags ();
+			update_menu = 1;
 			break;
 		case 'S':
 			toggle_option ("Shuffle");
