@@ -9,5 +9,6 @@ void set_info_rate (const int rate);
 void set_info_channels (const int channels);
 void set_info_time (const int time);
 void set_info_bitrate (const int bitrate);
+void ctime_change ();
 
 #endif
