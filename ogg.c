@@ -173,7 +173,7 @@ static int ogg_decode (void *void_data, char *buf, int buf_len,
 		/* Update the bitrate information */
 		bitrate = ov_bitrate_instant (&data->vf);
 		if (bitrate > 0)
-			data->bitrate = bitrate;
+			data->bitrate = bitrate / 1000;
 
 		break;
 	}
