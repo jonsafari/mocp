@@ -1084,9 +1084,13 @@ static void add_file_plist ()
 		return;
 	}
 
-	/* TODO: dont allow to add a file that is already in the list */
-	plist_add_from_item (playlist,
-			&curr_plist->items[menu_item->plist_pos]);
+	if (plist_find_fname(playlist,
+				curr_plist->items[menu_item->plist_pos].file)
+			== -1)
+		plist_add_from_item (playlist,
+				&curr_plist->items[menu_item->plist_pos]);
+	else
+		interface_error ("The file is already on the playlist.");
 }
 
 /* Clear the playlist */
