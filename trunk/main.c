@@ -366,6 +366,8 @@ static void show_usage (const char *prg_name) {
 "-M --moc-dir DIR       Use the specified MOC directory instead of the default.\n"
 "-P --pause             Pause.\n"
 "-U --unpause           Unpause.\n"
+"-y --sync              Synchronize the playlist with other clients.\n"
+"-n --nosync            Don't synchronize the playlist with other clients.\n"
 , prg_name);
 }
 
@@ -444,6 +446,8 @@ int main (int argc, char *argv[])
 		{ "moc-dir",		1, NULL, 'M' },
 		{ "pause",		0, NULL, 'P' },
 		{ "unpause",		0, NULL, 'U' },
+		{ "sync",		0, NULL, 'y' },
+		{ "nosync",		0, NULL, 'n' },
 		{ 0, 0, 0, 0 }
 	};
 	int ret, opt_index = 0;
@@ -453,7 +457,7 @@ int main (int argc, char *argv[])
 	memset (&params, 0, sizeof(params));
 	options_init ();
 
-	while ((ret = getopt_long(argc, argv, "VhDSFR:macpsxT:C:M:PU",
+	while ((ret = getopt_long(argc, argv, "VhDSFR:macpsxT:C:M:PUyn",
 					long_options, &opt_index)) != -1) {
 		switch (ret) {
 			case 'V':
@@ -518,6 +522,14 @@ int main (int argc, char *argv[])
 			case 'M':
 				option_set_str ("MOCDir", optarg);
 				option_ignore_config ("MOCDir");
+				break;
+			case 'y':
+				option_set_int ("SyncPlaylist", 1);
+				option_ignore_config ("SyncPlaylist");
+				break;
+			case 'n':
+				option_set_int ("SyncPlaylist", 0);
+				option_ignore_config ("SyncPlaylist");
 				break;
 			default:
 				show_usage (argv[0]);
