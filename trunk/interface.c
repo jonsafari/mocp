@@ -229,6 +229,12 @@ static void interface_fatal (const char *format, ...)
 static void interface_fatal (const char *format, ...);
 #endif
 
+static void xterm_clear_title ()
+{
+	if (has_xterm)
+		write (1, "\033]2;\007", sizeof("\033]2;\007")-1);
+}
+
 static void interface_fatal (const char *format, ...)
 {
 	char err_msg[512];
@@ -240,6 +246,7 @@ static void interface_fatal (const char *format, ...)
 	va_end (va);
 
 	logit ("FATAL ERROR: %s", err_msg);
+	xterm_clear_title ();
 	endwin ();
 	fatal ("%s", err_msg);
 }
@@ -969,12 +976,6 @@ static void xterm_set_title (const char *title)
 		xterm_title.title[sizeof(xterm_title.title)-1] = 0;
 		xterm_update_title ();
 	}
-}
-
-static void xterm_clear_title ()
-{
-	if (has_xterm)
-		write (1, "\033]2;\007", sizeof("\033]2;\007")-1);
 }
 
 static void xterm_set_state (int state)
