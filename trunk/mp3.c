@@ -299,8 +299,10 @@ static void *mp3_open (const char *file)
 			logit ("mmapped() %ld bytes of file", (long)data->size);
 		}
 	}
-	else
+	else {
 		debug ("Not using mmap()");
+		data->mapped = NULL;
+	}
 #endif
 
 	data->duration = count_time_internal (data);
