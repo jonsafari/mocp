@@ -1,8 +1,6 @@
 Before 2.2.0:
 * test if sync_plists_data() isn't too slow.
 * test if plist_total_time() isn't too slow.
-* Shift-left and Shift-right for faster seeking (10 sec. per keystroke).
-* When playing file - use the time read by the server in the interface.
 * configurable saving the playlist at the end: ask, no, not if saved, always.
 * A bar showing time for the current song.
 * General error/fatal functions that recognize if they are in the interface or
@@ -14,9 +12,15 @@ Before 2.2.0:
 * When adding files to the playlist, add them also to the server's playlist
 * True shuffle.
 * History in the i command.
+* Shift-left and Shift-right for faster seeking (10 sec. per keystroke).
 
 In future:
 
+* Number items on the playlist.
+* Command to chenge the mixer device.
+* Command to go to the previously played file.
+* Command to see all information about the file with all tags.
+* Move the playlist to see the song that is currently played.
 * Show the bitrate in the right time (the playback time, not while decoding).
 * Lyrics downloaded from the Internet.
 * Do something with errors while precaching that seems to belong to the current
@@ -40,7 +44,7 @@ In future:
 * Use 24-bit output if the audio device supports it.
 * Seek forward using the content of the output buffer.
 * Locales.
-* Song ratings.
+* Song ratings or something like Q in XMMS.
 * www.musepack.net (www.caddr.com)
 * Silent seeking
 
