@@ -40,8 +40,10 @@
 # legend             - "KHz" and "Kbps"
 # disabled           - disabled element ([STEREO])
 # enabled            - enabled element
-# empty_bar          - "empty" part of the volume bar
-# filled_bar         - "filled" part of the volume bar
+# empty_mixer_bar    - "empty" part of the volume bar
+# filled_mixer_bar   - "filled" part of the volume bar
+# empty_time_bar     - "empty" part of the time bar
+# filled_time_bar    - "filled" part of the time bar
 # entry              - place wher user can type a search query or a file name
 # entry_title        - the title of an entry
 # error              - error message
@@ -94,8 +96,10 @@ sound_parameters	= white		blue	bold
 legend			= white		blue
 disabled		= blue		blue	bold
 enabled			= white		blue	bold
-empty_bar		= white		blue
-filled_bar		= black		cyan
+empty_mixer_bar		= white		blue
+filled_mixer_bar	= black		cyan
+empty_time_bar		= white		blue
+filled_time_bar		= black		cyan
 entry			= white		blue
 entry_title		= black		cyan
 error			= red		blue	bold
