@@ -1254,7 +1254,7 @@ static int get_file_time (char *file)
 	
 	file_mtime = get_mtime(file);
 
-	if (cache_file && !strcmp(cache_file, file)
+	if (cache_file && cache_time != -1 && !strcmp(cache_file, file)
 			&& cache_mtime == file_mtime) {
 		debug ("Using cache");
 		return cache_time;
@@ -1263,7 +1263,8 @@ static int get_file_time (char *file)
 		debug ("Getting file time for %s", file);
 
 	ftime = read_file_time (file);
-	update_times (file, ftime);
+	if (ftime != -1)
+		update_times (file, ftime);
 
 	if (cache_file)
 		free (cache_file);
