@@ -1005,8 +1005,10 @@ static void send_playlist (struct plist *plist)
 	send_int_to_srv (CMD_LIST_CLEAR);
 	
 	for (i = 0; i < plist->num; i++) {
-		send_int_to_srv (CMD_LIST_ADD);
-		send_str_to_srv (plist->items[i].file);
+		if (!plist->items[i].deleted) {
+			send_int_to_srv (CMD_LIST_ADD);
+			send_str_to_srv (plist->items[i].file);
+		}
 	}
 }
 
