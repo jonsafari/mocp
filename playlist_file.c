@@ -101,25 +101,56 @@ static int plist_load_m3u (struct plist *plist, const char *fname,
 	while ((line = read_line(file))) {
 		if (!strncmp(line, "#EXTINF:", sizeof("#EXTINF:")-1)) {
 			char *comma;
+			char *num_err;
+			char time_text[10];
+			int time_sec;
 
 			if (after_extinf) {
-				interface_error ("Broken M3U file.");
+				interface_error ("Broken M3U file: double "
+						"#EXTINF.");
 				free (line);
 				plist_delete (plist, last_added);
 				return added;
 			}
 			
-			comma = strchr (line + sizeof("#EXTINF:"), ',');
-
+			comma = strchr (line + (sizeof("#EXTINF:") - 1), ',');
 			if (!comma) {
-				interface_error ("Broken M3U file.");
+				interface_error ("Broken M3U file: no comma "
+						"in #EXTINF.");
 				free (line);
 				return added;
 			}
-			
+	
+			time_text[sizeof(time_text)-1] = 0;
+			strncpy (time_text, line + sizeof("#EXTINF:") - 1,
+					MIN(comma - line - (sizeof("#EXTINF:")
+						- 1), sizeof(time_text)));
+			if (time_text[sizeof(time_text)-1]) {
+				interface_error ("Broken M3U file: "
+						"wrong time.");
+				free (line);
+				return added;
+			}
+
+			time_sec = strtol (time_text, &num_err, 10);
+			if (*num_err) {
+				interface_error ("Broken M3U file: "
+						"time is not a number.");
+				free (line);
+				return added;
+			}
+
+		
 			after_extinf = 1;
 			last_added = plist_add (plist, NULL);
 			plist_set_title (plist, last_added, comma + 1);
+
+			plist->items[last_added].tags = tags_new ();
+			if (*time_text) {
+				plist->items[last_added].tags->time = time_sec;
+				plist->items[last_added].tags->filled
+					= TAGS_TIME;
+			}
 		}
 		if (line[0] != '#') {
 			char path[2*PATH_MAX];
@@ -186,17 +217,27 @@ static int plist_save_m3u (struct plist *plist, const char *fname,
 		return 0;
 	}
 
-	/* Don't use m3u, because it requires time of the file and we don't
-	 * store it nowhere.
-	 * TODO: use EXTM3U*/
-	/*if (fprintf(file, "#EXTM3U\r\n") < 0) {
+	if (fprintf(file, "#EXTM3U\r\n") < 0) {
 		interface_error ("Error writing playlist: %s", strerror(errno));
 		fclose (file);
 		return 0;
-	}*/
+	}
 	
 	for (i = 0; i < plist->num; i++)
-		if (!plist_deleted(plist, i))
+		if (!plist_deleted(plist, i)) {
+
+			/* EXTM3U */
+			if (plist->items[i].tags->time != -1
+					&& fprintf(file, "#EXTINF:%d,%s\r\n",
+						plist->items[i].tags->time,
+						plist->items[i].title) < 0) {
+				interface_error ("Error writing playlist: %s",
+						strerror(errno));
+				fclose (file);
+				return 0;
+			}
+
+			/* file */
 			if (fprintf(file, "%s\r\n", plist->items[i].file
 						+ strip_path) < 0) {
 				interface_error ("Error writing playlist: %s",
@@ -204,6 +245,7 @@ static int plist_save_m3u (struct plist *plist, const char *fname,
 				fclose (file);
 				return 0;
 			}
+		}
 				
 	if (fclose(file)) {
 		interface_error ("Error writing playlist: %s", strerror(errno));
@@ -259,6 +301,7 @@ static void find_common_path (char *buf, const int buf_size,
 int plist_save (struct plist *plist, const char *file, const char *cwd)
 {
 	char common_path[PATH_MAX+1];
+	int i;
 
 	if (cwd)
 		
@@ -266,9 +309,16 @@ int plist_save (struct plist *plist, const char *file, const char *cwd)
 		 * relative paths) */
 		find_common_path (common_path, sizeof(common_path), plist);
 
+	for (i = 0; i < plist->num; i++)
+		if (!plist_deleted(plist, i))
+			plist->items[i].tags = read_file_tags (
+					plist->items[i].file,
+					plist->items[i].tags,
+					TAGS_COMMENTS | TAGS_TIME);
+	make_titles_tags (plist);
+
 	/* FIXME: checkif it possible to just add some directories to make
 	 * relative path working. */
-	
 	return plist_save_m3u (plist, file, cwd && !strcmp(common_path, cwd) ?
 			strlen(common_path) : 0);
 }
