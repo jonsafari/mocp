@@ -239,12 +239,18 @@ static int wav_decode (void *void_data, char *buf, int buf_len,
 	return fread (buf, 1, buf_len, data->file);
 }
 
+static int wav_bitrate (void *void_data)
+{
+	return -1;
+}
+
 static struct decoder_funcs decoder_funcs = {
 	wav_open,
 	wav_close,
 	wav_decode,
 	wav_seek,
-	wav_info
+	wav_info,
+	wav_bitrate
 };
 
 struct decoder_funcs *wav_get_funcs ()

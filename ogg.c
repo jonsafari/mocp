@@ -101,7 +101,6 @@ static void ogg_info (const char *file_name, struct file_tags *info,
 static void *ogg_open (const char *file)
 {
 	struct ogg_data *data;
-	vorbis_info *info;
 
 	data = (struct ogg_data *)xmalloc (sizeof(struct ogg_data));
 
@@ -119,10 +118,7 @@ static void *ogg_open (const char *file)
 	}
 
 	data->last_section = -1;
-
-	info = ov_info (&data->vf, -1);
-	
-	set_info_bitrate (ov_bitrate(&data->vf, -1) / 1000);
+	data->bitrate = ov_bitrate(&data->vf, -1) / 1000;
 
 	return data;
 }
@@ -177,7 +173,7 @@ static int ogg_decode (void *void_data, char *buf, int buf_len,
 		/* Update the bitrate information */
 		bitrate = ov_bitrate_instant (&data->vf);
 		if (bitrate > 0)
-			set_info_bitrate (bitrate / 1000);
+			data->bitrate = bitrate;
 
 		break;
 	}
@@ -185,12 +181,20 @@ static int ogg_decode (void *void_data, char *buf, int buf_len,
 	return ret;
 }
 
+static int ogg_get_bitrate (void *void_data)
+{
+	struct ogg_data *data = (struct ogg_data *)void_data;
+
+	return data->bitrate;
+}
+
 static struct decoder_funcs decoder_funcs = {
 	ogg_open,
 	ogg_close,
 	ogg_decode,
 	ogg_seek,
-	ogg_info
+	ogg_info,
+	ogg_get_bitrate
 };
 
 struct decoder_funcs *ogg_get_funcs ()
