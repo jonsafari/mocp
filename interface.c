@@ -51,6 +51,10 @@ static int srv_sock = -1;
 /* If the user presses quit, or we receive a termination signal. */
 static volatile int want_quit = 0;
 
+/* If user presses CTRL-C, set this to 1. This should interrupt long operations
+ * that blocks the interface. */
+static volatile int wants_interrupt = 0;
+
 #ifdef SIGWINCH
 /* If we get SIGWINCH. */
 static volatile int want_resize = 0;
@@ -243,6 +247,27 @@ static void interface_fatal (const char *format, ...)
 static void sig_quit (int sig ATTR_UNUSED)
 {
 	want_quit = 1;
+}
+
+static void sig_interrupt (int sig)
+{
+	logit ("Got signal %d: interrupt the operation", sig);
+	wants_interrupt = 1;
+}
+
+/* Return 1 if user wants interrupt an operation by pressing CTRL-C. */
+int user_wants_interrupt ()
+{
+	if (wants_interrupt) {
+		wants_interrupt = 0;
+		return 1;
+	}
+	return 0;
+}
+
+static void clear_interrupt ()
+{
+	wants_interrupt = 0;
 }
 
 #ifdef SIGWINCH
@@ -711,6 +736,32 @@ static void sec_to_min (char *buff, const int seconds)
 		strcpy (buff, "!!!!!");
 }
 
+/* Fill time in tags and menu items for all items in plist. */
+static void fill_times (struct plist *plist, struct menu *menu)
+{
+	int i;
+
+	for (i = 0; i < plist->num; i++)
+		if (!plist_deleted(plist, i)) {		
+			if (user_wants_interrupt()) {
+				interface_error ("Getting times interrupted");
+				break;
+			}
+
+			plist->items[i].tags = read_file_tags(
+					plist->items[i].file,
+					plist->items[i].tags,
+					TAGS_TIME);
+			if (menu && plist->items[i].tags->time != -1) {
+				char time_str[6];
+
+				sec_to_min (time_str,
+						plist->items[i].tags->time);
+				menu_item_set_time_plist (menu, i, time_str);
+			}
+		}
+}
+
 /* Make menu using the playlist and directory table. */
 static struct menu *make_menu (struct plist *plist, struct file_list *dirs,
 		struct file_list *playlists)
@@ -790,23 +841,6 @@ static struct menu *make_menu (struct plist *plist, struct file_list *dirs,
 			
 			menu_item_set_format (menu_items[menu_pos],
 					format_name(plist->items[i].file));
-
-			if (read_time)
-				plist->items[i].tags = read_file_tags (
-						plist->items[i].file,
-						plist->items[i].tags,
-						TAGS_TIME);
-			
-			if (plist->items[i].tags
-					&& plist->items[i].tags->time != -1) {
-				char time_str[6];
-				
-				sec_to_min (time_str,
-						plist->items[i].tags->time);
-				menu_item_set_time (menu_items[menu_pos]
-						,time_str);
-			}
-				
 			menu_pos++;
 		}
 	}
@@ -816,6 +850,13 @@ static struct menu *make_menu (struct plist *plist, struct file_list *dirs,
 	menu_set_show_time (menu,
 			strcasecmp(options_get_str("ShowTime"), "no"));
 	menu_set_info_attr (menu, colours[CLR_MENU_ITEM_INFO]);
+
+	if (read_time) {
+		set_iface_status_ref ("Getting times...");
+		fill_times (plist, menu);
+		set_iface_status_ref (NULL);
+	}
+	
 	return menu;
 }
 
@@ -1104,7 +1145,7 @@ static void update_ctime ()
 
 /* Update time in the menus and items for playlist and curr_plist for the given
  * file. */
-void update_times (const char *file, const int time)
+static void update_times (const char *file, const int time)
 {
 	char time_str[6];
 	int i;
@@ -1307,7 +1348,7 @@ static int load_dir (char *dir, const int reload)
 	if (going_up)
 		menu_setcurritem_title (curr_plist_menu, last_dir);
 	
-	sprintf (msg, "%d files and directories", curr_plist_menu->nitems - 1);
+	sprintf (msg, "%d files/directories", curr_plist_menu->nitems - 1);
 	set_iface_status_ref (msg);
 
 	return 1;
@@ -1718,7 +1759,7 @@ void init_interface (const int sock, const int debug, char **args,
 
 	signal (SIGQUIT, sig_quit);
 	//signal (SIGTERM, sig_quit);
-	signal (SIGINT, sig_quit);
+	signal (SIGINT, sig_interrupt);
 	
 #ifdef SIGWINCH
 	signal (SIGWINCH, sig_winch);
@@ -2347,27 +2388,6 @@ static void entry_key (const int ch)
 	wrefresh (info_win);
 }
 
-/* Fill time in tags and menu items for all items in plist. */
-static void fill_times (struct plist *plist, struct menu *menu)
-{
-	int i;
-
-	for (i = 0; i < plist->num; i++)
-		if (!plist_deleted(plist, i)) {		
-			plist->items[i].tags = read_file_tags(
-					plist->items[i].file,
-					plist->items[i].tags,
-					TAGS_TIME);
-			if (menu && plist->items[i].tags->time != -1) {
-				char time_str[6];
-
-				sec_to_min (time_str,
-						plist->items[i].tags->time);
-				menu_item_set_time_plist (menu, i, time_str);
-			}
-		}
-}
-
 static void toggle_show_time ()
 {
 	if (!strcasecmp(options_get_str("ShowTime"), "yes")) {
@@ -2712,8 +2732,10 @@ void interface_loop ()
 #endif
 
 		if (ret > 0) {
-			if (FD_ISSET(STDIN_FILENO, &fds))
+			if (FD_ISSET(STDIN_FILENO, &fds)) {
+				clear_interrupt ();
 				menu_key (wgetch(main_win));
+			}
 			if (FD_ISSET(srv_sock, &fds))
 				server_event (get_int_from_srv());
 			dequeue_events ();
