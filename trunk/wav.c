@@ -47,12 +47,8 @@ struct wav_data
 	int format;
 	long len;
 	long pcm_offset;
+	int time;
 };
-
-static void wav_info (const char *file_name, struct file_tags *info)
-{
-	return;
-}
 
 static void *wav_open (const char *file)
 {
@@ -191,7 +187,7 @@ static void *wav_open (const char *file)
 		return NULL;
 	}
 	data->len = len;
-	set_info_time (len / (data->rate * data->channels * data->format));
+	data->time = len / (data->rate * data->channels * data->format);
 	logit ("PCM: %ld", data->pcm_offset);
 
 	return data;
@@ -203,6 +199,17 @@ static void wav_close (void *void_data)
 
 	fclose (data->file);
 	free (data);
+}
+
+static void wav_info (const char *file_name, struct file_tags *info)
+{
+	struct wav_data *data;
+	
+	data = wav_open (file_name);
+	info->time = data->time;
+	wav_close (data);
+
+	return;
 }
 
 static int wav_seek (void *void_data, int sec)
