@@ -87,6 +87,7 @@ static int msg_is_error = 0;
 static char message[512] = "Welcome to "PACKAGE_STRING"! "
 	"Press h for the list of commands.";
 static char interface_status[STATUS_LINE_LEN + 1] = "              ";
+static int help_screen_top; /* First visible line of the help screen. */
 
 static struct plist *curr_plist = NULL; /* Current directory */
 static struct plist *playlist = NULL; /* The playlist */
@@ -147,49 +148,6 @@ static struct
 	NULL,
 	0
 };
-
-static char *help_text[] = {
-"       " PACKAGE_STRING,
-"",
-"  UP, DOWN     Move up and down in the menu",
-"  PAGE UP/DOWN Move one page up/down",
-"  HOME, END    Move to the first, last item",
-"  ENTER        Start playing files (from this file) or go to directory",
-"  s            Stop playing",
-"  n            Next song",
-"  b            Previous song",
-"  p, SPACE     Pause/unpause",
-"  LEFT, RIGHT  Seek backward, forward",
-"  h            Show this help screen",
-"  f            Switch between short and full names",
-"  m            Go to the music directory (requires an entry in the config)",
-"  a/A          Add file to the playlist / Add directory recursively",
-"  d/C          Delete item from the playlist / Clear the playlist",
-"  l            Switch between playlist and file list",
-"  S/R/X        Switch shuffle / repeat / autonext",
-"  '.' , ','    Increase, decrease volume by 5%",
-"  '>' , '<'    Increase, decrease volume by 1%",
-"  M            Hide error/informative message",
-"  H            Switch ShowHiddenFiles option",
-"  ^r           Refresh the screen",
-"  r            Reread directory content",
-"  q            Detach MOC from the server",
-"  V            Save the playlist in the current directory",
-"  g, /         Search the menu. The following commands can be used in this",
-"               entry:",
-"      CTRL-g   Find next",
-"      CTRL-n   Find next",
-"      Esc      Exit the entry",
-"      CTRL-x   Exit the entry",
-"  CTRL-t       Toggle ShowTime option",
-"  CTRL-f       Toggle ShowFormat option",
-"  i            Go to a directory",
-"  G            Go to a directory where the currently played file is",
-"  U            Go to '..'",
-"  Q            Quit"
-};
-static int help_screen_top = 0;
-#define HELP_LINES	((int)(sizeof(help_text)/sizeof(help_text[0])))
 
 static void xterm_clear_title ()
 {
@@ -1948,6 +1906,10 @@ static void print_help_screen ()
 {
 	int i;
 	int max_lines = help_screen_top + LINES - 6;
+	int help_lines;
+	char **help;
+
+	help = get_keys_help (&help_lines);
 	
 	werase (main_win);
 	wbkgd (main_win, get_color(CLR_BACKGROUND));
@@ -1959,12 +1921,12 @@ static void print_help_screen ()
 				"...MORE...");
 	}
 	wmove (main_win, 1, 0);
-	for (i = help_screen_top; i < max_lines && i < HELP_LINES; i++) {
+	for (i = help_screen_top; i < max_lines && i < help_lines; i++) {
 		wattrset (main_win, get_color(CLR_LEGEND));
-		waddstr (main_win, help_text[i]);
+		waddstr (main_win, help[i]);
 		waddch (main_win, '\n');
 	}
-	if (i != HELP_LINES) {
+	if (i != help_lines) {
 		wattrset (main_win, get_color(CLR_MESSAGE));
 		mvwaddstr (main_win, LINES-5,
 				COLS/2 - (sizeof("...MORE...")-1)/2,
@@ -2454,9 +2416,12 @@ static void menu_key (const int ch)
 	int do_update_menu = 0;
 
 	if (main_win_mode == WIN_HELP) {
+		int help_lines;
+
+		get_keys_help (&help_lines);
 
 		if (ch == KEY_DOWN || ch == KEY_NPAGE || ch == '\n') {
-			if (help_screen_top + LINES - 5 <= HELP_LINES) {
+			if (help_screen_top + LINES - 5 <= help_lines) {
 				help_screen_top++;
 				print_help_screen ();
 			}
@@ -2834,6 +2799,7 @@ void interface_end ()
 	send_int (srv_sock, CMD_DISCONNECT);
 	close (srv_sock);
 	endwin ();
+	keys_cleanup ();
 	xterm_clear_title ();
 	plist_free (curr_plist);
 	plist_free (playlist);
