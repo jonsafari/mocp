@@ -53,8 +53,9 @@ static struct hw_funcs hw;
 /* Player state */
 static int state = STATE_STOP;
 
-/* request for playing thread */
+/* requests for playing thread */
 static int stop_playing = 0;
+static int play_next = 0;
 
 static struct plist playlist;
 
@@ -71,6 +72,8 @@ static void *play_thread (void *unused ATTR_UNUSED)
 	while (curr_playing != -1) {
 		char *file = plist_get_file (&playlist, curr_playing);
 		struct decoder_funcs *df;
+
+		play_next = 0;
 
 		if (file) {
 			df = get_decoder_funcs (file);
@@ -101,7 +104,8 @@ static void *play_thread (void *unused ATTR_UNUSED)
 			free (file);
 		}
 
-		if (stop_playing || !options_get_int("AutoNext")) {
+		if (stop_playing || (!options_get_int("AutoNext")
+					&& !play_next)) {
 			LOCK (curr_playing_mut);
 			curr_playing = -1;
 			UNLOCK (curr_playing_mut);
@@ -185,7 +189,10 @@ void audio_play (const char *fname)
 
 void audio_next ()
 {
-	player_stop ();
+	if (play_thread_running) {
+		play_next = 1;
+		player_stop ();
+	}
 }
 
 void audio_pause ()
