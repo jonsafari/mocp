@@ -1,12 +1,19 @@
 #ifndef AUDIO_H
 #define AUDIO_H
 
+struct sound_params
+{
+	int channels;
+	int rate;
+	int format; /* in bytes */
+};
+
 /* Functions of sound driver. */
 struct hw_funcs
 {
 	void (*init) ();
 	void (*shutdown) ();
-	int (*open) (const int bits, const int channels, const int rate);
+	int (*open) (struct sound_params *sound_params);
 	void (*close) ();
 	int (*play) (const char *buff, const size_t size);
 	int (*read_mixer) ();
@@ -27,7 +34,7 @@ void audio_init (const char *sound_driver);
 void audio_exit ();
 void audio_seek (const int sec);
 
-int audio_open (const int bits, const int channels, const int rate);
+int audio_open (struct sound_params *sound_params);
 int audio_send_buf (const char *buf, const size_t size);
 int audio_send_pcm (const char *buf, const size_t size);
 void audio_reset ();
