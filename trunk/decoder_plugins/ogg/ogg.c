@@ -111,7 +111,7 @@ static void *ogg_open (const char *file)
 	decoder_error_init (&data->error);
 
 	if (!(data->file = fopen (file, "r")))
-		decoder_error (&data->error, ERROR_FATAL, 1,
+		decoder_error (&data->error, ERROR_FATAL, errno,
 				"Can't load OGG: ");
 	else if (ov_open(data->file, &data->vf, NULL, 0) < 0) {
 		decoder_error (&data->error, ERROR_FATAL, 0,
