@@ -405,3 +405,18 @@ void plist_delete (struct plist *plist, const int num)
 		plist->items[num].deleted = 1;
 	UNLOCK (plist->mutex);
 }
+
+/* Count not deleted items. */
+int plist_count (struct plist *plist)
+{
+	int i;
+	int count = 0;
+	
+	assert (plist != NULL);
+
+	for (i = 0; i < plist->num; i++)
+		if (!plist->items[i].deleted)
+			count++;
+
+	return count;
+}
