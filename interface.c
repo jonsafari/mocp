@@ -157,6 +157,7 @@ enum entry_type
 	ENTRY_DISABLED,
 	ENTRY_SEARCH,
 	ENTRY_PLIST_SAVE,
+	ENTRY_GO_DIR,
 	ENTRY_PLIST_OVERWRITE
 };
 
@@ -2406,16 +2407,117 @@ static int entry_common_key (const int ch)
 	return 0;
 }
 
+/* Match a directory to the pattern. Resolve beginning ~. 
+ * Return the directory or NULL, the memory is malloc()ed. */
+static char *match_dir (const char *str)
+{
+	char dir[PATH_MAX] = "";
+
+	dir[sizeof(dir)-1] = 0;
+
+	if (str[0] == '~') {
+		strncpy (dir, getenv("HOME"), sizeof(dir));
+		
+		if (dir[sizeof(dir)-1]) {
+			logit ("Path too long!");
+			return NULL;
+		}
+		
+		strncat (dir, "/", sizeof(dir) - strlen(dir));
+		
+		if (dir[sizeof(dir)-1]) {
+			logit ("Path too long!");
+			return NULL;
+		}
+
+		strncat (dir, str, sizeof(dir) - strlen(dir));
+	}
+	else if (str[0] != '/') {
+		if (snprintf(dir, sizeof(dir), "%s/%s", cwd, str)
+				>= (int)sizeof(dir)) {
+			logit ("Path too long!");
+			return NULL;
+		}
+	}
+	else
+		strcpy (dir, str);
+
+	return find_match_dir (dir);
+}
+
+static int entry_go_dir_key (const int ch)
+{
+	if (isgraph(ch) || ch == ' ') {
+		int len = strlen (entry.text);
+	
+		if (len == entry.width)
+			return 1;
+
+		/* './' or '../' is useless and can cause problems */
+		if (entry.text[len-1] == '.' && ch == '/')
+			return 1;
+		
+		entry.text[len++] = ch;
+		entry.text[len] = 0;
+
+		entry_draw ();
+
+		return 1;
+	}
+	else if (ch == '\t') {
+		char *dir = match_dir (entry.text);
+
+		if (dir) {
+			strncpy (entry.text, dir, sizeof(entry.text));
+			entry.text[sizeof(entry.text)-1] = 0;
+			strncat (entry.text, "/",
+					sizeof(entry.text)
+					- strlen(entry.text));
+			entry.text[sizeof(entry.text)-1] = 0;
+		}
+
+		free (dir);
+		entry_draw ();
+
+		return 1;
+	}
+	else if (ch == '\n') {
+		if (strlen(entry.text) > 0) {
+			char *dir = xstrdup (entry.text);
+			int len = strlen (dir);
+			
+			entry_disable ();
+			update_info_win ();
+
+			/* Strip trailing slash */
+			if (dir[len-1] == '/')
+				dir[len-1] = 0;
+			
+			go_to_dir (dir);
+			update_menu ();
+			free (dir);
+		}
+		else
+			entry_disable ();
+		
+		return 1;
+	}
+
+	return 0;
+}
+
 static void entry_key (const int ch)
 {
 	int handled = 0;
 	
+	if (entry.type == ENTRY_GO_DIR)
+		handled = entry_go_dir_key (ch);
 	if (entry.type == ENTRY_SEARCH)
-		handled = entry_search_key(ch);
+		handled = entry_search_key (ch);
 	if (entry.type == ENTRY_PLIST_SAVE)
-		handled = entry_plist_save_key(ch);
+		handled = entry_plist_save_key (ch);
 	if (entry.type == ENTRY_PLIST_OVERWRITE)
-		handled = entry_plist_overwrite_key(ch);
+		handled = entry_plist_overwrite_key (ch);
 	if (!handled)
 		entry_common_key (ch);
 	wrefresh (info_win);
@@ -2653,6 +2755,9 @@ static void menu_key (const int ch)
 			case CTRL('f'):
 				toggle_show_format ();
 				do_update_menu = 1;
+				break;
+			case 'i':
+				make_entry (ENTRY_GO_DIR, "GO");
 				break;
 			case KEY_RESIZE:
 				break;
