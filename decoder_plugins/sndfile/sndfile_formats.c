@@ -17,12 +17,11 @@
 
 #include <string.h>
 #include <sndfile.h>
-#include "sndfile_formats.h"
 #include "decoder.h"
 #include "main.h"
 #include "server.h"
 #include "log.h"
-#include <files.h>
+#include "files.h"
 
 /* TODO:
  * - sndfile is not thread-safe: use a mutex?
