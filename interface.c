@@ -1858,6 +1858,11 @@ static void server_event (const int event)
 		case EV_ERROR:
 			update_error ();
 			break;
+		case EV_OPTIONS:
+			get_server_options ();
+			update_info_win ();
+			wrefresh (info_win);
+			break;
 		default:
 			interface_message ("Unknown event: 0x%02x", event);
 			logit ("Unknown event 0x%02x", event);

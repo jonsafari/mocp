@@ -12,6 +12,7 @@
 #define EV_CHANNELS	0x09 /* the number of channels has changed */
 #define EV_EXIT		0x0a /* the server is about to exit */
 #define EV_PONG		0x0b /* response for CMD_PING */
+#define EV_OPTIONS	0x0c /* the options has changed */
 
 /* State of the server. */
 #define STATE_PLAY	0x01
