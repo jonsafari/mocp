@@ -66,29 +66,33 @@ static void ogg_info (const char *file_name, struct file_tags *info,
 		}
 	}
 
+	if (tags_sel & TAGS_COMMENTS) {
 	comments = ov_comment (&vf, -1);
-	for (i = 0; i < comments->comments; i++) {
-		if (!strncasecmp(comments->user_comments[i], "title=",
-				 strlen ("title=")))
-			info->title = xstrdup(comments->user_comments[i]
-					+ strlen ("title="));
-		else if (!strncasecmp(comments->user_comments[i], "artist=",
-				      strlen ("artist=")))
-			info->artist = xstrdup (comments->user_comments[i]
-					+ strlen ("artiat="));
-		else if (!strncasecmp(comments->user_comments[i], "album=",
-				      strlen ("album=")))
-			info->album = xstrdup (comments->user_comments[i]
-					+ strlen ("album="));
-		else if (!strncasecmp(comments->user_comments[i], "tracknumber=",
-				      strlen ("tracknumber=")))
-			info->track = atoi (comments->user_comments[i]
-					+ strlen ("tracknumber="));
-		else if (!strncasecmp(comments->user_comments[i], "track=",
-				      strlen ("track=")))
-			info->track = atoi (comments->user_comments[i]
-					+ strlen ("track="));
-
+		for (i = 0; i < comments->comments; i++) {
+			if (!strncasecmp(comments->user_comments[i], "title=",
+					 strlen ("title=")))
+				info->title = xstrdup(comments->user_comments[i]
+						+ strlen ("title="));
+			else if (!strncasecmp(comments->user_comments[i],
+						"artist=", strlen ("artist=")))
+				info->artist = xstrdup (
+						comments->user_comments[i]
+						+ strlen ("artiat="));
+			else if (!strncasecmp(comments->user_comments[i],
+						"album=", strlen ("album=")))
+				info->album = xstrdup (
+						comments->user_comments[i]
+						+ strlen ("album="));
+			else if (!strncasecmp(comments->user_comments[i],
+						"tracknumber=",
+						strlen ("tracknumber=")))
+				info->track = atoi (comments->user_comments[i]
+						+ strlen ("tracknumber="));
+			else if (!strncasecmp(comments->user_comments[i],
+						"track=", strlen ("track=")))
+				info->track = atoi (comments->user_comments[i]
+						+ strlen ("track="));
+		}
 	}
 
 	if ((tags_sel & TAGS_TIME)
