@@ -39,6 +39,8 @@
 #include "options.h"
 #include "server.h"
 
+/*#define DEBUG*/
+
 #define SERVER_LOG	"mocp_server_log"
 #define PID_FILE	"pid"
 
@@ -126,7 +128,9 @@ static void sig_exit (int sig)
 
 static void sig_wake_up (int sig)
 {
+#ifdef DEBUG
 	logit ("got wake up signal");
+#endif
 }
 
 static void clients_init ()
@@ -181,7 +185,9 @@ static int valid_pid (const int pid)
 
 static void wake_up_server ()
 {
+#ifdef DEBUG
 	logit ("Waking up the server");
+#endif
 	if (pthread_kill(server_tid, SIGUSR1))
 		logit ("Can't wake up the server: %s", strerror(errno));
 }
@@ -269,8 +275,10 @@ static void add_event (struct events *ev, const int event)
 	for (i = 0; i < ev->num; i++)
 		if (ev->queue[i] == event) {
 			UNLOCK (ev->mutex);
+#ifdef DEBUG
 			logit ("Not adding event 0x02%x: already in the queue",
 					event);
+#endif
 			return;
 		}
 	
@@ -293,8 +301,10 @@ static void add_event_all (const int event)
 
 	if (added)
 		wake_up_server ();
+#ifdef DEBUG
 	else
 		logit ("No events were added because there are no clients.");
+#endif
 }
 
 /* Send events from the queue. Return 0 on error. */
@@ -323,7 +333,9 @@ static void send_events (fd_set *fds)
 	for (i = 0; i < CLIENTS_MAX; i++)
 		if (clients[i].socket != -1 && clients[i].wants_events
 				&& FD_ISSET(clients[i].socket, fds)) {
+#ifdef DEBUG
 			logit ("Flushing events for client %d", i);
+#endif
 			if (!flush_events(&clients[i])) {
 				close (clients[i].socket);
 				del_client (&clients[i]);
@@ -710,7 +722,9 @@ void server_loop (int list_sock)
 			if (FD_ISSET(list_sock, &fds_read)) {
 				int client_sock;
 				
+#ifdef DEBUG
 				logit ("accept()ing connection...");
+#endif
 				client_sock = accept (list_sock,
 					(struct sockaddr *)&client_name,
 					&name_len);
