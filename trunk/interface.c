@@ -1398,10 +1398,8 @@ static int load_dir (char *dir)
 		switch_titles_tags (curr_plist);
 		sync_plists_data (playlist, curr_plist);
 	}
-	else {
-		make_titles_file (curr_plist);
+	else
 		switch_titles_file (curr_plist);
-	}
 	
 	plist_sort_fname (curr_plist);
 	qsort (dirs->items, dirs->num, sizeof(char *), qsort_dirs_func);
@@ -1537,9 +1535,9 @@ static void process_args (char **args, const int num)
 			visible_plist = playlist;
 			
 			if (options_get_int("ReadTags"))
-				make_titles_tags (playlist);
+				switch_titles_tags (playlist);
 			else
-				make_titles_file (playlist);
+				switch_titles_file (playlist);
 
 			playlist_menu = make_menu (playlist, NULL, 0);
 			curr_menu = playlist_menu;
