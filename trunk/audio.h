@@ -55,5 +55,8 @@ char *audio_get_sname ();
 void audio_set_mixer (const int val);
 int audio_get_mixer ();
 void audio_plist_delete (const char *file);
+int audio_get_ftime (const char *file);
+void audio_plist_set_time (const char *file, const int time);
+void audio_state_started_playing ();
 
 #endif
