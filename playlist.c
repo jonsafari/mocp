@@ -567,7 +567,9 @@ void sync_plists_data (struct plist *dst, struct plist *src)
 	debug ("Synchronizing playlists...");
 
 	for (i = 0; i < src->num; i++)
-		if ((idx = plist_find_fname(dst, src->items[i].file)) != -1) {
+		if (!plist_deleted(src, i)
+				&& (idx = plist_find_fname(dst,
+						src->items[i].file)) != -1) {
 			debug ("Found item for the file %s",
 					src->items[i].file);
 
