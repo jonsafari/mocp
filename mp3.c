@@ -320,19 +320,22 @@ static void *mp3_open (const char *file)
 	data->stream.next_frame = NULL;
 	data->stream.sync = 0;
 	data->stream.error = MAD_ERROR_NONE;
+
 #ifdef HAVE_MMAP
 	if (data->mapped)
 		mad_stream_buffer (&data->stream, data->mapped,
 				data->mapped_size);
-	else
+	else {
 #endif
 		if (lseek(data->infile, SEEK_SET, 0) == (off_t)-1) {
 			error ("lseek() failed: %s", strerror(errno));
 			close (data->infile);
-			data->stream.error = MAD_ERROR_BUFLEN;
 			free (data);
 			return NULL;
 		}
+
+		data->stream.error = MAD_ERROR_BUFLEN;
+	}
 
 	return data;
 }
@@ -560,7 +563,7 @@ static int mp3_seek (void *void_data, int sec)
 		mad_stream_buffer (&data->stream,
 				data->mapped + new_position,
 				data->mapped_size - new_position);
-		data->stream.error = 0;
+		data->stream.error = MAD_ERROR_NONE;
 	}
 	else {
 #endif
