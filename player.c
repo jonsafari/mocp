@@ -254,10 +254,18 @@ void player (char *file, char *next_file, struct buf *out_buf)
 
 		update_time ();
 
+		/* When clearing request, we must make sure, that another
+		 * request will not arrive at the moment, so we check if
+		 * the request has changed. */
 		if (request == REQ_STOP) {
 			logit ("stop");
 			buf_stop (out_buf);
-			request = REQ_NOTHING;
+			
+			LOCK (request_cond_mutex);
+			if (request == REQ_STOP)
+				request = REQ_NOTHING;
+			UNLOCK (request_cond_mutex);
+			
 			break;
 		}
 		else if (request == REQ_SEEK) {
@@ -274,7 +282,12 @@ void player (char *file, char *next_file, struct buf *out_buf)
 				eof = 0;
 				decoded = 0;
 			}
-			request = REQ_NOTHING;
+
+			LOCK (request_cond_mutex);
+			if (request == REQ_SEEK)
+				request = REQ_NOTHING;
+			UNLOCK (request_cond_mutex);
+
 		}
 		else if (!eof && decoded <= buf_get_free(out_buf)
 				&& !sound_params_change) {
