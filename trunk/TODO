@@ -1,5 +1,4 @@
 Before 2.2.0:
-* Optimize plist_count() and plist_find_fname().
 * SyncPlaylist as command line option.
 * serial numbers for playlists. locking when sending a playlist to the server.
 * When adding files to the playlist, add them also to the server's playlist.
