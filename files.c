@@ -122,7 +122,7 @@ void make_file_title (struct plist *plist, const int num,
 		plist_set_title_file (plist, num, plist->items[num].file);
 }
 
-/* Make a title from file name for the item. */
+/* Make a title from the tags for the item. */
 void make_tags_title (struct plist *plist, const int num)
 {
 	assert (plist != NULL);
