@@ -1,9 +1,8 @@
 #ifndef MP3_H
 #define MP3_H
 
-#include "buf.h"
+#include "file_types.h"
 
-void mp3_play (const char *file, struct buf *out_buf);
-void mp3_info (const char *file_name, struct file_tags *info);
+struct decoder_funcs *mp3_get_funcs ();
 
 #endif

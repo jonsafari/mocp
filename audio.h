@@ -1,14 +1,6 @@
 #ifndef AUDIO_H
 #define AUDIO_H
 
-enum play_request
-{
-	PR_NOTHING,
-	PR_SEEK_FORWARD,
-	PR_SEEK_BACKWARD,
-	PR_STOP
-};
-
 /* Functions of sound driver. */
 struct hw_funcs
 {
@@ -34,8 +26,6 @@ void audio_unpause ();
 void audio_init (const char *sound_driver);
 void audio_exit ();
 void audio_seek (const int sec);
-
-enum play_request get_request ();
 
 int audio_open (const int bits, const int channels, const int rate);
 int audio_send_buf (const char *buf, const size_t size);

@@ -175,14 +175,14 @@ void resolve_path (char *buf, const int size, char *file)
 struct file_tags *read_file_tags (char *file)
 {
 	struct file_tags *tags;
-	info_func_t info_func;
+	struct decoder_funcs *df;
 
 	assert (file != NULL);
-	info_func = get_info_func (file);
-	assert (info_func != NULL);
+	df = get_decoder_funcs (file);
+	assert (df != NULL);
 
 	tags = tags_new ();
-	info_func (file, tags);
+	df->info (file, tags);
 	if (tags->title)
 		return tags;
 
