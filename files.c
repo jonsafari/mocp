@@ -101,7 +101,8 @@ void make_titles_file (struct plist *plist)
 		if (!plist_deleted(plist, i)) {
 			char *fname;
 
-			fname = get_file (plist->items[i].file, hide_extension);
+			fname = get_file(plist->items[i].file, hide_extension);
+			fname = iconv_str (fname);
 			plist_set_title_file (plist, i, fname);
 			free (fname);
 		}
@@ -153,6 +154,7 @@ void make_titles_tags (struct plist *plist)
 					
 				fname = get_file (plist->items[i].file,
 						hide_extension);
+				fname = iconv_str (fname);
 				plist_set_title_file (plist, i, fname);
 				free (fname);
 			}
