@@ -1606,7 +1606,6 @@ void init_interface (const int sock, const int debug, char **args,
 	initscr ();
 	cbreak ();
 	noecho ();
-	nodelay (stdscr, TRUE);
 	use_default_colors ();
 
 	check_term_size ();
@@ -1629,6 +1628,7 @@ void init_interface (const int sock, const int debug, char **args,
 	info_win = newwin (4, COLS, LINES - 4, 0);
 	wbkgd (main_win, get_color(CLR_BACKGROUND));
 	wbkgd (info_win, get_color(CLR_BACKGROUND));
+	nodelay (main_win, TRUE);
 
 	msg_timeout = time(NULL) + 3;
 	reset_file_info ();
@@ -2784,7 +2784,7 @@ void interface_loop ()
 
 				/* Recognize meta sequences */
 				if (ch == KEY_ESCAPE
-						&& (meta = wgetch(stdscr))
+						&& (meta = wgetch(main_win))
 						!= ERR)
 					ch = meta | META_KEY_FLAG;
 				
