@@ -29,6 +29,7 @@
 #include <errno.h>
 #include <stdarg.h>
 #include <pthread.h>
+#include <assert.h>
 
 #include "log.h"
 #include "protocol.h"
@@ -49,7 +50,10 @@ static pthread_t server_tid; /* Why? */
 static volatile int server_quit = 0;
 
 static int client_sock = -1;
-static pthread_mutex_t client_sock_mut = PTHREAD_MUTEX_INITIALIZER;
+
+static int event_queue[10];
+static int nevents = 0;
+static pthread_mutex_t event_queue_mut = PTHREAD_MUTEX_INITIALIZER;
 
 /* Information about currently played file */
 static struct {
@@ -170,12 +174,49 @@ int server_init (int debug, int foreground)
 /* Send EV_DATA and the integer value. Return 0 on error. */
 static int send_data_int (const int data)
 {
-	LOCK (client_sock_mut);
-	if (!send_int(client_sock, EV_DATA) || !send_int(client_sock, data)) {
-		UNLOCK (client_sock_mut);
+	if (!send_int(client_sock, EV_DATA) || !send_int(client_sock, data))
 		return 0;
-	}
-	UNLOCK (client_sock_mut);
+
+	return 1;
+}
+
+/* Add event to the queue */
+static void add_event (const int event)
+{
+	int i;
+
+	LOCK (event_queue_mut);
+	for (i = 0; i < nevents; i++)
+		if (event_queue[i] == event) {
+			UNLOCK (event_queue_mut);
+			return;
+		}
+	
+	assert (nevents < (int)(sizeof(event_queue)/sizeof(event_queue[0])));
+
+	event_queue[nevents++] = event;
+	UNLOCK (event_queue_mut);
+}
+
+static void clear_events ()
+{
+	LOCK (event_queue_mut);
+	nevents = 0;
+	UNLOCK (event_queue_mut);
+}
+
+/* Send events from the queue. Return 0 on error. */
+static int flush_events ()
+{
+	int i;
+
+	LOCK (event_queue_mut);
+	for (i = 0; i < nevents; i++)
+		if (!send_int(client_sock, event_queue[i]))
+			return 0;
+	
+	nevents = 0;
+	UNLOCK (event_queue_mut);
 
 	return 1;
 }
@@ -187,7 +228,7 @@ static void server_shutdown ()
 	audio_exit ();
 	unlink (socket_name());
 	unlink (create_file_name(PID_FILE));
-	if (pthread_mutex_destroy(&client_sock_mut))
+	if (pthread_mutex_destroy(&event_queue_mut))
 		logit ("Can't destroy client socket mutex: %s",
 				strerror(errno));
 
@@ -280,12 +321,10 @@ static int send_sname ()
 	int status = 1;
 	char *sname = audio_get_sname ();
 	
-	LOCK (client_sock_mut);
 	if (!send_int(client_sock, EV_DATA) || !send_str(client_sock,
 				sname ? sname : ""))
 		status = 0;
 	free (sname);
-	UNLOCK (client_sock_mut);
 
 	return status;
 }
@@ -490,6 +529,8 @@ static int handle_client (int list_sock)
 	int max_fd = (list_sock > client_sock ? list_sock : client_sock) + 1;
 	int last_song_time = 0;
 
+	clear_events ();
+
 	while (client_status == 0) {
 		struct timeval timeout;
 		int song_time;
@@ -520,12 +561,9 @@ static int handle_client (int list_sock)
 			song_time = audio_get_time ();
 			if (song_time != last_song_time && !client_status) {
 				last_song_time = song_time;
-				LOCK (client_sock_mut);
-				if (!send_int(client_sock, EV_CTIME))
-					client_status = EOF;
-				UNLOCK (client_sock_mut);
-				/*logit ("Time: %d", song_time);*/
+				add_event (EV_CTIME);
 			}
+			flush_events ();
 		}
 	}
 	
@@ -566,14 +604,12 @@ void server_loop (int list_sock)
 			logit ("Incoming connection");
 			end = handle_client (list_sock);
 			
-			LOCK (client_sock_mut);
 			if (server_quit) {
 				logit ("Exiting due to signal");
 				send_int (client_sock, EV_EXIT);
 			}
 			close (client_sock);
 			client_sock = -1;
-			UNLOCK (client_sock_mut);
 			
 			logit ("Connection closed");
 		}
@@ -581,14 +617,6 @@ void server_loop (int list_sock)
 	
 	close (list_sock);
 	server_shutdown ();
-}
-
-static void send_event (const int event)
-{
-	LOCK (client_sock_mut);
-	if (client_sock != -1)
-		send_int (client_sock, event);
-	UNLOCK (client_sock_mut);
 }
 
 /* Don't allow events to be send to quickly. Return 1 if the event can be
@@ -609,29 +637,29 @@ void set_info_bitrate (const int bitrate)
 {
 	sound_info.bitrate = bitrate;
 	if (event_throttle() || bitrate <= 0)
-		send_event (EV_BITRATE);
+		add_event (EV_BITRATE);
 }
 
 void set_info_time (const int time)
 {
 	sound_info.time = time;
-	send_event (EV_STATE);
+	add_event (EV_STATE);
 }
 
 void set_info_channels (const int channels)
 {
 	sound_info.channels = channels;
-	send_event (EV_CHANNELS);
+	add_event (EV_CHANNELS);
 }
 
 void set_info_rate (const int rate)
 {
 	sound_info.rate = rate;
-	send_event (EV_RATE);
+	add_event (EV_RATE);
 }
 
 /* Notify the client about change of the player state. */
 void state_change ()
 {
-	send_event (EV_STATE);
+	add_event (EV_STATE);
 }
