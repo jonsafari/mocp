@@ -1,7 +1,7 @@
 #ifndef PLAYLIST_FILE_H
 #define PLAYLIST_FILE_H
 
-int plist_load_m3u (struct plist *plist, const char *fname);
+int plist_load (struct plist *plist, const char *fname, const char *cwd);
 int is_plist_file (char *name);
 
 #endif
