@@ -133,7 +133,7 @@ static enum
 
 static struct file_info {
 	char title[256];
-	char bitrate[4];
+	char bitrate[5];
 	char rate[3];
 	char time[6];
 	char curr_time[6];
@@ -351,7 +351,7 @@ static void info_border ()
 	
 	wmove (info_win, 2, 25);
 	wattrset (info_win, colours[CLR_LEGEND]);
-	waddstr (info_win, "KHz    Kbps");
+	waddstr (info_win, "KHz     Kbps");
 }
 
 static void draw_interface_status ()
@@ -553,7 +553,7 @@ static void update_info_win ()
 	waddstr (info_win, file_info.rate);
 	
 	/* Bitrate */
-	wmove (info_win, 2, 32 - strlen(file_info.bitrate));
+	wmove (info_win, 2, 33 - strlen(file_info.bitrate));
 	waddstr (info_win, file_info.bitrate);
 
 	/* Channels */
@@ -1121,9 +1121,14 @@ static void update_bitrate ()
 
 	send_int_to_srv (CMD_GET_BITRATE);
 	if ((bitrate = get_data_int()) > 0) {
-		snprintf (file_info.bitrate, sizeof(file_info.bitrate),
-				"%d", bitrate);
-		file_info.bitrate[sizeof(file_info.bitrate)-1] = 0;
+		if (bitrate < 9999) {
+			snprintf (file_info.bitrate, sizeof(file_info.bitrate),
+					"%d", bitrate);
+			file_info.bitrate[sizeof(file_info.bitrate)-1] = 0;
+		}
+		else
+			strcpy (file_info.bitrate, "!!!!");
+			
 	}
 	else {
 		debug ("Cleared bitrate");
