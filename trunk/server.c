@@ -106,6 +106,12 @@ static void sig_exit (int sig)
 	 * the server thread */
 }
 
+/* CHeck if the process with ginen PID exists. Return != 0 if so. */
+static int valid_pid (const int pid)
+{
+	return kill(pid, 0) == 0 ? 1 : 0;
+}
+
 /* Initialize the server - return fd of the listening socket or -1 on error */
 int server_init (int debug, int foreground, const char *sound_driver)
 {
@@ -114,11 +120,11 @@ int server_init (int debug, int foreground, const char *sound_driver)
 	int pid;
 
 	pid = check_pid_file ();
-	if (pid) {
+	if (pid && valid_pid(pid)) {
 		fprintf (stderr, "Server already running with pid %d\n", pid);
 		fatal ("Exiting.");
 	}
-	/* TODO: delete the socket */
+
 
 	if (foreground)
 		log_init_stream (stdout);	
@@ -128,6 +134,8 @@ int server_init (int debug, int foreground, const char *sound_driver)
 			fatal ("Can't open log file.");
 		log_init_stream (logf);
 	}
+
+	unlink (socket_name());
 
 	/* Create a socket */
 	if ((server_sock = socket (PF_LOCAL, SOCK_STREAM, 0)) == -1)
