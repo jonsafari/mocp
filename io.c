@@ -33,6 +33,8 @@
 # include <sys/mman.h>
 #endif
 
+#define DEBUG
+
 #include "main.h"
 #include "log.h"
 #include "io.h"
@@ -488,7 +490,7 @@ static int io_ok_nolock (struct io_stream *s)
 	if ((s->source == IO_SOURCE_FD || s->source == IO_SOURCE_MMAP)
 			&& s->errno_val)
 		res = 0;
-	
+
 	return res;
 }
 
@@ -516,12 +518,14 @@ static ssize_t io_peek_internal (struct io_stream *s, void *buf, size_t count)
 
 	/* Wait until enough data will be available */
 	while (io_ok_nolock(s) && !s->stop_read_thread
-			&& received < (ssize_t)fifo_buf_get_fill(&s->buf)
+			&& count > (ssize_t)fifo_buf_get_fill(&s->buf)
 			&& fifo_buf_get_space (&s->buf)
-			&& !s->eof)
+			&& !s->eof) {
+		debug ("waiting...");
 		pthread_cond_wait (&s->buf_fill_cond, &s->buf_mutex);
+	}
 
-	received = fifo_buf_peek (&s->buf, buf, count - received);
+	received = fifo_buf_peek (&s->buf, buf, count);
 	debug ("Read %d bytes", (int)received);
 
 	UNLOCK (s->buf_mutex);

@@ -144,9 +144,8 @@ static long tell_callback (void *datasource)
 	return io_tell (datasource);
 }
 
-static void *ogg_open (const char *file)
+static void ogg_open_stream_internal (struct ogg_data *data)
 {
-	struct ogg_data *data;
 	int res;
 	ov_callbacks callbacks = {
 		read_callback,
@@ -154,20 +153,8 @@ static void *ogg_open (const char *file)
 		close_callback,
 		tell_callback
 	};
-
-	data = (struct ogg_data *)xmalloc (sizeof(struct ogg_data));
-	data->ok = 0;
-
-	decoder_error_init (&data->error);
-
-	data->stream = io_open (file, 1);
-	if (!io_ok(data->stream)) {
-		decoder_error (&data->error, ERROR_FATAL, 0,
-				"Can't load OGG: %s",
-				io_strerror(data->stream));
-		io_close (data->stream);
-	}
-	else if ((res = ov_open_callbacks(data->stream, &data->vf, NULL, 0,
+	
+	if ((res = ov_open_callbacks(data->stream, &data->vf, NULL, 0,
 					callbacks)) < 0) {
 		decoder_error (&data->error, ERROR_FATAL, 0,
 				"ov_open() failed!");
@@ -182,6 +169,50 @@ static void *ogg_open (const char *file)
 			data->duration = -1;
 		data->ok = 1;
 	}
+}
+
+static void *ogg_open (const char *file)
+{
+	struct ogg_data *data;
+	data = (struct ogg_data *)xmalloc (sizeof(struct ogg_data));
+	data->ok = 0;
+
+	decoder_error_init (&data->error);
+
+	data->stream = io_open (file, 1);
+	if (!io_ok(data->stream)) {
+		decoder_error (&data->error, ERROR_FATAL, 0,
+				"Can't load OGG: %s",
+				io_strerror(data->stream));
+		io_close (data->stream);
+	}
+	else
+		ogg_open_stream_internal (data);
+	
+	return data;
+}
+
+static int ogg_can_decode (struct io_stream *stream)
+{
+	char buf[5];
+
+	/* FIXME: this test is too simple */
+	if (io_peek(stream, buf, 5) == 5 && !memcmp(buf, "OggS", 5))
+		return 1;
+
+	return 0;
+}
+
+static void *ogg_open_stream (struct io_stream *stream)
+{
+	struct ogg_data *data;
+
+	data = (struct ogg_data *)xmalloc (sizeof(struct ogg_data));
+	data->ok = 0;
+
+	decoder_error_init (&data->error);
+	data->stream = stream;
+	ogg_open_stream_internal (data);
 	
 	return data;
 }
@@ -286,8 +317,8 @@ static void ogg_get_error (void *prv_data, struct decoder_error *error)
 
 static struct decoder ogg_decoder = {
 	ogg_open,
-	NULL,
-	NULL,
+	ogg_open_stream,
+	ogg_can_decode,
 	ogg_close,
 	ogg_decode,
 	ogg_seek,

@@ -209,7 +209,7 @@ static void *play_thread (void *unused ATTR_UNUSED)
 				if (!stream)
 					player (file, next_file, &out_buf);
 				else
-					player_by_stream (stream, df);
+					player_by_stream (stream, df, &out_buf);
 				if (next_file)
 					free (next_file);
 

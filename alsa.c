@@ -472,9 +472,16 @@ static void alsa_set_mixer (int vol)
 static int alsa_get_buff_fill ()
 {
 	if (handle) {
+		int err;
 		snd_pcm_sframes_t delay;
-		snd_pcm_delay (handle, &delay);
-		return delay * bytes_per_frame;
+		
+		if ((err = snd_pcm_delay(handle, &delay)) < 0) {
+			logit ("snd_pcm_delay() failed: %s", snd_strerror(err));
+			return 0;
+		}
+
+		/* delay can be negative when underrun occur */
+		return delay >= 0 ? delay * bytes_per_frame : 0;
 	}
 	return 0;
 }
