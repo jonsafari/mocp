@@ -1002,7 +1002,7 @@ static void mark_file (const char *file)
 /* Update the xterm title. */
 static void xterm_update_title ()
 {
-	write (1, "\033]2;", sizeof("\033]2;")-1);
+	write (1, "\033]0;", sizeof("\033]0;")-1);
 	write (1, "MOC ", sizeof("MOC ")-1);
 	
 	switch (xterm_title.state) {
