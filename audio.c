@@ -312,3 +312,16 @@ char *audio_get_sname ()
 
 	return sname;
 }
+
+int audio_get_mixer ()
+{
+	return hw.read_mixer ();
+}
+
+void audio_set_mixer (const int val)
+{
+	if (val >= 0 && val <= 100)
+		hw.set_mixer (val);
+	else
+		logit ("Tried to set mixer to volume out of range.");
+}
