@@ -71,3 +71,7 @@ ShowTime		= IfAvailable
 
 # Theme file. This can be absolute path or relative to ~/.moc/themes/
 # Theme			= example_theme
+
+# MOC directory - where pid file, socket, and state files are stored.
+# You can use ~ at the begining
+# MOCDir		= ~/.moc

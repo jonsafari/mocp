@@ -155,6 +155,7 @@ void options_init ()
 	option_add_int ("ShowFormat", 1);
 	option_add_str ("ShowTime", "IfAvailable");
 	option_add_str ("Theme", NULL);
+	option_add_str ("MOCDir", "~/.moc");
 }
 
 /* Return 1 if a parameter to an integer option is valid. */
