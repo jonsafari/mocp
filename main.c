@@ -32,8 +32,8 @@
 #include "interface.h"
 #include "options.h"
 #include "protocol.h"
+#include "decoder.h"
 #include "log.h"
-#include "file_types.h"
 #include "files.h"
 #include "playlist.h"
 
@@ -198,7 +198,7 @@ static void start_moc (const struct parameters *params, char **args,
 	int list_sock;
 	int server_sock = -1;
 
-	file_types_init ();
+	decoder_init ();
 	srand (time(NULL));
 
 	if (!params->foreground && (server_sock = server_connect()) == -1) {
@@ -274,7 +274,7 @@ static void start_moc (const struct parameters *params, char **args,
 
 	
 	options_free ();
-	file_types_cleanup ();
+	decoder_cleanup ();
 }
 
 static void show_version ()

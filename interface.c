@@ -43,7 +43,7 @@
 #include "menu.h"
 #include "files.h"
 #include "options.h"
-#include "file_types.h"
+#include "decoder.h"
 #include "interface.h"
 #include "playlist_file.h"
 #include "themes.h"
@@ -1009,7 +1009,7 @@ static void add_to_menu (struct menu *menu, struct plist *plist, const int num)
 	menu_item_set_attr_sel_marked (menu, added,
 			get_color(CLR_MENU_ITEM_FILE_MARKED_SELECTED));
 	
-	menu_item_set_format (menu, added, format_name(item->file));
+	menu_item_set_format (menu, added, file_type_name(item->file));
 }
 
 /* Make menu using the playlist and directory table. */

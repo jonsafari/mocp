@@ -22,7 +22,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "audio.h"
-#include "file_types.h"
+#include "decoder.h"
 #include "server.h"
 #include "main.h"
 #include "log.h"
@@ -54,6 +54,9 @@ struct flac_data
 	unsigned channels;
 
 	FLAC__uint64 last_decode_position;
+
+	int ok; /* was this stream successfully opened? */
+	struct decoder_error error;
 };
 
 /* Convert FLAC big-endian data into PCM little-endian. */
@@ -157,7 +160,7 @@ static void error_callback (const FLAC__FileDecoder *decoder ATTR_UNUSED,
 		data->abort = 1;
 	}
 	else
-		error ("FLAC: lost sync");
+		decoder_error (&data->error, ERROR_FATAL, 0, "FLAC: lost sync");
 }
 
 static void *flac_open (const char *file)
@@ -165,24 +168,29 @@ static void *flac_open (const char *file)
 	struct flac_data *data;
 
 	data = (struct flac_data *)xmalloc (sizeof(struct flac_data));
+	decoder_error_init (&data->error);
 	
 	data->bitrate = -1;
 	data->abort = 0;
 	data->sample_buffer_fill = 0;
 	data->last_decode_position = 0;
+	data->ok = 1;
 
 	if (!(data->decoder = FLAC__file_decoder_new())) {
-		error ("FLAC__file_decoder_new() failed");
-		free (data);
-		return NULL;
+		decoder_error (&data->error, ERROR_FATAL, 0,
+				"FLAC__file_decoder_new() failed");
+		data->ok = 0;
+		return data;
 	}
 
 	FLAC__file_decoder_set_md5_checking (data->decoder, false);
 	if (!FLAC__file_decoder_set_filename(data->decoder, file)) {
-		free (data);
-		error ("FLAC__file_decoder_set_filename() failed");
-		return NULL;
+		decoder_error (&data->error, ERROR_FATAL, 0,
+				"FLAC__file_decoder_set_filename() failed");
+		data->ok = 0;
+		return data;
 	}
+	
 	FLAC__file_decoder_set_metadata_ignore_all (data->decoder);
 	FLAC__file_decoder_set_metadata_respond (data->decoder,
 			FLAC__METADATA_TYPE_STREAMINFO);
@@ -193,16 +201,18 @@ static void *flac_open (const char *file)
 	FLAC__file_decoder_set_error_callback (data->decoder, error_callback);
 
 	if (FLAC__file_decoder_init(data->decoder) != FLAC__FILE_DECODER_OK) {
-		free (data);
-		error ("FLAC__file_decoder_init() failed");
-		return NULL;
+		decoder_error (&data->error, ERROR_FATAL, 0,
+				"FLAC__file_decoder_init() failed");
+		data->ok = 0;
+		return data;
 	}
 
 	if (!FLAC__file_decoder_process_until_end_of_metadata(data->decoder)) {
-		free (data);
-		error ("FLAC__file_decoder_process_until_end_of_metadata()"
+		decoder_error (&data->error, ERROR_FATAL, 0,
+				"FLAC__file_decoder_process_until_end_of_metadata()"
 				" failed.");
-		return NULL;
+		data->ok = 0;
+		return data;
 	}
 
 	return data;
@@ -347,6 +357,8 @@ static int flac_decode (void *void_data, char *buf, int buf_len,
 	sound_params->format = bytes_per_sample;
 	sound_params->rate = data->sample_rate;
 	sound_params->channels = data->channels;
+
+	decoder_error_clear (&data->error);
 	
 	if (!data->sample_buffer_fill) {
 		debug ("decoding...");
@@ -358,7 +370,8 @@ static int flac_decode (void *void_data, char *buf, int buf_len,
 		}
 
 		if (!FLAC__file_decoder_process_single(data->decoder)) {
-			error ("Read error processing frame.");
+			decoder_error (&data->error, ERROR_FATAL, 0,
+					"Read error processing frame.");
 			return 0;
 		}
 
@@ -407,17 +420,37 @@ static int flac_get_duration (void *void_data)
 	return data->length;
 }
 
-static struct decoder_funcs decoder_funcs = {
+static void flac_get_name (const char *file ATTR_UNUSED, char buf[4])
+{
+	strcpy (buf, "FLA");
+}
+
+static int flac_our_format_ext (const char *ext)
+{
+	return !strcasecmp(ext, "flac") || !strcasecmp(ext, "fla");
+}
+
+static void flac_get_error (void *prv_data, struct decoder_error *error)
+{
+	struct flac_data *data = (struct flac_data *)prv_data;
+
+	decoder_error_copy (error, &data->error);
+}
+
+static struct decoder flac_decoder = {
 	flac_open,
 	flac_close,
 	flac_decode,
 	flac_seek,
 	flac_info,
 	flac_get_bitrate,
-	flac_get_duration
+	flac_get_duration,
+	flac_get_error,
+	flac_our_format_ext,
+	flac_get_name
 };
 
-struct decoder_funcs *flac_get_funcs ()
+struct decoder *flac_get_funcs ()
 {
-	return &decoder_funcs;
+	return &flac_decoder;
 }

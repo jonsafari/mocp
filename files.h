@@ -2,7 +2,6 @@
 #define FILES_H
 
 #include "playlist.h"
-#include "file_types.h"
 
 enum file_type
 {

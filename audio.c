@@ -27,7 +27,7 @@
 
 #include "server.h"
 #include "main.h"
-#include "file_types.h"
+#include "decoder.h"
 #include "playlist.h"
 #include "log.h"
 
@@ -157,7 +157,7 @@ static void *play_thread (void *unused ATTR_UNUSED)
 
 	while (curr_playing != -1) {
 		char *file;
-		struct decoder_funcs *df;
+		struct decoder *df;
 
 		LOCK (plist_mut);
 		file = plist_get_file (curr_plist, curr_playing);
@@ -167,7 +167,7 @@ static void *play_thread (void *unused ATTR_UNUSED)
 		play_prev = 0;
 
 		if (file) {
-			df = get_decoder_funcs (file);
+			df = get_decoder (file);
 			if (df) {
 				int next;
 				char *next_file;

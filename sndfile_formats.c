@@ -18,10 +18,11 @@
 #include <string.h>
 #include <sndfile.h>
 #include "sndfile_formats.h"
-#include "file_types.h"
+#include "decoder.h"
 #include "main.h"
 #include "server.h"
 #include "log.h"
+#include <files.h>
 
 /* TODO:
  * - sndfile is not thread-safe: use a mutex?
@@ -32,6 +33,8 @@ struct sndfile_data
 {
 	SNDFILE *sndfile;
 	SF_INFO snd_info;
+	int ok; /* Was this stream successfully opened? */
+	struct decoder_error error;
 };
 
 static void *sndfile_open (const char *file)
@@ -39,25 +42,25 @@ static void *sndfile_open (const char *file)
 	struct sndfile_data *data;
 	
 	data = (struct sndfile_data *)xmalloc (sizeof(struct sndfile_data));
-
+	
+	decoder_error_init (&data->error);
 	memset (&data->snd_info, 0, sizeof(data->snd_info));
 	
 	if (!(data->sndfile = sf_open(file, SFM_READ,
 					&data->snd_info))) {
 
-		/* sf_strerror is not thread save with NULL argument */
-		error ("Can't open file: %s", sf_strerror(NULL));
-		
-		free (data);
-		return NULL;
+		/* FIXME: sf_strerror is not thread save with NULL argument */
+		decoder_error (&data->error, ERROR_FATAL, 0,
+				"Can't open file: %s", sf_strerror(NULL));
+		return data;
 	}
 
 	if (data->snd_info.channels > 2) {
-		error ("The file has more than 2 channels, this is not "
-				"supported.");
+		decoder_error (&data->error, ERROR_FATAL, 0,
+				"The file has more than 2 channels, this is"
+				" not supported.");
 		sf_close (data->sndfile);
-		free (data);
-		return NULL;
+		return data;
 	}
 
 	debug ("Opened file %s", file);
@@ -72,7 +75,8 @@ static void sndfile_close (void *void_data)
 {
 	struct sndfile_data *data = (struct sndfile_data *)void_data;
 
-	sf_close (data->sndfile);
+	if (data->ok)
+		sf_close (data->sndfile);
 	free (data);
 }
 
@@ -137,17 +141,59 @@ static int sndfile_get_duration (void *void_data)
 			: -1;
 }
 
-static struct decoder_funcs decoder_funcs = {
+static void sndfile_get_name (const char *file, char buf[4])
+{
+	char *ext = ext_pos (file);
+	
+	if (!strcasecmp(ext, "au") || !strcasecmp(ext, "snd"))
+		strcpy (buf, "AU");
+	else if (!strcasecmp(ext, "wav"))
+		strcpy (buf, "WAV");
+	else if (!strcasecmp(ext, "aif"))
+		strcpy (buf, "AIF");
+	else if (!strcasecmp(ext, "8svx"))
+		strcpy (buf, "SVX");
+	else if (!strcasecmp(ext, "sph"))
+		strcpy (buf, "SPH");
+	else if (!strcasecmp(ext, "sf"))
+		strcpy (buf, "IRC");
+	else if (!strcasecmp(ext, "voc"))
+		strcpy (buf, "VOC");
+}
+
+static int sndfile_our_format_ext (const char *ext)
+{
+	return !strcasecmp(ext, "au")
+		|| !strcasecmp(ext, "snd")
+		|| !strcasecmp(ext, "wav")
+		|| !strcasecmp(ext, "aif")
+		|| !strcasecmp(ext, "8svx")
+		|| !strcasecmp(ext, "sph")
+		|| !strcasecmp(ext, "sf")
+		|| !strcasecmp(ext, "voc");
+}
+
+static void sndfile_get_error (void *prv_data, struct decoder_error *error)
+{
+	struct sndfile_data *data = (struct sndfile_data *)prv_data;
+
+	decoder_error_copy (error, &data->error);
+}
+
+static struct decoder sndfile_decoder = {
 	sndfile_open,
 	sndfile_close,
 	sndfile_decode,
 	sndfile_seek,
 	sndfile_info,
 	sndfile_get_bitrate,
-	sndfile_get_duration
+	sndfile_get_duration,
+	sndfile_get_error,
+	sndfile_our_format_ext,
+	sndfile_get_name
 };
 
-struct decoder_funcs *sndfile_get_funcs ()
+struct decoder *sndfile_get_funcs ()
 {
-	return &decoder_funcs;
+	return &sndfile_decoder;
 }

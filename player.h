@@ -1,7 +1,6 @@
 #ifndef PLAYER_H
 #define PLAYER_H
 
-#include "file_types.h"
 #include "buf.h"
 
 void player_cleanup ();

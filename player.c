@@ -22,7 +22,7 @@
 
 #include "main.h"
 #include "log.h"
-#include "file_types.h"
+#include "decoder.h"
 #include "audio.h"
 #include "buf.h"
 #include "server.h"
@@ -45,7 +45,7 @@ struct precache
 	int buf_fill;
 	int ok; /* 1 if precache succeed */
 	struct sound_params sound_params; /* of the sound in the buffer */
-	struct decoder_funcs *f; /* decoder functions for precached file */
+	struct decoder *f; /* decoder functions for precached file */
 	void *decoder_data;
 	int running; /* if the precache thread is running */
 	pthread_t tid; /* tid of the precache thread */
@@ -80,7 +80,7 @@ static void *precache_thread (void *data)
 	precache->buf_fill = 0;
 	precache->sound_params.channels = 0; /* mark that sound_params were not
 						yet filled. */
-	precache->f = get_decoder_funcs (precache->file);
+	precache->f = get_decoder (precache->file);
 	assert (precache->f != NULL);
 
 	if (!(precache->decoder_data = precache->f->open(precache->file))) {
@@ -183,10 +183,10 @@ void player (char *file, char *next_file, struct buf *out_buf)
 	struct sound_params sound_params = { 0, 0, 0 };
 	struct sound_params new_sound_params;
 	int sound_params_change = 0;
-	struct decoder_funcs *f;
+	struct decoder *f;
 	int bitrate = -1;
 
-	f = get_decoder_funcs (file);
+	f = get_decoder (file);
 	assert (f != NULL);
 	
 	buf_set_notify_cond (out_buf, &request_cond, &request_cond_mutex);

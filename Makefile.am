@@ -16,8 +16,8 @@ mocp_SOURCES = log.c \
 	       buf.h \
 	       audio.c \
 	       audio.h \
-	       file_types.c \
-	       file_types.h \
+	       decoder.c \
+	       decoder.h \
        	       interface.c \
 	       interface.h \
 	       menu.c \
