@@ -134,6 +134,7 @@ static int count_time_internal (struct mp3_data *data)
 	int num_frames = 0;
 	mad_timer_t duration = mad_timer_zero;
 	struct mad_header header;
+	int good_header = 0; /* Have we decoded any header? */
 
 	mad_header_init (&header);
 	xing_init (&xing);
@@ -178,6 +179,8 @@ static int count_time_internal (struct mp3_data *data)
 			}
 		}
 
+		good_header = 1;
+
 		/* Limit xing testing to the first frame header */
 		if (!num_frames++) {
 			if (xing_parse(&xing, data->stream.anc_ptr,
@@ -218,6 +221,9 @@ static int count_time_internal (struct mp3_data *data)
 			
 		mad_timer_add (&duration, header.duration);
 	}
+
+	if (!good_header)
+		return -1;
 
 	if (!is_vbr) {
 		/* time in seconds */
