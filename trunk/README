@@ -48,17 +48,6 @@ Run program with the 'moc' command. If you need help, press 'h'.
 If you use FreeBSD, you may have to run configure in this way:
 ./configure LDFLAGS=-L/usr/local/lib CPPFLAGS=-I/usr/local/include
 
-
-What is version checker?
-
-It is a funny mechanism to check for a new version of MOC and see what has
-changed. Just press 'V' to see how it works, the programm will connect to
-moc.daper.net, check for a new version, and display message.
-MOC will remind you of pressing 'V' every 31 days, if you don't like it, you
-can turn it off by setting Reminder = 0 in the config file or by compiling MOC
-with --disable-version-checker.
-
-
 Who wrote that? Where can I send bug reports, questions or comments?
 
 	* Damian Pietras <daper@daper.net>
