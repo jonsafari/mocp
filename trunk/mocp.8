@@ -1,4 +1,4 @@
-.TH MOC 8 "8 october 2004" "Version 2.0.0" "music on console"
+.TH MOC 8 "18 october 2004" "Version 2.1.0" "music on console"
 
 .SH NAME
 MOC \- console audio player
@@ -39,8 +39,9 @@ stdout.
 
 .TP
 .I -R --sound-driver NAME
-Use the specified sound driver. Currently only OSS and null (for debugging) are
-supported. This option is called SoundDriver in configuration file.
+Use the specified sound driver. This can be OSS, ALSA, or null (for debugging).
+Some of the drivers could not be compiled in. This option is called SoundDriver
+in configuration file.
 
 .TP
 .I -m --music-dir
