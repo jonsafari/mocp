@@ -1,10 +1,8 @@
 Before 2.2.0:
 * multiple extensions for one file type (.flac, .fla)
-* displaying bitrate up to 9999Kbps
-* speed up saving the playlist when the titles are known to be made from tags.
 * fast going to a directory - when after CTRL-g user enters absolute path
   or a path that begins with ~. Tab - completes directories names.
-* flac
+* speed up saving the playlist when the titles are known to be made from tags.
 * General error/fatal functions that recognize if they are in the interface or
   in the server and if ncurses were initialized.
 * Redefining keys.
@@ -14,17 +12,19 @@ Before 2.2.0:
 * Do something with big interface.c - general user interface code?
 * Add simple formats, like .au, .cdr, ...
 * Arrow keys working in the entry field.
-* General 16-bit to 24-bit conversion.
+* General 24-bit to 16-bit conversion.
 * Share the playlist between interfaces - one interface is a "master"?.
+* When adding files to the playlist, add them also to the server's playlist
+* True shuffle.
 
 In future:
 
+* Better international characters handling - tags in UTF.
 * handle SIGBUS - when mmap()ed file is truncated.
 * Showing the buffer state.
 * Use pathconf() instead of PATH_MAX.
 * Cache for tags in each directory. (.cache.m3u?)
 * Binary search in options code.
-* True shuffle.
 * 'D' command must not delete an item from the server playlist if the
   server is not playing from the playlist.
 * ESD
@@ -40,6 +40,7 @@ In future:
 * Locales.
 * special themes for xterm - after detecting xterm load XtermTheme that
   supports xterm features.
+* Song ratings.
 
 Maybe never:
 
