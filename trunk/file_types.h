@@ -4,6 +4,13 @@
 #include "playlist.h"
 #include "audio.h"
 
+/* Flags for the info decoder function. */
+enum tags_select
+{
+	TAGS_COMMENTS	= 0x01, /* artist, title, etc. */
+	TAGS_TIME	= 0x02 /* time of the file. */
+};
+
 /* Functions that must be provided to support a file format.
  * void *data is a pointer to private data used by the decoder passed to each
  * function. */
@@ -26,7 +33,8 @@ struct decoder_funcs
 	int (*seek)(void *data, int sec);
 
 	/* Fill the tags structure for a file. */
-	void (*info)(const char *file, struct file_tags *tags);
+	void (*info)(const char *file, struct file_tags *tags,
+			const int tags_sel);
 };
 
 int is_sound_file (char *name);
