@@ -66,21 +66,17 @@ void menu_draw (struct menu *menu)
 		wmove (menu->win, i - menu->top + 1, 1);
 		
 		/* Set attributes */
-		if (i == menu->selected)
+		if (i == menu->selected && i == menu->marked)
+			wattrset (menu->win, menu->items[i]->attr_sel_marked);
+		else if (i == menu->selected)
 			wattrset (menu->win, menu->items[i]->attr_sel);
+		else if (i == menu->marked)
+			wattrset (menu->win, menu->items[i]->attr_marked);
 		else
 			wattrset (menu->win, menu->items[i]->attr_normal);
 		
-		if (menu->items[i]->type == F_DIR) {
-			waddnstr (menu->win, menu->items[i]->title,
-					menu->maxx - 1);
-			waddch (menu->win, '/');
-			title_len = strlen (menu->items[i]->title) + 1;
-		}
-		else {
-			waddnstr (menu->win, menu->items[i]->title, menu->maxx);
-			title_len = strlen (menu->items[i]->title);
-		}
+		waddnstr (menu->win, menu->items[i]->title, menu->maxx);
+		title_len = strlen (menu->items[i]->title);
 		
 		
 		/* Make blank line to the right side of the screen */
@@ -93,9 +89,7 @@ void menu_draw (struct menu *menu)
 }
 
 /* menu_items must be malloc()ed memory! */
-struct menu *menu_new (WINDOW *win, struct menu_item **items, const int nitems,
-		const int attr_normal, const int attr_normal_sel,
-		const int attr_marked, const int attr_marked_sel)
+struct menu *menu_new (WINDOW *win, struct menu_item **items, const int nitems)
 {
 	struct menu *menu;
 
@@ -113,10 +107,6 @@ struct menu *menu_new (WINDOW *win, struct menu_item **items, const int nitems,
 	menu->maxy--; /* Border without bottom line */
 	menu->nitems = nitems;
 	menu->marked = -1;
-	menu->attr_normal = attr_normal;
-	menu->attr_normal_sel = attr_normal_sel;
-	menu->attr_marked = attr_marked;
-	menu->attr_marked_sel = attr_marked_sel;
 
 	return menu;
 }
@@ -141,8 +131,9 @@ struct menu_item *menu_newitem (char *title, const int plist_pos,
 
 	item->title = xstrdup (title);
 	item->plist_pos = plist_pos;
-	item->attr_normal = 0;
-	item->attr_sel = 0;
+	item->attr_normal = A_NORMAL;
+	item->attr_sel = A_NORMAL;
+	item->attr_sel_marked = A_NORMAL;
 	item->type = type;
 	item->file = xstrdup (file);
 
@@ -287,10 +278,7 @@ void set_menu_state (struct menu *menu, int selected, int top)
 
 void menu_unmark_item (struct menu *menu)
 {
-	if (menu->marked != -1) {
-		menu->items[menu->marked]->attr_normal = menu->attr_normal;
-		menu->items[menu->marked]->attr_sel = menu->attr_normal_sel;
-	}
+	menu->marked = -1;
 }
 
 /* Mark the item that is plist_item on the playlist. */
@@ -305,9 +293,8 @@ void menu_mark_plist_item (struct menu *menu, const int plist_item)
 	/* Find this item. */
 	for (i = 0; i < menu->nitems; i++)
 		if (menu->items[i]->plist_pos == plist_item) {
-			menu->items[i]->attr_normal = menu->attr_marked;
-			menu->items[i]->attr_sel = menu->attr_marked_sel;
 			menu->marked = i;
+			break;
 		}
 }
 
@@ -325,8 +312,8 @@ void menu_set_top_item (struct menu *menu, const int num)
 		menu->top = num;
 }
 
-/* Find an item that title's contain the string beginning from current. Return
- * the item index or -1 if not found. */
+/* Find an item that title's contain the string, begin searching from current.
+ * Return the item index or -1 if not found. */
 int menu_find_pattern_next (struct menu *menu, const char *pattern,
 		const int current)
 {
@@ -365,4 +352,24 @@ int menu_next_turn (const struct menu *menu)
 		return menu->selected + 1;
 	else
 		return 0;
+}
+
+void menu_item_set_attr_normal (struct menu_item *item, const int attr)
+{
+	item->attr_normal = attr;
+}
+
+void menu_item_set_attr_sel (struct menu_item *item, const int attr)
+{
+	item->attr_sel = attr;
+}
+
+void menu_item_set_attr_sel_marked (struct menu_item *item, const int attr)
+{
+	item->attr_sel_marked = attr;
+}
+
+void menu_item_set_attr_marked (struct menu_item *item, const int attr)
+{
+	item->attr_marked = attr;
 }
