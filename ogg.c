@@ -139,6 +139,7 @@ void ogg_play (const char *file_name, struct buf *out_buf)
 		last_section = current_section;
 
 		if ((request = get_request()) != PR_NOTHING) {
+			buf_stop (out_buf);
 			buf_reset (out_buf);
 
 			if (request == PR_STOP) {
@@ -160,10 +161,8 @@ void ogg_play (const char *file_name, struct buf *out_buf)
 				buf_time_set (out_buf, time);
 			}
 		}
-		else if (!written) {
-			logit ("OGG: write refused, exiting");
-			break;
-		}
+		else if (!written)
+			logit ("OGG: write refused");
 	}
 	
 	ov_clear (&vf);
