@@ -40,7 +40,7 @@
 static snd_pcm_t *handle = NULL;
 static struct sound_params params = { 0, 0, 0 };
 static int chunk_size = -1; /* in frames */
-static char alsa_buf[16384];
+static char alsa_buf[16 * 1024];
 static int alsa_buf_fill = 0;
 static int bytes_per_frame;
 static pthread_mutex_t buf_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -275,7 +275,8 @@ static int play_buf_chunks ()
 				chunk_size / bytes_per_frame);
 		if (err == -EAGAIN) {
 			UNLOCK (buf_mutex);
-			snd_pcm_wait (handle, 5000);
+			if (snd_pcm_wait(handle, 5000) < 0)
+				logit ("snd_pcm_wait() failed");
 			LOCK (buf_mutex);
 		}
 		else if (err == -EPIPE) {
