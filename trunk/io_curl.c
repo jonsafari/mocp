@@ -158,8 +158,6 @@ void io_curl_close (struct io_stream *s)
 	assert (s != NULL);
 	assert (s->source == IO_SOURCE_CURL);
 
-	/* TODO: abort curl IO */
-
 	if (s->url)
 		free (s->url);
 	if (s->http_headers)
@@ -212,6 +210,10 @@ ssize_t io_curl_read (struct io_stream *s, char *buf, size_t count)
 			ret = select (max_fd + 1, &read_fds, &write_fds,
 					&exc_fds, NULL);
 
+			if (ret < 0 && errno == EINTR) {
+				logit ("Interrupted");
+				return 0;
+			}
 			if (ret < 0) {
 				s->errno_val == errno;
 				logit ("select() failed");

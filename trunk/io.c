@@ -29,6 +29,8 @@
 #include <string.h>
 #include <strings.h>
 #include <assert.h>
+#include <pthread.h>
+#include <signal.h>
 #ifdef HAVE_MMAP
 # include <sys/mman.h>
 #endif
@@ -247,6 +249,7 @@ void io_abort (struct io_stream *s)
 	
 	LOCK (s->buf_mutex);
 	s->stop_read_thread = 1;
+	pthread_kill (s->read_thread, SIGUSR1);
 	pthread_cond_broadcast (&s->buf_fill_cond);
 	pthread_cond_broadcast (&s->buf_free_cond);
 	UNLOCK (s->buf_mutex);
