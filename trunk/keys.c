@@ -425,7 +425,7 @@ static int parse_key (const char *symbol)
 		if (strlen(symbol) != 3)
 			return -1;
 
-		return symbol[2] & META_KEY_FLAG;
+		return symbol[2] | META_KEY_FLAG;
 	}
 
 	/* TODO: Special keys */
