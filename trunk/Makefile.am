@@ -22,7 +22,9 @@ mocp_SOURCES = log.c \
 	       files.c \
 	       files.h \
 	       options.c \
-	       options.h
+	       options.h \
+	       player.c \
+	       player.h
 EXTRA_mocp_SOURCES = gnugetopt.h \
 		     getopt.c \
 		     getopt1.c \
