@@ -1,0 +1,101 @@
+# Example color theme for MOC.
+# You can use a theme by copying it to ~/.moc/themes directory, and using
+# Theme config option or -T command line option.
+#
+# Fill free to make your own themes and send me them. It will be included in
+# official MOC releases or on the MOC web site.
+#
+# The format of this file is:
+# Lines beginning with # are comments.
+# Blank lines are ignored.
+# Every other line is expected to be in format:
+#
+# ELEMENT = FOREGROUND_COLOR BACKGROUND_COLOR [ATTRIBUTE[,ATTRIBUTE,..]]
+#
+# Where names are case insensitive.
+#
+# ELEMENT is an element of MOC interface. This can be:
+# background         - default background for regions when nothing is displayed
+# frame              - frames for windows
+# window_title       - the title of the window (eg name of the current
+#                      directory)
+# directory          - a directory in the menu
+# selected_directory - a directory that is selected using arrows
+# playlist           - playlist file
+# selected_playlist  - see selected directory
+# file               - an ordinary file in the menu (mp3, ogg, ...)
+# selected_file      - see selected directory
+# marked_file        - a file that is currently beeing played
+# marked_selected_file - a file that is currently beeing played and is also
+#                      selected using arrows
+# info               - information shown at the right side of files
+# status             - the status line with a message
+# title              - the title of the file that is currently beeing played
+# state              - the state: play, stop, or paus (>, [], ||)
+# current_time       - current time of playing
+# time_left          - the time left to the end of playing the current file
+# total_time         - the length of the currently played file
+# time_left_frames   - the brackets outside the time left ([10:13])
+# sound_parameters   - the frequency and bitrate numbers
+# legend             - "KHz" and "Kbps"
+# disabled           - disabled element ([STEREO])
+# enabled            - enabled element
+# empty_bar          - "empty" part of the volume bar
+# filled_bar         - "filled" part of the volume bar
+# entry              - place wher user can type a search query or a file name
+# entry_title        - the title of an entry
+# error              - error message
+# message            - information message
+#
+# FOREGOUND_VOLOR and BACKGROUND_COLOR can have one of the following values:
+# black, red, green, yellow, blue, magenta, cyan, white, default (can be
+# transparent), grey (not standard, but works)
+#
+# Optional ATTRIBUTE parameters can be (from ncurses manual):
+# normal      - default (no highlight)
+# standout    - best highlighting mode of the terminal
+# underline   - underlining
+# reverse     - reverse video
+# blink       - blinking
+# dim         - half bright
+# bold        - extra bright or bold
+# protect     - protected mode
+#
+# You can specify a list of attributes separated by commas: attr1,attr2,attr3.
+# Don't use spaces anywhere in such a list.
+#
+# HINT: you have only 8 colors, but combined with attributes bold and/or
+# reversed you actually get more colors.
+#
+# If you don't specify some elements, the default values will be used.
+#
+# Here follows the default configuration:
+background		= white		blue
+frame			= white		blue
+window_title		= white		blue
+directory		= white		blue	bold
+selected_directory	= white		black	bold
+playlist		= white		blue	bold
+selected_playlist	= white		black	bold
+file			= white		blue
+selected_file		= white		black
+marked_file		= green		blue	bold
+marked_selected_file	= green		black	bold
+info			= blue		blue	bold
+status			= white		blue
+title			= white		blue	bold
+state			= white		blue	bold
+current_time		= white		blue	bold
+time_left		= white		blue	bold
+total_time		= white		blue	bold
+time_left_frames	= white		blue
+sound_parameters	= white		blue	bold
+legend			= white		blue
+disabled		= blue		blue	bold
+enabled			= white		blue	bold
+empty_bar		= white		blue
+filled_bar		= black		cyan
+entry			= white		blue
+entry_title		= black		cyan
+error			= red		blue	bold
+message			= green		blue	bold
