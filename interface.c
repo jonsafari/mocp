@@ -1202,6 +1202,9 @@ static void print_help_screen ()
 "  '.' , ','    Increase, decrease volume by 5%\n"
 "  '>' , '<'    Increase, decrease volume by 1%\n"
 "  M            Hide error/informative message\n"
+"  H            Switch ShowHiddenFiles option\n"
+"  ^r           Refresh the screen\n"
+"  r            Reread directory content\n"
 "  q            Detach MOC from the server\n"
 "  Q            Quit\n");
 
