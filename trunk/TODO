@@ -1,11 +1,7 @@
-Before 2.1.0:
-
-To test:
-  - no-gaps
-  - broken playlist files
-  - valgrind
-
 Before 2.2.0:
+* multiple extensions for one file type (.flac, .fla)
+* displaying bitrate up to 9999Kbps
+* speed up saving the playlist when the titles are known to be made from tags.
 * fast going to a directory - when after CTRL-g user enters absolute path
   or a path that begins with ~. Tab - completes directories names.
 * flac
@@ -16,6 +12,10 @@ Before 2.2.0:
 * configurable saving the playlist at the end: ask, no, not if saved, always.
 * A bar showing time for current song.
 * Do something with big interface.c - general user interface code?
+* Add simple formats, like .au, .cdr, ...
+* Arrow keys working in the entry field.
+* General 16-bit to 24-bit conversion.
+* Share the playlist between interfaces - one interface is a "master"?.
 
 In future:
 
@@ -43,7 +43,6 @@ In future:
 
 Maybe never:
 
-* When starting another client get the playlist from an already running client.
 * Say about ignored options that affects server when the server is not being
   run.
 * Input buffer with separate thread - like output buffer.
