@@ -19,6 +19,8 @@
 #include <string.h>
 #include <errno.h>
 
+#define DEBUG
+
 #include "server.h"
 #include "main.h"
 #include "file_types.h"
@@ -83,9 +85,7 @@ static void *play_thread (void *unused ATTR_UNUSED)
 				logit ("Playing item %d: %s", curr_playing,
 						file);
 				
-				state = STATE_PLAY;
 				buf_time_set (&out_buf, 0.0);
-				state_change ();
 				
 				next = plist_next (&playlist, curr_playing);
 				player (file, next != -1 ?
@@ -365,7 +365,7 @@ char *audio_get_sname ()
 	char *sname = NULL;
 	
 	LOCK (curr_playing_mut);
-	if (curr_playing != -1)
+	if (curr_playing != -1 && state != STATE_STOP)
 		sname = xstrdup (playlist.items[curr_playing].file);
 	UNLOCK (curr_playing_mut);
 
@@ -391,4 +391,43 @@ void audio_plist_delete (const char *file)
 
 	if (num != -1)
 		plist_delete (&playlist, num);
+}
+
+/* Get the time of a file if it is on the playlist and the time is avilable. */
+int audio_get_ftime (const char *file)
+{
+	int i;
+	int time;
+
+	/* TODO: also check the mtime. */
+
+	if ((i = plist_find_fname(&playlist, file)) != -1
+			&& (time = get_item_time(&playlist, i)) != -1) {
+		debug ("Found time for %s", file);
+		return time;
+	}
+
+	return -1;
+}
+
+/* Set the time for a file on the playlist. */
+void audio_plist_set_time (const char *file, const int time)
+{
+	int i;
+
+	if ((i = plist_find_fname(&playlist, file)) != -1) {
+		update_item_time (&playlist.items[i], time);
+		/* TODO: also update the mtime */
+		debug ("Setting time for %s", file);
+	}
+	else
+		logit ("Request for updating time for a file not present on the"
+				" playlist!");
+}
+
+/* Notify about changing the state (unsed by the player). */
+void audio_state_started_playing ()
+{
+	state = STATE_PLAY;
+	state_change ();
 }
