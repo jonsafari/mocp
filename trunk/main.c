@@ -254,8 +254,7 @@ static void start_moc (const struct parameters *params, char **args,
 			}
 		}
 		else
-			fatal ("The server is busy (too many clients "
-					"connected)");
+			fatal ("Can't connect to the server.");
 	}
 
 	if (params->dont_run_iface) {
@@ -363,7 +362,7 @@ static void server_command (struct parameters *params)
 		}
 	}
 	else
-		fatal ("The server is busy (another client is connected)");
+		fatal ("Can't connect to the server.");
 
 	close (sock);
 }
