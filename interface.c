@@ -1051,14 +1051,25 @@ static void process_args (char **args, const int num)
 	}
 	else {
 		int i;
+		char this_cwd[PATH_MAX];
+		
+		if (!getcwd(this_cwd, sizeof(cwd)))
+			interface_fatal ("Can't get CWD.");
 
 		for (i = 0; i < num; i++) {
+			char path[2*PATH_MAX];
 			int dir = isdir(args[i]);
 
+			if (args[i][0] == '/')
+				strcpy (path, "/");
+			else
+				strcpy (path, this_cwd);
+			resolve_path (path, sizeof(path), args[i]);
+
 			if (dir == 1)
-				read_directory_recurr (args[i], playlist);
-			else if (dir == 0 && is_sound_file(args[i]))
-				plist_add (playlist, args[i]);
+				read_directory_recurr (path, playlist);
+			else if (dir == 0 && is_sound_file(path))
+				plist_add (playlist, path);
 		}
 
 		if (playlist->num) {
