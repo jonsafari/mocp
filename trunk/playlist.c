@@ -338,11 +338,13 @@ int plist_find_fname (struct plist *plist, const char *file)
 	return -1;
 }
 
-/* Find an item on the list, also find deleted items. Return the index or -1
- * if not found. */
+/* Find an item on the list, also find deleted items. If there are more than one
+ * items for this file, return the not deleted one, or if all are deleted,
+ * return the last of them. Return the index or -1 if not found. */
 int plist_find_del_fname (struct plist *plist, const char *file)
 {
 	int i;
+	int item = -1;
 	int hash = str_hash (file);
 
 	assert (plist != NULL);
@@ -351,11 +353,12 @@ int plist_find_del_fname (struct plist *plist, const char *file)
 		if (plist->items[i].file
 				&& plist->items[i].file_hash == hash
 				&& !strcmp(plist->items[i].file, file)) {
-			return i;
+			if (item == -1 || plist_deleted(plist, item))
+				item = i;
 		}
 	}
 
-	return -1;
+	return item;
 }
 
 #define if_not_empty(str)	((str) && (*str) ? (str) : NULL)
