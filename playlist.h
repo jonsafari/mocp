@@ -40,6 +40,7 @@ struct plist
 	int not_deleted;	/* Number of not deleted items */
 	pthread_mutex_t mutex;
 	struct plist_item *items;
+	int serial;		/* Optional serial number of this playlist */
 };
 
 void plist_init (struct plist *plist);
@@ -73,5 +74,6 @@ void plist_shuffle (struct plist *plist);
 void plist_swap_first_fname (struct plist *plist, const char *fname);
 struct plist_item *plist_new_item ();
 void plist_free_item_fields (struct plist_item *item);
-
+void plist_set_serial (struct plist *plist, const int serial);
+int plist_get_serial (const struct plist *plist);
 #endif
