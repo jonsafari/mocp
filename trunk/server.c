@@ -335,6 +335,18 @@ static int get_set_option ()
 	return 1;
 }
 
+/* Set the mixer to the value provided by the client. Return 0 on error. */
+static int set_mixer ()
+{
+	int val;
+
+	if (!get_int(client_sock, &val))
+		return 0;
+
+	audio_set_mixer (val);
+	return 1;
+}
+
 /* Reveive a command from the client and execute it.
  * Return EOF on EOF or error, 1 if the client wants the server to exit,
  * otherwise 0.
@@ -421,6 +433,14 @@ static int handle_command ()
 			break;
 		case CMD_SET_OPTION:
 			if (!get_set_option())
+				status = EOF;
+			break;
+		case CMD_GET_MIXER:
+			if (!send_data_int(audio_get_mixer()))
+				status = EOF;
+			break;
+		case CMD_SET_MIXER:
+			if (!set_mixer())
 				status = EOF;
 			break;
 		default:
