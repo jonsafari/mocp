@@ -23,7 +23,7 @@
 #include <errno.h>
 #include <assert.h>
 
-#define DEBUG
+/*#define DEBUG*/
 
 #include "server.h"
 #include "main.h"
