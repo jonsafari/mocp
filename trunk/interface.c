@@ -668,6 +668,17 @@ static int qsort_strcmp_func (const void *a, const void *b)
 	return strcmp (*(char **)a, *(char **)b);
 }
 
+/* Convert time in second to min:sec text format. */
+static void sec_to_min (char *buff, const int seconds)
+{
+	int min, sec;
+
+	min = seconds / 60;
+	sec = seconds % 60;
+
+	snprintf (buff, 6, "%02d:%02d", min, sec);
+}
+
 /* Make menu using the playlist and directory table. */
 static struct menu *make_menu (struct plist *plist, struct file_list *dirs,
 		struct file_list *playlists)
@@ -675,8 +686,10 @@ static struct menu *make_menu (struct plist *plist, struct file_list *dirs,
 	int i;
 	int menu_pos;
 	struct menu_item **menu_items;
+	struct menu *menu;
 	int plist_items;
 	int nitems;
+	int read_time = !strcasecmp(options_get_str("ShowTime"), "yes");
 	
 	plist_items = plist_count (plist);
 
@@ -732,6 +745,7 @@ static struct menu *make_menu (struct plist *plist, struct file_list *dirs,
 			menu_items[menu_pos] = menu_newitem (
 					plist->items[i].title, i, F_SOUND,
 					plist->items[i].file);
+			
 			menu_item_set_attr_normal (menu_items[menu_pos],
 					colours[CLR_MENU_ITEM_FILE]);
 			menu_item_set_attr_sel (menu_items[menu_pos],
@@ -741,11 +755,35 @@ static struct menu *make_menu (struct plist *plist, struct file_list *dirs,
 			menu_item_set_attr_sel_marked (menu_items[menu_pos],
 					colours[
 					CLR_MENU_ITEM_FILE_MARKED_SELECTED]);
+			
+			menu_item_set_format (menu_items[menu_pos],
+					format_name(plist->items[i].file));
+
+			if (read_time)
+				plist->items[i].tags = read_file_tags (
+						plist->items[i].file,
+						plist->items[i].tags,
+						TAGS_TIME);
+			
+			if (plist->items[i].tags->time != -1) {
+				char time_str[6];
+				
+				sec_to_min (time_str,
+						plist->items[i].tags->time);
+				menu_item_set_time (menu_items[menu_pos]
+						,time_str);
+			}
+				
 			menu_pos++;
 		}
 	}
 	
-	return menu_new (main_win, menu_items, nitems);
+	menu = menu_new (main_win, menu_items, nitems);
+	menu_set_show_format (menu, options_get_int("ShowFormat"));
+	menu_set_show_time (menu,
+			strcasecmp(options_get_str("ShowTime"), "no"));
+	menu_set_info_attr (menu, colours[CLR_MENU_ITEM_INFO]);
+	return menu;
 }
 
 /* Check if dir2 is in dir1 */
@@ -937,17 +975,6 @@ static char *find_title (char *file)
 	return xstrdup (title);
 }
 
-/* Convert time in second to min:sec text format. */
-static void sec_to_min (char *buff, const int seconds)
-{
-	int min, sec;
-
-	min = seconds / 60;
-	sec = seconds % 60;
-
-	snprintf (buff, 6, "%02d:%02d", min, sec);
-}
-
 static void set_time (const int time)
 {
 	file_info.time_num = time;
@@ -1120,6 +1147,7 @@ static int go_to_dir (char *dir)
 
 	if (dir && is_subdir(dir, cwd)) {
 		strcpy (last_dir, strrchr(cwd, '/') + 1);
+		strcat (last_dir, "/");
 		going_up = 1;
 	}
 
@@ -1349,7 +1377,7 @@ static void set_default_colours ()
 			A_BOLD);
 	make_colour (CLR_MENU_ITEM_FILE_MARKED_SELECTED, COLOR_GREEN,
 			COLOR_BLACK, A_BOLD);
-	make_colour (CLR_MENU_ITEM_INFO, COLOR_BLUE, COLOR_BLUE, A_NORMAL);
+	make_colour (CLR_MENU_ITEM_INFO, COLOR_BLUE, COLOR_BLUE, A_BOLD);
 	make_colour (CLR_STATUS, COLOR_WHITE, COLOR_BLUE, A_NORMAL);
 	make_colour (CLR_TITLE, COLOR_WHITE, COLOR_BLUE, A_BOLD);
 	make_colour (CLR_STATE, COLOR_WHITE, COLOR_BLUE, A_BOLD);
