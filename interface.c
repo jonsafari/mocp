@@ -112,10 +112,11 @@ static struct file_info {
 	char state[3];
 } file_info;
 
-/* When we are waiting for data from the server an event can occur. The event
- * we don't want to forget is EV_STATE, so set this variable to 1 if that event
- * occur. */
+/* When we are waiting for data from the server an event can occur. The eventa
+ * we don't want to forget are EV_STATE and EV_ERROR, so set this variables to
+ * 1 if one of them occur. */
 static int must_update_state = 0;
+static int must_update_error = 0;
 
 /* ^c version of c */
 #ifndef CTRL
@@ -253,6 +254,8 @@ static int get_data_int ()
 			return get_int_from_srv ();
 		else if (event == EV_STATE)
 			 must_update_state = 1;
+		else if (event == EV_ERROR)
+			must_update_error = 1;
 	}		
 }
 
@@ -541,6 +544,8 @@ static char *get_data_str ()
 			return get_str_from_srv ();
 		else if (event == EV_STATE)
 			must_update_state = 1;
+		else if (event == EV_ERROR)
+			must_update_error = 1;
 	}		
 }
 
@@ -1061,6 +1066,17 @@ void init_interface (const int sock, const int debug, char **args,
 	update_state ();
 }
 
+/* Get error message from the server and show it. */
+static void update_error ()
+{
+	char *err;
+	
+	send_int_to_srv (CMD_GET_ERROR);
+	err = get_data_str ();
+	interface_error (err);
+	free (err);
+}
+
 /* Handle server event. */
 static void server_event (const int event)
 {
@@ -1089,6 +1105,9 @@ static void server_event (const int event)
 		case EV_CHANNELS:
 			update_channels ();
 			break;
+		case EV_ERROR:
+			update_error ();
+			break;
 		default:
 			interface_message ("Unknown event: 0x%02x", event);
 			logit ("Unknown event 0x%02x", event);
@@ -1097,6 +1116,10 @@ static void server_event (const int event)
 	if (must_update_state) {
 		update_state ();
 		must_update_state = 0;
+	}
+	if (must_update_error) {
+		update_error ();
+		must_update_error = 0;
 	}
 }
 
@@ -1624,7 +1647,8 @@ void interface_loop ()
 		ret = select (srv_sock + 1, &fds, NULL, NULL, &timeout);
 		
 		if (ret == 0) {
-			if (msg_timeout && msg_timeout < time(NULL)) {
+			if (msg_timeout && msg_timeout < time(NULL)
+					&& !msg_is_error) {
 				update_info_win ();
 				wrefresh (info_win);
 				msg_timeout = 0;
