@@ -1226,6 +1226,17 @@ static void switch_read_tags ()
 	update_curr_file ();
 }
 
+/* Reread the directory. */
+static void reread_dir ()
+{
+	int selected_item = menu->selected;
+	int top_item = menu->top;
+
+	go_to_dir (NULL);
+	menu_set_top_item (menu, top_item);
+	menu_setcurritem (menu, selected_item);
+}
+
 /* Handle key */
 static void menu_key (const int ch)
 {
@@ -1347,12 +1358,17 @@ static void menu_key (const int ch)
 			wrefresh (info_win);
 			break;
 		case CTRL('r'):
-			logit ("refresh");
 			wclear (info_win);
 			update_info_win ();
 			wrefresh (info_win);
 			wclear (main_win);
 			update_menu = 1;
+			break;
+		case 'r':
+			if (visible_plist == curr_plist) {
+				reread_dir ();
+				update_menu = 1;
+			}
 			break;
 		case KEY_RESIZE:
 			break;
