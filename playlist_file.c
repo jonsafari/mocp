@@ -25,6 +25,7 @@
 #include "interface.h"
 #include "main.h"
 #include "files.h"
+#include "options.h"
 
 int is_plist_file (char *name)
 {
@@ -181,17 +182,19 @@ int plist_load (struct plist *plist, const char *fname, const char *cwd)
 {
 	int num;
 	int i;
+	int read_tags = options_get_int ("ReadTags");
 
 	num = plist_load_m3u (plist, fname, cwd);
 
 	/* make titles if not present */
 	for (i = 0; i < plist->num; i++)
 		if (!plist_deleted(plist, i) && !plist->items[i].title) {
-			plist->items[i].tags = read_file_tags (
+			if (read_tags)
+				plist->items[i].tags = read_file_tags (
 						plist->items[i].file,
 						plist->items[i].tags,
 						TAGS_COMMENTS);
-			if (plist->items[i].tags->title)
+			if (plist->items[i].tags && plist->items[i].tags->title)
 				plist->items[i].title = build_title (
 						plist->items[i].tags);
 			else
