@@ -158,6 +158,9 @@ void options_init ()
 	option_add_str ("AlsaDevice", "default");
 	option_add_str ("AlsaMixer", "PCM");
 	option_add_int ("HideFileExtension", 0);
+	option_add_int ("ShowFormat", 1);
+	option_add_str ("ShowTime", "no");
+	option_add_str ("Theme", NULL);
 }
 
 /* Return 1 if a parameter to an integer option is valid. */
@@ -172,6 +175,7 @@ int check_int_option (const char *name, const int val)
 			|| !strcasecmp(name, "ShowHiddenFiles")
 			|| !strcasecmp(name, "StartInMusicDir")
 			|| !strcasecmp(name, "HideFileExtension")
+			|| !strcasecmp(name, "ShowFormat")
 			) {
 		if (!(val == 1 || val == 0))
 			return 0;
@@ -196,6 +200,11 @@ int check_str_option (const char *name, const char *val)
 	}
 	else if (!strcasecmp(name, "OutputDriver")) {
 		if (!proper_sound_driver(val))
+			return 0;
+	}
+	else if (!strcasecmp(name, "ShowTime")) {
+		if (strcasecmp(val, "yes") && strcasecmp(val, "no")
+				&& strcasecmp(val, "IfAvailable"))
 			return 0;
 	}
 	
