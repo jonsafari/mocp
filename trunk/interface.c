@@ -429,7 +429,6 @@ static void interface_message (const char *format, ...)
 static void reset_file_info ()
 {
 	file_info.title[0] = 0;
-	file_info.time[0] = 0;
 	strcpy (file_info.curr_time, "00:00");
 	strcpy (file_info.time_left, "00:00");
 	strcpy (file_info.time, "00:00");
@@ -754,7 +753,7 @@ static void update_curr_file ()
 
 		strncpy (file_info.title, title,
 				sizeof(file_info.title) - 1);
-		file_info.title[COLS-5] = 0;
+		file_info.title[sizeof(file_info.title-1)] = 0;
 		xterm_set_title (file_info.title);
 		mark_file (file);
 		free (title);
