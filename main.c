@@ -355,7 +355,9 @@ static void show_usage (const char *prg_name) {
 "%s [OPTIONS]... [FILE]...\n"
 "-V --version           Print program version and exit.\n"
 "-h --help              Print usage and exit.\n"
+#ifndef NDEBUG
 "-D --debug             Turn on logging to a file.\n"
+#endif
 "-S --server            Run only the server.\n"
 "-F --foreground        Run server in foreground, log to stdout.\n"
 "-R --sound-driver NAME Use the specified sound driver (oss, alsa, null).\n"
@@ -437,7 +439,9 @@ int main (int argc, char *argv[])
 	struct option long_options[] = {
 		{ "version",		0, NULL, 'V' },
 		{ "help",		0, NULL, 'h' },
+#ifndef NDEBUG
 		{ "debug",		0, NULL, 'D' },
+#endif
 		{ "server",		0, NULL, 'S' },
 		{ "foreground",		0, NULL, 'F' },
 		{ "sound-driver",	1, NULL, 'R' },
@@ -472,9 +476,11 @@ int main (int argc, char *argv[])
 			case 'h':
 				show_usage (argv[0]);
 				return 0;
+#ifndef NDEBUG
 			case 'D':
 				params.debug = 1;
 				break;
+#endif
 			case 'S':
 				params.only_server = 1;
 				break;
