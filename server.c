@@ -253,6 +253,7 @@ static void thread_signal (const int signum, void (*func)(int))
 	struct sigaction act;
 
 	act.sa_handler = func;
+	act.sa_flags = 0;
 	sigemptyset (&act.sa_mask);
 	
 	if (sigaction(signum, &act, 0) == -1)
