@@ -1057,11 +1057,17 @@ void update_times (const char *file, const int time)
 	sec_to_min (time_str, time);
 
 	if ((i = plist_find_fname(curr_plist, file)) != -1) {
+		curr_plist->items[i].tags = read_file_tags (
+				curr_plist->items[i].file,
+				curr_plist->items[i].tags, 0);
 		curr_plist->items[i].tags->time = time;
 		menu_item_set_time_plist (curr_plist_menu, i, time_str);
 	}
 	
 	if ((i = plist_find_fname(playlist, file)) != -1) {
+		playlist->items[i].tags = read_file_tags (
+				playlist->items[i].file,
+				playlist->items[i].tags, 0);
 		playlist->items[i].tags->time = time;
 		menu_item_set_time_plist (playlist_menu, i, time_str);
 	}
