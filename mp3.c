@@ -14,6 +14,10 @@
  * (C) by Robert Leslie.
  */
 
+/* FIXME: there could be a bit of silence in mp3 at the end or at the
+ * beginning. If you hear gaps between files, it's the file's fault.
+ * Can we strip this silence? */
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
