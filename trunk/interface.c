@@ -2030,8 +2030,16 @@ static void go_file ()
 
 	if (menu_item->type == F_SOUND)
 		play_it (menu_item->plist_pos);
-	else if (menu_item->type == F_DIR && visible_plist == curr_plist)
-		go_dir_up ();
+	else if (menu_item->type == F_DIR && visible_plist == curr_plist) {
+		if (!strcmp(menu_item->file, ".."))
+			go_dir_up ();
+		else {
+			char dir[PATH_MAX + 1];
+
+			strcpy (dir, menu_item->file);
+			go_to_dir (dir);
+		}
+	}
 	else if (menu_item->type == F_DIR && visible_plist == playlist)
 		
 		/* the only item on the playlist of type F_DIR is '..' */
