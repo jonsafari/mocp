@@ -83,7 +83,7 @@ static int plist_load_m3u (struct plist *plist, const char *fname,
 		if (!strncmp(line, "#EXTINF:", sizeof("#EXTINF:")-1)) {
 			char *comma;
 			char *num_err;
-			char time_text[10];
+			char time_text[10] = "";
 			int time_sec;
 
 			if (after_extinf) {
