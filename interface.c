@@ -2754,9 +2754,12 @@ void interface_loop ()
 				
 				menu_key (ch);
 			}
-			if (FD_ISSET(srv_sock, &fds))
-				server_event (get_int_from_srv());
-			dequeue_events ();
+
+			if (!want_quit) {
+				if (FD_ISSET(srv_sock, &fds))
+					server_event (get_int_from_srv());
+				dequeue_events ();
+			}
 		}
 		else if (user_wants_interrupt())
 			handle_interrupt ();
