@@ -394,17 +394,11 @@ static int req_seek (struct client *cli)
 }
 
 /* Report an error logging it and sending a message to the client. */
-void error (const char *format, ...)
+void server_error (const char *msg)
 {
-	va_list va;
-	
-	va_start (va, format);
-	vsnprintf (err_msg, sizeof(err_msg), format, va);
+	strncpy (err_msg, msg, sizeof(err_msg) - 1);
 	err_msg[sizeof(err_msg) - 1] = 0;
-	va_end (va);
-
 	logit ("ERROR: %s", err_msg);
-
 	add_event_all (EV_ERROR);
 }
 
