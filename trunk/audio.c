@@ -58,6 +58,7 @@ static int state = STATE_STOP;
 /* requests for playing thread */
 static int stop_playing = 0;
 static int play_next = 0;
+static int play_prev = 0;
 
 static struct plist playlist;
 
@@ -76,6 +77,7 @@ static void *play_thread (void *unused ATTR_UNUSED)
 		struct decoder_funcs *df;
 
 		play_next = 0;
+		play_prev = 0;
 
 		if (file) {
 			df = get_decoder_funcs (file);
@@ -105,7 +107,7 @@ static void *play_thread (void *unused ATTR_UNUSED)
 		}
 
 		if (stop_playing || (!options_get_int("AutoNext")
-					&& !play_next)) {
+					&& !play_next && !play_prev)) {
 			LOCK (curr_playing_mut);
 			curr_playing = -1;
 			UNLOCK (curr_playing_mut);
@@ -115,6 +117,15 @@ static void *play_thread (void *unused ATTR_UNUSED)
 			LOCK (curr_playing_mut);
 			if (options_get_int("Shuffle"))
 				curr_playing = plist_rand (&playlist);
+                        else if (play_prev == 1){ 
+                                curr_playing = plist_prev (&playlist,
+                                                curr_playing);
+                                if (curr_playing == -1)
+                                        logit ("Beginning of the list.");
+                                else 
+                                        logit ("Previous item.");
+                            
+                        }
 			else {
 				curr_playing = plist_next (&playlist,
 						curr_playing);
@@ -191,6 +202,14 @@ void audio_next ()
 {
 	if (play_thread_running) {
 		play_next = 1;
+		player_stop ();
+	}
+}
+
+void audio_prev ()
+{
+	if (play_thread_running) {
+		play_prev = 1;
 		player_stop ();
 	}
 }
