@@ -1,8 +1,6 @@
 Before 2.1.0:
 
-* Handling errors when writing sound to the device.
-* Don't do chdir().
-* Option to hide file name extensions.
+* Fix total time for VBR streams without XING.
 * Configuration options and command line parameters for selecting pid file and
   socket. A parameter for selecting different configuration file.
 * General procedures for reading files instead of doing this at the decoder
@@ -14,14 +12,14 @@ Before 2.1.0:
 * Use pathconf() instead of PATH_MAX.
 * Showing the buffer state.
 * configurable colors. Colors of the menu set in menu.c.
-* Scrolled help.
-* Help for searching.
-* Addending the current directory to the playlist. Helps creating sorted
+* Adding the current directory to the playlist. Helps creating sorted
   playlist.
 * Update alsa mixer when changed by other application.
+* Display the file format.
 
 In future:
 
+* True shuffle.
 * 'D' command must not delete an item from the server playlist if the
   server is not playing from the playlist.
 * ESD
@@ -49,6 +47,4 @@ Maybe never:
 * Input buffer with separate thread - like output buffer.
 * Funny ASCII equalizer.
 * Mouse support
-* Daily/weekly/monthly statistics of played files (Only for fun :)
-* Server which provides information about currently played music + CGI/PHP
-  script to show it on the web.
+* Command line option to get the current state and the title of the played file.
