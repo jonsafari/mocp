@@ -126,10 +126,10 @@ static int alsa_open (struct sound_params *sound_params)
 			format = SND_PCM_FORMAT_S8;
 			break;
 		case 2:
-			format = SND_PCM_FORMAT_S16_LE;
+			format = SND_PCM_FORMAT_S16;
 			break;
 		case 3:
-			format = SND_PCM_FORMAT_S24_LE;
+			format = SND_PCM_FORMAT_S24;
 			break;
 		default:
 			error ("Unknown bps value: %d",
