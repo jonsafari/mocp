@@ -16,8 +16,9 @@
 #include <pthread.h>
 #include <string.h>
 #include <errno.h>
+#include <assert.h>
 
-/*#define DEBUG*/
+#define DEBUG
 
 #include "main.h"
 #include "log.h"
@@ -25,6 +26,9 @@
 #include "audio.h"
 #include "buf.h"
 #include "server.h"
+#include "options.h"
+
+#define PCM_BUF_SIZE	(32 * 1024)
 
 enum request
 {
@@ -32,6 +36,21 @@ enum request
 	REQ_SEEK,
 	REQ_STOP
 };
+
+struct precache
+{
+	char *file; /* the file to precache */
+	char buf[2 * PCM_BUF_SIZE]; /* PCM buffer with precached data */
+	int buf_fill;
+	int ok; /* 1 if precache succeed */
+	struct sound_params sound_params; /* of the sound in the buffer */
+	struct decoder_funcs *f; /* decoder functions for precached file */
+	void *decoder_data;
+	int running; /* if the precache thread is running */
+	pthread_t tid; /* tid of the precache thread */
+};
+
+struct precache precache;
 
 /* request conditional and mutex */
 static pthread_cond_t request_cond = PTHREAD_COND_INITIALIZER;
@@ -55,25 +74,146 @@ static void update_time ()
 #define sound_params_eq(p1, p2) (p1.format == p2.format \
 		&& p1.channels == p2.channels && p1.rate == p2.rate)
 
-/* Open a file, decode it and put output to the buffer. */
-void player (const char *file, struct decoder_funcs *f, struct buf *out_buf)
+static void *precache_thread (void *data)
+{
+	struct precache *precache = (struct precache *)data;
+	int decoded;
+	struct sound_params new_sound_params;
+
+	precache->buf_fill = 0;
+	precache->sound_params.channels = 0; /* mark that sound_params were not
+						yet filled. */
+	precache->f = get_decoder_funcs (precache->file);
+	assert (precache->f != NULL);
+
+	if (!(precache->decoder_data = precache->f->open(precache->file))) {
+		logit ("Failed to open the file for precache.");
+		return NULL;
+	}
+
+	/* Stop at PCM_BUF_SIZE, because when we decode too much, there is no
+	 * place when we can put the data that don't fit into the buffer. */
+	while (precache->buf_fill < PCM_BUF_SIZE) {
+		decoded = precache->f->decode (precache->decoder_data,
+				precache->buf + precache->buf_fill,
+				PCM_BUF_SIZE, &new_sound_params);
+
+		if (!decoded) {
+			
+			/* EOF so fast? we can't pass this information
+			 * in precache, so give up */
+			logit ("EOF when precaching.");
+			precache->f->close (precache->decoder_data);
+			return NULL;
+		}
+		
+		if (!precache->sound_params.channels)
+			precache->sound_params = new_sound_params;
+		else if (!sound_params_eq(precache->sound_params,
+					new_sound_params)) {
+
+			/* there is no way to store sound with two different
+			 * parameters in the buffer, give up with
+			 * precacheing. (this should never happen) */
+			logit ("Sound parameters has changed when precaching.");
+			precache->f->close (precache->decoder_data);
+			return NULL;
+		}
+
+		precache->buf_fill += decoded;
+	}
+	
+	precache->ok = 1;
+	logit ("Successfully precached file (%d bytes)", precache->buf_fill);
+	return NULL;
+}
+
+static void start_precache (struct precache *precache, const char *file)
+{
+	assert (!precache->running);
+	assert (file != NULL);
+
+	precache->file = xstrdup (file);
+	logit ("Precaching file %s", file);
+	precache->ok = 0;
+	if (pthread_create(&precache->tid, NULL, precache_thread, precache))
+		logit ("Could not run precache thread");
+	else
+		precache->running = 1;
+}
+
+static void precache_wait (struct precache *precache)
+{
+	if (precache->running) {
+		debug ("Waiting for precache thread...");
+		if (pthread_join(precache->tid, NULL))
+			fatal ("pthread_join() for precache thread failed");
+		precache->running = 0;
+		debug ("done");
+	}
+	else
+		debug ("Precache thread is not running");
+}
+
+static void precache_reset (struct precache *precache)
+{
+	assert (!precache->running);
+	precache->ok = 0;
+	if (precache->file) {
+		free (precache->file);
+		precache->file = NULL;
+	}
+}
+
+void player_init ()
+{
+	precache.file = NULL;
+	precache.running = 0;
+	precache.ok =  0;
+}
+
+/* Open a file, decode it and put output into the buffer. At the end, start
+ * precaching next_file. */
+void player (char *file, char *next_file, struct buf *out_buf)
 {
 	int eof = 0;
-	char buf[8096];
+	char buf[PCM_BUF_SIZE];
 	void *decoder_data;
 	int decoded = 0;
 	struct sound_params sound_params = { 0, 0, 0 };
 	struct sound_params new_sound_params;
 	int sound_params_change = 0;
 	int audio_opened = 0;
+	struct decoder_funcs *f;
+
+	f = get_decoder_funcs (file);
+	assert (f != NULL);
 	
 	buf_set_notify_cond (out_buf, &request_cond, &request_cond_mutex);
 	buf_reset (out_buf);
+	
+	precache_wait (&precache);
 
-	if (!(decoder_data = f->open(file))) {
+	if (precache.ok && !strcmp(precache.file, file)) {
+		logit ("Using precached file");
+
+		assert (f == precache.f);
+		
+		sound_params = precache.sound_params;
+		decoder_data = precache.decoder_data;
+		set_info_channels (sound_params.channels);
+		set_info_rate (sound_params.rate / 1000);
+		if (!audio_open(&sound_params))
+			return;
+		audio_opened = 1;
+		buf_put (out_buf, precache.buf, precache.buf_fill);
+	}
+	else if (!(decoder_data = f->open(file))) {
 		logit ("Can't open file, exiting");
 		return;
 	}
+
+	precache_reset (&precache);
 
 	while (1) {
 		debug ("loop...");
@@ -94,10 +234,15 @@ void player (const char *file, struct decoder_funcs *f, struct buf *out_buf)
 					sound_params_change = 1;
 			}
 		}
-		else if ((decoded > buf_get_free(out_buf)
-				|| (eof && buf_get_free(out_buf)))
-				&& out_buf->fill) {
+
+		/* Wait, if there is no space in the buffer to put the decoded
+		 * data or EOF occured and there is something in the buffer. */
+		else if (decoded > buf_get_free(out_buf)
+					|| (eof && out_buf->fill)) {
 			debug ("waiting...");
+			if (eof && !precache.file && next_file
+					&& options_get_int("Precache"))
+				start_precache (&precache, next_file);
 			pthread_cond_wait (&request_cond, &request_cond_mutex);
 			UNLOCK (request_cond_mutex);
 		}
@@ -130,6 +275,7 @@ void player (const char *file, struct decoder_funcs *f, struct buf *out_buf)
 		}
 		else if (!eof && decoded <= buf_get_free(out_buf)
 				&& !sound_params_change) {
+			debug ("putting into the buffer %d bytes", decoded);
 			buf_put (out_buf, buf, decoded);
 			decoded = 0;
 		}
@@ -160,9 +306,10 @@ void player (const char *file, struct decoder_funcs *f, struct buf *out_buf)
 void player_cleanup ()
 {
 	if (pthread_mutex_destroy(&request_cond_mutex))
-		logit ("Can't destroy mutex: %s", strerror(errno));
+		logit ("Can't destroy request mutex: %s", strerror(errno));
 	if (pthread_cond_destroy(&request_cond))
-		logit ("Can't destroy condition: %s", strerror(errno));
+		logit ("Can't destroy request condition: %s", strerror(errno));
+	precache_reset (&precache);
 }
 
 void player_reset ()
