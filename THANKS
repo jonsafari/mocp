@@ -4,4 +4,6 @@ notifing about bugs.
 Maciej Kubiak <aze@daper.net> - suggestions and bug reports.
 Kari Karvonen <gabo@haisee.com> - suggested code for the autonext option.
 Florian Kriener <me@leflo.de> - Title building code, many typos and bugs fixed.
-Marcin Micha³owski - Added default ang grey colors, made first nice theme.
+Marcin Micha³owski - Added default and grey colors, made first nice theme.
+Elimar Riesebieter <riesebie@lxtec.de> - Tests on PPC (made working on big
+	endian architectures).
