@@ -346,10 +346,16 @@ void read_tags (struct plist *plist)
 	assert (plist != NULL);
 
 	for (i = 0; i < plist->num; i++)
-		if (!plist_deleted(plist, i))
+		if (!plist_deleted(plist, i)) {
+			if (user_wants_interrupt()) {
+				interface_error ("Getting tags interrupted.");
+				break;
+			}
+			
 			plist->items[i].tags = read_file_tags(
 					plist->items[i].file,
 					plist->items[i].tags, TAGS_COMMENTS);
+		}
 }
 
 struct file_list *file_list_new ()
@@ -420,6 +426,11 @@ int read_directory (const char *directory, struct file_list *dirs,
 	while ((entry = readdir(dir))) {
 		char file[PATH_MAX];
 		enum file_type type;
+
+		if (user_wants_interrupt()) {
+			interface_error ("Interrupted! Not all files read!");
+			break;
+		}
 		
 		if (!strcmp(entry->d_name, ".") || !strcmp(entry->d_name, ".."))
 			continue;
@@ -445,8 +456,9 @@ int read_directory (const char *directory, struct file_list *dirs,
 	return 1;
 }
 
-/* Recursively add files from the directory to the playlist. */
-void read_directory_recurr (const char *directory, struct plist *plist)
+/* Recursively add files from the directory to the playlist. 
+ * Return 1 if OK (and even some errors), 0 if the user interrupted. */
+int read_directory_recurr (const char *directory, struct plist *plist)
 {
 	DIR *dir;
 	struct dirent *entry;
@@ -456,13 +468,18 @@ void read_directory_recurr (const char *directory, struct plist *plist)
 
 	if (!(dir = opendir(directory))) {
 		interface_error ("Can't read directory: %s", strerror(errno));
-		return;
+		return 1;
 	}
 	
 	while ((entry = readdir(dir))) {
 		char file[PATH_MAX];
 		enum file_type type;
 		
+		if (user_wants_interrupt()) {
+			interface_error ("Interrupted! Not all files read!");
+			break;
+		}
+			
 		if (!strcmp(entry->d_name, ".") || !strcmp(entry->d_name, ".."))
 			continue;
 		if (snprintf(file, sizeof(file), "%s/%s", directory,
@@ -472,13 +489,16 @@ void read_directory_recurr (const char *directory, struct plist *plist)
 			continue;
 		}
 		type = file_type (file);
-		if (type == F_DIR)
-			read_directory_recurr (file, plist);
+		if (type == F_DIR) {
+			if (!read_directory_recurr(file, plist))
+				return 0;
+		}
 		else if (type == F_SOUND && plist_find_fname(plist, file) == -1)
 			plist_add (plist, file);
 	}
 
 	closedir (dir);
+	return 1;
 }
 
 /* Return the file extension position or NULL if the file has no extension. */
