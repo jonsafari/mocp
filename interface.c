@@ -2670,7 +2670,7 @@ static void go_to_file_dir ()
 		assert (slash != NULL);
 		*slash = 0;
 
-		if (strcmp(file, cwd))
+		if (strcmp(file, cwd) || visible_plist == playlist)
 			go_to_dir (file);
 	}
 
