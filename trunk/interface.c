@@ -1003,6 +1003,7 @@ void init_interface (const int sock, const int debug, char **args,
 	plist_init (curr_plist);
 	playlist = (struct plist *)xmalloc (sizeof(struct plist));
 	plist_init (playlist);
+	send_int_to_srv (CMD_SEND_EVENTS);
 
 	initscr ();
 	cbreak ();
