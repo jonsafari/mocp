@@ -105,6 +105,19 @@ int plist_add (struct plist *plist, const char *file_name)
 	return plist->num - 1;
 }
 
+/* Copy all fields of item src to dst. */
+static void plist_item_copy (struct plist_item *dst,
+		const struct plist_item *src)
+{
+	dst->file = xstrdup (src->file);
+	dst->title = xstrdup (src->title);
+	dst->deleted = src->deleted;
+
+	if (src->tags)
+		dst->tags = tags_dup (src->tags);
+	
+}
+
 /* Get the pointer to the element on the playlist.
  * If the item number is not valid, return NULL.
  * Returned memory is malloced.
@@ -382,13 +395,10 @@ char *build_title (const struct file_tags *tags)
 /* Copy the item to the playlist. */
 void plist_add_from_item (struct plist *plist, const struct plist_item *item)
 {
-	int pos = plist_add (plist, item->file);
+	int pos = plist_add (plist, NULL);
 
 	assert (!item->deleted);
-
-	plist->items[pos].title = xstrdup (item->title);
-	if (item->tags)
-		plist->items[pos].tags = tags_dup (item->tags);
+	plist_item_copy (&plist->items[pos], item);
 }
 
 /* Return a random playlist index of a not deleted item. */
@@ -473,4 +483,13 @@ int plist_deleted (const struct plist *plist, const int num)
 {
 	assert (num >=0 && num < plist->num);
 	return plist->items[num].deleted;
+}
+
+/* Add the content of playlist b to a by copying items. */
+void plist_cat (struct plist *a, const struct plist *b)
+{
+	int i;
+
+	for (i = 0; i < b->num; i++)
+		plist_add_from_item (a, &b->items[i]);
 }
