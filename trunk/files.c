@@ -202,11 +202,7 @@ struct file_tags *read_file_tags (char *file)
 
 	tags = tags_new ();
 	df->info (file, tags);
-	if (tags->title)
-		return tags;
-
-	tags_free (tags);
-	return NULL;
+	return tags;
 }
 
 void read_tags (struct plist *plist)
