@@ -29,24 +29,11 @@
 
 struct file_type {
 	char *ext;
-	info_func_t info;
-	play_func_t play;
+	struct decoder_funcs *funcs;
 };
 
-static struct file_type types[] = {
-#ifdef HAVE_MAD
-	{ "mp3",	mp3_info,	mp3_play },
-#endif
-#ifdef HAVE_VORBIS
-	{ "ogg",	ogg_info,	ogg_play },
-#endif
-#if 0
-	{ "wav",	wav_info,	wav_play },
-#endif
-
-	/* Fake entry to avoid compile errors about lack or unneded comma. */
-	{ "",		NULL,		NULL }
-};
+static struct file_type types[8];
+static int types_num = 0;
 
 /* Return the file extension position or NULL if the file has no extension. */
 static char *ext_pos (char *file)
@@ -66,35 +53,36 @@ static char *ext_pos (char *file)
 int is_sound_file (char *name)
 {
 	char *ext = ext_pos (name);
-	unsigned int i;
+	int i;
 
 	if (ext)
-		for (i = 0; i < sizeof(types)/sizeof(types[0]); i++)
+		for (i = 0; i < types_num; i++)
 			if (!strcasecmp(ext, types[i].ext))
 				return 1;
 	return 0;
 }
 
-info_func_t get_info_func (char *file)
+struct decoder_funcs *get_decoder_funcs (char *file)
 {
 	char *ext = ext_pos (file);
-	unsigned int i;
+	int i;
 
 	if (ext)
-		for (i = 0; i < sizeof(types)/sizeof(types[0]); i++)
+		for (i = 0; i < types_num; i++)
 			if (!strcasecmp(ext, types[i].ext))
-				return types[i].info;
+				return types[i].funcs;
 	return NULL;
 }
 
-play_func_t get_play_func (char *file)
+void file_types_init ()
 {
-	char *ext = ext_pos (file);
-	unsigned int i;
+#ifdef HAVE_MAD
+	types[types_num].ext = "mp3";
+	types[types_num++].funcs = mp3_get_funcs ();
+#endif
 
-	if (ext)
-		for (i = 0; i < sizeof(types)/sizeof(types[0]); i++)
-			if (!strcasecmp(ext, types[i].ext))
-				return types[i].play;
-	return NULL;
+#ifdef HAVE_VORBIS
+	types[types_num].ext = "ogg";
+	types[types_num++].funcs = ogg_get_funcs ();
+#endif
 }
