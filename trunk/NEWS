@@ -1,0 +1,62 @@
+2.0.0
+	* Split into client-server, you can detach the interface and leave
+	  the server playing songs in the background.
+	* Output buffer with seperate thread.
+	* Useing OSS directly - better stop and pause.
+	* Support xterm resizing.
+	* Using xterm title.
+TODO	* Autonext option.
+TODO	* Better shuffle option.
+TODO	* Configurable sorting (by file names or titles).
+	* Faster reading directory contents.
+	* Displaying time left to the end of songs.
+	* Fixed moving through symlinked directories.
+TODO	* Added setting scheduler
+	* Renamed executable file to mocp due to conflict with QT meta object
+	  compiler.
+	* Do not allow displaying bitrate too fast to read it.
+	* Fixed compilation with pthreads, better configure.
+	* Fixed problems when compiling with gcc 3.3
+	* Fixed displaying window title longer than the window.
+	* Space key working as pause.
+	* Fixed escaping and possible segfault in trenary expressions.
+	* Removed version checker.
+	* Fixed sorting directories ('../' was not always on top).
+	* Fixed escaping characters in config file, no need for '\\\\'.
+1.1.0
+	* Support for WAVE.
+	* Playlist without reading/writeing to file.
+	* Option in the config file to automaticaly change process priority at
+	  startup. Helpful on slow computers.
+	* Recursivaly adding files from comamnd line and from the interface.
+	* Shuffle and repeat.
+	* Nice progress bar for longer operations.
+	* Fixed segfault when using the END key.
+	* Fixed segfault when playing OGG files.
+	* Workaround for kde and gnome terminals.
+	* Now MOC can be compiled on FreeBSD.
+	* Other fixes.
+1.0.0
+	* First release intended to be stable and user-friendly :)
+	* Added man page.
+	* Added version checker (simple command to see if a new version of MOC
+	  has been released).
+	* Fixed problem when compiling without ogg.
+	* Added redraw command.
+	* Other small fixes.
+0.9.2
+	* Fixed -s option.
+	* Added 'f' command (switching between short and full file names).
+	* Added README file.
+	* Added support for config file.
+	* Added MusicDir option, 'm' command and '-m' switch.
+	* Added ability to turning off messages about broken streams.
+	* Fixed including dirent.h for various OS.
+	* Fixed and updated configure.
+0.9.1
+	* Added mixer (using OSS).
+	* Added help screen.
+	* Fixed some tiny buffer overflows.
+	* Small fixes in code.
+0.9.0
+	* First stable version.

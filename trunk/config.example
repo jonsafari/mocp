@@ -1,0 +1,46 @@
+# This is a configuration file for the MOC player. It should be named 'config'
+# and placed in directory ~/.moc/
+# Comments begins with '#'.
+# You can use quotes and escape ('\') in parameters
+
+
+# Show file titles (title, author, album) instead of file names.
+FullInfo		= yes
+
+# Directory in which you store music files, if you specify it, you will be able
+# to quickly go to this directory with the '-m' parameter or the 'm' command.
+#MusicDir		= "/home/joe/music"
+
+# How to sort? Default if by file name (FileName), but if you turn on the
+# FullInfo option, you can sort by title.
+#Sort			= Title
+Sort			= FileName
+
+# Show errors in the streams, for example CRC errors or broken frames in mp3
+# files
+ShowStreamErrors	= no
+
+# Process priority to set, 0 to disable. Setuid to the MOC binary is required.
+Priority		= -2
+
+# Turn on repeat.
+Repeat			= no
+
+# Turn on shuffle.
+Shuffle			= no
+
+# Turn on AutoNext
+AutoNext		= yes
+
+# Default FormatString
+# %n - Track number
+# %a - Artist
+# %A - Album
+# %t - Title
+# %(X:TRUE:FALSE) - ternary expression - if X exists, do TRUE, otherwaise
+#                   FALSE. '\' - escape character (must be double, because of 
+#                   config interpreter). man zshmisc for more info.
+FormatString		= "%(n:%n :)%(a:%a - :)%(t:%t:)%(A: \\(%A\\):)"
+
+# Output buffer size in kilobytes
+OutputBuffer		= 1024
