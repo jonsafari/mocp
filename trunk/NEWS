@@ -26,8 +26,8 @@
 	  necessary.
 	* Fast, silent seeking ('[' and ']' keys).
 	* The cursor is hidden when it's not needed.
-	* Changed the erroneous name of the time_left_frames to time_total_frames
-	  in themes.
+	* Changed the erroneous name of the time_left_frames to
+	  time_total_frames in themes.
 	* Added '/' command working as an alias for g (Kamil Tarkowski).
 	* Added CTRL-n working like CTRL-g (Kamil Tarkowski).
 	* ? key working like h (Kamil Tarkowski).
@@ -42,8 +42,8 @@
 	* Added a bar showing time of the current file.
 	* Repeat without AutoNext plays a song in loop.
 	* Added (empty|filled)_mixer_bar, (empty|filled)_time_bar to themes.
-	* Fixed setting sound parameters while playing OGG. This caused crashes on big
-	  endian machines (Philippe De Muyter).
+	* Fixed setting sound parameters while playing OGG. This caused crashes
+	  on big endian machines (Philippe De Muyter).
 	* Fixed crash on some file tags.
 	* Fixed crash when issuing some errors.
 	* Fixed the --help message.
@@ -53,11 +53,12 @@
 	* Fixed getting time when nothing is played.
 	* iconv() (character set conversion) for file names.
 	* END and HOME keys working in the i command entry (go to a directory).
-	* Synchronizing adding/deleting items from the playlist with the server's
-	* playlist.
+	* Synchronizing adding/deleting items from the playlist with the
+	  server's playlist.
 	* Faster operations on big playlists.
 	* Fixed saving playlist when more than one client wants to do this.
-	* Fixed recursive adding file to the playlist if some directory can't be read.
+	* Fixed recursive adding file to the playlist if some directory
+	  can't be read.
 	* Fixed deleting items from the playlist.
 	* Fixed handling a playlist file as command a line argument.
 	* Fixed compilation with --disable-debug.
