@@ -35,14 +35,14 @@
 # define CTRL(c) ((c) & CTRL_KEY_CODE)
 #endif
 
-
 struct command
 {
-	enum key_cmd cmd;
-	char *name;
-	enum key_context context;
-	int keys[6]; /* array of keys ended with -1 */
-	int default_keys_set; /* Are the keys default? */
+	enum key_cmd cmd;	/* the command */
+	char *name;		/* name of the command (in config file) */
+	char *help;		/* help string for the command */
+	enum key_context context; /* context - where the command isused */
+	int keys[6];		/* array of keys ended with -1 */
+	int default_keys_set;	/* are the keys default? */
 };
 
 /* Array of commands - each element is a list of keys for this command. */
@@ -50,6 +50,7 @@ static struct command commands[] = {
 	{
 		KEY_CMD_QUIT_CLIENT,
 		"quit_client",
+		"Detach MOC from the server",
 		CON_MENU,
 		{ 'q', -1 },
 		1
@@ -57,6 +58,7 @@ static struct command commands[] = {
 	{
 		KEY_CMD_GO,
 		"go",
+		"Start playing files (from this file) or go to directory",
 		CON_MENU,
 		{ '\n',	-1 },
 		1
@@ -64,6 +66,7 @@ static struct command commands[] = {
 	{
 		KEY_CMD_MENU_DOWN,
 		"menu_down",
+		"Move down in the menu",
 		CON_MENU,
 		{ KEY_DOWN, -1 },
 		1
@@ -71,6 +74,7 @@ static struct command commands[] = {
 	{
 		KEY_CMD_MENU_UP,
 		"menu_up",
+		"Move up in the menu",
 		CON_MENU,
 		{ KEY_UP, -1 },
 		1
@@ -78,6 +82,7 @@ static struct command commands[] = {
 	{
 		KEY_CMD_MENU_NPAGE,
 		"menu_page_down",
+		"Move one page down",
 		CON_MENU,
 		{ KEY_NPAGE, -1},
 		1
@@ -85,6 +90,7 @@ static struct command commands[] = {
 	{
 		KEY_CMD_MENU_PPAGE,
 		"menu_page_up",
+		"Move one page up",
 		CON_MENU,
 		{ KEY_PPAGE, -1},
 		1
@@ -92,6 +98,7 @@ static struct command commands[] = {
 	{
 		KEY_CMD_MENU_FIRST,
 		"menu_first_item",
+		"Move to the first item in the menu",
 		CON_MENU,
 		{ KEY_HOME, -1 },
 		1
@@ -99,6 +106,7 @@ static struct command commands[] = {
 	{
 		KEY_CMD_MENU_LAST,
 		"menu_last_item",
+		"Move to the last item in the menu",
 		CON_MENU,
 		{ KEY_END, -1 },
 		1
@@ -106,6 +114,7 @@ static struct command commands[] = {
 	{
 		KEY_CMD_QUIT,
 		"quit",
+		"Quit",
 		CON_MENU,
 		{ 'Q', -1 },
 		1
@@ -113,6 +122,7 @@ static struct command commands[] = {
 	{
 		KEY_CMD_STOP,
 		"stop",
+		"Stop",
 		CON_MENU,
 		{ 's', -1 },
 		1
@@ -120,6 +130,7 @@ static struct command commands[] = {
 	{
 		KEY_CMD_NEXT,
 		"next",
+		"Play next file",
 		CON_MENU,
 		{ 'n', -1 },
 		1
@@ -127,6 +138,7 @@ static struct command commands[] = {
 	{
 		KEY_CMD_PREVIOUS,
 		"previous",
+		"Play previous file",
 		CON_MENU,
 		{ 'b', -1 },
 		1
@@ -134,6 +146,7 @@ static struct command commands[] = {
 	{
 		KEY_CMD_PAUSE,
 		"pause",
+		"Pause",
 		CON_MENU,
 		{ 'p', ' ', -1 },
 		1
@@ -141,6 +154,7 @@ static struct command commands[] = {
 	{
 		KEY_CMD_TOGGLE_READ_TAGS,
 		"toggle_read_tags",
+		"Toggle ReadTags option",
 		CON_MENU,
 		{ 'f', -1 },
 		1
@@ -148,6 +162,7 @@ static struct command commands[] = {
 	{
 		KEY_CMD_TOGGLE_SHUFFLE,
 		"toggle_shuffle",
+		"Toggle Shuffle",
 		CON_MENU,
 		{ 'S', -1 },
 		1
@@ -155,6 +170,7 @@ static struct command commands[] = {
 	{
 		KEY_CMD_TOGGLE_REPEAT,
 		"toggle_repeat",
+		"Toggle repeat",
 		CON_MENU,
 		{ 'R', -1 },
 		1
@@ -162,6 +178,7 @@ static struct command commands[] = {
 	{
 		KEY_CMD_TOGGLE_AUTO_NEXT,
 		"toggle_auto_next",
+		"Toggle AutoNext option",
 		CON_MENU,
 		{ 'X', -1 },
 		1
@@ -169,6 +186,7 @@ static struct command commands[] = {
 	{
 		KEY_CMD_TOGGLE_PLAYLIST,
 		"toggle_playlist",
+		"Switch between playlist and file list",
 		CON_MENU,
 		{ 'l', -1 },
 		1
@@ -176,6 +194,7 @@ static struct command commands[] = {
 	{
 		KEY_CMD_PLIST_ADD_FILE,
 		"add_file",
+		"Add a file to the playlist",
 		CON_MENU,
 		{ 'a', -1 },
 		1
@@ -183,6 +202,7 @@ static struct command commands[] = {
 	{
 		KEY_CMD_PLIST_CLEAR,
 		"clear_playlist",
+		"Clear the playlist",
 		CON_MENU,
 		{ 'C', -1 },
 		1
@@ -190,6 +210,7 @@ static struct command commands[] = {
 	{
 		KEY_CMD_PLIST_ADD_DIR,
 		"add_directory",
+		"Add a directory recursively to the playlist",
 		CON_MENU,
 		{ 'A', -1 },
 		1
@@ -197,6 +218,7 @@ static struct command commands[] = {
 	{
 		KEY_CMD_MIXED_DEC_1,
 		"volume_down_1",
+		"Decrease volume by 1%",
 		CON_MENU,
 		{ '<', -1 },
 		1
@@ -204,6 +226,7 @@ static struct command commands[] = {
 	{
 		KEY_CMD_MIXER_INC_1,
 		"volume_up_1",
+		"Increase volume by 1%",
 		CON_MENU,
 		{ '>', -1 },
 		1
@@ -211,6 +234,7 @@ static struct command commands[] = {
 	{
 		KEY_CMD_MIXER_DEC_5,
 		"volume_down_5",
+		"Decrease volume by 5%",
 		CON_MENU,
 		{ ',', -1 },
 		1
@@ -218,6 +242,7 @@ static struct command commands[] = {
 	{
 		KEY_CMD_MIXER_INC_5,
 		"volume_up_5",
+		"Increase volume by 5%",
 		CON_MENU,
 		{ '.', -1 },
 		1
@@ -225,6 +250,7 @@ static struct command commands[] = {
 	{
 		KEY_CMD_SEEK_FORWARD_1,
 		"seek_forward_1",
+		"Seek forward by 1s",
 		CON_MENU,
 		{ KEY_RIGHT, -1 },
 		1
@@ -232,6 +258,7 @@ static struct command commands[] = {
 	{
 		KEY_CMD_SEEK_BACKWARD_1,
 		"seek_backward_1",
+		"Seek backward by 1s",
 		CON_MENU,
 		{ KEY_LEFT, -1},
 		1
@@ -239,6 +266,7 @@ static struct command commands[] = {
 	{
 		KEY_CMD_HELP,
 		"help",
+		"Show the help screen",
 		CON_MENU,
 		{ 'h', '?', -1 },
 		1
@@ -246,6 +274,7 @@ static struct command commands[] = {
 	{
 		KEY_CMD_HIDE_MESSAGE,
 		"hide_message",
+		"Hide error/informative message",
 		CON_MENU,
 		{ 'M', -1 },
 		1
@@ -253,6 +282,7 @@ static struct command commands[] = {
 	{
 		KEY_CMD_REFRESH,
 		"refresh",
+		"Refresh the screen",
 		CON_MENU,
 		{ CTRL('r'), -1},
 		1
@@ -260,6 +290,7 @@ static struct command commands[] = {
 	{
 		KEY_CMD_RELOAD,
 		"reload",
+		"Reread directory content",
 		CON_MENU,
 		{ 'r', -1 },
 		1
@@ -267,6 +298,7 @@ static struct command commands[] = {
 	{
 		KEY_CMD_TOGGLE_SHOW_HIDDEN_FILES,
 		"toggle_hidden_files",
+		"Toggle ShowHiddenFiles option",
 		CON_MENU,
 		{ 'H', -1 },
 		1
@@ -274,6 +306,7 @@ static struct command commands[] = {
 	{
 		KEY_CMD_GO_MUSIC_DIR,
 		"go_to_music_directory",
+		"Go to the music directory (requires an entry in the config)",
 		CON_MENU,
 		{ 'm', -1 },
 		1
@@ -281,6 +314,7 @@ static struct command commands[] = {
 	{
 		KEY_CMD_PLIST_DEL,
 		"delete_from_playlist",
+		"Delete an item from the playlist",
 		CON_MENU,
 		{ 'd', -1 },
 		1
@@ -288,6 +322,7 @@ static struct command commands[] = {
 	{
 		KEY_CMD_MENU_SEARCH,
 		"search_menu",
+		"Search the menu.",
 		CON_MENU,
 		{ 'g', '/', -1 },
 		1
@@ -295,6 +330,7 @@ static struct command commands[] = {
 	{
 		KEY_CMD_PLIST_SAVE,
 		"save_playlist",
+		"Save the playlist",
 		CON_MENU,
 		{ 'V', -1 },
 		1
@@ -302,6 +338,7 @@ static struct command commands[] = {
 	{
 		KEY_CMD_TOGGLE_SHOW_TIME,
 		"toggle_show_time",
+		"Toggle ShowTime option",
 		CON_MENU,
 		{ CTRL('t'), -1},
 		1
@@ -309,6 +346,7 @@ static struct command commands[] = {
 	{
 		KEY_CMD_TOGGLE_SHOW_FORMAT,
 		"toggle_show_format",
+		"Toggle ShowFormat option",
 		CON_MENU,
 		{ CTRL('f'), -1 },
 		1
@@ -316,6 +354,7 @@ static struct command commands[] = {
 	{
 		KEY_CMD_GO_TO_PLAYING_FILE,
 		"go_to_playing_file",
+		"Go to a directory where the currently played file is",
 		CON_MENU,
 		{ 'G', -1 },
 		1
@@ -323,6 +362,7 @@ static struct command commands[] = {
 	{
 		KEY_CMD_GO_DIR,
 		"go_to_a_directory",
+		"Go to a directory",
 		CON_MENU,
 		{ 'i', -1 },
 		1
@@ -330,6 +370,7 @@ static struct command commands[] = {
 	{
 		KEY_CMD_GO_DIR_UP,
 		"go_up",
+		"Go to '..'",
 		CON_MENU,
 		{ 'U', -1 },
 		1
@@ -337,6 +378,7 @@ static struct command commands[] = {
 	{
 		KEY_CMD_NEXT_SEARCH,
 		"next_search",
+		"Find the next matching item",
 		CON_ENTRY_SEARCH,
 		{ CTRL('g'), CTRL('n'), -1 },
 		1
@@ -344,6 +386,7 @@ static struct command commands[] = {
 	{
 		KEY_CMD_CANCEL,
 		"cancel",
+		"Exit from an entry",
 		CON_ENTRY,
 		{ CTRL('x'), KEY_ESCAPE, -1 },
 		1
@@ -575,6 +618,6 @@ static char *get_key_name (const int key)
 }
 
 /* Return a string contains the list of keys used for command. */
-char *get_command_keys (const char *command)
+static char *get_command_keys (const int idx)
 {
 }
