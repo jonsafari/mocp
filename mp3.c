@@ -32,6 +32,8 @@
 #endif
 #include <pthread.h>
 
+#define DEBUG
+
 #include "server.h"
 #include "main.h"
 #include "log.h"
@@ -64,7 +66,6 @@ struct mp3_data
 	struct mad_stream stream;
 	struct mad_frame frame;
 	struct mad_synth synth;
-	int first_frame; /* Are we going to decode the first frame now? */
 };
 
 /* Fill in the mad buffer, return number of bytes read, 0 on eof or error */
@@ -117,35 +118,6 @@ static char *get_tag (struct id3_tag *tag, const char *what)
 	return comm;
 }
 
-/* Fill info structure with data from the id3 tag */
-static void mp3_info (const char *file_name, struct file_tags *info)
-{
-	struct id3_tag *tag;
-	struct id3_file *id3file;
-	char *track = NULL;
-	
-	id3file = id3_file_open (file_name, ID3_FILE_MODE_READONLY);
-	if (!id3file)
-		return;
-	tag = id3_file_tag (id3file);
-	if (tag) {
-		info->artist = get_tag (tag, ID3_FRAME_ARTIST);
-		info->title = get_tag (tag, ID3_FRAME_TITLE);
-		info->album = get_tag (tag, ID3_FRAME_ALBUM);
-		track = get_tag (tag, ID3_FRAME_TRACK);
-		
-		if (track) {
-			char *end;
-			
-			info->track = strtol (track, &end, 10);
-			if (!*end)
-				info->track = -1;
-			free (track);
-		}
-	}
-	id3_file_close (id3file);
-}
-
 static void *mp3_open (const char *file)
 {
 	struct stat stat;
@@ -174,7 +146,6 @@ static void *mp3_open (const char *file)
 	}
 
 	data->size = stat.st_size;
-	data->first_frame = 1;
 
 	mad_stream_init (&data->stream);
 	mad_frame_init (&data->frame);
@@ -197,6 +168,191 @@ static void *mp3_open (const char *file)
 #endif
 
 	return data;
+}
+
+static void mp3_close (void *void_data)
+{
+	struct mp3_data *data = (struct mp3_data *)void_data;
+
+#ifdef HAVE_MMAP
+	if (data->mapped && munmap(data->mapped, data->size) == -1)
+		logit ("munmap() failed: %s", strerror(errno));
+#endif
+
+	close (data->infile);
+	
+	mad_stream_finish (&data->stream);
+	mad_frame_finish (&data->frame);
+	mad_synth_finish (&data->synth);
+
+	free (data);
+}
+
+/* Get the time for mp3 file, return -1 on error. */
+/* Adapted from mpg321. */
+static int count_time (const char *file)
+{
+	struct mp3_data *data;
+	struct xing xing;
+	unsigned long bitrate = 0;
+	int has_xing = 0;
+	int is_vbr = 0;
+	int num_frames = 0;
+	mad_timer_t duration = mad_timer_zero;
+	struct mad_header header;
+
+	debug ("Processing file %s", file);
+
+	if (!(data = mp3_open(file)))
+		return -1;
+
+	mad_header_init (&header);
+	xing_init (&xing);
+
+	/* There are three ways of calculating the length of an mp3:
+	  1) Constant bitrate: One frame can provide the information
+		 needed: # of frames and duration. Just see how long it
+		 is and do the division.
+	  2) Variable bitrate: Xing tag. It provides the number of 
+		 frames. Each frame has the same number of samples, so
+		 just use that.
+	  3) All: Count up the frames and duration of each frames
+		 by decoding each one. We do this if we've no other
+		 choice, i.e. if it's a VBR file with no Xing tag.
+	*/
+
+	while (1) {
+		
+		/* Fill the input buffer if needed */
+		if (data->stream.buffer == NULL ||
+			data->stream.error == MAD_ERROR_BUFLEN) {
+#ifdef HAVE_MMAP
+			if (data->mapped)
+				break; /* FIXME: check if the size of file
+					  has't changed */
+			else
+#endif
+			if (!fill_buff(data))
+				break;
+		}
+
+		if (mad_header_decode(&header, &data->stream) == -1) {
+			if (MAD_RECOVERABLE(data->stream.error))
+				continue;
+			else if (data->stream.error == MAD_ERROR_BUFLEN)
+				continue;
+			else {
+				debug ("Can't decode header: %s",
+						mad_stream_errorstr(
+							&data->stream));
+				break;
+			}
+		}
+
+		/* Limit xing testing to the first frame header */
+		if (!num_frames++) {
+			if (xing_parse(&xing, data->stream.anc_ptr,
+						data->stream.anc_bitlen)
+					!= -1) {
+				is_vbr = 1;
+
+				debug ("Has XING header");
+				
+				if (xing.flags & XING_FRAMES) {
+					has_xing = 1;
+					num_frames = xing.frames;
+					break;
+				}
+				debug ("XING header doesn't contain number of "
+						"frames.");
+			}
+		}				
+
+		/* Test the first n frames to see if this is a VBR file */
+		if (!is_vbr && !(num_frames > 20)) {
+			if (bitrate && header.bitrate != bitrate) {
+				debug ("Detected VBR after %d frames",
+						num_frames);
+				is_vbr = 1;
+			}
+			else
+				bitrate = header.bitrate;
+		}
+		
+		/* We have to assume it's not a VBR file if it hasn't already
+		 * been marked as one and we've checked n frames for different
+		 * bitrates */
+		else if (!is_vbr) {
+			debug ("Fixed rate MP3");
+			break;
+		}
+			
+		mad_timer_add (&duration, header.duration);
+	}
+
+	if (!is_vbr) {
+		/* time in seconds */
+		double time = (data->size * 8.0) / (header.bitrate);
+		
+		double timefrac = (double)time - ((long)(time));
+
+		/* samples per frame */
+		long nsamples = 32 * MAD_NSBSAMPLES(&header);
+
+		/* samplerate is a constant */
+		num_frames = (long) (time * header.samplerate / nsamples);
+
+		mad_timer_set(&duration, (long)time, (long)(timefrac*100),
+				100);
+	}
+		
+	else if (has_xing) {
+		mad_timer_multiply (&header.duration, num_frames);
+		duration = header.duration;
+	}
+	else {
+		/* the durations have been added up, and the number of frames
+		   counted. We do nothing here. */
+		debug ("Counted duration by counting the frames durations in "
+				"VBR file.");
+	}
+
+	mad_header_finish(&header);
+	mp3_close (data);
+
+	debug ("MP3 time: %ld", mad_timer_count (duration, MAD_UNITS_SECONDS));
+	return mad_timer_count (duration, MAD_UNITS_SECONDS);
+}
+
+/* Fill info structure with data from the id3 tag */
+static void mp3_info (const char *file_name, struct file_tags *info)
+{
+	struct id3_tag *tag;
+	struct id3_file *id3file;
+	char *track = NULL;
+	
+	id3file = id3_file_open (file_name, ID3_FILE_MODE_READONLY);
+	if (!id3file)
+		return;
+	tag = id3_file_tag (id3file);
+	if (tag) {
+		info->artist = get_tag (tag, ID3_FRAME_ARTIST);
+		info->title = get_tag (tag, ID3_FRAME_TITLE);
+		info->album = get_tag (tag, ID3_FRAME_ALBUM);
+		track = get_tag (tag, ID3_FRAME_TRACK);
+		
+		if (track) {
+			char *end;
+			
+			info->track = strtol (track, &end, 10);
+			if (!*end)
+				info->track = -1;
+			free (track);
+		}
+	}
+	id3_file_close (id3file);
+
+	info->time = count_time (file_name);
 }
 
 /* Scale PCM data to 16 bit unsigned */
@@ -314,29 +470,6 @@ static int mp3_decode (void *void_data, char *buf, int buf_len,
 			set_info_bitrate (data->bitrate / 1000);
 		}
 
-		/* Read some information about the strean from the first frame */
-		if (data->first_frame) {
-			struct xing xing;
-			mad_timer_t duration = data->frame.header.duration;
-
-			if (xing_parse(&xing, data->stream.anc_ptr,
-						data->stream.anc_bitlen) != -1) {
-				xing_init (&xing);
-				mad_timer_multiply (&duration,
-						xing.frames);
-			}
-			else {
-				mad_timer_multiply (&duration, data->size /
-					(data->stream.next_frame - data->stream.this_frame));
-			}
-
-			data->duration = mad_timer_count (duration,
-					MAD_UNITS_SECONDS);
-			set_info_time (data->duration);
-			
-			data->first_frame = 0;
-		}
-		
 		mad_synth_frame (&data->synth, &data->frame);
 		mad_stream_sync (&data->stream);
 
@@ -405,24 +538,6 @@ static int mp3_seek (void *void_data, int sec)
 	} while (skip);
 
 	return sec;
-}
-
-static void mp3_close (void *void_data)
-{
-	struct mp3_data *data = (struct mp3_data *)void_data;
-
-#ifdef HAVE_MMAP
-	if (data->mapped && munmap(data->mapped, data->size) == -1)
-		logit ("munmap() failed: %s", strerror(errno));
-#endif
-
-	close (data->infile);
-	
-	mad_stream_finish (&data->stream);
-	mad_frame_finish (&data->frame);
-	mad_synth_finish (&data->synth);
-
-	free (data);
 }
 
 static struct decoder_funcs decoder_funcs = {

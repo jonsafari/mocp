@@ -43,13 +43,14 @@ static void ogg_info (const char *file_name, struct file_tags *info)
 	vorbis_comment *comments;
 	OggVorbis_File vf;
 	FILE *file;
+	int ogg_time;
 
 	if (!(file = fopen (file_name, "r"))) {
 		error ("Can't load OGG: %s", strerror(errno));
 		return;
 	}
 
-	if (ov_test(file, &vf, NULL, 0) < 0) {
+	if (ov_open(file, &vf, NULL, 0) < 0) {
 		error ("ov_test() failed!");
 		return;
 	}
@@ -79,6 +80,9 @@ static void ogg_info (const char *file_name, struct file_tags *info)
 
 	}
 
+	if ((ogg_time = ov_time_total(&vf, -1)) != OV_EINVAL)
+		info->time = ogg_time;
+
 	ov_clear (&vf);
 }
 
@@ -106,7 +110,6 @@ static void *ogg_open (const char *file)
 
 	info = ov_info (&data->vf, -1);
 	
-	set_info_time (ov_time_total(&data->vf, -1));
 	set_info_bitrate (ov_bitrate(&data->vf, -1) / 1000);
 
 	return data;
