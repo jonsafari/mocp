@@ -1,7 +1,6 @@
 #ifndef PLAYLIST_H
 #define PLAYLIST_H
 
-#include <pthread.h>
 #include <sys/types.h>
 
 /* Flags for the info decoder function. */
@@ -38,7 +37,6 @@ struct plist
 	int num;		/* Number of elements on the list */
 	int allocated;		/* Number of allocated elements */
 	int not_deleted;	/* Number of not deleted items */
-	pthread_mutex_t mutex;
 	struct plist_item *items;
 	int serial;		/* Optional serial number of this playlist */
 };
@@ -64,7 +62,7 @@ void plist_set_title_file (struct plist *plist, const int num,
 		const char *title);
 void plist_set_file (struct plist *plist, const int num, const char *file);
 int plist_deleted (const struct plist *plist, const int num);
-void plist_cat (struct plist *a, const struct plist *b);
+void plist_cat (struct plist *a, struct plist *b);
 void sync_plists_data (struct plist *dst, struct plist *src);
 void update_item_time (struct plist_item *item, const int time);
 void update_file (struct plist_item *item);
@@ -76,4 +74,6 @@ struct plist_item *plist_new_item ();
 void plist_free_item_fields (struct plist_item *item);
 void plist_set_serial (struct plist *plist, const int serial);
 int plist_get_serial (const struct plist *plist);
+int plist_last (struct plist *plist);
+
 #endif
