@@ -1,6 +1,5 @@
 Before 2.2.0:
-* entry text longer than the entry.
-* themes directory in the distribution.
+* General 24-bit to 16-bit conversion.
 * Different themes for xterm.
 * speed up saving the playlist when the titles are known to be made from tags.
 * General error/fatal functions that recognize if they are in the interface or
@@ -11,13 +10,14 @@ Before 2.2.0:
 * A bar showing time for current song.
 * Do something with big interface.c - general user interface code?
 * Arrow keys working in the entry field.
-* General 24-bit to 16-bit conversion.
 * Share the playlist between interfaces - one interface is a "master"?.
 * When adding files to the playlist, add them also to the server's playlist
 * True shuffle.
 
 In future:
 
+* Do something with errors while precaching that seems to belong to the current
+  file
 * Better international characters handling - tags in UTF.
 * handle SIGBUS - when mmap()ed file is truncated.
 * Showing the buffer state.
