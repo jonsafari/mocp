@@ -43,7 +43,7 @@
 
 #define FILE_LIST_INIT_SIZE	64
 
-static enum file_type file_type (char *file)
+enum file_type file_type (char *file)
 {
 	struct stat file_stat;
 	
