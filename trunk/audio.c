@@ -91,7 +91,7 @@ static void *play_thread (void *unused)
 			LOCK (curr_playing_mut);
 			curr_playing = -1;
 			UNLOCK (curr_playing_mut);
-			logit ("play thread: stopped");
+			logit ("stopped");
 		}
 		else {
 			LOCK (curr_playing_mut);
@@ -117,7 +117,7 @@ static void *play_thread (void *unused)
 		state_change ();
 	}
 
-	logit ("exiting playing thread");
+	logit ("exiting");
 
 	return NULL;
 }

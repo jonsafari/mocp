@@ -50,7 +50,7 @@ static void *read_thread (void *arg)
 {
 	struct buf *buf = (struct buf *)arg;
 
-	logit ("READER: entering output buffer thread");
+	logit ("entering output buffer thread");
 
 	while (1) {
 		int to_play, played;
@@ -65,7 +65,7 @@ static void *read_thread (void *arg)
 		if (buf->stop)
 			buf->fill = 0;
 
-		logit ("READER: sending the signal");
+		logit ("sending the signal");
 		pthread_cond_broadcast (&buf->ready_cond);
 		if (buf->opt_cond) {
 			pthread_mutex_lock (buf->opt_cond_mutex);
@@ -75,31 +75,31 @@ static void *read_thread (void *arg)
 		
 		if ((buf->fill == 0 || buf->pause || buf->stop)
 				&& !buf->exit) {
-			logit ("READER: waiting for someting in the buffer");
+			logit ("waiting for someting in the buffer");
 			pthread_cond_wait (&buf->play_cond, &buf->mutex);
-			logit ("READER: someting appeard in the buffer");
+			logit ("someting appeard in the buffer");
 		}
 		
 		if (buf->exit && buf->fill == 0) {
-			logit ("READER: exit");
+			logit ("exit");
 			UNLOCK (buf->mutex);
 			break;
 		}
 
 		if (buf->fill == 0) {
-			logit ("READER: buffer empty");
+			logit ("buffer empty");
 			UNLOCK (buf->mutex);
 			continue;
 		}
 
 		if (buf->pause) {
-			logit ("READER: paused");
+			logit ("paused");
 			UNLOCK (buf->mutex);
 			continue;
 		}
 
 		if (buf->stop) {
-			logit ("READER: stopped");
+			logit ("stopped");
 			UNLOCK (buf->mutex);
 			continue;
 		}
@@ -134,7 +134,7 @@ static void *read_thread (void *arg)
 		UNLOCK (buf->mutex);
 	}
 
-	logit ("READER: exiting");
+	logit ("exiting");
 	
 	return NULL;
 }
@@ -202,7 +202,7 @@ void buf_destroy (struct buf *buf)
 		logit ("Destroying buffer ready condition failed: %s",
 				strerror(errno));
 
-	logit ("WRITER: buffer destroyed");
+	logit ("buffer destroyed");
 
 	/*close (fd);*/
 }
@@ -244,7 +244,7 @@ int buf_put (struct buf *buf, const char *data, int size)
 		}
 
 		if (buf->stop) {
-			logit ("WRITER: the buffer is stopped, refusing to write to the buffer");
+			logit ("the buffer is stopped, refusing to write to the buffer");
 			UNLOCK (buf->mutex);
 			return 0;
 		}
@@ -288,16 +288,16 @@ void buf_unpause (struct buf *buf)
  * sent by buf_put(). */
 void buf_stop (struct buf *buf)
 {
-	logit ("WRITER: stopping the buffer");
+	logit ("stopping the buffer");
 	LOCK (buf->mutex);
 	buf->stop = 1;
 	buf->pause = 0;
 	buf->reset_dev = 1;
-	logit ("buf_stop(): sending signal");
+	logit ("sending signal");
 	pthread_cond_signal (&buf->play_cond);
-	logit ("buf_stop(): waiting for signal");
+	logit ("waiting for signal");
 	pthread_cond_wait (&buf->ready_cond, &buf->mutex);
-	logit ("buf_stop(): done");
+	logit ("done");
 	UNLOCK (buf->mutex);
 }
 
@@ -305,7 +305,7 @@ void buf_stop (struct buf *buf)
  * and buf_put is not used! */
 void buf_reset (struct buf *buf)
 {
-	logit ("buf_reset()");
+	logit ("resetting the buffer");
 	
 	LOCK (buf->mutex);
 	buf->stop = 0;

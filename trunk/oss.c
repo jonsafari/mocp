@@ -235,7 +235,7 @@ static int oss_get_buff_fill ()
 static int oss_reset ()
 {
 	if (dsp_fd == -1) {
-		logit ("audio_reset() when audio device is not opened");
+		logit ("reset when audio device is not opened");
 		return 0;
 	}
 
