@@ -1103,7 +1103,8 @@ static char *find_title (char *file)
 
 		update_file (&curr_plist->items[idx]);
 
-		if (!curr_plist->items[idx].title_tags)
+		if (!curr_plist->items[idx].title_tags
+				&& curr_plist->items[idx].tags->title)
 			curr_plist->items[idx].title_tags
 				= build_title (curr_plist->items[idx].tags);
 
@@ -1115,6 +1116,14 @@ static char *find_title (char *file)
 		update_file (&playlist->items[idx]);
 		playlist->items[idx].tags = read_file_tags (file,
 				playlist->items[idx].tags, TAGS_COMMENTS);
+
+		if (!playlist->items[idx].title_tags
+				&& playlist->items[idx].tags->title)
+			playlist->items[idx].title_tags
+				= build_title (curr_plist->items[idx].tags);
+
+		title = xstrdup (playlist->items[idx].title_tags);
+
 	}
 	else {
 		struct file_tags *tags;
