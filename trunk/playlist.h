@@ -22,7 +22,7 @@ struct plist_item
 	char *title_tags;	/* title based on the tags */
 	struct file_tags *tags;
 	short deleted;
-	time_t mtime;		/* modification time */ /* TODO: use it */
+	time_t mtime;		/* modification time */
 };
 
 struct plist
@@ -47,7 +47,6 @@ int plist_find_fname (struct plist *plist, const char *file);
 struct file_tags *tags_new ();
 void tags_free (struct file_tags *tags);
 char *build_title (const struct file_tags *tags);
-int plist_rand (struct plist *plist);
 int plist_count (struct plist *plist);
 void plist_set_title_tags (struct plist *plist, const int num,
 		const char *title);
@@ -61,5 +60,7 @@ void update_item_time (struct plist_item *item, const int time);
 void update_file (struct plist_item *item);
 int get_item_time (const struct plist *plist, const int i);
 int plist_total_time (const struct plist *plisti, int *all_files);
+void plist_shuffle (struct plist *plist);
+void plist_swap_first_fname (struct plist *plist, const char *fname);
 
 #endif
