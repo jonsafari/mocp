@@ -68,6 +68,8 @@ static void *play_thread (void *unused)
 		if (file) {
 			df = get_decoder_funcs (file);
 			if (df) {
+				int next;
+				
 				logit ("Playing item %d: %s", curr_playing,
 						file);
 				
@@ -75,8 +77,11 @@ static void *play_thread (void *unused)
 				buf_time_set (&out_buf, 0.0);
 				state_change ();
 				
-				player (file, df, &out_buf);
-				
+				next = plist_next (&playlist, curr_playing);
+				player (file, next != -1 ?
+						plist_get_file(&playlist, next)
+						: NULL,
+						&out_buf);
 				state = STATE_STOP;
 				set_info_rate (0);
 				set_info_bitrate (0);
@@ -262,6 +267,7 @@ void audio_init ()
 		hw.init ();
 	buf_init (&out_buf, options_get_int("OutputBuffer") * 1024);
 	plist_init (&playlist);
+	player_init ();
 }
 
 void audio_exit ()
