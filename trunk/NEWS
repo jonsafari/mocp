@@ -1,3 +1,8 @@
+2.1.2
+	* Fixed playing mp3 with UseMmap turned on.
+	* Fixed handling ALSA device open errors.
+2.1.1
+	* Added missing example_theme.
 2.1.0
 	* Multiple clients. You can have moc interface on many
 	  consoles/terminals.
