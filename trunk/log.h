@@ -3,6 +3,12 @@
 
 #include <stdio.h>
 
+#ifdef DEBUG
+# define debug logit
+#else
+# define debug fake_logit
+#endif
+
 /* __FUNCTION__ is a gcc extension */
 #ifndef HAVE__FUNCTION__
 # define __FUNCTION__ "UNKNOWN_FUNC"
