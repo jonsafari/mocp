@@ -2,7 +2,8 @@
 # You can use a theme by copying it to ~/.moc/themes directory, and using
 # Theme config option or -T command line option.
 #
-# Fill free to make your own themes and send me them. If I like it
+# Fill free to make your own themes and send me them. It will be included in
+# official MOC releases or on the MOC web site.
 #
 # The format of this file is:
 # Lines beginning with # are comments.
