@@ -2408,41 +2408,47 @@ static int entry_common_key (const int ch)
 	return 0;
 }
 
-/* Match a directory to the pattern. Resolve beginning ~. 
- * Return the directory or NULL, the memory is malloc()ed. */
-static char *match_dir (const char *str)
+/* Make a directory from the string resolving ~, './' and '..'.
+ * Return the directory, the memory is malloc()ed.
+ * Return NULL on error. */
+static char *make_dir (const char *str)
 {
-	char dir[PATH_MAX] = "";
+	char *dir;
+	int add_slash = 0;
 
-	dir[sizeof(dir)-1] = 0;
+	dir = (char *)xmalloc (sizeof(char) * (PATH_MAX + 1));
 
+	dir[PATH_MAX] = 0;
+
+	/* If the string ends with a slash and is not just '/', add this
+	 * slash. */
+	if (strlen(str) > 1 && str[strlen(str)-1] == '/')
+		add_slash = 1;
+	
 	if (str[0] == '~') {
-		strncpy (dir, getenv("HOME"), sizeof(dir));
+		strncpy (dir, getenv("HOME"), PATH_MAX);
 		
-		if (dir[sizeof(dir)-1]) {
-			logit ("Path too long!");
-			return NULL;
-		}
-		
-		strncat (dir, str + 1, sizeof(dir) - strlen(dir));
-
-		if (dir[sizeof(dir)-1]) {
+		if (dir[PATH_MAX]) {
 			logit ("Path too long!");
 			return NULL;
 		}
 
+		if (!strcmp(str, "~"))
+			add_slash = 1;
+		
+		str++;
 	}
-	else if (str[0] != '/') {
-		if (snprintf(dir, sizeof(dir), "%s/%s", cwd, str)
-				>= (int)sizeof(dir)) {
-			logit ("Path too long!");
-			return NULL;
-		}
-	}
+	else if (str[0] != '/')
+		strcpy (dir, cwd);
 	else
-		strcpy (dir, str);
+		strcpy (dir, "/");
 
-	return find_match_dir (dir);
+	resolve_path (dir, PATH_MAX, str);
+
+	if (add_slash && strlen(dir) < PATH_MAX)
+		strcat (dir, "/");
+
+	return dir;
 }
 
 static int entry_go_dir_key (const int ch)
@@ -2453,10 +2459,6 @@ static int entry_go_dir_key (const int ch)
 		if (len == entry.width)
 			return 1;
 
-		/* './' or '../' is useless and can cause problems */
-		if (entry.text[len-1] == '.' && ch == '/')
-			return 1;
-		
 		entry.text[len++] = ch;
 		entry.text[len] = 0;
 
@@ -2465,15 +2467,23 @@ static int entry_go_dir_key (const int ch)
 		return 1;
 	}
 	else if (ch == '\t') {
-		char *dir = match_dir (entry.text);
+		char *dir;
+		char *complete_dir;
+		
+		if (!(dir = make_dir(entry.text)))
+			return 1;
+		
+		complete_dir = find_match_dir (dir);
+		
+		strncpy (entry.text, complete_dir ? complete_dir : dir,
+				sizeof(entry.text));
+		entry.text[sizeof(entry.text)-1] = 0;
 
-		if (dir) {
-			strncpy (entry.text, dir, sizeof(entry.text));
-			entry.text[sizeof(entry.text)-1] = 0;
+		if (complete_dir) {
 			strncat (entry.text, "/",
-					sizeof(entry.text)
-					- strlen(entry.text));
+				sizeof(entry.text) - strlen(entry.text));
 			entry.text[sizeof(entry.text)-1] = 0;
+			free (complete_dir);
 		}
 
 		free (dir);
@@ -2483,24 +2493,25 @@ static int entry_go_dir_key (const int ch)
 	}
 	else if (ch == '\n') {
 		if (entry.text[0]) {
-			char *dir = xstrdup (entry.text);
-			int len = strlen (dir);
-			
+			char *dir = make_dir (entry.text);
+
+			/* strip trailing slash */
+			if (dir[strlen(dir)-1] == '/')
+				dir[strlen(dir)-1] = 0;
+
 			entry_disable ();
 			update_info_win ();
 
-			/* Strip trailing slash */
-			if (dir[len-1] == '/')
-				dir[len-1] = 0;
-			
-			go_to_dir (dir);
-			update_menu ();
-			free (dir);
+			if (dir) {
+				go_to_dir (dir);
+				update_menu ();
+				free (dir);
+			}
 		}
-		else {
+		else
 			entry_disable ();
-			update_info_win ();
-		}
+		
+		update_info_win ();
 		
 		return 1;
 	}
