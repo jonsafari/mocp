@@ -1,18 +1,23 @@
 Before 2.2.0:
-* run ./mocp, Q and endwin() is not used?
-* valgrind server and client crashes (assertion seconds > 0)
-* Arrow keys working in the entry field.
+* END, DEL, and HOME keys working in the entry field.
+* History in the i command.
+* True shuffle.
 * Share the playlist between interfaces - one interface is a "master"?.
 * When adding files to the playlist, add them also to the server's playlist
-* True shuffle.
-* History in the i command.
 * Shift-left and Shift-right for faster, silent seeking (10 sec. per keystroke).
+* iconv() for file names also.
+* when a file is played and modified, and reload is used - the time is not
+  updated
 * valgrind the client and the server.
 
 In future:
 
+* Complete to the matching part of a directory with the i command if a name is
+  ambigous.
+* Move interface primitives (windows, entry, etc.) to a separate file.
 * Fake increase/decrease volume in alsa by 1% if such resolution is not
   possible.
+* Read tags for sndfile formats.
 * Number items on the playlist.
 * Command to chenge the mixer device.
 * Command to go to the previously played file.
@@ -47,6 +52,7 @@ In future:
 
 Maybe never:
 
+* posix_fadvise()
 * Say about ignored options that affects server when the server is not being
   run.
 * Input buffer with separate thread - like output buffer.
