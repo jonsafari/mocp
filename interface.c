@@ -114,6 +114,11 @@ static struct file_info {
  * occur. */
 static int must_update_state = 0;
 
+/* ^c version of c */
+#ifndef CTRL
+# define CTRL(c) ((c) & 0x1F)
+#endif
+
 static void interface_fatal (const char *msg)
 {
 	endwin ();
@@ -1340,6 +1345,14 @@ static void menu_key (const int ch)
 			interface_message (NULL);
 			update_info_win ();
 			wrefresh (info_win);
+			break;
+		case CTRL('r'):
+			logit ("refresh");
+			wclear (info_win);
+			update_info_win ();
+			wrefresh (info_win);
+			wclear (main_win);
+			update_menu = 1;
 			break;
 		case KEY_RESIZE:
 			break;
