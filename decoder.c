@@ -59,8 +59,12 @@ char *file_type_name (const char *file)
 {
 	int i;
 	static char buf[4];
-	
-	if ((i = find_type(file)) != -1) {
+
+	if (file_type(file) == F_URL) {
+		strcpy (buf, "NET");
+		return buf;
+	}
+	else if ((i = find_type(file)) != -1) {
 		plugins[i].decoder->get_name(file, buf);
 		return buf;
 	}
