@@ -22,7 +22,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
-#include <pthread.h>
 
 #define DEBUG
 
@@ -110,7 +109,6 @@ void plist_init (struct plist *plist)
 	plist->items = (struct plist_item *)xmalloc (sizeof(struct plist_item)
 			* INIT_SIZE);
 	plist->serial = -1;
-	pthread_mutex_init (&plist->mutex, NULL);
 }
 
 static int str_hash (const char *file)
@@ -149,8 +147,6 @@ struct plist_item *plist_new_item ()
 /* Add a file to the list. Return the index of the item. */
 int plist_add (struct plist *plist, const char *file_name)
 {
-	LOCK (plist->mutex);
-	
 	assert (plist != NULL);
 	assert (plist->items != NULL);
 		
@@ -173,8 +169,6 @@ int plist_add (struct plist *plist, const char *file_name)
 	plist->num++;
 	plist->not_deleted++;
 
-	UNLOCK (plist->mutex);
-
 	return plist->num - 1;
 }
 
@@ -184,7 +178,7 @@ static void plist_item_copy (struct plist_item *dst,
 {
 	dst->file = xstrdup (src->file);
 	dst->file_hash = src->file_hash != -1
-		? src->file_hash : str_hash(src->file);
+		? src->file_hash : (src->file ? str_hash(src->file) : -1);
 	dst->title_file = xstrdup (src->title_file);
 	dst->title_tags = xstrdup (src->title_tags);
 	dst->mtime = src->mtime;
@@ -215,10 +209,8 @@ char *plist_get_file (struct plist *plist, int i)
 	assert (i >= 0);
 	assert (plist != NULL);
 
-	LOCK (plist->mutex);
 	if (i < plist->num)
 		file = xstrdup (plist->items[i].file);
-	UNLOCK (plist->mutex);
 
 	return file;
 }
@@ -234,10 +226,8 @@ int plist_next (struct plist *plist, int num)
 	assert (plist != NULL);
 	assert (num >= -1);
 
-	LOCK (plist->mutex);
 	while (i < plist->num && plist->items[i].deleted)
 		i++;
-	UNLOCK (plist->mutex);
 
 	return i < plist->num ? i : -1;
 }
@@ -253,10 +243,8 @@ int plist_prev (struct plist *plist, int num)
 	assert (plist != NULL);
 	assert (num >= -1);
 
-	LOCK (plist->mutex);
 	while (i >= 0 && plist->items[i].deleted)
 		i--;
-	UNLOCK (plist->mutex);
 
 	return i >= 0 ? i : -1;
 }
@@ -280,6 +268,7 @@ void plist_free_item_fields (struct plist_item *item)
 		item->tags = NULL;
 	}
 
+	item->file_hash = -1;
 	item->title = NULL;
 }
 
@@ -290,18 +279,15 @@ void plist_clear (struct plist *plist)
 
 	assert (plist != NULL);
 	
-	LOCK (plist->mutex);
 	
 	for (i = 0; i < plist->num; i++)
-		if (!plist->items[i].deleted)
-			plist_free_item_fields (&plist->items[i]);
+		plist_free_item_fields (&plist->items[i]);
 	
 	plist->items = (struct plist_item *)xrealloc (plist->items,
 			sizeof(struct plist_item) * INIT_SIZE);
 	plist->allocated = INIT_SIZE;
 	plist->num = 0;
 	plist->not_deleted = 0;
-	UNLOCK (plist->mutex);
 }
 
 /* Destroy the list freeing memory, the list can't be used after that. */
@@ -313,8 +299,6 @@ void plist_free (struct plist *plist)
 	free (plist->items);
 	plist->allocated = 0;
 	plist->items = NULL;
-	if (pthread_mutex_destroy(&plist->mutex))
-		logit ("Can't destry playlist mutex");
 }
 
 static int qsort_func_fname (const void *a, const void *b)
@@ -328,7 +312,7 @@ static int qsort_func_fname (const void *a, const void *b)
 	return strcmp (ap->file, bp->file);
 }
 
-/* Sort the playlist by file names. We don't use mutex here. */
+/* Sort the playlist by file names. */
 void plist_sort_fname (struct plist *plist)
 {
 	qsort (plist->items, plist->num, sizeof(struct plist_item),
@@ -343,18 +327,13 @@ int plist_find_fname (struct plist *plist, const char *file)
 
 	assert (plist != NULL);
 
-	LOCK (plist->mutex);
 	for (i = 0; i < plist->num; i++) {
-		assert (!plist->items[i].file
-				|| plist->items[i].file_hash != -1);
-		if (!plist->items[i].deleted && plist->items[i].file
+		if (plist->items[i].file
 				&& plist->items[i].file_hash == hash
 				&& !strcmp(plist->items[i].file, file)) {
-			UNLOCK (plist->mutex);
 			return i;
 		}
 	}
-	UNLOCK (plist->mutex);
 
 	return -1;
 }
@@ -510,7 +489,6 @@ int plist_add_from_item (struct plist *plist, const struct plist_item *item)
 {
 	int pos = plist_add (plist, NULL);
 
-	assert (!item->deleted);
 	plist_item_copy (&plist->items[pos], item);
 
 	return pos;
@@ -520,15 +498,21 @@ void plist_delete (struct plist *plist, const int num)
 {
 	assert (plist != NULL);
 	
-	LOCK (plist->mutex);
 	assert (!plist->items[num].deleted);
 	assert (plist->not_deleted > 0);
 	if (num < plist->num) {
-		plist->items[num].deleted = 1;
+
+		/* Free every field except the file, it is needed in deleted
+		 * items. */
+		char *file = plist_get_file (plist, num);
+
+		plist->items[num].file = NULL;
 		plist_free_item_fields (&plist->items[num]);
+		plist->items[num].file = file;
+
+		plist->items[num].deleted = 1;
 	}
 	plist->not_deleted--;
-	UNLOCK (plist->mutex);
 }
 
 /* Count not deleted items. */
@@ -565,6 +549,7 @@ void plist_set_title_file (struct plist *plist, const int num,
 void plist_set_file (struct plist *plist, const int num, const char *file)
 {
 	assert (num >=0 && num < plist->num);
+	assert (file != NULL);
 
 	if (plist->items[num].file)
 		free (plist->items[num].file);
@@ -581,13 +566,19 @@ int plist_deleted (const struct plist *plist, const int num)
 }
 
 /* Add the content of playlist b to a by copying items. */
-void plist_cat (struct plist *a, const struct plist *b)
+void plist_cat (struct plist *a, struct plist *b)
 {
 	int i;
 
-	for (i = 0; i < b->num; i++)
+	assert (a != NULL);
+	assert (b != NULL);
+
+	for (i = 0; i < b->num; i++) {
+		assert (b->items[i].file != NULL);
+		
 		if (plist_find_fname(a, b->items[i].file) == -1)
 			plist_add_from_item (a, &b->items[i]);
+	}
 }
 
 /* Copy titles_tags and times from src to dst if the data are available and
@@ -717,11 +708,9 @@ void plist_shuffle (struct plist *plist)
 {
 	int i;
 
-	LOCK (plist->mutex);
 	for (i = 0; i < plist->num; i++)
 		plist_swap (plist, i,
 				(rand()/(float)RAND_MAX) * (plist->num - 1));
-	UNLOCK (plist->mutex);
 }
 
 /* Swap the first item on the playlist with the item with file fname. */
@@ -746,4 +735,18 @@ void plist_set_serial (struct plist *plist, const int serial)
 int plist_get_serial (const struct plist *plist)
 {
 	return plist->serial;
+}
+
+/* Return the index of the last not deleted item from the playlist.
+ * Return -1 if there are no items. */
+int plist_last (struct plist *plist)
+{
+	int i;
+
+	i = plist->num;
+	
+	while (i > 0 && plist_deleted(plist, i))
+		i--;
+
+	return i;
 }
