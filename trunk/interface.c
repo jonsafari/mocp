@@ -1270,7 +1270,7 @@ static void go_file ()
 		}
 
 		plist_clear (playlist);
-		if (plist_load_m3u(playlist, menu_item->file))
+		if (plist_load(playlist, menu_item->file, cwd))
 			interface_message ("Playlist loaded.");
 		toggle_plist ();
 	}
