@@ -375,7 +375,7 @@ static void wait_for_data ()
 		
 		if (event == EV_PLIST_ADD)
 			event_push (&events, event, recv_item_from_srv());
-		else if (event == EV_PLIST_DEL)
+		else if (event == EV_PLIST_DEL || event == EV_STATUS_MSG)
 			event_push (&events, event, get_str_from_srv());
 		else if (event != EV_DATA)
 			event_push (&events, event, NULL);
@@ -2238,6 +2238,10 @@ static void server_event (const int event, void *data)
 		case EV_TAGS:
 			update_curr_tags (data);
 			break;
+		case EV_STATUS_MSG:
+			set_iface_status_ref (data);
+			free (data);
+			break;
 		default:
 			interface_message ("Unknown event: 0x%02x", event);
 			logit ("Unknown event 0x%02x", event);
@@ -3437,7 +3441,7 @@ static void get_and_handle_event ()
 		/* some events contail data */
 		if (type == EV_PLIST_ADD)
 			data = recv_item_from_srv ();
-		else if (type == EV_PLIST_DEL)
+		else if (type == EV_PLIST_DEL || type == EV_STATUS_MSG)
 			data = get_str_from_srv ();
 		else
 			data = NULL;

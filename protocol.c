@@ -612,7 +612,7 @@ static char *make_event_packet (struct event *e, size_t *len)
 
 	*len = sizeof(e->type);
 
-	if (e->type == EV_PLIST_DEL) {
+	if (e->type == EV_PLIST_DEL || e->type == EV_STATUS_MSG) {
 		int str_len;
 
 		assert (e->data != NULL);
@@ -676,7 +676,7 @@ enum noblock_io_status event_send_noblock (int sock, struct event_queue *q)
 			plist_free_item_fields (e->data);
 			free (e->data);
 		}
-		else if (e->type == EV_PLIST_DEL)
+		else if (e->type == EV_PLIST_DEL || e->type == EV_STATUS_MSG)
 			free (e->data);
 		else if (e->data)
 			logit ("Unhandled event data!");
