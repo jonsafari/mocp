@@ -2582,10 +2582,8 @@ static void delete_item ()
 		update_info_win ();
 		wrefresh (info_win);
 	}
-	else {
-		toggle_plist ();
-		plist_clear (playlist);
-	}
+	else
+		clear_playlist (1);
 }
 
 static int entry_search_key (const int ch)
