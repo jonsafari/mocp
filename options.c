@@ -126,15 +126,15 @@ void options_init ()
 	memset (options, 0, sizeof(options));
 
 	option_add_int ("ReadTags", 1);
-	option_add_str ("MusicDir", NULL); /* TODO*/
+	option_add_str ("MusicDir", NULL);
 	option_add_int ("ShowStreamErrors", 0);
-	option_add_int ("Priority", 0); /* TODO*/
+	option_add_int ("Priority", 0);
 	option_add_int ("Repeat", 0);
-	option_add_int ("Shuffle", 0); /* TODO */
+	option_add_int ("Shuffle", 0);
 	option_add_int ("AutoNext", 1);
-	option_add_str ("Sort", "FileName"); /* TODO */
+	option_add_str ("Sort", "FileName");
 	option_add_str ("FormatString",
-			"%(n:%n :)%(a:%a - :)%(t:%t:)%(A: \\(%A\\):)"); /* TODO */
+			"%(n:%n :)%(a:%a - :)%(t:%t:)%(A: \\(%A\\):)");
 	option_add_int ("OutputBuffer", 512);
 }
 
