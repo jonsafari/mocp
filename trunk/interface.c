@@ -1641,7 +1641,7 @@ static void load_playlist ()
 }
 
 /* Initialize a color item of given index (CLR_*) with colors and
- * attributes. */
+ * attributes. Do nothing if the item is already initialized. */
 static void make_color (const enum color_index index, const short foreground,
 		const short background,	const int attr)
 {
@@ -1650,10 +1650,12 @@ static void make_color (const enum color_index index, const short foreground,
 	assert (pair < COLOR_PAIRS);
 	assert (index < CLR_LAST);
 
-	init_pair (pair, foreground, background);
-	colors[index] = COLOR_PAIR (pair) | attr;
+	if (colors[index] == -1) {
+		init_pair (pair, foreground, background);
+		colors[index] = COLOR_PAIR (pair) | attr;
 
-	pair++;
+		pair++;
+	}
 }
 
 static void set_default_colors ()
@@ -1905,6 +1907,14 @@ static void load_color_theme (const char *name)
 	fclose (file);
 }
 
+static void reset_colors_table ()
+{
+	int i;
+
+	for (i = 0; i < CLR_LAST; i++)
+		colors[i] = -1;
+}
+
 /* Initialize the interface. args are command line file names. arg_num is the
  * number of arguments. */
 void init_interface (const int sock, const int debug, char **args,
@@ -1943,7 +1953,7 @@ void init_interface (const int sock, const int debug, char **args,
 	
 	detect_term ();
 	start_color ();
-	set_default_colors ();
+	reset_colors_table ();
 
 	if (options_get_str("ForceTheme"))
 		load_color_theme (options_get_str("ForceTheme"));
@@ -1951,6 +1961,8 @@ void init_interface (const int sock, const int debug, char **args,
 		load_color_theme (options_get_str("XTermTheme"));
 	else if (options_get_str("Theme"))
 		load_color_theme (options_get_str("Theme"));
+
+	set_default_colors ();
 
 	/* windows */
 	main_win = newwin (LINES - 4, COLS, 0, 0);
