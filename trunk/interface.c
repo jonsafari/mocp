@@ -101,7 +101,7 @@ static enum {
 } main_win_mode = WIN_MENU;
 
 static struct file_info {
-	char title[100];
+	char title[256];
 	char bitrate[4];
 	char rate[3];
 	char time[6];
@@ -753,7 +753,7 @@ static void update_curr_file ()
 
 		strncpy (file_info.title, title,
 				sizeof(file_info.title) - 1);
-		file_info.title[sizeof(file_info.title-1)] = 0;
+		file_info.title[sizeof(file_info.title)-1] = 0;
 		xterm_set_title (file_info.title);
 		mark_file (file);
 		free (title);
