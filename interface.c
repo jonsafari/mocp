@@ -19,6 +19,7 @@
 # include <sys/select.h>
 #endif
 #include <sys/un.h>
+#include <sys/stat.h>
 #include <unistd.h>
 #include <ncurses.h>
 #include <string.h>
@@ -33,6 +34,8 @@
 #include "menu.h"
 #include "files.h"
 #include "options.h"
+#include "file_types.h"
+#include "interface.h"
 
 #define STATUS_LINE_LEN	25
 
@@ -536,6 +539,20 @@ static char *get_data_str ()
 	}		
 }
 
+static void send_playlist (struct plist *plist)
+{
+	int i;
+	
+	send_int_to_srv (CMD_LIST_CLEAR);
+	
+	for (i = 0; i < plist->num; i++) {
+		if (!plist->items[i].deleted) {
+			send_int_to_srv (CMD_LIST_ADD);
+			send_str_to_srv (plist->items[i].file);
+		}
+	}
+}
+
 /* Mark this file in the menu. Umark if NULL*/
 static void mark_file (const char *file)
 {
@@ -890,8 +907,72 @@ static void check_term_size ()
 		interface_fatal ("The terminal is too small after resizeing.");
 }
 
-/* Initialize the interface */
-void init_interface (const int sock, const int debug)
+/* Return 1 if the file is a directory, 0 if not, -1 on error. */
+static int isdir (const char *file)
+{
+	struct stat file_stat;
+
+	if (stat(file, &file_stat) == -1) {
+		interface_error ("Can't stat %s: %s", file, strerror(errno));
+		return -1;
+	}
+	return S_ISDIR(file_stat.st_mode) ? 1 : 0;
+}
+
+/* Process file names passwd as arguments. */
+static void process_args (char **args, const int num)
+{
+	if (num == 1 && isdir(args[0]) == 1) {
+		cwd[sizeof(cwd)-1] = 0;
+		strncpy (cwd, args[0], sizeof(cwd));
+		if (cwd[sizeof(cwd)-1])
+			interface_fatal ("Path too long.");
+		go_to_dir (NULL);
+	}
+	else {
+		int i;
+
+		for (i = 0; i < num; i++) {
+			int dir = isdir(args[i]);
+
+			if (dir == 1)
+				read_directory_recurr (args[i], playlist);
+			else if (dir == 0 && is_sound_file(args[i]))
+				plist_add (playlist, args[i]);
+		}
+
+		if (playlist->num) {
+			char msg[50];
+
+			visible_plist = playlist;
+			
+			if (options_get_int("ReadTags")) {
+				read_tags (playlist);
+				make_titles_tags (playlist);
+			}
+			else
+				make_titles_file (playlist);
+
+			menu = make_menu (playlist, NULL, 0);
+			set_title ("Playlist");
+			update_curr_file ();
+			sprintf (msg, "%d files on the list",
+					plist_count(playlist));
+			set_interface_status (msg);
+
+			send_playlist (playlist);
+			send_int_to_srv (CMD_PLAY);
+			send_str_to_srv (playlist->items[0].file);
+		}
+		else
+			enter_first_dir ();
+	}
+}
+
+/* Initialize the interface. args are command line file names. arg_num is the
+ * number of arguments. */
+void init_interface (const int sock, const int debug, char **args,
+		const int arg_num)
 {
 	srv_sock = sock;
 	if (debug) {
@@ -953,7 +1034,11 @@ void init_interface (const int sock, const int debug)
 	main_border ();
 	get_server_options ();
 	
-	enter_first_dir ();
+	if (arg_num)
+		process_args (args, arg_num);
+	else
+		enter_first_dir ();
+	
 	menu_draw (menu);
 	wrefresh (main_win);
 	update_state ();
@@ -995,20 +1080,6 @@ static void server_event (const int event)
 	if (must_update_state) {
 		update_state ();
 		must_update_state = 0;
-	}
-}
-
-static void send_playlist (struct plist *plist)
-{
-	int i;
-	
-	send_int_to_srv (CMD_LIST_CLEAR);
-	
-	for (i = 0; i < plist->num; i++) {
-		if (!plist->items[i].deleted) {
-			send_int_to_srv (CMD_LIST_ADD);
-			send_str_to_srv (plist->items[i].file);
-		}
 	}
 }
 
@@ -1077,12 +1148,18 @@ static void toggle_option (const char *name)
 static void toggle_plist ()
 {
 	if (visible_plist == playlist) {
-		visible_plist = curr_plist;
-		menu_free (menu);
-		menu = saved_menu;
-		set_title (cwd);
-		update_curr_file ();
-		set_interface_status (NULL);
+		if (!cwd[0])
+			
+			/* we were at the playlist from the startup */
+			enter_first_dir ();
+		else {
+			visible_plist = curr_plist;
+			menu_free (menu);
+			menu = saved_menu;
+			set_title (cwd);
+			update_curr_file ();
+			set_interface_status (NULL);
+		}
 	}
 	else if (playlist && playlist->num) {
 		char msg[50];
