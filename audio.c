@@ -86,6 +86,7 @@ static void *play_thread (void *unused ATTR_UNUSED)
 			df = get_decoder_funcs (file);
 			if (df) {
 				int next;
+				char *next_file;
 				
 				logit ("Playing item %d: %s", curr_playing,
 						file);
@@ -93,10 +94,13 @@ static void *play_thread (void *unused ATTR_UNUSED)
 				buf_time_set (&out_buf, 0.0);
 				
 				next = plist_next (&playlist, curr_playing);
-				player (file, next != -1 ?
-						plist_get_file(&playlist, next)
-						: NULL,
-						&out_buf);
+				next_file = next != -1 ?
+					plist_get_file(&playlist, next)
+					: NULL;
+				player (file, next_file, &out_buf);
+				if (next_file)
+					free (next_file);
+
 				state = STATE_STOP;
 				set_info_rate (0);
 				set_info_bitrate (0);
