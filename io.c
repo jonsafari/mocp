@@ -520,7 +520,7 @@ static ssize_t io_peek_internal (struct io_stream *s, void *buf, size_t count)
 
 	/* Wait until enough data will be available */
 	while (io_ok_nolock(s) && !s->stop_read_thread
-			&& count > (ssize_t)fifo_buf_get_fill(&s->buf)
+			&& count > fifo_buf_get_fill(&s->buf)
 			&& fifo_buf_get_space (&s->buf)
 			&& !s->eof) {
 		debug ("waiting...");
