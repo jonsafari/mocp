@@ -1,7 +1,7 @@
 Before 2.2.0:
-* when adding or deleting something from the playlist - send command to other
-  interfaces.
-* something wrong with i and  TAB
+* Optimize plist_count() and plist_find_fname().
+* SyncPlaylist as command line option.
+* serial numbers for playlists. locking when sending a playlist to the server.
 * When adding files to the playlist, add them also to the server's playlist.
 * Fix deleting items from the playlist and the server playlist.
 * Shift-left and Shift-right for faster, silent seeking (10 sec. per keystroke).
@@ -19,6 +19,7 @@ Before 2.3.0:
 * Fake increase/decrease volume in alsa by 1% if such resolution is not
   possible.
 * A command to chenge the mixer device.
+* Reread ALSA mixer to see changes made by other programs.
 * Show the bitrate in the right time (the playback time, not while decoding).
 * Cache for tags in each directory. (.cache.m3u?)
 * Support for internet streams.
@@ -29,7 +30,6 @@ Before 2.3.0:
 * 'd' command must not delete an item from the server playlist if the
   server is not playing from the playlist.
 * config and command line option to use ASCII chars for drawing lines.
-* Equalizel like in Beep Media Player
 
 In future:
 
@@ -55,6 +55,7 @@ In future:
 * Song ratings or something like Q in XMMS.
 * Configurable sorting.
 * Command line option to get the current state and the title of the played file.
+* Equalizel like in Beep Media Player
 
 Maybe never:
 
