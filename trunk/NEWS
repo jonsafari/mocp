@@ -5,13 +5,12 @@
 	* Useing OSS directly - better stop and pause.
 	* Support xterm resizing.
 	* Using xterm title.
-TODO	* Autonext option.
-TODO	* Better shuffle option.
+	* Autonext option.
 TODO	* Configurable sorting (by file names or titles).
 	* Faster reading directory contents.
 	* Displaying time left to the end of songs.
 	* Fixed moving through symlinked directories.
-TODO	* Added setting scheduler
+TODO	* Added setting scheduler to realtime priority.
 	* Renamed executable file to mocp due to conflict with QT meta object
 	  compiler.
 	* Do not allow displaying bitrate too fast to read it.
