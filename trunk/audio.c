@@ -127,7 +127,8 @@ static void *play_thread (void *unused)
 
 void audio_reset ()
 {
-	hw.reset ();
+	if (hw.reset)
+		hw.reset ();
 }
 
 void audio_stop ()
@@ -228,6 +229,8 @@ void audio_close ()
 
 static void find_hw_funcs (const char *driver, struct hw_funcs *funcs)
 {
+	memset (funcs, 0, sizeof(funcs));
+
 #ifdef HAVE_OSS
 	if (!strcasecmp(driver, "oss")) {
 		oss_funcs (funcs);
@@ -256,7 +259,8 @@ void audio_init ()
 {
 	memset (&hw, 0, sizeof(hw));
 	find_hw_funcs (options_get_str("SoundDriver"), &hw);
-	hw.init ();
+	if (hw.init)
+		hw.init ();
 	buf_init (&out_buf, options_get_int("OutputBuffer") * 1024);
 	plist_init (&playlist);
 }
@@ -264,7 +268,8 @@ void audio_init ()
 void audio_exit ()
 {
 	audio_stop ();
-	hw.shutdown ();
+	if (hw.shutdown)
+		hw.shutdown ();
 	buf_destroy (&out_buf);
 	plist_free (&playlist);
 	player_cleanup ();
