@@ -670,6 +670,12 @@ char *find_match_dir (char *pattern)
 	closedir (dir);
 	free (search_dir);
 
+	if (matching_dir) {
+		matching_dir = (char *)xrealloc (matching_dir,
+				sizeof(char) * (strlen(matching_dir) + 2));
+		strcat (matching_dir, "/");
+	}
+
 	return matching_dir;
 }
 
