@@ -238,7 +238,7 @@ static int req_play ()
 	if (!(file = get_str(client_sock)))
 		return EOF;
 
-	logit ("Playing %s", file);
+	logit ("Playing %s", *file ? file : "first element on the list");
 	audio_play (file);
 	free (file);
 	
