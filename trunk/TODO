@@ -1,6 +1,10 @@
 Before 2.1.0:
 
-* Fix total time for VBR streams without XING.
+* m3u extension.
+* message when loading a playlist.
+* Displaying file time and format, something like:
+  [02:54|OGG] (configurable elements)
+* option to disable mmap(). (slow on NFS - use fstatfs()?) 
 * Configuration options and command line parameters for selecting pid file and
   socket. A parameter for selecting different configuration file.
 * General procedures for reading files instead of doing this at the decoder
@@ -8,6 +12,7 @@ Before 2.1.0:
 * Try mmap() again if size of the file has changed.
 * Start to buffer another file when the decoder ends playing.
 * Configurable sorting.
+* r - also reread the playlist.
 * iconv() to fix encoding.
 * Use pathconf() instead of PATH_MAX.
 * Showing the buffer state.
@@ -15,17 +20,17 @@ Before 2.1.0:
 * Adding the current directory to the playlist. Helps creating sorted
   playlist.
 * Update alsa mixer when changed by other application.
-* Display the file format.
 
 In future:
 
+* Cache for tags in each directory.
 * True shuffle.
+* Don't use nmap() on NFS. (how to detect if a file is on NFS?)
 * 'D' command must not delete an item from the server playlist if the
   server is not playing from the playlist.
 * ESD
 * General error/fatal functions that recognize if they are in the interface or
   in the server.
-* m3u extension.
 * Moving items on the playlist up and down.
 * Add a key for switching sort modes.
 * A bar showing time for current song.
