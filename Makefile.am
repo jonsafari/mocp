@@ -49,4 +49,4 @@ EXTRA_mocp_SOURCES = gnugetopt.h \
 mocp_LDADD = @EXTRA_OBJS@
 mocp_DEPENDENCIES = @EXTRA_OBJS@
 man_MANS = mocp.8
-EXTRA_DIST = config.example mocp.8 THANKS
+EXTRA_DIST = config.example mocp.8 THANKS example_theme
