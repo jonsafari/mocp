@@ -48,6 +48,26 @@ void tags_free (struct file_tags *tags)
 	free (tags);
 }
 
+/* Copy the tags data from src to dst freeing old fields if necessary. */
+void tags_copy (struct file_tags *dst, const struct file_tags *src)
+{
+	if (dst->title)
+		free (dst->title);
+	dst->title = xstrdup (src->title);
+
+	if (dst->artist)
+		free (dst->artist);
+	dst->artist = xstrdup (src->artist);
+
+	if (dst->album)
+		free (dst->album);
+	dst->album = xstrdup (src->album);
+	
+	dst->track = src->track;
+	dst->time = src->time;
+	dst->filled = src->filled;
+}
+
 struct file_tags *tags_new ()
 {
 	struct file_tags *tags;
@@ -68,14 +88,9 @@ static struct file_tags *tags_dup (const struct file_tags *tags)
 
 	struct file_tags *dtags;
 
-	dtags = (struct file_tags *)xmalloc (sizeof(struct file_tags));
-	dtags->title = xstrdup (tags->title);
-	dtags->artist = xstrdup (tags->artist);
-	dtags->album = xstrdup (tags->album);
-	dtags->track = tags->track;
-	dtags->time = tags->time;
-	dtags->filled = tags->filled;
-	
+	dtags = tags_new();
+	tags_copy (dtags, tags);
+
 	return dtags;
 }
 
