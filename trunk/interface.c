@@ -206,6 +206,7 @@ static char *help_text[] = {
 "  ENTER        Start playing files (from this file) or go to directory",
 "  s            Stop playing",
 "  n            Next song",
+"  b            Previous song",
 "  p, SPACE     Pause/unpause",
 "  LEFT, RIGHT  Seek backward, forward",
 "  h            Show this help screen",
@@ -2798,6 +2799,9 @@ static void menu_key (const int ch)
 				break;
 			case 'n':
 				send_int_to_srv (CMD_NEXT);
+				break;
+			case 'b':
+				send_int_to_srv (CMD_PREV);
 				break;
 			case 'p':
 			case ' ':
