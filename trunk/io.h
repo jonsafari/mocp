@@ -1,6 +1,14 @@
 #ifndef IO_H
 #define IO_H
 
+/* curl sometimes needs this */
+
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/time.h>
+#ifdef HAVE_SYS_SELECT_H
+# include <sys/select.h>
+#endif
 #include <unistd.h> /* fot [s]size_t */
 #include <pthread.h>
 #ifdef HAVE_CURL
