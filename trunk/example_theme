@@ -1,4 +1,4 @@
-# Example colour theme for MOC.
+# Example color theme for MOC.
 # You can use a theme by copying it to ~/.moc/themes directory, and using
 # Theme config option or -T command line option.
 #
@@ -63,8 +63,8 @@
 # You can specify a list of attributes separated by commas: attr1,attr2,attr3.
 # Don't use spaces anywhere in such a list.
 #
-# HINT: you have only 8 colours, but combined with attributes bold and/or
-# reversed you actually get more colours.
+# HINT: you have only 8 colors, but combined with attributes bold and/or
+# reversed you actually get more colors.
 #
 # If you don't specify some elements, the default values will be used.
 #

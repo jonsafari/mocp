@@ -72,7 +72,7 @@ struct
 
 static char cwd[PATH_MAX] = "";
 
-enum colour_index
+enum color_index
 {
 	CLR_BACKGROUND,
 	CLR_FRAME,
@@ -106,7 +106,7 @@ enum colour_index
 	CLR_LAST, /* Fake element to get number of collors */
 	CLR_WRONG
 };
-static int colours[CLR_LAST];
+static int colors[CLR_LAST];
 
 static WINDOW *main_win = NULL;
 static WINDOW *info_win = NULL;
@@ -311,20 +311,20 @@ int server_connect ()
 static void main_border ()
 {
 	/* Border */
-	wattrset (main_win, colours[CLR_FRAME]);
+	wattrset (main_win, colors[CLR_FRAME]);
 	wborder (main_win, ACS_VLINE, ACS_VLINE, ACS_HLINE, ' ',
 			ACS_ULCORNER, ACS_URCORNER, ACS_VLINE, ACS_VLINE);
 
 	/* The title */
 	wmove (main_win, 0, COLS / 2 - strlen(mainwin_title) / 2 - 1);
 	
-	wattrset (main_win, colours[CLR_FRAME]);
+	wattrset (main_win, colors[CLR_FRAME]);
 	waddch (main_win, ACS_RTEE);
 	
-	wattrset (main_win, colours[CLR_WIN_TITLE]);
+	wattrset (main_win, colors[CLR_WIN_TITLE]);
 	waddstr (main_win, mainwin_title);
 	
-	wattrset (main_win, colours[CLR_FRAME]);
+	wattrset (main_win, colors[CLR_FRAME]);
 	waddch (main_win, ACS_LTEE);
 }
 
@@ -346,12 +346,12 @@ static void set_title (const char *title)
 /* Draw border around the info window and add some static text */
 static void info_border ()
 {
-	wattrset (info_win, colours[CLR_FRAME]);
+	wattrset (info_win, colors[CLR_FRAME]);
 	wborder (info_win, ACS_VLINE, ACS_VLINE, ACS_HLINE, ACS_HLINE,
 			ACS_LTEE, ACS_RTEE, ACS_LLCORNER, ACS_LRCORNER);
 	
 	wmove (info_win, 2, 25);
-	wattrset (info_win, colours[CLR_LEGEND]);
+	wattrset (info_win, colors[CLR_LEGEND]);
 	waddstr (info_win, "KHz     Kbps");
 }
 
@@ -359,7 +359,7 @@ static void draw_interface_status ()
 {
 	int i;
 	
-	wattrset (info_win, colours[CLR_STATUS]);
+	wattrset (info_win, colors[CLR_STATUS]);
 	mvwaddstr (info_win, 0, 6, interface_status);
 	for (i = strlen(interface_status); i < STATUS_LINE_LEN; i++)
 		waddch (info_win, ' ');
@@ -451,14 +451,14 @@ static void draw_mixer () {
 	else
 		sprintf (bar, " Vol  %02d%%           ", vol);
 
-	wattrset (info_win, colours[CLR_FRAME]);
+	wattrset (info_win, colors[CLR_FRAME]);
 	mvwaddch (info_win, 0, COLS - 23, ACS_RTEE);
 	mvwaddch (info_win, 0, COLS - 2, ACS_LTEE);
 
-	wattrset (info_win, colours[CLR_BAR_FILL]);
+	wattrset (info_win, colors[CLR_BAR_FILL]);
 	mvwaddnstr (info_win, 0, COLS - 22, bar, vol / 5);
 
-	wattrset (info_win, colours[CLR_BAR_EMPTY]);
+	wattrset (info_win, colors[CLR_BAR_EMPTY]);
 	mvwaddstr (info_win, 0, COLS - 22 + (vol / 5), bar + vol / 5);
 }
 
@@ -467,10 +467,10 @@ static void draw_mixer () {
 static void entry_draw ()
 {
 	wmove (info_win, 0, 1);
-	wattrset (info_win, colours[CLR_ENTRY_TITLE]);
+	wattrset (info_win, colors[CLR_ENTRY_TITLE]);
 	wprintw (info_win, "%s:", entry.title);
 	
-	wattrset (info_win, colours[CLR_ENTRY]);
+	wattrset (info_win, colors[CLR_ENTRY]);
 	wprintw (info_win, " %-*s", entry.width, entry.text);
 
 	/* This hopefully will move the cursor to the right position. */
@@ -505,30 +505,30 @@ static void update_info_win ()
 
 	/* Show message it it didn't expire yet */
 	if (time(NULL) <= msg_timeout) {
-		wattrset (info_win, msg_is_error ? colours[CLR_ERROR]
-				: colours[CLR_MESSAGE]);
+		wattrset (info_win, msg_is_error ? colors[CLR_ERROR]
+				: colors[CLR_MESSAGE]);
 		mvwaddnstr (info_win, 1, 1, message, COLS - 2);
 	}
 	else {
 
 		/* The title */
-		wattrset (info_win, colours[CLR_TITLE]);
+		wattrset (info_win, colors[CLR_TITLE]);
 		mvwaddnstr (info_win, 1, 4, file_info.title,
 				COLS - 5);
 
 		/* State of playing */
-		wattrset (info_win, colours[CLR_STATE]);
+		wattrset (info_win, colors[CLR_STATE]);
 		mvwaddstr (info_win, 1, 1, file_info.state);
 	}
 
 	/* Current time */
-	wattrset (info_win, colours[CLR_TIME_CURRENT]);
+	wattrset (info_win, colors[CLR_TIME_CURRENT]);
 	wmove (info_win, 2, 1);
 	waddstr (info_win, file_info.curr_time);
 
 	/* Time left */
 	if (*file_info.time_left) {
-		wattrset (info_win, colours[CLR_TIME_LEFT]);
+		wattrset (info_win, colors[CLR_TIME_LEFT]);
 		waddch (info_win, ' ');
 		waddstr (info_win, file_info.time_left);
 	}
@@ -537,17 +537,17 @@ static void update_info_win ()
 	if (file_info.time[0] != 0) {
 		wmove (info_win, 2, 13);
 		
-		wattrset (info_win, colours[CLR_TIME_LEFT_FRAMES]);
+		wattrset (info_win, colors[CLR_TIME_LEFT_FRAMES]);
 		waddch (info_win, '[');
 		
-		wattrset (info_win, colours[CLR_TIME_TOTAL]);
+		wattrset (info_win, colors[CLR_TIME_TOTAL]);
 		wprintw (info_win, "%s", file_info.time);
 		
-		wattrset (info_win, colours[CLR_TIME_LEFT_FRAMES]);
+		wattrset (info_win, colors[CLR_TIME_LEFT_FRAMES]);
 		waddch (info_win, ']');
 	}
 
-	wattrset (info_win, colours[CLR_SOUND_PARAMS]);
+	wattrset (info_win, colors[CLR_SOUND_PARAMS]);
 
 	/* Rate */
 	wmove (info_win, 2, 25 - strlen(file_info.rate));
@@ -560,36 +560,36 @@ static void update_info_win ()
 	/* Channels */
 	wmove (info_win, 2, 38);
 	if (file_info.channels == 2)
-		wattrset (info_win, colours[CLR_INFO_ENABLED]);
+		wattrset (info_win, colors[CLR_INFO_ENABLED]);
 	else
-		wattrset (info_win, colours[CLR_INFO_DISABLED]);
+		wattrset (info_win, colors[CLR_INFO_DISABLED]);
 	waddstr (info_win, "[STEREO]");
 	
 	/* Shuffle & repeat */
 	wmove (info_win, 2, COLS - sizeof("[SHUFFLE] [REPEAT] [NEXT]"));
 	if (options_get_int("Shuffle"))
-		wattrset (info_win, colours[CLR_INFO_ENABLED]);
+		wattrset (info_win, colors[CLR_INFO_ENABLED]);
 	else
-		wattrset (info_win, colours[CLR_INFO_DISABLED]);
+		wattrset (info_win, colors[CLR_INFO_DISABLED]);
 	waddstr (info_win, "[SHUFFLE] ");
 
 	if (options_get_int("Repeat"))
-		wattrset (info_win, colours[CLR_INFO_ENABLED]);
+		wattrset (info_win, colors[CLR_INFO_ENABLED]);
 	else
-		wattrset (info_win, colours[CLR_INFO_DISABLED]);
+		wattrset (info_win, colors[CLR_INFO_DISABLED]);
 	waddstr (info_win, "[REPEAT] ");
 
 	if (options_get_int("AutoNext"))
-		wattrset (info_win, colours[CLR_INFO_ENABLED]);
+		wattrset (info_win, colors[CLR_INFO_ENABLED]);
 	else
-		wattrset (info_win, colours[CLR_INFO_DISABLED]);
+		wattrset (info_win, colors[CLR_INFO_DISABLED]);
 	waddstr (info_win, "[NEXT]");
 	
 	if (entry.type != ENTRY_DISABLED)
 		entry_draw ();
 	else {
 		/* Status line */
-		wattrset (info_win, colours[CLR_FRAME]);
+		wattrset (info_win, colors[CLR_FRAME]);
 		mvwaddch (info_win, 0, 5, ACS_RTEE);
 		mvwaddch (info_win, 0, 5 + STATUS_LINE_LEN + 1, ACS_LTEE);
 		
@@ -796,9 +796,9 @@ static struct menu *make_menu (struct plist *plist, struct file_list *dirs,
 	
 	/* add '..' */
 	menu_items[0] = menu_newitem ("../", -1, F_DIR, "..");
-	menu_item_set_attr_normal (menu_items[0], colours[CLR_MENU_ITEM_DIR]);
+	menu_item_set_attr_normal (menu_items[0], colors[CLR_MENU_ITEM_DIR]);
 	menu_item_set_attr_sel (menu_items[0],
-			colours[CLR_MENU_ITEM_DIR_SELECTED]);
+			colors[CLR_MENU_ITEM_DIR_SELECTED]);
 	menu_pos = 1;
 	
 	if (dirs)
@@ -811,9 +811,9 @@ static struct menu *make_menu (struct plist *plist, struct file_list *dirs,
 			menu_items[menu_pos] =
 				menu_newitem (title, -1, F_DIR, dirs->items[i]);
 			menu_item_set_attr_normal (menu_items[menu_pos],
-					colours[CLR_MENU_ITEM_DIR]);
+					colors[CLR_MENU_ITEM_DIR]);
 			menu_item_set_attr_sel (menu_items[menu_pos],
-					colours[CLR_MENU_ITEM_DIR_SELECTED]);
+					colors[CLR_MENU_ITEM_DIR_SELECTED]);
 			menu_pos++;
 		}
 
@@ -823,9 +823,9 @@ static struct menu *make_menu (struct plist *plist, struct file_list *dirs,
 					strrchr(playlists->items[i], '/') + 1,
 					-1, F_PLAYLIST,	playlists->items[i]);
 			menu_item_set_attr_normal (menu_items[menu_pos],
-					colours[CLR_MENU_ITEM_PLAYLIST]);
+					colors[CLR_MENU_ITEM_PLAYLIST]);
 			menu_item_set_attr_sel (menu_items[menu_pos],
-					colours[
+					colors[
 					CLR_MENU_ITEM_PLAYLIST_SELECTED]);
 			menu_pos++;
 		}
@@ -848,13 +848,13 @@ static struct menu *make_menu (struct plist *plist, struct file_list *dirs,
 			}
 			
 			menu_item_set_attr_normal (menu_items[menu_pos],
-					colours[CLR_MENU_ITEM_FILE]);
+					colors[CLR_MENU_ITEM_FILE]);
 			menu_item_set_attr_sel (menu_items[menu_pos],
-					colours[CLR_MENU_ITEM_FILE_SELECTED]);
+					colors[CLR_MENU_ITEM_FILE_SELECTED]);
 			menu_item_set_attr_marked (menu_items[menu_pos],
-					colours[CLR_MENU_ITEM_FILE_MARKED]);
+					colors[CLR_MENU_ITEM_FILE_MARKED]);
 			menu_item_set_attr_sel_marked (menu_items[menu_pos],
-					colours[
+					colors[
 					CLR_MENU_ITEM_FILE_MARKED_SELECTED]);
 			
 			menu_item_set_format (menu_items[menu_pos],
@@ -867,7 +867,7 @@ static struct menu *make_menu (struct plist *plist, struct file_list *dirs,
 	menu_set_show_format (menu, options_get_int("ShowFormat"));
 	menu_set_show_time (menu,
 			strcasecmp(options_get_str("ShowTime"), "no"));
-	menu_set_info_attr (menu, colours[CLR_MENU_ITEM_INFO]);
+	menu_set_info_attr (menu, colors[CLR_MENU_ITEM_INFO]);
 
 	if (read_time) {
 		set_iface_status_ref ("Getting times...");
@@ -1524,9 +1524,9 @@ static void load_playlist ()
 	set_iface_status_ref (NULL);
 }
 
-/* Initialize a colour item of given index (CLR_*) with colours and
+/* Initialize a color item of given index (CLR_*) with colors and
  * attributes. */
-static void make_colour (const enum colour_index index, const short foreground,
+static void make_color (const enum color_index index, const short foreground,
 		const short background,	const int attr)
 {
 	static int pair = 1;
@@ -1535,47 +1535,47 @@ static void make_colour (const enum colour_index index, const short foreground,
 	assert (index < CLR_LAST);
 
 	init_pair (pair, foreground, background);
-	colours[index] = COLOR_PAIR (pair) | attr;
+	colors[index] = COLOR_PAIR (pair) | attr;
 
 	pair++;
 }
 
-static void set_default_colours ()
+static void set_default_colors ()
 {
-	make_colour (CLR_BACKGROUND, COLOR_WHITE, COLOR_BLUE, A_NORMAL);
-	make_colour (CLR_FRAME, COLOR_WHITE, COLOR_BLUE, A_NORMAL);
-	make_colour (CLR_WIN_TITLE, COLOR_WHITE, COLOR_BLUE, A_NORMAL);
-	make_colour (CLR_MENU_ITEM_DIR, COLOR_WHITE, COLOR_BLUE, A_BOLD);
-	make_colour (CLR_MENU_ITEM_DIR_SELECTED, COLOR_WHITE, COLOR_BLACK,
+	make_color (CLR_BACKGROUND, COLOR_WHITE, COLOR_BLUE, A_NORMAL);
+	make_color (CLR_FRAME, COLOR_WHITE, COLOR_BLUE, A_NORMAL);
+	make_color (CLR_WIN_TITLE, COLOR_WHITE, COLOR_BLUE, A_NORMAL);
+	make_color (CLR_MENU_ITEM_DIR, COLOR_WHITE, COLOR_BLUE, A_BOLD);
+	make_color (CLR_MENU_ITEM_DIR_SELECTED, COLOR_WHITE, COLOR_BLACK,
 			A_BOLD);
-	make_colour (CLR_MENU_ITEM_PLAYLIST, COLOR_WHITE, COLOR_BLUE, A_BOLD);
-	make_colour (CLR_MENU_ITEM_PLAYLIST_SELECTED, COLOR_WHITE, COLOR_BLACK,
+	make_color (CLR_MENU_ITEM_PLAYLIST, COLOR_WHITE, COLOR_BLUE, A_BOLD);
+	make_color (CLR_MENU_ITEM_PLAYLIST_SELECTED, COLOR_WHITE, COLOR_BLACK,
 			A_BOLD);
-	make_colour (CLR_MENU_ITEM_FILE, COLOR_WHITE, COLOR_BLUE, A_NORMAL);
-	make_colour (CLR_MENU_ITEM_FILE_SELECTED, COLOR_WHITE,
+	make_color (CLR_MENU_ITEM_FILE, COLOR_WHITE, COLOR_BLUE, A_NORMAL);
+	make_color (CLR_MENU_ITEM_FILE_SELECTED, COLOR_WHITE,
 			COLOR_BLACK, A_NORMAL);
-	make_colour (CLR_MENU_ITEM_FILE_MARKED, COLOR_GREEN, COLOR_BLUE,
+	make_color (CLR_MENU_ITEM_FILE_MARKED, COLOR_GREEN, COLOR_BLUE,
 			A_BOLD);
-	make_colour (CLR_MENU_ITEM_FILE_MARKED_SELECTED, COLOR_GREEN,
+	make_color (CLR_MENU_ITEM_FILE_MARKED_SELECTED, COLOR_GREEN,
 			COLOR_BLACK, A_BOLD);
-	make_colour (CLR_MENU_ITEM_INFO, COLOR_BLUE, COLOR_BLUE, A_BOLD);
-	make_colour (CLR_STATUS, COLOR_WHITE, COLOR_BLUE, A_NORMAL);
-	make_colour (CLR_TITLE, COLOR_WHITE, COLOR_BLUE, A_BOLD);
-	make_colour (CLR_STATE, COLOR_WHITE, COLOR_BLUE, A_BOLD);
-	make_colour (CLR_TIME_CURRENT, COLOR_WHITE, COLOR_BLUE, A_BOLD);
-	make_colour (CLR_TIME_LEFT, COLOR_WHITE, COLOR_BLUE, A_BOLD);
-	make_colour (CLR_TIME_LEFT_FRAMES, COLOR_WHITE, COLOR_BLUE, A_NORMAL);
-	make_colour (CLR_TIME_TOTAL, COLOR_WHITE, COLOR_BLUE, A_BOLD);
-	make_colour (CLR_SOUND_PARAMS, COLOR_WHITE, COLOR_BLUE, A_BOLD);
-	make_colour (CLR_LEGEND, COLOR_WHITE, COLOR_BLUE, A_NORMAL);
-	make_colour (CLR_INFO_DISABLED, COLOR_BLUE, COLOR_BLUE, A_BOLD);
-	make_colour (CLR_INFO_ENABLED, COLOR_WHITE, COLOR_BLUE, A_BOLD);
-	make_colour (CLR_BAR_EMPTY, COLOR_WHITE, COLOR_BLUE, A_NORMAL);
-	make_colour (CLR_BAR_FILL, COLOR_BLACK, COLOR_CYAN, A_NORMAL);
-	make_colour (CLR_ENTRY, COLOR_WHITE, COLOR_BLUE, A_NORMAL);
-	make_colour (CLR_ENTRY_TITLE, COLOR_BLACK, COLOR_CYAN, A_BOLD);
-	make_colour (CLR_ERROR, COLOR_RED, COLOR_BLUE, A_BOLD);
-	make_colour (CLR_MESSAGE, COLOR_GREEN, COLOR_BLUE, A_BOLD);
+	make_color (CLR_MENU_ITEM_INFO, COLOR_BLUE, COLOR_BLUE, A_BOLD);
+	make_color (CLR_STATUS, COLOR_WHITE, COLOR_BLUE, A_NORMAL);
+	make_color (CLR_TITLE, COLOR_WHITE, COLOR_BLUE, A_BOLD);
+	make_color (CLR_STATE, COLOR_WHITE, COLOR_BLUE, A_BOLD);
+	make_color (CLR_TIME_CURRENT, COLOR_WHITE, COLOR_BLUE, A_BOLD);
+	make_color (CLR_TIME_LEFT, COLOR_WHITE, COLOR_BLUE, A_BOLD);
+	make_color (CLR_TIME_LEFT_FRAMES, COLOR_WHITE, COLOR_BLUE, A_NORMAL);
+	make_color (CLR_TIME_TOTAL, COLOR_WHITE, COLOR_BLUE, A_BOLD);
+	make_color (CLR_SOUND_PARAMS, COLOR_WHITE, COLOR_BLUE, A_BOLD);
+	make_color (CLR_LEGEND, COLOR_WHITE, COLOR_BLUE, A_NORMAL);
+	make_color (CLR_INFO_DISABLED, COLOR_BLUE, COLOR_BLUE, A_BOLD);
+	make_color (CLR_INFO_ENABLED, COLOR_WHITE, COLOR_BLUE, A_BOLD);
+	make_color (CLR_BAR_EMPTY, COLOR_WHITE, COLOR_BLUE, A_NORMAL);
+	make_color (CLR_BAR_FILL, COLOR_BLACK, COLOR_CYAN, A_NORMAL);
+	make_color (CLR_ENTRY, COLOR_WHITE, COLOR_BLUE, A_NORMAL);
+	make_color (CLR_ENTRY_TITLE, COLOR_BLACK, COLOR_CYAN, A_BOLD);
+	make_color (CLR_ERROR, COLOR_RED, COLOR_BLUE, A_BOLD);
+	make_color (CLR_MESSAGE, COLOR_GREEN, COLOR_BLUE, A_BOLD);
 }
 
 static void theme_parse_error (const int line, const char *msg)
@@ -1583,15 +1583,15 @@ static void theme_parse_error (const int line, const char *msg)
 	interface_fatal ("Parse error in theme file line %d: %s", line, msg);
 }
 
-/* Find the index of a colour element by name. Return CLR_WRONG if not found. */
-static enum colour_index find_colour_element_name (const char *name)
+/* Find the index of a color element by name. Return CLR_WRONG if not found. */
+static enum color_index find_color_element_name (const char *name)
 {
 	int i;
 	static struct
 	{
 		char *name;
-		enum colour_index idx;
-	} colour_tab[] = {
+		enum color_index idx;
+	} color_tab[] = {
 		{ "background",		CLR_BACKGROUND },
 		{ "frame",		CLR_FRAME },
 		{ "window_title",	CLR_WIN_TITLE },
@@ -1624,22 +1624,22 @@ static enum colour_index find_colour_element_name (const char *name)
 	};
 	assert (name != NULL);
 
-	for (i = 0; i < (int)(sizeof(colour_tab)/sizeof(colour_tab[0])); i++)
-		if (!strcasecmp(colour_tab[i].name, name))
-			return colour_tab[i].idx;
+	for (i = 0; i < (int)(sizeof(color_tab)/sizeof(color_tab[0])); i++)
+		if (!strcasecmp(color_tab[i].name, name))
+			return color_tab[i].idx;
 
 	return CLR_WRONG;
 }
 
-/* Find the curses colour by name. Return -1 if the colour is unknown. */
-static short find_colour_name (const char *name)
+/* Find the curses color by name. Return -1 if the color is unknown. */
+static short find_color_name (const char *name)
 {
 	int i;
 	static struct
 	{
 		char *name;
-		short colour;
-	} colour_tab[] = {
+		short color;
+	} color_tab[] = {
 		{ "black",	COLOR_BLACK },
 		{ "red",	COLOR_RED },
 		{ "green",	COLOR_GREEN },
@@ -1651,14 +1651,14 @@ static short find_colour_name (const char *name)
 
 	};
 	
-	for (i = 0; i < (int)(sizeof(colour_tab)/sizeof(colour_tab[0])); i++)
-		if (!strcasecmp(colour_tab[i].name, name))
-			return colour_tab[i].colour;
+	for (i = 0; i < (int)(sizeof(color_tab)/sizeof(color_tab[0])); i++)
+		if (!strcasecmp(color_tab[i].name, name))
+			return color_tab[i].color;
 	
 	return -1;
 }
 
-static void load_colour_theme (const char *fname)
+static void load_color_theme (const char *fname)
 {
 	FILE *file;
 	char path[PATH_MAX];
@@ -1684,7 +1684,7 @@ static void load_colour_theme (const char *fname)
 		char *tmp;
 		char *foreground, *background, *attributes;
 		int curses_attr = 0;
-		enum colour_index element;
+		enum color_index element;
 		short clr_fore, clr_back;
 		
 		line_num++;
@@ -1698,10 +1698,10 @@ static void load_colour_theme (const char *fname)
 		if (!(tmp = strtok(NULL, " \t")) || strcmp(tmp, "="))
 			theme_parse_error (line_num, "expected '='");
 		if (!(foreground = strtok(NULL, " \t")))
-			theme_parse_error (line_num, "foreground colour not "
+			theme_parse_error (line_num, "foreground color not "
 					"specified");
 		if (!(background = strtok(NULL, " \t")))
-			theme_parse_error (line_num, "background colour not "
+			theme_parse_error (line_num, "background color not "
 					"specified");
 		if ((attributes = strtok(NULL, " \t"))) {
 			char *attr;
@@ -1736,16 +1736,16 @@ static void load_colour_theme (const char *fname)
 			} while ((attr = strtok(NULL, ",")));
 		}
 
-		if ((element = find_colour_element_name(name)) == CLR_WRONG)
+		if ((element = find_color_element_name(name)) == CLR_WRONG)
 			theme_parse_error (line_num, "unknown element");
-		if ((clr_fore = find_colour_name(foreground)) == -1)
+		if ((clr_fore = find_color_name(foreground)) == -1)
 			theme_parse_error (line_num,
-					"bad foreground colour name");
-		if ((clr_back = find_colour_name(background)) == -1)
+					"bad foreground color name");
+		if ((clr_back = find_color_name(background)) == -1)
 			theme_parse_error (line_num,
-					"bad background colour name");
+					"bad background color name");
 
-		make_colour (element, clr_fore, clr_back, curses_attr);
+		make_color (element, clr_fore, clr_back, curses_attr);
 		
 		free (line);
 	}
@@ -1790,17 +1790,17 @@ void init_interface (const int sock, const int debug, char **args,
 	
 	detect_term ();
 	start_color ();
-	set_default_colours ();
+	set_default_colors ();
 
 	if (options_get_str("Theme"))
-		load_colour_theme (options_get_str("Theme"));
+		load_color_theme (options_get_str("Theme"));
 
 	/* windows */
 	main_win = newwin (LINES - 4, COLS, 0, 0);
 	keypad (main_win, TRUE);
 	info_win = newwin (4, COLS, LINES - 4, 0);
-	wbkgd (main_win, colours[CLR_BACKGROUND]);
-	wbkgd (info_win, colours[CLR_BACKGROUND]);
+	wbkgd (main_win, colors[CLR_BACKGROUND]);
+	wbkgd (info_win, colors[CLR_BACKGROUND]);
 
 	msg_timeout = time(NULL) + 3;
 	reset_file_info ();
@@ -2104,22 +2104,22 @@ static void print_help_screen ()
 	int max_lines = help_screen_top + LINES - 6;
 	
 	werase (main_win);
-	wbkgd (main_win, colours[CLR_BACKGROUND]);
+	wbkgd (main_win, colors[CLR_BACKGROUND]);
 
 	wmove (main_win, 0, 0);
 	if (help_screen_top != 0) {
-		wattrset (main_win, colours[CLR_MESSAGE]);
+		wattrset (main_win, colors[CLR_MESSAGE]);
 		mvwaddstr (main_win, 0, COLS/2 - (sizeof("...MORE...")-1)/2,
 				"...MORE...");
 	}
 	wmove (main_win, 1, 0);
 	for (i = help_screen_top; i < max_lines && i < HELP_LINES; i++) {
-		wattrset (main_win, colours[CLR_LEGEND]);
+		wattrset (main_win, colors[CLR_LEGEND]);
 		waddstr (main_win, help_text[i]);
 		waddch (main_win, '\n');
 	}
 	if (i != HELP_LINES) {
-		wattrset (main_win, colours[CLR_MESSAGE]);
+		wattrset (main_win, colors[CLR_MESSAGE]);
 		mvwaddstr (main_win, LINES-5,
 				COLS/2 - (sizeof("...MORE...")-1)/2,
 				"...MORE...");
