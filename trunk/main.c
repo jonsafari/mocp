@@ -163,8 +163,7 @@ static void start_moc (const struct parameters *params)
 		switch (fork()) {
 			case 0: /* child - start server */
 				list_sock = server_init (params->debug,
-						params->foreground,
-						params->sound_driver);
+						params->foreground);
 				write (notify_pipe[1], &i, sizeof(i));
 				close (notify_pipe[0]);
 				close (notify_pipe[1]);
@@ -188,8 +187,7 @@ static void start_moc (const struct parameters *params)
 	else if (!params->foreground && params->only_server)
 		fatal ("Server is already running");
 	else if (params->foreground && params->only_server) {
-		list_sock = server_init (params->debug, params->foreground,
-				params->sound_driver);
+		list_sock = server_init (params->debug, params->foreground);
 		server_loop (list_sock);
 	}
 
@@ -255,7 +253,7 @@ static void show_usage (const char *prg_name) {
 }
 
 /* Check if the sound driver string presents a proper driver. */
-static int proper_sound_driver (const char *driver)
+int proper_sound_driver (const char *driver)
 {
 #ifdef HAVE_OSS
 	if (!strcasecmp(driver, "oss"))
@@ -287,14 +285,6 @@ int main (int argc, char *argv[])
 		/* foreground */	0,
 		/* sound_driver */	""
 	};
-
-#ifdef HAVE_OSS
-	strcpy (params.sound_driver, "oss");
-#elif !define(NDEBUG)
-	strcpy (params.sound_driver, "null");
-#else
-# error "Can't find any sound driver"
-#endif
 
 	while ((ret = getopt_long(argc, argv, "VhDSFR:", long_options,
 					&opt_index)) != -1) {
@@ -329,7 +319,8 @@ int main (int argc, char *argv[])
 	if (params.foreground && !params.only_server)
 		fatal ("Can't use --foreground without --server");
 
-	if (!proper_sound_driver(params.sound_driver))
+	if (params.sound_driver[0]
+			&& !proper_sound_driver(params.sound_driver))
 		fatal ("Bad sound driver.");
 
 	start_moc (&params);
