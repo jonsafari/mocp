@@ -326,7 +326,7 @@ static void *io_read_thread (void *data)
 		s->after_seek = 0;
 		UNLOCK (s->buf_mutex);
 		
-		read_buf_fill = io_internal_read (s, 1, read_buf,
+		read_buf_fill = io_internal_read (s, 0, read_buf,
 				sizeof(read_buf));
 		UNLOCK (s->io_mutex);
 		debug ("Read %d bytes", (int)read_buf_fill);
