@@ -481,12 +481,15 @@ void audio_set_mixer (const int val)
 
 void audio_plist_delete (const char *file)
 {
-	int num = plist_find_fname (&playlist, file);
-
-	if (num != -1) {
-		plist_clear (&shuffled_plist);
+	int num;
+	
+	num = plist_find_fname (&playlist, file);
+	if (num != -1)
 		plist_delete (&playlist, num);
-	}
+	
+	num = plist_find_fname (&shuffled_plist, file);
+	if (num != -1)
+		plist_delete (&shuffled_plist, num);
 }
 
 /* Get the time of a file if it is on the playlist and the time is avilable. */
