@@ -238,7 +238,7 @@ static int count_time_internal (struct mp3_data *data)
 	else {
 		/* the durations have been added up, and the number of frames
 		   counted. We do nothing here. */
-		debug ("Counted duration by counting the frames durations in "
+		debug ("Counted duration by counting frames durations in "
 				"VBR file.");
 	}
 
