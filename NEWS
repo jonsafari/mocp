@@ -14,6 +14,8 @@
 	  command line.
 	* Fixed invoking MOC with relative path arguments
 	* Fixed displaying file title longer than the window.
+	* Fixed broken menu after resizing terminal when help screen is
+	  displayed.
 2.0.0
 	* Split into client-server, you can detach the interface and leave
 	  the server playing songs in the background (keys: q - background,
