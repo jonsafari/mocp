@@ -157,6 +157,7 @@ void options_init ()
 	option_add_str ("Theme", NULL);
 	option_add_str ("MOCDir", "~/.moc");
 	option_add_int ("UseMmap", 1);
+	option_add_int ("Precache", 1);
 }
 
 /* Return 1 if a parameter to an integer option is valid. */
