@@ -1893,7 +1893,8 @@ void init_interface (const int sock, const int debug, char **args,
 	else
 		enter_first_dir ();
 
-	load_playlist ();
+	if (plist_count(playlist) == 0)
+		load_playlist ();
 	
 	menu_draw (curr_menu);
 	wrefresh (main_win);
@@ -2624,6 +2625,7 @@ static void toggle_show_time ()
 			menu_set_show_time (curr_plist_menu, 1);
 		fill_times (playlist, playlist_menu);
 		fill_times (curr_plist, curr_plist_menu);
+		update_info_win ();
 		set_iface_status_ref ("ShowTime: yes");
 		
 	}
