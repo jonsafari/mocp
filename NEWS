@@ -8,7 +8,7 @@
 	  (i command).
 	* Ability to use default (transparent) and grey color.
 	* Added a theme with transparent background.
-	* Added nightly_theme.
+	* Added nightly_theme (Wim Speekenbrink).
 	* Added green_theme (Jacek Lehmann).
 	* Global theme directory.
 	* MOC should now work on big-endian processors.
