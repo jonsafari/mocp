@@ -194,6 +194,11 @@ void player (char *file, char *next_file, struct out_buf *out_buf)
 	
 	precache_wait (&precache);
 
+	if (precache.ok && strcmp(precache.file, file)) {
+		logit ("The precached file is not the file we want.");
+		precache.f->close (precache.decoder_data);
+	}
+
 	if (precache.ok && !strcmp(precache.file, file)) {
 		logit ("Using precached file");
 
