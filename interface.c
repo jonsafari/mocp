@@ -223,9 +223,11 @@ static char *help_text[] = {
 "  r            Reread directory content",
 "  q            Detach MOC from the server",
 "  V            Save the playlist in the current directory",
-"  g            Search the menu. The following commands can be used in this",
+"  g, /         Search the menu. The following commands can be used in this",
 "               entry:",
 "      CTRL-g   Find next",
+"      CTRL-n   Find next",
+"      Esc      Exit the entry",
 "      CTRL-x   Exit the entry",
 "  CTRL-t       Toggle ShowTime option",
 "  CTRL-f       Toggle ShowFormat option",
@@ -498,24 +500,43 @@ static void sec_to_min (char *buff, const int seconds)
 		strcpy (buff, "!!!!!");
 }
 
+/* Convert time in second to min:sec text format(for total time in playlist).
+ * buff must be 10 chars long. */
+static void sec_to_min_plist (char *buff, const int seconds)
+{
+	assert (seconds >= 0);
+	if (seconds < 999 * 60 * 60 - 1) {
+		
+		/* the time is less than 999 * 60 minutes */
+		int hour, min, sec;
+		hour = seconds / 3600;
+		min  = (seconds / 60) % 60;
+		sec  = seconds % 60;
+		
+		snprintf (buff, 10, "%03d:%02d:%02d", hour, min, sec);
+	}
+	else
+		strcpy (buff, "!!!!!!!!!");
+}
+
 /* Draw the playlist time. */
 static void draw_plist_time ()
 {
 	int all_files; /* Does the time count all files? */
 	int time;
-	char buf[6];
+	char buf[10];
 	
 	wattrset (info_win, colors[CLR_FRAME]);
-	mvwaddch (info_win, 0, COLS - 9, ACS_RTEE);
+	mvwaddch (info_win, 0, COLS - 13, ACS_RTEE);
 	mvwaddch (info_win, 0, COLS - 2, ACS_LTEE);
 
 	time = plist_total_time (visible_plist, &all_files);
 	
 	wattrset (info_win, colors[CLR_PLIST_TIME]);
-	sec_to_min (buf, time);
-	wmove (info_win, 0, COLS - 8);
+	sec_to_min_plist (buf, time);
+	wmove (info_win, 0, COLS - 12);
 	waddch (info_win, all_files ? ' ' : '>');
-	wprintw (info_win, "%05s", buf);
+	wprintw (info_win, "%09s", buf);
 }
 
 /* Draw the entry. Use this function at the end of screen drawing, because
@@ -2364,7 +2385,7 @@ static int entry_search_key (const int ch)
 			entry.text[len-1] = 0;
 		return 1;
 	}
-	if (ch == CTRL('g')) {
+	if (ch == CTRL('g') || (ch == CTRL('n'))) {
 		int item;
 
 		/* Find next matching */
@@ -2816,6 +2837,7 @@ static void menu_key (const int ch)
 				seek (1);
 				break;
 			case 'h':
+			case '?':
 				help_screen ();
 				break;
 			case 'M':
@@ -2860,6 +2882,7 @@ static void menu_key (const int ch)
 				do_update_menu = 1;
 				break;
 			case 'g':
+			case '/':
 				make_entry (ENTRY_SEARCH, "SEARCH");
 				break;
 			case 'V':
@@ -2885,7 +2908,6 @@ static void menu_key (const int ch)
 			case 'i':
 				make_entry (ENTRY_GO_DIR, "GO");
 				break;
-			/*case CTRL(KEY_PPAGE):*/
 			case 'U':
 				go_dir_up ();
 				do_update_menu = 1;
