@@ -274,13 +274,13 @@ static void *mp3_open (const char *file)
 
 	/* Open the file */
 	if ((data->infile = open(file, O_RDONLY)) == -1) {
-		error ("open() failed: %s\n", strerror (errno));
+		error ("open() failed: %s", strerror(errno));
 		free (data);
 		return NULL;
 	}
 
 	if (fstat(data->infile, &stat) == -1) {
-		error ("Can't stat() file: %s\n", strerror(errno));
+		error ("Can't stat() file: %s", strerror(errno));
 		close (data->infile);
 		free (data);
 		return NULL;
