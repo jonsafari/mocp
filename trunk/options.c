@@ -191,7 +191,7 @@ int check_int_option (const char *name, const int val)
 			return 0;
 	}
 	else if (!strcasecmp(name, "InputBuffer")) {
-		if (val < 8)
+		if (val < 32)
 			return 0;
 	}
 	return 1;
