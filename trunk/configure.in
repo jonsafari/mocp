@@ -170,6 +170,23 @@ then
 		EXTRA_OBJS="$EXTRA_OBJS flac.o"])
 fi
 
+dnl libsndfile
+COMPILE_SNDFILE="no"
+AC_ARG_WITH(sndfile, AS_HELP_STRING(--without-sndfile,
+	    Compile without libsndfile))
+
+if test "x$withsndfile" != "xno"
+then
+	PKG_CHECK_MODULES(sndfile, sndfile >= 1.0.0,
+			   [AC_DEFINE([HAVE_SNDFILE], 1,
+				      [Define you have libsndfile version > 1.0.0])
+			   LIBS="$LIBS $sndfile_LIBS"
+			   CFLAGS="$CFLAGS $sndfile_CFLAGS"
+			   EXTRA_OBJS="$EXTRA_OBJS sndfile_formats.o"
+			   COMPILE_SNDFILE="yes"]
+			    )
+fi
+
 LIBS="$LIBS -lncurses"
 		
 AC_OUTPUT(Makefile \
@@ -185,6 +202,8 @@ echo "OSS:			"$COMPILE_OSS
 echo "ALSA:			"$COMPILE_ALSA
 echo "DEBUG:			"$COMPILE_DEBUG
 echo "ICONV:			"$COMPILE_ICONV
+echo "SNDFILE:		"$COMPILE_SNDFILE
+echo
 echo "----------------------------------------------------------------"
 
 echo "WARNING: since MOC version 2 the executable file name was changed to mocp!"

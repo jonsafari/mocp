@@ -28,8 +28,6 @@ mocp_SOURCES = log.c \
 	       options.h \
 	       player.c \
 	       player.h \
-	       wav.c \
-	       wav.h \
 	       playlist_file.c \
 	       playlist_file.h
 EXTRA_mocp_SOURCES = gnugetopt.h \
@@ -48,7 +46,9 @@ EXTRA_mocp_SOURCES = gnugetopt.h \
 		     alsa.c \
 		     alsa.h \
 		     flac.c \
-		     flac.h
+		     flac.h \
+		     sndfile_formats.c \
+		     sndfile_formats.h
 mocp_LDADD = @EXTRA_OBJS@
 mocp_DEPENDENCIES = @EXTRA_OBJS@
 man_MANS = mocp.8
