@@ -1280,6 +1280,7 @@ static int get_file_time (char *file)
 	if (cache_file && cache_time != -1 && !strcmp(cache_file, file)
 			&& cache_mtime == file_mtime) {
 		debug ("Using cache");
+		update_times (file, cache_time);
 		return cache_time;
 	}
 	else
