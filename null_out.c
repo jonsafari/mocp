@@ -19,14 +19,6 @@
 static struct sound_params params = { 0, 0, 0 };
 
  
-static void null_init ()
-{
-}
-
-static void null_shutdown ()
-{
-}
-
 static int null_open (struct sound_params *sound_params)
 {
 	params = *sound_params;
@@ -83,8 +75,6 @@ static int null_get_channels ()
 
 void null_funcs (struct hw_funcs *funcs)
 {
-	funcs->init = null_init;
-	funcs->shutdown = null_shutdown;
 	funcs->open = null_open;
 	funcs->close = null_close;
 	funcs->play = null_play;
