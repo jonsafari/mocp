@@ -310,3 +310,11 @@ void audio_set_mixer (const int val)
 	else
 		logit ("Tried to set mixer to volume out of range.");
 }
+
+void audio_plist_delete (const char *file)
+{
+	int num = plist_find_fname (&playlist, file);
+
+	if (num != -1)
+		plist_delete (&playlist, num);
+}
