@@ -244,6 +244,7 @@ int read_directory (const char *directory, struct file_list *dirs,
 	DIR *dir;
 	struct dirent *entry;
 	int show_hidden = options_get_int ("ShowHiddenFiles");
+	int dir_is_root;
 	
 	assert (directory != NULL);
 	assert (*directory == '/');
@@ -256,6 +257,12 @@ int read_directory (const char *directory, struct file_list *dirs,
 		return 0;
 	}
 
+	if (!strcmp(directory, "/"))
+		dir_is_root = 1;
+
+	else
+		dir_is_root = 0;
+
 	while ((entry = readdir(dir))) {
 		char file[PATH_MAX];
 		enum file_type type;
@@ -264,8 +271,8 @@ int read_directory (const char *directory, struct file_list *dirs,
 			continue;
 		if (!show_hidden && entry->d_name[0] == '.')
 			continue;
-		if (snprintf(file, sizeof(file), "%s/%s", directory,
-					entry->d_name)
+		if (snprintf(file, sizeof(file), "%s/%s", dir_is_root ?
+					"" : directory,	entry->d_name)
 				>= (int)sizeof(file)) {
 			interface_error ("Path too long!");
 			return 0;
