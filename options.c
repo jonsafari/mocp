@@ -21,6 +21,7 @@
 #include <ctype.h>
 #include "main.h"
 #include "log.h"
+#include "options.h"
 
 #define OPTIONS_MAX	64
 #define OPTION_NAME_MAX	32
@@ -48,8 +49,7 @@ struct option
 	char name[OPTION_NAME_MAX];
 	enum option_type type;
 	union option_value value;
-	int ignore_in_config; /* TODO: function to set this flag to ignore this
-				 option when parsing config file. */
+	int ignore_in_config;
 };
 
 static struct option options[OPTIONS_MAX];
@@ -65,6 +65,7 @@ static void option_add_int (const char *name, const int value)
 	strcpy (options[options_num].name, name);
 	options[options_num].type = OPTION_INT;
 	options[options_num].value.num = value;
+	options[options_num].ignore_in_config = 0;
 
 	options_num++;
 }
@@ -79,6 +80,7 @@ static void option_add_str (const char *name, const char *value)
 	strcpy (options[options_num].name, name);
 	options[options_num].type = OPTION_STR;
 	options[options_num].value.str = xstrdup (value);
+	options[options_num].ignore_in_config = 0;
 
 	options_num++;
 }
@@ -122,6 +124,16 @@ void option_set_str (const char *name, const char *value)
 	options[opt].value.str = xstrdup (value);
 }
 
+void option_ignore_config (const char *name)
+{
+	int opt = find_option(name, OPTION_STR);
+
+	if (opt == -1)
+		fatal ("Tried to set wrong option '%s'!", name);
+
+	options[opt].ignore_in_config = 1;
+}
+
 /* Make a table of options and its default values. */
 void options_init ()
 {
@@ -146,7 +158,7 @@ void options_init ()
 }
 
 /* Return 1 if a parameter to an integer option is valid. */
-static int check_int_option (const char *name, const int val)
+int check_int_option (const char *name, const int val)
 {
 	/* YES/NO options */
 	if (!strcasecmp(name, "ReadTags")
@@ -171,7 +183,7 @@ static int check_int_option (const char *name, const int val)
 }
 
 /* Return 1 if a parameter to a string option is valid. */
-static int check_str_option (const char *name, const char *val)
+int check_str_option (const char *name, const char *val)
 {
 	if (!strcasecmp(name, "Sort")) {
 		if (strcasecmp(val, "FileName"))
@@ -196,6 +208,9 @@ static int set_option (const char *name, const char *value)
 
 	if (i == -1)
 		return 0;
+
+	if (options[i].ignore_in_config)
+		return 1;
 
 	if (options[i].type == OPTION_INT) {
 		int num;
