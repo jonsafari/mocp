@@ -35,7 +35,8 @@
 #include "wav.h"
 
 struct file_type_data {
-	char *ext;			/* file extension */
+	char **ext;			/* NULL terminated file extension
+					   list */
 	struct decoder_funcs *funcs;
 	char name[4];			/* short format name */
 };
@@ -47,12 +48,15 @@ static int types_num = 0;
 static int find_type (char *file)
 {
 	char *ext = ext_pos (file);
-	int i;
+	int i, j;
 
 	if (ext)
-		for (i = 0; i < types_num; i++)
-			if (!strcasecmp(ext, types[i].ext))
-				return i;
+		for (i = 0; i < types_num; i++) {
+			j = 0;
+			while (types[i].ext[j])
+				if (!strcasecmp(ext, types[i].ext[j++]))
+					return i;
+		}
 	return -1;
 }
 
@@ -83,26 +87,39 @@ struct decoder_funcs *get_decoder_funcs (char *file)
 	return NULL;
 }
 
+static char **mk_ext_table (const int num)
+{
+	char **tab = (char **)xmalloc (sizeof(char **) * ((num) + 1));
+	
+	tab[num] = NULL;
+	return tab;
+}
+
 void file_types_init ()
 {
-	types[types_num].ext = "wav";
+	types[types_num].ext = mk_ext_table (1);
+	types[types_num].ext[0] = "wav";
 	strcpy (types[types_num].name, "WAV");
 	types[types_num++].funcs = wav_get_funcs ();
 
 #ifdef HAVE_MAD
-	types[types_num].ext = "mp3";
+	types[types_num].ext = mk_ext_table (1);
+	types[types_num].ext[0] = "mp3";
 	strcpy (types[types_num].name, "MP3");
 	types[types_num++].funcs = mp3_get_funcs ();
 #endif
 
 #ifdef HAVE_VORBIS
-	types[types_num].ext = "ogg";
+	types[types_num].ext = mk_ext_table (1);	
+	types[types_num].ext[0] = "ogg";
 	strcpy (types[types_num].name, "OGG");
 	types[types_num++].funcs = ogg_get_funcs ();
 #endif
 
 #ifdef HAVE_FLAC
-	types[types_num].ext = "flac";
+	types[types_num].ext = mk_ext_table (2);
+	types[types_num].ext[0] = "flac";
+	types[types_num].ext[1] = "fla";
 	strcpy (types[types_num].name, "FLA");
 	types[types_num++].funcs = flac_get_funcs ();
 #endif
