@@ -178,6 +178,7 @@ void audio_unpause ()
 	state_change ();
 }
 
+/* Return 0 on error. */
 int audio_open (struct sound_params *sound_params)
 {
 	return hw.open (sound_params);
