@@ -207,13 +207,21 @@ void player (char *file, char *next_file, struct buf *out_buf)
 			return;
 		buf_put (out_buf, precache.buf, precache.buf_fill);
 	}
-	else if (!(decoder_data = f->open(file))) {
-		logit ("Can't open file, exiting");
-		return;
+	else {
+		struct decoder_error err;
+		
+		decoder_data = f->open(file);
+		f->get_error (decoder_data, &err);
+		if (err.type != ERROR_OK) {
+			f->close (decoder_data);
+			error ("%s", err.err);
+			decoder_error_clear (&err);
+			logit ("Can't open file, exiting");
+			return;
+		}
 	}
-	else
-		audio_plist_set_time (file, f->get_duration(decoder_data));
 
+	audio_plist_set_time (file, f->get_duration(decoder_data));
 	audio_state_started_playing ();
 	precache_reset (&precache);
 
@@ -222,9 +230,21 @@ void player (char *file, char *next_file, struct buf *out_buf)
 		
 		LOCK (request_cond_mutex);
 		if (!eof && !decoded) {
+			struct decoder_error err;
+			
 			UNLOCK (request_cond_mutex);
 			decoded = f->decode (decoder_data, buf, sizeof(buf),
 					&new_sound_params);
+			
+			f->get_error (decoder_data, &err);
+			if (err.type != ERROR_OK) {
+				if (err.type != ERROR_STREAM
+						|| options_get_int(
+							"ShowStreamErrors"))
+					error ("%s", err.err);
+				decoder_error_clear (&err);
+			}
+			
 			if (!decoded) {
 				eof = 1;
 				logit ("EOF from decoder");
