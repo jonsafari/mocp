@@ -70,6 +70,7 @@
 	* Few fixes when running MOC with file names or directories as
 	  arguments.
 	* Fixed reading track numbers for mp3 files.
+	* Small fixes of ALSA behaviour when underrun occurs.
 2.1.4
 	* Fixed the 'next' command when AutoNext is turned off.
 	* Sorting the files before adding them to the playlist when using the
