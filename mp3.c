@@ -42,9 +42,7 @@
 #include "main.h"
 #include "log.h"
 #include "xing.h"
-#include "playlist.h"
 #include "audio.h"
-#include "buf.h"
 #include "options.h"
 #include "file_types.h"
 
