@@ -38,6 +38,7 @@ Other features:
  - The way MOC creates titles from tags is configurable.
  - Optional character set conversion for file tags using iconv().
  - OSS or ALSA output.
+ - User defined keys.
 
 --------------------------------------------------------------------------------
 What software is required to compile it?
