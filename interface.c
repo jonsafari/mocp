@@ -111,8 +111,10 @@ enum color_index
 	CLR_LEGEND,
 	CLR_INFO_DISABLED,
 	CLR_INFO_ENABLED,
-	CLR_BAR_EMPTY,
-	CLR_BAR_FILL,
+	CLR_MIXER_BAR_EMPTY,
+	CLR_MIXER_BAR_FILL,
+	CLR_TIME_BAR_EMPTY,
+	CLR_TIME_BAR_FILL,
 	CLR_ENTRY,
 	CLR_ENTRY_TITLE,
 	CLR_ERROR,
@@ -153,6 +155,7 @@ static struct file_info {
 	char time[6];
 	char curr_time[6];
 	char time_left[6];
+	int curr_time_num;
 	int time_num;
 	int channels;
 	char state[3];
@@ -475,10 +478,10 @@ static void draw_mixer ()
 	mvwaddch (info_win, 0, COLS - 38, ACS_RTEE);
 	mvwaddch (info_win, 0, COLS - 17, ACS_LTEE);
 
-	wattrset (info_win, colors[CLR_BAR_FILL]);
+	wattrset (info_win, colors[CLR_MIXER_BAR_FILL]);
 	mvwaddnstr (info_win, 0, COLS - 37, bar, vol / 5);
 
-	wattrset (info_win, colors[CLR_BAR_EMPTY]);
+	wattrset (info_win, colors[CLR_MIXER_BAR_EMPTY]);
 	mvwaddstr (info_win, 0, COLS - 37 + (vol / 5), bar + vol / 5);
 }
 
@@ -585,6 +588,35 @@ static void entry_disable ()
 	curs_set (0);
 }
 
+static void draw_curr_time_bar ()
+{
+	int i;
+	int to_fill;
+	
+	wattrset (info_win, colors[CLR_FRAME]);
+	mvwaddch (info_win, 3, COLS - 2, ACS_LTEE);
+	mvwaddch (info_win, 3, 1, ACS_RTEE);
+
+	if (file_info.curr_time_num)
+
+		/* The duration can be smaller than the current time, if the
+		 * file was changed while playing. */
+		to_fill =  file_info.curr_time_num <= file_info.time_num ?
+			((float)file_info.curr_time_num / file_info.time_num)
+			* (COLS - 4)
+			: COLS - 4;
+	else
+		to_fill = 0;
+
+	wattrset (info_win, colors[CLR_TIME_BAR_FILL]);
+	for (i = 0; i < to_fill; i++)
+		waddch (info_win, ' ');
+
+	wattrset (info_win, colors[CLR_TIME_BAR_EMPTY]);
+	while (i++ < COLS - 4)
+		waddch (info_win, ' ');
+}
+
 /* Update the info win */
 static void update_info_win ()
 {
@@ -613,10 +645,12 @@ static void update_info_win ()
 	wattrset (info_win, colors[CLR_TIME_CURRENT]);
 	wmove (info_win, 2, 1);
 	waddstr (info_win, file_info.curr_time);
+	draw_curr_time_bar ();
 
 	/* Time left */
 	if (*file_info.time_left) {
 		wattrset (info_win, colors[CLR_TIME_LEFT]);
+		wmove (info_win, 2, 6);
 		waddch (info_win, ' ');
 		waddstr (info_win, file_info.time_left);
 	}
@@ -756,6 +790,7 @@ static void reset_file_info ()
 	file_info.bitrate[0] = 0;
 	file_info.rate[0] = 0;
 	file_info.time_num = 0;
+	file_info.curr_time_num = -1;
 	file_info.channels = 1;
 	strcpy (file_info.state, "[]");
 }
@@ -1257,16 +1292,15 @@ static void update_bitrate ()
 
 static void update_ctime ()
 {
-	int ctime;
 	int left;
 	
 	send_int_to_srv (CMD_GET_CTIME);
-	ctime = get_data_int ();
+	file_info.curr_time_num = get_data_int ();
 
-	sec_to_min (file_info.curr_time, ctime);
+	sec_to_min (file_info.curr_time, file_info.curr_time_num);
 
 	if (file_info.time_num != -1) {
-		left = file_info.time_num - ctime;
+		left = file_info.time_num - file_info.curr_time_num;
 		sec_to_min (file_info.time_left, left > 0 ? left : 0);
 	}
 	else
@@ -1652,8 +1686,10 @@ static void set_default_colors ()
 	make_color (CLR_LEGEND, COLOR_WHITE, COLOR_BLUE, A_NORMAL);
 	make_color (CLR_INFO_DISABLED, COLOR_BLUE, COLOR_BLUE, A_BOLD);
 	make_color (CLR_INFO_ENABLED, COLOR_WHITE, COLOR_BLUE, A_BOLD);
-	make_color (CLR_BAR_EMPTY, COLOR_WHITE, COLOR_BLUE, A_NORMAL);
-	make_color (CLR_BAR_FILL, COLOR_BLACK, COLOR_CYAN, A_NORMAL);
+	make_color (CLR_MIXER_BAR_EMPTY, COLOR_WHITE, COLOR_BLUE, A_NORMAL);
+	make_color (CLR_MIXER_BAR_FILL, COLOR_BLACK, COLOR_CYAN, A_NORMAL);
+	make_color (CLR_TIME_BAR_EMPTY, COLOR_WHITE, COLOR_BLUE, A_NORMAL);
+	make_color (CLR_TIME_BAR_FILL, COLOR_BLACK, COLOR_CYAN, A_NORMAL);
 	make_color (CLR_ENTRY, COLOR_WHITE, COLOR_BLUE, A_NORMAL);
 	make_color (CLR_ENTRY_TITLE, COLOR_BLACK, COLOR_CYAN, A_BOLD);
 	make_color (CLR_ERROR, COLOR_RED, COLOR_BLUE, A_BOLD);
@@ -1698,8 +1734,10 @@ static enum color_index find_color_element_name (const char *name)
 		{ "legend",		CLR_LEGEND },
 		{ "disabled",		CLR_INFO_DISABLED },
 		{ "enabled",		CLR_INFO_ENABLED },
-		{ "empty_bar",		CLR_BAR_EMPTY },
-		{ "filled_bar",		CLR_BAR_FILL },
+		{ "empty_mixer_bar",	CLR_MIXER_BAR_EMPTY },
+		{ "filled_mixer_bar",	CLR_MIXER_BAR_FILL },
+		{ "empty_time_bar",	CLR_TIME_BAR_EMPTY },
+		{ "filled_time_bar",	CLR_TIME_BAR_FILL },
 		{ "entry",		CLR_ENTRY },
 		{ "entry_title",	CLR_ENTRY_TITLE },
 		{ "error",		CLR_ERROR },
