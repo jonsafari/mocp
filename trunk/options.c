@@ -126,7 +126,7 @@ void option_set_str (const char *name, const char *value)
 
 void option_ignore_config (const char *name)
 {
-	int opt = find_option(name, OPTION_STR);
+	int opt = find_option(name, OPTION_ANY);
 
 	if (opt == -1)
 		fatal ("Tried to set wrong option '%s'!", name);
@@ -141,6 +141,7 @@ void options_init ()
 
 	option_add_int ("ReadTags", 1);
 	option_add_str ("MusicDir", NULL);
+	option_add_int ("StartInMusicDir", 0);
 	option_add_int ("ShowStreamErrors", 0);
 	option_add_int ("Priority", 0);
 	option_add_int ("Repeat", 0);
@@ -167,6 +168,7 @@ int check_int_option (const char *name, const int val)
 			|| !strcasecmp(name, "Shuffle")
 			|| !strcasecmp(name, "AutoNext")
 			|| !strcasecmp(name, "ShowHiddenFiles")
+			|| !strcasecmp(name, "StartInMusicDir")
 			) {
 		if (!(val == 1 || val == 0))
 			return 0;
