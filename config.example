@@ -37,10 +37,10 @@ AutoNext		= yes
 #                   config interpreter). man zshmisc for more info.
 FormatString		= "%(n:%n :)%(a:%a - :)%(t:%t:)%(A: \(%A\):)"
 
-# Output buffer size in kilobytes
+# Output buffer size in kilobytes. Minimum value is 128KB. */
 OutputBuffer		= 2048
 
-# Input buffer size in kilobytes
+# Input buffer size in kilobytes. Minimum value is 32KB. */
 InputBuffer		= 512
 
 # Sound driver - OSS, ALSA, or null (only for debugging)
