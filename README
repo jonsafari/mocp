@@ -6,11 +6,11 @@ What is it?
 --------------------------------------------------------------------------------
 
 MOC (music on console) is a console audio player for LINUX/UNIX designed to be
-powerfull and easy to use.
+powerful and easy to use.
 
 You just need to select a file from some directory using the menu similar to
 Midnight Commander, and MOC will start playing all files in this directory
-beggining from the choosen file. There is no need to create playlists like in
+beggining from the chosen file. There is no need to create playlists like in
 other players.
 
 If you want to combine some files from one or few directories on one playlist,
