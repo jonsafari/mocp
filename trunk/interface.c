@@ -3062,23 +3062,18 @@ static void toggle_show_format ()
 
 static void go_to_file_dir ()
 {
-	char *file;
-
-	send_int_to_srv (CMD_GET_SNAME);
-	file = get_data_str ();
-
-	if (file[0]) {
+	if (file_info.curr_file && file_type(file_info.curr_file) == F_SOUND) {
 		char *slash;
+		char *file = xstrdup (file_info.curr_file);
 
-		slash = strrchr (file, '/');
+		slash = strrchr (file_info.curr_file, '/');
 		assert (slash != NULL);
 		*slash = 0;
 
 		if (strcmp(file, cwd) || visible_plist == playlist)
 			go_to_dir (file);
+		free (file);
 	}
-
-	free (file);
 }
 
 /* Return the time like the standard time() function, but rounded i.e. if we
