@@ -18,12 +18,10 @@
 #include <stdlib.h>
 #include <alsa/asoundlib.h>
 #include <assert.h>
-
-/* DEBUG */
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-
+#include <pthread.h>
+#include <string.h>
+#include <errno.h>
+#include <unistd.h>
 #include "server.h"
 #include "audio.h"
 #include "main.h"
@@ -35,8 +33,8 @@
 #define BUFFER_MAX_USEC	300000
 
 /* TODO:
- * nonblock?
- * configurable buffer
+ * configurable device
+ * mixer
  */
 
 static snd_pcm_t *handle = NULL;
@@ -44,6 +42,14 @@ static struct sound_params params = { 0, 0, 0 };
 static int chunk_size = -1;
 static char alsa_buf[16384];
 static int alsa_buf_fill = 0;
+static int bytes_per_frame;
+static pthread_mutex_t buf_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+static void alsa_shutdown ()
+{
+	if (pthread_mutex_destroy(&buf_mutex))
+		logit ("Can't destrou mutex: %s", strerror(errno));
+}
 
 static int alsa_open (struct sound_params *sound_params)
 {
@@ -56,7 +62,7 @@ static int alsa_open (struct sound_params *sound_params)
 	snd_pcm_uframes_t buffer_frames;
 
 	if ((err = snd_pcm_open(&handle, DEVICE, SND_PCM_STREAM_PLAYBACK,
-					0)))
+					SND_PCM_NONBLOCK)))
 		error ("Can't open audio: %s", snd_strerror(err));
 
 	if ((err = snd_pcm_hw_params_malloc(&hw_params)) < 0) {
@@ -148,9 +154,10 @@ static int alsa_open (struct sound_params *sound_params)
 	snd_pcm_hw_params_get_period_size (hw_params, &chunk_frames, 0);
 	snd_pcm_hw_params_get_buffer_size (hw_params, &buffer_frames);
 
+	bytes_per_frame = sound_params->channels * sound_params->format;
+
 #ifdef DEBUG
-	logit ("Buffer time: %ldus", buffer_frames * sound_params->channels
-			* sound_params->format);
+	logit ("Buffer time: %ldus", buffer_frames * bytes_per_frame);
 #endif
 
 
@@ -161,8 +168,7 @@ static int alsa_open (struct sound_params *sound_params)
 		return 0;
 	}
 
-	chunk_size = chunk_frames * sound_params->format
-		* sound_params->channels;
+	chunk_size = chunk_frames * bytes_per_frame;
 
 #ifdef DEBUG
 	logit ("Chunk size: %d", chunk_size);
@@ -211,6 +217,7 @@ static int alsa_play (const char *buff, const size_t size)
 	logit ("Got %d bytes to play", (int)size);
 #endif
 
+	LOCK (buf_mutex);
 	while (to_write) {
 		int written = 0;
 		int to_copy = MIN((size_t)to_write,
@@ -230,25 +237,46 @@ static int alsa_play (const char *buff, const size_t size)
 			int err;
 			
 			err = snd_pcm_writei (handle, alsa_buf + written,
-					chunk_size /
-					(params.format * params.channels));
-			if (err == -EPIPE) {
+					chunk_size / bytes_per_frame);
+			if (err == -EAGAIN) {
+				UNLOCK (buf_mutex);
+				snd_pcm_wait (handle, 5000);
+				LOCK (buf_mutex);
+			}
+			else if (err == -EPIPE) {
 				logit ("underrun!");
 				if ((err = snd_pcm_prepare(handle)) < 0) {
 					error ("Can't recover after underrun: %s",
 							snd_strerror(err));
 					/* TODO: reopen the device */
+					UNLOCK (buf_mutex);
 					return -1;
 				}
 			}
-			/* TODO: handle -ESTRPIPE */
+			else if (err == -ESTRPIPE) {
+				logit ("Suspend, trying to resume");
+				while ((err = snd_pcm_resume(handle))
+						== -EAGAIN)
+					sleep (1);
+				if (err < 0) {
+					logit ("Failed, restarting");
+					if ((err = snd_pcm_prepare(handle))
+							< 0) {
+						error ("Failed to restart "
+								"device: %s.",
+								snd_strerror(err));
+						UNLOCK (buf_mutex);
+						return -1;
+					}
+				}
+			}
 			else if (err < 0) {
 				error ("Can't play: %s", snd_strerror(err));
+				UNLOCK (buf_mutex);
 				return -1;
 			}
 			else {
-				int written_bytes = err *
-					(params.format * params.channels);
+				int written_bytes = err * bytes_per_frame;
 
 				written += written_bytes;
 				alsa_buf_fill -= written_bytes;
@@ -265,6 +293,7 @@ static int alsa_play (const char *buff, const size_t size)
 		logit ("%d bytes remain in alsa_buf", alsa_buf_fill);
 #endif
 	}
+	UNLOCK (buf_mutex);
 
 #ifdef DEBUG
 	logit ("Played everything");
@@ -289,8 +318,26 @@ static int alsa_get_buff_fill ()
 
 static int alsa_reset ()
 {
-	if (handle)
-		snd_pcm_drop (handle);
+	if (handle) {
+		int err;
+		
+		LOCK (buf_mutex);
+		if ((err = snd_pcm_drop(handle)) < 0) {
+			error ("Can't reset the device: %s",
+					snd_strerror(err));
+			UNLOCK (buf_mutex);
+			return 0;
+		}
+		if ((err = snd_pcm_prepare(handle)) < 0) {
+			error ("Can't prepare anfter reset: %s",
+					snd_strerror(err));
+			UNLOCK (buf_mutex);
+			return 0;
+		}
+
+		alsa_buf_fill = 0;
+		UNLOCK (buf_mutex);
+	}
 	else
 		logit ("alsa_reset() when the device is not opened.");
 	return 1;
@@ -313,6 +360,7 @@ static int alsa_get_channels ()
 
 void alsa_funcs (struct hw_funcs *funcs)
 {
+	funcs->shutdown = alsa_shutdown;
 	funcs->open = alsa_open;
 	funcs->close = alsa_close;
 	funcs->play = alsa_play;
