@@ -550,3 +550,85 @@ char *read_line (FILE *file)
 
 	return line;
 }
+
+/* Return malloc()ed string in form "base/name". */
+static char *add_dir_file (const char *base, const char *name)
+{
+	char *path;
+	int base_is_root;
+
+	base_is_root = !strcmp (base, "/") ? 1 : 0;
+	path = (char *)xmalloc (sizeof(char) *
+			(base_is_root ? 0 : strlen(base) + strlen(name) + 2));
+	
+	sprintf (path, "%s/%s", base_is_root ? "": base, name);
+
+	return path;
+}
+
+/* Find a directory that the beginning part of the path matches dir.
+ * Returned path has slash at the end if the name was unabigius.
+ * Return NULL if nothing was found.
+ * Returned memory is malloc()ed.
+ * patterm is modified! */
+char *find_match_dir (char *pattern)
+{
+	char *slash;
+	DIR *dir;
+	struct dirent *entry;
+	int name_len;
+	char *name;
+	char *matching_dir = NULL;
+	char *search_dir;
+
+	if (!pattern[0])
+		return NULL;
+
+	/* strip the last directory */
+	slash = strrchr (pattern, '/');
+	if (!slash)
+		return NULL;
+	if (slash == pattern) {
+		
+		/* only '/dir' */
+		search_dir = xstrdup ("/");
+	}
+	else {
+		*slash = 0;
+		search_dir = xstrdup (pattern);
+		*slash = '/';
+	}
+
+	name = slash + 1;
+	name_len = strlen (name);
+
+	if (!name[0])
+		return NULL;
+		
+	if (!(dir = opendir(search_dir)))
+		return NULL;
+
+	while ((entry = readdir(dir))) {
+		if (!strncmp(entry->d_name, name, name_len)) {
+			char *path = add_dir_file (search_dir, entry->d_name);
+
+			if (isdir(path) == 1) {
+				if (matching_dir) {
+
+					/* More matching directories */
+					free (matching_dir);
+					free (path);
+					return NULL;
+				}
+
+				matching_dir = path;
+			}
+			else
+				free (path);
+		}
+	}
+	
+	closedir (dir);
+
+	return matching_dir;
+}
