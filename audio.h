@@ -61,5 +61,6 @@ void audio_plist_set_time (const char *file, const int time);
 void audio_state_started_playing ();
 int audio_plist_get_serial ();
 void audio_plist_set_serial (const int serial);
+struct file_tags *audio_get_curr_tags ();
 
 #endif

@@ -10,7 +10,7 @@ void state_change ();
 void set_info_rate (const int rate);
 void set_info_channels (const int channels);
 void set_info_bitrate (const int bitrate);
-void set_info_tags (struct file_tags *tags);
+void tags_change ();
 void ctime_change ();
 
 #endif

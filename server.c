@@ -820,6 +820,31 @@ static int send_serial (struct client *cli)
 	return 1;
 }
 
+/* Send tags to the client. Return 0 on error. */
+static int req_get_tags (struct client *cli)
+{
+	struct file_tags *tags;
+	int res = 1;
+
+	debug ("Sending tags to client with fd %d...", cli->socket);
+	
+	if (!send_int(cli->socket, EV_DATA)) {
+		logit ("Error when sending EV_DATA");
+		return 0;
+	}
+	
+	tags = audio_get_curr_tags ();
+	if (!send_tags(cli->socket, tags)) {
+		logit ("Error when sending tags");
+		res = 0;
+	}
+
+	if (tags)
+		tags_free (tags);
+	
+	return res;
+}
+
 /* Reveive a command from the client and execute it. */
 static void handle_command (struct client *cli)
 {
@@ -969,6 +994,10 @@ static void handle_command (struct client *cli)
 			break;
 		case CMD_PLIST_SET_SERIAL:
 			if (!req_plist_set_serial(cli))
+				err = 1;
+			break;
+		case CMD_GET_TAGS:
+			if (!req_get_tags(cli))
 				err = 1;
 			break;
 		default:
@@ -1148,7 +1177,7 @@ void ctime_change ()
 	add_event_all (EV_CTIME, NULL);
 }
 
-void set_info_tags (struct file_tags *tags)
+void tags_change ()
 {
-	add_event_all (EV_TAGS, tags);
+	add_event_all (EV_TAGS, NULL);
 }

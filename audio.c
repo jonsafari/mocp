@@ -615,3 +615,9 @@ void audio_plist_set_serial (const int serial)
 	plist_set_serial (&playlist, serial);
 	UNLOCK (plist_mut);
 }
+
+struct file_tags *audio_get_curr_tags ()
+{
+	return player_get_curr_tags ();
+}
+

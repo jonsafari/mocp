@@ -62,6 +62,10 @@ static pthread_mutex_t request_cond_mutex = PTHREAD_MUTEX_INITIALIZER;
 static enum request request = REQ_NOTHING;
 static int req_seek;
 
+/* Tags of the currentply played file. */
+static struct file_tags *curr_tags = NULL;
+static pthread_mutex_t curr_tags_mut = PTHREAD_MUTEX_INITIALIZER;
+
 static void update_time ()
 {
 	static int last_time = 0;
@@ -207,10 +211,12 @@ static void decode_loop (const struct decoder *f, void *decoder_data,
 	struct sound_params new_sound_params;
 	int bitrate = -1;
 	int sound_params_change = 0;
-	struct file_tags *tags = NULL;
 
-	if (f->current_tags)
-		tags = tags_new ();
+	if (f->current_tags) {
+		LOCK (curr_tags_mut);
+		curr_tags = tags_new ();
+		UNLOCK (curr_tags_mut);
+	}
 	else
 		logit ("No current_tags() function");
 
@@ -252,12 +258,15 @@ static void decode_loop (const struct decoder *f, void *decoder_data,
 					set_info_bitrate (bitrate);
 				}
 
+				LOCK (curr_tags_mut);
 				if (f->current_tags && f->current_tags(
-							decoder_data, tags)) {
-					set_info_tags (tags);
+							decoder_data,
+							curr_tags)) {
+					tags_change ();
 					debug ("Tags change");
-					show_tags(tags);
+					show_tags (curr_tags);
 				}
+				UNLOCK (curr_tags_mut);
 			}
 		}
 
@@ -335,8 +344,12 @@ static void decode_loop (const struct decoder *f, void *decoder_data,
 		}
 	}
 
-	if (tags)
-		tags_free (tags);
+	LOCK (curr_tags_mut);
+	if (curr_tags) {
+		tags_free (curr_tags);
+		curr_tags = NULL;
+	}
+	UNLOCK (curr_tags_mut);
 }
 
 /* Open a file, decode it and put output into the buffer. At the end, start
@@ -443,6 +456,8 @@ void player_cleanup ()
 {
 	if (pthread_mutex_destroy(&request_cond_mutex))
 		logit ("Can't destroy request mutex: %s", strerror(errno));
+	if (pthread_mutex_destroy(&curr_tags_mut))
+		logit ("Can't destroy tags mutex: %s", strerror(errno));
 	if (pthread_cond_destroy(&request_cond))
 		logit ("Can't destroy request condition: %s", strerror(errno));
 
@@ -470,4 +485,20 @@ void player_seek (const int sec)
 	LOCK (request_cond_mutex);
 	pthread_cond_signal (&request_cond);
 	UNLOCK (request_cond_mutex);
+}
+
+/* Return tags for the currently played file or NULL if there are no tags.
+ * Tags are duplicated. */
+struct file_tags *player_get_curr_tags ()
+{
+	struct file_tags *tags;
+
+	LOCK (curr_tags_mut);
+	if (curr_tags)
+		tags = tags_dup (curr_tags);
+	else
+		curr_tags = NULL;
+	UNLOCK (curr_tags_mut);
+
+	return tags;
 }
