@@ -37,6 +37,7 @@
 #include "options.h"
 #include "file_types.h"
 #include "interface.h"
+#include "playlist_file.h"
 
 #define STATUS_LINE_LEN	25
 #define INTERFACE_LOG	"mocp_client_log"
@@ -503,40 +504,73 @@ static int qsort_dirs_func (const void *a, const void *b)
 		return -1;
 	if (!strcmp(sb, "../"))
 		return 1;
-	return strcmp (*(char **)a, *(char **)b);
+	return strcmp (sa, sb);
 }	
 
+static int qsort_strcmp_func (const void *a, const void *b)
+{
+	return strcmp (*(char **)a, *(char **)b);
+}
+
 /* Make menu using the playlist and directory table. */
-static struct menu *make_menu (struct plist *plist, char **dirs, int ndirs)
+static struct menu *make_menu (struct plist *plist, struct file_list *dirs,
+		struct file_list *playlists)
 {
 	int i;
 	int menu_pos;
-	int plist_items = 0;
 	struct menu_item **menu_items;
+	int plist_items;
 	
 	plist_items = plist_count (plist);
+
+	/* +1 for '..' */
 	menu_items = (struct menu_item **)xmalloc (sizeof(struct menu_item *)
-			* (plist_items + ndirs));
+			* (plist_items + dirs->num + playlists->num + 1));
 	
+	/* add '..' */
+	menu_items[0] = menu_newitem ("..", -1, F_DIR, "..");
+	menu_items[0]->attr_normal = COLOR_PAIR(CLR_ITEM) | A_BOLD;
+	menu_items[0]->attr_sel = COLOR_PAIR(CLR_SELECTED) | A_BOLD;
+
 	/* directories */
-	for (i = 0; i < ndirs; i++) {
-		menu_items[i] = menu_newitem (dirs[i], -1);
-		menu_items[i]->attr_normal = COLOR_PAIR(CLR_ITEM) | A_BOLD;
-		menu_items[i]->attr_sel = COLOR_PAIR(CLR_SELECTED) | A_BOLD;
+	menu_pos = 1;
+	for (i = 0; i < dirs->num; i++) {
+		menu_items[menu_pos] =
+			menu_newitem (strrchr(dirs->items[i], '/') + 1,
+					-1, F_DIR, dirs->items[i]);
+		menu_items[menu_pos]->attr_normal =
+			COLOR_PAIR(CLR_ITEM) | A_BOLD;
+		menu_items[menu_pos]->attr_sel =
+			COLOR_PAIR(CLR_SELECTED) | A_BOLD;
+		menu_pos++;
+	}
+
+	/* playlists */
+	for (i = 0; i < playlists->num; i++){
+		menu_items[menu_pos] =
+			menu_newitem (strrchr(playlists->items[i], '/') + 1,
+					-1, F_PLAYLIST,	playlists->items[i]);
+		menu_items[menu_pos]->attr_normal =
+			COLOR_PAIR(CLR_ITEM) | A_BOLD;
+		menu_items[menu_pos]->attr_sel =
+			COLOR_PAIR(CLR_SELECTED) | A_BOLD;
+		menu_pos++;
 	}
 	
 	/* playlist items */
-	for (i = 0, menu_pos = ndirs; i < plist->num; i++) {
+	for (i = 0; i < plist->num; i++) {
 		if (!plist_deleted(plist, i)) {
 			menu_items[menu_pos] = menu_newitem (
-					plist->items[i].title, i);
+					plist->items[i].title, i, F_SOUND,
+					plist_get_file(plist, i));
 			menu_items[menu_pos]->attr_normal = COLOR_PAIR(CLR_ITEM);
 			menu_items[menu_pos]->attr_sel = COLOR_PAIR(CLR_SELECTED);
 			menu_pos++;
 		}
 	}
 	
-	return menu_new (main_win, menu_items, ndirs + plist_items,
+	return menu_new (main_win, menu_items,
+			dirs->num + plist_items + playlists->num + 1,
 			COLOR_PAIR(CLR_ITEM), COLOR_PAIR(CLR_SELECTED),
 			COLOR_PAIR(CLR_MARKED) | A_BOLD,
 			COLOR_PAIR(CLR_MARKED_SELECTED) | A_BOLD);
@@ -819,13 +853,12 @@ static void update_state ()
  * 0 on error. */
 static int go_to_dir (char *dir)
 {
-	char **dirs;
-	int ndirs;
 	struct plist *old_curr_plist;
 	char last_dir[PATH_MAX];
 	char *new_dir = dir ? dir : cwd;
 	int going_up = 0;
 	char msg[50];
+	struct file_list *dirs, *playlists;
 
 	set_interface_status ("reading directory...");
 	wrefresh (info_win);
@@ -840,20 +873,23 @@ static int go_to_dir (char *dir)
 
 	if (dir && is_subdir(dir, cwd)) {
 		strcpy (last_dir, strrchr(cwd, '/') + 1);
-		strcat (last_dir, "/");
 		going_up = 1;
 	}
 
 	old_curr_plist = curr_plist;
 	curr_plist = (struct plist *)xmalloc (sizeof(struct plist));
 	plist_init (curr_plist);
+	dirs = file_list_new ();
+	playlists = file_list_new ();
 
-	if (!read_directory(new_dir, curr_plist, &dirs, &ndirs)) {
+	if (!read_directory(new_dir, dirs, playlists, curr_plist)) {
 		if (chdir(cwd))
 			interface_fatal ("Can't go to the previous directory.");
 		set_interface_status (NULL);
 		wrefresh (info_win);
 		plist_free (curr_plist);
+		file_list_free (dirs);
+		file_list_free (playlists);
 		free (curr_plist);
 		curr_plist = old_curr_plist;
 		return 0;
@@ -876,18 +912,21 @@ static int go_to_dir (char *dir)
 	else
 		make_titles_file (curr_plist);
 	
-	qsort (dirs, ndirs, sizeof(char *), qsort_dirs_func);
 	plist_sort_fname (curr_plist);
+	qsort (dirs->items, dirs->num, sizeof(char *), qsort_dirs_func);
+	qsort (playlists->items, playlists->num, sizeof(char *),
+			qsort_strcmp_func);
 	
-	menu = make_menu (curr_plist, dirs, ndirs);
+	menu = make_menu (curr_plist, dirs, playlists);
+	file_list_free (dirs);
+	file_list_free (playlists);
 	if (going_up)
 		menu_setcurritem_title (menu, last_dir);
 	
-	free_dir_tab (dirs, ndirs);
 	set_title (cwd);
 
 	update_state ();
-	sprintf (msg, "%d files and directories", curr_plist->num + ndirs - 1);
+	sprintf (msg, "%d files and directories", menu->nitems - 1);
 	set_interface_status (msg);
 	wrefresh (info_win);
 
@@ -1160,18 +1199,22 @@ static void go_file ()
 {
 	struct menu_item *menu_item = menu_curritem (menu);
 
-	if (menu_item->plist_pos != -1) {
-
-		/* It's a file */
+	if (menu_item->type == F_SOUND)
 		play_it (menu_item->plist_pos);
-	}
-	else {
-		/* it's a directory */
+	else if (menu_item->type == F_DIR) {
 		char dir[PATH_MAX + 1];
-
-		strcpy (dir, cwd);
-		resolve_path (dir, sizeof(dir), menu_item->title);
 		
+		if (!strcmp(menu_item->file, "..")) {
+			char *slash;
+
+			strcpy (dir, cwd);				
+			slash = strrchr (dir, '/');
+			assert (slash != NULL);
+			*slash = 0;
+		}
+		else
+			strcpy (dir, menu_item->file);
+
 		go_to_dir (dir);
 	}
 }
