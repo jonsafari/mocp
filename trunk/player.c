@@ -94,6 +94,8 @@ static void *precache_thread (void *data)
 	/* Stop at PCM_BUF_SIZE, because when we decode too much, there is no
 	 * place when we can put the data that don't fit into the buffer. */
 	while (precache->buf_fill < PCM_BUF_SIZE) {
+		struct decoder_error err;
+		
 		decoded = precache->f->decode (precache->decoder_data,
 				precache->buf + precache->buf_fill,
 				PCM_BUF_SIZE, &new_sound_params);
@@ -103,6 +105,13 @@ static void *precache_thread (void *data)
 			/* EOF so fast? we can't pass this information
 			 * in precache, so give up */
 			logit ("EOF when precaching.");
+			precache->f->close (precache->decoder_data);
+			return NULL;
+		}
+
+		precache->f->get_error (precache->decoder_data, &err);
+		
+		if (err.type == ERROR_FATAL) {
 			precache->f->close (precache->decoder_data);
 			return NULL;
 		}
@@ -121,6 +130,9 @@ static void *precache_thread (void *data)
 		}
 
 		precache->buf_fill += decoded;
+
+		if (err.type != ERROR_OK)
+			break; /* Don't lose the error message */
 	}
 	
 	precache->ok = 1;
@@ -185,6 +197,7 @@ void player (char *file, char *next_file, struct out_buf *out_buf)
 	int sound_params_change = 0;
 	struct decoder *f;
 	int bitrate = -1;
+	struct decoder_error err;
 
 	f = get_decoder (file);
 	assert (f != NULL);
@@ -211,10 +224,17 @@ void player (char *file, char *next_file, struct out_buf *out_buf)
 		if (!audio_open(&sound_params))
 			return;
 		out_buf_put (out_buf, precache.buf, precache.buf_fill);
+
+		precache.f->get_error (precache.decoder_data, &err);
+		if (err.type != ERROR_OK) {
+			if (err.type != ERROR_STREAM
+					|| options_get_int(
+						"ShowStreamErrors"))
+				error ("%s", err.err);
+			decoder_error_clear (&err);
+		}
 	}
 	else {
-		struct decoder_error err;
-		
 		decoder_data = f->open(file);
 		f->get_error (decoder_data, &err);
 		if (err.type != ERROR_OK) {
