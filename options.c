@@ -164,6 +164,7 @@ void options_init ()
 	option_add_int ("SavePlaylist", 1);
 	option_add_str ("Keymap", NULL);
 	option_add_int ("SyncPlaylist", 1);
+	option_add_int ("InputBuffer", 512);
 }
 
 /* Return 1 if a parameter to an integer option is valid. */
@@ -187,6 +188,10 @@ int check_int_option (const char *name, const int val)
 	}
 	else if (!strcasecmp(name, "OutputBuffer")) {
 		if (val < 128)
+			return 0;
+	}
+	else if (!strcasecmp(name, "InputBuffer")) {
+		if (val < 8)
 			return 0;
 	}
 	return 1;

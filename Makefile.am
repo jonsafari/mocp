@@ -38,7 +38,9 @@ mocp_SOURCES = log.c \
 	       keys.c \
 	       keys.h \
 	       ltdl.c \
-	       ltdl.h
+	       ltdl.h \
+	       io.c \
+	       io.h
 EXTRA_mocp_SOURCES = gnugetopt.h \
 		     getopt.c \
 		     getopt1.c \

@@ -39,7 +39,7 @@ void out_buf_unpause (struct out_buf *buf);
 void out_buf_stop (struct out_buf *buf);
 void out_buf_reset (struct out_buf *buf);
 void out_buf_time_set (struct out_buf *buf, const float time);
-float out_buf_time_get (struct out_buf *buf);
+int out_buf_time_get (struct out_buf *buf);
 void out_buf_set_notify_cond (struct out_buf *buf, pthread_cond_t *cond,
 		pthread_mutex_t *mutex);
 int out_buf_get_free (struct out_buf *buf);

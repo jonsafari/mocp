@@ -14,19 +14,22 @@
 #endif
 
 #include <string.h>
-#include <errno.h>
 #include <stdio.h>
+#include <errno.h>
 #include <assert.h>
 #include <vorbis/vorbisfile.h>
 #include <vorbis/codec.h>
 
+#define DEBUG
+
 #include "main.h"
 #include "log.h"
 #include "decoder.h"
+#include "io.h"
 
 struct ogg_data
 {
-	FILE *file;
+	struct io_stream *stream;
 	OggVorbis_File vf;
 	int last_section;
 	int bitrate;
@@ -101,22 +104,75 @@ static void ogg_info (const char *file_name, struct file_tags *info,
 	ov_clear (&vf);
 }
 
+static size_t read_callback (void *ptr, size_t size, size_t nmemb,
+		void *datasource)
+{
+	ssize_t res;
+
+	res = io_read (datasource, ptr, size * nmemb);
+	
+	/* libvorbisfile expects the read callback to return >= 0 with errno
+	 * set to non zero on error. */
+	if (res < 0) {
+		logit ("Read error");
+		if (errno == 0)
+			errno = 0xffff;
+		res = 0;
+	}
+	else 
+		res /= size;
+
+	return res;
+}
+
+static int seek_callback (void *datasource, ogg_int64_t offset, int whence)
+{
+	debug ("Seek request to %ld (%s)", (long)offset,
+			whence == SEEK_SET ? "SEEK_SET"
+			: (whence == SEEK_CUR ? "SEEK_CUR" : "SEEK_END"));
+	return io_seek (datasource, offset, whence);
+}
+
+static int close_callback (void *datasource)
+{
+	io_close (datasource);
+	return 0;
+}
+
+static long tell_callback (void *datasource)
+{
+	return io_tell (datasource);
+}
+
 static void *ogg_open (const char *file)
 {
 	struct ogg_data *data;
+	int res;
+	ov_callbacks callbacks = {
+		read_callback,
+		seek_callback,
+		close_callback,
+		tell_callback
+	};
 
 	data = (struct ogg_data *)xmalloc (sizeof(struct ogg_data));
 	data->ok = 0;
 
 	decoder_error_init (&data->error);
 
-	if (!(data->file = fopen (file, "r")))
-		decoder_error (&data->error, ERROR_FATAL, errno,
-				"Can't load OGG: ");
-	else if (ov_open(data->file, &data->vf, NULL, 0) < 0) {
+	data->stream = io_open (file, 1);
+	if (!io_ok(data->stream)) {
+		decoder_error (&data->error, ERROR_FATAL, 0,
+				"Can't load OGG: %s",
+				io_strerror(data->stream));
+		io_close (data->stream);
+	}
+	else if ((res = ov_open_callbacks(data->stream, &data->vf, NULL, 0,
+					callbacks)) < 0) {
 		decoder_error (&data->error, ERROR_FATAL, 0,
 				"ov_open() failed!");
-		fclose (data->file);
+		debug ("ov_open error: %d", res);
+		io_close (data->stream);
 	}
 	else {
 		data->last_section = -1;
