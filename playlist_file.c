@@ -85,6 +85,7 @@ static int plist_load_m3u (struct plist *plist, const char *fname,
 			char *num_err;
 			char time_text[10] = "";
 			int time_sec;
+			char *title;
 
 			if (after_extinf) {
 				interface_error ("Broken M3U file: double "
@@ -127,7 +128,12 @@ static int plist_load_m3u (struct plist *plist, const char *fname,
 		
 			after_extinf = 1;
 			last_added = plist_add (plist, NULL);
-			plist_set_title (plist, last_added, comma + 1);
+
+			/* We must xstrdup() here, because iconv_str()
+			 * expects malloc()ed memory */
+			title = iconv_str (xstrdup(comma + 1));
+			plist_set_title (plist, last_added, title);
+			free (title);
 
 			plist->items[last_added].tags = tags_new ();
 			if (*time_text) {
