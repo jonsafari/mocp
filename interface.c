@@ -691,6 +691,8 @@ static int qsort_strcmp_func (const void *a, const void *b)
 /* Convert time in second to min:sec text format. buff must be 6 chars long. */
 static void sec_to_min (char *buff, const int seconds)
 {
+	assert (seconds >= 0);
+
 	if (seconds < 6000) {
 
 		/* the time is less than 99:59 */
@@ -1151,9 +1153,8 @@ static int get_file_time (char *file)
 		debug ("Found item on the playlist");
 		plist->items[index].tags = read_file_tags (file,
 				plist->items[index].tags, TAGS_TIME);
-		ftime = plist->items[index].tags->time;
-		
-		update_times (file, plist->items[index].tags->time);
+		if ((ftime = plist->items[index].tags->time) != -1)
+			update_times (file, plist->items[index].tags->time);
 	}
 	else if ((tags = read_file_tags(file, NULL, TAGS_TIME))) {
 		ftime = tags->time;
