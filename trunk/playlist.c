@@ -633,3 +633,27 @@ int get_item_time (const struct plist *plist, const int i)
 
 	return -1;
 }
+
+/* Return the total time of all files on the playlist that has the time tag.
+ * If the time information is missing for any file, all_files is set to 0,
+ * otherwise 1. */
+int plist_total_time (const struct plist *plist, int *all_files)
+{
+	int i;
+	int total_time = 0;
+
+	*all_files = 1;
+
+	for (i = 0; i < plist->num; i++)
+		if (!plist_deleted(plist, i)) {
+			if (!plist->items[i].tags
+					|| !(plist->items[i].tags->filled
+						& TAGS_TIME)
+					|| plist->items[i].tags->time == -1)
+				*all_files = 0;
+			else
+				total_time += plist->items[i].tags->time;
+		}
+
+	return total_time;
+}

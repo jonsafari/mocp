@@ -59,5 +59,6 @@ void sync_plists_data (struct plist *dst, struct plist *src);
 void update_item_time (struct plist_item *item, const int time);
 void update_file (struct plist_item *item);
 int get_item_time (const struct plist *plist, const int i);
+int plist_total_time (const struct plist *plisti, int *all_files);
 
 #endif
