@@ -40,6 +40,7 @@
 #include "oss.h"
 #include "options.h"
 #include "server.h"
+#include "playlist.h"
 
 #define SERVER_LOG	"mocp_server_log"
 #define PID_FILE	"pid"
@@ -571,70 +572,13 @@ static int find_cli_requesting_plist ()
 	return -1;
 }
 
-/* Get string from one fd, send it to the second fd. Don't send anything if
- * to_fd == -1. If from_fd == -1, send an empty string. Put the pointer to the
- * string in *s (malloc()ed).
- * Return 0 on error. */
-static int get_send_str (int from_fd, int to_fd, char **s)
-{
-	if (from_fd == -1 || !(*s = get_str(from_fd))) {
-		
-		if (to_fd != -1) /* just say, that it's end of the list */
-			send_str(to_fd, "");
-		return from_fd == -1 ? 1 : 0;
-	}
-
-	if (to_fd != -1 && !send_str(to_fd, *s))
-		return 0;
-
-	return 1;
-}
-
-/* Get an integer value from one fd, send it to the second fd. Don't send
- * anything if to_fd == -1. If from_fd == -1, send -1.
- * Return 0 on error or end of the list. */
-static int get_send_int (int from_fd, int to_fd)
-{
-	int d;
-	
-	if (from_fd == -1 || !get_int(from_fd, &d)) {
-		if (to_fd != -1 && !send_int(to_fd, -1))
-			return 0;
-		return from_fd == -1 ? 1 : 0;
-	}
-
-	if (!send_int(to_fd, d))
-		return 0;
-
-	return 1;
-}
-
-/* Get a time_t value from one fd, send it to the second fd. Don't send
- * anything if to_fd == -1. If from_fd == -1, send (time_t)-1.
- * Return 0 on error or end of the list. */
-static int get_send_time (int from_fd, int to_fd)
-{
-	time_t d;
-	
-	if (from_fd == -1 || !get_time(from_fd, &d)) {
-		if (to_fd != -1 && !send_time(to_fd, -1))
-			return 0;
-		return from_fd == -1 ? 1 : 0;
-	}
-
-	if (!send_time(to_fd, d))
-		return 0;
-
-	return 1;
-}
-
 /* Handle CMD_SEND_PLIST. Some client requested to get the playlist, so we asked
  * another client to send it (EV_SEND_PLIST). */
 static int req_send_plist (struct client *cli)
 {
 	int requesting = find_cli_requesting_plist ();
 	int send_fd;
-	int recv_fd;
+	struct plist_item *item;
 
 	debug ("Client with fd %d wants to send its playlists", cli->socket);
 
@@ -644,86 +588,74 @@ static int req_send_plist (struct client *cli)
 	}
 	else {
 		send_fd = clients[requesting].socket;
-		if (!send_int(send_fd, EV_DATA))
-			return 0;
+		if (!send_int(send_fd, EV_DATA)) {
+			logit ("Error while sending response, disconnecting"
+					" the client");
+			close (send_fd);
+			del_client (&clients[requesting]);
+			send_fd = -1;
+		}
 	}
-
-	recv_fd = cli->socket;
 
 	/* Even if no clients are requesting the playlist, we must read it,
 	 * because there is no way to say that we don't need it. */
-	while (recv_fd != -1) {
-		char *s;
-		
-		/* file */
-		if (!get_send_str(recv_fd, send_fd, &s)) {
-			if (requesting != -1)
-				clients[requesting].requests_plist = 0;
-			debug ("Error when sending/receiving the file path");
-			return 0;
+	while ((item = recv_item(cli->socket)) && item->file[0]) {
+		if (send_fd != -1 && !send_item(send_fd, item)) {
+			logit ("Error while sending item, disconnecting the"
+					" client");
+			close (send_fd);
+			del_client (&clients[requesting]);
+			send_fd = -1;
 		}
-
-		if (!s[0]) {
-			if (requesting != -1)
-				clients[requesting].requests_plist = 0;
-			debug ("End of the list");
-			free (s);
-			return 1;
-		}
-		free (s);
-		
-		/* title */
-		if (!get_send_str(recv_fd, send_fd, &s)) {
-			logit ("Error when sending/receiving the title tag");
-			recv_fd = -1;
-		}
-		else
-			free (s);
-		
-		/* artist */
-		if (!get_send_str(recv_fd, send_fd, &s)) {
-			logit ("Error when sending/receiving the artist tag");
-			recv_fd = -1;
-		}
-		else
-			free (s);
-
-		/* album */
-		if (!get_send_str(recv_fd, send_fd, &s)) {
-			logit ("Error when sending/receiving the album tag");
-			recv_fd = -1;
-		}
-		else
-			free (s);
-		
-		/* track */
-		if (!get_send_int(recv_fd, send_fd)) {
-			logit ("Error when sending/receiving the track tag");
-			recv_fd = -1;
-		}
-
-		/* time */
-		if (!get_send_int(recv_fd, send_fd)) {
-			logit ("Error when sending/receiving the time tag");
-			recv_fd = -1;
-		}
-
-		/* modification time */
-		if (!get_send_time(recv_fd, send_fd)) {
-			logit ("Error when sending/receiving the mtime");
-			recv_fd = -1;
-		}
+		plist_free_item_fields (item);
+		free (item);
 	}
 
-	debug ("Error when sending the playlist.");
+	if (item) {
+		plist_free_item_fields (item);
+		free (item);
+		logit ("Playlist sent");
+	}
+	else
+		logit ("Error while receiving item");
+
+	if (send_fd != -1 && !send_item (send_fd, NULL)) {
+		logit ("Error while sending end of playlist mark, disconnecting"
+				" the client.");
+		close (send_fd);
+		del_client (&clients[requesting]);
+		return 0;
+	}
 
 	if (requesting != -1)
 		clients[requesting].requests_plist = 0;
 	
-	return 0;
+	return item ? 1 : 0;
 }
 
-/* Send this event followeb by the string to all clients except cli. Don't use
+/* Send this event followed by the item to all clients except cli. Don't use
+ * the queue - send it now. */
+static void send_event_item_direct (struct client *cli, const int event,
+		const struct plist_item *item)
+{
+	int i;
+
+	for (i = 0; i < CLIENTS_MAX; i++)
+		if (clients[i].socket != -1
+				&& clients[i].socket != cli->socket
+				&& clients[i].wants_events) {
+			if (!send_int(clients[i].socket, event)
+					|| !send_item(clients[i].socket,
+						item)) {
+				logit ("Error while sending event,"
+						" disconnecting the client.");
+				close (clients[i].socket);
+				del_client (&clients[i]);
+			}
+		}
+}
+
+/* Send this event followed by the string to all clients except cli. Don't use
  * the queue - send it now. */
 static void send_event_str_direct (struct client *cli, const int event,
 		const char *str)
@@ -767,17 +699,31 @@ static void send_event_direct (struct client *cli, const int event)
  * forwarding the whole list). Return 0 on error. */
 static int plist_sync_cmd (struct client *cli, const int cmd)
 {
-	if (cmd == CMD_CLI_PLIST_DEL || cmd == CMD_CLI_PLIST_ADD) {
-		char *file;
-		int event = cmd == CMD_CLI_PLIST_DEL ?
-			EV_PLIST_DEL : EV_PLIST_ADD;
+	if (cmd == CMD_CLI_PLIST_ADD) {
+		struct plist_item *item;
 
-		debug ("Sending event %d", event);
+		debug ("Sending EV_PLIST_ADD");
 
-		if (!(file = get_str(cli->socket)))
+		if (!(item = recv_item(cli->socket))) {
+			logit ("Error while reveiving item");
 			return 0;
+		}
 		
-		send_event_str_direct (cli, event, file);
+		send_event_item_direct (cli, EV_PLIST_ADD, item);
+		plist_free_item_fields (item);
+		free (item);
+	}
+	else if (cmd == CMD_CLI_PLIST_DEL) {
+		char *file;
+
+		debug ("Sending EV_PLIST_DEL");
+
+		if (!(file = get_str(cli->socket))) {
+			logit ("Error while reveiving file");
+			return 0;
+		}
+
+		send_event_str_direct (cli, EV_PLIST_DEL, file);
 		free (file);
 	}
 	else { /* it can be only CMD_CLI_PLIST_CLEAR */

@@ -120,7 +120,7 @@ static struct file_info {
 struct event
 {
 	int type;	/* type of the event */
-	char *data;	/* optional data string associated with the event */
+	void *data;	/* optional data associated with the event */
 	struct event *next;
 };
 
@@ -300,12 +300,6 @@ static void send_int_to_srv (const int num)
 		interface_fatal ("Can't send() int to the server.");
 }
 
-static void send_time_to_srv (const time_t num)
-{
-	if (!send_time(srv_sock, num))
-		interface_fatal ("Can't send() time to the server.");
-}
-
 static void send_str_to_srv (const char *str)
 {
 	if (!send_str(srv_sock, str))
@@ -322,14 +316,10 @@ static int get_int_from_srv ()
 	return num;
 }
 
-static time_t get_time_from_srv ()
+static void send_item_to_srv (const struct plist_item *item)
 {
-	time_t num;
-	
-	if (!get_time(srv_sock, &num))
-		interface_fatal ("Can't receive value from the server.");
-
-	return num;
+	if (!send_item(srv_sock, item))
+		interface_fatal ("Can't send() item to the server.");
 }
 
 /* Returned memory is malloc()ed. */
@@ -343,8 +333,19 @@ static char *get_str_from_srv ()
 	return str;
 }
 
+
+static struct plist_item *recv_item_from_srv ()
+{
+	struct plist_item *item;
+
+	if (!(item = recv_item(srv_sock)))
+		interface_fatal ("Can't receive item from the server.");
+
+	return item;
+}
+
 /* Push an event on the queue if it's not already there. */
-static void event_push (const int event, char *data)
+static void event_push (const int event, void *data)
 {
 	if (!events.head) {
 		events.head = (struct event *)xmalloc (sizeof(struct event));
@@ -377,7 +378,9 @@ static void wait_for_data ()
 	do {
 		event = get_int_from_srv ();
 		
-		if (event == EV_PLIST_ADD || event == EV_PLIST_DEL)
+		if (event == EV_PLIST_ADD)
+			event_push (event, recv_item_from_srv());
+		else if (event == EV_PLIST_DEL)
 			event_push (event, get_str_from_srv());
 		else if (event != EV_DATA)
 			event_push (event, NULL);
@@ -1718,6 +1721,9 @@ static void load_playlist ()
  * if such a list doesn't exists. */
 static int get_server_playlist ()
 {
+	struct plist_item *item;
+	int end_of_list = 0;
+	
 	set_iface_status_ref ("Getting the playlist...");
 	debug ("Getting the playlist...");
 	
@@ -1737,69 +1743,15 @@ static int get_server_playlist ()
 		fatal ("Server didnt send EV_DATA when it was supposed to send"
 				" the playlist.");
 
-	while (1) {
-		char *file, *title, *artist, *album;
-		int track, time;
-		time_t mtime;
-		int a;
-
-		/* get the file name */
-		file = get_str_from_srv ();
-		if (!file[0]) {
-			free (file);
-			break; /* end of the list */
-		}
-		title = get_str_from_srv ();
-		artist = get_str_from_srv ();
-		album = get_str_from_srv ();
-		track = get_int_from_srv ();
-		time = get_int_from_srv ();
-		mtime = get_time_from_srv ();
-
-		a = plist_add (playlist, file);
-		playlist->items[a].mtime = mtime;
-		if (*title || *artist || *album || track != -1 || time != -1) {
-			playlist->items[a].tags = tags_new ();
-
-			if (*title || *artist || *album) {
-				playlist->items[a].tags->filled	|=
-					TAGS_COMMENTS;
-
-				if (*title)
-					playlist->items[a].tags->title = title;
-				else
-					free (title);
-				
-				if (*artist)
-					playlist->items[a].tags->artist =
-						artist;
-				else
-					free (artist);
-				
-				if (*album)
-					playlist->items[a].tags->album = album;
-				else
-					free (album);
-			}
-			else {
-				free (title);
-				free (artist);
-				free (album);
-			}
-			
-			if (time != -1) {
-				playlist->items[a].tags->filled |= TAGS_TIME;
-				playlist->items[a].tags->time = time;
-			}
-		}
-		else {
-			free (title);
-			free (artist);
-			free (album);
-		}
-		
-		free (file);
-	}
+	do {
+		item = recv_item_from_srv ();
+		if (item->file[0])
+			plist_add_from_item (playlist, item);
+		else
+			end_of_list = 1;
+		plist_free_item_fields (item);
+		free (item);
+	} while (!end_of_list);
 
 	if (options_get_int("ReadTags")) {
 		set_iface_status_ref ("Reading tags...");
@@ -1823,34 +1775,10 @@ static void forward_playlist ()
 	send_int_to_srv (CMD_SEND_PLIST);
 
 	for (i = 0; i < playlist->num; i++)
-		if (!plist_deleted(playlist, i)) {
-			send_str_to_srv (plist_get_file(playlist, i));
-			if (playlist->items[i].tags) {
-				struct file_tags *t =
-					playlist->items[i].tags;
-				
-				send_str_to_srv (t->title ? t->title : "");
-				send_str_to_srv (t->artist ? t->artist : "");
-				send_str_to_srv (t->album ? t->album : "");
-				send_int_to_srv (t->track);
-				send_int_to_srv (t->filled & TAGS_TIME
-						? t->time : -1);
-			}
-			else {
-				
-				/* empty tags */
-				send_str_to_srv (""); /* title */
-				send_str_to_srv (""); /* artist */
-				send_str_to_srv (""); /* album */
-				send_int_to_srv (-1); /* track */
-				send_int_to_srv (-1); /* time */
-			}
+		if (!plist_deleted(playlist, i))
+			send_item_to_srv (&playlist->items[i]);
 
-			send_time_to_srv (playlist->items[i].mtime);
-		}
-
-	/* end of the list */
-	send_str_to_srv ("");
+	send_item_to_srv (NULL);
 }
 
 /* Initialize the interface. args are command line file names. arg_num is the
@@ -1953,11 +1881,11 @@ static void update_menu ()
 	wrefresh (main_win);
 }
 
-/* Handle EV_PLIST_ADD. */
-static void event_plist_add (const char *file)
+/* Handle EV_PLIST_ADD. Free item. */
+static void event_plist_add (struct plist_item *item)
 {
-	if (plist_find_fname(playlist, file) == -1) {
-		int item_num = plist_add (playlist, file);
+	if (plist_find_fname(playlist, item->file) == -1) {
+		int item_num = plist_add_from_item (playlist, item);
 		
 		if (options_get_int("ReadTags"))
 			make_tags_title (playlist, item_num);
@@ -1972,9 +1900,9 @@ static void event_plist_add (const char *file)
 		else
 			playlist_menu = NULL;
 	}
-	else
-		interface_error ("A request for adding item that is already on"
-				" the playlist.");
+
+	plist_free_item_fields (item);
+	free (item);
 }
 
 /* Switch between the current playlist and the playlist
@@ -2013,8 +1941,8 @@ static void toggle_plist ()
 	wrefresh (info_win);
 }
 
-/* Handle EV_PLIST_DEL. */
-static void event_plist_del (const char *file)
+/* Handle EV_PLIST_DEL. Free file. */
+static void event_plist_del (char *file)
 {
 	int item = plist_find_fname (playlist, file);
 
@@ -2032,6 +1960,8 @@ static void event_plist_del (const char *file)
 
 		if (plist_count(playlist) > 0) {
 			if (curr_menu == playlist_menu) {
+				char msg[50];
+				
 				playlist_menu = make_menu (playlist, NULL, 0);
 				menu_set_top_item (playlist_menu, top_item);
 				menu_setcurritem (playlist_menu, selected_item);
@@ -2039,6 +1969,10 @@ static void event_plist_del (const char *file)
 				update_curr_file ();
 				update_info_win ();
 				wrefresh (info_win);
+				
+				sprintf (msg, "%d files on the list",
+						plist_count(playlist));
+				set_iface_status_ref (msg);
 			}
 			else 
 				playlist_menu = NULL;
@@ -2053,6 +1987,8 @@ static void event_plist_del (const char *file)
 	else
 		logit ("Server requested deleting an item not present on the"
 				" playlist.");
+
+	free (file);
 }
 
 /* Handle EV_PLIST_CLEAR. */
@@ -2068,7 +2004,7 @@ static void event_plist_clear ()
 }
 
 /* Handle server event. */
-static void server_event (const int event, char *data)
+static void server_event (const int event, void *data)
 {
 	logit ("EVENT: 0x%02x", event);
 
@@ -2108,7 +2044,7 @@ static void server_event (const int event, char *data)
 			break;
 		case EV_PLIST_ADD:
 			if (options_get_int("SyncPlaylist")) {
-				event_plist_add (data);
+				event_plist_add ((struct plist_item *)data);
 				if (curr_menu == playlist_menu)
 					update_menu ();
 			}
@@ -2121,7 +2057,7 @@ static void server_event (const int event, char *data)
 			break;
 		case EV_PLIST_DEL:
 			if (options_get_int("SyncPlaylist")) {
-				event_plist_del (data);
+				event_plist_del ((char *)data);
 				update_menu ();
 			}
 			break;
@@ -2240,12 +2176,12 @@ static void add_file_plist ()
 	}
 
 	if (plist_find_fname(playlist, menu_item->file) == -1) {
-		plist_add_from_item (playlist,
-				&curr_plist->items[menu_item->plist_pos]);
+		struct plist_item *item = &curr_plist->items[
+			menu_item->plist_pos];
+		plist_add_from_item (playlist, item);
 		if (options_get_int("SyncPlaylist")) {
 			send_int_to_srv (CMD_CLI_PLIST_ADD);
-			send_str_to_srv (curr_plist->items[
-					menu_item->plist_pos].file);
+			send_item_to_srv (item);
 		}
 		if (playlist_menu) {
 			menu_free (playlist_menu);
@@ -2300,6 +2236,8 @@ static void add_dir_plist ()
 	if (options_get_int("ReadTags")) {
 		set_iface_status_ref ("Getting tags...");
 		switch_titles_tags (&plist);
+		if (!strcasecmp(options_get_str("ShowTime"), "yes"))
+			read_times (&plist);
 		sync_plists_data (curr_plist, &plist);
 	}
 	else
@@ -2317,7 +2255,7 @@ static void add_dir_plist ()
 		for (i = 0; i < plist.num; i++)
 			if (!plist_deleted(&plist, i)) {
 				send_int_to_srv (CMD_CLI_PLIST_ADD);
-				send_str_to_srv (plist_get_file(&plist, i));
+				send_item_to_srv (&plist.items[i]);
 			}
 	}
 	
@@ -2468,6 +2406,12 @@ static void delete_item ()
 	top_item = curr_menu->top;
 	
 	menu_item = menu_curritem (curr_menu);
+
+	if (menu_item->plist_pos == -1) {
+		interface_error ("You can't delete '..'");
+		return;
+	}
+	
 	send_int_to_srv (CMD_CLI_PLIST_DEL);
 	send_str_to_srv (playlist->items[menu_item->plist_pos].file);
 
@@ -3128,8 +3072,6 @@ static void dequeue_events ()
 		if (!events.head)
 			events.tail = NULL; /* the queue is empty */
 
-		if (e->data)
-			free (e->data);
 		free (e);
 	}
 
@@ -3150,18 +3092,17 @@ static void handle_interrupt ()
 static void get_and_handle_event ()
 {
 	int type = get_int_from_srv ();
-	char *data;
+	void *data;
 
 	/* some events contail data */
-	if (type == EV_PLIST_ADD || type == EV_PLIST_DEL)
+	if (type == EV_PLIST_ADD)
+		data = recv_item_from_srv ();
+	else if (type == EV_PLIST_DEL)
 		data = get_str_from_srv ();
 	else
 		data = NULL;
 
 	server_event (type, data);
-
-	if (data)
-		free (data);
 }
 
 void interface_loop ()
