@@ -713,21 +713,29 @@ void update_file (struct plist_item *item)
 		}
 
 		if (item->title_tags) {
+			int update_title;
+			
+			update_title = item->title == item->title_tags;
 			free (item->title_tags);
-			if (item->title == item->title_tags) {
-				item->tags = read_file_tags (item->file,
-						item->tags, TAGS_COMMENTS);
-				if (item->tags->title) {
-					item->title_tags = build_title (
-							item->tags);
+
+			item->tags = read_file_tags (item->file,
+					item->tags, TAGS_COMMENTS);
+			if (item->tags->title)
+				item->title_tags = build_title (item->tags);
+			else {
+				if (!item->title_file)
+					item->title_file = get_file (item->file,
+							options_get_int(
+								"HideFileExtension"));
+				item->title_tags = NULL;
+			}
+
+			if (update_title) {
+				if (item->title_tags)
 					item->title = item->title_tags;
-				}
 				else
 					item->title = item->title_file;
-					
 			}
-			else
-				item->title_tags = NULL;
 		}
 
 		item->mtime = mtime;
