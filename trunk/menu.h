@@ -19,6 +19,8 @@ struct menu_item
 	char *title;		/* Titile of the item */
 	int attr_normal;	/* Attributes in normal mode */
 	int attr_sel;		/* Attributes in selected mode */
+	int attr_marked;	/* Attributes when marked. */
+	int attr_sel_marked;	/* Attributes in selected and marked mode */
 	int plist_pos;		/* Position of that item on the playlist */
 	char *file;		/* File associated with the item. */ 
 	enum file_type type;	/* Type of the associated file. */
@@ -34,21 +36,15 @@ struct menu
 	int maxy; /* maximum y position */
 	int selected; /* selected item */
 	int marked; /* index of the marked item or -1 */
-
-	/* ncurses attributes for normal items */
-	int attr_normal;
-	int attr_normal_sel;
-
-	/* ncurses attributes for marked item */
-	int attr_marked;
-	int attr_marked_sel;
 };
 
-struct menu *menu_new (WINDOW *win, struct menu_item **items, const int nitems,
-		const int attr_normal, const int attr_normal_sel,
-		const int attr_marked, const int attr_marked_sel);
+struct menu *menu_new (WINDOW *win, struct menu_item **items, const int nitems);
 struct menu_item *menu_newitem (char *title, const int plist_pos,
 		const enum file_type type, const char *file);
+void menu_item_set_attr_normal (struct menu_item *item, const int attr);
+void menu_item_set_attr_sel (struct menu_item *item, const int attr);
+void menu_item_set_attr_sel_marked (struct menu_item *item, const int attr);
+void menu_item_set_attr_marked (struct menu_item *item, const int attr);
 void menu_free (struct menu *menu);
 void menu_driver (struct menu *menu, enum menu_request req);
 struct menu_item *menu_curritem (struct menu *menu);
