@@ -88,6 +88,9 @@ static void *precache_thread (void *data)
 		return NULL;
 	}
 
+	audio_plist_set_time (precache->file,
+			precache->f->get_duration(precache->decoder_data));
+
 	/* Stop at PCM_BUF_SIZE, because when we decode too much, there is no
 	 * place when we can put the data that don't fit into the buffer. */
 	while (precache->buf_fill < PCM_BUF_SIZE) {
@@ -208,7 +211,10 @@ void player (char *file, char *next_file, struct buf *out_buf)
 		logit ("Can't open file, exiting");
 		return;
 	}
+	else
+		audio_plist_set_time (file, f->get_duration(decoder_data));
 
+	audio_state_started_playing ();
 	precache_reset (&precache);
 
 	while (1) {
