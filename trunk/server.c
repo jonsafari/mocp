@@ -346,8 +346,6 @@ static void add_event_all (const int event, void *data)
 				else if (event == EV_PLIST_DEL) {
 					data_copy = xstrdup (data);
 				}
-				else if (event == EV_TAGS)
-					data_copy = tags_dup (data);
 				else
 					logit ("Unhandled data!");
 			}
