@@ -32,6 +32,8 @@
 # endif
 #endif
 
+#define DEBUG
+
 #include "playlist.h"
 #include "main.h"
 #include "interface.h"
@@ -212,9 +214,12 @@ struct file_tags *read_file_tags (char *file, struct file_tags *present_tags,
 		needed_tags = tags_sel;
 	}
 	
-	if (needed_tags)
+	if (needed_tags) {
 		df->info (file, tags, needed_tags);
-	tags->filled |= tags_sel;
+		tags->filled |= tags_sel;
+	}
+	else
+		debug ("No need to read any tags");
 	
 	return tags;
 }
