@@ -36,8 +36,6 @@
 #define AUDIO_MAX_PLAY		0.1
 #define AUDIO_MAX_PLAY_BYTES	32768
 
-#define MIN(a, b) ((a) < (b) ? (a) : (b))
-
 /*static int fd;*/
 
 /* Get the size of continuos filled space in the buffer. */
