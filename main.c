@@ -111,7 +111,7 @@ char *create_file_name (const char *file)
 	len = strlen(home_dir) + strlen(CONFIG_DIR) + strlen(file) + 3;
 
 	if (len > PATH_MAX)
-		return NULL;
+		fatal ("Path too long.");
 
 	sprintf (fname, "%s/%s/%s", home_dir, CONFIG_DIR, file);
 	return fname;
