@@ -152,20 +152,23 @@ enum entry_type
 {
 	ENTRY_DISABLED,
 	ENTRY_SEARCH,
-	ENTRY_PLIST_SAVE
+	ENTRY_PLIST_SAVE,
+	ENTRY_PLIST_OVERWRITE
 };
 
 /* User entry. */
 static struct
 {
-	char text[512];
-	enum entry_type type;
-	char title[32];
-	int width;
+	char text[512];		/* the text the user types */
+	enum entry_type type;	/* type of the entry */
+	char title[32];		/* displayed title */
+	char *file;		/* optional: file associated with the entry */
+	int width;		/* width of the entry part for typing */
 } entry = {
 	"",
 	ENTRY_DISABLED,
 	"",
+	NULL,
 	0
 };
 
@@ -441,6 +444,7 @@ static void make_entry (const enum entry_type type, const char *title)
 {
 	entry.type = type;
 	entry.text[0] = 0;
+	entry.file = NULL;
 	strncpy (entry.title, title, sizeof(entry.title));
 	entry.width = COLS - strlen(title) - 4;
 	entry_draw ();
@@ -450,6 +454,10 @@ static void make_entry (const enum entry_type type, const char *title)
 static void entry_disable ()
 {
 	entry.type = ENTRY_DISABLED;
+	if (entry.file) {
+		free (entry.file);
+		entry.file = NULL;
+	}
 }
 
 /* Update the info win */
@@ -2157,6 +2165,16 @@ static int entry_search_key (const int ch)
 	return 0;
 }
 
+/* Return != 0 if the file exists. */
+static int file_exists (const char *file)
+{
+	struct stat file_stat;
+
+	if (!stat(file, &file_stat))
+		return 1;
+	return 0;
+}
+
 /* Handle keys specific to ENTRY_PLIST_SAVE. Return 1 if a key was handled. */
 static int entry_plist_save_key (const int ch)
 {
@@ -2181,15 +2199,42 @@ static int entry_plist_save_key (const int ch)
 				return 1;
 			}
 
-			set_iface_status_ref ("Saving the playlist...");
-			if (plist_save(playlist, path, cwd))
-				interface_message ("Playlist saved.");
-			set_iface_status_ref (NULL);
+			if (file_exists(path)) {
+				make_entry (ENTRY_PLIST_OVERWRITE,
+						"File exists, owerwrite?");
+				entry.file = xstrdup (path);
+			}
+			else {
+				set_iface_status_ref ("Saving the playlist...");
+				if (plist_save(playlist, path, cwd))
+					interface_message ("Playlist saved.");
+				set_iface_status_ref (NULL);
+			}
 		}
 		update_info_win ();
 		return 1;
 	}
 	return 0;
+}
+
+static int entry_plist_overwrite_key (const int key)
+{
+	if (key == 'y') {
+		char *file = xstrdup (entry.file);
+		
+		entry_disable ();
+		set_iface_status_ref ("Saving the playlist...");
+		if (plist_save(playlist, file, cwd))
+			interface_message ("Playlist saved.");
+		set_iface_status_ref (NULL);
+		free (file);
+	}
+	else if (key == 'n') {
+		entry_disable ();
+		set_iface_status_ref ("Not overwriting.");
+	}
+	
+	return 1;
 }
 
 /* Handle common entry key. Return 1 if a key was handled. */
@@ -2234,6 +2279,8 @@ static void entry_key (const int ch)
 		handled = entry_search_key(ch);
 	if (entry.type == ENTRY_PLIST_SAVE)
 		handled = entry_plist_save_key(ch);
+	if (entry.type == ENTRY_PLIST_OVERWRITE)
+		handled = entry_plist_overwrite_key(ch);
 	if (!handled)
 		entry_common_key (ch);
 	wrefresh (info_win);
