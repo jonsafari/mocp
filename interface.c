@@ -2312,6 +2312,7 @@ static void delete_item ()
 		update_curr_file ();
 		sprintf (msg, "%d files on the list", plist_count(playlist));
 		set_iface_status_ref (msg);
+		update_info_win ();
 		wrefresh (info_win);
 	}
 	else {
