@@ -910,6 +910,15 @@ static void xterm_set_state (int state)
 	}
 }
 
+static void set_time (const int time)
+{
+	file_info.time_num = time;
+	if (time != -1)
+		sec_to_min (file_info.time, time);
+	else
+		strcpy (file_info.time, "00:00");
+}
+
 /* Set the state. */
 static void set_state (const int state)
 {
@@ -919,6 +928,7 @@ static void set_state (const int state)
 			break;
 		case STATE_STOP:
 			strcpy (file_info.state, "[]");
+			set_time (-1);
 			break;
 		case STATE_PAUSE:
 			strcpy (file_info.state, "||");
@@ -1004,15 +1014,6 @@ static char *find_title (char *file)
 	cache_title = title;
 
 	return xstrdup (title);
-}
-
-static void set_time (const int time)
-{
-	file_info.time_num = time;
-	if (time != -1)
-		sec_to_min (file_info.time, time);
-	else
-		strcpy (file_info.time, "00:00");
 }
 
 static void update_channels ()
