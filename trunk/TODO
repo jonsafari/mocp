@@ -20,6 +20,11 @@ Before 2.3.0:
 * Command line option to show information about the currently played file.
 * Add --recursive command line option: if a command line argument is a
   directory, add files from it to the playlist recursively.
+* --next, --previous command line options.
+* Ability to use all xterm colors.
+* After start load the defined playlist and switch to it.
+* When searching using /, filter out not matching items and allow to use arrow
+  keys for browsing the results.
 
 In future:
 
