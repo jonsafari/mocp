@@ -526,3 +526,13 @@ void audio_state_started_playing ()
 	state = STATE_PLAY;
 	state_change ();
 }
+
+int audio_plist_get_serial ()
+{
+	return plist_get_serial (&playlist);
+}
+
+void audio_plist_set_serial (const int serial)
+{
+	plist_set_serial (&playlist, serial);
+}
