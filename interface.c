@@ -431,6 +431,25 @@ static void reset_file_info ()
 	strcpy (file_info.state, "[]");
 }
 
+/* Set cwd to last directory written to a file, return 1 on success. */
+static int read_last_dir ()
+{
+	FILE *dir_file;
+	int res = 1;
+	int read;
+
+	if (!(dir_file = fopen(create_file_name("last_directory"), "r")))
+		return 0;
+
+	if ((read = fread(cwd, sizeof(char), sizeof(cwd)-1, dir_file)) == 0)
+		res = 0;
+	else
+		cwd[read] = 0;
+
+	fclose (dir_file);
+	return res;
+}
+
 /* Try to find the directory we can start. */
 static void set_start_dir ()
 {
@@ -443,8 +462,6 @@ static void set_start_dir ()
 		if (cwd[sizeof(cwd)-1])
 			fatal ("$HOME is larger than PATH_MAX!");
 	}
-
-	//strcpy (cwd, "/home/daper/mp3/metal/heavy/Iron Maiden/2000 - Brave New World");
 }
 
 static int qsort_dirs_func (const void *a, const void *b)
@@ -824,6 +841,16 @@ static int go_to_dir (char *dir)
 	return 1;
 }
 
+/* Enter to the initial directory. */
+static void enter_first_dir ()
+{
+	if (read_last_dir() && go_to_dir(NULL))
+		return;
+	set_start_dir ();
+	if (!go_to_dir(NULL))
+		interface_fatal ("Can't enter any directory.");
+}
+
 /* Set the has_xterm variable. */
 static void detect_term ()
 {
@@ -861,7 +888,6 @@ static void check_term_size ()
 void init_interface (const int sock, const int debug)
 {
 	srv_sock = sock;
-	set_start_dir ();
 	if (debug) {
 		FILE *logfp;
 
@@ -921,8 +947,7 @@ void init_interface (const int sock, const int debug)
 	main_border ();
 	get_server_options ();
 	
-	if (!go_to_dir(NULL))
-		interface_fatal ("Can't go to the initial directory.");
+	enter_first_dir ();
 	menu_draw (menu);
 	wrefresh (main_win);
 	update_state ();
@@ -1464,8 +1489,24 @@ void interface_loop ()
 	free (playlist);
 }
 
+/* Save the current directory path to a file. */
+static void save_curr_dir ()
+{
+	FILE *dir_file;
+
+	if (!(dir_file = fopen(create_file_name("last_directory"), "w"))) {
+		interface_error ("Can't save current directory: %s",
+				strerror(errno));
+		return;
+	}
+
+	fprintf (dir_file, "%s", cwd);
+	fclose (dir_file);
+}
+
 void interface_end ()
 {
+	save_curr_dir ();
 	close (srv_sock);
 	endwin ();
 	xterm_clear_title ();
