@@ -49,6 +49,8 @@
 #define CMD_PREV	0x20 /* start playing previous song if available */
 #define CMD_SEND_PLIST	0x21 /* send the playlist to the requesting client */
 #define CMD_GET_PLIST	0x22 /* get the playlist from one of the clients */
+#define CMD_CAN_SEND_PLIST	0x23 /* mark the client as able to to send
+					playlist */
 
 char *socket_name ();
 int get_int (int sock, int *i);
