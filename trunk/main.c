@@ -25,7 +25,7 @@
 #include <getopt.h>
 #include <errno.h>
 #include <unistd.h>
-
+#include <time.h>
 #include "server.h"
 #include "main.h"
 #include "interface.h"
@@ -146,6 +146,7 @@ static void start_moc (const struct parameters *params)
 
 	options_init ();
 	options_parse (create_file_name(CONFIG_FILE));
+	srand (time(NULL));
 
 	if (!params->foreground && (server_sock = server_connect()) == -1) {
 		int notify_pipe[2];
