@@ -1143,6 +1143,12 @@ static void set_mixer (int val)
 	wrefresh (info_win);
 }
 
+static void seek (const int sec)
+{
+	send_int_to_srv (CMD_SEEK);
+	send_int_to_srv (sec);
+}
+
 /* Handle key */
 static void menu_key (const int ch)
 {
@@ -1231,6 +1237,12 @@ static void menu_key (const int ch)
 			break;
 		case '>':
 			set_mixer (get_mixer() + 1);
+			break;
+		case KEY_LEFT:
+			seek (-1);
+			break;
+		case KEY_RIGHT:
+			seek (1);
 			break;
 		case KEY_RESIZE:
 			break;
