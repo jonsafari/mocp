@@ -27,6 +27,7 @@ Before 2.0:
 
 In future:
 
+* Moving items on the playlist up and down.
 * Input buffer with separate thread - like output buffer.
 * Start to buffer another file when the decoder ends playing.
 * Add --disable-debug (debug code - logging)
