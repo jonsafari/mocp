@@ -60,24 +60,41 @@ enum file_type file_type (char *file)
 	return F_OTHER;
 }
 
+/* Get file name from a path. Returned memory is malloc()ed. */
+static char *get_file (char *path, const int strip_ext)
+{
+	char *fname;
+	char *ext;
+	
+	assert (path != NULL);
+
+	fname = strrchr (path, '/');
+
+	if (fname)
+		fname++;
+	else
+		fname = path;
+
+	fname = xstrdup (fname);
+	
+	if (strip_ext && (ext = ext_pos(fname)))
+		*(ext-1) = 0;
+
+	return fname;
+}
+
 /* Make titles for the playlist items from the file names. */
 void make_titles_file (struct plist *plist)
 {
+	int hide_extension = options_get_int ("HideFileExtension");
 	int i;
 
 	for (i = 0; i < plist->num; i++) {
 		char *fname;
 
-		assert (plist->items[i].file != NULL);
-
-		fname = strrchr (plist->items[i].file, '/');
-
-		if (fname)
-			fname++;
-		else
-			fname = plist->items[i].file;
-
+		fname = get_file (plist->items[i].file, hide_extension);
 		plist_set_title (plist, i, fname);
+		free (fname);
 	}
 }
 
@@ -85,6 +102,7 @@ void make_titles_file (struct plist *plist)
 void make_titles_tags (struct plist *plist)
 {
 	int i;
+	int hide_extension = options_get_int ("HideFileExtension");
 
 	for (i = 0; i < plist->num; i++) {
 
@@ -98,14 +116,11 @@ void make_titles_tags (struct plist *plist)
 			free (title);
 		}
 		else {
-			char *fname = strrchr (plist->items[i].file, '/');
-
-			if (fname)
-				fname++;
-			else
-				fname = plist->items[i].file;
-
+			char *fname;
+				
+			fname = get_file (plist->items[i].file, hide_extension);
 			plist_set_title (plist, i, fname);
+			free (fname);
 		}
 	}
 }
@@ -341,8 +356,8 @@ char *ext_pos (char *file)
 	char *ext = strrchr (file, '.');
 	char *slash = strrchr (file, '/');
 
-	/* don't treat dot in ./file as a dot before extension */
-	if (ext && (!slash || slash < ext))
+	/* don't treat dot in ./file or /.file as a dot before extension */
+	if (ext && (!slash || slash < ext) && ext != file && *(ext-1) != '/')
 		ext++;
 	else
 		ext = NULL;

@@ -58,3 +58,6 @@ ShowHiddenFiles		= no
 # Start in the music directory if no arguments are given. If set to no, start
 # in the current directory.
 StartInMusicDir		= no
+
+# Hide file name extensions
+HideFileExtension	= no
