@@ -41,6 +41,7 @@
 #define CMD_PING	0x19 /* request for EV_PONG */
 #define CMD_GET_MIXER	0x1a /* get the volume level */
 #define CMD_SET_MIXER	0x1b /* set the volume level */
+#define CMD_DELETE	0x1c /* delete an item from the playlist */
 
 char *socket_name ();
 int get_int (int sock, int *i);
