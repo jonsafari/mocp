@@ -1,10 +1,5 @@
 Before 2.1.0:
 
-* General procedures for reading files instead of doing this at the decoder
-  level.
-* Try mmap() again if size of the file has changed.
-* option to disable mmap(). (slow on NFS - use fstatfs()?) 
-* Start to buffer another file when the decoder ends playing.
 * Configurable sorting.
 * r - also reread the playlist.
 * iconv() to fix encoding.
@@ -17,11 +12,17 @@ Before 2.1.0:
 * Fix showing time bigger than 99:59.
 * Reload directory when after backing to curr_plist_menu detected that the
   directory has changed.
+* Fix losing error messages when something is displayed after them too fast.
+* Finish ALSA.
+
+Before 2.2.0:
+* fast going to a directory - when after CTRL-g user enters absolute path
+  or a path that begins with ~.
+* flac
 
 In future:
 
-* fast going to a directory - when after CTRL-g user enters absolute path
-  or a path that begins with ~.
+* handle SIGBUS - when mmap()ed file is truncated.
 * configurable saving the playlist at the end: ask, no, not if saved, always
 * Cache for tags in each directory. (.cache.m3u?)
 * Binary search in options code.
@@ -38,7 +39,6 @@ In future:
 * Support for Audio-CD.
 * Support for CDDB.
 * Support for internet streams.
-* flac
 * libsidplay2
 * Use 24-bit output if output device supports it.
 * Seek forward using the content of the output buffer.
