@@ -1075,7 +1075,7 @@ static void update_ctime ()
 	wrefresh (info_win);
 }
 
-/* Update time in the menus an items for playlist and curr_plist for the given
+/* Update time in the menus and items for playlist and curr_plist for the given
  * file. */
 void update_times (const char *file, const int time)
 {
@@ -1089,7 +1089,8 @@ void update_times (const char *file, const int time)
 				curr_plist->items[i].file,
 				curr_plist->items[i].tags, 0);
 		curr_plist->items[i].tags->time = time;
-		menu_item_set_time_plist (curr_plist_menu, i, time_str);
+		if (curr_plist_menu)
+			menu_item_set_time_plist (curr_plist_menu, i, time_str);
 	}
 	
 	if ((i = plist_find_fname(playlist, file)) != -1) {
@@ -1097,7 +1098,8 @@ void update_times (const char *file, const int time)
 				playlist->items[i].file,
 				playlist->items[i].tags, 0);
 		playlist->items[i].tags->time = time;
-		menu_item_set_time_plist (playlist_menu, i, time_str);
+		if (playlist_menu)
+			menu_item_set_time_plist (playlist_menu, i, time_str);
 	}
 }
 
@@ -2232,6 +2234,71 @@ static void entry_key (const int ch)
 	wrefresh (info_win);
 }
 
+/* Fill time in tags and menu items for all items in plist. */
+static void fill_times (struct plist *plist, struct menu *menu)
+{
+	int i;
+
+	for (i = 0; i < plist->num; i++)
+		if (!plist_deleted(plist, i)) {		
+			plist->items[i].tags = read_file_tags(
+					plist->items[i].file,
+					plist->items[i].tags,
+					TAGS_TIME);
+			if (menu && plist->items[i].tags->time != -1) {
+				char time_str[6];
+
+				sec_to_min (time_str,
+						plist->items[i].tags->time);
+				menu_item_set_time_plist (menu, i, time_str);
+			}
+		}
+}
+
+static void toggle_show_time ()
+{
+	if (!strcasecmp(options_get_str("ShowTime"), "yes")) {
+		option_set_str("ShowTime", "IfAvailable");
+		set_iface_status_ref ("ShowTime: IfAvailable");
+	}
+	else if (!strcasecmp(options_get_str("ShowTime"), "no")) {
+		option_set_str("ShowTime", "yes");
+		if (playlist_menu)
+			menu_set_show_time (playlist_menu, 1);
+		if (curr_plist_menu)
+			menu_set_show_time (curr_plist_menu, 1);
+		set_iface_status_ref ("Getting times...");
+		fill_times (playlist, playlist_menu);
+		fill_times (curr_plist, curr_plist_menu);
+		set_iface_status_ref ("ShowTime: yes");
+		
+	}
+	else { /* IfAvailable */
+		option_set_str("ShowTime", "no");
+		if (playlist_menu)
+			menu_set_show_time (playlist_menu, 0);
+		if (curr_plist_menu)
+			menu_set_show_time (curr_plist_menu, 0);
+		set_iface_status_ref ("ShowTime: no");
+	}	
+}
+
+static void toggle_show_format ()
+{
+	int show_format = !options_get_int("ShowFormat");
+	
+	option_set_int ("ShowFormat", show_format);
+	if (show_format)
+		set_iface_status_ref ("ShowFormat: yes");
+	else
+		set_iface_status_ref ("ShowFormat: no");
+
+	if (curr_plist_menu)
+		menu_set_show_format (curr_plist_menu, show_format);
+	if (playlist_menu)
+		menu_set_show_format (playlist_menu, show_format);
+}
+
 /* Handle key */
 static void menu_key (const int ch)
 {
@@ -2413,6 +2480,14 @@ static void menu_key (const int ch)
 				else
 					interface_error ("The playlist is "
 							"empty.");
+				break;
+			case CTRL('t'):
+				toggle_show_time ();
+				do_update_menu = 1;
+				break;
+			case CTRL('f'):
+				toggle_show_format ();
+				do_update_menu = 1;
 				break;
 			case KEY_RESIZE:
 				break;
