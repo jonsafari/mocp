@@ -193,7 +193,7 @@ static struct decoder sndfile_decoder = {
 	sndfile_get_name
 };
 
-struct decoder *sndfile_get_funcs ()
+struct decoder *plugin_init ()
 {
 	return &sndfile_decoder;
 }

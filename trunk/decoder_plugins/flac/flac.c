@@ -15,7 +15,7 @@
 #include "config.h"
 #endif
 
-#define DEBUG
+/*#define DEBUG*/
 
 #include <string.h>
 #include <FLAC/all.h>
@@ -450,7 +450,7 @@ static struct decoder flac_decoder = {
 	flac_get_name
 };
 
-struct decoder *flac_get_funcs ()
+struct decoder *plugin_init ()
 {
 	return &flac_decoder;
 }

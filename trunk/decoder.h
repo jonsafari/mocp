@@ -62,6 +62,9 @@ struct decoder
 	void (*get_name)(const char *file, char buf[4]);
 };
 
+/* Function that must be exported by a plugin. */
+typedef struct decoder *(*plugin_init_func)();
+
 int is_sound_file (const char *name);
 struct decoder *get_decoder (const char *file);
 void decoder_init ();

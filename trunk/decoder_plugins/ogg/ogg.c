@@ -241,7 +241,7 @@ static struct decoder ogg_decoder = {
 	ogg_get_name
 };
 
-struct decoder *ogg_get_funcs ()
+struct decoder *plugin_init ()
 {
 	return &ogg_decoder;
 }

@@ -34,20 +34,18 @@ mocp_SOURCES = log.c \
 	       themes.c \
 	       themes.h \
 	       keys.c \
-	       keys.h
+	       keys.h \
+	       ltdl.c \
+	       ltdl.h
 EXTRA_mocp_SOURCES = gnugetopt.h \
 		     getopt.c \
 		     getopt1.c \
-		     mp3.h \
 		     null_out.c \
 		     null_out.h \
 		     oss.c \
 		     oss.h \
-		     ogg.h \
 		     alsa.c \
-		     alsa.h \
-		     flac.h \
-		     sndfile_formats.h
+		     alsa.h
 man_MANS = mocp.8
 mocp_LDADD = @EXTRA_OBJS@
 mocp_DEPENDENCIES = @EXTRA_OBJS@
