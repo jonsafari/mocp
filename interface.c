@@ -1200,57 +1200,6 @@ static void play_it (const int plist_pos)
 	free (file);
 }
 
-/* Action when the user selected a file. */
-static void go_file ()
-{
-	struct menu_item *menu_item = menu_curritem (menu);
-
-	if (menu_item->type == F_SOUND)
-		play_it (menu_item->plist_pos);
-	else if (menu_item->type == F_DIR) {
-		char dir[PATH_MAX + 1];
-		
-		if (!strcmp(menu_item->file, "..")) {
-			char *slash;
-
-			strcpy (dir, cwd);				
-			slash = strrchr (dir, '/');
-			assert (slash != NULL);
-			*slash = 0;
-		}
-		else
-			strcpy (dir, menu_item->file);
-
-		go_to_dir (dir);
-	}
-}
-
-/* pause/unpause */
-static void switch_pause ()
-{
-	send_int_to_srv (CMD_GET_STATE);
-	switch (get_data_int()) {
-		case STATE_PLAY:
-			send_int_to_srv (CMD_PAUSE);
-			break;
-		case STATE_PAUSE:
-			send_int_to_srv (CMD_UNPAUSE);
-			break;
-		default:
-			logit ("User pressed pause when not playing.");
-	}
-}
-
-static void toggle_option (const char *name)
-{
-	send_int_to_srv (CMD_SET_OPTION);
-	send_str_to_srv (name);
-	send_int_to_srv (!options_get_int(name));
-	sync_int_option (name);
-	update_info_win ();
-	wrefresh (info_win);
-}
-
 /* Switch between the current playlist and the playlist
  * (curr_plist/playlist). */
 static void toggle_plist ()
@@ -1283,6 +1232,61 @@ static void toggle_plist ()
 	else
 		interface_error ("The playlist is empty.");
 
+	wrefresh (info_win);
+}
+
+/* Action when the user selected a file. */
+static void go_file ()
+{
+	struct menu_item *menu_item = menu_curritem (menu);
+
+	if (menu_item->type == F_SOUND)
+		play_it (menu_item->plist_pos);
+	else if (menu_item->type == F_DIR && visible_plist == curr_plist) {
+		char dir[PATH_MAX + 1];
+		
+		if (!strcmp(menu_item->file, "..")) {
+			char *slash;
+
+			strcpy (dir, cwd);				
+			slash = strrchr (dir, '/');
+			assert (slash != NULL);
+			*slash = 0;
+		}
+		else
+			strcpy (dir, menu_item->file);
+
+		go_to_dir (dir);
+	}
+	else if (menu_item->type == F_DIR && visible_plist == playlist)
+		
+		/* the only item on the playlist of type F_DIR is '..' */
+		toggle_plist ();
+}
+
+/* pause/unpause */
+static void switch_pause ()
+{
+	send_int_to_srv (CMD_GET_STATE);
+	switch (get_data_int()) {
+		case STATE_PLAY:
+			send_int_to_srv (CMD_PAUSE);
+			break;
+		case STATE_PAUSE:
+			send_int_to_srv (CMD_UNPAUSE);
+			break;
+		default:
+			logit ("User pressed pause when not playing.");
+	}
+}
+
+static void toggle_option (const char *name)
+{
+	send_int_to_srv (CMD_SET_OPTION);
+	send_str_to_srv (name);
+	send_int_to_srv (!options_get_int(name));
+	sync_int_option (name);
+	update_info_win ();
 	wrefresh (info_win);
 }
 
