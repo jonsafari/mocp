@@ -2927,6 +2927,16 @@ static void dequeue_events ()
 	debug ("done");
 }
 
+/* Handle interrupt (CTRL-C) */
+static void handle_interrupt ()
+{
+	if (entry.type != ENTRY_DISABLED) {
+		entry_disable ();
+		update_info_win ();
+		wrefresh (info_win);
+	}
+}
+
 void interface_loop ()
 {
 	while (!want_quit) {
@@ -2965,6 +2975,8 @@ void interface_loop ()
 				server_event (get_int_from_srv());
 			dequeue_events ();
 		}
+		else if (user_wants_interrupt())
+			handle_interrupt ();
 	}
 }
 
