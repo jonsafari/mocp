@@ -47,7 +47,7 @@ static void *read_thread (void *arg)
 	logit ("entering output buffer thread");
 
 	while (1) {
-		int played;
+		int played = 0;
 		char play_buf[AUDIO_MAX_PLAY_BYTES];
 		int play_buf_fill;
 		int play_buf_pos = 0;
