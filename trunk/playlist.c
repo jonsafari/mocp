@@ -7,6 +7,8 @@
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
  *
+ * Author of title building code: Florian Kriener <me@leflo.de>
+ *
  */
 
 #ifdef HAVE_CONFIG_H
