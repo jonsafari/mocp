@@ -242,8 +242,10 @@ static int flush_events ()
 
 	LOCK (event_queue_mut);
 	for (i = 0; i < nevents; i++)
-		if (!send_int(client_sock, event_queue[i]))
+		if (!send_int(client_sock, event_queue[i])) {
+			UNLOCK (event_queue_mut);
 			return 0;
+		}
 	
 	nevents = 0;
 	UNLOCK (event_queue_mut);
