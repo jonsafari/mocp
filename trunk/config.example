@@ -61,3 +61,13 @@ StartInMusicDir		= no
 
 # Hide file name extensions
 HideFileExtension	= no
+
+# Show file format in menu.
+ShowFormat		= yes
+
+# Show file time in menu. Possible options: yes, no, IfAvailable - show the
+# time only when it was read before (often works faster)
+ShowTime		= IfAvailable
+
+# Theme file. This can be absolute path or relative to ~/.moc/themes/
+# Theme			= example_theme
