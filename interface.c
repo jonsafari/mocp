@@ -1718,15 +1718,15 @@ static char *find_theme_file (const char *name)
 		return path;
 	}
 
-	/* Try the system directory */
-	if (snprintf(path, sizeof(path), "%s/%s", SYSTEM_THEMES_DIR,
+	/* Try the user directory */
+	if (snprintf(path, sizeof(path), "%s/%s", create_file_name("themes"),
 				name) >= (int)sizeof(path))
 		interface_fatal ("Theme path too long!");
 	if (file_exists(path))
 		return path;
-
-	/* Try the user directory */
-	if (snprintf(path, sizeof(path), "%s/%s", create_file_name("themes"),
+	
+	/* Try the system directory */
+	if (snprintf(path, sizeof(path), "%s/%s", SYSTEM_THEMES_DIR,
 				name) >= (int)sizeof(path))
 		interface_fatal ("Theme path too long!");
 	if (file_exists(path))
