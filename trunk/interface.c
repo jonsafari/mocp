@@ -1397,9 +1397,13 @@ static void switch_read_tags ()
 		make_titles_tags (curr_plist);
 	}
 
-	update_menu_titles (menu, curr_plist);
-	if (saved_menu)
-		update_menu_titles (saved_menu, playlist);
+	if (visible_plist == curr_plist)
+		update_menu_titles (menu, curr_plist);
+	else
+	{
+		update_menu_titles (menu, playlist);
+		update_menu_titles (saved_menu, curr_plist);
+	}
 	update_curr_file ();
 }
 
