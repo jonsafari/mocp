@@ -24,6 +24,8 @@
 #include "buf.h"
 #include "server.h"
 
+/*#define DEBUG*/
+
 enum request
 {
 	REQ_NOTHING,
@@ -63,7 +65,9 @@ void player (const char *file, struct decoder_funcs *f, struct buf *out_buf)
 	}
 
 	while (1) {
+#ifdef DEBUG
 		logit ("loop...");
+#endif
 		
 		LOCK (request_cond_mutex);
 		if (!eof && !decoded) {
@@ -75,7 +79,9 @@ void player (const char *file, struct decoder_funcs *f, struct buf *out_buf)
 				logit ("EOF from decoder");
 			}
 			else {
+#ifdef DEBUG
 				logit ("decoded %d bytes", decoded);
+#endif
 				if (!sound_params_eq(new_sound_params,
 							sound_params))
 					sound_params_change = 1;
@@ -84,7 +90,9 @@ void player (const char *file, struct decoder_funcs *f, struct buf *out_buf)
 		else if ((decoded > buf_get_free(out_buf)
 				|| (eof && buf_get_free(out_buf)))
 				&& out_buf->fill) {
+#ifdef DEBUG
 			logit ("waiting...");
+#endif
 			pthread_cond_wait (&request_cond, &request_cond_mutex);
 			UNLOCK (request_cond_mutex);
 		}
