@@ -111,7 +111,7 @@ static char mainwin_title[512];
 static int msg_timeout = 0;
 static int msg_is_error = 0;
 static char message[512] = "Welcome to "PACKAGE_STRING"! "
-	"Please send bug reports to "PACKAGE_BUGREPORT;
+	"Press h for the list of commands.";
 static char interface_status[STATUS_LINE_LEN + 1] = "              ";
 
 static struct plist *curr_plist = NULL; /* Current directory */
