@@ -182,6 +182,36 @@ static void append_items (int sock, char **args, int num)
 
 }
 
+static void set_prio ()
+{
+#ifdef HAVE_PRIORITY
+
+#ifdef HAVE_SCHED_SETSCHEDULER
+	struct sched_param p;
+#endif
+
+	if (options_get_int("Priority") != 0) {
+		if (setpriority(PRIO_PROCESS, 0, options_get_int("Priority"))
+				== -1)
+			fprintf (stderr, "setpriority() failed: %s\n",
+					strerror(errno));
+
+#ifdef HAVE_SCHED_SETSCHEDULER
+		if ((p.sched_priority = sched_get_priority_max(SCHED_FIFO))
+				== -1)
+			fprintf (stderr, "sched_get_priority_max() failed: %s\n",
+					strerror(errno));
+		else if (sched_setscheduler(0, SCHED_FIFO, &p) == -1)
+			fprintf (stderr, "sched_setscheduler() failed: %s\n",
+					strerror(errno));
+#endif
+	}
+		
+	/* Drop root privileges, if we are not root */
+	setuid (getuid());
+#endif
+}
+
 /* Run client and the server if needed. */
 static void start_moc (const struct parameters *params, char **args,
 		const int arg_num)
@@ -192,6 +222,7 @@ static void start_moc (const struct parameters *params, char **args,
 	check_moc_dir ();
 
 	options_parse (create_file_name(CONFIG_FILE));
+	set_prio ();
 	file_types_init ();
 	srand (time(NULL));
 
