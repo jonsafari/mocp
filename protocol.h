@@ -45,6 +45,7 @@
 #define CMD_SEND_EVENTS 0x1d /* request for events */
 #define CMD_GET_ERROR	0x1e /* get the error message */
 #define CMD_GET_FTIME	0x1f /* get time of a file from the server */
+#define CMD_PREV	0x20 /* start playing previous song if available */
 
 char *socket_name ();
 int get_int (int sock, int *i);

@@ -593,6 +593,9 @@ static void handle_command (struct client *cli)
 		case CMD_NEXT:
 			audio_next ();
 			break;
+		case CMD_PREV:
+			audio_prev ();
+                        break;
 		case CMD_PING:
 			if (!send_int(cli->socket, EV_PONG))
 				err = 1;
