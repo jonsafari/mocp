@@ -17,6 +17,7 @@
 #include <pthread.h>
 #include <signal.h>
 #include <string.h>
+#include <errno.h>
 
 #include "server.h"
 #include "main.h"
@@ -36,7 +37,7 @@
 #include "protocol.h"
 #include "options.h"
 
-static pthread_t playing_thread;  /* tid of play thread */
+static pthread_t playing_thread = 0;  /* tid of play thread */
 
 static int curr_playing = -1; /* currently played item */
 static pthread_mutex_t curr_playing_mut = PTHREAD_MUTEX_INITIALIZER;
@@ -53,6 +54,7 @@ static volatile enum play_request request = PR_NOTHING;
 static int stop_playing = 0;
 
 static struct plist playlist;
+static struct plist shuffled_plist;
 
 enum play_request get_request ()
 {
@@ -71,28 +73,28 @@ static void make_play_request (const enum play_request req)
 
 static void *play_thread (void *unused)
 {
-	play_func_t play_func;
-	int play_num; /* The REAL position of the item on the playlist */
-
 	logit ("entering playing thread");
 
-	LOCK (curr_playing_mut);
-	play_num = plist_find (&playlist, curr_playing);
-	UNLOCK (curr_playing_mut);
+	if (options_get_int("Shuffle") && !shuffled_plist.num) {
+		plist_clear (&shuffled_plist);
+		plist_copy (&shuffled_plist, &playlist);
+		plist_shuffle (&shuffled_plist);
+	}
 	
-	while (play_num != -1) {
-		char *file;
-		
-		file = plist_get_file (&playlist, play_num);
+	while (curr_playing != -1) {
+		play_func_t play_func;
+		char *file = plist_get_file (&playlist, curr_playing);
+
 		if (file) {
 			play_func = get_play_func (file);
 			if (play_func) {
-				logit ("Playing item %d: %s", play_num, file);
+				logit ("Playing item %d: %s", curr_playing,
+						file);
 				
-				request = PR_NOTHING;
 				state = STATE_PLAY;
 				buf_time_set (&out_buf, 0.0);
 				state_change ();
+				buf_reset (&out_buf);
 				
 				play_func (file, &out_buf);
 				
@@ -106,25 +108,28 @@ static void *play_thread (void *unused)
 			}
 			else
 				logit ("Unknown file type of item %d: %s",
-						play_num, file);
+						curr_playing, file);
 			free (file);
 		}
 
 		if (stop_playing || !options_get_int("AutoNext")) {
 			LOCK (curr_playing_mut);
 			curr_playing = -1;
-			play_num = -1;
 			UNLOCK (curr_playing_mut);
 			stop_playing = 0;
 			logit ("play thread: stopped");
 		}
 		else {
 			LOCK (curr_playing_mut);
-			curr_playing = plist_next (&playlist, play_num);
+			if (options_get_int("Shuffle")
+					&& !shuffled_plist.num) {
+				plist_copy (&shuffled_plist, &playlist);
+				plist_shuffle (&playlist);
+			}
+
+			curr_playing = plist_next (&playlist, curr_playing);
 			if (curr_playing == -1 && options_get_int("Repeat"))
-				curr_playing = 0;
-			play_num = curr_playing != -1 ?
-				plist_find (&playlist, curr_playing) : -1;
+				curr_playing = plist_next (&playlist, -1);
 			UNLOCK (curr_playing_mut);
 		}
 
@@ -143,30 +148,33 @@ void audio_reset ()
 
 void audio_stop ()
 {
-	int playing;
-
-	LOCK (curr_playing_mut);
-	playing = curr_playing;
-	UNLOCK (curr_playing_mut);
-	
-	if (playing != -1) {
+	if (playing_thread) {
 		logit ("audio_stop()");
 		stop_playing = 1;
 		make_play_request (PR_STOP);
+		buf_stop (&out_buf);
 		logit ("pthread_join(playing_thread, NULL)");
-		pthread_join (playing_thread, NULL);
+		if (pthread_join(playing_thread, NULL))
+			logit ("pthread_join() failed: %s", strerror(errno));
+		playing_thread = 0;
 		logit ("done stopping");
 	}
 }
 
-void audio_play (int num)
+void audio_play (const char *fname)
 {
 	audio_stop ();
 	
 	LOCK (curr_playing_mut);
-	curr_playing = num;
-	if (pthread_create(&playing_thread, NULL, play_thread, NULL))
-		error ("can't create thread");
+	curr_playing = plist_find_fname (&playlist, fname);
+	if (curr_playing != -1) {
+		request = PR_NOTHING;
+		if (pthread_create(&playing_thread, NULL, play_thread, NULL))
+			error ("can't create thread");
+	}
+	else
+		logit ("Client wanted to play a file not present on the "
+				"playlist.");
 	UNLOCK (curr_playing_mut);
 }
 
@@ -255,6 +263,7 @@ void audio_init (const char *sound_driver)
 	hw.init ();
 	buf_init (&out_buf, options_get_int("OutputBuffer") * 1024);
 	plist_init (&playlist);
+	plist_init (&shuffled_plist);
 }
 
 void audio_exit ()
@@ -293,11 +302,13 @@ int audio_get_state ()
 void audio_plist_add (const char *file)
 {
 	plist_add (&playlist, file);
+	plist_clear (&shuffled_plist); /* now it isn't up to data */
 }
 
 void audio_plist_clear ()
 {
 	plist_clear (&playlist);
+	plist_clear (&shuffled_plist); /* not it isn't up to date */
 }
 
 /* Returned memory is malloc()ed. */
