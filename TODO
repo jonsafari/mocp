@@ -1,9 +1,6 @@
 Before 2.2.0:
 * test if sync_plists_data() isn't too slow.
 * test if plist_total_time() isn't too slow.
-* Ctrl-C to exit from an entry.
-* Pause as a command line option.
-* Command to go to a directory where the currently played file is.
 * When playing file - use the time read by the server in the interface.
 * configurable saving the playlist at the end: ask, no, not if saved, always.
 * A bar showing time for the current song.
@@ -16,6 +13,9 @@ Before 2.2.0:
 * When adding files to the playlist, add them also to the server's playlist
 * True shuffle.
 * History in the i command.
+* A key for going up a directory (e.g. Ctrl-PageUp like in Midnight Commander).
+* Shift-left and Shift-right for faster seeking (10 sec. per keystroke).
+* Hide the cursor
 
 In future:
 
@@ -43,6 +43,7 @@ In future:
 * Seek forward using the content of the output buffer.
 * Locales.
 * Song ratings.
+* www.musepack.net (www.caddr.com)
 
 Maybe never:
 
