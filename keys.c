@@ -412,6 +412,7 @@ static struct special_keys
 	{ "TAB",		'\t' },
 	{ "END",		KEY_END },
 	{ "KEYPAD_CENTER",	KEY_B2 },
+	{ "SPACE",		' ' },
 	{ "F1",			KEY_F(1) },
 	{ "F2",			KEY_F(2) },
 	{ "F3",			KEY_F(3) },
