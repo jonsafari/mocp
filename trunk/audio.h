@@ -49,5 +49,7 @@ int audio_get_state ();
 void audio_plist_add (const char *file);
 void audio_plist_clear ();
 char *audio_get_sname ();
+void audio_set_mixer (const int val);
+int audio_get_mixer ();
 
 #endif
