@@ -39,6 +39,8 @@
 #define CMD_GET_RATE	0x17 /* get the rate */
 #define CMD_GET_CHANNELS	0x18 /* get the number of channels */
 #define CMD_PING	0x19 /* request for EV_PONG */
+#define CMD_GET_MIXER	0x1a /* get the volume level */
+#define CMD_SET_MIXER	0x1b /* set the volume level */
 
 char *socket_name ();
 int get_int (int sock, int *i);
