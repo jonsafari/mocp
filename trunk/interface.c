@@ -3086,7 +3086,7 @@ static void save_playlist ()
 {
 	char *plist_file = create_file_name("playlist.m3u");
 
-	if (plist_count(playlist)) {
+	if (plist_count(playlist) && options_get_int("SavePlaylist")) {
 		set_iface_status_ref ("Saving the playlist...");
 		plist_save (playlist, plist_file, NULL);
 		set_iface_status_ref (NULL);

@@ -161,6 +161,7 @@ void options_init ()
 	option_add_int ("UseMmap", 1);
 	option_add_int ("Precache", 1);
 	option_add_str ("TagsIconv", NULL);
+	option_add_int ("SavePlaylist", 1);
 }
 
 /* Return 1 if a parameter to an integer option is valid. */
@@ -176,6 +177,7 @@ int check_int_option (const char *name, const int val)
 			|| !strcasecmp(name, "StartInMusicDir")
 			|| !strcasecmp(name, "HideFileExtension")
 			|| !strcasecmp(name, "ShowFormat")
+			|| !strcasecmp(name, "SavePlaylist")
 			) {
 		if (!(val == 1 || val == 0))
 			return 0;
