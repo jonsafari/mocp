@@ -94,6 +94,11 @@ static struct plist *visible_plist = NULL; /* The playlist the user sees */
 static struct menu *menu = NULL;
 static struct menu *saved_menu = NULL; /* Menu associated with curr_plist */
 
+static enum {
+	WIN_MENU,
+	WIN_HELP
+} main_win_mode = WIN_MENU;
+
 static struct file_info {
 	char title[100];
 	char bitrate[4];
@@ -515,10 +520,9 @@ static void mark_file (const char *file)
 		
 		if (i != -1) {
 			menu_mark_plist_item (menu, i);
-			menu_draw (menu);
+			if (main_win_mode == WIN_MENU)
+				menu_draw (menu);
 		}
-		else
-			menu_unmark_item (menu);
 	}
 	else
 		menu_unmark_item (menu);
@@ -730,8 +734,10 @@ static void update_state ()
 	
 	update_curr_file ();
 	
-	menu_draw (menu);
-	wrefresh (main_win);
+	if (main_win_mode == WIN_MENU) {
+		menu_draw (menu);
+		wrefresh (main_win);
+	}
 
 	update_channels ();
 	update_bitrate ();
@@ -1150,10 +1156,61 @@ static void seek (const int sec)
 	send_int_to_srv (sec);
 }
 
+static void print_help_screen ()
+{
+	wclear (main_win);
+	if (has_colors())
+		wbkgd (main_win, COLOR_PAIR(CLR_ITEM));
+
+	mvwprintw (main_win, 0, 0,
+"  UP, DOWN     Move up and down in the menu\n"
+"  PAGE UP/DOWN Move one page up/down\n"
+"  HOME, END    Move to the first, last item\n"
+"  ENTER        Start playing files (from this file) or go to directory\n"
+"  s            Stop playing\n"
+"  n            Next song\n"
+"  p, SPACE     Pause/unpause\n"
+"  LEFT, RIGHT  Seek backward, forward\n"
+"  h            Show this help screen\n"
+"  f            Switch between short and full names\n"
+"  m            Go to the music directory (requires an entry in the config)\n"
+"  a/A          Add file to the playlist / Add directory recursively\n"
+"  d/C          Delete item from the playlist / Clear the playlist\n"
+"  l            Switch between playlist and file list\n"
+"  S/R/X        Switch shuffle / repeat / autonext\n"
+"  '.' , ','    Increase, decrease volume by 5%\n"
+"  '>' , '<'    Increase, decrease volume by 1%\n"
+"  q            Detach MOC from the server\n"
+"  Q            Quit\n");
+
+	wrefresh (main_win);
+}
+
+static void help_screen ()
+{
+	main_win_mode = WIN_HELP;
+	print_help_screen ();
+}
+
 /* Handle key */
 static void menu_key (const int ch)
 {
 	int update_menu = 0;
+
+	if (main_win_mode == WIN_HELP) {
+
+		/* Switch to menu */
+		werase (main_win);
+		main_border ();
+		menu_update_size (menu, main_win);
+		menu_draw (menu);
+		update_info_win ();
+		wrefresh (main_win);
+		wrefresh (info_win);
+		
+		main_win_mode = WIN_MENU;
+		return;
+	}
 	
 	switch (ch) {
 		case 'q':
@@ -1245,6 +1302,9 @@ static void menu_key (const int ch)
 		case KEY_RIGHT:
 			seek (1);
 			break;
+		case 'h':
+			help_screen ();
+			break;
 		case KEY_RESIZE:
 			break;
 		default:
@@ -1271,11 +1331,17 @@ static void do_resize ()
 	wresize (info_win, 4, COLS);
 	mvwin (info_win, LINES - 4, 0);
 	werase (main_win);
-	main_border ();
-	menu_update_size (menu, main_win);
-	menu_draw (menu);
-	update_info_win ();
-	wrefresh (main_win);
+
+	if (main_win_mode == WIN_MENU) {
+		main_border ();
+		menu_update_size (menu, main_win);
+		menu_draw (menu);
+		update_info_win ();	
+		wrefresh (main_win);
+	}
+	else
+		print_help_screen ();
+
 	wrefresh (info_win);
 	logit ("resize");
 	want_resize = 0;
