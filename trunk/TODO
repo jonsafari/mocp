@@ -4,18 +4,22 @@ Before 2.0:
 
 Before 2.1.0:
 
-* Showing the buffer state.
+* Remember playlist.
+* Don't do chdir.
 * Option to hide file name extensions.
+* Playlist files (m3u, pls, (xpl?)).
+* Alsa output and mixer.
+* ESD
 * General procedures for reading files instead of doing this at the decoder
   level.
 * Try mmap() again if size of the file has changed.
 * Start to buffer another file when the decoder ends playing.
 * Configurable sorting.
-* Playlist files (m3u?).
 * Configuration options and command line parameters for selecting pid file and
   socket. A parameter for selecting different configuration file.
 * iconv() to fix encoding.
 * Use pathconf() instead of PATH_MAX.
+* Showing the buffer state.
 * configurable colors.
 * Scrolled help.
 * Help for searching.
@@ -23,13 +27,13 @@ Before 2.1.0:
 In future:
 
 * Moving items on the playlist up and down.
-* Add a key to switching sort modes.
+* Add a key for switching sort modes.
 * A bar showing time for current song.
 * http://www.speex.org
 * Support for Audio-CD.
 * Support for CDDB.
 * Support for internet streams.
-* Alsa output and mixer.
+* flac
 * libsidplay2
 * Use 24-bit output if output device supports it.
 * Seek forward using the content of the output buffer.
