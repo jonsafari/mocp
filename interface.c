@@ -102,7 +102,7 @@ enum color_index
 	CLR_TIME_CURRENT,
 	CLR_TIME_LEFT,
 	CLR_TIME_TOTAL,
-	CLR_TIME_LEFT_FRAMES,
+	CLR_TIME_TOTAL_FRAMES,
 	CLR_SOUND_PARAMS,
 	CLR_LEGEND,
 	CLR_INFO_DISABLED,
@@ -596,13 +596,13 @@ static void update_info_win ()
 	if (file_info.time[0] != 0) {
 		wmove (info_win, 2, 13);
 		
-		wattrset (info_win, colors[CLR_TIME_LEFT_FRAMES]);
+		wattrset (info_win, colors[CLR_TIME_TOTAL_FRAMES]);
 		waddch (info_win, '[');
 		
 		wattrset (info_win, colors[CLR_TIME_TOTAL]);
 		wprintw (info_win, "%s", file_info.time);
 		
-		wattrset (info_win, colors[CLR_TIME_LEFT_FRAMES]);
+		wattrset (info_win, colors[CLR_TIME_TOTAL_FRAMES]);
 		waddch (info_win, ']');
 	}
 
@@ -1604,7 +1604,7 @@ static void set_default_colors ()
 	make_color (CLR_STATE, COLOR_WHITE, COLOR_BLUE, A_BOLD);
 	make_color (CLR_TIME_CURRENT, COLOR_WHITE, COLOR_BLUE, A_BOLD);
 	make_color (CLR_TIME_LEFT, COLOR_WHITE, COLOR_BLUE, A_BOLD);
-	make_color (CLR_TIME_LEFT_FRAMES, COLOR_WHITE, COLOR_BLUE, A_NORMAL);
+	make_color (CLR_TIME_TOTAL_FRAMES, COLOR_WHITE, COLOR_BLUE, A_NORMAL);
 	make_color (CLR_TIME_TOTAL, COLOR_WHITE, COLOR_BLUE, A_BOLD);
 	make_color (CLR_SOUND_PARAMS, COLOR_WHITE, COLOR_BLUE, A_BOLD);
 	make_color (CLR_LEGEND, COLOR_WHITE, COLOR_BLUE, A_NORMAL);
@@ -1651,7 +1651,7 @@ static enum color_index find_color_element_name (const char *name)
 		{ "current_time",	CLR_TIME_CURRENT },
 		{ "time_left",		CLR_TIME_LEFT },
 		{ "total_time",		CLR_TIME_TOTAL },
-		{ "time_left_frames",	CLR_TIME_LEFT_FRAMES },
+		{ "time_total_frames",	CLR_TIME_TOTAL_FRAMES },
 		{ "sound_parameters",	CLR_SOUND_PARAMS },
 		{ "legend",		CLR_LEGEND },
 		{ "disabled",		CLR_INFO_DISABLED },

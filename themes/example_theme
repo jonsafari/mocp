@@ -35,7 +35,7 @@
 # current_time       - current time of playing
 # time_left          - the time left to the end of playing the current file
 # total_time         - the length of the currently played file
-# time_left_frames   - the brackets outside the time left ([10:13])
+# time_total_frames  - the brackets outside the total time of a file ([10:13])
 # sound_parameters   - the frequency and bitrate numbers
 # legend             - "KHz" and "Kbps"
 # disabled           - disabled element ([STEREO])
@@ -89,7 +89,7 @@ state			= white		blue	bold
 current_time		= white		blue	bold
 time_left		= white		blue	bold
 total_time		= white		blue	bold
-time_left_frames	= white		blue
+time_total_frames	= white		blue
 sound_parameters	= white		blue	bold
 legend			= white		blue
 disabled		= blue		blue	bold
