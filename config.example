@@ -93,3 +93,6 @@ UseMmap			= yes
 
 # Usefull for Poles: Convert from Windows encoding to ISO
 #TagsIconv		= WINDOWS-1250:ISO-8859-2
+
+# Remember the playlist after exit?
+SavePlaylist		= yes
