@@ -37,7 +37,8 @@ struct ogg_data
 };
 
 /* Fill info structure with data from ogg comments */
-static void ogg_info (const char *file_name, struct file_tags *info)
+static void ogg_info (const char *file_name, struct file_tags *info,
+		const int tags_sel)
 {
 	int i;
 	vorbis_comment *comments;
@@ -50,9 +51,19 @@ static void ogg_info (const char *file_name, struct file_tags *info)
 		return;
 	}
 
-	if (ov_open(file, &vf, NULL, 0) < 0) {
-		error ("ov_test() failed!");
-		return;
+	/* ov_test() is faster than ov_open(), but we can't read file time
+	 * with it. */
+	if (tags_sel & TAGS_TIME) {
+		if (ov_open(file, &vf, NULL, 0) < 0) {
+			error ("ov_test() failed!");
+			return;
+		}
+	}
+	else {
+		if (ov_test(file, &vf, NULL, 0) < 0) {
+			error ("ov_test() failed!");
+			return;
+		}
 	}
 
 	comments = ov_comment (&vf, -1);
@@ -80,7 +91,8 @@ static void ogg_info (const char *file_name, struct file_tags *info)
 
 	}
 
-	if ((ogg_time = ov_time_total(&vf, -1)) != OV_EINVAL)
+	if ((tags_sel & TAGS_TIME)
+			&& (ogg_time = ov_time_total(&vf, -1)) != OV_EINVAL)
 		info->time = ogg_time;
 
 	ov_clear (&vf);
