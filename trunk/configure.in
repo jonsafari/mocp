@@ -1,7 +1,6 @@
 AC_INIT([moc],[DEVEL],[daper@daper.net])
 AC_CONFIG_SRCDIR([main.c])
 AC_CONFIG_HEADERS([config.h])
-AC_CONFIG_FILES(Makefile)
 
 AM_INIT_AUTOMAKE
 
@@ -173,7 +172,8 @@ fi
 
 LIBS="$LIBS -lncurses"
 		
-AC_OUTPUT
+AC_OUTPUT(Makefile \
+	  themes/Makefile)
 
 echo
 echo "----------------------------------------------------------------"

@@ -1,3 +1,5 @@
+SUBDIRS = themes
+
 bin_PROGRAMS = mocp
 mocp_SOURCES = log.c \
 	       log.h \
@@ -49,4 +51,8 @@ EXTRA_mocp_SOURCES = gnugetopt.h \
 mocp_LDADD = @EXTRA_OBJS@
 mocp_DEPENDENCIES = @EXTRA_OBJS@
 man_MANS = mocp.8
-EXTRA_DIST = config.example mocp.8 THANKS example_theme
+EXTRA_DIST = config.example mocp.8 THANKS
+		     config.example
+
+docdir = $(datadir)/doc/$(PACKAGE)
+doc_DATA = config.example THANKS README
