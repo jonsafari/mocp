@@ -90,9 +90,13 @@ void make_titles_tags (struct plist *plist)
 
 		assert (plist->items[i].file != NULL);
 		
-		if (plist->items[i].tags)
-			plist_set_title (plist, i,
-					build_title (plist->items[i].tags));
+		if (plist->items[i].tags) {
+			char *title;
+			
+			title = build_title (plist->items[i].tags);
+			plist_set_title (plist, i, title);
+			free (title);
+		}
 		else {
 			char *fname = strrchr (plist->items[i].file, '/');
 
