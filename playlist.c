@@ -395,3 +395,13 @@ int plist_rand (struct plist *plist)
 
 	return i;
 }
+
+void plist_delete (struct plist *plist, const int num)
+{
+	assert (plist != NULL);
+	
+	LOCK (plist->mutex);
+	if (num < plist->num)
+		plist->items[num].deleted = 1;
+	UNLOCK (plist->mutex);
+}
