@@ -45,6 +45,22 @@ static void make_path (char *buf, const int buf_size,
 	resolve_path (buf, buf_size, path);
 }
 
+/* Strip white chars from the end of a string. */
+static void strip_string (char *str)
+{
+	char *c = str;
+	char *last_non_white = str;
+
+	while (*c) {
+		if (!isblank(*c))
+			last_non_white = c;
+		c++;
+	}
+
+	if (c > last_non_white)
+		*(last_non_white + 1) = 0;
+}
+
 /* Load M3U file into plist. Return number of items read. */
 static int plist_load_m3u (struct plist *plist, const char *fname,
 		const char *cwd)
@@ -121,6 +137,7 @@ static int plist_load_m3u (struct plist *plist, const char *fname,
 		else if (line[0] != '#') {
 			char path[2*PATH_MAX];
 
+			strip_string (line);
 			make_path (path, sizeof(path), cwd, line);
 
 			if (plist_find_fname(plist, path) == -1
