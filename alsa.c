@@ -20,6 +20,8 @@
 # include "config.h"
 #endif
 
+/*#define DEBUG*/
+
 #include <stdlib.h>
 #include <alsa/asoundlib.h>
 #include <assert.h>
@@ -32,8 +34,6 @@
 #include "main.h"
 #include "options.h"
 #include "log.h"
-
-/*#define DEBUG*/
 
 #define BUFFER_MAX_USEC	300000
 
