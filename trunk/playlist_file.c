@@ -281,6 +281,7 @@ static void strip_uncommon (char *buf, const char *path)
 }
 
 /* Find common element at the beginning of all files on the playlist. */
+/* FIXME: it doesn't work */
 static void find_common_path (char *buf, const int buf_size,
 		struct plist *plist)
 {
