@@ -165,6 +165,7 @@ void options_init ()
 	option_add_str ("Keymap", NULL);
 	option_add_int ("SyncPlaylist", 1);
 	option_add_int ("InputBuffer", 512);
+	option_add_int ("Prebuffering", 64);
 }
 
 /* Return 1 if a parameter to an integer option is valid. */
@@ -192,6 +193,10 @@ int check_int_option (const char *name, const int val)
 	}
 	else if (!strcasecmp(name, "InputBuffer")) {
 		if (val < 32)
+			return 0;
+	}
+	else if (!strcasecmp(name, "Prebuffering")) {
+		if (val < 0)
 			return 0;
 	}
 	return 1;
@@ -266,6 +271,15 @@ static int set_option (const char *name, const char *value)
 	}
 	
 	return 1;
+}
+
+/* Check if values of options make sense. This only check options that can't be
+ * check without parsing the whole file. */
+static void options_sanity_check ()
+{
+	if (options_get_int("Prebuffering") > options_get_int("InputBuffer"))
+		fatal ("Prebuffering is set to a value greater than "
+				"InputBuffer.");
 }
 
 /* Parse the configuration file. */
@@ -376,6 +390,8 @@ void options_parse (const char *config_file)
 	if (opt_name[0] || opt_value[0])
 		fatal ("Parse error at the end of the config file (need end of "
 				"line?).");
+
+	options_sanity_check ();
 
 	fclose (file);
 }

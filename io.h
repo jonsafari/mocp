@@ -36,6 +36,7 @@ struct io_stream
 	int buffered;	/* are we using the buffer? */
 	size_t pos;	/* current position in the file from the user point of
 			   view */
+	size_t prebuffer;	/* number of bytes left to prebuffer */
 	pthread_mutex_t io_mutex;	/* mutex for IO operations */
 
 #ifdef HAVE_MMAP
