@@ -146,19 +146,25 @@ static int plist_load_m3u (struct plist *plist, const char *fname,
 			char path[2*PATH_MAX];
 
 			strip_string (line);
-			make_path (path, sizeof(path), cwd, line);
+			if (strlen(line) <= PATH_MAX) {
+				make_path (path, sizeof(path), cwd, line);
 
-			if (plist_find_fname(plist, path) == -1
-					&& is_sound_file(path)) {
-				if (after_extinf)
-					plist_set_file (plist, last_added,
-							path);
-				else
-					plist_add (plist, path);
-				added++;
+				if (plist_find_fname(plist, path) == -1
+						&& is_sound_file(path)) {
+					if (after_extinf)
+						plist_set_file (plist,
+								last_added,
+								path);
+					else
+						plist_add (plist, path);
+					added++;
+				}
+				else if (after_extinf)
+					plist_delete (plist, last_added);
 			}
 			else if (after_extinf)
 				plist_delete (plist, last_added);
+
 			after_extinf = 0;
 		}
 		free (line);
