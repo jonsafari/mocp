@@ -311,6 +311,9 @@ static int play_buf_chunks ()
 
 static void alsa_close ()
 {
+
+	assert (handle != NULL);
+
 	/* play what remained in the buffer */
 	if (alsa_buf_fill) {
 		assert (alsa_buf_fill < chunk_size);
