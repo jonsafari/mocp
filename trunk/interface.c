@@ -208,6 +208,8 @@ static char *help_text[] = {
 "               entry:",
 "      CTRL-g   Find next",
 "      CTRL-x   Exit the entry",
+"  CTRL-t       Toggle ShowTime option",
+"  CTRL-f       Toggle ShowFormat option",
 "  Q            Quit"
 };
 static int help_screen_top = 0;
