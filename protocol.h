@@ -44,6 +44,7 @@
 #define CMD_DELETE	0x1c /* delete an item from the playlist */
 #define CMD_SEND_EVENTS 0x1d /* request for events */
 #define CMD_GET_ERROR	0x1e /* get the error message */
+#define CMD_GET_FTIME	0x1f /* get time of a file from the server */
 
 char *socket_name ();
 int get_int (int sock, int *i);

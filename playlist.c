@@ -18,10 +18,14 @@
 #include <assert.h>
 #include <pthread.h>
 
+#define DEBUG
+
 #include "playlist.h"
 #include "main.h"
 #include "log.h"
 #include "options.h"
+#include "files.h"
+#include "file_types.h"
 
 /* Initial size of the table */
 #define	INIT_SIZE	64
@@ -55,8 +59,9 @@ struct file_tags *tags_new ()
 	return tags;
 }
 
-struct file_tags *tags_dup (const struct file_tags *tags)
+static struct file_tags *tags_dup (const struct file_tags *tags)
 {
+
 	struct file_tags *dtags;
 
 	dtags = (struct file_tags *)xmalloc (sizeof(struct file_tags));
@@ -66,8 +71,28 @@ struct file_tags *tags_dup (const struct file_tags *tags)
 	dtags->track = tags->track;
 	dtags->time = tags->time;
 	dtags->filled = tags->filled;
-
+	
 	return dtags;
+}
+
+/* Copy missing tags from src to dst. */
+static void sync_tags (struct file_tags *src, struct file_tags *dst)
+{
+	if (src->filled & TAGS_TIME && !(dst->filled & TAGS_TIME)) {
+		debug ("Sync time");
+		dst->time = src->time;
+		dst->filled |= TAGS_TIME;
+	}
+
+	if ((src->filled & TAGS_COMMENTS)
+			&& !(dst->filled & TAGS_COMMENTS)) {
+		debug ("Sync comments");
+		dst->title = xstrdup (src->title);
+		dst->artist = xstrdup (src->artist);
+		dst->album = xstrdup (src->album);
+		dst->track = src->track;
+		dst->filled |= TAGS_COMMENTS;
+	}
 }
 
 /* Initialize the playlist. */
@@ -96,8 +121,12 @@ int plist_add (struct plist *plist, const char *file_name)
 
 	plist->items[plist->num].file = xstrdup (file_name);
 	plist->items[plist->num].deleted = 0;
-	plist->items[plist->num].tags = NULL;
 	plist->items[plist->num].title = NULL;
+	plist->items[plist->num].title_file = NULL;
+	plist->items[plist->num].title_tags = NULL;
+	plist->items[plist->num].tags = NULL;
+	plist->items[plist->num].mtime = (file_name ? get_mtime(file_name)
+			: (time_t)-1);
 	plist->num++;
 
 	UNLOCK (plist->mutex);
@@ -110,12 +139,23 @@ static void plist_item_copy (struct plist_item *dst,
 		const struct plist_item *src)
 {
 	dst->file = xstrdup (src->file);
-	dst->title = xstrdup (src->title);
-	dst->deleted = src->deleted;
-
+	dst->title_file = xstrdup (src->title_file);
+	dst->title_tags = xstrdup (src->title_tags);
+	dst->mtime = src->mtime;
+	
 	if (src->tags)
 		dst->tags = tags_dup (src->tags);
+	else
+		dst->tags = NULL;
+
+	if (src->title == src->title_file)
+		dst->title = dst->title_file;
+	else if (src->title == src->title_tags)
+		dst->title = dst->title_tags;
+	else
+		dst->title = NULL;
 	
+	dst->deleted = src->deleted;
 }
 
 /* Get the pointer to the element on the playlist.
@@ -162,14 +202,20 @@ static void plist_free_item_fields (struct plist_item *item)
 		free (item->file);
 		item->file = NULL;
 	}
+	if (item->title_tags) {
+		free (item->title_tags);
+		item->title_tags = NULL;
+	}
+	if (item->title_file) {
+		free (item->title_file);
+		item->title_file = NULL;
+	}
 	if (item->tags) {
 		tags_free (item->tags);
 		item->tags = NULL;
 	}
-	if (item->title) {
-		free (item->title);
-		item->title = NULL;
-	}
+
+	item->title = NULL;
 }
 
 /* Clear the list. */
@@ -458,14 +504,26 @@ int plist_count (struct plist *plist)
 	return count;
 }
 
-/* Set title of an intem. */
-void plist_set_title (struct plist *plist, const int num, const char *title)
+/* Set tags title of an item. */
+void plist_set_title_tags (struct plist *plist, const int num,
+		const char *title)
 {
-	assert (num >=0 && num < plist->num);
+	assert (num >= 0 && num < plist->num);
 
-	if (plist->items[num].title)
-		free (plist->items[num].title);
-	plist->items[num].title = xstrdup (title);
+	if (plist->items[num].title_tags)
+		free (plist->items[num].title_tags);
+	plist->items[num].title_tags = xstrdup (title);
+}
+
+/* Set file title of an item. */
+void plist_set_title_file (struct plist *plist, const int num,
+		const char *title)
+{
+	assert (num >= 0 && num < plist->num);
+
+	if (plist->items[num].title_file)
+		free (plist->items[num].title_file);
+	plist->items[num].title_file = xstrdup (title);
 }
 
 /* Set file for an item. */
@@ -476,6 +534,7 @@ void plist_set_file (struct plist *plist, const int num, const char *file)
 	if (plist->items[num].file)
 		free (plist->items[num].file);
 	plist->items[num].file = xstrdup (file);
+	plist->items[num].mtime = get_mtime (file);
 }
 
 /* Return 1 if an item has 'deleted' flag. */
@@ -492,4 +551,84 @@ void plist_cat (struct plist *a, const struct plist *b)
 
 	for (i = 0; i < b->num; i++)
 		plist_add_from_item (a, &b->items[i]);
+}
+
+/* Copy titles_tags and times from src to dst if the data are available and
+ * up-to-date. */
+void sync_plists_data (struct plist *dst, struct plist *src)
+{
+	int i;
+	int idx;
+
+	assert (src != NULL);
+	assert (dst != NULL);
+
+	debug ("Synchronizing playlists...");
+
+	for (i = 0; i < src->num; i++)
+		if ((idx = plist_find_fname(dst, src->items[i].file)) != -1) {
+			debug ("Found item for the file %s",
+					src->items[i].file);
+
+			if (src->items[i].mtime == dst->items[idx].mtime) {
+				
+				/* The file was not modified - copy the missing
+				 * data */
+				if (!dst->items[idx].title_tags) {
+					debug ("Filling title_tags");
+					dst->items[idx].title_tags = xstrdup (
+							src->items[i].title_tags
+							);
+				}
+				
+				if (src->items[i].tags) {
+					if (dst->items[idx].tags)
+						sync_tags (src->items[i].tags,
+								dst->items[idx].tags);
+					else {
+						debug ("copying tags");
+						dst->items[idx].tags =
+							tags_dup (src->items[i].tags);
+					}
+				}
+			}
+			else if (src->items[i].mtime > dst->items[idx].mtime) {
+				debug ("Replacing title_tags and tags.");
+				
+				/* The file was modified - update the data */
+				if (dst->items[idx].title_tags)
+					free (dst->items[idx].title_tags);
+
+				dst->items[idx].title_tags = xstrdup (
+						src->items[i].title_tags);
+
+				dst->items[idx].mtime = src->items[i].mtime;
+				
+				if (dst->items[idx].tags)
+					tags_free (dst->items[idx].tags);
+
+				dst->items[idx].tags = tags_dup (
+						src->items[i].tags);
+			}
+		}
+}
+
+/* Set the time tags field for the item. */
+void update_item_time (struct plist_item *item, const int time)
+{
+	if (!item->tags)
+		item->tags = tags_new ();
+
+	item->tags->time = time;
+	item->tags->filled |= TAGS_TIME;
+}
+
+int get_item_time (const struct plist *plist, const int i)
+{
+	assert (plist != NULL);
+	
+	if (plist->items[i].tags)
+		return plist->items[i].tags->time;
+
+	return -1;
 }

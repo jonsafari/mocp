@@ -71,7 +71,7 @@ enum file_type file_type (char *file)
 }
 
 /* Get file name from a path. Returned memory is malloc()ed. */
-static char *get_file (char *path, const int strip_ext)
+static char *get_file (const char *path, const int strip_ext)
 {
 	char *fname;
 	char *ext;
@@ -81,12 +81,10 @@ static char *get_file (char *path, const int strip_ext)
 	fname = strrchr (path, '/');
 
 	if (fname)
-		fname++;
+		fname = xstrdup (fname + 1);
 	else
-		fname = path;
+		fname = xstrdup (path);
 
-	fname = xstrdup (fname);
-	
 	if (strip_ext && (ext = ext_pos(fname)))
 		*(ext-1) = 0;
 
@@ -104,8 +102,29 @@ void make_titles_file (struct plist *plist)
 			char *fname;
 
 			fname = get_file (plist->items[i].file, hide_extension);
-			plist_set_title (plist, i, fname);
+			plist_set_title_file (plist, i, fname);
 			free (fname);
+		}
+}
+
+/* Read TAGS_COMMENTS for items that neither TAGS_COMMENTS nor title_tags 
+ * are present. */
+static void read_comments_tags (struct plist *plist)
+{
+	int i;
+	
+	for (i = 0; i < plist->num; i++)
+		if (!plist_deleted(plist, i) && !plist->items[i].title_tags) {
+			assert (plist->items[i].file != NULL);
+
+			if (user_wants_interrupt()) {
+				interface_error ("Reading tags interrupted.");
+				break;
+			}
+			plist->items[i].tags = read_file_tags (
+					plist->items[i].file,
+					plist->items[i].tags,
+					TAGS_COMMENTS);
 		}
 }
 
@@ -115,16 +134,18 @@ void make_titles_tags (struct plist *plist)
 	int i;
 	int hide_extension = options_get_int ("HideFileExtension");
 
+	read_comments_tags (plist);
+
 	for (i = 0; i < plist->num; i++)
-		if (!plist_deleted(plist, i)) {
+		if (!plist_deleted(plist, i) && !plist->items[i].title_tags) {
 			assert (plist->items[i].file != NULL);
-			
+
 			if (plist->items[i].tags
 					&& plist->items[i].tags->title) {
 				char *title;
 				
 				title = build_title (plist->items[i].tags);
-				plist_set_title (plist, i, title);
+				plist_set_title_tags (plist, i, title);
 				free (title);
 			}
 			else {
@@ -132,9 +153,44 @@ void make_titles_tags (struct plist *plist)
 					
 				fname = get_file (plist->items[i].file,
 						hide_extension);
-				plist_set_title (plist, i, fname);
+				plist_set_title_file (plist, i, fname);
 				free (fname);
 			}
+		}
+}
+
+/* Switch playlist titles to title_file */
+void switch_titles_file (struct plist *plist)
+{
+	int i;
+
+	make_titles_file (plist);
+
+	for (i = 0; i < plist->num; i++)
+		if (!plist_deleted(plist, i)) {
+			assert (plist->items[i].title_file != NULL);
+			plist->items[i].title = plist->items[i].title_file;
+		}
+}
+
+/* Switch playlist titles to title_tags */
+void switch_titles_tags (struct plist *plist)
+{
+	int i;
+	
+	make_titles_tags (plist);
+	
+	for (i = 0; i < plist->num; i++)
+		if (!plist_deleted(plist, i)) {
+			assert (plist->items[i].title_tags
+					|| plist->items[i].title_file);
+			
+			if (plist->items[i].title_tags)
+				plist->items[i].title
+					= plist->items[i].title_tags;
+			else
+				plist->items[i].title
+					= plist->items[i].title_file;
 		}
 }
 
@@ -301,9 +357,10 @@ void iconv_cleanup ()
 }
 
 /* Read selected tags for a file into tags structure (or create it if NULL).
- * If some tags are already present, don't read them. */
-struct file_tags *read_file_tags (char *file, struct file_tags *present_tags,
-		const int tags_sel)
+ * If some tags are already present, don't read them.
+ * If present_tags is NULL, allocate new tags. */
+struct file_tags *read_file_tags (const char *file,
+		struct file_tags *present_tags, const int tags_sel)
 {
 	struct file_tags *tags;
 	struct decoder_funcs *df;
@@ -337,25 +394,6 @@ struct file_tags *read_file_tags (char *file, struct file_tags *present_tags,
 		debug ("No need to read any tags");
 	
 	return tags;
-}
-
-void read_tags (struct plist *plist)
-{
-	int i;
-
-	assert (plist != NULL);
-
-	for (i = 0; i < plist->num; i++)
-		if (!plist_deleted(plist, i)) {
-			if (user_wants_interrupt()) {
-				interface_error ("Getting tags interrupted.");
-				break;
-			}
-			
-			plist->items[i].tags = read_file_tags(
-					plist->items[i].file,
-					plist->items[i].tags, TAGS_COMMENTS);
-		}
 }
 
 struct file_list *file_list_new ()
@@ -502,7 +540,7 @@ int read_directory_recurr (const char *directory, struct plist *plist)
 }
 
 /* Return the file extension position or NULL if the file has no extension. */
-char *ext_pos (char *file)
+char *ext_pos (const char *file)
 {
 	char *ext = strrchr (file, '.');
 	char *slash = strrchr (file, '/');
@@ -641,4 +679,21 @@ int file_exists (const char *file)
 	if (!stat(file, &file_stat))
 		return 1;
 	return 0;
+}
+
+/* Get the modification time of a file. Return (time_t)-1 on error */
+time_t get_mtime (const char *file)
+{
+	struct stat stat_buf;
+
+	if (stat(file, &stat_buf) != -1)
+		return stat_buf.st_mtime;
+	
+	return (time_t)-1;
+}
+
+/* Update the item data if the file was modified. */
+void update_file (struct plist_item *item)
+{
+	/* TODO */
 }

@@ -506,6 +506,20 @@ static int delete_item (struct client *cli)
 	return 1;
 }
 
+/* Handle CMD_GET_FTIME. */
+static int req_get_ftime (struct client *cli)
+{
+	char *file;
+
+	if (!(file = get_str(cli->socket)))
+		return 0;
+
+	/* TODO */
+	send_data_int (cli, -1);
+
+	return 1;
+}
+
 /* Reveive a command from the client and execute it. */
 static void handle_command (struct client *cli)
 {
@@ -611,6 +625,10 @@ static void handle_command (struct client *cli)
 			break;
 		case CMD_GET_ERROR:
 			if (!send_data_str(cli, err_msg))
+				err = 1;
+			break;
+		case CMD_GET_FTIME:
+			if (!req_get_ftime(cli))
 				err = 1;
 			break;
 		default:
