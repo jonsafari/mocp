@@ -28,23 +28,33 @@
 #include "server.h"
 #include "audio.h"
 #include "log.h"
-
-#define PCM_DEVICE	"/dev/dsp"
-#define MIXER_DEVICE	"/dev/mixer"
+#include "options.h"
+#include "main.h"
 
 static int mixer_fd = -1;
 static int volatile dsp_fd = -1;
+static int mixer_channel;
 
 static struct sound_params params = { 0, 0, 0 };
 
 static void oss_init ()
 {
-
 	/* Open the mixer device */
-	mixer_fd = open (MIXER_DEVICE, O_RDWR);
+	mixer_fd = open (options_get_str("OSSMixerDevice"), O_RDWR);
 	if (mixer_fd == -1)
-		error ("Can't open mixer device %s: %s", MIXER_DEVICE,
+		error ("Can't open mixer device %s: %s",
+				options_get_str("OSSMixerDevice"),
 				strerror(errno));
+	else {
+		char *channel = options_get_str ("OSSMixerChannel");
+
+		if (!strcasecmp(channel, "pcm"))
+			mixer_channel = SOUND_MIXER_PCM;
+		else if (!strcasecmp(channel, "master"))
+			mixer_channel = SOUND_MIXER_VOLUME;
+		else
+			fatal ("Bad OSS mixer channel!");
+	}
 }
 
 static void oss_shutdown ()
@@ -125,8 +135,9 @@ static int oss_set_params ()
 
 static int open_dev ()
 {
-	if ((dsp_fd = open(PCM_DEVICE, O_WRONLY)) == -1) {
-		error ("Can't open %s, %s", PCM_DEVICE, strerror(errno));
+	if ((dsp_fd = open(options_get_str("OSSDevice"), O_WRONLY)) == -1) {
+		error ("Can't open %s, %s", options_get_str("OSSDevice"),
+				strerror(errno));
 		return 0;
 	}
 
@@ -171,7 +182,7 @@ static int oss_read_mixer ()
 	int vol;
 	
 	if (mixer_fd != -1) {
-		if (ioctl(mixer_fd, MIXER_READ(SOUND_MIXER_PCM), &vol) == -1)
+		if (ioctl(mixer_fd, MIXER_READ(mixer_channel), &vol) == -1)
 			error ("Can't read from mixer");
 		else {
 			/* Average between left and right */
@@ -192,7 +203,7 @@ static void oss_set_mixer (int vol)
 			vol = 0;
 		
 		vol = vol | (vol << 8);
-		if (ioctl(mixer_fd, MIXER_WRITE(SOUND_MIXER_PCM), &vol) == -1)
+		if (ioctl(mixer_fd, MIXER_WRITE(mixer_channel), &vol) == -1)
 			error ("Can't set mixer, ioctl failed");
 	}
 }
