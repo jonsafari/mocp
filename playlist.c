@@ -112,6 +112,19 @@ void plist_init (struct plist *plist)
 	pthread_mutex_init (&plist->mutex, NULL);
 }
 
+static int str_hash (const char *file)
+{
+	long h = 0;
+	int i = 0;
+
+	while (file[i]) {
+		h ^= i % 2 ? file[i] : file[i] << 8;
+		i++;
+	}
+
+	return h;
+}
+
 /* Create a new playlit item with empty fields. */
 struct plist_item *plist_new_item ()
 {
@@ -119,6 +132,7 @@ struct plist_item *plist_new_item ()
 
 	item = (struct plist_item *)xmalloc (sizeof(struct plist_item));
 	item->file = NULL;
+	item->file_hash = -1;
 	item->deleted = 0;
 	item->title = NULL;
 	item->title_file = NULL;
@@ -144,6 +158,8 @@ int plist_add (struct plist *plist, const char *file_name)
 	}
 
 	plist->items[plist->num].file = xstrdup (file_name);
+	plist->items[plist->num].file_hash = file_name
+		? str_hash (file_name) : -1;
 	plist->items[plist->num].deleted = 0;
 	plist->items[plist->num].title = NULL;
 	plist->items[plist->num].title_file = NULL;
@@ -164,6 +180,8 @@ static void plist_item_copy (struct plist_item *dst,
 		const struct plist_item *src)
 {
 	dst->file = xstrdup (src->file);
+	dst->file_hash = src->file_hash != -1
+		? src->file_hash : str_hash(src->file);
 	dst->title_file = xstrdup (src->title_file);
 	dst->title_tags = xstrdup (src->title_tags);
 	dst->mtime = src->mtime;
@@ -318,16 +336,20 @@ void plist_sort_fname (struct plist *plist)
 int plist_find_fname (struct plist *plist, const char *file)
 {
 	int i;
+	int hash = str_hash (file);
 
 	assert (plist != NULL);
 
 	LOCK (plist->mutex);
-	for (i = 0; i < plist->num; i++)
+	for (i = 0; i < plist->num; i++) {
+		assert (plist->items[i].file_hash != -1);
 		if (!plist->items[i].deleted && plist->items[i].file
+				&& plist->items[i].file_hash == hash
 				&& !strcmp(plist->items[i].file, file)) {
 			UNLOCK (plist->mutex);
 			return i;
 		}
+	}
 	UNLOCK (plist->mutex);
 
 	return -1;
@@ -543,6 +565,7 @@ void plist_set_file (struct plist *plist, const int num, const char *file)
 	if (plist->items[num].file)
 		free (plist->items[num].file);
 	plist->items[num].file = xstrdup (file);
+	plist->items[num].file_hash = str_hash (file);
 	plist->items[num].mtime = get_mtime (file);
 }
 
