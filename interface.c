@@ -2304,6 +2304,7 @@ static int entry_plist_save_key (const int ch)
 			char path[PATH_MAX];
 
 			entry_disable ();
+			update_info_win ();
 			if (!ext || strcmp(ext, "m3u"))
 				strncat (entry.text, ".m3u", sizeof(entry.text)
 						- strlen(entry.text) - 1);
@@ -2342,6 +2343,7 @@ static int entry_plist_overwrite_key (const int key)
 		char *file = xstrdup (entry.file);
 		
 		entry_disable ();
+		update_info_win ();
 		set_iface_status_ref ("Saving the playlist...");
 		if (plist_save(playlist, file, cwd))
 			interface_message ("Playlist saved.");
@@ -2353,6 +2355,7 @@ static int entry_plist_overwrite_key (const int key)
 	}
 	else if (key == 'n') {
 		entry_disable ();
+		update_info_win ();
 		set_iface_status_ref ("Not overwriting.");
 	}
 	
