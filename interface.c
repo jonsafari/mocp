@@ -562,6 +562,12 @@ static void set_interface_status (const char *msg)
 	draw_interface_status ();
 }
 
+static void set_iface_status_ref (const char *msg)
+{
+	set_interface_status (msg);
+	wrefresh (info_win);
+}
+
 void interface_error (const char *format, ...)
 {
 	va_list va;
@@ -1198,8 +1204,7 @@ static int go_to_dir (char *dir)
 	char msg[50];
 	struct file_list *dirs, *playlists;
 
-	set_interface_status ("reading directory...");
-	wrefresh (info_win);
+	set_iface_status_ref ("reading directory...");
 
 	if (dir && is_subdir(dir, cwd)) {
 		strcpy (last_dir, strrchr(cwd, '/') + 1);
@@ -1214,8 +1219,7 @@ static int go_to_dir (char *dir)
 	playlists = file_list_new ();
 
 	if (!read_directory(new_dir, dirs, playlists, curr_plist)) {
-		set_interface_status (NULL);
-		wrefresh (info_win);
+		set_iface_status_ref (NULL);
 		plist_free (curr_plist);
 		file_list_free (dirs);
 		file_list_free (playlists);
@@ -1257,8 +1261,7 @@ static int go_to_dir (char *dir)
 
 	update_state ();
 	sprintf (msg, "%d files and directories", curr_plist_menu->nitems - 1);
-	set_interface_status (msg);
-	wrefresh (info_win);
+	set_iface_status_ref (msg);
 
 	return 1;
 }
@@ -1391,12 +1394,10 @@ static void load_playlist ()
 {
 	char *plist_file = create_file_name ("playlist.m3u");
 
-	set_interface_status ("Loading playlist...");
-	wrefresh (info_win);
+	set_iface_status_ref ("Loading playlist...");
 	if (file_type(plist_file) == F_PLAYLIST)
 		plist_load (playlist, plist_file, cwd);
-	set_interface_status (NULL);
-	wrefresh (info_win);
+	set_iface_status_ref (NULL);
 }
 
 /* Initialize a colour item of given index (CLR_*) with colours and
@@ -1829,12 +1830,10 @@ static void go_file ()
 		}
 
 		plist_clear (playlist);
-		set_interface_status ("Loading playlist...");
-		wrefresh (info_win);
+		set_iface_status_ref ("Loading playlist...");
 		if (plist_load(playlist, menu_item->file, cwd))
 			interface_message ("Playlist loaded.");
-		set_interface_status (NULL);
-		wrefresh (info_win);
+		set_iface_status_ref (NULL);
 		toggle_plist ();
 	}
 }
@@ -1928,8 +1927,7 @@ static void add_dir_plist ()
 		return;
 	}
 
-	set_interface_status ("reading directories...");
-	wrefresh (info_win);
+	set_iface_status_ref ("reading directories...");
 	read_directory_recurr (menu_item->file, playlist);
 	if (options_get_int("ReadTags")) {
 		read_tags (playlist);
@@ -1944,7 +1942,7 @@ static void add_dir_plist ()
 	}
 
 	sprintf (msg, "%d files on the list", plist_count(playlist));
-	set_interface_status (msg);
+	set_iface_status_ref (msg);
 	wrefresh (info_win);
 }
 
@@ -2087,7 +2085,7 @@ static void delete_item ()
 		curr_menu = playlist_menu;
 		update_curr_file ();
 		sprintf (msg, "%d files on the list", plist_count(playlist));
-		set_interface_status (msg);
+		set_iface_status_ref (msg);
 		wrefresh (info_win);
 	}
 	else {
@@ -2176,12 +2174,10 @@ static int entry_plist_save_key (const int ch)
 				return 1;
 			}
 
-			set_interface_status ("Saving the playlist...");
-			wrefresh (info_win);
+			set_iface_status_ref ("Saving the playlist...");
 			if (plist_save(playlist, path, cwd))
 				interface_message ("Playlist saved.");
-			set_interface_status (NULL);
-			wrefresh (info_win);
+			set_iface_status_ref (NULL);
 		}
 		update_info_win ();
 		return 1;
@@ -2559,11 +2555,9 @@ static void save_playlist ()
 	char *plist_file = create_file_name("playlist.m3u");
 
 	if (plist_count(playlist)) {
-		set_interface_status ("Saving the playlist...");
-		wrefresh (info_win);
+		set_iface_status_ref ("Saving the playlist...");
 		plist_save (playlist, plist_file, NULL);
-		set_interface_status (NULL);
-		wrefresh (info_win);
+		set_iface_status_ref (NULL);
 	}
 	else
 		unlink (plist_file);
