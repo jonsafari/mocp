@@ -2814,4 +2814,6 @@ void interface_end ()
 
 	/* Make sure that the next line after we exit will be "clear". */
 	putchar ('\n');
+
+	logit ("Interface exited");
 }
