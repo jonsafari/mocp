@@ -189,7 +189,7 @@ static int locking_client ()
 static int client_lock (struct client *cli)
 {
 	if (cli->lock) {
-		logit ("Client tants deadlock.");
+		logit ("Client wants deadlock.");
 		return 0;
 	}
 	
