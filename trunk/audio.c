@@ -100,12 +100,12 @@ static void go_to_another_file ()
 	 * by searching for the current item on the list where we are
 	 * switching. */
 	if (shuffle && curr_plist != &shuffled_plist) {
-		curr_playing = plist_find_fname (&shuffled_plist,
+		curr_playing = plist_find_del_fname (&shuffled_plist,
 				plist_get_file(&playlist, curr_playing));
 		assert (curr_playing != -1);
 	}
 	else if (!shuffle && curr_plist != &playlist) {
-		curr_playing = plist_find_fname (&playlist,
+		curr_playing = plist_find_del_fname (&playlist,
 				plist_get_file(&shuffled_plist, curr_playing));
 		assert (curr_playing != -1);
 	}
