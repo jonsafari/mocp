@@ -497,7 +497,7 @@ struct file_tags *player_get_curr_tags ()
 	if (curr_tags)
 		tags = tags_dup (curr_tags);
 	else
-		curr_tags = NULL;
+		tags = NULL;
 	UNLOCK (curr_tags_mut);
 
 	return tags;
