@@ -1642,7 +1642,7 @@ static int entry_plist_save_key (const int ch)
 	return 0;
 }
 
-/* Handle common entry key. REturn 1 if a key was handled. */
+/* Handle common entry key. Return 1 if a key was handled. */
 static int entry_common_key (const int ch)
 {
 	if (isgraph(ch) || ch == ' ') {
@@ -1846,7 +1846,7 @@ static void menu_key (const int ch)
 				delete_item ();
 				do_update_menu = 1;
 				break;
-			case CTRL('g'):
+			case 'g':
 				make_entry (ENTRY_SEARCH, "SEARCH");
 				break;
 			case 'V':
