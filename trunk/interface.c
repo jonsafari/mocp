@@ -2142,17 +2142,17 @@ static void update_curr_tags (struct file_tags *tags)
 		tags_free (file_info.tags);
 	file_info.tags = tags;
 	
-	title = build_title (tags);
+	if (file_info.curr_file) {
+		title = find_title (file_info.curr_file);
 
-	if (title) {
-		strncpy (file_info.title, title,
-				sizeof(file_info.title) - 1);
+		strncpy (file_info.title, title, sizeof(file_info.title) - 1);
 		file_info.title[sizeof(file_info.title)-1] = 0;
+		xterm_set_title (title);
 		free (title);
-	}
 
-	update_info_win ();
-	wrefresh (info_win);
+		update_info_win ();
+		wrefresh (info_win);
+	}
 }
 
 /* Handle server event. */
