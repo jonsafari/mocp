@@ -4,6 +4,13 @@
 #include <pthread.h>
 #include <sys/types.h>
 
+/* Flags for the info decoder function. */
+enum tags_select
+{
+	TAGS_COMMENTS	= 0x01, /* artist, title, etc. */
+	TAGS_TIME	= 0x02 /* time of the file. */
+};
+
 struct file_tags
 {
 	char *title;
@@ -35,7 +42,7 @@ struct plist
 
 void plist_init (struct plist *plist);
 int plist_add (struct plist *plist, const char *file_name);
-void plist_add_from_item (struct plist *plist, const struct plist_item *item);
+int plist_add_from_item (struct plist *plist, const struct plist_item *item);
 char *plist_get_file (struct plist *plist, int i);
 int plist_next (struct plist *plist, int num);
 int plist_prev (struct plist *plist, int num);
@@ -62,5 +69,7 @@ int get_item_time (const struct plist *plist, const int i);
 int plist_total_time (const struct plist *plisti, int *all_files);
 void plist_shuffle (struct plist *plist);
 void plist_swap_first_fname (struct plist *plist, const char *fname);
+struct plist_item *plist_new_item ();
+void plist_free_item_fields (struct plist_item *item);
 
 #endif
