@@ -140,7 +140,7 @@ void make_titles_tags (struct plist *plist)
 
 /* Add file to the directory path in buf resolveing '../' and removing './'. */
 /* buf must be absolute path. */
-void resolve_path (char *buf, const int size, char *file)
+void resolve_path (char *buf, const int size, const char *file)
 {
 	char *f; /* points to the char in *file we process */
 	char path[2*PATH_MAX]; /* temporary path */
@@ -602,14 +602,12 @@ char *find_match_dir (char *pattern)
 	name = slash + 1;
 	name_len = strlen (name);
 
-	if (!name[0])
-		return NULL;
-		
 	if (!(dir = opendir(search_dir)))
 		return NULL;
 
 	while ((entry = readdir(dir))) {
-		if (!strncmp(entry->d_name, name, name_len)) {
+		if (strcmp(entry->d_name, ".") && strcmp(entry->d_name, "..")
+				&& !strncmp(entry->d_name, name, name_len)) {
 			char *path = add_dir_file (search_dir, entry->d_name);
 
 			if (isdir(path) == 1) {
