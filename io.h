@@ -81,5 +81,6 @@ long io_tell (struct io_stream *s);
 int io_eof (struct io_stream *s);
 void io_init ();
 void io_cleanup ();
+void io_abort (struct io_stream *s);
 
 #endif

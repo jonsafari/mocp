@@ -244,17 +244,17 @@ off_t io_seek (struct io_stream *s, off_t offset, int whence)
 void io_abort (struct io_stream *s)
 {
 	assert (s != NULL);
-
-	logit ("Aborting...");
 	
-	LOCK (s->buf_mutex);
-	s->stop_read_thread = 1;
-	pthread_kill (s->read_thread, SIGUSR1);
-	pthread_cond_broadcast (&s->buf_fill_cond);
-	pthread_cond_broadcast (&s->buf_free_cond);
-	UNLOCK (s->buf_mutex);
-
-	logit ("done");
+	if (s->buffered && !s->stop_read_thread) {
+		logit ("Aborting...");
+		LOCK (s->buf_mutex);
+		s->stop_read_thread = 1;
+		pthread_kill (s->read_thread, SIGUSR1);
+		pthread_cond_broadcast (&s->buf_fill_cond);
+		pthread_cond_broadcast (&s->buf_free_cond);
+		UNLOCK (s->buf_mutex);
+		logit ("done");
+	}
 }
 
 /* Close the stream and free all resources associated with it. */
@@ -339,8 +339,10 @@ static void *io_read_thread (void *data)
 		
 		LOCK (s->buf_mutex);
 
-		if (s->stop_read_thread)
+		if (s->stop_read_thread) {
+			UNLOCK (s->buf_mutex);
 			break;
+		}
 		
 		if (read_buf_fill < 0) {
 
@@ -567,7 +569,7 @@ static ssize_t io_read_buffered (struct io_stream *s, void *buf, size_t count)
 
 	UNLOCK (s->buf_mutex);
 	
-	return io_ok(s) ? received : -1;
+	return io_ok(s) ? (!s->stop_read_thread ? received : 0) : -1;
 }
 
 /* Read data from the stream without buffering. If dont_move was set, the

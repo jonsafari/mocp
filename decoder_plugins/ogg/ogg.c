@@ -330,6 +330,13 @@ static int ogg_get_duration (void *prv_data)
 	return data->duration;
 }
 
+static struct io_stream *ogg_get_stream (void *prv_data)
+{
+	struct ogg_data *data = (struct ogg_data *)prv_data;
+
+	return data->stream;
+}
+
 static void ogg_get_name (const char *file ATTR_UNUSED, char buf[4])
 {
 	strcpy (buf, "OGG");
@@ -361,7 +368,8 @@ static struct decoder ogg_decoder = {
 	ogg_get_error,
 	ogg_our_format_ext,
 	ogg_get_name,
-	ogg_current_tags
+	ogg_current_tags,
+	ogg_get_stream
 };
 
 struct decoder *plugin_init ()

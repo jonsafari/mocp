@@ -66,6 +66,10 @@ static int req_seek;
 static struct file_tags *curr_tags = NULL;
 static pthread_mutex_t curr_tags_mut = PTHREAD_MUTEX_INITIALIZER;
 
+/* Stream associated with the currently playing decoder. */
+static struct io_stream *decoder_stream = NULL;
+static pthread_mutex_t decoder_stream_mut = PTHREAD_MUTEX_INITIALIZER;
+
 static void update_time ()
 {
 	static int last_time = 0;
@@ -220,6 +224,14 @@ static void decode_loop (const struct decoder *f, void *decoder_data,
 	else
 		logit ("No current_tags() function");
 
+	if (f->get_stream) {
+		LOCK (decoder_stream_mut);
+		decoder_stream = f->get_stream (decoder_data);
+		UNLOCK (decoder_stream_mut);
+	}
+	else
+		logit ("No get_stream() function");
+
 	while (1) {
 		debug ("loop...");
 		
@@ -344,6 +356,11 @@ static void decode_loop (const struct decoder *f, void *decoder_data,
 		}
 	}
 
+	LOCK (decoder_stream_mut);
+	decoder_stream = NULL;
+	f->close (decoder_data);
+	UNLOCK (decoder_stream_mut);
+
 	LOCK (curr_tags_mut);
 	if (curr_tags) {
 		tags_free (curr_tags);
@@ -417,7 +434,6 @@ void player (const char *file, const char *next_file, struct out_buf *out_buf)
 
 	decode_loop (f, decoder_data, next_file, out_buf, sound_params);
 
-	f->close (decoder_data);
 	out_buf_set_notify_cond (out_buf, NULL, NULL);
 	logit ("exiting");
 }
@@ -445,7 +461,6 @@ void player_by_stream (struct io_stream *stream, const struct decoder *df,
 	else {
 		audio_state_started_playing ();
 		decode_loop (df, decoder_data, NULL, out_buf, sound_params);
-		df->close (decoder_data);
 		out_buf_set_notify_cond (out_buf, NULL, NULL);
 	}
 	
@@ -458,6 +473,8 @@ void player_cleanup ()
 		logit ("Can't destroy request mutex: %s", strerror(errno));
 	if (pthread_mutex_destroy(&curr_tags_mut))
 		logit ("Can't destroy tags mutex: %s", strerror(errno));
+	if (pthread_mutex_destroy(&decoder_stream_mut))
+		logit ("Can't destroy decoder_stream mutex: %s", strerror(errno));
 	if (pthread_cond_destroy(&request_cond))
 		logit ("Can't destroy request condition: %s", strerror(errno));
 
@@ -472,7 +489,14 @@ void player_reset ()
 
 void player_stop ()
 {
+	logit ("requesting stop");
 	request = REQ_STOP;
+	
+	LOCK (decoder_stream_mut);
+	if (decoder_stream)
+		io_abort (decoder_stream);
+	UNLOCK (decoder_stream_mut);
+
 	LOCK (request_cond_mutex);
 	pthread_cond_signal (&request_cond);
 	UNLOCK (request_cond_mutex);

@@ -7,7 +7,7 @@
 
 /* On every change in the decoder API this number will be changed, so MOC will
  * not load plugins compiled with older/newer decoder.h. */
-#define DECODER_API_VERSION	2
+#define DECODER_API_VERSION	3
 
 enum decoder_error_type
 {
@@ -79,6 +79,10 @@ struct decoder
 	 * Return 1 if the tags were changed from the last call of this function
 	 * and 0 if not. Optional. */
 	int (*current_tags)(void *data, struct file_tags *tags);
+
+	/* Get the pointer to the io_stream structure used in the decoder or
+	 * NULL if this is not used. Optional. */
+	struct io_stream *(*get_stream)(void *data);
 };
 
 /* Function that must be exported by a plugin. */
