@@ -1496,7 +1496,10 @@ static void detect_term ()
 {
 	char *term;
 
-	if (((term = getenv("TERM")) && !strcmp(term, "xterm")))
+	if ((((term = getenv("TERM")) && !strcmp(term, "xterm"))
+				|| !strcmp(term, "rxvt")
+				|| !strcmp(term, "eterm")
+				|| !strcmp(term, "Eterm")))
 		has_xterm = 1;
 }
 
