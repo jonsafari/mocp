@@ -1,32 +1,94 @@
-.TH MOC 8 "22 september 2004" "Version 2.0.0" "music on console"
+.TH MOC 8 "8 october 2004" "Version 2.0.0" "music on console"
 
 .SH NAME
 MOC \- console audio player
 
 .SH SYNOPSIS
 .B mocp
-[OPTIONS] [FILE]
+[OPTIONS] [FILE ...]
 
 .SH DESRIPTION
 
 MOC is a console audio player with simple ncurses interface. It supports OGG,
-wav, and MP3 formats. Just run mocp, go to some directory using menu and
+wave, and MP3 formats. Just run mocp, go to some directory using menu and
 press enter to start playing file, program will be playing automaticaly rest
 of the files in the directory.
 
+With no options and no file arguments the program begins in current directory or
+in MusicDir if StartInMusicDir option is set. If you give a directory on the
+command line, MOC will try to go there. With files or multiple directories,
+everything will be added to the playlist recursively.
+
 .SH OPTIONS
+If an option can be also set in the configuration file, the command line
+overrides it.
 
 .TP
-.I TODO
-Write this :)
+.I -D --debug
+Run in debug mode. Client and server logs much information to debug files.
+Don't use this, the server log is large.
+
+.TP
+.I -S --server
+Run only the server and exit.
+
+.TP
+.I -F --foreground
+Can be used only with -S. Run the server in foreground and log everyting to
+stdout.
+
+.TP
+.I -R --sound-driver NAME
+Use the specified sound driver. Currently only OSS and null (for debugging) are
+supported. This option is called SoundDriver in configuration file.
+
+.TP
+.I -m --music-dir
+Start in MusicDir (set in configuration file). This can be also set in
+configuration file as StartInMusicDir.
+
+.TP
+.I -a --append
+Append files given after options to the server playlist and don't run the
+interface. (see -p)
+
+.TP
+.I -c --clear
+Clear the server playlist. (see -p)
+
+.TP
+.I -p --play
+Play the first item on the playlist and don't run the interface. This can be
+used in conjunction with -p or -c and is most useful in this way:
+
+.BR
+mocp -a -c -p file1 file2 directory
+
+.BR
+(Clear the server playlist, add files and start playing)
+
+.TP
+.I -h --help
+Print list of options with short description and exit.
+
+.TP
+.I -V --version
+Print program version and exit.
 
 .SH FILES
 
+.TP
+.I ~/.moc
+
+MOC directory for configuration file, socket, pid file, and other data.
+
+.TP
 .I ~/.moc/config
 
 Configuration file of MOC. Format is very simple, to see how to use it,
 look into example configuration file (config.example) distributed with the
 program.
+
 
 .SH HOMEPAGE
 http://moc.daper.net
