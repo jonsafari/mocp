@@ -1,5 +1,6 @@
-SUBDIRS = themes
-AM_CPPFLAGS = -DSYSTEM_THEMES_DIR=\"$(pkgdatadir)/themes\"
+SUBDIRS = themes decoder_plugins
+AM_CPPFLAGS = -DSYSTEM_THEMES_DIR=\"$(pkgdatadir)/themes\" \
+	      -DPLUGIN_DIR=\"$(plugindir)/$(DECODER_PLUGIN_DIR)\"
 
 bin_PROGRAMS = mocp
 mocp_SOURCES = log.c \
@@ -37,25 +38,20 @@ mocp_SOURCES = log.c \
 EXTRA_mocp_SOURCES = gnugetopt.h \
 		     getopt.c \
 		     getopt1.c \
-		     mp3.c \
 		     mp3.h \
-		     xing.c \
-		     xing.h \
 		     null_out.c \
 		     null_out.h \
 		     oss.c \
 		     oss.h \
-		     ogg.c \
 		     ogg.h \
 		     alsa.c \
 		     alsa.h \
-		     flac.c \
 		     flac.h \
-		     sndfile_formats.c \
 		     sndfile_formats.h
+man_MANS = mocp.8
 mocp_LDADD = @EXTRA_OBJS@
 mocp_DEPENDENCIES = @EXTRA_OBJS@
-man_MANS = mocp.8
+mocp_LDFLAGS = @EXTRA_LIBS@
 EXTRA_DIST = config.example mocp.8 THANKS keymap.example
 
 docdir = $(datadir)/doc/$(PACKAGE)
