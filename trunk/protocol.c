@@ -455,8 +455,12 @@ void event_queue_free (struct event_queue *q)
 	
 	assert (q != NULL);
 
-	while ((e = event_get_first(q)))
+	while ((e = event_get_first(q))) {
+		if (e->data)
+			logit ("Event with data that I can't free() found in the"
+					" queue while free()ing it!");
 		event_pop (q);
+	}
 }
 
 void event_queue_init (struct event_queue *q)
