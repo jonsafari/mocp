@@ -1,0 +1,81 @@
+# Example keymap file
+# To define your own keys for MOC commands, create a keymap file in ~/.moc/
+# directory and add an options Keymap = FILE in ~/.moc/config
+#
+# The format of this file is:
+# Lines beginning with # are comments.
+# Blank lines are ignored.
+# Every other line is expected to be in format:
+#
+# COMMAND = KEY [KEY ...]
+#
+# The key can be:
+#  - just a char, like i, L, ", *
+#  - CRTL-KEY sequence: ^k (CTRL-k), ^4
+#  - ALT-KEY (meta sequence): M-j (ALT-j), M-%
+#  - Special keys:
+#    DOWN
+#    UP
+#    LEFT
+#    RIGHT
+#    HOME
+#    BACKSPACE
+#    DEL
+#    INS
+#    ENTER
+#    PAGE_UP
+#    PAGE_DOWN
+#    TAB
+#    END
+#    KEYPAD_CENTER
+#    SPACE
+#    ESCAPE
+#    F1 - F12
+#
+# Maximum nuber of keys for one command is 5.
+#
+# Default key configuration for MOC (and a list of all available commands):
+
+quit_client =		q
+go =			ENTER
+menu_down =		DOWN
+menu_up =		UP
+menu_page_down =	PAGE_DOWN
+menu_page_up =		PAGE_UP
+menu_first_item = 	HOME
+menu_last_item =	END
+quit = 			Q
+stop = 			s
+next =			n
+previous =		b
+pause =			p SPACE
+toggle_read_tags =	f
+toggle_shuffle = 	S
+toggle_repeat =		R
+toggle_auto_next =	X
+toggle_playlist =	l
+add_file =		a
+clear_playlist =	C
+add_directory =		A
+volume_down_1 =		<
+volume_up_1 =		>
+volume_down_5 =		,
+volume_up_5 =		.
+seek_forward_1 =	RIGHT
+seek_backward_1 =	LEFT
+help =			h ?
+hide_message =		M
+refresh =		^r
+reload =		r
+toggle_hidden_files =	H
+go_to_music_directory =	m
+delete_from_playlist =	d
+search_menu =		g /
+save_playlist =		V
+toggle_show_time =	^t
+toggle_show_format =	^f
+go_to_playing_file =	G
+go_to_a_directory =	i
+go_up =			U
+next_search =		^g ^n
+cancel =		^x ESCAPE
