@@ -1403,6 +1403,14 @@ static void menu_key (const int ch)
 				update_menu = 1;
 			}
 			break;
+		case 'm':
+			if (options_get_str("MusicDir")) {
+				go_to_dir (options_get_str("MusicDir"));
+				update_menu = 1;
+			}
+			else
+				interface_error ("MusicDir not defined");
+			break;
 		case KEY_RESIZE:
 			break;
 		default:
