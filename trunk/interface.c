@@ -488,7 +488,9 @@ static int is_subdir (char *dir1, char *dir2)
 
 	assert (slash != NULL);
 
-	return !strncmp(dir1, dir2, slash - dir2) ? 1 : 0;
+	/* FIXME: '/dir/dir' is not subdir of '/dir' */
+
+	return !strncmp(dir1, dir2, strlen(dir1)) ? 1 : 0;
 }
 
 /* Get a string value from the server that will arrive after EV_DATA. */
