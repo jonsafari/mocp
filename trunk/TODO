@@ -15,7 +15,6 @@ Before 2.0:
 * config for mixer device (master, pcm etc)
 * Configure the bahaviour when another client is connecting: EV_BUSY or drop
   the previous connection.
-* Command for turning off message/error text immediately.
 * Configurable pcm and mixer device.
 * Update DOCS.
 
