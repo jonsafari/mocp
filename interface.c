@@ -1904,7 +1904,6 @@ static void add_dir_plist ()
 	else
 		make_titles_file (playlist);
 	
-	plist_sort_fname (playlist);
 	if (playlist_menu) {
 		menu_free (playlist_menu);
 		playlist_menu = NULL;
