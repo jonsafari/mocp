@@ -1,6 +1,8 @@
 #ifndef AUDIO_H
 #define AUDIO_H
 
+#include <stdlib.h>
+
 struct sound_params
 {
 	int channels;
