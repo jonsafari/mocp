@@ -16,7 +16,6 @@
 	* Faster reading directory contents.
 	* Displaying time left to the end of the songs.
 	* Fixed moving through symlinked directories.
-	* Added setting scheduler to realtime priority.
 	* Renamed executable file to mocp due to conflict with QT meta object
 	  compiler.
 	* Configurable mixer channel, OSS output device, and mixer device.
