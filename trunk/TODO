@@ -46,6 +46,7 @@ In future:
 * Alsa output and mixer.
 * libsidplay2
 * Use 24-bit output if output device supports it.
+* Seek forward using the content of the output buffer.
 
 Maybe never:
 
