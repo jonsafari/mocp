@@ -438,3 +438,30 @@ int plist_count (struct plist *plist)
 
 	return count;
 }
+
+/* Set title of an intem. */
+void plist_set_title (struct plist *plist, const int num, const char *title)
+{
+	assert (num >=0 && num < plist->num);
+
+	if (plist->items[num].title)
+		free (plist->items[num].title);
+	plist->items[num].title = xstrdup (title);
+}
+
+/* Set file for an item. */
+void plist_set_file (struct plist *plist, const int num, const char *file)
+{
+	assert (num >=0 && num < plist->num);
+
+	if (plist->items[num].file)
+		free (plist->items[num].file);
+	plist->items[num].file = xstrdup (file);
+}
+
+/* Return 1 if an item has 'deleted' flag. */
+int plist_deleted (const struct plist *plist, const int num)
+{
+	assert (num >=0 && num < plist->num);
+	return plist->items[num].deleted;
+}
