@@ -2002,6 +2002,7 @@ static void toggle_plist ()
 	else
 		interface_error ("The playlist is empty.");
 
+	update_info_win ();
 	wrefresh (info_win);
 }
 
