@@ -1138,19 +1138,21 @@ static void send_playlist (struct plist *plist, const int clear)
 	}
 }
 
-/* Mark this file in the menu. Umark if NULL*/
-static void mark_file (const char *file)
+/* Mark this file from the playlist with this serial number in the menu.
+ * Umark if file is NULL. */
+static void mark_file (const char *file, const int plist_serial)
 {
 	if (file) {
 		int i;
 		
 		if (curr_plist_menu
+				&& plist_serial == plist_get_serial(curr_plist)
 				&& (i = plist_find_fname(curr_plist, file))
 				!= -1)
 			menu_mark_plist_item (curr_plist_menu, i);
 
-		if (playlist_menu
-				&&(i = plist_find_fname(playlist, file))
+		if (playlist_menu && plist_serial == plist_get_serial(playlist)
+				&& (i = plist_find_fname(playlist, file))
 				!= -1)
 			menu_mark_plist_item (playlist_menu, i);
 		
@@ -1447,9 +1449,12 @@ static int get_file_time (char *file)
 static void update_curr_file ()
 {
 	char *file;
+	int plist_serial;
 
 	send_int_to_srv (CMD_GET_SNAME);
 	file = get_data_str ();
+	send_int_to_srv (CMD_PLIST_GET_SERIAL);
+	plist_serial = get_data_int ();
 
 	if (playlist_menu)
 		menu_unmark_item (playlist_menu);
@@ -1464,7 +1469,7 @@ static void update_curr_file ()
 		file_info.title[sizeof(file_info.title)-1] = 0;
 		set_time (get_file_time(file));
 		xterm_set_title (file_info.title);
-		mark_file (file);
+		mark_file (file, plist_serial);
 		free (title);
 	}
 	else {
