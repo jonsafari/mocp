@@ -183,7 +183,7 @@ off_t io_seek (struct io_stream *s, off_t offset, int whence)
 				new_pos = offset;
 			break;
 		case SEEK_CUR:
-			if ((ssize_t)s->mem_pos + offset >= 0
+			if ((ssize_t)s->pos + offset >= 0
 					&& s->pos + offset < s->size)
 				new_pos = s->pos + offset;
 			break;
