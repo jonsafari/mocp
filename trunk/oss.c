@@ -94,7 +94,8 @@ static int oss_set_params ()
 			req_format = AFMT_S16_LE;
 			break;
 
-/* AFMT_S24_LE is only sometimes present */
+/* AFMT_S24_LE is only present in linux 2.4? We don't really use that, so don't
+ * care. */
 #ifdef AFMT_S24_LE
 		case 3:
 			req_format = AFMT_S24_LE;
