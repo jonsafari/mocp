@@ -19,6 +19,10 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
+#include <sys/time.h>
+#ifdef HAVE_PRIORITY
+# include <sys/resource.h>
+#endif
 #include <unistd.h>
 #include <signal.h>
 #define _GNU_SOURCE
@@ -206,10 +210,12 @@ static void set_prio ()
 					strerror(errno));
 #endif
 	}
+
+#endif
 		
 	/* Drop root privileges, if we are not root */
 	setuid (getuid());
-#endif
+	setgid (getgid());
 }
 
 /* Run client and the server if needed. */
