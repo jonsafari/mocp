@@ -64,7 +64,7 @@ struct client
 static struct client clients[CLIENTS_MAX];
 	
 /* Thread ID of the server thread. */
-static pthread_t server_tid; /* Why? */
+static pthread_t server_tid;
 
 /* Set to 1 when a signal arrived causing the program to exit. */
 static volatile int server_quit = 0;
@@ -117,11 +117,11 @@ static void sig_exit (int sig)
 	logit ("Got signal %d", sig);
 	server_quit = 1;
 
-	/* FIXME: wake up the server thread with pthread_kill() when it's not
-	 * the server thread */
+	if (server_tid != pthread_self())
+		pthread_kill (server_tid, sig);
 }
 
-static void sig_wake_up (int sig)
+static void sig_wake_up (int sig ATTR_UNUSED)
 {
 	debug ("got wake up signal");
 }
