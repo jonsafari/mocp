@@ -18,6 +18,7 @@
 
 #include "main.h"
 #include "file_types.h"
+#include "files.h"
 
 #ifdef HAVE_MAD
 # include "mp3.h"
@@ -29,28 +30,13 @@
 
 #include "wav.h"
 
-struct file_type {
+struct file_type_data {
 	char *ext;
 	struct decoder_funcs *funcs;
 };
 
-static struct file_type types[8];
+static struct file_type_data types[8];
 static int types_num = 0;
-
-/* Return the file extension position or NULL if the file has no extension. */
-static char *ext_pos (char *file)
-{
-	char *ext = strrchr (file, '.');
-	char *slash = strrchr (file, '/');
-
-	/* don't treat dot in ./file as a dot before extension */
-	if (ext && (!slash || slash < ext))
-		ext++;
-	else
-		ext = NULL;
-
-	return ext;
-}
 
 int is_sound_file (char *name)
 {
