@@ -480,10 +480,13 @@ static int qsort_dirs_func (const void *a, const void *b)
 static struct menu *make_menu (struct plist *plist, char **dirs, int ndirs)
 {
 	int i;
+	int menu_pos;
+	int plist_items = 0;
 	struct menu_item **menu_items;
 	
+	plist_items = plist_count (plist);
 	menu_items = (struct menu_item **)xmalloc (sizeof(struct menu_item *)
-			* (plist->num + ndirs));
+			* (plist_items + ndirs));
 	
 	/* directories */
 	for (i = 0; i < ndirs; i++) {
@@ -493,14 +496,17 @@ static struct menu *make_menu (struct plist *plist, char **dirs, int ndirs)
 	}
 	
 	/* playlist items */
-	for (i = ndirs; i < plist->num + ndirs; i++) {
-		menu_items[i] = menu_newitem (plist->items[i-ndirs].title,
-				i - ndirs);
-		menu_items[i]->attr_normal = COLOR_PAIR(CLR_ITEM);
-		menu_items[i]->attr_sel = COLOR_PAIR(CLR_SELECTED);
+	for (i = 0, menu_pos = ndirs; i < plist->num; i++) {
+		if (!plist->items[i].deleted) {
+			menu_items[menu_pos] = menu_newitem (
+					plist->items[i].title, i);
+			menu_items[menu_pos]->attr_normal = COLOR_PAIR(CLR_ITEM);
+			menu_items[menu_pos]->attr_sel = COLOR_PAIR(CLR_SELECTED);
+			menu_pos++;
+		}
 	}
 	
-	return menu_new (main_win, menu_items, ndirs + plist->num,
+	return menu_new (main_win, menu_items, ndirs + plist_items,
 			COLOR_PAIR(CLR_ITEM), COLOR_PAIR(CLR_SELECTED),
 			COLOR_PAIR(CLR_MARKED) | A_BOLD,
 			COLOR_PAIR(CLR_MARKED_SELECTED) | A_BOLD);
@@ -1074,16 +1080,23 @@ static void toggle_plist ()
 		menu = saved_menu;
 		set_title (cwd);
 		update_curr_file ();
+		set_interface_status (NULL);
 	}
 	else if (playlist && playlist->num) {
+		char msg[50];
+
 		visible_plist = playlist;
 		saved_menu = menu;
 		menu = make_menu (playlist, NULL, 0);
 		set_title ("Playlist");
 		update_curr_file ();
+		sprintf (msg, "%d files on the list", plist_count(playlist));
+		set_interface_status (msg);
 	}
 	else
 		interface_error ("The playlist is empty.");
+
+	wrefresh (info_win);
 }
 
 /* Add the current selected file to the playlist. */
@@ -1153,7 +1166,7 @@ static void add_dir_plist ()
 	
 	plist_sort_fname (playlist);
 
-	sprintf (msg, "%d files on the list", playlist->num);
+	sprintf (msg, "%d files on the list", plist_count(playlist));
 	set_interface_status (msg);
 	wrefresh (info_win);
 }
@@ -1263,6 +1276,46 @@ static void reread_dir ()
 	go_to_dir (NULL);
 	menu_set_top_item (menu, top_item);
 	menu_setcurritem (menu, selected_item);
+}
+
+static void delete_item ()
+{
+	struct menu_item *menu_item;
+	int selected_item;
+	int top_item;
+
+	if (visible_plist != playlist) {
+		interface_error ("You can only delete an item from the "
+				"playlist.");
+		return;
+	}
+
+	assert (playlist->num > 0);
+
+	selected_item = menu->selected;
+	top_item = menu->top;
+	
+	menu_item = menu_curritem (menu);
+	send_int_to_srv (CMD_DELETE);
+	send_str_to_srv (playlist->items[menu_item->plist_pos].file);
+
+	plist_delete (playlist, menu_item->plist_pos);
+	if (plist_count(playlist) > 0) {
+		char msg[50];
+		
+		menu_free (menu);
+		menu = make_menu (playlist, NULL, 0);
+		menu_set_top_item (menu, top_item);
+		menu_setcurritem (menu, selected_item);
+		update_curr_file ();
+		sprintf (msg, "%d files on the list", plist_count(playlist));
+		set_interface_status (msg);
+		wrefresh (info_win);
+	}
+	else {
+		toggle_plist ();
+		plist_clear (playlist);
+	}
 }
 
 /* Handle key */
@@ -1413,6 +1466,10 @@ static void menu_key (const int ch)
 			}
 			else
 				interface_error ("MusicDir not defined");
+			break;
+		case 'd':
+			delete_item ();
+			update_menu = 1;
 			break;
 		case KEY_RESIZE:
 			break;
