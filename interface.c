@@ -801,12 +801,12 @@ static char *find_title (char *file)
 	
 	if ((index = plist_find_fname(visible_plist, file)) != -1) {
 		if (!visible_plist->items[index].tags)
-			visible_plist->items[index].tags = read_file_tags (file);
-		if (visible_plist->items[index].tags
-				&& visible_plist->items[index].tags->title)
+		visible_plist->items[index].tags = read_file_tags (file,
+				visible_plist->items[index].tags, TAGS_COMMENTS);
+		if (visible_plist->items[index].tags->title)
 			title = build_title (visible_plist->items[index].tags);
 	}
-	else if ((tags = read_file_tags(file))) {
+	else if ((tags = read_file_tags(file, NULL, TAGS_COMMENTS))) {
 		if (tags->title)
 			title = build_title (tags);
 		tags_free (tags);
@@ -928,12 +928,11 @@ static int get_file_time (char *file)
 	/* TODO: common code instead of this block: search on curr_plist and
 	 * the playlist. */
 	if ((index = plist_find_fname(visible_plist, file)) != -1) {
-		if (!visible_plist->items[index].tags)
-			visible_plist->items[index].tags = read_file_tags (file);
-		if (visible_plist->items[index].tags)
-			ftime = visible_plist->items[index].tags->time;
+		visible_plist->items[index].tags = read_file_tags (file,
+				visible_plist->items[index].tags, TAGS_TIME);
+		ftime = visible_plist->items[index].tags->time;
 	}
-	else if ((tags = read_file_tags(file))) {
+	else if ((tags = read_file_tags(file, NULL, TAGS_TIME))) {
 		ftime = tags->time;
 		tags_free (tags);
 	}

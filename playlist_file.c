@@ -158,10 +158,11 @@ int plist_load (struct plist *plist, const char *fname, const char *cwd)
 	/* make titles if not present */
 	for (i = 0; i < plist->num; i++)
 		if (!plist_deleted(plist, i) && !plist->items[i].title) {
-			if (!plist->items[i].tags)
-				plist->items[i].tags = read_file_tags (
-						plist->items[i].file);
-			if (plist->items[i].tags && plist->items[i].tags->title)
+			plist->items[i].tags = read_file_tags (
+						plist->items[i].file,
+						plist->items[i].tags,
+						TAGS_COMMENTS);
+			if (plist->items[i].tags->title)
 				plist->items[i].title = build_title (
 						plist->items[i].tags);
 			else
