@@ -1,6 +1,4 @@
 Before 2.2.0:
-* Shift-left and Shift-right for faster, silent seeking (10 sec. per keystroke).
-* cleanup all TODO entries
 * valgrind the client and the server.
 * Test on FreeBSD.
 
@@ -25,6 +23,9 @@ Before 2.3.0:
 * 'd' command must not delete an item from the server playlist if the
   server is not playing from the playlist.
 * config and command line option to use ASCII chars for drawing lines.
+* Command line option to show information about the currently played file.
+* Add --recursive command line option: if a command line argument is a
+  directory, add files from it to the playlist recursively.
 
 In future:
 
@@ -32,7 +33,6 @@ In future:
 * Read tags for sndfile formats.
 * Number items on the playlist.
 * Command to see all information about a file with all tags.
-* Command line option to show all information about a file.
 * Move the playlist to see the song that is currently played.
 * Lyrics downloaded from the Internet.
 * Better international characters handling - tags in UTF.
@@ -49,7 +49,6 @@ In future:
 * Locales.
 * Song ratings or something like Q in XMMS.
 * Configurable sorting.
-* Command line option to get the current state and the title of the played file.
 * Equalizel like in Beep Media Player
 
 Maybe never:
