@@ -2343,7 +2343,7 @@ static int entry_go_dir_key (const int ch)
 			char *dir = make_dir (entry.text);
 
 			/* strip trailing slash */
-			if (dir[strlen(dir)-1] == '/')
+			if (dir[strlen(dir)-1] == '/' && strcmp(dir, "/"))
 				dir[strlen(dir)-1] = 0;
 
 			entry_disable ();
