@@ -29,6 +29,7 @@ struct plist
 
 void plist_init (struct plist *plist);
 int plist_add (struct plist *plist, const char *file_name);
+void plist_add_from_item (struct plist *plist, const struct plist_item *item);
 char *plist_get_file (struct plist *plist, int i);
 int plist_next (struct plist *plist, int num);
 void plist_clear (struct plist *plist);
