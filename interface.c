@@ -1885,6 +1885,7 @@ static void update_menu ()
 static void event_plist_add (struct plist_item *item)
 {
 	if (plist_find_fname(playlist, item->file) == -1) {
+		char msg[50];
 		int item_num = plist_add_from_item (playlist, item);
 		
 		if (options_get_int("ReadTags"))
@@ -1899,6 +1900,9 @@ static void event_plist_add (struct plist_item *item)
 		}
 		else
 			playlist_menu = NULL;
+		
+		sprintf (msg, "%d files on the list", plist_count(playlist));
+		set_iface_status_ref (msg);
 	}
 
 	plist_free_item_fields (item);
@@ -1982,6 +1986,7 @@ static void event_plist_del (char *file)
 				toggle_plist ();
 			plist_clear (playlist);
 			playlist_menu = NULL;
+			set_iface_status_ref (NULL);
 		}
 	}
 	else
@@ -1991,8 +1996,8 @@ static void event_plist_del (char *file)
 	free (file);
 }
 
-/* Handle EV_PLIST_CLEAR. */
-static void event_plist_clear ()
+/* Clear the playlist */
+static void clear_playlist ()
 {
 	if (visible_plist == playlist)
 		toggle_plist();
@@ -2001,6 +2006,10 @@ static void event_plist_clear ()
 		menu_free (playlist_menu);
 		playlist_menu = NULL;
 	}
+	if (options_get_int("SyncPlaylist"))
+		send_int_to_srv (CMD_CLI_PLIST_CLEAR);
+	interface_message ("The playlist was cleared.");
+	set_iface_status_ref (NULL);
 }
 
 /* Handle server event. */
@@ -2051,7 +2060,7 @@ static void server_event (const int event, void *data)
 			break;
 		case EV_PLIST_CLEAR:
 			if (options_get_int("SyncPlaylist")) {
-				event_plist_clear ();
+				clear_playlist ();
 				update_menu ();
 			}
 			break;
@@ -2190,21 +2199,6 @@ static void add_file_plist ()
 	}
 	else
 		error ("The file is already on the playlist.");
-}
-
-/* Clear the playlist */
-static void clear_playlist ()
-{
-	if (visible_plist == playlist)
-		toggle_plist();
-	plist_clear (playlist);
-	if (playlist_menu) {
-		menu_free (playlist_menu);
-		playlist_menu = NULL;
-	}
-	if (options_get_int("SyncPlaylist"))
-		send_int_to_srv (CMD_CLI_PLIST_CLEAR);
-	interface_message ("The playlist was cleared.");
 }
 
 /* Recursively add the conted to a directory to the playlist. */
