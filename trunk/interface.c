@@ -765,7 +765,8 @@ static struct menu *make_menu (struct plist *plist, struct file_list *dirs,
 						plist->items[i].tags,
 						TAGS_TIME);
 			
-			if (plist->items[i].tags->time != -1) {
+			if (plist->items[i].tags
+					&& plist->items[i].tags->time != -1) {
 				char time_str[6];
 				
 				sec_to_min (time_str,
