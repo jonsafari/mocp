@@ -121,7 +121,7 @@ static void go_to_another_file ()
 		else 
 			logit ("Previous item.");
 	}
-	else {
+	else if (options_get_int("AutoNext") || play_next) {
 		curr_playing = plist_next (curr_plist, curr_playing);
 		if (curr_playing == -1 && options_get_int("Repeat")) {
 			if (shuffle)
@@ -134,6 +134,11 @@ static void go_to_another_file ()
 		else
 			logit ("Next item.");
 	}
+	else if (!options_get_int("Repeat"))
+		curr_playing = -1;
+	else
+		debug ("Repeating file");
+
 	UNLOCK (curr_playing_mut);
 }
 
@@ -179,8 +184,7 @@ static void *play_thread (void *unused ATTR_UNUSED)
 			free (file);
 		}
 
-		if (stop_playing || (!options_get_int("AutoNext")
-					&& !play_next && !play_prev)) {
+		if (stop_playing) {
 			LOCK (curr_playing_mut);
 			curr_playing = -1;
 			UNLOCK (curr_playing_mut);
