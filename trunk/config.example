@@ -75,3 +75,7 @@ ShowTime		= IfAvailable
 # MOC directory - where pid file, socket, and state files are stored.
 # You can use ~ at the begining
 # MOCDir		= ~/.moc
+
+# Use mmap() to read files (currently used for reading mp3). mmap() is much
+# slower on NFS.
+UseMmap			= yes
