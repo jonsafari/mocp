@@ -1145,14 +1145,14 @@ static void mark_file (const char *file, const int plist_serial)
 
 	assert (file != NULL);
 	
-	if (curr_plist_menu && plist_serial == plist_get_serial(curr_plist)
-			&& (i = plist_find_fname(curr_plist, file)) != -1)
-		menu_mark_plist_item (curr_plist_menu, i);
-
 	if (playlist_menu && plist_serial == plist_get_serial(playlist)
 			&& (i = plist_find_fname(playlist, file)) != -1)
 		menu_mark_plist_item (playlist_menu, i);
-	
+	else if (curr_plist_menu
+			&& (i = plist_find_fname(curr_plist, file)) != -1)
+		menu_mark_plist_item (curr_plist_menu, i);
+
+
 	if (main_win_mode == WIN_MENU)
 		menu_draw (curr_menu);
 }
