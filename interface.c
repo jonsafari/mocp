@@ -1685,6 +1685,24 @@ static void process_args (char **args, const int num)
 		make_path (args[0]);
 		if (!go_to_dir(NULL))
 			enter_first_dir ();
+		return;
+	}
+	
+	if (num == 1 && is_plist_file(args[0])) {
+		char path[PATH_MAX+1]; /* the directory where the playlist is */
+		char *slash;
+
+		if (args[0][0] == '/')
+			strcpy (path, "/");
+		else if (!getcwd(path, sizeof(path)))
+			interface_fatal ("Can't get CWD: %s", strerror(errno));
+
+		resolve_path (path, sizeof(path), args[0]);
+		slash = strrchr (path, '/');
+		assert (slash != NULL);
+		*slash = 0;
+		
+		plist_load (playlist, args[0], path);
 	}
 	else {
 		int i;
@@ -1708,28 +1726,28 @@ static void process_args (char **args, const int num)
 			else if (dir == 0 && is_sound_file(path))
 				plist_add (playlist, path);
 		}
-
-		if (playlist->num) {
-			char msg[50];
-
-			visible_plist = playlist;
-			
-			if (options_get_int("ReadTags"))
-				switch_titles_tags (playlist);
-			else
-				switch_titles_file (playlist);
-
-			playlist_menu = make_menu (playlist, NULL, 0);
-			curr_menu = playlist_menu;
-			set_title ("Playlist");
-			update_curr_file ();
-			sprintf (msg, "%d files on the list",
-					plist_count(playlist));
-			set_interface_status (msg);
-		}
-		else
-			enter_first_dir ();
 	}
+
+	if (plist_count(playlist)) {
+		char msg[50];
+
+		visible_plist = playlist;
+		
+		if (options_get_int("ReadTags"))
+			switch_titles_tags (playlist);
+		else
+			switch_titles_file (playlist);
+
+		playlist_menu = make_menu (playlist, NULL, 0);
+		curr_menu = playlist_menu;
+		set_title ("Playlist");
+		update_curr_file ();
+		sprintf (msg, "%d files on the list",
+				plist_count(playlist));
+		set_interface_status (msg);
+	}
+	else
+		enter_first_dir ();
 }
 
 /* Load the playlist from .moc directory. */
