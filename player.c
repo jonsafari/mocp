@@ -17,14 +17,14 @@
 #include <string.h>
 #include <errno.h>
 
+/*#define DEBUG*/
+
 #include "main.h"
 #include "log.h"
 #include "file_types.h"
 #include "audio.h"
 #include "buf.h"
 #include "server.h"
-
-/*#define DEBUG*/
 
 enum request
 {
@@ -76,9 +76,7 @@ void player (const char *file, struct decoder_funcs *f, struct buf *out_buf)
 	}
 
 	while (1) {
-#ifdef DEBUG
-		logit ("loop...");
-#endif
+		debug ("loop...");
 		
 		LOCK (request_cond_mutex);
 		if (!eof && !decoded) {
@@ -90,9 +88,7 @@ void player (const char *file, struct decoder_funcs *f, struct buf *out_buf)
 				logit ("EOF from decoder");
 			}
 			else {
-#ifdef DEBUG
-				logit ("decoded %d bytes", decoded);
-#endif
+				debug ("decoded %d bytes", decoded);
 				if (!sound_params_eq(new_sound_params,
 							sound_params))
 					sound_params_change = 1;
@@ -101,9 +97,7 @@ void player (const char *file, struct decoder_funcs *f, struct buf *out_buf)
 		else if ((decoded > buf_get_free(out_buf)
 				|| (eof && buf_get_free(out_buf)))
 				&& out_buf->fill) {
-#ifdef DEBUG
-			logit ("waiting...");
-#endif
+			debug ("waiting...");
 			pthread_cond_wait (&request_cond, &request_cond_mutex);
 			UNLOCK (request_cond_mutex);
 		}

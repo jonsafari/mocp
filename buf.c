@@ -67,9 +67,7 @@ static void *read_thread (void *arg)
 		if (buf->stop)
 			buf->fill = 0;
 
-#ifdef DEBUG
-		logit ("sending the signal");
-#endif
+		debug ("sending the signal");
 		pthread_cond_broadcast (&buf->ready_cond);
 		if (buf->opt_cond) {
 			pthread_mutex_lock (buf->opt_cond_mutex);
@@ -79,13 +77,9 @@ static void *read_thread (void *arg)
 		
 		if ((buf->fill == 0 || buf->pause || buf->stop)
 				&& !buf->exit) {
-#ifdef DEBUG
-			logit ("waiting for someting in the buffer");
-#endif
+			debug ("waiting for someting in the buffer");
 			pthread_cond_wait (&buf->play_cond, &buf->mutex);
-#ifdef DEBUG
-			logit ("someting appeard in the buffer");
-#endif
+			debug ("someting appeard in the buffer");
 		}
 		
 		if (buf->exit && buf->fill == 0) {
@@ -117,10 +111,8 @@ static void *read_thread (void *arg)
 					AUDIO_MAX_PLAY_BYTES));
 		UNLOCK (buf->mutex);
 
-#ifdef DEBUG
-		logit ("playing %d bytes from %d", to_play,
+		debug ("playing %d bytes from %d", to_play,
 				buf->pos);
-#endif
 
 		/* We don't need mutex here, because we are the only thread
 		 * that modify buf->pos, and the buffer part we use is
