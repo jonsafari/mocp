@@ -106,6 +106,7 @@ void plist_init (struct plist *plist)
 {
 	plist->num = 0;
 	plist->allocated = INIT_SIZE;
+	plist->not_deleted = 0;
 	plist->items = (struct plist_item *)xmalloc (sizeof(struct plist_item)
 			* INIT_SIZE);
 	pthread_mutex_init (&plist->mutex, NULL);
@@ -151,6 +152,7 @@ int plist_add (struct plist *plist, const char *file_name)
 	plist->items[plist->num].mtime = (file_name ? get_mtime(file_name)
 			: (time_t)-1);
 	plist->num++;
+	plist->not_deleted++;
 
 	UNLOCK (plist->mutex);
 
@@ -277,6 +279,7 @@ void plist_clear (struct plist *plist)
 			sizeof(struct plist_item) * INIT_SIZE);
 	plist->allocated = INIT_SIZE;
 	plist->num = 0;
+	plist->not_deleted = 0;
 	UNLOCK (plist->mutex);
 }
 
@@ -493,26 +496,21 @@ void plist_delete (struct plist *plist, const int num)
 	
 	LOCK (plist->mutex);
 	assert (!plist->items[num].deleted);
+	assert (plist->not_deleted > 0);
 	if (num < plist->num) {
 		plist->items[num].deleted = 1;
 		plist_free_item_fields (&plist->items[num]);
 	}
+	plist->not_deleted--;
 	UNLOCK (plist->mutex);
 }
 
 /* Count not deleted items. */
 int plist_count (struct plist *plist)
 {
-	int i;
-	int count = 0;
-	
 	assert (plist != NULL);
-
-	for (i = 0; i < plist->num; i++)
-		if (!plist->items[i].deleted)
-			count++;
-
-	return count;
+	
+	return plist->not_deleted;
 }
 
 /* Set tags title of an item. */
