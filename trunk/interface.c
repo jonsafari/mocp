@@ -150,6 +150,41 @@ static struct
 # define KEY_ESCAPE	27
 #endif
 
+static char *help_text[] = {
+"       " PACKAGE_STRING,
+"",
+"  UP, DOWN     Move up and down in the menu",
+"  PAGE UP/DOWN Move one page up/down",
+"  HOME, END    Move to the first, last item",
+"  ENTER        Start playing files (from this file) or go to directory",
+"  s            Stop playing",
+"  n            Next song",
+"  p, SPACE     Pause/unpause",
+"  LEFT, RIGHT  Seek backward, forward",
+"  h            Show this help screen",
+"  f            Switch between short and full names",
+"  m            Go to the music directory (requires an entry in the config)",
+"  a/A          Add file to the playlist / Add directory recursively",
+"  d/C          Delete item from the playlist / Clear the playlist",
+"  l            Switch between playlist and file list",
+"  S/R/X        Switch shuffle / repeat / autonext",
+"  '.' , ','    Increase, decrease volume by 5%",
+"  '>' , '<'    Increase, decrease volume by 1%",
+"  M            Hide error/informative message",
+"  H            Switch ShowHiddenFiles option",
+"  ^r           Refresh the screen",
+"  r            Reread directory content",
+"  q            Detach MOC from the server",
+"  V            Save the playlist in the current directory",
+"  g            Search the menu. The following commands can be used in this",
+"               entry:",
+"      CTRL-g   Find next",
+"      CTRL-x   Exit the entry",
+"  Q            Quit"
+};
+static int help_screen_top = 0;
+#define HELP_LINES	((int)(sizeof(help_text)/sizeof(help_text[0])))
+
 static void interface_fatal (const char *msg)
 {
 	endwin ();
@@ -1458,40 +1493,38 @@ static void seek (const int sec)
 
 static void print_help_screen ()
 {
-	wclear (main_win);
+	int i;
+	int max_lines = help_screen_top + LINES - 6;
+	
+	werase (main_win);
 	wbkgd (main_win, COLOR_PAIR(CLR_ITEM));
 
-	mvwprintw (main_win, 0, 0,
-"  UP, DOWN     Move up and down in the menu\n"
-"  PAGE UP/DOWN Move one page up/down\n"
-"  HOME, END    Move to the first, last item\n"
-"  ENTER        Start playing files (from this file) or go to directory\n"
-"  s            Stop playing\n"
-"  n            Next song\n"
-"  p, SPACE     Pause/unpause\n"
-"  LEFT, RIGHT  Seek backward, forward\n"
-"  h            Show this help screen\n"
-"  f            Switch between short and full names\n"
-"  m            Go to the music directory (requires an entry in the config)\n"
-"  a/A          Add file to the playlist / Add directory recursively\n"
-"  d/C          Delete item from the playlist / Clear the playlist\n"
-"  l            Switch between playlist and file list\n"
-"  S/R/X        Switch shuffle / repeat / autonext\n"
-"  '.' , ','    Increase, decrease volume by 5%\n"
-"  '>' , '<'    Increase, decrease volume by 1%\n"
-"  M            Hide error/informative message\n"
-"  H            Switch ShowHiddenFiles option\n"
-"  ^r           Refresh the screen\n"
-"  r            Reread directory content\n"
-"  q            Detach MOC from the server\n"
-"  V            Save the playlist in the current directory\n"
-"  Q            Quit\n");
+	wmove (main_win, 0, 0);
+	if (help_screen_top != 0) {
+		wattrset (main_win, COLOR_PAIR(CLR_MARKED) | A_BOLD);
+		mvwaddstr (main_win, 0, COLS/2 - (sizeof("...MORE...")-1)/2,
+				"...MORE...");
+		wattrset (main_win, COLOR_PAIR(CLR_ITEM));
+	}
+	wmove (main_win, 1, 0);
+	for (i = help_screen_top; i < max_lines && i < HELP_LINES; i++) {
+		waddstr (main_win, help_text[i]);
+		waddch (main_win, '\n');
+	}
+	if (i != HELP_LINES) {
+		wattrset (main_win, COLOR_PAIR(CLR_MARKED) | A_BOLD);
+		mvwaddstr (main_win, LINES-5,
+				COLS/2 - (sizeof("...MORE...")-1)/2,
+				"...MORE...");
+		wattrset (main_win, COLOR_PAIR(CLR_ITEM));
+	}
 
 	wrefresh (main_win);
 }
 
 static void help_screen ()
 {
+	help_screen_top = 0;
 	main_win_mode = WIN_HELP;
 	print_help_screen ();
 }
@@ -1720,15 +1753,30 @@ static void menu_key (const int ch)
 
 	if (main_win_mode == WIN_HELP) {
 
-		/* Switch to menu */
-		werase (main_win);
-		main_border ();
-		menu_draw (curr_menu);
-		update_info_win ();
-		wrefresh (main_win);
-		wrefresh (info_win);
+		if (ch == KEY_DOWN || ch == KEY_NPAGE || ch == '\n') {
+			if (help_screen_top + LINES - 5 <= HELP_LINES) {
+				help_screen_top++;
+				print_help_screen ();
+			}
+		}
+		else if (ch == KEY_UP || ch == KEY_PPAGE) {
+			if (help_screen_top > 0) {
+				help_screen_top--;
+				print_help_screen ();
+			}
+		}
+		else {
+			
+			/* Switch to menu */
+			werase (main_win);
+			main_border ();
+			menu_draw (curr_menu);
+			update_info_win ();
+			wrefresh (main_win);
+			wrefresh (info_win);
 		
-		main_win_mode = WIN_MENU;
+			main_win_mode = WIN_MENU;
+		}
 	}
 	else if (entry.type != ENTRY_DISABLED)
 		entry_key (ch);
