@@ -231,6 +231,7 @@ void file_list_free (struct file_list *list)
 	
 	for (i = 0; i < list->num; i++)
 		free (list->items[i]);
+	free (list->items);
 	free (list);
 }
 
