@@ -111,6 +111,23 @@ void plist_init (struct plist *plist)
 	pthread_mutex_init (&plist->mutex, NULL);
 }
 
+/* Create a new playlit item with empty fields. */
+struct plist_item *plist_new_item ()
+{
+	struct plist_item *item;
+
+	item = (struct plist_item *)xmalloc (sizeof(struct plist_item));
+	item->file = NULL;
+	item->deleted = 0;
+	item->title = NULL;
+	item->title_file = NULL;
+	item->title_tags = NULL;
+	item->tags = NULL;
+	item->mtime = (time_t)-1;
+
+	return item;
+}
+
 /* Add a file to the list. Return the index of the item. */
 int plist_add (struct plist *plist, const char *file_name)
 {
@@ -221,7 +238,7 @@ int plist_prev (struct plist *plist, int num)
 	return i >= 0 ? i : -1;
 }
 
-static void plist_free_item_fields (struct plist_item *item)
+void plist_free_item_fields (struct plist_item *item)
 {
 	if (item->file) {
 		free (item->file);
@@ -459,13 +476,15 @@ char *build_title (const struct file_tags *tags)
 	return xstrdup (title);
 }
 
-/* Copy the item to the playlist. */
-void plist_add_from_item (struct plist *plist, const struct plist_item *item)
+/* Copy the item to the playlist. Return the index of the added item. */
+int plist_add_from_item (struct plist *plist, const struct plist_item *item)
 {
 	int pos = plist_add (plist, NULL);
 
 	assert (!item->deleted);
 	plist_item_copy (&plist->items[pos], item);
+
+	return pos;
 }
 
 void plist_delete (struct plist *plist, const int num)
