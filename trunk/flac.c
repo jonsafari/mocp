@@ -21,7 +21,6 @@
 #include <FLAC/all.h>
 #include <stdlib.h>
 #include <string.h>
-#include "playlist.h"
 #include "audio.h"
 #include "file_types.h"
 #include "server.h"

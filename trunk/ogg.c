@@ -24,7 +24,6 @@
 #include "main.h"
 #include "log.h"
 #include "audio.h"
-#include "buf.h"
 #include "options.h"
 #include "file_types.h"
 

@@ -21,7 +21,6 @@
 #include "file_types.h"
 #include "main.h"
 #include "server.h"
-#include "playlist.h"
 #include "log.h"
 
 /* TODO:
