@@ -617,6 +617,18 @@ static void draw_curr_time_bar ()
 		waddch (info_win, ' ');
 }
 
+static void draw_message ()
+{
+	int i, len;
+	wattrset (info_win, msg_is_error ? colors[CLR_ERROR]
+			: colors[CLR_MESSAGE]);
+	mvwaddnstr (info_win, 1, 1, message, COLS - 2);
+
+	len = strlen (message);
+	for (i = 0; i < COLS - 2 - len; i++)
+		waddch (info_win, ' ');
+}
+
 /* Update the info win */
 static void update_info_win ()
 {
@@ -624,11 +636,8 @@ static void update_info_win ()
 	info_border ();
 
 	/* Show message it it didn't expire yet */
-	if (time(NULL) <= msg_timeout) {
-		wattrset (info_win, msg_is_error ? colors[CLR_ERROR]
-				: colors[CLR_MESSAGE]);
-		mvwaddnstr (info_win, 1, 1, message, COLS - 2);
-	}
+	if (time(NULL) <= msg_timeout)
+		draw_message ();
 	else {
 
 		/* The title */
@@ -750,7 +759,7 @@ void interface_error (const char *format, ...)
 	
 	/* The interface could have not been initialized yet. */
 	if (main_win) {
-		update_info_win ();
+		draw_message ();
 		wrefresh (info_win);
 	}
 	else
