@@ -586,7 +586,8 @@ static struct decoder mp3_decoder = {
 	mp3_get_duration,
 	mp3_get_error,
 	mp3_our_format_ext,
-	mp3_get_name
+	mp3_get_name,
+	NULL
 };
 
 struct decoder *plugin_init ()

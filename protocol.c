@@ -263,34 +263,45 @@ static char *add_buf_time (char *buf, int *len, int *allocated, const time_t t)
 	return buf;
 }
 
-/* Make a apcket from the item fields suitable to send() as. The returned
- * memory is malloc()ed and the size of the packed is put into len. */
-static char *make_item_packet (const struct plist_item *item, size_t *len)
+/* Add data to the dynamicaly allocated buffer which has aready len bytes
+ * data and is allocated big. Returns the pointer to the buffer which may be not
+ * the same as buf. */
+static char *add_buf_data (char *buf, int *len, int *allocated,
+		const char *data, const size_t data_len)
+{
+	if (*allocated - *len < (long)data_len) {
+		*allocated *= 2;
+		buf = xrealloc (buf, *allocated);
+	}
+
+	memcpy (buf + *len, data, data_len);
+	*len += data_len;
+
+	return buf;
+}
+
+/* Make a packet from the tags fields suitable to send() as. The returned
+ * memory is malloc()ed and the size of the packet is put into len.
+ * If tags == NULL, make a packet with empty tags. */
+static char *make_tags_packet (const struct file_tags *tags, size_t *len)
 {
 	char *buf;
-	size_t allocated;
-
-	allocated = 2048;
-	buf = xmalloc (allocated);
+	size_t allocated = 2048;
+	
+	buf = (char *)xmalloc (allocated);
 	*len = 0;
 
-	buf = add_buf_str (buf, len, &allocated, item->file);
-	buf = add_buf_long (buf, len, &allocated, item->file_hash);
-	buf = add_buf_str (buf, len, &allocated,
-			item->title_tags ? item->title_tags : "");
-	
-	if (item->tags) {
+	if (tags) {
 		buf = add_buf_str (buf, len, &allocated,
-				item->tags->title ? item->tags->title : "");
+				tags->title ? tags->title : "");
 		buf = add_buf_str (buf, len, &allocated,
-				item->tags->artist ? item->tags->artist : "");
+				tags->artist ? tags->artist : "");
 		buf = add_buf_str (buf, len, &allocated,
-				item->tags->album ? item->tags->album : "");
-		buf = add_buf_int (buf, len, &allocated, item->tags->track);
+				tags->album ? tags->album : "");
+		buf = add_buf_int (buf, len, &allocated, tags->track);
 		
 		buf = add_buf_int (buf, len, &allocated,
-				item->tags->filled & TAGS_TIME
-				? item->tags->time : -1);
+				tags->filled & TAGS_TIME ? tags->time : -1);
 	}
 	else {
 		
@@ -302,6 +313,31 @@ static char *make_item_packet (const struct plist_item *item, size_t *len)
 		buf = add_buf_int (buf, len, &allocated, -1); /* time */
 	}
 
+	return buf;
+}
+
+/* Make a packet from the item fields suitable to send() as. The returned
+ * memory is malloc()ed and the size of the packet is put into len. */
+static char *make_item_packet (const struct plist_item *item, size_t *len)
+{
+	char *buf;
+	size_t allocated;
+	char *tags_packet;
+	size_t tags_packet_len;
+
+	allocated = 2048;
+	buf = (char *)xmalloc (allocated);
+	*len = 0;
+
+	buf = add_buf_str (buf, len, &allocated, item->file);
+	buf = add_buf_long (buf, len, &allocated, item->file_hash);
+	buf = add_buf_str (buf, len, &allocated,
+			item->title_tags ? item->title_tags : "");
+
+	tags_packet = make_tags_packet (item->tags, &tags_packet_len);
+	buf = add_buf_data (buf, len, &allocated, tags_packet, tags_packet_len);
+	free (tags_packet);
+	
 	buf = add_buf_time (buf, len, &allocated, item->mtime);
 
 	return buf;
@@ -340,6 +376,49 @@ int send_item (int sock, const struct plist_item *item)
 	return 1;
 }
 
+struct file_tags *recv_tags (int sock)
+{
+	struct file_tags *tags = tags_new ();
+
+	if (!(tags->title = get_str(sock))) {
+		logit ("Error while receiving titile");
+		tags_free (tags);
+		return NULL;
+	}
+	
+	if (!(tags->artist = get_str(sock))) {
+		logit ("Error while receiving artist");
+		tags_free (tags);
+		return NULL;
+	}
+	
+	if (!(tags->album = get_str(sock))) {
+		logit ("Error while receiving album");
+		tags_free (tags);
+		return NULL;
+	}
+		
+	if (!get_int(sock, &tags->track)) {
+		logit ("Error while receiving ");
+		tags_free (tags);
+		return NULL;
+	}
+	
+	if (!get_int(sock, &tags->time)) {
+		logit ("Error while receiving time");
+		tags_free (tags);
+		return NULL;
+	}
+
+	if (tags->time != -1)
+		tags->filled |= TAGS_TIME;
+
+	if (tags->title || tags->artist || tags->album || tags->track != -1)
+		tags->filled |= TAGS_COMMENTS;
+
+	return tags;
+}
+
 /* Get a playlist item from the server. If empty item->file is an empty string,
  * end of playlist arrived (empty item). The memory is malloc()ed. Return NULL
  * on error. */
@@ -355,9 +434,6 @@ struct plist_item *recv_item (int sock)
 	}
 
 	if (item->file[0]) {
-		char *title, *artist, *album;
-		int track, time;
-		
 		if (!(get_long(sock, &item->file_hash))) {
 			logit ("Error while receiving file hash");
 			free (item->file);
@@ -374,103 +450,24 @@ struct plist_item *recv_item (int sock)
 			free (item->title_tags);
 			item->title_tags = NULL;
 		}
-		
-		if (!(title = get_str(sock))) {
-			logit ("Error while receiving titile");
+
+		if (!(item->tags = recv_tags(sock))) {
+			logit ("Error while receiving tags");
+			free (item->file);
 			if (item->title_tags)
 				free (item->title_tags);
 			free (item);
-			return NULL;
-		}
-		
-		if (!(artist = get_str(sock))) {
-			logit ("Error while receiving artist");
-			if (item->title_tags)
-				free (item->title_tags);
-			free (title);
-			free (item);
-			return NULL;
-		}
-		
-		if (!(album = get_str(sock))) {
-			logit ("Error while receiving album");
-			if (item->title_tags)
-				free (item->title_tags);
-			free (title);
-			free (artist);
-			free (item);
-			return NULL;
-		}
-			
-		if (!get_int(sock, &track)) {
-			logit ("Error while receiving ");
-			if (item->title_tags)
-				free (item->title_tags);
-			free (title);
-			free (artist);
-			free (item);
-			return NULL;
-		}
-		
-		if (!get_int(sock, &time)) {
-			logit ("Error while receiving time");
-			if (item->title_tags)
-				free (item->title_tags);
-			free (title);
-			free (artist);
-			free (item);
-			return NULL;
 		}
 		
 		if (!get_time(sock, &item->mtime)) {
 			logit ("Error while receiving mtime");
 			if (item->title_tags)
 				free (item->title_tags);
-			free (title);
-			free (artist);
-			free (item);
+			free (item->file);
+			tags_free (item->tags);
 			return NULL;
 		}
 
-		if (*title || *artist || *album || track != -1 || time != -1) {
-			item->tags = tags_new ();
-
-			if (*title || *artist || *album) {
-				item->tags->filled |= TAGS_COMMENTS;
-
-				if (*title)
-					item->tags->title = title;
-				else
-					free (title);
-				
-				if (*artist)
-					item->tags->artist = artist;
-				else
-					free (artist);
-				
-				if (*album)
-					item->tags->album = album;
-				else
-					free (album);
-			}
-			else {
-				free (title);
-				free (artist);
-				free (album);
-			}
-			
-			if (time != -1) {
-				item->tags->filled |= TAGS_TIME;
-				item->tags->time = time;
-			}
-
-			item->tags->track = track;
-		}
-		else {
-			free (title);
-			free (artist);
-			free (album);
-		}
 	}
 	
 	return item;
@@ -611,10 +608,22 @@ static char *make_event_packet (struct event *e, size_t *len)
 		item_packet = make_item_packet (e->data, &item_packet_len);
 		*len += item_packet_len;
 		
-		buf = xmalloc(*len);
+		buf = (char *)xmalloc(*len);
 		memcpy (buf, &e->type, sizeof(e->type));
 		memcpy (buf + sizeof(e->type), item_packet, item_packet_len);
 		free (item_packet);
+	}
+	else if (e->type == EV_TAGS) {
+		size_t tags_packet_len;
+		char *tags_packet;
+
+		tags_packet = make_tags_packet (e->data, &tags_packet_len);
+		*len += tags_packet_len;
+		
+		buf = (char *)xmalloc (*len);
+		memcpy (buf, &e->type, sizeof(e->type));
+		memcpy (buf + sizeof(e->type), tags_packet, tags_packet_len);
+		free (tags_packet);
 	}
 	else {
 		if (e->data)
@@ -654,6 +663,8 @@ enum noblock_io_status event_send_noblock (int sock, struct event_queue *q)
 		}
 		else if (e->type == EV_PLIST_DEL)
 			free (e->data);
+		else if (e->type == EV_TAGS)
+			tags_free (e->data);
 		else if (e->data)
 			logit ("Unhandled event data!");
 

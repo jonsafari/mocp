@@ -18,7 +18,7 @@
 #include <errno.h>
 #include <assert.h>
 
-/*#define DEBUG*/
+#define DEBUG
 
 #include "main.h"
 #include "log.h"
@@ -29,6 +29,7 @@
 #include "options.h"
 #include "player.h"
 #include "files.h"
+#include "playlist.h"
 
 #define PCM_BUF_SIZE	(32 * 1024)
 
@@ -185,6 +186,15 @@ void player_init ()
 	precache.ok =  0;
 }
 
+static void show_tags (const struct file_tags *tags)
+{
+	
+	debug ("TAG[title]: %s", tags->title ? tags->title : "N/A");
+	debug ("TAG[album]: %s", tags->album ? tags->album : "N/A");
+	debug ("TAG[artist]: %s", tags->artist ? tags->artist : "N/A");
+	debug ("TAG[track]: %d", tags->track);
+}
+
 /* Decoder loop for already opened and probably running for some time decoder.
  * next_file will be precached at eof. */
 static void decode_loop (const struct decoder *f, void *decoder_data,
@@ -197,6 +207,12 @@ static void decode_loop (const struct decoder *f, void *decoder_data,
 	struct sound_params new_sound_params;
 	int bitrate = -1;
 	int sound_params_change = 0;
+	struct file_tags *tags = NULL;
+
+	if (f->current_tags)
+		tags = tags_new ();
+	else
+		logit ("No current_tags() function");
 
 	while (1) {
 		debug ("loop...");
@@ -234,6 +250,13 @@ static void decode_loop (const struct decoder *f, void *decoder_data,
 				if (bitrate != new_bitrate) {
 					bitrate = new_bitrate;
 					set_info_bitrate (bitrate);
+				}
+
+				if (f->current_tags && f->current_tags(
+							decoder_data, tags)) {
+					set_info_tags (tags);
+					debug ("Tags change");
+					show_tags(tags);
 				}
 			}
 		}
@@ -312,6 +335,8 @@ static void decode_loop (const struct decoder *f, void *decoder_data,
 		}
 	}
 
+	if (tags)
+		tags_free (tags);
 }
 
 /* Open a file, decode it and put output into the buffer. At the end, start
