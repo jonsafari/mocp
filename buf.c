@@ -67,6 +67,11 @@ static void *read_thread (void *arg)
 
 		logit ("READER: sending the signal");
 		pthread_cond_broadcast (&buf->ready_cond);
+		if (buf->opt_cond) {
+			pthread_mutex_lock (buf->opt_cond_mutex);
+			pthread_cond_broadcast (buf->opt_cond);
+			pthread_mutex_unlock (buf->opt_cond_mutex);
+		}
 		
 		if ((buf->fill == 0 || buf->pause || buf->stop)
 				&& !buf->exit) {
@@ -150,6 +155,7 @@ void buf_init (struct buf *buf, int size)
 	buf->time = 0.0;
 	buf->reset_dev = 0;
 	buf->hardware_buf_fill = 0;
+	buf->opt_cond = NULL;
 	
 	pthread_mutex_init (&buf->mutex, NULL);
 	pthread_cond_init (&buf->play_cond, NULL);
@@ -295,17 +301,6 @@ void buf_stop (struct buf *buf)
 	UNLOCK (buf->mutex);
 }
 
-/* Involved in function handling signal in playing thread, causes buf_put()
- * to exit immediately. */
-void buf_abort_put (struct buf *buf)
-{
-	logit ("buf_abort_put()");
-	LOCK (buf->mutex);
-	buf->stop = 1;
-	pthread_cond_signal (&buf->ready_cond);
-	UNLOCK (buf->mutex);
-}
-
 /* Reset the buffer state: this can by called ONLY when the buffer is stopped
  * and buf_put is not used! */
 void buf_reset (struct buf *buf)
@@ -321,20 +316,6 @@ void buf_reset (struct buf *buf)
 	buf->hardware_buf_fill = 0;
 	
 	UNLOCK (buf->mutex);
-}
-
-void buf_wait_empty (struct buf *buf)
-{
-	logit ("WRITER: waiting for empty buffer");
-	
-	LOCK (buf->mutex);
-	while (buf->fill) {
-		logit ("WRITER: waiting...");
-		pthread_cond_wait (&buf->ready_cond, &buf->mutex);
-	}
-	UNLOCK (buf->mutex);
-
-	logit ("WRITER: empty buffer");
 }
 
 void buf_time_set (struct buf *buf, const float time)
@@ -354,4 +335,20 @@ float buf_time_get (struct buf *buf)
 	UNLOCK (buf->mutex);
 
 	return time;
+}
+
+void buf_set_notify_cond (struct buf *buf, pthread_cond_t *cond,
+		pthread_mutex_t *mutex)
+{
+	assert (buf != NULL);
+	
+	buf->opt_cond = cond;
+	buf->opt_cond_mutex = mutex;
+}
+
+int buf_get_free (struct buf *buf)
+{
+	assert (buf != NULL);
+
+	return buf->size - buf->fill;
 }

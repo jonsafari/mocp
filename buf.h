@@ -15,6 +15,11 @@ struct buf
 	pthread_cond_t play_cond;	/* Something was written to the buffer. */
 	pthread_cond_t ready_cond;	/* There is some space in the buffer. */
 
+	/* Optional conditional signal send when there is some free space in
+	 * the buffer. */
+	pthread_cond_t *opt_cond;
+	pthread_mutex_t *opt_cond_mutex;
+
 	/* State flags of the buffer. */
 	int pause;
 	int exit;	/* Exit when the buffer is empty. */
@@ -34,11 +39,12 @@ void buf_destroy (struct buf *buf);
 int buf_put (struct buf *buf, const char *data, int size);
 void buf_pause (struct buf *buf);
 void buf_unpause (struct buf *buf);
-void buf_wait_empty (struct buf *buf);
 void buf_stop (struct buf *buf);
 void buf_reset (struct buf *buf);
-void buf_abort_put (struct buf *buf);
 void buf_time_set (struct buf *buf, const float time);
 float buf_time_get (struct buf *buf);
+void buf_set_notify_cond (struct buf *buf, pthread_cond_t *cond,
+		pthread_mutex_t *mutex);
+int buf_get_free (struct buf *buf);
 
 #endif
