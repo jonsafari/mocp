@@ -54,7 +54,6 @@ static volatile enum play_request request = PR_NOTHING;
 static int stop_playing = 0;
 
 static struct plist playlist;
-static struct plist shuffled_plist;
 
 enum play_request get_request ()
 {
@@ -75,12 +74,6 @@ static void *play_thread (void *unused)
 {
 	logit ("entering playing thread");
 
-	if (options_get_int("Shuffle") && !shuffled_plist.num) {
-		plist_clear (&shuffled_plist);
-		plist_copy (&shuffled_plist, &playlist);
-		plist_shuffle (&shuffled_plist);
-	}
-	
 	while (curr_playing != -1) {
 		play_func_t play_func;
 		char *file = plist_get_file (&playlist, curr_playing);
@@ -121,15 +114,16 @@ static void *play_thread (void *unused)
 		}
 		else {
 			LOCK (curr_playing_mut);
-			if (options_get_int("Shuffle")
-					&& !shuffled_plist.num) {
-				plist_copy (&shuffled_plist, &playlist);
-				plist_shuffle (&playlist);
+			if (options_get_int("Shuffle"))
+				curr_playing = plist_rand (&playlist);
+			else {
+				curr_playing = plist_next (&playlist,
+						curr_playing);
+				if (curr_playing == -1
+						&& options_get_int("Repeat"))
+					curr_playing = plist_next (&playlist,
+							-1);
 			}
-
-			curr_playing = plist_next (&playlist, curr_playing);
-			if (curr_playing == -1 && options_get_int("Repeat"))
-				curr_playing = plist_next (&playlist, -1);
 			UNLOCK (curr_playing_mut);
 		}
 
@@ -263,7 +257,6 @@ void audio_init (const char *sound_driver)
 	hw.init ();
 	buf_init (&out_buf, options_get_int("OutputBuffer") * 1024);
 	plist_init (&playlist);
-	plist_init (&shuffled_plist);
 }
 
 void audio_exit ()
@@ -302,13 +295,11 @@ int audio_get_state ()
 void audio_plist_add (const char *file)
 {
 	plist_add (&playlist, file);
-	plist_clear (&shuffled_plist); /* now it isn't up to data */
 }
 
 void audio_plist_clear ()
 {
 	plist_clear (&playlist);
-	plist_clear (&shuffled_plist); /* not it isn't up to date */
 }
 
 /* Returned memory is malloc()ed. */
