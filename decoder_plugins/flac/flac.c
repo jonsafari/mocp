@@ -27,10 +27,6 @@
 #include "main.h"
 #include "log.h"
 
-#define BITRATE_HIST_SEGMENT_MSEC	500
-/* 500ms * 50 = 25s should be enough */
-#define BITRATE_HIST_SIZE		50
-
 #define MAX_SUPPORTED_CHANNELS		2
 
 #define SAMPLES_PER_WRITE		512
