@@ -29,8 +29,10 @@
 #include "log.h"
 #include "buf.h"
 
-/* Don't play more than that value in one audio_play(). This prevent locking. */
-#define AUDIO_MAX_PLAY	8 * 1024
+/* Don't play more than that value (in seconds) in one audio_play().
+ * This prevent locking. */
+#define AUDIO_MAX_PLAY		0.1
+#define AUDIO_MAX_PLAY_BYTES	32768
 
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 
@@ -104,11 +106,13 @@ static void *read_thread (void *arg)
 			continue;
 		}
 				
-		to_play = MIN (count_fill(buf), AUDIO_MAX_PLAY);
+		to_play = MIN (count_fill(buf),
+				MIN(audio_get_bps() * AUDIO_MAX_PLAY,
+					AUDIO_MAX_PLAY_BYTES));
 		UNLOCK (buf->mutex);
 
-		/*logit ("READER: playing %d bytes from %d", to_play,
-				buf->pos);*/
+		logit ("READER: playing %d bytes from %d", to_play,
+				buf->pos);
 
 		/* We don't need mutex here, because we are the only thread
 		 * that modify buf->pos, and the buffer part we use is
