@@ -1,12 +1,9 @@
 Before 2.0:
 
-* Adding files to a playlist of detached moc using command line.
-* AUDIO_MAX_PLAY based on bps.
 * Only trying to obtain the lock for client socket when sending an event. If
   this would block, place the event in a queue. This should prevent blocking
   the decoder when the socket is busy for a longer time period. The queue
   should be checked and purged after handling the client command.
-* Update DOCS.
 * Don't require GCC extensions.
 
 Before 2.1.0:
@@ -24,6 +21,8 @@ Before 2.1.0:
 * Configurable sorting.
 * Playlist files (m3u?).
 * Option to hide file extensions.
+* Configuration options and command line parameters for selecting pid file and
+  socket. A parameter for selecting different configuration file.
 
 In future:
 
