@@ -390,6 +390,22 @@ static struct command commands[] = {
 		CON_ENTRY,
 		{ CTRL('x'), KEY_ESCAPE, -1 },
 		1
+	},
+	{
+		KEY_CMD_SEEK_FORWARD_5,
+		"seek_forward_fast",
+		"Silent seek forward by 5s",
+		CON_MENU,
+		{ ']', -1 },
+		1
+	},
+	{
+		KEY_CMD_SEEK_BACKWARD_5,
+		"seek_backward_fast",
+		"Silent seek backward by 5s",
+		CON_MENU,
+		{ '[', -1 },
+		1
 	}
 };
 
