@@ -225,7 +225,7 @@ int server_init (int debug, int foreground)
 
 	server_tid = pthread_self ();
 	signal (SIGTERM, sig_exit);
-	signal (SIGINT, sig_exit);
+	signal (SIGINT, debug ? sig_exit : SIG_IGN);
 	signal (SIGHUP, SIG_IGN);
 	signal (SIGQUIT, sig_exit);
 	signal (SIGPIPE, SIG_IGN);
