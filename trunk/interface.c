@@ -448,7 +448,8 @@ static int get_mixer ()
 }
 
 /* Draw the mixer bar */
-static void draw_mixer () {
+static void draw_mixer ()
+{
 	char bar[21];
 	int vol;
 
