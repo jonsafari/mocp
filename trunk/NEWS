@@ -5,7 +5,7 @@
 	* Playlist load/save support (m3u files).
 	* The apperance can be customized using themes.
 	* Displaying file time and format in the menu.
-	* Precaching files and not the closing the audio device when playing
+	* Precaching files and not closing the audio device when playing
 	  the next file - no more gaps between two songs.
 	* ALSA support.
 	* Optional character set conversion using iconv().
