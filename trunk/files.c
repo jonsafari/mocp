@@ -105,16 +105,21 @@ static char *get_file (const char *path, const int strip_ext)
 void make_file_title (struct plist *plist, const int num,
 		const int hide_extension)
 {
-	char *fname;
 	
 	assert (plist != NULL);
 	assert (num >= 0 && num < plist->num);
 	assert (!plist_deleted(plist, num));
 
-	fname = get_file (plist->items[num].file, hide_extension);
-	fname = iconv_str (fname);
-	plist_set_title_file (plist, num, fname);
-	free (fname);
+	if (file_type(plist->items[num].file) != F_URL) {
+		char *fname;
+		
+		fname = get_file (plist->items[num].file, hide_extension);
+		fname = iconv_str (fname);
+		plist_set_title_file (plist, num, fname);
+		free (fname);
+	}
+	else
+		plist_set_title_file (plist, num, plist->items[num].file);
 }
 
 /* Make a title from file name for the item. */
@@ -126,7 +131,8 @@ void make_tags_title (struct plist *plist, const int num)
 
 	update_file (&plist->items[num]);
 
-	if (!plist->items[num].title_tags) {
+	if (!plist->items[num].title_tags
+			&& file_type(plist->items[num].file) != F_URL) {
 		char *title;
 		assert (plist->items[num].file != NULL);
 
