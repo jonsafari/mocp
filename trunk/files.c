@@ -184,6 +184,8 @@ void switch_titles_tags (struct plist *plist)
 		if (!plist_deleted(plist, i)) {
 			assert (plist->items[i].title_tags
 					|| plist->items[i].title_file);
+
+			update_file (&plist->items[i]);
 			
 			if (plist->items[i].title_tags)
 				plist->items[i].title
@@ -695,5 +697,39 @@ time_t get_mtime (const char *file)
 /* Update the item data if the file was modified. */
 void update_file (struct plist_item *item)
 {
-	/* TODO */
+	time_t mtime;
+
+	assert (item != NULL);
+
+	if ((mtime = get_mtime(item->file)) != item->mtime && mtime != -1) {
+		debug ("File %s was modified, updating", item->file);
+
+		if (item->tags) {
+			int needed_tags = item->tags->filled;
+
+			tags_free (item->tags);
+			item->tags = read_file_tags (item->file, NULL,
+					needed_tags);
+		}
+
+		if (item->title_tags) {
+			free (item->title_tags);
+			if (item->title == item->title_tags) {
+				item->tags = read_file_tags (item->file,
+						item->tags, TAGS_COMMENTS);
+				if (item->tags->title) {
+					item->title_tags = build_title (
+							item->tags);
+					item->title = item->title_tags;
+				}
+				else
+					item->title = item->title_file;
+					
+			}
+			else
+				item->title_tags = NULL;
+		}
+
+		item->mtime = mtime;
+	}
 }
