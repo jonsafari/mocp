@@ -1552,6 +1552,7 @@ void init_interface (const int sock, const int debug, char **args,
 			fatal ("Can't open log file for the interface");
 		log_init_stream (logfp);
 	}
+	logit ("Starting MOC interface...");
 	curr_plist = (struct plist *)xmalloc (sizeof(struct plist));
 	plist_init (curr_plist);
 	playlist = (struct plist *)xmalloc (sizeof(struct plist));
