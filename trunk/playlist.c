@@ -49,6 +49,7 @@ struct file_tags *tags_new ()
 	tags->artist = NULL;
 	tags->album = NULL;
 	tags->track = -1;
+	tags->time = -1;
 
 	return tags;
 }
@@ -62,6 +63,7 @@ struct file_tags *tags_dup (const struct file_tags *tags)
 	dtags->artist = xstrdup (tags->artist);
 	dtags->album = xstrdup (tags->album);
 	dtags->track = tags->track;
+	dtags->time = tags->time;
 
 	return dtags;
 }

@@ -9,6 +9,7 @@ struct file_tags
 	char *artist;
 	char *album;
 	int track;
+	int time;
 };
 
 struct plist_item
