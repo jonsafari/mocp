@@ -467,7 +467,7 @@ struct io_stream *io_open (const char *file, const int buffered)
 	pthread_mutex_init (&s->io_mutex, NULL);
 
 	if (buffered) {
-		fifo_buf_init (&s->buf, 64 * 1024);
+		fifo_buf_init (&s->buf, options_get_int("InputBuffer") * 1024);
 		
 		pthread_cond_init (&s->buf_free_cond, NULL);
 		pthread_cond_init (&s->buf_fill_cond, NULL);
