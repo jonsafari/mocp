@@ -198,6 +198,83 @@ static void draw_interface_status ()
 		waddch (info_win, ' ');
 }
 
+static void send_int_to_srv (const int num)
+{
+	if (!send_int(srv_sock, num))
+		interface_fatal ("Can't send() int to the server.");
+}
+
+static void send_str_to_srv (const char *str)
+{
+	if (!send_str(srv_sock, str))
+		interface_fatal ("Can't send() string to the server.");
+}
+
+static int get_int_from_srv ()
+{
+	int num;
+	
+	if (!get_int(srv_sock, &num))
+		interface_fatal ("Can't receive value from the server.");
+
+	return num;
+}
+
+/* Returned memory is malloc()ed. */
+static char *get_str_from_srv ()
+{
+	char *str = get_str (srv_sock);
+	
+	if (!str)
+		interface_fatal ("Can't receive string from the server.");
+
+	return str;
+}
+
+/* Get an integer value from the server that will arrive after EV_DATA. */
+static int get_data_int ()
+{
+	int event;
+
+	while (1) {
+		event = get_int_from_srv ();
+		if (event == EV_DATA)
+			return get_int_from_srv ();
+		else if (event == EV_STATE)
+			 must_update_state = 1;
+	}		
+}
+
+static int get_mixer ()
+{
+	send_int_to_srv (CMD_GET_MIXER);
+	return get_data_int ();
+}
+
+/* Draw the mixer bar */
+static void draw_mixer () {
+	char bar[21];
+	int vol;
+
+	vol = get_mixer ();
+
+	if (vol == -1)
+		return;
+
+	if (vol == 100)
+		sprintf (bar, " Vol %d%%           ", vol);
+	else
+		sprintf (bar, " Vol  %02d%%           ", vol);
+	mvwaddch (info_win, 0, COLS - 23, ACS_RTEE);
+	mvwaddch (info_win, 0, COLS - 2, ACS_LTEE);
+
+	wattron (info_win, COLOR_PAIR(CLR_BAR));
+	mvwaddnstr (info_win, 0, COLS - 22, bar, vol / 5);
+	wattron (info_win, COLOR_PAIR(CLR_NUMBERS));
+	mvwaddnstr (info_win, 0, COLS - 22 + (vol / 5),
+			bar + vol / 5, 20 - (vol / 5));
+}
+
 /* Update the info win */
 static void update_info_win ()
 {
@@ -287,7 +364,7 @@ static void update_info_win ()
 	mvwaddch (info_win, 0, 5 + STATUS_LINE_LEN + 1, ACS_LTEE);
 	draw_interface_status ();
 			
-	//draw_mixer ();
+	draw_mixer ();
 }
 
 static void set_interface_status (const char *msg)
@@ -412,53 +489,6 @@ static int is_subdir (char *dir1, char *dir2)
 	assert (slash != NULL);
 
 	return !strncmp(dir1, dir2, slash - dir2) ? 1 : 0;
-}
-
-static void send_int_to_srv (const int num)
-{
-	if (!send_int(srv_sock, num))
-		interface_fatal ("Can't send() int to the server.");
-}
-
-static void send_str_to_srv (const char *str)
-{
-	if (!send_str(srv_sock, str))
-		interface_fatal ("Can't send() string to the server.");
-}
-
-static int get_int_from_srv ()
-{
-	int num;
-	
-	if (!get_int(srv_sock, &num))
-		interface_fatal ("Can't receive value from the server.");
-
-	return num;
-}
-
-/* Returned memory is malloc()ed. */
-static char *get_str_from_srv ()
-{
-	char *str = get_str (srv_sock);
-	
-	if (!str)
-		interface_fatal ("Can't receive string from the server.");
-
-	return str;
-}
-
-/* Get an integer value from the server that will arrive after EV_DATA. */
-static int get_data_int ()
-{
-	int event;
-
-	while (1) {
-		event = get_int_from_srv ();
-		if (event == EV_DATA)
-			return get_int_from_srv ();
-		else if (event == EV_STATE)
-			 must_update_state = 1;
-	}		
 }
 
 /* Get a string value from the server that will arrive after EV_DATA. */
@@ -1081,6 +1111,20 @@ static void add_dir_plist ()
 	wrefresh (info_win);
 }
 
+static void set_mixer (int val)
+{
+	if (val < 0)
+		val = 0;
+	else if (val > 100)
+		val = 100;
+
+	send_int_to_srv (CMD_SET_MIXER);
+	send_int_to_srv (val);
+
+	draw_mixer ();
+	wrefresh (info_win);
+}
+
 /* Handle key */
 static void menu_key (const int ch)
 {
@@ -1157,6 +1201,18 @@ static void menu_key (const int ch)
 			break;
 		case 'A':
 			add_dir_plist ();
+			break;
+		case '<':
+			set_mixer (get_mixer() - 1);
+			break;
+		case ',':
+			set_mixer (get_mixer() - 5);
+			break;
+		case '.':
+			set_mixer (get_mixer() + 5);
+			break;
+		case '>':
+			set_mixer (get_mixer() + 1);
 			break;
 		case KEY_RESIZE:
 			break;
