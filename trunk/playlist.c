@@ -9,6 +9,10 @@
  *
  * Author of title building code: Florian Kriener <me@leflo.de>
  *
+ * Contributors:
+ *  - Florian Kriener <me@leflo.de> - title building code
+ *  - Kamil Tarkowski <kamilt@interia.pl> - plist_prev()
+ *
  */
 
 #ifdef HAVE_CONFIG_H
