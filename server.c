@@ -747,8 +747,10 @@ static int event_throttle ()
 
 void set_info_bitrate (const int bitrate)
 {
+	int old_bitrate = sound_info.bitrate;
+
 	sound_info.bitrate = bitrate;
-	if (event_throttle() || bitrate <= 0)
+	if (old_bitrate <= 0 || bitrate <= 0 || event_throttle())
 		add_event_all (EV_BITRATE);
 }
 
