@@ -2049,6 +2049,7 @@ static void add_dir_plist ()
 	set_iface_status_ref ("reading directories...");
 	read_directory_recurr (menu_item->file, playlist);
 	if (options_get_int("ReadTags")) {
+		set_iface_status_ref ("Getting tags...");
 		read_tags (playlist);
 		make_titles_tags (playlist);
 	}
@@ -2488,7 +2489,6 @@ static void menu_key (const int ch)
 		switch (ch) {
 			case 'q':
 				want_quit = 1;
-				send_int (srv_sock, CMD_DISCONNECT);
 				break;
 			case '\n':
 				go_file ();
@@ -2795,6 +2795,7 @@ void interface_end ()
 {
 	save_curr_dir ();
 	save_playlist ();
+	send_int (srv_sock, CMD_DISCONNECT);
 	close (srv_sock);
 	endwin ();
 	xterm_clear_title ();
