@@ -35,11 +35,7 @@
 static int mixer_fd = -1;
 static int volatile dsp_fd = -1;
 
-static struct {
-	int channels;
-	int rate;
-	int format;
-} params = { 0, 0, 0 };
+static struct sound_params params = { 0, 0, 0 };
 
 static void oss_init ()
 {
@@ -80,14 +76,13 @@ static int oss_set_params ()
 	int req_rate;
 
 	/* Set format */
-	req_format = params.format;
+	if (params.format == 1)
+		req_format = AFMT_S8;
+	else
+		req_format = AFMT_S16_LE;
+		
 	if (ioctl(dsp_fd, SNDCTL_DSP_SETFMT, &req_format) == -1) {
 		error ("Can't set audio format: %s", strerror(errno));
-		oss_close ();
-		return 0;
-	}
-	if (params.format != req_format) {
-		error ("Requested audio format is not supported");
 		oss_close ();
 		return 0;
 	}
@@ -123,8 +118,7 @@ static int oss_set_params ()
 	}
 
 	logit ("Audio parameters set to: %dbit, %d channels, %dHz",
-			params.format == AFMT_S8 ? 8 : 16, params.channels,
-			params.rate);
+			params.format * 8, params.channels, params.rate);
 
 	return 1;
 }
@@ -142,21 +136,10 @@ static int open_dev ()
 }
 
 /* Return 0 on fail */
-static int oss_open (const int bits, const int channels, const int rate)
+static int oss_open (struct sound_params *sound_params)
 {
 
-	if (bits == 8)
-		params.format = AFMT_S8;
-	else if (bits == 16)
-		params.format = AFMT_S16_LE;
-	else {
-		error ("Sount format not recognized, can't set to %d bits",
-				bits);
-		return 0;
-	}
-
-	params.channels = channels;
-	params.rate = rate;
+	params = *sound_params;
 	
 	if (!open_dev())
 		return 0;
@@ -253,10 +236,10 @@ static int oss_reset ()
 	return 1;
 }
 
-/* Return the number of bits/8 of current format (1 or 2) */
+/* Return the number of bytes of current format (1 or 2) */
 static int oss_get_format ()
 {
-	return params.format == AFMT_S8 ? 1 : 2;
+	return params.format;
 }
 
 static int oss_get_rate ()
@@ -284,4 +267,3 @@ void oss_funcs (struct hw_funcs *funcs)
 	funcs->get_rate = oss_get_rate;
 	funcs->get_channels = oss_get_channels;
 }
-
