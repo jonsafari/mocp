@@ -1097,8 +1097,9 @@ static char *find_title (char *file)
 
 	if ((idx = plist_find_fname(curr_plist, file)) != -1
 			&& (curr_plist->items[idx].title_tags
-			   || curr_plist->items[idx].tags->filled
-			   & TAGS_COMMENTS)) {
+			   || (curr_plist->items[idx].tags
+				   && curr_plist->items[idx].tags->filled
+			   & TAGS_COMMENTS))) {
 		debug ("Found title on the curr_plist");
 
 		update_file (&curr_plist->items[idx]);
