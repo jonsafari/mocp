@@ -923,10 +923,18 @@ static int isdir (const char *file)
 static void process_args (char **args, const int num)
 {
 	if (num == 1 && isdir(args[0]) == 1) {
-		cwd[sizeof(cwd)-1] = 0;
-		strncpy (cwd, args[0], sizeof(cwd));
-		if (cwd[sizeof(cwd)-1])
-			interface_fatal ("Path too long.");
+		if (args[0][0] == '/') {
+
+			/* the path is absolute */
+			strcpy (cwd, "/");
+		}
+		else {
+			/* relative path */
+			if (!getcwd(cwd, sizeof(cwd)))
+				interface_fatal ("Can't get CWD");
+		}
+		
+		resolve_path (cwd, sizeof(cwd), args[0]);
 		go_to_dir (NULL);
 	}
 	else {
