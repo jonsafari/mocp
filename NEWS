@@ -19,7 +19,7 @@ TODO	* Added setting scheduler to realtime priority.
 	* Fixed problems when compiling with gcc 3.3
 	* Fixed displaying window title longer than the window.
 	* Space key working as pause.
-	* Fixed escaping and possible segfault in trenary expressions.
+	* Fixed possible segfault in trenary expressions.
 	* Removed version checker.
 	* Fixed sorting directories ('../' was not always on top).
 	* Fixed escaping characters in config file, no need for '\\\\'.
