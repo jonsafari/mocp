@@ -1,4 +1,4 @@
-.TH MOC 8 "29 october 2004" "Version 2.1.0" "music on console"
+.TH MOC 8 "31 october 2004" "Version 2.1.0" "music on console"
 
 .SH NAME
 MOC \- console audio player
@@ -80,6 +80,16 @@ Bring down the server.
 .I -T --theme theme
 Use a theme file. If the path is not absolute, the file will be read
 from ~/.moc/themes.
+
+.TP
+.I -C --config FILE
+Use the specified config file instead of the default.
+
+.TP
+.I -M --moc-dir DIR
+Use the specified MOC directory instead of the default. This also causes to use
+the config file from that directory. This can be also specified in the config
+file using the MOCDir option.
 
 .TP
 .I -h --help
