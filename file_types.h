@@ -21,8 +21,9 @@ struct decoder_funcs
 	int (*decode)(void *data, char *buf, int buf_len,
 			struct sound_params *sound_params);
 
-	/* Seek in the stream by n seconds. */
-	void (*seek)(void *data, const int n);
+	/* Seek in the stream to the gives second. Return the time actualy seek
+	 * or -1 on error. */
+	int (*seek)(void *data, int sec);
 
 	/* Fill the tags structure for a file. */
 	void (*info)(const char *file, struct file_tags *tags);
