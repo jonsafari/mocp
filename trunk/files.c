@@ -33,19 +33,14 @@
 #endif
 
 #include "playlist.h"
-#include "menu.h"
 #include "main.h"
 #include "interface.h"
 #include "file_types.h"
 #include "options.h"
 #include "files.h"
+#include "playlist_file.h"
 
-enum file_type
-{
-	F_DIR,
-	F_SOUND,
-	F_OTHER
-};
+#define FILE_LIST_INIT_SIZE	64
 
 static enum file_type file_type (char *file)
 {
@@ -59,14 +54,9 @@ static enum file_type file_type (char *file)
 		return F_DIR;
 	if (is_sound_file(file))
 		return F_SOUND;
+	if (is_plist_file(file))
+		return F_PLAYLIST;
 	return F_OTHER;
-}
-
-void free_dir_tab (char **tab, int i)
-{
-	while (--i >= 0)
-		free (tab[i]);
-	free (tab);
 }
 
 /* Make titles for the playlist items from the file names. */
@@ -208,27 +198,62 @@ void read_tags (struct plist *plist)
 					plist->items[i].file);
 }
 
-/* Read the content of the current directory. Fill the playlist by the sound
- * files and make a table of directories (malloced). Return 1 if ok. */
-int read_directory (const char *directory, struct plist *plist,
-		char ***dir_tab, int *num_dirs)
+struct file_list *file_list_new ()
+{
+	struct file_list *list;
+
+	list = (struct file_list *)xmalloc(sizeof(struct file_list));
+	list->num = 0;
+	list->allocated = FILE_LIST_INIT_SIZE;
+	list->items = (char **)xmalloc (
+			sizeof(char *) * FILE_LIST_INIT_SIZE);
+
+	return list;
+}
+
+static void file_list_add (struct file_list *list, const char *file)
+{
+	assert (list != NULL);
+	
+	if (list->allocated == list->num) {
+		list->allocated *= 2;
+		list->items = (char **)xrealloc (list->items,
+				sizeof(char *) * list->allocated);
+	}
+
+	list->items[list->num] = xstrdup (file);
+	list->num++;
+}
+
+void file_list_free (struct file_list *list)
+{
+	int i;
+	
+	for (i = 0; i < list->num; i++)
+		free (list->items[i]);
+	free (list);
+}
+
+/* Read the content of the directory, make an array of absolute paths for
+ * all recognized files. Put directories, playlists and sound files
+ * in proper structures. Return 0 on error.*/
+int read_directory (const char *directory, struct file_list *dirs,
+		struct file_list *playlists, struct plist *plist)
 {
 	DIR *dir;
 	struct dirent *entry;
-	int ndirs, dir_alloc = 64;
 	int show_hidden = options_get_int ("ShowHiddenFiles");
 	
+	assert (directory != NULL);
+	assert (*directory == '/');
+	assert (dirs != NULL);
+	assert (playlists != NULL);
 	assert (plist != NULL);
-	assert (dir_tab != NULL);
 
 	if (!(dir = opendir(directory))) {
 		interface_error ("Can't read directory: %s", strerror(errno));
 		return 0;
 	}
-
-	*dir_tab = (char **)xmalloc (sizeof(char *) * dir_alloc);
-	(*dir_tab)[0] = strdup ("../");
-	ndirs = 1;
 
 	while ((entry = readdir(dir))) {
 		char file[PATH_MAX];
@@ -242,27 +267,17 @@ int read_directory (const char *directory, struct plist *plist,
 					entry->d_name)
 				>= (int)sizeof(file)) {
 			interface_error ("Path too long!");
-			free_dir_tab (*dir_tab, ndirs);
 			return 0;
 		}
 		type = file_type (file);
-		if (type == F_DIR) {
-			if (dir_alloc == ndirs) {
-				dir_alloc *= 2;
-				*dir_tab = (char **)xrealloc(*dir_tab,
-						sizeof(char *) * dir_alloc);
-			}
-			(*dir_tab)[ndirs] = (char *)xmalloc(sizeof(char) *
-					(strlen(entry->d_name) + 2));
-			sprintf ((*dir_tab)[ndirs], "%s/", entry->d_name);
-			ndirs++;
-		}
-		else if (type == F_SOUND) {
+		if (type == F_SOUND)
 			plist_add (plist, file);
-		}
+		else if (type == F_DIR)
+			file_list_add (dirs, file);
+		else if (type == F_PLAYLIST)
+			file_list_add (playlists, file);
 	}
 
-	*num_dirs = ndirs;
 	closedir (dir);
 
 	return 1;
@@ -302,4 +317,19 @@ void read_directory_recurr (const char *directory, struct plist *plist)
 	}
 
 	closedir (dir);
+}
+
+/* Return the file extension position or NULL if the file has no extension. */
+char *ext_pos (char *file)
+{
+	char *ext = strrchr (file, '.');
+	char *slash = strrchr (file, '/');
+
+	/* don't treat dot in ./file as a dot before extension */
+	if (ext && (!slash || slash < ext))
+		ext++;
+	else
+		ext = NULL;
+
+	return ext;
 }
