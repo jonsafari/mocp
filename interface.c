@@ -1697,6 +1697,8 @@ void init_interface (const int sock, const int debug, char **args,
 	plist_init (playlist);
 	send_int_to_srv (CMD_SEND_EVENTS);
 
+	iconv_init ();
+	
 	initscr ();
 	cbreak ();
 	noecho ();
@@ -2744,4 +2746,5 @@ void interface_end ()
 		menu_free (curr_plist_menu);
 	free (curr_plist);
 	free (playlist);
+	iconv_cleanup ();
 }
