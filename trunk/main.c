@@ -293,18 +293,6 @@ static void show_version ()
 
 	/* Show compiled-in components */
 	printf ("Compiled with:");
-#ifdef HAVE_MAD
-	printf (" MP3");
-#endif
-#ifdef HAVE_VORBIS
-	printf (" OGG");
-#endif
-#ifdef HAVE_FLAC
-	printf (" FLAC");
-#endif
-#ifdef HAVE_SNDFILE
-	printf (" SNDFILE");
-#endif
 #ifdef HAVE_OSS
 	printf (" OSS");
 #endif
