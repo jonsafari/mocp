@@ -67,7 +67,8 @@ AC_FUNC_MALLOC
 AC_FUNC_STAT
 AC_CHECK_FUNCS([getcwd memmove strcasecmp strdup strerror strncasecmp strrchr \
 		socket gettimeofday getenv fork setsid kill bind listen \
-		accept time connect unlink send recv select strftime],,
+		accept time connect unlink send recv select strftime \
+		localtime_r],,
 	       AC_MSG_ERROR([Required standard C functions are not present.]))
 AC_CHECK_FUNCS([strcasestr])
 
