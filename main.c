@@ -328,6 +328,8 @@ static void show_usage (const char *prg_name) {
 "-p --play		Play first item on the server playlist and exit.\n"
 "-s --stop		Stop playing.\n"
 "-x --exit		Shutdown the server.\n"
+"-T --theme theme	Use selected theme file (read from ~/.moc/themes if\n"
+"			the path is not absolute.\n"
 , prg_name);
 }
 
@@ -393,6 +395,7 @@ int main (int argc, char *argv[])
 		{ "play", 		0, NULL, 'p' },
 		{ "stop",		0, NULL, 's' },
 		{ "exit",		0, NULL, 'x' },
+		{ "theme",		0, NULL, 'T' },
 		{ 0, 0, 0, 0 }
 	};
 	int ret, opt_index = 0;
@@ -401,7 +404,7 @@ int main (int argc, char *argv[])
 	memset (&params, 0, sizeof(params));
 	options_init ();
 
-	while ((ret = getopt_long(argc, argv, "VhDSFR:macpsx", long_options,
+	while ((ret = getopt_long(argc, argv, "VhDSFR:macpsxT:", long_options,
 					&opt_index)) != -1) {
 		switch (ret) {
 			case 'V':
@@ -448,6 +451,10 @@ int main (int argc, char *argv[])
 			case 'x':
 				params.exit = 1;
 				params.dont_run_server = 1;
+				break;
+			case 'T':
+				option_set_str ("Theme", optarg);
+				option_ignore_config ("Theme");
 				break;
 			default:
 				show_usage (argv[0]);
