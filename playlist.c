@@ -139,6 +139,15 @@ int plist_next (struct plist *plist, int num)
 	return i < plist->num ? i : -1;
 }
 
+static void plist_free_item_fields (struct plist_item *item)
+{
+	free (item->file);
+	if (item->tags)
+		tags_free (item->tags);
+	if (item->title)
+		free (item->title);
+}
+
 /* Clear the list. */
 void plist_clear (struct plist *plist)
 {
@@ -148,13 +157,8 @@ void plist_clear (struct plist *plist)
 	
 	LOCK (plist->mutex);
 	
-	for (i = 0; i < plist->num; i++) {
-		free (plist->items[i].file);
-		if (plist->items[i].tags)
-			tags_free (plist->items[i].tags);
-		if (plist->items[i].title)
-			free (plist->items[i].title);
-	}
+	for (i = 0; i < plist->num; i++)
+		plist_free_item_fields (&plist->items[i]);
 	
 	plist->items = (struct plist_item *)xrealloc (plist->items,
 			sizeof(struct plist_item) * INIT_SIZE);
@@ -401,8 +405,10 @@ void plist_delete (struct plist *plist, const int num)
 	assert (plist != NULL);
 	
 	LOCK (plist->mutex);
-	if (num < plist->num)
+	if (num < plist->num) {
 		plist->items[num].deleted = 1;
+		plist_free_item_fields (&plist->items[num]);
+	}
 	UNLOCK (plist->mutex);
 }
 
