@@ -313,11 +313,16 @@ int plist_save (struct plist *plist, const char *file, const char *cwd)
 		find_common_path (common_path, sizeof(common_path), plist);
 
 	for (i = 0; i < plist->num; i++)
-		if (!plist_deleted(plist, i))
+		if (!plist_deleted(plist, i)) {
+			if (user_wants_interrupt()) {
+				interface_error ("Saving the playlist aborted");
+				return 0;
+			}
 			plist->items[i].tags = read_file_tags (
 					plist->items[i].file,
 					plist->items[i].tags,
 					TAGS_COMMENTS | TAGS_TIME);
+		}
 	make_titles_tags (plist);
 
 	/* FIXME: checkif it possible to just add some directories to make
