@@ -30,6 +30,8 @@ Before 2.3.0:
 * G points to the currently played file, not only the right "view"
 * better error messages when ov_*() in ogg.c fails.
 * Describe how plugins work.
+* Refuse to clear the playlist before loadin a new one only if the playlist was
+  modified (or custom made).
 
 In future:
 
@@ -60,6 +62,5 @@ Maybe never:
 * posix_fadvise()
 * Say about ignored options that affects server when the server is not being
   run.
-* Input buffer with separate thread - like output buffer.
 * Funny ASCII equalizer.
 * Mouse support
