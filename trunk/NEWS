@@ -1,14 +1,15 @@
 2.0.0
 	* Split into client-server, you can detach the interface and leave
-	  the server playing songs in the background.
+	  the server playing songs in the background (keys: q - background,
+	  Q - quit).
 	* Output buffer with seperate thread.
-	* Useing OSS directly - better stop and pause.
+	* Using OSS directly - better stop and pause.
 	* Support xterm resizing.
 	* Using xterm title.
-	* Autonext option.
+	* Autonext option (X key).
 TODO	* Configurable sorting (by file names or titles).
 	* Faster reading directory contents.
-	* Displaying time left to the end of songs.
+	* Displaying time left to the end of the songs.
 	* Fixed moving through symlinked directories.
 TODO	* Added setting scheduler to realtime priority.
 	* Renamed executable file to mocp due to conflict with QT meta object
@@ -22,6 +23,7 @@ TODO	* Added setting scheduler to realtime priority.
 	* Removed version checker.
 	* Fixed sorting directories ('../' was not always on top).
 	* Fixed escaping characters in config file, no need for '\\\\'.
+	* Stronger checking for parse errors in configuration file.
 1.1.0
 	* Support for WAVE.
 	* Playlist without reading/writeing to file.
