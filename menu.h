@@ -38,8 +38,9 @@ struct menu_item
 struct menu
 {
 	WINDOW *win;
-	struct menu_item **items;
-	int nitems; /* number of items */
+	struct menu_item *items;
+	int nitems; /* number of present items */
+	int allocated; /* number of allocated items */
 	int top; /* first visible item */
 	int maxx; /* maximum x position */
 	int maxy; /* maximum y position */
@@ -53,24 +54,28 @@ struct menu
 	int info_attr; /* Attributes for information about the file */
 };
 
-struct menu *menu_new (WINDOW *win, struct menu_item **items, const int nitems);
-
-struct menu_item *menu_newitem (char *title, const int plist_pos,
+struct menu *menu_new (WINDOW *win);
+int menu_add (struct menu *menu, char *title, const int plist_pos,
 		const enum file_type type, const char *file);
-void menu_item_set_attr_normal (struct menu_item *item, const int attr);
-void menu_item_set_attr_sel (struct menu_item *item, const int attr);
-void menu_item_set_attr_sel_marked (struct menu_item *item, const int attr);
-void menu_item_set_attr_marked (struct menu_item *item, const int attr);
+
+void menu_item_set_attr_normal (struct menu *menu, const int num,
+		const int attr);
+void menu_item_set_attr_sel (struct menu *menu, const int num, const int attr);
+void menu_item_set_attr_sel_marked (struct menu *menu, const int num,
+		const int attr);
+void menu_item_set_attr_marked (struct menu *menu, const int num,
+		const int attr);
+
 void menu_item_set_time_plist (struct menu *menu, const int plist_num,
 		const char *time);
-void menu_item_set_time (struct menu_item *item, const char *time);
-void menu_item_set_format (struct menu_item *item, const char *format);
+void menu_item_set_time (struct menu *menu, const int num, const char *time);
+void menu_item_set_format (struct menu *menu, const int num,
+		const char *format);
 
 void menu_free (struct menu *menu);
 void menu_driver (struct menu *menu, enum menu_request req);
-struct menu_item *menu_curritem (struct menu *menu);
+int menu_curritem (struct menu *menu);
 void menu_setcurritem (struct menu *menu, int num);
-int menu_get_selected (const struct menu *menu);
 void menu_setcurritem_title (struct menu *menu, const char *title);
 void menu_draw (struct menu *menu);
 void menu_mark_plist_item (struct menu *menu, const int plist_item);
@@ -84,5 +89,9 @@ int menu_next_turn (const struct menu *menu);
 void menu_set_show_time (struct menu *menu, const int t);
 void menu_set_show_format (struct menu *menu, const int t);
 void menu_set_info_attr (struct menu *menu, const int attr);
+enum file_type menu_item_get_type (const struct menu *menu, const int num);
+char *menu_item_get_file (struct menu *menu, const int num);
+int menu_item_get_plist_pos (struct menu *menu, const int num);
+void menu_item_set_title (struct menu *menu, const int num, const char *title);
 
 #endif

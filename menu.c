@@ -1,6 +1,6 @@
 /*
  * MOC - music on console
- * Copyright (C) 2002-2004 Damian Pietras <daper@daper.net>
+ * Copyright (C) 2002-2005 Damian Pietras <daper@daper.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,6 +22,9 @@
 #include "main.h"
 #include "menu.h"
 #include "files.h"
+
+/* Initial number of items to allocate in a new menu. */
+#define INIT_NUM_ITEMS	64
 
 #ifndef HAVE_STRCASESTR
 /* Case insensitive version od strstr(). */
@@ -82,16 +85,16 @@ void menu_draw (struct menu *menu)
 		
 		/* Set attributes */
 		if (i == menu->selected && i == menu->marked)
-			wattrset (menu->win, menu->items[i]->attr_sel_marked);
+			wattrset (menu->win, menu->items[i].attr_sel_marked);
 		else if (i == menu->selected)
-			wattrset (menu->win, menu->items[i]->attr_sel);
+			wattrset (menu->win, menu->items[i].attr_sel);
 		else if (i == menu->marked)
-			wattrset (menu->win, menu->items[i]->attr_marked);
+			wattrset (menu->win, menu->items[i].attr_marked);
 		else
-			wattrset (menu->win, menu->items[i]->attr_normal);
+			wattrset (menu->win, menu->items[i].attr_normal);
 		
-		waddnstr (menu->win, menu->items[i]->title, title_width);
-		title_len = strlen (menu->items[i]->title);
+		waddnstr (menu->win, menu->items[i].title, title_width);
+		title_len = strlen (menu->items[i].title);
 		
 		
 		/* Make blank line to the right side of the screen */
@@ -105,43 +108,69 @@ void menu_draw (struct menu *menu)
 		wmove (menu->win, i - menu->top + 1, info_pos);
 
 		if (menu->show_time && menu->show_format
-				&& (*menu->items[i]->time
-					|| *menu->items[i]->format))
+				&& (*menu->items[i].time
+					|| *menu->items[i].format))
 			wprintw (menu->win, "[%5s|%3s]",
-					menu->items[i]->time
-					? menu->items[i]->time : "     ",
-					menu->items[i]->format);
-		else if (menu->show_time && menu->items[i]->time[0])
-			wprintw (menu->win, "[%5s]", menu->items[i]->time);
-		else if (menu->show_format && menu->items[i]->format[0])
-			wprintw (menu->win, "[%3s]", menu->items[i]->format);
+					menu->items[i].time
+					? menu->items[i].time : "     ",
+					menu->items[i].format);
+		else if (menu->show_time && menu->items[i].time[0])
+			wprintw (menu->win, "[%5s]", menu->items[i].time);
+		else if (menu->show_format && menu->items[i].format[0])
+			wprintw (menu->win, "[%3s]", menu->items[i].format);
 	}
 }
 
 /* menu_items must be malloc()ed memory! */
-struct menu *menu_new (WINDOW *win, struct menu_item **items, const int nitems)
+struct menu *menu_new (WINDOW *win)
 {
 	struct menu *menu;
 
-	assert (items != NULL);
-	assert (win != NULL);
-	
 	menu = (struct menu *)xmalloc (sizeof(struct menu));
 
 	menu->win = win;
-	menu->items = items;
+	menu->items = (struct menu_item *)xmalloc(
+			sizeof(struct menu_item) * INIT_NUM_ITEMS);
+	menu->allocated = INIT_NUM_ITEMS;
+	menu->nitems = 0;
 	menu->top = 0;
 	menu->selected = 0;
 	getmaxyx (win, menu->maxy, menu->maxx);
 	menu->maxx -= 2; /* The window contains border */
 	menu->maxy--; /* Border without bottom line */
-	menu->nitems = nitems;
 	menu->marked = -1;
 	menu->show_time = 0;
 	menu->show_format = 0;
 	menu->info_attr = A_NORMAL;
 
 	return menu;
+}
+
+int menu_add (struct menu *menu, char *title, const int plist_pos,
+		const enum file_type type, const char *file)
+{
+	assert (menu != NULL);
+	assert (title != NULL);
+
+	if (menu->allocated == menu->nitems) {
+		menu->allocated *= 2;
+		menu->items = (struct menu_item *)xrealloc (menu->items,
+				sizeof(struct menu_item) * menu->allocated);
+	}
+
+	menu->items[menu->nitems].title = xstrdup (title);
+	menu->items[menu->nitems].plist_pos = plist_pos;
+	menu->items[menu->nitems].type = type;
+	menu->items[menu->nitems].file = xstrdup (file);
+
+	menu->items[menu->nitems].attr_normal = A_NORMAL;
+	menu->items[menu->nitems].attr_sel = A_NORMAL;
+	menu->items[menu->nitems].attr_marked = A_NORMAL;
+	menu->items[menu->nitems].attr_sel_marked = A_NORMAL;
+	menu->items[menu->nitems].time[0] = 0;
+	menu->items[menu->nitems].format[0] = 0;
+
+	return menu->nitems++;
 }
 
 void menu_update_size (struct menu *menu, WINDOW *win)
@@ -153,28 +182,6 @@ void menu_update_size (struct menu *menu, WINDOW *win)
 	menu->maxy--; /* Border without bottom line */
 }
 
-struct menu_item *menu_newitem (char *title, const int plist_pos,
-		const enum file_type type, const char *file)
-{
-	struct menu_item *item;
-
-	assert (title != NULL);
-	
-	item = (struct menu_item *)xmalloc (sizeof(struct menu_item));
-
-	item->title = xstrdup (title);
-	item->plist_pos = plist_pos;
-	item->attr_normal = A_NORMAL;
-	item->attr_sel = A_NORMAL;
-	item->attr_sel_marked = A_NORMAL;
-	item->type = type;
-	item->time[0] = 0;
-	item->format[0] = 0;
-	item->file = xstrdup (file);
-
-	return item;
-}
-
 void menu_free (struct menu *menu)
 {
 	int i;
@@ -183,10 +190,9 @@ void menu_free (struct menu *menu)
 
 	/* Free items */
 	for (i = 0; i < menu->nitems; i++) {
-		free (menu->items[i]->title);
-		if (menu->items[i]->file)
-			free (menu->items[i]->file);
-		free (menu->items[i]);
+		free (menu->items[i].title);
+		if (menu->items[i].file)
+			free (menu->items[i].file);
 	}
 
 	free (menu->items);
@@ -253,11 +259,12 @@ void menu_driver (struct menu *menu, enum menu_request req)
 	}
 }
 
-struct menu_item *menu_curritem (struct menu *menu)
+/* Return the index of the currently selected item. */
+int menu_curritem (struct menu *menu)
 {
 	assert (menu != NULL);
 	
-	return menu->items[menu->selected];
+	return menu->selected;
 }
 
 /* Make this item selected */
@@ -283,7 +290,7 @@ void menu_setcurritem_title (struct menu *menu, const char *title)
 
 	/* Find it */
 	for (i = 0; i < menu->nitems; i++)
-		if (!strcmp(menu->items[i]->title, title))
+		if (!strcmp(menu->items[i].title, title))
 			break;
 
 	/* Not found? */
@@ -325,7 +332,7 @@ static int find_item_plist (const struct menu *menu, const int plist_num)
 	assert (menu != NULL);
 
 	for (i = 0; i < menu->nitems; i++)
-		if (menu->items[i]->plist_pos == plist_num)
+		if (menu->items[i].plist_pos == plist_num)
 			return i;
 	return -1;
 }
@@ -370,22 +377,15 @@ int menu_find_pattern_next (struct menu *menu, const char *pattern,
 	assert (current >= 0 && current < menu->nitems);
 
 	for (i = current; i < menu->nitems; i++)
-		if (strcasestr(menu->items[i]->title, pattern))
+		if (strcasestr(menu->items[i].title, pattern))
 			return i;
 
 	/* Not found? */
 	for (i = 0; i < current; i++)
-		if (strcasestr(menu->items[i]->title, pattern))
+		if (strcasestr(menu->items[i].title, pattern))
 			return i;
 
 	return -1;
-}
-
-int menu_get_selected (const struct menu *menu)
-{
-	assert (menu != NULL);
-	
-	return menu->selected;
 }
 
 /* Get index of the next item after selected. If last item is selected, return
@@ -400,36 +400,49 @@ int menu_next_turn (const struct menu *menu)
 		return 0;
 }
 
-void menu_item_set_attr_normal (struct menu_item *item, const int attr)
+void menu_item_set_attr_normal (struct menu *menu, const int num,
+		const int attr)
 {
-	assert (item != NULL);
-	item->attr_normal = attr;
+	assert (menu != NULL);
+	assert (num >= 0 && num < menu->nitems);
+	
+	menu->items[num].attr_normal = attr;
 }
 
-void menu_item_set_attr_sel (struct menu_item *item, const int attr)
+void menu_item_set_attr_sel (struct menu *menu, const int num, const int attr)
 {
-	assert (item != NULL);
-	item->attr_sel = attr;
+	assert (menu != NULL);
+	assert (num >= 0 && num < menu->nitems);
+	
+	menu->items[num].attr_sel = attr;
 }
 
-void menu_item_set_attr_sel_marked (struct menu_item *item, const int attr)
+void menu_item_set_attr_sel_marked (struct menu *menu, const int num,
+		const int attr)
 {
-	assert (item != NULL);
-	item->attr_sel_marked = attr;
+	assert (menu != NULL);
+	assert (num >= 0 && num < menu->nitems);
+	
+	menu->items[num].attr_sel_marked = attr;
 }
 
-void menu_item_set_attr_marked (struct menu_item *item, const int attr)
+void menu_item_set_attr_marked (struct menu *menu, const int num,
+		const int attr)
 {
-	assert (item != NULL);
-	item->attr_marked = attr;
+	assert (menu != NULL);
+	assert (num >= 0 && num < menu->nitems);
+	
+	menu->items[num].attr_marked = attr;
 }
 
-void menu_item_set_time (struct menu_item *item, const char *time)
+void menu_item_set_time (struct menu *menu, const int num, const char *time)
 {
-	assert (item != NULL);
-	item->time[sizeof(item->time)-1] = 0;
-	strncpy (item->time, time, sizeof(item->time));
-	assert (item->time[sizeof(item->time)-1] == 0);
+	assert (menu != NULL);
+	assert (num >= 0 && num < menu->nitems);
+	
+	menu->items[num].time[sizeof(menu->items[num].time)-1] = 0;
+	strncpy (menu->items[num].time, time, sizeof(menu->items[num].time));
+	assert (menu->items[num].time[sizeof(menu->items[num].time)-1] == 0);
 }
 
 void menu_item_set_time_plist (struct menu *menu, const int plist_num,
@@ -442,17 +455,20 @@ void menu_item_set_time_plist (struct menu *menu, const int plist_num,
 	i = find_item_plist (menu, plist_num);
 	assert (i != -1);
 	
-	menu_item_set_time (menu->items[i], time);
+	menu_item_set_time (menu, i, time);
 }
 
-void menu_item_set_format (struct menu_item *item, const char *format)
+void menu_item_set_format (struct menu *menu, const int num,
+		const char *format)
 {
-	assert (item != NULL);
-	assert (format != NULL);
+	assert (menu != NULL);
+	assert (num >= 0 && num < menu->nitems);
 
-	item->format[sizeof(item->format)-1] = 0;
-	strncpy (item->format, format, sizeof(item->format));
-	assert (item->format[sizeof(item->format)-1] == 0);
+	menu->items[num].format[sizeof(menu->items[num].format)-1] = 0;
+	strncpy (menu->items[num].format, format,
+			sizeof(menu->items[num].format));
+	assert (menu->items[num].format[sizeof(menu->items[num].format)-1]
+			== 0);
 }
 
 void menu_set_show_time (struct menu *menu, const int t)
@@ -473,3 +489,36 @@ void menu_set_info_attr (struct menu *menu, const int attr)
 	menu->info_attr = attr;
 }
 
+enum file_type menu_item_get_type (const struct menu *menu, const int num)
+{
+	assert (menu != NULL);
+	assert (num >= 0 && num < menu->nitems);
+
+	return menu->items[num].type;
+}
+
+char *menu_item_get_file (struct menu *menu, const int num)
+{
+	assert (menu != NULL);
+	assert (num >= 0 && num < menu->nitems);
+
+	return menu->items[num].file;
+}
+
+int menu_item_get_plist_pos (struct menu *menu, const int num)
+{
+	assert (menu != NULL);
+	assert (num >= 0 && num < menu->nitems);
+
+	return menu->items[num].plist_pos;
+}
+
+void menu_item_set_title (struct menu *menu, const int num, const char *title)
+{
+	assert (menu != NULL);
+	assert (num >= 0 && num < menu->nitems);
+
+	if (menu->items[num].title)
+		free (menu->items[num].title);
+	menu->items[num].title = xstrdup (title);
+}
