@@ -103,6 +103,10 @@ UseMmap			= yes
 # Remember the playlist after exit?
 SavePlaylist		= yes
 
+# When using more than one client (interface) at a time, do the share the
+# playlist?
+SyncPlaylist		= yes
+
 # Choose a keymap file (relative to ~/.moc/ or absolute path)
 # Example keymap with description is included (keymap.example).
 #Keymap			= my_keymap

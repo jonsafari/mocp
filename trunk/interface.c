@@ -1891,7 +1891,7 @@ void init_interface (const int sock, const int debug, char **args,
 		enter_first_dir ();
 
 	if (plist_count(playlist) == 0) {
-		if (!get_server_playlist())
+		if (!options_get_int("SyncPlaylist") || !get_server_playlist())
 			load_playlist ();
 	}
 	else {
