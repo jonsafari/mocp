@@ -1,25 +1,23 @@
 Before 2.0:
 
 * Don't count time at the buffer level, do it in player.c
-
-* Try mmap() again if size of the file has changed.
+* Configurable pcm and mixer device.
+* config for mixer device (master, pcm etc)
 * Generic ^r, r - reread directory.
-* Adding files to a playlist of detached moc using command line.
 * Run as server if stdin is not a terminal.
+* Option and a key to ignore hidden files.
+* Adding files to a playlist of detached moc using command line.
+* AUDIO_MAX_PLAY based on bps.
 * Only trying to obtain the lock for client socket when sending an event. If
   this would block, place the event in a queue. This should prevent blocking
   the decoder when the socket is busy for a longer time period. The queue
   should be checked and purged after handling the client command.
-* Option and a key to ignore hidden files.
-* AUDIO_MAX_PLAY based on bps.
-* config for mixer device (master, pcm etc)
-* Configure the bahaviour when another client is connecting: EV_BUSY or drop
-  the previous connection.
-* Configurable pcm and mixer device.
 * Update DOCS.
 
 Before 2.1.0:
 
+* Support for multiple clients.
+* Try mmap() again if size of the file has changed.
 * Prebuffering.
 * iconv() to fix encoding.
 * Something like M-s in mc.
@@ -28,17 +26,16 @@ Before 2.1.0:
 * General procedures for reading files instead of doing this at the decoder
   level.
 * Start to buffer another file when the decoder ends playing.
+* Configurable sorting.
+* Playlist files (m3u?).
+* Option to hide file extensions.
 
 In future:
 
 * Moving items on the playlist up and down.
-* Input buffer with separate thread - like output buffer.
 * Add a key to switching sort modes.
 * A bar showing time for current song.
-* Sort by tack number if present.
 * http://www.speex.org
-* Playlist files (m3u?).
-* Option to hide file extensions.
 * Support for Audio-CD.
 * Support for CDDB.
 * Support for internet streams.
@@ -49,6 +46,7 @@ In future:
 
 Maybe never:
 
+* Input buffer with separate thread - like output buffer.
 * Funny ASCII equalizer.
 * Mouse support
 * Daily/weekly/monthly statistics of played files (Only for fun :)
