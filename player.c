@@ -27,6 +27,7 @@
 #include "buf.h"
 #include "server.h"
 #include "options.h"
+#include "player.h"
 
 #define PCM_BUF_SIZE	(32 * 1024)
 
