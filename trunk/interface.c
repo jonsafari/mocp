@@ -45,6 +45,16 @@
 #define STATUS_LINE_LEN	25
 #define INTERFACE_LOG	"mocp_client_log"
 
+/* ncurses extension */
+#ifndef COLOR_DEFAULT
+# define COLOR_DEFAULT	-2
+#endif
+
+/* hidden color? */
+#ifndef COLOR_GREY
+# define COLOR_GREY	10
+#endif
+
 /* Socket connection to the server. */
 static int srv_sock = -1;
 
@@ -1648,7 +1658,8 @@ static short find_color_name (const char *name)
 		{ "magenta",	COLOR_MAGENTA },
 		{ "cyan",	COLOR_CYAN },
 		{ "white",	COLOR_WHITE },
-
+		{ "default",	COLOR_DEFAULT },
+		{ "grey",	COLOR_GREY }
 	};
 	
 	for (i = 0; i < (int)(sizeof(color_tab)/sizeof(color_tab[0])); i++)
@@ -1777,6 +1788,7 @@ void init_interface (const int sock, const int debug, char **args,
 	initscr ();
 	cbreak ();
 	noecho ();
+	use_default_colors ();
 
 	check_term_size ();
 
