@@ -195,14 +195,14 @@ AC_OUTPUT(Makefile \
 echo
 echo "----------------------------------------------------------------"
 echo "MOC will be compiled with:"
-echo "MP3:			"$COMPILE_MAD
-echo "OGG:			"$COMPILE_VORBIS
-echo "FLAC:                   "$COMPILE_FLAC
-echo "OSS:			"$COMPILE_OSS
-echo "ALSA:			"$COMPILE_ALSA
-echo "DEBUG:			"$COMPILE_DEBUG
-echo "ICONV:			"$COMPILE_ICONV
-echo "SNDFILE:		"$COMPILE_SNDFILE
+echo "MP3:               "$COMPILE_MAD
+echo "OGG:               "$COMPILE_VORBIS
+echo "FLAC:              "$COMPILE_FLAC
+echo "OSS:               "$COMPILE_OSS
+echo "ALSA:              "$COMPILE_ALSA
+echo "DEBUG:             "$COMPILE_DEBUG
+echo "ICONV:             "$COMPILE_ICONV
+echo "SNDFILE:           "$COMPILE_SNDFILE
 echo
 echo "----------------------------------------------------------------"
 
