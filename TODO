@@ -1,7 +1,9 @@
 Before 2.3.0:
-* failing assert (alsa_buffill < chunk_size)
-* remove the mutex from alsa
-* Decoder api versioning.
+* interrupt prebuffering doesn't work
+* io_stream should provide information about mime-type.
+* prebuffer again if buffer fill drops to 0
+* Handling stream *.pls files (PLSv2 http://www.scvi.net/pls.htm) and m3u
+* iconv() for internet tags.
 * Complete to the matching part of a directory with the i command if a name is
   ambigous.
 * History in the i command.
@@ -13,7 +15,6 @@ Before 2.3.0:
 * Reread ALSA mixer to see changes made by other programs.
 * Show the bitrate in the right time (the playback time, not while decoding).
 * Cache for tags in each directory. (.cache.m3u?)
-* Support for internet streams.
 * Support for Audio-CD.
 * Support for CDDB.
 * www.musepack.net (www.caddr.com)
@@ -35,6 +36,7 @@ Before 2.3.0:
 * Describe how plugins work.
 * Refuse to clear the playlist before loadin a new one only if the playlist was
   modified (or custom made).
+* remove the mutex from alsa
 
 In future:
 
