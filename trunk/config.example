@@ -40,7 +40,7 @@ FormatString		= "%(n:%n :)%(a:%a - :)%(t:%t:)%(A: \(%A\):)"
 # Output buffer size in kilobytes
 OutputBuffer		= 2048
 
-# Sound driver - OSS or null (only for debugging)
+# Sound driver - OSS, ALSA, or null (only for debugging)
 SoundDriver		= OSS
 
 # OSS output device
