@@ -987,7 +987,8 @@ static void add_clients_fds (fd_set *read, fd_set *write)
 
 	for (i = 0; i < CLIENTS_MAX; i++)
 		if (clients[i].socket != -1) {
-			FD_SET (clients[i].socket, read);
+			if (locking_client() == -1 || is_locking(&clients[i]))
+				FD_SET (clients[i].socket, read);
 
 			LOCK (clients[i].events_mutex);
 			if (!event_queue_empty(&clients[i].events))
