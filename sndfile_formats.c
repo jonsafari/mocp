@@ -13,12 +13,15 @@
 # include "config.h"
 #endif
 
+#define DEBUG
+
 #include <sndfile.h>
 #include "sndfile_formats.h"
 #include "file_types.h"
 #include "main.h"
 #include "server.h"
 #include "playlist.h"
+#include "log.h"
 
 /* TODO:
  * - sndfile is not thread-safe: use a mutex?
@@ -54,6 +57,11 @@ static void *sndfile_open (const char *file)
 		free (data);
 		return NULL;
 	}
+
+	debug ("Opened file %s", file);
+	debug ("Channels: %d", data->snd_info.channels);
+	debug ("Format: %08X", data->snd_info.format);
+	debug ("Sample rate: %d", data->snd_info.samplerate);
 
 	return data;
 }
@@ -109,8 +117,7 @@ static int sndfile_decode (void *void_data, char *buf, int buf_len,
 	sound_params->format = 2;
 	
 	return sf_read_short (data->sndfile, (short *)buf,
-			buf_len / 2 / data->snd_info.channels)
-		* data->snd_info.channels;
+			buf_len / 2 / data->snd_info.channels) * 2;
 }
 
 static int sndfile_get_bitrate (void *void_data ATTR_UNUSED)
