@@ -574,6 +574,7 @@ static void mp3_get_error (void *prv_data, struct decoder_error *error)
 }
 
 static struct decoder mp3_decoder = {
+	DECODER_API_VERSION,
 	mp3_open,
 	NULL,
 	NULL,
