@@ -15,6 +15,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <assert.h>
 
 #include "main.h"
 #include "file_types.h"
@@ -32,16 +33,19 @@
 # include "flac.h"
 #endif
 
-#include "wav.h"
+#ifdef HAVE_SNDFILE
+# include "sndfile_formats.h"
+#endif
 
 struct file_type_data {
-	char **ext;			/* NULL terminated file extension
-					   list */
+	char **ext;			/* file extension list */
+	int ext_max;
+	int ext_num;
 	struct decoder_funcs *funcs;
 	char name[4];			/* short format name */
 };
 
-static struct file_type_data types[8];
+static struct file_type_data types[20];
 static int types_num = 0;
 
 /* Find the index in table types for the given file. Return -1 if not found. */
@@ -52,9 +56,8 @@ static int find_type (char *file)
 
 	if (ext)
 		for (i = 0; i < types_num; i++) {
-			j = 0;
-			while (types[i].ext[j])
-				if (!strcasecmp(ext, types[i].ext[j++]))
+			for (j = 0; j < types[i].ext_num; j++)
+				if (!strcasecmp(ext, types[i].ext[j]))
 					return i;
 		}
 	return -1;
@@ -87,40 +90,61 @@ struct decoder_funcs *get_decoder_funcs (char *file)
 	return NULL;
 }
 
-static char **mk_ext_table (const int num)
+/* Add a file type to the table with ext_num file extensions.
+ * Return the index of the type. */
+static int add_type (const int ext_num, const char *name,
+		struct decoder_funcs *funcs)
 {
-	char **tab = (char **)xmalloc (sizeof(char **) * ((num) + 1));
-	
-	tab[num] = NULL;
-	return tab;
+	types[types_num].ext = (char **)xmalloc (sizeof(char **) * ext_num);
+	types[types_num].ext_max = ext_num;
+	types[types_num].ext_num = 0;
+	strncpy (types[types_num].name, name,
+			sizeof(types[types_num].name) - 1);
+	types[types_num].funcs = funcs;
+
+	return types_num++;
+}
+
+static void add_ext (const int idx, const char *ext)
+{
+	assert (types[idx].ext_num < types[idx].ext_max);
+	types[idx].ext[types[idx].ext_num++] = xstrdup (ext);
 }
 
 void file_types_init ()
 {
-	types[types_num].ext = mk_ext_table (1);
-	types[types_num].ext[0] = "wav";
-	strcpy (types[types_num].name, "WAV");
-	types[types_num++].funcs = wav_get_funcs ();
-
+	int i;
+	
 #ifdef HAVE_MAD
-	types[types_num].ext = mk_ext_table (1);
-	types[types_num].ext[0] = "mp3";
-	strcpy (types[types_num].name, "MP3");
-	types[types_num++].funcs = mp3_get_funcs ();
+	i = add_type (1, "MP3", mp3_get_funcs());
+	add_ext (i, "mp3");
 #endif
 
 #ifdef HAVE_VORBIS
-	types[types_num].ext = mk_ext_table (1);	
-	types[types_num].ext[0] = "ogg";
-	strcpy (types[types_num].name, "OGG");
-	types[types_num++].funcs = ogg_get_funcs ();
+	i = add_type (1, "OGG", ogg_get_funcs());
+	add_ext (i, "ogg");
 #endif
 
 #ifdef HAVE_FLAC
-	types[types_num].ext = mk_ext_table (2);
-	types[types_num].ext[0] = "flac";
-	types[types_num].ext[1] = "fla";
-	strcpy (types[types_num].name, "FLA");
-	types[types_num++].funcs = flac_get_funcs ();
+	i = add_type (2, "FLA", flac_get_funcs());
+	add_ext (i, "fla");
+	add_ext (i, "flac");
 #endif
+
+#ifdef HAVE_SNDFILE
+	i = add_type (1, "AU", sndfile_get_funcs());
+	add_ext (i, "au");
+
+	i = add_type (1, "WAV", sndfile_get_funcs());
+	add_ext (i, "wav");
+#endif
+}
+
+void file_types_cleanup ()
+{
+	int i, j;
+
+	for (i = 0; i < types_num; i++)
+		for (j = 0; j < types[i].ext_num; j++)
+			free (types[i].ext[j]);
 }
