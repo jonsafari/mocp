@@ -120,35 +120,23 @@ char *plist_get_file (struct plist *plist, int i)
 	return file;
 }
 
-/* Find the real number of the item on the list taking into account deleted
- * items. Return -1 if there is no such item. */
-int plist_find (struct plist *plist, int num)
-{
-	int i = 0;
-
-	assert (num >= 0);
-	assert (plist != NULL);
-	
-	LOCK (plist->mutex);
-	while (i < plist->num && num > 0) {
-		if (!plist->items[i].deleted)
-			num--;
-		i++;
-	}
-	UNLOCK (plist->mutex);
-
-	return i < plist->num && !plist->items[i].deleted ? i : -1;
-}
-
 /* Get the number of the next item on the list (skipping deleted items).
- * The real numbed can be retreived by using plist_find().
+ * If num == -1, get the first item.
  * Return -1 if there is no items left.
  */
 int plist_next (struct plist *plist, int num)
 {
+	int i = num + 1;
+	
 	assert (plist != NULL);
-	assert (num >= 0);
-	return  num + 1 < plist->num ? num + 1 : -1;
+	assert (num >= -1);
+
+	LOCK (plist->mutex);
+	while (i < plist->num && plist->items[i].deleted)
+		i++;
+	UNLOCK (plist->mutex);
+
+	return i < plist->num ? i : -1;
 }
 
 /* Clear the list. */
@@ -201,16 +189,21 @@ void plist_sort_fname (struct plist *plist)
 			qsort_func_fname);
 }
 
-/* Find an item oon the list. Return the index or -1 if not found. */
-int plist_find_fname (const struct plist *plist, const char *file)
+/* Find an item on the list. Return the index or -1 if not found. */
+int plist_find_fname (struct plist *plist, const char *file)
 {
 	int i;
 
 	assert (plist != NULL);
 
+	LOCK (plist->mutex);
 	for (i = 0; i < plist->num; i++)
-		if (!strcmp(plist->items[i].file, file))
-				return i;
+		if (!strcmp(plist->items[i].file, file)) {
+			UNLOCK (plist->mutex);
+			return i;
+		}
+	UNLOCK (plist->mutex);
+
 	return -1;
 }
 
@@ -374,3 +367,11 @@ void plist_add_from_item (struct plist *plist, const struct plist_item *item)
 		plist->items[pos].tags = tags_dup (item->tags);
 }
 
+void plist_shuffle (struct plist *plist)
+{
+	
+}
+
+void plist_copy (struct plist *dst, const struct plist *src)
+{
+}
