@@ -1,21 +1,18 @@
 Before 2.2.0:
-* test if sync_plists_data() isn't too slow.
-* test if plist_total_time() isn't too slow.
-* configurable saving the playlist at the end: ask, no, not if saved, always.
-* A bar showing time for the current song.
-* General error/fatal functions that recognize if they are in the interface or
-  in the server and if ncurses were initialized.
-* Redefining keys.
-* Configurable sorting.
+* run ./mocp, Q and endwin() is not used?
+* valgrind server and client crashes (assertion seconds > 0)
 * Arrow keys working in the entry field.
 * Share the playlist between interfaces - one interface is a "master"?.
 * When adding files to the playlist, add them also to the server's playlist
 * True shuffle.
 * History in the i command.
-* Shift-left and Shift-right for faster seeking (10 sec. per keystroke).
+* Shift-left and Shift-right for faster, silent seeking (10 sec. per keystroke).
+* valgrind the client and the server.
 
 In future:
 
+* Fake increase/decrease volume in alsa by 1% if such resolution is not
+  possible.
 * Number items on the playlist.
 * Command to chenge the mixer device.
 * Command to go to the previously played file.
@@ -46,7 +43,7 @@ In future:
 * Locales.
 * Song ratings or something like Q in XMMS.
 * www.musepack.net (www.caddr.com)
-* Silent seeking
+* Configurable sorting.
 
 Maybe never:
 
