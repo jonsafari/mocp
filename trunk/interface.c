@@ -1,6 +1,6 @@
 /*
  * MOC - music on console
- * Copyright (C) 2004 Damian Pietras <daper@daper.net>
+ * Copyright (C) 2004,2005 Damian Pietras <daper@daper.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -141,11 +141,15 @@ static struct
 	char title[32];		/* displayed title */
 	char *file;		/* optional: file associated with the entry */
 	int width;		/* width of the entry part for typing */
+	int cur_pos;		/* cursor position */
+	int display_from;	/* displaying from this char */
 } entry = {
 	"",
 	ENTRY_DISABLED,
 	"",
 	NULL,
+	0,
+	0,
 	0
 };
 
@@ -443,22 +447,38 @@ static void draw_plist_time ()
 }
 
 /* Draw the entry. Use this function at the end of screen drawing, because
- * it should set the cursor position in the right place. */
+ * Set the cursor position in the right place. */
 static void entry_draw ()
 {
+	int c;
+	
 	wmove (info_win, 0, 1);
 	wattrset (info_win, get_color(CLR_ENTRY_TITLE));
 	wprintw (info_win, "%s:", entry.title);
 	
 	wattrset (info_win, get_color(CLR_ENTRY));
-	if ((int)strlen(entry.text) <= entry.width)
-		wprintw (info_win, " %-*s", entry.width, entry.text);
-	else
-		wprintw (info_win, " ...%s", entry.text + strlen(entry.text)
-				- entry.width + 3);
 
-	/* This hopefully will move the cursor to the right position. */
-	wmove (info_win, 0, strlen(entry.title) + 3 + strlen(entry.text));
+	/* Truncate the text, it must be shorter than the entry width */
+	c = entry.text[entry.width + entry.display_from];
+	entry.text[entry.width + entry.display_from] = 0;
+	
+	if (entry.display_from == 0) {
+		
+		/* the text fits into the screen */
+		wprintw (info_win, " %-*s", entry.width, entry.text);
+		wmove (info_win, 0, entry.cur_pos + strlen(entry.title) + 3);
+	}
+	else {
+
+		/* the entry text is longer than the screen */
+		wprintw (info_win, " %-*s", entry.width,
+				entry.text + entry.display_from);
+		wmove (info_win, 0, entry.cur_pos - entry.display_from
+				+ strlen(entry.title) + 3);
+	}
+
+	/* Restore the truncated char */
+	entry.text[entry.width + entry.display_from] = c;
 }
 
 static void make_entry (const enum entry_type type, const char *title)
@@ -468,9 +488,109 @@ static void make_entry (const enum entry_type type, const char *title)
 	entry.file = NULL;
 	strncpy (entry.title, title, sizeof(entry.title));
 	entry.width = COLS - strlen(title) - 4;
+	entry.cur_pos = 0;
+	entry.display_from = 0;
 	entry_draw ();
 	curs_set (1);
 	wrefresh (info_win);
+}
+
+/* Set the entry text. Move the cursor to the end. */
+static void entry_set_text (const char *text)
+{
+	int len;
+	
+	strncpy (entry.text, text, sizeof(entry.text));
+	entry.text[sizeof(entry.text)-1] = 0;
+	len = strlen (entry.text);
+	entry.cur_pos = len;
+	
+	if (entry.cur_pos - entry.display_from > entry.width)
+		entry.display_from = len - entry.width;
+}
+
+/* Add a char to the entry where the cursor is placed. */
+static void entry_add_char (const char c)
+{
+	unsigned int len = strlen(entry.text);
+
+	if (len < sizeof(entry.text) - 1) {
+		memmove (entry.text + entry.cur_pos + 1,
+				entry.text + entry.cur_pos,
+				len - entry.cur_pos + 1);
+		
+		entry.text[entry.cur_pos] = c;
+		entry.cur_pos++;
+
+		if (entry.cur_pos - entry.display_from > entry.width)
+			entry.display_from++;
+	}
+}
+
+/* Delete the char before the cursor. */
+static void entry_back_space ()
+{
+	if (entry.cur_pos > 0) {
+		int len = strlen (entry.text);
+		
+		memmove (entry.text + entry.cur_pos - 1,
+				entry.text + entry.cur_pos,
+				len - entry.cur_pos);
+		entry.text[--len] = 0;
+		entry.cur_pos--;
+
+		if (entry.cur_pos < entry.display_from)
+			entry.display_from--;
+
+		/* Can we show more after deleting the char? */
+		if (entry.display_from > 0
+				&& len - entry.display_from < entry.width)
+			entry.display_from--;
+	}
+}
+
+/* Delete the char under the cursor. */
+static void entry_del_char ()
+{
+	int len = strlen (entry.text);
+
+	if (entry.cur_pos < len) {
+		len--;
+		memmove (entry.text + entry.cur_pos,
+				entry.text + entry.cur_pos + 1,
+				len - entry.cur_pos);
+		entry.text[len] = 0;
+		
+		/* Can we show more after deleting the char? */
+		if (entry.display_from > 0
+				&& len - entry.display_from < entry.width)
+			entry.display_from--;
+	
+	}
+}
+
+/* Move the cursor one char left. */
+static void entry_curs_left ()
+{
+	if (entry.cur_pos > 0) {
+		entry.cur_pos--;
+
+		if (entry.cur_pos < entry.display_from)
+			entry.display_from--;
+	}
+}
+
+/* Move the cursor one char right. */
+static void entry_curs_right ()
+{
+	int len = strlen (entry.text);
+	
+	if (entry.cur_pos < len) {
+		entry.cur_pos++;
+
+		if (entry.cur_pos > entry.width + entry.display_from)
+			entry.display_from++;
+	}
 }
 
 static void entry_disable ()
@@ -1196,14 +1316,16 @@ static void update_ctime ()
 	send_int_to_srv (CMD_GET_CTIME);
 	file_info.curr_time_num = get_data_int ();
 
-	sec_to_min (file_info.curr_time, file_info.curr_time_num);
-
 	if (file_info.time_num != -1) {
+		sec_to_min (file_info.curr_time, file_info.curr_time_num);
 		left = file_info.time_num - file_info.curr_time_num;
 		sec_to_min (file_info.time_left, left > 0 ? left : 0);
 	}
-	else
+	else {
+		strcpy (file_info.curr_time, "00:00");
 		file_info.time_left[0] = 0;
+	}
+
 
 	update_info_win ();
 	wrefresh (info_win);
@@ -2182,28 +2304,34 @@ static int entry_plist_overwrite_key (const int key)
 static int entry_common_key (const int ch)
 {
 	enum key_cmd cmd;
-	
+
 	if (isgraph(ch) || ch == ' ') {
-		int len = strlen (entry.text);
-	
-		if (len == sizeof(entry.text) - 1)
-			return 1;
-		
-		entry.text[len++] = ch;
-		entry.text[len] = 0;
+		entry_add_char (ch);
+		entry_draw ();
+		return 1;
+	}
+
+	if (ch == KEY_LEFT) {
+		entry_curs_left ();
+		entry_draw ();
+		return 1;
+	}
+
+	if (ch == KEY_RIGHT) {
+		entry_curs_right ();
 		entry_draw ();
 		return 1;
 	}
 
 	if (ch == KEY_BACKSPACE) {
+		entry_back_space ();
+		entry_draw ();
+		return 1;
+	}
 
-		/* delete last character */
-		if (entry.text[0] != 0) {
-			int len = strlen (entry.text);
-
-			entry.text[len-1] = 0;
-			entry_draw ();
-		}
+	if (ch == KEY_DC) {
+		entry_del_char ();
+		entry_draw ();
 		return 1;
 	}
 
@@ -2266,22 +2394,23 @@ static int entry_go_dir_key (const int ch)
 	if (ch == '\t') {
 		char *dir;
 		char *complete_dir;
+		char buf[PATH_MAX+1];
 		
 		if (!(dir = make_dir(entry.text)))
 			return 1;
 		
 		complete_dir = find_match_dir (dir);
 		
-		strncpy (entry.text, complete_dir ? complete_dir : dir,
-				sizeof(entry.text));
-		entry.text[sizeof(entry.text)-1] = 0;
+		strncpy (buf, complete_dir ? complete_dir : dir, sizeof(buf));
+		entry.text[sizeof(buf)-1] = 0;
 
 		if (complete_dir) {
-			strncat (entry.text, "/",
-				sizeof(entry.text) - strlen(entry.text));
-			entry.text[sizeof(entry.text)-1] = 0;
+			strncat (entry.text, "/", sizeof(buf) - strlen(buf));
+			entry.text[sizeof(buf)-1] = 0;
 			free (complete_dir);
 		}
+
+		entry_set_text (buf);
 
 		free (dir);
 		entry_draw ();
@@ -2630,7 +2759,13 @@ static void do_resize ()
 	wresize (info_win, 4, COLS);
 	mvwin (info_win, LINES - 4, 0);
 	werase (main_win);
+	
 	entry.width = COLS - strlen(entry.title) - 4;
+	entry.cur_pos = strlen(entry.text);
+	if (strlen(entry.text) > (unsigned)entry.width)
+		entry.display_from = strlen(entry.text) - entry.width;
+	else
+		entry.display_from = 0;
 
 	if (curr_plist_menu)
 		menu_update_size (curr_plist_menu, main_win);
