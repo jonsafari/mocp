@@ -115,12 +115,13 @@ static int plist_load_m3u (struct plist *plist, const char *fname,
 					= TAGS_TIME;
 			}
 		}
-		if (line[0] != '#') {
+		else if (line[0] != '#') {
 			char path[2*PATH_MAX];
 
 			make_path (path, sizeof(path), cwd, line);
 
-			if (plist_find_fname(plist, path) == -1) {
+			if (plist_find_fname(plist, path) == -1
+					&& is_sound_file(path)) {
 				if (after_extinf)
 					plist_set_file (plist, last_added,
 							path);
