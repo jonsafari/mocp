@@ -20,6 +20,9 @@ struct buf
 	int exit;	/* Exit when the buffer is empty. */
 	int stop;	/* Don't play anything. */
 
+	int reset_dev;	/* request to the reading thread to reset the audio
+			   device */
+
 	float time;	/* Time of played sound .*/
 	int hardware_buf_fill;	/* How the sound card buffer is filled */
 
