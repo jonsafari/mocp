@@ -306,6 +306,10 @@ static void *mp3_open (const char *file)
 #endif
 
 	data->duration = count_time_internal (data);
+	mad_frame_mute (&data->frame);
+	data->stream.next_frame = NULL;
+	data->stream.sync = 0;
+	data->stream.error = MAD_ERROR_BUFLEN;
 #ifdef HAVE_MMAP
 	if (data->mapped)
 		mad_stream_buffer (&data->stream, data->mapped,
