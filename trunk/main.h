@@ -46,8 +46,10 @@ char *xstrdup (const char *s);
 
 #ifdef HAVE__ATTRIBUTE__
 void fatal (const char *format, ...) __attribute__((format (printf, 1, 2)));
+void error (const char *format, ...) __attribute__((format (printf, 1, 2)));
 #else
 void fatal (const char *format, ...);
+void error (const char *format, ...);
 #endif
 
 char *create_file_name (const char *file);
