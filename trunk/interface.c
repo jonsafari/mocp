@@ -1370,6 +1370,14 @@ static void menu_key (const int ch)
 				update_menu = 1;
 			}
 			break;
+		case 'H':
+			option_set_int ("ShowHiddenFiles",
+					!options_get_int("ShowHiddenFiles"));
+			if (visible_plist == curr_plist) {
+				reread_dir ();
+				update_menu = 1;
+			}
+			break;
 		case KEY_RESIZE:
 			break;
 		default:
