@@ -1,0 +1,53 @@
+Before 2.0:
+
+* Global input buffer.
+* Try mmap() again if size of the file has changed.
+* Generic ^r, r - reread directory.
+* Shuffle as in madplay (line 1302 of player.c)
+* Some pthread_mutex_destroy()s, pthread_cond_destroy()s
+* Adding files to a playlist of detached moc using command line.
+* Run as server if stdin is not a terminal.
+* Only trying to obtain the lock for client socket when sending an event. If
+  this would block, place the event in a queue. This should prevent blocking
+  the decoder when the socket is busy for a longer time period. The queue
+  should be checked and purged after handling the client command.
+* Option and a key to ignore hidden files.
+* AUDIO_MAX_PLAY based on bps.
+* config for mixed device (master, pcm etc)
+* Configure the bahaviour when another client is connecting: EV_BUSY or drop
+  the previous connection.
+* Command for turning off message/error text immediately.
+
+* Prebuffering.
+* iconv() to fix encoding.
+* Something like M-s in mc.
+* configurable colors.
+* Update DOCS.
+* Showing the buffer state.
+
+In future:
+
+* Input buffer with separate thread - like output buffer.
+* Start to buffer another file when the decoder ends playing.
+* Add --disable-debug (debug code - logging)
+* Add a key to switching sort modes.
+* A bar showing time for current song.
+* Sort by tack number if present.
+* Showing buffer fill
+* http://www.speex.org
+* Playlist files (m3u?).
+* Option to hide file extensions.
+* Support for Audio-CD.
+* Support for CDDB.
+* Support for internet streams.
+* Alsa output and mixer.
+* libsidplay2
+* Use 24-bit output if output device supports it.
+
+Maybe never:
+
+* Funny ASCII equalizer.
+* Mouse support
+* Daily/weekly/monthly statistics of played files (Only for fun :)
+* Server which provides information about currently played music + CGI/PHP
+  script to show it on the web.
