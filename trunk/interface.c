@@ -3092,4 +3092,7 @@ void interface_end ()
 	free (curr_plist);
 	free (playlist);
 	iconv_cleanup ();
+
+	/* Make sure that the next line after we exit will be "clear". */
+	putchar ('\n');
 }
