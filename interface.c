@@ -520,42 +520,49 @@ static struct menu *make_menu (struct plist *plist, struct file_list *dirs,
 	int menu_pos;
 	struct menu_item **menu_items;
 	int plist_items;
+	int nitems;
 	
 	plist_items = plist_count (plist);
 
 	/* +1 for '..' */
+	nitems = plist_items + 1;
+	if (dirs)
+		nitems +=  dirs->num;
+	if (playlists)
+		nitems += playlists->num;
+
 	menu_items = (struct menu_item **)xmalloc (sizeof(struct menu_item *)
-			* (plist_items + dirs->num + playlists->num + 1));
+			* nitems);
 	
 	/* add '..' */
 	menu_items[0] = menu_newitem ("..", -1, F_DIR, "..");
 	menu_items[0]->attr_normal = COLOR_PAIR(CLR_ITEM) | A_BOLD;
 	menu_items[0]->attr_sel = COLOR_PAIR(CLR_SELECTED) | A_BOLD;
-
-	/* directories */
 	menu_pos = 1;
-	for (i = 0; i < dirs->num; i++) {
-		menu_items[menu_pos] =
-			menu_newitem (strrchr(dirs->items[i], '/') + 1,
-					-1, F_DIR, dirs->items[i]);
-		menu_items[menu_pos]->attr_normal =
-			COLOR_PAIR(CLR_ITEM) | A_BOLD;
-		menu_items[menu_pos]->attr_sel =
-			COLOR_PAIR(CLR_SELECTED) | A_BOLD;
-		menu_pos++;
-	}
+	
+	if (dirs)
+		for (i = 0; i < dirs->num; i++) {
+			menu_items[menu_pos] =
+				menu_newitem (strrchr(dirs->items[i], '/') + 1,
+						-1, F_DIR, dirs->items[i]);
+			menu_items[menu_pos]->attr_normal =
+				COLOR_PAIR(CLR_ITEM) | A_BOLD;
+			menu_items[menu_pos]->attr_sel =
+				COLOR_PAIR(CLR_SELECTED) | A_BOLD;
+			menu_pos++;
+		}
 
-	/* playlists */
-	for (i = 0; i < playlists->num; i++){
-		menu_items[menu_pos] =
-			menu_newitem (strrchr(playlists->items[i], '/') + 1,
+	if (playlists)
+		for (i = 0; i < playlists->num; i++){
+			menu_items[menu_pos] = menu_newitem (
+					strrchr(playlists->items[i], '/') + 1,
 					-1, F_PLAYLIST,	playlists->items[i]);
-		menu_items[menu_pos]->attr_normal =
-			COLOR_PAIR(CLR_ITEM) | A_BOLD;
-		menu_items[menu_pos]->attr_sel =
-			COLOR_PAIR(CLR_SELECTED) | A_BOLD;
-		menu_pos++;
-	}
+			menu_items[menu_pos]->attr_normal =
+				COLOR_PAIR(CLR_ITEM) | A_BOLD;
+			menu_items[menu_pos]->attr_sel =
+				COLOR_PAIR(CLR_SELECTED) | A_BOLD;
+			menu_pos++;
+		}
 	
 	/* playlist items */
 	for (i = 0; i < plist->num; i++) {
@@ -569,8 +576,7 @@ static struct menu *make_menu (struct plist *plist, struct file_list *dirs,
 		}
 	}
 	
-	return menu_new (main_win, menu_items,
-			dirs->num + plist_items + playlists->num + 1,
+	return menu_new (main_win, menu_items, nitems,
 			COLOR_PAIR(CLR_ITEM), COLOR_PAIR(CLR_SELECTED),
 			COLOR_PAIR(CLR_MARKED) | A_BOLD,
 			COLOR_PAIR(CLR_MARKED_SELECTED) | A_BOLD);
@@ -1268,7 +1274,7 @@ static void toggle_plist ()
 
 		visible_plist = playlist;
 		saved_menu = menu;
-		menu = make_menu (playlist, NULL, 0);
+		menu = make_menu (playlist, NULL, NULL);
 		set_title ("Playlist");
 		update_curr_file ();
 		sprintf (msg, "%d files on the list", plist_count(playlist));
