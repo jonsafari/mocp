@@ -232,6 +232,8 @@ static void decode_loop (const struct decoder *f, void *decoder_data,
 	else
 		logit ("No get_stream() function");
 
+	status_msg ("Playing...");
+
 	while (1) {
 		debug ("loop...");
 		
@@ -356,6 +358,8 @@ static void decode_loop (const struct decoder *f, void *decoder_data,
 		}
 	}
 
+	status_msg ("");
+
 	LOCK (decoder_stream_mut);
 	decoder_stream = NULL;
 	f->close (decoder_data);
@@ -417,6 +421,7 @@ void player (const char *file, const char *next_file, struct out_buf *out_buf)
 	else {
 		struct decoder_error err;
 
+		status_msg ("Opening...");
 		decoder_data = f->open(file);
 		f->get_error (decoder_data, &err);
 		if (err.type != ERROR_OK) {

@@ -181,8 +181,6 @@ static void *play_thread (void *unused ATTR_UNUSED)
 						io_close (stream);
 						status_msg ("");
 					}
-					else
-						status_msg ("Playing...");
 				}
 				else {
 					error ("Could not open URL: %s",
