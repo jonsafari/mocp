@@ -47,6 +47,7 @@
 #include "player.h"
 #include "audio.h"
 #include "files.h"
+#include "io.h"
 
 static pthread_t playing_thread = 0;  /* tid of play thread */
 static int play_thread_running = 0;
@@ -157,7 +158,7 @@ static void *play_thread (void *unused ATTR_UNUSED)
 
 	while (curr_playing != -1) {
 		char *file;
-		struct decoder *df;
+		struct decoder *df = NULL;
 
 		LOCK (plist_mut);
 		file = plist_get_file (curr_plist, curr_playing);
@@ -167,7 +168,26 @@ static void *play_thread (void *unused ATTR_UNUSED)
 		play_prev = 0;
 
 		if (file) {
-			df = get_decoder (file);
+			struct io_stream *stream = NULL;
+			
+			if (file_type(file) == F_URL) {
+				stream = io_open (file, 1);
+				if (io_ok(stream)) {
+					df = get_decoder_by_content (stream);
+					if (!df) {
+						error ("Format not supported");
+						io_close (stream);
+					}
+				}
+				else {
+					error ("Could not open URL: %s",
+							io_strerror(stream));
+					io_close (stream);
+				}
+			}
+			else
+				df = get_decoder (file);
+			
 			if (df) {
 				int next;
 				char *next_file;
@@ -186,7 +206,10 @@ static void *play_thread (void *unused ATTR_UNUSED)
 				UNLOCK (plist_mut);
 				UNLOCK (curr_playing_mut);
 				
-				player (file, next_file, &out_buf);
+				if (!stream)
+					player (file, next_file, &out_buf);
+				else
+					player_by_stream (stream, df);
 				if (next_file)
 					free (next_file);
 

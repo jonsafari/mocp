@@ -3,12 +3,16 @@
 
 #include <unistd.h> /* fot [s]size_t */
 #include <pthread.h>
+#ifdef HAVE_CURL
+# include <curl/curl.h>
+#endif
 #include "fifo_buf.h"
 
 enum io_source
 {
 	IO_SOURCE_FD,
-	IO_SOURCE_MMAP
+	IO_SOURCE_MMAP,
+	IO_SOURCE_CURL
 };
 
 struct io_stream
@@ -31,6 +35,22 @@ struct io_stream
 	size_t mem_pos;
 #endif
 
+#ifdef HAVE_CURL
+	CURLM *curl_multi_handle;	/* we use the multi interface to get the
+					   data in pieces */
+	CURL *curl_handle;		/* the actual used handle */
+	CURLMcode curl_multi_status;	/* curl status of the last multi
+					   operation */
+	CURLcode curl_status;		/* curl status of the last easy
+					   operation */
+	char *url;
+	struct curl_slist *http_headers;	/* HTTP headers to send with
+						   the request */
+	char *curl_buf;			/* buffer for data the curl gives us */
+	long curl_buf_fill;
+	
+#endif
+
 	struct fifo_buf buf;
 	pthread_mutex_t buf_mutex;
 	pthread_cond_t buf_free_cond; /* some space became available in the
@@ -45,10 +65,12 @@ struct io_stream *io_open (const char *file, const int buffered);
 ssize_t io_read (struct io_stream *s, void *buf, size_t count);
 off_t io_seek (struct io_stream *s, off_t offset, int whence);
 void io_close (struct io_stream *s);
-int io_ok (const struct io_stream *s);
+int io_ok (struct io_stream *s);
 char *io_strerror (struct io_stream *s);
 ssize_t io_file_size (const struct io_stream *s);
 long io_tell (struct io_stream *s);
 int io_eof (struct io_stream *s);
+void io_init ();
+void io_cleanup ();
 
 #endif

@@ -368,6 +368,10 @@ void player (char *file, char *next_file, struct out_buf *out_buf)
 	logit ("exiting");
 }
 
+void player_by_stream (struct io_stream *stream, const struct decoder *df)
+{
+}
+
 void player_cleanup ()
 {
 	if (pthread_mutex_destroy(&request_cond_mutex))

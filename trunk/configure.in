@@ -9,7 +9,7 @@ AC_PREREQ(2.59)
 AC_CANONICAL_HOST
 AC_PROG_CC
 AC_PROG_INSTALL
-AC_PROG_MAKE_SET
+
 AC_PROG_AWK
 AC_LIBTOOL_DLOPEN
 AC_DISABLE_STATIC
@@ -190,6 +190,23 @@ then
 			   [true])
 fi
 
+dnl curl
+COMPILE_CURL="no"
+AC_ARG_WITH(curl, AS_HELP_STRING(--without-curl,
+	    [Compile without curl (Internet streams support)]))
+if test "x$withcurl" != "xno"
+then
+	dnl FIXME: make a better curl test
+	AC_CHECK_PROG([CURL_CONFIG], [curl-config], [yes])
+	if test "x$CURL_CONFIG" == "xyes"
+	then
+		CFLAGS="$CFLAGS `curl-config --cflags`"
+		EXTRA_LIBS="$EXTRA_LIBS `curl-config --libs`"
+		AC_DEFINE([HAVE_CURL], 1, [Define if you have libcurl])
+		COMPILE_CURL="yes"
+	fi
+fi
+
 EXTRA_LIBS="$EXTRA_LIBS -lncurses"
 AC_SUBST(EXTRA_LIBS)
 		
@@ -210,6 +227,7 @@ echo "OSS:               "$COMPILE_OSS
 echo "ALSA:              "$COMPILE_ALSA
 echo "DEBUG:             "$COMPILE_DEBUG
 echo "ICONV:             "$COMPILE_ICONV
+echo "Network streams    "$COMPILE_CURL
 echo
 echo "----------------------------------------------------------------"
 

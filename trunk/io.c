@@ -27,22 +27,19 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <string.h>
+#include <strings.h>
 #include <assert.h>
 #ifdef HAVE_MMAP
 # include <sys/mman.h>
 #endif
 
-#define DEBUG
-
 #include "main.h"
 #include "log.h"
 #include "io.h"
 #include "options.h"
-
-// DEBUG!
-/*static char write_mirror_file[128];
-static int write_mirror_num = 0;
-static int write_mirror_fd;*/
+#ifdef HAVE_CURL
+# include "io_curl.h"
+#endif
 
 #ifdef HAVE_MMAP
 static ssize_t io_read_mmap (struct io_stream *s, void *buf, size_t count)
@@ -95,7 +92,7 @@ static ssize_t io_read_fd (struct io_stream *s, void *buf, size_t count)
 	return read (s->fd, buf, count);
 }
 
-static ssize_t io_internal_read (struct io_stream *s, void *buf, size_t count)
+static ssize_t io_internal_read (struct io_stream *s, char *buf, size_t count)
 {
 	ssize_t res = 0;
 	
@@ -105,6 +102,11 @@ static ssize_t io_internal_read (struct io_stream *s, void *buf, size_t count)
 #ifdef HAVE_MMAP
 	if (s->source == IO_SOURCE_MMAP)
 		res = io_read_mmap (s, buf, count);
+	else
+#endif
+#ifdef HAVE_CURL
+	if (s->source == IO_SOURCE_CURL)
+		res = io_curl_read (s, buf, count);
 	else
 #endif
 	if (s->source == IO_SOURCE_FD)
@@ -176,6 +178,9 @@ off_t io_seek (struct io_stream *s, off_t offset, int whence)
 	
 	assert (s != NULL);
 
+	if (s->source == IO_SOURCE_CURL)
+		return -1;
+
 	LOCK (s->io_mutex);
 	switch (whence) {
 		case SEEK_SET:
@@ -207,13 +212,6 @@ off_t io_seek (struct io_stream *s, off_t offset, int whence)
 		debug ("Seek to: %lu", (unsigned long)res);
 	else
 		logit ("Seek error");
-
-/*	close (write_mirror_fd);
-	sprintf (write_mirror_file, "write_mirror_%d", write_mirror_num++);
-	write_mirror_fd = open (write_mirror_file, O_WRONLY | O_CREAT | O_TRUNC,
-			0600);
-	assert (write_mirror_fd != -1);
-	debug ("Write mirror: %s", write_mirror_file);*/
 
 	return res;
 }
@@ -250,12 +248,21 @@ void io_close (struct io_stream *s)
 	}
 	
 	if (s->opened) {
+		
 #ifdef HAVE_MMAP
-		if (s->source == IO_SOURCE_MMAP && s->mem
-				&& munmap(s->mem, s->size))
-			logit ("munmap() failed: %s", strerror(errno));
+		if (s->source == IO_SOURCE_MMAP) {
+			if (s->mem && munmap(s->mem, s->size))
+				logit ("munmap() failed: %s", strerror(errno));
+			close (s->fd);
+		}
 #endif
-		close (s->fd);
+		
+#ifdef HAVE_CURL
+		if (s->source == IO_SOURCE_CURL)
+			io_curl_close (s);
+#endif
+		if (s->source == IO_SOURCE_FD)
+			close (s->fd);
 	}
 
 	if (s->buffered) {
@@ -277,9 +284,6 @@ void io_close (struct io_stream *s)
 	if (s->strerror)
 		free (s->strerror);
 	free (s);
-
-	// DEBUG !!!
-/*	close (write_mirror_fd);*/
 
 	logit ("done");
 }
@@ -367,68 +371,77 @@ static void *io_read_thread (void *data)
 	return NULL;
 }
 
+static void io_open_file (struct io_stream *s, const char *file)
+{
+	struct stat file_stat;
+
+	if ((s->fd = open(file, O_RDONLY)) == -1)
+		s->errno_val = errno;
+	else if (fstat(s->fd, &file_stat) == -1)
+		s->errno_val = errno;
+	else {
+
+		s->size = file_stat.st_size;
+
+#ifdef HAVE_MMAP
+		if (options_get_int("UseMmap") && s->size > 0) {
+			if ((s->mem = mmap(0, s->size, PROT_READ, MAP_SHARED,
+							s->fd, 0))
+					== MAP_FAILED) {
+				s->mem = NULL;
+				logit ("mmap() failed: %s", strerror(errno));
+				s->source = IO_SOURCE_FD;
+			}
+			else {
+				logit ("mmap()ed %lu bytes",
+						(unsigned long)s->size);
+				s->source = IO_SOURCE_MMAP;
+				s->mem_pos = 0;
+			}
+		}
+		else {
+			logit ("Not using mmap()");
+			s->source = IO_SOURCE_FD;
+		}
+#else
+		s->source = IO_SOURCE_FD;
+#endif
+		
+		s->opened = 1;
+	}
+}
+
 /* Open the file. Return NULL on error. */
 struct io_stream *io_open (const char *file, const int buffered)
 {
 	struct io_stream *s;
-	struct stat file_stat;
 
 	assert (file != NULL);
 
 	s = xmalloc (sizeof(struct io_stream));
 	s->errno_val = 0;
 	s->strerror = NULL;
-	
-	if ((s->fd = open(file, O_RDONLY)) == -1) {
-		s->errno_val = errno;
-		return s;
-	}
+	s->opened = 0;
 
-	if (fstat(s->fd, &file_stat) == -1) {
-		s->errno_val = errno;
-		return s;
-	}
-
-	s->size = file_stat.st_size;
-
-#ifdef HAVE_MMAP
-	if (options_get_int("UseMmap") && s->size > 0) {
-		if ((s->mem = mmap(0, s->size, PROT_READ, MAP_SHARED,
-						s->fd, 0)) == MAP_FAILED) {
-			s->mem = NULL;
-			logit ("mmap() failed: %s", strerror(errno));
-			s->source = IO_SOURCE_FD;
-		}
-		else {
-			logit ("mmap()ed %lu bytes", (unsigned long)s->size);
-			s->source = IO_SOURCE_MMAP;
-			s->mem_pos = 0;
-		}
-	}
-	else {
-		logit ("Not using mmap()");
-		s->source = IO_SOURCE_FD;
-	}
-#else
-	s->source = IO_SOURCE_FD;
+#ifdef HAVE_CURL
+	if (!strncasecmp(file, "http://", sizeof("http://")-1)
+			|| !strncasecmp(file, "ftp://", sizeof("ftp://")-1))
+		io_curl_open (s, file);
+	else
 #endif
+	io_open_file (s, file);
 
-	s->opened = 1;
+	if (!s->opened)
+		return s;
+				
 	s->stop_read_thread = 0;
 	s->eof = 0;
 	s->after_seek = 0;
 	s->buffered = buffered;
 	s->pos = 0;
 
-	// DEBUG !!!
-/*	sprintf (write_mirror_file, "write_mirror_%d", write_mirror_num++);
-	write_mirror_fd = open (write_mirror_file, O_WRONLY | O_CREAT | O_TRUNC,
-			0600);
-	assert (write_mirror_fd != -1);
-	debug ("Write mirror: %s", write_mirror_file);*/
-
 	if (buffered) {
-		fifo_buf_init (&s->buf, options_get_int("InputBuffer") * 1024);
+		fifo_buf_init (&s->buf, 64 * 1024);
 		
 		pthread_mutex_init (&s->buf_mutex, NULL);
 		pthread_mutex_init (&s->io_mutex, NULL);
@@ -442,9 +455,33 @@ struct io_stream *io_open (const char *file, const int buffered)
 	return s;
 }
 
-int io_ok (const struct io_stream *s)
+/* Return != 0 if the there were no errors in the stream. */
+static int io_ok_nolock (struct io_stream *s)
 {
-	return !s->errno_val;
+	int res = 1;
+	
+#ifdef HAVE_CURL
+	if (s->source == IO_SOURCE_CURL && !io_curl_ok(s))
+		res = 0;
+	else
+#endif
+	if ((s->source == IO_SOURCE_FD || s->source == IO_SOURCE_MMAP)
+			&& s->errno_val)
+		res = 0;
+	
+	return res;
+}
+
+/* Return != 0 if the there were no errors in the stream. */
+int io_ok (struct io_stream *s)
+{
+	int res;
+	
+	LOCK (s->io_mutex);
+	res = io_ok_nolock (s);
+	UNLOCK (s->io_mutex);
+
+	return res;
 }
 
 static ssize_t io_read_buffered (struct io_stream *s, void *buf, size_t count)
@@ -453,7 +490,8 @@ static ssize_t io_read_buffered (struct io_stream *s, void *buf, size_t count)
 
 	LOCK (s->buf_mutex);
 
-	while (received < (ssize_t)count && io_ok(s) && !s->stop_read_thread
+	while (received < (ssize_t)count && io_ok_nolock(s)
+			&& !s->stop_read_thread
 			&& (!s->eof || fifo_buf_get_fill(&s->buf))) {
 		if (fifo_buf_get_fill(&s->buf)) {
 			received += fifo_buf_get (&s->buf, buf + received,
@@ -501,8 +539,6 @@ ssize_t io_read (struct io_stream *s, void *buf, size_t count)
 	else
 		received = io_read_unbuffered (s, buf, count);
 
-/*	write (write_mirror_fd, buf, received);*/
-
 	return received;
 }
 
@@ -514,9 +550,17 @@ char *io_strerror (struct io_stream *s)
 	if (s->strerror)
 		free (s->strerror);
 	
-	strerror_r (s->errno_val, err, sizeof(err));
-	s->strerror = (char *)xmalloc (sizeof(char)*(strlen(err)+1));
-	strcpy (s->strerror, err);
+#ifdef HAVE_CURL
+	if (s->source == IO_SOURCE_CURL && !io_curl_ok(s))
+		io_curl_strerror (s);
+	else
+#endif
+	if (s->errno_val) {
+		strerror_r (s->errno_val, err, sizeof(err));
+		s->strerror = xstrdup (err);
+	}
+	else
+		s->strerror = strdup ("OK");
 
 	return s->strerror;
 }
@@ -562,3 +606,18 @@ int io_eof (struct io_stream *s)
 
 	return eof;
 }
+
+void io_init ()
+{
+#ifdef HAVE_CURL
+	io_curl_init ();
+#endif
+}
+
+void io_cleanup ()
+{
+#ifdef HAVE_CURL
+	io_curl_cleanup ();
+#endif
+}
+

@@ -26,6 +26,7 @@
 #include "decoder.h"
 #include "files.h"
 #include "log.h"
+#include "io.h"
 
 static struct plugin {
 	lt_dlhandle handle;
@@ -73,6 +74,18 @@ struct decoder *get_decoder (const char *file)
 	
 	if ((i = find_type(file)) != -1)
 		return plugins[i].decoder;
+
+	return NULL;
+}
+
+struct decoder *get_decoder_by_content (struct io_stream *stream)
+{
+	int i;
+	
+	for (i = 0; i < plugins_num; i++)
+		if (plugins[i].decoder->can_decode
+				&& plugins[i].decoder->can_decode(stream))
+			return plugins[i].decoder;
 
 	return NULL;
 }

@@ -181,6 +181,8 @@ static void sndfile_get_error (void *prv_data, struct decoder_error *error)
 
 static struct decoder sndfile_decoder = {
 	sndfile_open,
+	NULL,
+	NULL,
 	sndfile_close,
 	sndfile_decode,
 	sndfile_seek,
