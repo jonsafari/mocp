@@ -13,8 +13,8 @@ Midnight Commander, and MOC will start playing all files in this directory
 beginning from the chosen file. There is no need to create playlists like in
 other players.
 
-If you want to combine some files from one or few directories on one play list,
-you can do this. The play list will be remembered between runs or you can save
+If you want to combine some files from one or few directories on one playlist,
+you can do this. The playlist will be remembered between runs or you can save
 it as an m3u file to load it whenever you want.
 
 Need the console where MOC is running for more important things? Need to close
@@ -33,7 +33,7 @@ Sphere Nist WAV, IRCAM SF, Creative VOC.
 Other features:
  - Simple mixer.
  - Color themes.
- - Searching the menu (the play list or a directory) like M-s in Midnight
+ - Searching the menu (the playlist or a directory) like M-s in Midnight
    Commander.
  - The way MOC creates titles from tags is configurable.
  - Optional character set conversion for file tags using iconv().
