@@ -24,6 +24,7 @@
 #endif
 #include <sys/un.h>
 #include <sys/stat.h>
+#include <sys/time.h>
 #include <unistd.h>
 #include <ncurses.h>
 #include <string.h>
@@ -102,6 +103,7 @@ static enum
 	WIN_HELP
 } main_win_mode = WIN_MENU;
 
+/* Information about the currently played file. */
 static struct file_info {
 	char title[256];
 	char bitrate[5];
@@ -113,6 +115,8 @@ static struct file_info {
 	int time_num;
 	int channels;
 	char state[3];
+	int state_code;
+	char *curr_file;
 } file_info;
 
 /* When we are waiting for data from the server, events can occur. We can't 
@@ -160,6 +164,11 @@ static struct
 	0,
 	0
 };
+
+/* Silent seeking - where we are in seconds. -1 - no seeking. */
+static int silent_seek_pos = -1;
+static time_t silent_seek_key_last = (time_t)0; /* when the silent seek key was
+						   last used */
 
 static void xterm_clear_title ()
 {
@@ -666,21 +675,25 @@ static void entry_disable ()
 	curs_set (0);
 }
 
+/* Draw the current time bar, or the silent seek time if silent_seek_pos >= 0.
+ */
 static void draw_curr_time_bar ()
 {
 	int i;
 	int to_fill;
+	int curr_time = silent_seek_pos >= 0
+		? silent_seek_pos : file_info.curr_time_num;
 	
 	wattrset (info_win, get_color(CLR_FRAME));
 	mvwaddch (info_win, 3, COLS - 2, ACS_LTEE);
 	mvwaddch (info_win, 3, 1, ACS_RTEE);
 
-	if (file_info.curr_time_num)
+	if (curr_time)
 
 		/* The duration can be smaller than the current time, if the
 		 * file was changed while playing. */
-		to_fill =  file_info.curr_time_num <= file_info.time_num ?
-			((float)file_info.curr_time_num / file_info.time_num)
+		to_fill =  curr_time <= file_info.time_num ?
+			((float)curr_time / file_info.time_num)
 			* (COLS - 4)
 			: COLS - 4;
 	else
@@ -875,6 +888,7 @@ static void reset_file_info ()
 	file_info.curr_time_num = -1;
 	file_info.channels = 1;
 	strcpy (file_info.state, "[]");
+	file_info.curr_file = NULL;
 }
 
 /* Set cwd to last directory written to a file, return 1 on success. */
@@ -1341,16 +1355,23 @@ static void update_bitrate ()
 	wrefresh (info_win);
 }
 
+/* Update the current time. If silent_seek_pos >= 0, use this time instead of
+ * the real time. */
 static void update_ctime ()
 {
 	int left;
+	int curr_time;
 	
-	send_int_to_srv (CMD_GET_CTIME);
-	file_info.curr_time_num = get_data_int ();
+	if (silent_seek_pos >= 0)
+		curr_time = silent_seek_pos;
+	else {
+		send_int_to_srv (CMD_GET_CTIME);
+		curr_time = file_info.curr_time_num = get_data_int ();
+	}
 
 	if (file_info.time_num != -1) {
-		sec_to_min (file_info.curr_time, file_info.curr_time_num);
-		left = file_info.time_num - file_info.curr_time_num;
+		sec_to_min (file_info.curr_time, curr_time);
+		left = file_info.time_num - curr_time;
 		sec_to_min (file_info.time_left, left > 0 ? left : 0);
 	}
 	else {
@@ -1450,16 +1471,41 @@ static void update_curr_file ()
 		file_info.title[0] = 0;
 		xterm_set_title ("");
 	}
+	
+	if (!file_info.curr_file || strcmp(file_info.curr_file, file)) {
+		if (file_info.curr_file)
+			free (file_info.curr_file);
 
-	free (file);
+		if (file[0])
+			file_info.curr_file = file;
+		else {
+			file_info.curr_file = NULL;
+			free (file);
+		}
+
+		/* Silent seeking makes no sense if the playing file has
+		 * changed */
+		silent_seek_pos = -1;
+	}
+	else
+		free (file);
 }
 
 /* Get and show the server state. */
 static void update_state ()
 {
+	int new_state;
+	
 	/* play | stop | pause */
 	send_int_to_srv (CMD_GET_STATE);
-	set_state (get_data_int());
+	new_state = get_data_int ();
+	set_state (new_state);
+
+	/* Silent seeking makes no sense if the state has changed. */
+	if (new_state != file_info.state_code) {
+		file_info.state_code = new_state;
+		silent_seek_pos = -1;
+	}
 
 	update_curr_file ();
 	
@@ -2875,6 +2921,55 @@ static void go_to_file_dir ()
 	free (file);
 }
 
+/* Return the time like the standard time() function, but rounded i.e. if we
+ * have 11.8 seconds, return 12 seconds. */
+static time_t rounded_time ()
+{
+	struct timeval exact_time;
+	time_t curr_time;
+
+	if (gettimeofday(&exact_time, NULL) == -1)
+		interface_fatal ("gettimeofday() failed: %s", strerror(errno));
+	
+	curr_time = exact_time.tv_sec;
+	if (exact_time.tv_usec > 500000)
+		curr_time++;
+
+	return curr_time;
+}
+
+/* Handle silent seek key. */
+static void seek_silent (const int sec)
+{
+	if (file_info.state_code == STATE_PLAY) {
+		if (silent_seek_pos == -1) {
+			silent_seek_pos = file_info.curr_time_num + sec;
+		}
+		else
+			silent_seek_pos += sec;
+			
+		if (silent_seek_pos < 0)
+			silent_seek_pos = 0;
+		else if (silent_seek_pos > file_info.time_num)
+			silent_seek_pos = file_info.time_num;
+
+		silent_seek_key_last = rounded_time ();
+		update_ctime ();
+	}
+}
+
+/* Handle releasing silent seek key. */
+static void do_silent_seek ()
+{
+	time_t curr_time = time(NULL);
+	
+	if (silent_seek_pos != -1 && silent_seek_key_last < curr_time) {
+		send_int_to_srv (CMD_SEEK);
+		send_int_to_srv (silent_seek_pos - file_info.curr_time_num - 1);
+		silent_seek_pos = -1;
+	}
+}
+
 /* Handle key */
 static void menu_key (const int ch)
 {
@@ -3085,6 +3180,12 @@ static void menu_key (const int ch)
 			case KEY_CMD_WRONG:
 				error ("Bad command");
 				break;
+			case KEY_CMD_SEEK_FORWARD_5:
+				seek_silent (5);
+				break;
+			case KEY_CMD_SEEK_BACKWARD_5:
+				seek_silent (-5);
+				break;
 			default:
 				debug ("Unhandled command: %d", cmd);
 				fatal ("Unhandled command");
@@ -3200,6 +3301,8 @@ void interface_loop ()
 				wrefresh (info_win);
 				msg_timeout = 0;
 			}
+
+			do_silent_seek ();
 		}
 		else if (ret == -1 && !want_quit && errno != EINTR)
 			interface_fatal ("select() failed: %s", strerror(errno));
@@ -3228,6 +3331,7 @@ void interface_loop ()
 			if (!want_quit) {
 				if (FD_ISSET(srv_sock, &fds))
 					get_and_handle_event ();
+				do_silent_seek ();
 				dequeue_events ();
 			}
 		}
