@@ -143,7 +143,6 @@ void options_init ()
 	option_add_str ("MusicDir", NULL);
 	option_add_int ("StartInMusicDir", 0);
 	option_add_int ("ShowStreamErrors", 0);
-	option_add_int ("Priority", 0);
 	option_add_int ("Repeat", 0);
 	option_add_int ("Shuffle", 0);
 	option_add_int ("AutoNext", 1);
@@ -171,10 +170,6 @@ int check_int_option (const char *name, const int val)
 			|| !strcasecmp(name, "StartInMusicDir")
 			) {
 		if (!(val == 1 || val == 0))
-			return 0;
-	}
-	else if (!strcasecmp(name, "Priority")) {
-		if (val < -20 || val > 19)
 			return 0;
 	}
 	else if (!strcasecmp(name, "OutputBuffer")) {

@@ -15,7 +15,6 @@ style. Features:
 	* Fast switching to your music directory.
 	* Playlists (without read/write to a file).
 	* Shuffle and repeat.
-	* Changing process priority to higher value.
 	* Output buffer in separate thread.
 	
 
