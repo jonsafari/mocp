@@ -78,7 +78,6 @@ static void *play_thread (void *unused)
 				player (file, df, &out_buf);
 				
 				state = STATE_STOP;
-				set_info_time (0);
 				set_info_rate (0);
 				set_info_bitrate (0);
 				set_info_channels (1);
