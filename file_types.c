@@ -31,26 +31,16 @@
 #include "wav.h"
 
 struct file_type_data {
-	char *ext;
+	char *ext;			/* file extension */
 	struct decoder_funcs *funcs;
+	char name[4];			/* short format name */
 };
 
 static struct file_type_data types[8];
 static int types_num = 0;
 
-int is_sound_file (char *name)
-{
-	char *ext = ext_pos (name);
-	int i;
-
-	if (ext)
-		for (i = 0; i < types_num; i++)
-			if (!strcasecmp(ext, types[i].ext))
-				return 1;
-	return 0;
-}
-
-struct decoder_funcs *get_decoder_funcs (char *file)
+/* Find the index in table types for the given file. Return -1 if not found. */
+static int find_type (char *file)
 {
 	char *ext = ext_pos (file);
 	int i;
@@ -58,22 +48,52 @@ struct decoder_funcs *get_decoder_funcs (char *file)
 	if (ext)
 		for (i = 0; i < types_num; i++)
 			if (!strcasecmp(ext, types[i].ext))
-				return types[i].funcs;
+				return i;
+	return -1;
+}
+
+int is_sound_file (char *name)
+{
+	return find_type(name) != -1 ? 1 : 0;
+}
+
+/* Return short format name for the given file or NULL if not found. */
+char *format_name (char *file)
+{
+	int i;
+	
+	if ((i = find_type(file)) != -1)
+		return types[i].name;
+
+	return NULL;
+
+}
+
+struct decoder_funcs *get_decoder_funcs (char *file)
+{
+	int i;
+	
+	if ((i = find_type(file)) != -1)
+		return types[i].funcs;
+
 	return NULL;
 }
 
 void file_types_init ()
 {
 	types[types_num].ext = "wav";
+	strcpy (types[types_num].name, "WAV");
 	types[types_num++].funcs = wav_get_funcs ();
 
 #ifdef HAVE_MAD
 	types[types_num].ext = "mp3";
+	strcpy (types[types_num].name, "MP3");
 	types[types_num++].funcs = mp3_get_funcs ();
 #endif
 
 #ifdef HAVE_VORBIS
 	types[types_num].ext = "ogg";
+	strcpy (types[types_num].name, "OGG");
 	types[types_num++].funcs = ogg_get_funcs ();
 #endif
 }
