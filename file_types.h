@@ -2,6 +2,7 @@
 #define FILE_TYPES_H
 
 #include "playlist.h"
+#include "audio.h"
 
 /* Functions that must be provided to support a file format.
  * void *data is a pointer to private data used by the decoder passed to each
@@ -17,7 +18,8 @@ struct decoder_funcs
 
 	/* Decode a piece of input and write it to the buf of size buf_len.
 	 * Return the number of butes written or 0 on EOF. */
-	int (*decode)(void *data, char *buf, int buf_len);
+	int (*decode)(void *data, char *buf, int buf_len,
+			struct sound_params *sound_params);
 
 	/* Seek in the stream by n seconds. */
 	void (*seek)(void *data, const int n);
