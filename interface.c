@@ -1502,10 +1502,6 @@ static int load_dir (char *dir)
 		return 0;
 	}
 
-	/* Get a new serial number */
-	send_int_to_srv (CMD_GET_SERIAL);
-	plist_set_serial (curr_plist, get_data_int());
-
 	plist_free (old_curr_plist);
 	free (old_curr_plist);
 
