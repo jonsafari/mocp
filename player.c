@@ -98,20 +98,20 @@ void player (const char *file, struct decoder_funcs *f, struct buf *out_buf)
 			break;
 		}
 		else if (request == REQ_SEEK) {
-			int sec = req_seek + audio_get_time ();
 			int decoder_seek;
 			
 			logit ("seeking");
-			buf_stop (out_buf);
-			buf_reset (out_buf);
-			if ((decoder_seek = f->seek(decoder_data, sec)) == -1)
+			if ((decoder_seek = f->seek(decoder_data, req_seek))
+					== -1)
 				logit ("error when seeking");
 			else {
+				buf_stop (out_buf);
+				buf_reset (out_buf);
 				buf_time_set (out_buf, decoder_seek);
 				eof = 0;
+				decoded = 0;
 			}
 			request = REQ_NOTHING;
-			decoded = 0;
 		}
 		else if (!eof && decoded <= buf_get_free(out_buf)
 				&& !sound_params_change) {
@@ -126,7 +126,8 @@ void player (const char *file, struct decoder_funcs *f, struct buf *out_buf)
 			sound_params_change = 0;
 			set_info_channels (sound_params.channels);
 			set_info_rate (sound_params.rate / 1000);
-			audio_open (&sound_params);
+			if (!audio_open(&sound_params))
+				break;
 			audio_opened = 1;
 		}
 		else if (eof && out_buf->fill == 0) {
@@ -165,7 +166,7 @@ void player_stop ()
 void player_seek (const int sec)
 {
 	request = REQ_SEEK;
-	req_seek = sec;
+	req_seek = sec + audio_get_time();
 	LOCK (request_cond_mutex);
 	pthread_cond_signal (&request_cond);
 	UNLOCK (request_cond_mutex);
