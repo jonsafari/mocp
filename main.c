@@ -281,6 +281,7 @@ static void start_moc (const struct parameters *params, char **args,
 
 	
 	options_free ();
+	file_types_cleanup ();
 }
 
 static void show_version ()
