@@ -306,13 +306,13 @@ static void show_usage (const char *prg_name) {
 "-h --help		Print usage and exit.\n"
 "-D --debug		Turn on logging to a file.\n"
 "-S --server		Run only the server.\n"
-"-F --foreground	Run server in foreground, log to stdout.\n"
+"-F --foreground		Run server in foreground, log to stdout.\n"
 "-R --sound-driver NAME	Use the specified sound driver (oss, null).\n"
 "-m --music-dir		Start in MusicDir.\n"
 "-a --append		Append the files passed in command line to the server\n"
 "			playlist and exit.\n"
 "-c --clear		Clear the server playlist and exit.\n"
-"-p --play		Play first element on the server playlist and exit.\n"
+"-p --play		Play first item on the server playlist and exit.\n"
 , prg_name);
 }
 
