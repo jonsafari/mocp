@@ -3,6 +3,7 @@
 
 int read_directory (const char *directory, struct plist *plist,
 		char ***dir_tab, int *ndirs);
+void read_directory_recurr (const char *directory, struct plist *plist);
 void free_dir_tab (char **tab, int i);
 void make_titles_file (struct plist *plist);
 void make_titles_tags (struct plist *plist);
