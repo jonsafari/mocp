@@ -1251,7 +1251,10 @@ static void go_file ()
 			strcpy (dir, cwd);				
 			slash = strrchr (dir, '/');
 			assert (slash != NULL);
-			*slash = 0;
+			if (slash == dir)
+				*(slash + 1) = 0;
+			else
+				*slash = 0;
 		}
 		else
 			strcpy (dir, menu_item->file);
