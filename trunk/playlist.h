@@ -35,11 +35,12 @@ int plist_next (struct plist *plist, int num);
 void plist_clear (struct plist *plist);
 void plist_delete (struct plist *plist, const int num);
 void plist_free (struct plist *plist);
-int plist_find (struct plist *plist, int num);
 void plist_sort_fname (struct plist *plist);
-int plist_find_fname (const struct plist *plist, const char *file);
+int plist_find_fname (struct plist *plist, const char *file);
 struct file_tags *tags_new ();
 void tags_free (struct file_tags *tags);
 char *build_title (const struct file_tags *tags);
+void plist_shuffle (struct plist *plist);
+void plist_copy (struct plist *dst, const struct plist *src);
 
 #endif
