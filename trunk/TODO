@@ -1,7 +1,7 @@
 Before 2.1.0:
 
-* Displaying file time and format, something like:
-  [02:54|OGG] (configurable elements)
+* Commands for displaying/hiding the format and time information.
+* Ask if the user wants to overwrite the playlist when saving.
 * Configuration options and command line parameters for selecting pid file and
   socket. A parameter for selecting different configuration file.
 * General procedures for reading files instead of doing this at the decoder
@@ -14,22 +14,25 @@ Before 2.1.0:
 * iconv() to fix encoding.
 * Use pathconf() instead of PATH_MAX.
 * Showing the buffer state.
-* configurable colors. Colors of the menu set in menu.c.
 * Adding the current directory to the playlist. Helps creating sorted
   playlist.
 * Update alsa mixer when changed by other application.
 * Fix cursor position in the entry field.
-* Ask if the user wants to overwrite the playlist when saving.
+* Fix showing time bigger than 99:59.
 
 In future:
 
+* fast going to a directory - when after CTRL-g user enters absolute path
+  or a path that begins with ~.
+* configurable saving the playlist at the end: ask, no, not if saved, always
 * Cache for tags in each directory. (.cache.m3u?)
+* Binary search in options code.
 * True shuffle.
 * 'D' command must not delete an item from the server playlist if the
   server is not playing from the playlist.
 * ESD
 * General error/fatal functions that recognize if they are in the interface or
-  in the server.
+  in the server and if ncurses were initialized.
 * Moving items on the playlist up and down.
 * Add a key for switching sort modes.
 * A bar showing time for current song.
@@ -44,8 +47,7 @@ In future:
 * Locales.
 * special themes for xterm - after detecting xterm load XtermTheme that
   supports xterm features.
-* fast going to a directory - when after CTRL-g user enters absolute path
-  or a path that begins with ~.
+* Redefining keys.
 
 Maybe never:
 
