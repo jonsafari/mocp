@@ -1458,6 +1458,14 @@ static void delete_item ()
 	}
 }
 
+static void update_menu ()
+{
+	werase (main_win);
+	main_border ();
+	menu_draw (menu);
+	wrefresh (main_win);
+}
+
 /* Turn on search file mode. */
 void search_file_mode_on ()
 {
@@ -1469,7 +1477,6 @@ void search_file_mode_on ()
 
 void search_file_key (const int ch)
 {
-
 	if (isgraph(ch) || ch == ' ') {
 		int item;
 		int len = strlen (search_string);
@@ -1484,10 +1491,7 @@ void search_file_key (const int ch)
 
 		if (item != -1) {
 			menu_setcurritem (menu, item);
-			werase (main_win);
-			main_border ();
-			menu_draw (menu);
-			wrefresh (main_win);
+			update_menu ();
 			draw_search_entry ();
 		}
 		else
@@ -1517,10 +1521,7 @@ void search_file_key (const int ch)
 				menu_next_turn(menu));
 
 		menu_setcurritem (menu, item);
-		werase (main_win);
-		main_border ();
-		menu_draw (menu);
-		wrefresh (main_win);
+		update_menu ();
 		draw_search_entry ();
 	}
 	else if (ch == '\n') {
@@ -1529,6 +1530,7 @@ void search_file_key (const int ch)
 		go_file ();
 		search_file_mode = 0;
 		update_info_win ();
+		update_menu ();
 	}
 	wrefresh (info_win);
 }
@@ -1536,7 +1538,7 @@ void search_file_key (const int ch)
 /* Handle key */
 static void menu_key (const int ch)
 {
-	int update_menu = 0;
+	int do_update_menu = 0;
 
 	if (main_win_mode == WIN_HELP) {
 
@@ -1563,31 +1565,31 @@ static void menu_key (const int ch)
 				break;
 			case '\n':
 				go_file ();
-				update_menu = 1;
+				do_update_menu = 1;
 				break;
 			case KEY_DOWN:
 				menu_driver (menu, REQ_DOWN);
-				update_menu = 1;
+				do_update_menu = 1;
 				break;
 			case KEY_UP:
 				menu_driver (menu, REQ_UP);
-				update_menu = 1;
+				do_update_menu = 1;
 				break;
 			case KEY_NPAGE:
 				menu_driver (menu, REQ_PGDOWN);
-				update_menu = 1;
+				do_update_menu = 1;
 				break;
 			case KEY_PPAGE:
 				menu_driver (menu, REQ_PGUP);
-				update_menu = 1;
+				do_update_menu = 1;
 				break;
 			case KEY_HOME:
 				menu_driver (menu, REQ_TOP);
-				update_menu = 1;
+				do_update_menu = 1;
 				break;
 			case KEY_END:
 				menu_driver (menu, REQ_BOTTOM);
-				update_menu = 1;
+				do_update_menu = 1;
 				break;
 			case 'Q':
 				send_int_to_srv (CMD_QUIT);
@@ -1605,7 +1607,7 @@ static void menu_key (const int ch)
 				break;
 			case 'f':
 				switch_read_tags ();
-				update_menu = 1;
+				do_update_menu = 1;
 				break;
 			case 'S':
 				toggle_option ("Shuffle");
@@ -1618,14 +1620,14 @@ static void menu_key (const int ch)
 				break;
 			case 'l':
 				toggle_plist ();
-				update_menu = 1;
+				do_update_menu = 1;
 				break;
 			case 'a':
 				add_file_plist ();
 				break;
 			case 'C':
 				clear_playlist ();
-				update_menu = 1;
+				do_update_menu = 1;
 				break;
 			case 'A':
 				add_dir_plist ();
@@ -1661,12 +1663,12 @@ static void menu_key (const int ch)
 				update_info_win ();
 				wrefresh (info_win);
 				wclear (main_win);
-				update_menu = 1;
+				do_update_menu = 1;
 				break;
 			case 'r':
 				if (visible_plist == curr_plist) {
 					reread_dir ();
-					update_menu = 1;
+					do_update_menu = 1;
 				}
 				break;
 			case 'H':
@@ -1675,14 +1677,14 @@ static void menu_key (const int ch)
 							"ShowHiddenFiles"));
 				if (visible_plist == curr_plist) {
 					reread_dir ();
-					update_menu = 1;
+					do_update_menu = 1;
 				}
 				break;
 			case 'm':
 				if (options_get_str("MusicDir")) {
 					go_to_dir (options_get_str(
 								"MusicDir"));
-					update_menu = 1;
+					do_update_menu = 1;
 				}
 				else
 					interface_error ("MusicDir not "
@@ -1690,7 +1692,7 @@ static void menu_key (const int ch)
 				break;
 			case 'd':
 				delete_item ();
-				update_menu = 1;
+				do_update_menu = 1;
 				break;
 			case CTRL('g'):
 				search_file_mode_on ();
@@ -1701,12 +1703,8 @@ static void menu_key (const int ch)
 				interface_error ("Bad key");
 		}
 
-		if (update_menu) {
-			werase (main_win);
-			main_border ();
-			menu_draw (menu);
-			wrefresh (main_win);
-		}
+		if (do_update_menu)
+			update_menu ();
 	}
 }
 
