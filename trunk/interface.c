@@ -117,12 +117,20 @@ static struct file_info {
 
 /* When we are waiting for data from the server, events can occur. We can't 
  * handle them while waiting, so we push them on the queue. */
-#define EVENTS_MAX	20
-static struct
+struct event
 {
-	int queue[EVENTS_MAX];
-	int num;
-} events = { {}, 0 };
+	int type;	/* type of the event */
+	char *data;	/* optional data string associated with the event */
+	struct event *next;
+};
+
+struct event_queue
+{
+	struct event *head;
+	struct event *tail;
+};
+
+struct event_queue events = { NULL, NULL };
 
 enum entry_type
 {
@@ -336,35 +344,51 @@ static char *get_str_from_srv ()
 }
 
 /* Push an event on the queue if it's not already there. */
-static void event_push (const int event)
+static void event_push (const int event, char *data)
 {
-	int i;
-
-	for (i = 0; i < events.num; i++)
-		if (events.queue[i] == event) {
-			debug ("Not adding event 0x%02x, it's already in the "
-					"queue.", event);
-			return;
-		}
-
-	assert (events.num < EVENTS_MAX - 1);
-	events.queue[events.num++] = event;
+	if (!events.head) {
+		events.head = (struct event *)xmalloc (sizeof(struct event));
+		events.head->next = NULL;
+		events.head->type = event;
+		events.head->data = data;
+		events.tail = events.head;
+	}
+	else {
+		assert (events.head != NULL);
+		assert (events.tail != NULL);
+		assert (events.tail->next == NULL);
+		
+		events.tail->next = (struct event *)xmalloc (
+				sizeof(struct event));
+		events.tail = events.tail->next;
+		events.tail->next = NULL;
+		events.tail->type = event;
+		events.tail->data = data;
+	}
 
 	debug ("Added event 0x%02x to the queue", event);
+}
+
+/* Wait for EV_DATA handling other events. */
+static void wait_for_data ()
+{
+	int event;
+	
+	do {
+		event = get_int_from_srv ();
+		
+		if (event == EV_PLIST_ADD || event == EV_PLIST_DEL)
+			event_push (event, get_str_from_srv());
+		else if (event != EV_DATA)
+			event_push (event, NULL);
+	 } while (event != EV_DATA);
 }
 
 /* Get an integer value from the server that will arrive after EV_DATA. */
 static int get_data_int ()
 {
-	int event;
-
-	while (1) {
-		event = get_int_from_srv ();
-		if (event == EV_DATA)
-			return get_int_from_srv ();
-		else
-			event_push (event);
-	}		
+	wait_for_data ();
+	return get_int_from_srv ();
 }
 
 static int get_mixer ()
@@ -1103,15 +1127,8 @@ static int is_subdir (char *dir1, char *dir2)
 /* Get a string value from the server that will arrive after EV_DATA. */
 static char *get_data_str ()
 {
-	int event;
-
-	while (1) {
-		event = get_int_from_srv ();
-		if (event == EV_DATA)
-			return get_str_from_srv ();
-		else
-			event_push (event);
-	}		
+	wait_for_data ();
+	return get_str_from_srv ();
 }
 
 static void send_playlist (struct plist *plist)
@@ -1728,8 +1745,10 @@ static int get_server_playlist ()
 
 		/* get the file name */
 		file = get_str_from_srv ();
-		if (!file[0])
+		if (!file[0]) {
+			free (file);
 			break; /* end of the list */
+		}
 		title = get_str_from_srv ();
 		artist = get_str_from_srv ();
 		album = get_str_from_srv ();
@@ -1761,6 +1780,11 @@ static int get_server_playlist ()
 					playlist->items[a].tags->album = album;
 				else
 					free (album);
+			}
+			else {
+				free (title);
+				free (artist);
+				free (album);
 			}
 			
 			if (time != -1) {
@@ -1902,7 +1926,8 @@ void init_interface (const int sock, const int debug, char **args,
 	}
 	
 	send_int_to_srv (CMD_SEND_EVENTS);
-	send_int_to_srv (CMD_CAN_SEND_PLIST);
+	if (options_get_int("SyncPlaylist"))
+		send_int_to_srv (CMD_CAN_SEND_PLIST);
 	menu_draw (curr_menu);
 	wrefresh (main_win);
 	update_state ();
@@ -1920,8 +1945,130 @@ static void update_error ()
 	free (err);
 }
 
+static void update_menu ()
+{
+	werase (main_win);
+	main_border ();
+	menu_draw (curr_menu);
+	wrefresh (main_win);
+}
+
+/* Handle EV_PLIST_ADD. */
+static void event_plist_add (const char *file)
+{
+	if (plist_find_fname(playlist, file) == -1) {
+		int item_num = plist_add (playlist, file);
+		
+		if (options_get_int("ReadTags"))
+			make_tags_title (playlist, item_num);
+		else
+			make_file_title (playlist, item_num,
+					options_get_int("HideFileExtension"));
+		
+		if (curr_menu == playlist_menu) {
+			playlist_menu = make_menu (playlist, NULL, NULL);
+			curr_menu = playlist_menu;
+		}
+		else
+			playlist_menu = NULL;
+	}
+	else
+		interface_error ("A request for adding item that is already on"
+				" the playlist.");
+}
+
+/* Switch between the current playlist and the playlist
+ * (curr_plist/playlist). */
+static void toggle_plist ()
+{
+	if (visible_plist == playlist) {
+		if (!cwd[0])
+			
+			/* we were at the playlist from the startup */
+			enter_first_dir ();
+		else {
+			visible_plist = curr_plist;
+			curr_menu = curr_plist_menu;
+			set_title (cwd);
+			update_curr_file ();
+			set_interface_status (NULL);
+		}
+	}
+	else if (plist_count(playlist)) {
+		char msg[50];
+
+		visible_plist = playlist;
+		if (!playlist_menu)
+			playlist_menu = make_menu (playlist, NULL, NULL);
+		curr_menu = playlist_menu;
+		set_title ("Playlist");
+		update_curr_file ();
+		sprintf (msg, "%d files on the list", plist_count(playlist));
+		set_interface_status (msg);
+	}
+	else
+		error ("The playlist is empty.");
+
+	update_info_win ();
+	wrefresh (info_win);
+}
+
+/* Handle EV_PLIST_DEL. */
+static void event_plist_del (const char *file)
+{
+	int item = plist_find_fname (playlist, file);
+
+	if (item != -1) {
+		int selected_item = 0;
+		int top_item = 0;
+		
+		plist_delete (playlist, item);
+		
+		if (playlist_menu) {
+			selected_item = playlist_menu->selected;
+			top_item = playlist_menu->top;
+			menu_free (playlist_menu);
+		}
+
+		if (plist_count(playlist) > 0) {
+			if (curr_menu == playlist_menu) {
+				playlist_menu = make_menu (playlist, NULL, 0);
+				menu_set_top_item (playlist_menu, top_item);
+				menu_setcurritem (playlist_menu, selected_item);
+				curr_menu = playlist_menu;
+				update_curr_file ();
+				update_info_win ();
+				wrefresh (info_win);
+			}
+			else 
+				playlist_menu = NULL;
+		}
+		else {
+			if (curr_menu == playlist_menu)
+				toggle_plist ();
+			plist_clear (playlist);
+			playlist_menu = NULL;
+		}
+	}
+	else
+		logit ("Server requested deleting an item not present on the"
+				" playlist.");
+}
+
+/* Handle EV_PLIST_CLEAR. */
+static void event_plist_clear ()
+{
+	if (visible_plist == playlist)
+		toggle_plist();
+	plist_clear (playlist);
+	if (playlist_menu) {
+		menu_free (playlist_menu);
+		playlist_menu = NULL;
+	}
+}
+
 /* Handle server event. */
-static void server_event (const int event)
+static void server_event (const int event, char *data)
 {
 	logit ("EVENT: 0x%02x", event);
 
@@ -1959,6 +2106,25 @@ static void server_event (const int event)
 		case EV_SEND_PLIST:
 			forward_playlist ();
 			break;
+		case EV_PLIST_ADD:
+			if (options_get_int("SyncPlaylist")) {
+				event_plist_add (data);
+				if (curr_menu == playlist_menu)
+					update_menu ();
+			}
+			break;
+		case EV_PLIST_CLEAR:
+			if (options_get_int("SyncPlaylist")) {
+				event_plist_clear ();
+				update_menu ();
+			}
+			break;
+		case EV_PLIST_DEL:
+			if (options_get_int("SyncPlaylist")) {
+				event_plist_del (data);
+				update_menu ();
+			}
+			break;
 		default:
 			interface_message ("Unknown event: 0x%02x", event);
 			logit ("Unknown event 0x%02x", event);
@@ -1976,42 +2142,6 @@ static void play_it (const int plist_pos)
 	send_int_to_srv (CMD_PLAY);
 	send_str_to_srv (file);
 	free (file);
-}
-
-/* Switch between the current playlist and the playlist
- * (curr_plist/playlist). */
-static void toggle_plist ()
-{
-	if (visible_plist == playlist) {
-		if (!cwd[0])
-			
-			/* we were at the playlist from the startup */
-			enter_first_dir ();
-		else {
-			visible_plist = curr_plist;
-			curr_menu = curr_plist_menu;
-			set_title (cwd);
-			update_curr_file ();
-			set_interface_status (NULL);
-		}
-	}
-	else if (plist_count(playlist)) {
-		char msg[50];
-
-		visible_plist = playlist;
-		if (!playlist_menu)
-			playlist_menu = make_menu (playlist, NULL, NULL);
-		curr_menu = playlist_menu;
-		set_title ("Playlist");
-		update_curr_file ();
-		sprintf (msg, "%d files on the list", plist_count(playlist));
-		set_interface_status (msg);
-	}
-	else
-		error ("The playlist is empty.");
-
-	update_info_win ();
-	wrefresh (info_win);
 }
 
 static void go_dir_up ()
@@ -2112,6 +2242,11 @@ static void add_file_plist ()
 	if (plist_find_fname(playlist, menu_item->file) == -1) {
 		plist_add_from_item (playlist,
 				&curr_plist->items[menu_item->plist_pos]);
+		if (options_get_int("SyncPlaylist")) {
+			send_int_to_srv (CMD_CLI_PLIST_ADD);
+			send_str_to_srv (curr_plist->items[
+					menu_item->plist_pos].file);
+		}
 		if (playlist_menu) {
 			menu_free (playlist_menu);
 			playlist_menu = NULL;
@@ -2131,6 +2266,8 @@ static void clear_playlist ()
 		menu_free (playlist_menu);
 		playlist_menu = NULL;
 	}
+	if (options_get_int("SyncPlaylist"))
+		send_int_to_srv (CMD_CLI_PLIST_CLEAR);
 	interface_message ("The playlist was cleared.");
 }
 
@@ -2170,6 +2307,19 @@ static void add_dir_plist ()
 
 	plist_sort_fname (&plist);
 	plist_cat (playlist, &plist);
+
+	if (options_get_int("SyncPlaylist")) {
+		int i;
+
+		set_iface_status_ref ("Notifying clients...");
+		
+		/* Send the new items to the server (notify other clients) */
+		for (i = 0; i < plist.num; i++)
+			if (!plist_deleted(&plist, i)) {
+				send_int_to_srv (CMD_CLI_PLIST_ADD);
+				send_str_to_srv (plist_get_file(&plist, i));
+			}
+	}
 	
 	if (playlist_menu) {
 		menu_free (playlist_menu);
@@ -2318,7 +2468,7 @@ static void delete_item ()
 	top_item = curr_menu->top;
 	
 	menu_item = menu_curritem (curr_menu);
-	send_int_to_srv (CMD_DELETE);
+	send_int_to_srv (CMD_CLI_PLIST_DEL);
 	send_str_to_srv (playlist->items[menu_item->plist_pos].file);
 
 	plist_delete (playlist, menu_item->plist_pos);
@@ -2340,14 +2490,6 @@ static void delete_item ()
 		toggle_plist ();
 		plist_clear (playlist);
 	}
-}
-
-static void update_menu ()
-{
-	werase (main_win);
-	main_border ();
-	menu_draw (curr_menu);
-	wrefresh (main_win);
 }
 
 static int entry_search_key (const int ch)
@@ -2974,32 +3116,21 @@ static void do_resize ()
 /* Handle events from the queue. */
 static void dequeue_events ()
 {
-	/* While handling events, new events could be added to the queue,
-	 * we recognize such situation be checking if number of events has
-	 * changed. */
-
 	debug ("Dequeuing events...");
 
-	while (events.num) {
-		int i;
-		int num_before = events.num; /* number of events can change
-						during events handling */
+	while (events.head) {
+		struct event *e = events.head;
 		
-		debug ("%d events pending", events.num);
+		server_event (e->type, e->data);
 
-		for (i = 0; i < num_before; i++) {
-			int event = events.queue[i];
+		/* Remove this event from the queue */
+		events.head = e->next;
+		if (!events.head)
+			events.tail = NULL; /* the queue is empty */
 
-			/* "Mark" it as handled. When such event occur before
-			 * we handle all events, we don't lose it in
-			 * push_event(). */
-			events.queue[i] = -1;
-			server_event (event);
-		}
-
-		memmove (events.queue, events.queue + num_before,
-				sizeof(int) * (events.num - num_before));
-		events.num -= num_before;
+		if (e->data)
+			free (e->data);
+		free (e);
 	}
 
 	debug ("done");
@@ -3013,6 +3144,24 @@ static void handle_interrupt ()
 		update_info_win ();
 		wrefresh (info_win);
 	}
+}
+
+/* Get event from the server and handle it. */
+static void get_and_handle_event ()
+{
+	int type = get_int_from_srv ();
+	char *data;
+
+	/* some events contail data */
+	if (type == EV_PLIST_ADD || type == EV_PLIST_DEL)
+		data = get_str_from_srv ();
+	else
+		data = NULL;
+
+	server_event (type, data);
+
+	if (data)
+		free (data);
 }
 
 void interface_loop ()
@@ -3062,7 +3211,7 @@ void interface_loop ()
 
 			if (!want_quit) {
 				if (FD_ISSET(srv_sock, &fds))
-					server_event (get_int_from_srv());
+					get_and_handle_event ();
 				dequeue_events ();
 			}
 		}
