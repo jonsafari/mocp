@@ -42,7 +42,8 @@
 #endif
 
 #ifdef HAVE_MMAP
-static ssize_t io_read_mmap (struct io_stream *s, void *buf, size_t count)
+static ssize_t io_read_mmap (struct io_stream *s, const int dont_move,
+		void *buf, size_t count)
 {
 	struct stat file_stat;
 	size_t to_read;
@@ -81,18 +82,34 @@ static ssize_t io_read_mmap (struct io_stream *s, void *buf, size_t count)
 	
 	to_read = MIN(count, s->size - s->mem_pos);
 	memcpy (buf, s->mem + s->mem_pos, to_read);
-	s->mem_pos += to_read;
+
+	if (!dont_move)
+		s->mem_pos += to_read;
 
 	return to_read;
 }
 #endif
 
-static ssize_t io_read_fd (struct io_stream *s, void *buf, size_t count)
+static ssize_t io_read_fd (struct io_stream *s, const int dont_move, void *buf,
+		size_t count)
 {
-	return read (s->fd, buf, count);
+	ssize_t res;
+	
+	res = read (s->fd, buf, count);
+	
+	if (res < 0)
+		return -1;
+
+	if (dont_move && lseek(s->fd, -res, SEEK_CUR) < 0)
+		return -1;
+	
+	return res;
 }
 
-static ssize_t io_internal_read (struct io_stream *s, char *buf, size_t count)
+/* Reat the data from the stream resource. If dont_move was set, the stream
+ * position is unchanded. */
+static ssize_t io_internal_read (struct io_stream *s, const int dont_move,
+		char *buf, size_t count)
 {
 	ssize_t res = 0;
 	
@@ -101,16 +118,19 @@ static ssize_t io_internal_read (struct io_stream *s, char *buf, size_t count)
 
 #ifdef HAVE_MMAP
 	if (s->source == IO_SOURCE_MMAP)
-		res = io_read_mmap (s, buf, count);
+		res = io_read_mmap (s, dont_move, buf, count);
 	else
 #endif
 #ifdef HAVE_CURL
-	if (s->source == IO_SOURCE_CURL)
+	if (s->source == IO_SOURCE_CURL) {
+		if (dont_move)
+			fatal ("You can't peek data directly from curl");
 		res = io_curl_read (s, buf, count);
+	}
 	else
 #endif
 	if (s->source == IO_SOURCE_FD)
-		res = io_read_fd (s, buf, count);
+		res = io_read_fd (s, dont_move, buf, count);
 	else
 		fatal ("Unknown io_stream->source: %d", s->source);
 
@@ -133,7 +153,7 @@ static off_t io_seek_fd (struct io_stream *s, const int where)
 
 static off_t io_seek_buffered (struct io_stream *s, const long where)
 {
-	off_t res;
+	off_t res = -1;
 
 	logit ("Seeking...");
 
@@ -159,7 +179,7 @@ static off_t io_seek_buffered (struct io_stream *s, const long where)
 
 static off_t io_seek_unbuffered (struct io_stream *s, const long where)
 {
-	off_t res;
+	off_t res = -1;
 	
 #ifdef HAVE_MMAP
 	if (s->source == IO_SOURCE_MMAP)
@@ -306,7 +326,7 @@ static void *io_read_thread (void *data)
 		s->after_seek = 0;
 		UNLOCK (s->buf_mutex);
 		
-		read_buf_fill = io_internal_read (s, read_buf,
+		read_buf_fill = io_internal_read (s, 1, read_buf,
 				sizeof(read_buf));
 		UNLOCK (s->io_mutex);
 		debug ("Read %d bytes", (int)read_buf_fill);
@@ -484,6 +504,31 @@ int io_ok (struct io_stream *s)
 	return res;
 }
 
+/* Read data from the buffer withoud removing them, so stream position is
+ * unchanged. You can't peek more data than the buffer size. */
+static ssize_t io_peek_internal (struct io_stream *s, void *buf, size_t count)
+{
+	ssize_t received = 0;
+
+	debug ("Peeking data...");
+
+	LOCK (s->buf_mutex);
+
+	/* Wait until enough data will be available */
+	while (io_ok_nolock(s) && !s->stop_read_thread
+			&& received < (ssize_t)fifo_buf_get_fill(&s->buf)
+			&& fifo_buf_get_space (&s->buf)
+			&& !s->eof)
+		pthread_cond_wait (&s->buf_fill_cond, &s->buf_mutex);
+
+	received = fifo_buf_peek (&s->buf, buf, count - received);
+	debug ("Read %d bytes so far", (int)received);
+
+	UNLOCK (s->buf_mutex);
+	
+	return io_ok(s) ? received : -1;
+}
+
 static ssize_t io_read_buffered (struct io_stream *s, void *buf, size_t count)
 {
 	ssize_t received = 0;
@@ -513,12 +558,17 @@ static ssize_t io_read_buffered (struct io_stream *s, void *buf, size_t count)
 	return io_ok(s) ? received : -1;
 }
 
-static ssize_t io_read_unbuffered (struct io_stream *s, void *buf, size_t count)
+/* Read data from the stream without buffering. If dont_move was set, the
+ * stream position is unchanged. */
+static ssize_t io_read_unbuffered (struct io_stream *s, const int dont_move,
+		void *buf, size_t count)
 {
 	ssize_t res;
 	
-	res = io_internal_read (s, buf, count);
-	s->pos += res;
+	res = io_internal_read (s, dont_move, buf, count);
+
+	if (!dont_move)
+		s->pos += res;
 
 	return res;
 }
@@ -537,7 +587,27 @@ ssize_t io_read (struct io_stream *s, void *buf, size_t count)
 	if (s->buffered)
 		received = io_read_buffered (s, buf, count);
 	else
-		received = io_read_unbuffered (s, buf, count);
+		received = io_read_unbuffered (s, 0, buf, count);
+
+	return received;
+}
+
+/* Read data from the stream to the buffer of size count. The data are not
+ * removed from the stream. Return the number of bytes read, 0 on EOF, < 0
+ * on error. */
+ssize_t io_peek (struct io_stream *s, void *buf, size_t count)
+{
+	ssize_t received;
+	
+	assert (s != NULL);
+	assert (buf != NULL);
+
+	debug ("Reading...");
+
+	if (s->buffered)
+		received = io_peek_internal (s, buf, count);
+	else
+		received = io_read_unbuffered (s, 1, buf, count);
 
 	return received;
 }

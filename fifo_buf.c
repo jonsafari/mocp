@@ -68,7 +68,38 @@ size_t fifo_buf_put (struct fifo_buf *b, const char *data, size_t size)
 	return written;
 }
 
-/* Get data from the buffer. Returns the number of bytes read. */
+/* Copy data from the beggining of the buffer to the user buffer. Returns the
+ * number of bytes copied. */
+size_t fifo_buf_peek (struct fifo_buf *b, char *user_buf,
+		size_t user_buf_size)
+{
+	size_t user_buf_pos = 0, written = 0;
+	ssize_t left = b->fill;
+	ssize_t pos = b->pos;
+	
+	assert (b != NULL);
+	assert (b->buf != NULL);
+
+	while (left && written < user_buf_size) {
+		size_t to_copy = pos + left <= b->size
+			? left : b->size - pos;
+
+		if (to_copy > user_buf_size - written)
+			to_copy = user_buf_size - written;
+
+		memcpy (user_buf + user_buf_pos, b->buf + pos, to_copy);
+		user_buf_pos += to_copy;
+		written += to_copy;
+		
+		left -= to_copy;
+		pos += to_copy;
+		if (pos == b->size)
+			pos = 0;
+	}
+
+	return written;
+}
+
 size_t fifo_buf_get (struct fifo_buf *b, char *user_buf,
 		size_t user_buf_size)
 {

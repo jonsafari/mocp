@@ -63,6 +63,7 @@ struct io_stream
 
 struct io_stream *io_open (const char *file, const int buffered);
 ssize_t io_read (struct io_stream *s, void *buf, size_t count);
+ssize_t io_peek (struct io_stream *s, void *buf, size_t count);
 off_t io_seek (struct io_stream *s, off_t offset, int whence);
 void io_close (struct io_stream *s);
 int io_ok (struct io_stream *s);
