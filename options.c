@@ -158,6 +158,7 @@ void options_init ()
 	option_add_str ("MOCDir", "~/.moc");
 	option_add_int ("UseMmap", 1);
 	option_add_int ("Precache", 1);
+	option_add_str ("TagsIconv", NULL);
 }
 
 /* Return 1 if a parameter to an integer option is valid. */
@@ -202,6 +203,14 @@ int check_str_option (const char *name, const char *val)
 	else if (!strcasecmp(name, "ShowTime")) {
 		if (strcasecmp(val, "yes") && strcasecmp(val, "no")
 				&& strcasecmp(val, "IfAvailable"))
+			return 0;
+	}
+	else if (!strcasecmp(name, "TagsIconv")) {
+		char *colon;
+
+		/* simple check if val is FORMAT1:FORMAT2 */
+		if (!(colon = strchr(val, ':')) || strchr(colon + 1, ':')
+				|| *(colon + 1) == 0 || colon == val)
 			return 0;
 	}
 	

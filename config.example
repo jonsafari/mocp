@@ -79,3 +79,13 @@ ShowTime		= IfAvailable
 # Use mmap() to read files (currently used for reading mp3). mmap() is much
 # slower on NFS.
 UseMmap			= yes
+
+# Perform character set conversion using iconv() to tags and file titles
+# read from playlist files. This option has format: FROM:TO.
+# To get list of supported sets use the iconv -l command.
+
+# Just strip non-ASCII chars
+#TagsIconv		= ASCII:ASCII
+
+# Usefull for Poles: Convert from Windows encoding to ISO
+#TagsIconv		= WINDOWS-1250:ISO-8859-2
