@@ -1243,6 +1243,7 @@ static int go_to_dir (char *dir)
 		strcpy (cwd, dir);
 
 	if (options_get_int("ReadTags")) {
+		set_iface_status_ref ("Reading tags...");
 		read_tags (curr_plist);
 		make_titles_tags (curr_plist);
 	}
@@ -2029,13 +2030,16 @@ static void switch_read_tags ()
 		option_set_int("ReadTags", 0);
 		make_titles_file (curr_plist);
 		make_titles_file (playlist);
+		set_iface_status_ref ("ReadTags: no");
 	}
 	else {
 		option_set_int("ReadTags", 1);
+		set_iface_status_ref ("Reading tags...");
 		read_tags (playlist);
 		make_titles_tags (playlist);
 		read_tags (curr_plist);
 		make_titles_tags (curr_plist);
+		set_iface_status_ref ("ReadTags: yes");
 	}
 
 	if (playlist_menu)
