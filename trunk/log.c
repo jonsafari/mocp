@@ -20,7 +20,8 @@
 static FILE *logfp = NULL; /* logging file stream */
 
 /* Put something into the log */
-void logit (const char *format, ...)
+void internal_logit (const char *file, const int line, const char *function,
+		const char *format, ...)
 {
 	char msg[256];
 	char time_str[20];
@@ -38,10 +39,16 @@ void logit (const char *format, ...)
 	strftime (time_str, sizeof(time_str), "%b %e %T",
 			localtime(&utc_time));
 
-	fprintf (logfp, "%s: %s\n", time_str, msg);
+	fprintf (logfp, "%s: %s:%d %s(): %s\n", time_str, file, line, function,
+			msg);
 	fflush (logfp);
 
 	va_end (va);
+}
+
+/* fake logit() function for NDEBUG */
+void fake_logit (const char *format, ...)
+{
 }
 
 /* Initialize logging stream */
