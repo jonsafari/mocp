@@ -60,6 +60,7 @@ struct client
 	int wants_events;	/* requested events? */
 	struct events events;
 	int requests_plist;	/* is the client waiting for the playlist? */
+	int can_send_plist;	/* can this client send a playlist? */
 };
 
 static struct client clients[CLIENTS_MAX];
@@ -161,6 +162,7 @@ static int add_client (int sock)
 			clients[i].events.num = 0;
 			clients[i].socket = sock;
 			clients[i].requests_plist = 0;
+			clients[i].can_send_plist = 0;
 			return 1;
 		}
 
@@ -515,14 +517,14 @@ static int req_get_ftime (struct client *cli)
 	return 1;
 }
 
-/* Return the index of the first conencted client that is able to send the
- * playlist or -1 if there isn't any. */
-static int first_connected_client ()
+/* Return the index of the first client able to send the playlist or -1 if
+ * there isn't any. */
+static int find_sending_plist ()
 {
 	int i;
 	
 	for (i = 0; i < CLIENTS_MAX; i++)
-		if (clients[i].socket != -1 && !clients[i].requests_plist)
+		if (clients[i].socket != -1 && clients[i].can_send_plist)
 			return i;
 	return -1;
 }
@@ -540,7 +542,7 @@ static int get_client_plist (struct client *cli)
 
 	cli->requests_plist = 1;
 	
-	first = first_connected_client ();
+	first = find_sending_plist ();
 	if (first == -1) {
 		debug ("No clients with the playlist.");
 		cli->requests_plist = 0;
@@ -842,6 +844,9 @@ static void handle_command (struct client *cli)
 		case CMD_SEND_PLIST:
 			if (!req_send_plist(cli))
 				err = 1;
+			break;
+		case CMD_CAN_SEND_PLIST:
+			cli->can_send_plist = 1;
 			break;
 		default:
 			logit ("Bad command (0x%x) from the client.", cmd);

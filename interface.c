@@ -1900,6 +1900,7 @@ void init_interface (const int sock, const int debug, char **args,
 	}
 	
 	send_int_to_srv (CMD_SEND_EVENTS);
+	send_int_to_srv (CMD_CAN_SEND_PLIST);
 	menu_draw (curr_menu);
 	wrefresh (main_win);
 	update_state ();
