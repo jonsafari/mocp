@@ -2,7 +2,9 @@
 	* Multiple clients. You can have moc interface on many
 	  consoles/terminals.
 	* Searching the menu (CTRL-g) like M-s in Midnight Commander.
-	* Playlist load support (m3u).
+	* Playlist load/save support (m3u).
+	* ALSA support.
+	* MOC remembers the playlist between runs.
 	* Small fixes and cleanups.
 2.0.0
 	* Split into client-server, you can detach the interface and leave
