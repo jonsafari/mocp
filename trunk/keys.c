@@ -350,7 +350,41 @@ static struct command commands[] = {
 	}
 };
 
-#define COMMANDS_NUM	(sizeof(commands)/sizeof(commands[0]))
+static struct special_keys
+{
+	char *name;
+	int key;
+} special_keys[] = {
+	{ "DOWN",		KEY_DOWN },
+	{ "UP",			KEY_UP },
+	{ "LEFT",		KEY_LEFT },
+	{ "RIGHT",		KEY_RIGHT },
+	{ "HOME",		KEY_HOME },
+	{ "BACKSPACE",		KEY_BACKSPACE },
+	{ "DEL",		KEY_DC },
+	{ "INS",		KEY_IC },
+	{ "ENTER",		'\n' },
+	{ "PAGE_UP",		KEY_PPAGE },
+	{ "PAGE_DOWN",		KEY_NPAGE },
+	{ "TAB",		'\t' },
+	{ "END",		KEY_END },
+	{ "KEYPAD_CENTER",	KEY_B2 },
+	{ "F1",			KEY_F(1) },
+	{ "F2",			KEY_F(2) },
+	{ "F3",			KEY_F(3) },
+	{ "F4",			KEY_F(4) },
+	{ "F5",			KEY_F(5) },
+	{ "F6",			KEY_F(6) },
+	{ "F7",			KEY_F(7) },
+	{ "F8",			KEY_F(8) },
+	{ "F9",			KEY_F(9) },
+	{ "F10",		KEY_F(10) },
+	{ "F11",		KEY_F(11) },
+	{ "F12",		KEY_F(12) }
+};
+
+#define COMMANDS_NUM		(sizeof(commands)/sizeof(commands[0]))
+#define SPECIAL_KEYS_NUM	(sizeof(special_keys)/sizeof(special_keys[0]))
 
 enum key_cmd get_key_cmd (const enum key_context context, const int key)
 {
@@ -403,8 +437,8 @@ static void keymap_parse_error (const int line, const char *msg)
  * Return -1 on error. */
 static int parse_key (const char *symbol)
 {
-	/* TODO: function keys, other (home, tab?) */
-
+	unsigned int i;
+	
 	if (strlen(symbol) == 1)
 		
 		/* Just a regular char */
@@ -428,7 +462,10 @@ static int parse_key (const char *symbol)
 		return symbol[2] | META_KEY_FLAG;
 	}
 
-	/* TODO: Special keys */
+	/* Special keys. */
+	for (i = 0; i < SPECIAL_KEYS_NUM; i++)
+		if (!strcasecmp(special_keys[i].name, symbol))
+			return special_keys[i].key;
 
 	return -1;
 }
@@ -513,8 +550,6 @@ static void load_key_map (const char *file_name)
 	}
 
 	fclose (file);
-
-//	fatal ("DEBUG");
 }
 
 /* Check if any used default key is not defined for something else. */
@@ -532,4 +567,14 @@ void keys_init ()
 		load_key_map (file);
 		check_keys ();
 	}
+}
+
+/* Get a nice key name. */
+static char *get_key_name (const int key)
+{
+}
+
+/* Return a string contains the list of keys used for command. */
+char *get_command_keys (const char *command)
+{
 }
