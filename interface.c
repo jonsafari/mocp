@@ -1664,7 +1664,8 @@ static enum color_index find_color_element_name (const char *name)
 		{ "entry",		CLR_ENTRY },
 		{ "entry_title",	CLR_ENTRY_TITLE },
 		{ "error",		CLR_ERROR },
-		{ "message",		CLR_MESSAGE }
+		{ "message",		CLR_MESSAGE },
+		{ "plist_time",		CLR_PLIST_TIME }
 	};
 	assert (name != NULL);
 
