@@ -1130,8 +1130,6 @@ static int go_to_dir (char *dir)
 	playlists = file_list_new ();
 
 	if (!read_directory(new_dir, dirs, playlists, curr_plist)) {
-		if (chdir(cwd))
-			interface_fatal ("Can't go to the previous directory.");
 		set_interface_status (NULL);
 		wrefresh (info_win);
 		plist_free (curr_plist);
@@ -1367,7 +1365,7 @@ static void set_default_colours ()
 	make_colour (CLR_BAR_FILL, COLOR_BLACK, COLOR_CYAN, A_NORMAL);
 	make_colour (CLR_ENTRY, COLOR_WHITE, COLOR_BLUE, A_NORMAL);
 	make_colour (CLR_ENTRY_TITLE, COLOR_BLACK, COLOR_CYAN, A_BOLD);
-	make_colour (CLR_ERROR, COLOR_RED, COLOR_BLUE, A_NORMAL);
+	make_colour (CLR_ERROR, COLOR_RED, COLOR_BLUE, A_BOLD);
 	make_colour (CLR_MESSAGE, COLOR_GREEN, COLOR_BLUE, A_BOLD);
 }
 
