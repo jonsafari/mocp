@@ -48,5 +48,6 @@ int plist_count (struct plist *plist);
 void plist_set_title (struct plist *plist, const int num, const char *title);
 void plist_set_file (struct plist *plist, const int num, const char *file);
 int plist_deleted (const struct plist *plist, const int num);
+void plist_cat (struct plist *a, const struct plist *b);
 
 #endif
