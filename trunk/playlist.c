@@ -550,7 +550,8 @@ void plist_cat (struct plist *a, const struct plist *b)
 	int i;
 
 	for (i = 0; i < b->num; i++)
-		plist_add_from_item (a, &b->items[i]);
+		if (plist_find_fname(a, b->items[i].file) == -1)
+			plist_add_from_item (a, &b->items[i]);
 }
 
 /* Copy titles_tags and times from src to dst if the data are available and
