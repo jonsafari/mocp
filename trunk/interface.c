@@ -1678,7 +1678,7 @@ static void process_args (char **args, const int num)
 			resolve_path (path, sizeof(path), args[i]);
 
 			if (dir == 1)
-				read_directory_recurr (path, playlist);
+				read_directory_recurr (path, playlist, 1);
 			else if (dir == 0 && is_sound_file(path))
 				plist_add (playlist, path);
 		}
@@ -1886,8 +1886,6 @@ static void event_plist_add (struct plist_item *item)
 {
 	if (plist_find_fname(playlist, item->file) == -1) {
 		char msg[50];
-		int selected_item = 0;
-		int top_item = 0;
 		int item_num = plist_add_from_item (playlist, item);
 		
 		if (options_get_int("ReadTags"))
@@ -1896,20 +1894,13 @@ static void event_plist_add (struct plist_item *item)
 			make_file_title (playlist, item_num,
 					options_get_int("HideFileExtension"));
 
-		if (playlist_menu) {
-			selected_item = playlist_menu->selected;
-			top_item = playlist_menu->top;
+		if (curr_menu == playlist_menu) {
+			/* TODO: append item to the menu */
+		}
+		else {
+			playlist_menu = NULL;
 			menu_free (playlist_menu);
 		}
-		
-		if (curr_menu == playlist_menu) {
-			playlist_menu = make_menu (playlist, NULL, NULL);
-			menu_set_top_item (playlist_menu, top_item);
-			menu_setcurritem (playlist_menu, selected_item);
-			curr_menu = playlist_menu;
-		}
-		else
-			playlist_menu = NULL;
 		
 		sprintf (msg, "%d files on the list", plist_count(playlist));
 		set_iface_status_ref (msg);
@@ -2238,7 +2229,7 @@ static void add_dir_plist ()
 
 	set_iface_status_ref ("reading directories...");
 	plist_init (&plist);
-	read_directory_recurr (menu_item->file, &plist);
+	read_directory_recurr (menu_item->file, &plist, 0);
 	if (options_get_int("ReadTags")) {
 		set_iface_status_ref ("Getting tags...");
 		switch_titles_tags (&plist);

@@ -196,7 +196,7 @@ static void append_items (int sock, char **args, int num)
 		int dir = isdir(args[i]);
 
 		if (dir == 1)
-			read_directory_recurr (args[i], &plist);
+			read_directory_recurr (args[i], &plist, 1);
 		else if (dir == 0 && is_sound_file(args[i]))
 			plist_add (&plist, args[i]);
 	}

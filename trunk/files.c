@@ -550,17 +550,16 @@ int read_directory (const char *directory, struct file_list *dirs,
 }
 
 /* Recursively add files from the directory to the playlist. 
- * Return 1 if OK (and even some errors), 0 if the user interrupted.
- * The playlist must be empty, because we don't check if a file is already
- * on the playlist. */
-int read_directory_recurr (const char *directory, struct plist *plist)
+ * Return 1 if OK (and even some errors), 0 if the user interrupted. */
+int read_directory_recurr (const char *directory, struct plist *plist,
+		const int check_duplicates)
 {
 	DIR *dir;
 	struct dirent *entry;
 
 	assert (plist != NULL);
 	assert (directory != NULL);
-	assert (plist->num == 0);
+	assert (check_duplicates || (!check_duplicates && plist->num == 0));
 
 	if (!(dir = opendir(directory))) {
 		error ("Can't read directory: %s", strerror(errno));
@@ -586,7 +585,8 @@ int read_directory_recurr (const char *directory, struct plist *plist)
 		}
 		type = file_type (file);
 		if (type == F_DIR) {
-			if (!read_directory_recurr(file, plist))
+			if (!read_directory_recurr(file, plist,
+						check_duplicates))
 				return 0;
 		}
 		else if (type == F_SOUND)
