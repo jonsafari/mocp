@@ -319,7 +319,7 @@ static void *mp3_open (const char *file)
 	mad_frame_mute (&data->frame);
 	data->stream.next_frame = NULL;
 	data->stream.sync = 0;
-	data->stream.error = MAD_ERROR_BUFLEN;
+	data->stream.error = MAD_ERROR_NONE;
 #ifdef HAVE_MMAP
 	if (data->mapped)
 		mad_stream_buffer (&data->stream, data->mapped,
@@ -329,6 +329,7 @@ static void *mp3_open (const char *file)
 		if (lseek(data->infile, SEEK_SET, 0) == (off_t)-1) {
 			error ("lseek() failed: %s", strerror(errno));
 			close (data->infile);
+			data->stream.error = MAD_ERROR_BUFLEN;
 			free (data);
 			return NULL;
 		}
