@@ -1014,7 +1014,8 @@ static void add_to_menu (struct menu *menu, struct plist *plist, const int num)
 	int added;
 	struct plist_item *item = &plist->items[num];
 	
-	added = menu_add (menu, item->title, num, F_SOUND, item->file);
+	added = menu_add (menu, item->title, num, file_type(item->file),
+			item->file);
 
 	if (item->tags && item->tags->time != -1) {
 		char time_str[6];
@@ -2319,11 +2320,11 @@ static void go_dir_up ()
 static void go_file ()
 {
 	int selected = menu_curritem (curr_menu);
+	enum file_type type = menu_item_get_type(curr_menu, selected);
 
-	if (menu_item_get_type(curr_menu, selected) == F_SOUND)
+	if (type == F_SOUND || type == F_URL)
 		play_it (menu_item_get_plist_pos(curr_menu, selected));
-	else if (menu_item_get_type(curr_menu, selected) == F_DIR
-			&& visible_plist == curr_plist) {
+	else if (type == F_DIR && visible_plist == curr_plist) {
 		if (!strcmp(menu_item_get_file(curr_menu, selected), ".."))
 			go_dir_up ();
 		else {
@@ -2333,12 +2334,11 @@ static void go_file ()
 			go_to_dir (dir);
 		}
 	}
-	else if (menu_item_get_type(curr_menu, selected) == F_DIR
-			&& visible_plist == playlist)
+	else if (type == F_DIR && visible_plist == playlist)
 		
 		/* the only item on the playlist of type F_DIR is '..' */
 		toggle_plist ();
-	else if (menu_item_get_type(curr_menu, selected) == F_PLAYLIST) {
+	else if (type == F_PLAYLIST) {
 		if (plist_count(playlist)) {
 			error ("Please clear the playlist, because "
 					"I'm not sure you want to do this.");
