@@ -1,8 +1,4 @@
 Before 2.2.0:
-* SyncPlaylist as command line option.
-* serial numbers for playlists. locking when sending a playlist to the server.
-* When adding files to the playlist, add them also to the server's playlist.
-* Fix deleting items from the playlist and the server playlist.
 * Shift-left and Shift-right for faster, silent seeking (10 sec. per keystroke).
 * cleanup all TODO entries
 * valgrind the client and the server.
