@@ -328,6 +328,12 @@ static void show_version ()
 #ifdef HAVE_VORBIS
 	printf (" OGG");
 #endif
+#ifdef HAVE_FLAC
+	printf (" FLAC");
+#endif
+#ifdef HAVE_SNDFILE
+	printf (" SNDFILE");
+#endif
 #ifdef HAVE_OSS
 	printf (" OSS");
 #endif
