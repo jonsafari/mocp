@@ -202,8 +202,6 @@ static void start_moc (const struct parameters *params)
 			fatal ("The server is busy (another client is "
 					"connected)");
 	}
-	else
-		close (server_sock);
 
 	options_free ();
 }
