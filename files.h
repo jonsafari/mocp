@@ -36,5 +36,6 @@ char *read_line (FILE *file);
 void iconv_init ();
 void iconv_cleanup ();
 char *iconv_str (char *str);
+char *find_match_dir (char *dir);
 
 #endif
