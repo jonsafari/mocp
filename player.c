@@ -70,10 +70,6 @@ static void update_time ()
 	}
 }
 
-/* Does the parameters p1 and p2 are equal? */
-#define sound_params_eq(p1, p2) (p1.format == p2.format \
-		&& p1.channels == p2.channels && p1.rate == p2.rate)
-
 static void *precache_thread (void *data)
 {
 	struct precache *precache = (struct precache *)data;
@@ -183,7 +179,6 @@ void player (char *file, char *next_file, struct buf *out_buf)
 	struct sound_params sound_params = { 0, 0, 0 };
 	struct sound_params new_sound_params;
 	int sound_params_change = 0;
-	int audio_opened = 0;
 	struct decoder_funcs *f;
 
 	f = get_decoder_funcs (file);
@@ -205,7 +200,6 @@ void player (char *file, char *next_file, struct buf *out_buf)
 		set_info_rate (sound_params.rate / 1000);
 		if (!audio_open(&sound_params))
 			return;
-		audio_opened = 1;
 		buf_put (out_buf, precache.buf, precache.buf_fill);
 	}
 	else if (!(decoder_data = f->open(file))) {
@@ -281,15 +275,12 @@ void player (char *file, char *next_file, struct buf *out_buf)
 		}
 		else if (!eof && sound_params_change && out_buf->fill == 0) {
 			logit ("sound parameters has changed.");
-			if (audio_opened)
-				audio_close ();
 			sound_params = new_sound_params;
 			sound_params_change = 0;
 			set_info_channels (sound_params.channels);
 			set_info_rate (sound_params.rate / 1000);
 			if (!audio_open(&sound_params))
 				break;
-			audio_opened = 1;
 		}
 		else if (eof && out_buf->fill == 0) {
 			logit ("played everything");
@@ -298,7 +289,6 @@ void player (char *file, char *next_file, struct buf *out_buf)
 	}
 
 	f->close (decoder_data);
-	audio_close ();
 	buf_set_notify_cond (out_buf, NULL, NULL);
 	logit ("exiting");
 }
