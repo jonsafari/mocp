@@ -1,6 +1,8 @@
 #ifndef PROTOCOL_H
 #define PROTOCOL_H
 
+#include "playlist.h"
+
 /* Definition of events send by server to the client */
 #define EV_STATE	0x01 /* server has changed the state */
 #define EV_CTIME	0x02 /* current time of the song has changed */
@@ -69,5 +71,7 @@ char *get_str (int sock);
 int send_str (int sock, const char *str);
 int get_time (int sock, time_t *i);
 int send_time (int sock, time_t i);
+int send_item (int sock, const struct plist_item *item);
+struct plist_item *recv_item (int sock);
 
 #endif
