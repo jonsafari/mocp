@@ -544,6 +544,7 @@ static struct decoder flac_decoder = {
 	flac_get_error,
 	flac_our_format_ext,
 	flac_get_name,
+	NULL,
 	NULL
 };
 

@@ -587,6 +587,7 @@ static struct decoder mp3_decoder = {
 	mp3_get_error,
 	mp3_our_format_ext,
 	mp3_get_name,
+	NULL,
 	NULL
 };
 
