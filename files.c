@@ -583,11 +583,8 @@ int read_directory_recurr (const char *directory, struct plist *plist,
 			continue;
 		}
 		type = file_type (file);
-		if (type == F_DIR) {
-			if (!read_directory_recurr(file, plist,
-						check_duplicates))
-				return 0;
-		}
+		if (type == F_DIR)
+			read_directory_recurr(file, plist, check_duplicates);
 		else if (type == F_SOUND)
 			plist_add (plist, file);
 	}
