@@ -1,7 +1,6 @@
 Before 2.2.0:
 * test if sync_plists_data() isn't too slow.
 * test if plist_total_time() isn't too slow.
-* A key for going up a directory (e.g. Ctrl-PageUp like in Midnight Commander).
 * Shift-left and Shift-right for faster seeking (10 sec. per keystroke).
 * When playing file - use the time read by the server in the interface.
 * configurable saving the playlist at the end: ask, no, not if saved, always.
@@ -43,6 +42,7 @@ In future:
 * Locales.
 * Song ratings.
 * www.musepack.net (www.caddr.com)
+* Silent seeking
 
 Maybe never:
 
