@@ -37,8 +37,6 @@
 #include "files.h"
 #include "playlist.h"
 
-#define CONFIG_FILE	"config"
-
 struct parameters
 {
 	int debug;
@@ -101,19 +99,22 @@ char *xstrdup (const char *s)
 /* Return path to a file in MOC config directory. NOT THREAD SAFE */
 char *create_file_name (const char *file)
 {
-	char *home_dir = getenv("HOME");
+	char *home_dir;
 	static char fname[PATH_MAX];
-	int len;
+	char *moc_dir = options_get_str ("MOCDir");
 	
-	if (!home_dir)
-		fatal ("No HOME environmential variable.");
-	
-	len = strlen(home_dir) + strlen(CONFIG_DIR) + strlen(file) + 3;
-
-	if (len > PATH_MAX)
+	if (moc_dir[0] == '~') {
+		if (!(home_dir = getenv("HOME")))
+			fatal ("No HOME environmential variable.");
+		if (snprintf(fname, sizeof(fname), "%s/%s/%s", home_dir,
+					moc_dir + 1, file)
+				>= (int)sizeof(fname))
+			fatal ("Path too long.");
+	}
+	else if (snprintf(fname, sizeof(fname), "%s/%s", moc_dir, file)
+			>= (int)sizeof(fname))
 		fatal ("Path too long.");
 
-	sprintf (fname, "%s/%s/%s", home_dir, CONFIG_DIR, file);
 	return fname;
 }
 
@@ -198,7 +199,6 @@ static void start_moc (const struct parameters *params, char **args,
 	int list_sock;
 	int server_sock = -1;
 
-	options_parse (create_file_name(CONFIG_FILE));
 	file_types_init ();
 	srand (time(NULL));
 
@@ -330,6 +330,8 @@ static void show_usage (const char *prg_name) {
 "-x --exit		Shutdown the server.\n"
 "-T --theme theme	Use selected theme file (read from ~/.moc/themes if\n"
 "			the path is not absolute.\n"
+"-C --config FILE       Use the specified config file instead of the default.\n"
+"-M --moc-dir DIR       Use the specified MOC directory instead of the default.\n"
 , prg_name);
 }
 
@@ -357,8 +359,6 @@ static void server_command (struct parameters *params)
 {
 	int sock;
 
-	options_parse (create_file_name(CONFIG_FILE));
-	
 	if ((sock = server_connect()) == -1)
 		fatal ("The server is not running");
 
@@ -396,16 +396,19 @@ int main (int argc, char *argv[])
 		{ "stop",		0, NULL, 's' },
 		{ "exit",		0, NULL, 'x' },
 		{ "theme",		1, NULL, 'T' },
+		{ "config",		1, NULL, 'C' },
+		{ "moc-dir",		1, NULL, 'M' },
 		{ 0, 0, 0, 0 }
 	};
 	int ret, opt_index = 0;
 	struct parameters params;
+	char *config_file = NULL;
 
 	memset (&params, 0, sizeof(params));
 	options_init ();
 
-	while ((ret = getopt_long(argc, argv, "VhDSFR:macpsxT:", long_options,
-					&opt_index)) != -1) {
+	while ((ret = getopt_long(argc, argv, "VhDSFR:macpsxT:C:M:",
+					long_options, &opt_index)) != -1) {
 		switch (ret) {
 			case 'V':
 				show_version ();
@@ -456,6 +459,13 @@ int main (int argc, char *argv[])
 				option_set_str ("Theme", optarg);
 				option_ignore_config ("Theme");
 				break;
+			case 'C':
+				config_file = xstrdup (optarg);
+				break;
+			case 'M':
+				option_set_str ("MOCDir", optarg);
+				option_ignore_config ("MOCDir");
+				break;
 			default:
 				show_usage (argv[0]);
 				return 1;
@@ -467,8 +477,12 @@ int main (int argc, char *argv[])
 	if (params.dont_run_iface && params.only_server)
 		fatal ("-c, -a and -p options can't be used with --server");
 
+	options_parse (config_file ? config_file
+			: create_file_name("config"));
+	if (config_file)
+		free (config_file);
 	check_moc_dir ();
-
+	
 	if (params.dont_run_server)
 		server_command (&params);
 	else
