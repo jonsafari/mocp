@@ -1142,6 +1142,12 @@ static void update_curr_file ()
 
 	send_int_to_srv (CMD_GET_SNAME);
 	file = get_data_str ();
+
+	if (playlist_menu)
+		menu_unmark_item (playlist_menu);
+	if (curr_plist_menu)
+		menu_unmark_item (curr_plist_menu);
+
 	if (file[0]) {
 		char *title = find_title (file);
 
@@ -1155,7 +1161,6 @@ static void update_curr_file ()
 	}
 	else {
 		file_info.title[0] = 0;
-		menu_unmark_item (curr_menu);
 		xterm_set_title ("");
 	}
 
