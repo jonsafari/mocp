@@ -41,7 +41,6 @@ struct parameters
 	int debug;
 	int only_server;
 	int foreground;
-	char sound_driver[16];
 };
 
 /* End program with a message. Use when an error occurs and we can't recover. */
@@ -145,7 +144,6 @@ static void start_moc (const struct parameters *params)
 
 	check_moc_dir ();
 
-	options_init ();
 	options_parse (create_file_name(CONFIG_FILE));
 	file_types_init ();
 	srand (time(NULL));
@@ -249,6 +247,7 @@ static void show_usage (const char *prg_name) {
 "-S --server		Run only the server.\n"
 "-F --foreground	Run server in foreground, log to stdout.\n"
 "-R --sound-driver NAME	Use the specified sound driver (oss, null).\n"
+"-m --music-dir		Start in MusicDir.\n"
 , prg_name);
 }
 
@@ -276,17 +275,19 @@ int main (int argc, char *argv[])
 		{ "server",		0, NULL, 'S' },
 		{ "foreground",		0, NULL, 'F' },
 		{ "sound-driver",	1, NULL, 'R' },
+		{ "music-dir",		0, NULL, 'm' },
 		{ 0, 0, 0, 0 }
 	};
 	int ret, opt_index = 0;
 	struct parameters params = {
 		/* debug */		0,
 		/* only_server */	0,
-		/* foreground */	0,
-		/* sound_driver */	""
+		/* foreground */	0
 	};
 
-	while ((ret = getopt_long(argc, argv, "VhDSFR:", long_options,
+	options_init ();
+
+	while ((ret = getopt_long(argc, argv, "VhDSFR:m", long_options,
 					&opt_index)) != -1) {
 		switch (ret) {
 			case 'V':
@@ -305,10 +306,14 @@ int main (int argc, char *argv[])
 				params.foreground = 1;
 				break;
 			case 'R':
-				strncpy (params.sound_driver, optarg,
-						sizeof(params.sound_driver));
-				params.sound_driver[sizeof(params.sound_driver)-1]
-					= 0;
+				if (!check_str_option("SoundDriver", optarg))
+					fatal ("No such sound driver");
+				option_set_str ("SoundDriver", optarg);
+				option_ignore_config ("SoundDriver");
+				break;
+			case 'm':
+				option_set_int ("StartInMusicDir", 1);
+				option_ignore_config ("StartInMusicDir");
 				break;
 			default:
 				show_usage (argv[0]);
@@ -318,10 +323,6 @@ int main (int argc, char *argv[])
 	
 	if (params.foreground && !params.only_server)
 		fatal ("Can't use --foreground without --server");
-
-	if (params.sound_driver[0]
-			&& !proper_sound_driver(params.sound_driver))
-		fatal ("Bad sound driver.");
 
 	start_moc (&params);
 
