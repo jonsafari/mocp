@@ -40,57 +40,62 @@
 #include "audio.h"
 #include "buf.h"
 #include "options.h"
+#include "file_types.h"
 
 /* Used only if mmap() is not available */
 #define INPUT_BUFFER	(64 * 1024)
 
-/* Information about the file */
-struct {
+struct mp3_data
+{
 	int infile; /* fd on the mp3 file */
 	unsigned long bitrate;
 	unsigned int freq;
 	short channels;
 	signed long duration; /* Total time of the file in seconds*/
 	off_t size; /* Size of the file */
-	struct xing xing;
-	short has_xing;
+
 #ifdef HAVE_MMAP
 	char *mapped;
 	int mapped_size;
 #endif
-} info;
+	
+	unsigned char in_buff[INPUT_BUFFER];
 
-static unsigned char in_buff[INPUT_BUFFER];
+	struct mad_stream stream;
+	struct mad_frame frame;
+	struct mad_synth synth;
+	int first_frame; /* Are we going to decode the first frame now? */
+};
 
-/* Fill in the mad buffer, return number of bytes read, 0 on eof, < 0 on error */
-static size_t fill_buff (struct mad_stream *stream)
+/* Fill in the mad buffer, return number of bytes read, 0 on eof or error */
+static size_t fill_buff (struct mp3_data *data)
 {
 	size_t remaining;
 	ssize_t read_size;
 	unsigned char *read_start;
 	
-	if (stream->next_frame != NULL) {
-		remaining = stream->bufend - stream->next_frame;
-		memmove (in_buff, stream->next_frame, remaining);
-		read_start = in_buff + remaining;
+	if (data->stream.next_frame != NULL) {
+		remaining = data->stream.bufend - data->stream.next_frame;
+		memmove (data->in_buff, data->stream.next_frame, remaining);
+		read_start = data->in_buff + remaining;
 		read_size = INPUT_BUFFER - remaining;
 	}
 	else {
-		read_start = in_buff;
+		read_start = data->in_buff;
 		read_size = INPUT_BUFFER;
 		remaining = 0;
 	}
 
-	read_size = read (info.infile, read_start, read_size);
+	read_size = read (data->infile, read_start, read_size);
 	if (read_size < 0) {
 		error ("read() failed: %s\n", strerror (errno));
-		return -1;
+		return 0;
 	}
 	else if (read_size == 0)
 		return 0;
 
-	mad_stream_buffer(stream, in_buff, read_size + remaining);
-	stream->error = 0;
+	mad_stream_buffer(&data->stream, data->in_buff, read_size + remaining);
+	data->stream.error = 0;
 
 	return read_size;
 }
@@ -113,7 +118,7 @@ static char *get_tag (struct id3_tag *tag, const char *what)
 }
 
 /* Fill info structure with data from the id3 tag */
-void mp3_info (const char *file_name, struct file_tags *info)
+static void mp3_info (const char *file_name, struct file_tags *info)
 {
 	struct id3_tag *tag;
 	struct id3_file *id3file;
@@ -141,48 +146,57 @@ void mp3_info (const char *file_name, struct file_tags *info)
 	id3_file_close (id3file);
 }
 
-
-static int load_mp3 (const char *file_name)
+static void *mp3_open (const char *file)
 {
 	struct stat stat;
+	struct mp3_data *data;
+
+	data = (struct mp3_data *)xmalloc (sizeof(struct mp3_data));
 
 	/* Reset information about the file */
-	info.bitrate = 0;
-	info.freq = 0;
-	info.channels = 0;
-	info.duration = 0;
-	info.has_xing = 0;
+	data->bitrate = 0;
+	data->freq = 0;
+	data->channels = 0;
+	data->duration = 0;
 
 	/* Open the file */
-	if ((info.infile = open(file_name, O_RDONLY)) == -1) {
+	if ((data->infile = open(file, O_RDONLY)) == -1) {
 		error ("open() failed: %s\n", strerror (errno));
-		return 0;
+		free (data);
+		return NULL;
 	}
 
-	if (fstat(info.infile, &stat) == -1) {
+	if (fstat(data->infile, &stat) == -1) {
 		error ("Can't stat() file: %s\n", strerror(errno));
-		close (info.infile);
-		return 0;
+		close (data->infile);
+		free (data);
+		return NULL;
 	}
 
-	info.size = stat.st_size;
+	data->size = stat.st_size;
+	data->first_frame = 1;
 
+	mad_stream_init (&data->stream);
+	mad_frame_init (&data->frame);
+	mad_synth_init (&data->synth);
+	
 #ifdef HAVE_MMAP
-	info.mapped_size = info.size;
-	info.mapped = mmap (0, info.mapped_size, PROT_READ, MAP_SHARED,
-			info.infile, 0);
-	if (info.mapped == MAP_FAILED) {
+	data->mapped_size = data->size;
+	data->mapped = mmap (0, data->mapped_size, PROT_READ, MAP_SHARED,
+			data->infile, 0);
+	if (data->mapped == MAP_FAILED) {
 		logit ("mmap() failed: %s, using standard read()",
 				strerror(errno));
-		info.mapped = NULL;
+		data->mapped = NULL;
 	}
-	else
-		logit ("mmapped() %ld bytes of file", info.size);
+	else {
+		mad_stream_buffer (&data->stream, data->mapped, data->mapped_size);
+		data->stream.error = 0;
+		logit ("mmapped() %ld bytes of file", data->size);
+	}
 #endif
 
-	/*seek = 0;*/
-
-	return 1;
+	return data;
 }
 
 /* Scale PCM data to 16 bit unsigned */
@@ -201,80 +215,153 @@ static inline signed int scale (mad_fixed_t sample)
 	return sample >> (MAD_F_FRACBITS + 1 - 16);
 }
 
-static int write_output (struct mad_pcm *pcm, struct mad_header *header)
+static int put_output (char *buf, int buf_len, struct mad_pcm *pcm,
+		struct mad_header *header)
 {
 	unsigned int nsamples;
 	mad_fixed_t const *left_ch, *right_ch;
-	char *output;
-	int olen = 0;
+	int olen;
 	int pos = 0;
-	int sent;
 
 	nsamples = pcm->length;
 	left_ch = pcm->samples[0];
 	right_ch = pcm->samples[1];
 	olen = nsamples * MAD_NCHANNELS (header) * 2;
-	output = (char *) xmalloc (olen * sizeof (char));
 
+	if (olen > buf_len) {
+		logit ("PCM buffer to small!");
+		return 0;
+	}
+	
 	while (nsamples--) {
 		signed int sample;
 
 		/* output sample(s) in 16-bit signed little-endian PCM */
 		sample = scale (*left_ch++);
-		output[pos++] = (sample >> 0) & 0xff;
-		output[pos++] = (sample >> 8) & 0xff;
+		buf[pos++] = (sample >> 0) & 0xff;
+		buf[pos++] = (sample >> 8) & 0xff;
 
 		if (MAD_NCHANNELS (header) == 2) {
 			sample = scale (*right_ch++);
-			output[pos++] = (sample >> 0) & 0xff;
-			output[pos++] = (sample >> 8) & 0xff;
+			buf[pos++] = (sample >> 0) & 0xff;
+			buf[pos++] = (sample >> 8) & 0xff;
 		}
 	}
-	sent = audio_send_buf (output, olen);
-	free (output);
-	return sent;
+
+	return olen;
 }
 
-void mp3_play (const char *file, struct buf *out_buf)
+static int mp3_decode (void *void_data, char *buf, int buf_len)
 {
-	int first_frame = 1;
-	int seek_skip = 0, seek = -1;
-	int written;
-	struct mad_stream stream;
-	struct mad_frame frame;
-	struct mad_synth synth;
+	struct mp3_data *data = (struct mp3_data *)void_data;
 
-	if (!load_mp3(file))
-		return;
-
-	mad_stream_init (&stream);
-	mad_frame_init (&frame);
-	mad_synth_init (&synth);
-	
-#ifdef HAVE_MMAP
-	if (info.mapped) {
-		mad_stream_buffer (&stream, info.mapped, info.mapped_size);
-		stream.error = 0;
-	}
-#endif
-	
 	while (1) {
-		enum play_request request;
 
-		/* Fill the input buffer */
-		if (stream.buffer == NULL ||
-			stream.error == MAD_ERROR_BUFLEN) {
+		/* Fill the input buffer if needed */
+		if (data->stream.buffer == NULL ||
+			data->stream.error == MAD_ERROR_BUFLEN) {
 #ifdef HAVE_MMAP
-			if (info.mapped)
-				break; /* FIXME: check if the size of file
+			if (data->mapped)
+				return 0; /* FIXME: check if the size of file
 					  has't changed */
 			else
 #endif
-			if (fill_buff(&stream) <= 0)
-				break;
+			if (!fill_buff(data))
+				return 0;
 		}
 		
-		/* Skip 2 frames after seeking */
+		if (mad_frame_decode (&data->frame, &data->stream)) {
+			if (MAD_RECOVERABLE(data->stream.error)) {
+
+				/* Ignore LOSTSYNC */
+				if (data->stream.error == MAD_ERROR_LOSTSYNC)
+					continue;
+
+				if (options_get_int("ShowStreamErrors"))
+					error ("Broken frame: %s",
+							mad_stream_errorstr(&data->stream));
+				continue;
+			}
+			else if (data->stream.error == MAD_ERROR_BUFLEN)
+				continue;
+			else {
+				if (options_get_int("ShowStreamErrors"))
+					error ("Broken frame: %s",
+							mad_stream_errorstr (&data->stream));
+				return 0;
+			}
+		}
+
+		/* Bitrate and number or channels can change */
+		if (data->channels != MAD_NCHANNELS(&data->frame.header) ||
+				data->freq != data->frame.header.samplerate) {
+			if (!data->first_frame)
+				audio_close ();
+			
+			if ((data->freq = data->frame.header.samplerate) == 0) {
+				error ("Broken file: information "
+						"about the frequency "
+						"couldn't be read.");
+				return 0;
+			}
+			data->channels = MAD_NCHANNELS(&data->frame.header);
+			
+			if (!audio_open(16, data->channels, data->freq))
+				return 0;
+
+			set_info_channels (data->channels);
+			set_info_rate (data->freq / 1000);
+		}
+
+		/* Change of the bitrate? */
+		if (data->frame.header.bitrate != data->bitrate) {
+			if ((data->bitrate = data->frame.header.bitrate) == 0) {
+				error ("Broken file: information "
+						"about the bitrate couldn't "
+						"be read.\n");
+				return 0;
+			}
+
+			set_info_bitrate (data->bitrate / 1000);
+		}
+
+		/* Read some information about the strean from the first frame */
+		if (data->first_frame) {
+			struct xing xing;
+			mad_timer_t duration = data->frame.header.duration;
+
+			if (xing_parse(&xing, data->stream.anc_ptr,
+						data->stream.anc_bitlen) != -1) {
+				xing_init (&xing);
+				mad_timer_multiply (&duration,
+						xing.frames);
+			}
+			else {
+				mad_timer_multiply (&duration, data->size /
+					(data->stream.next_frame - data->stream.this_frame));
+			}
+
+			data->duration = mad_timer_count (duration,
+					MAD_UNITS_SECONDS);
+			set_info_time (data->duration);
+			
+			data->first_frame = 0;
+		}
+		
+		mad_synth_frame (&data->synth, &data->frame);
+		mad_stream_sync (&data->stream);
+
+		return put_output (buf, buf_len, &data->synth.pcm,
+				&data->frame.header);
+	}
+}
+
+static void mp3_seek (void *void_data, const int sec)
+{
+	struct mp3_data *data = (struct mp3_data *)void_data;
+
+#if 0
+	/* Skip 2 frames after seeking */
 		if (seek_skip) {
 			int skip = 2;
 
@@ -343,120 +430,37 @@ void mp3_play (const char *file, struct buf *out_buf)
 
 			continue;
 		}
+#endif
+}
 
-		if (mad_frame_decode (&frame, &stream)) {
-			if (MAD_RECOVERABLE(stream.error)) {
-
-				/* Ignore LOSTSYNC */
-				if (stream.error == MAD_ERROR_LOSTSYNC)
-					continue;
-
-				if (options_get_int("ShowStreamErrors"))
-					error ("Broken frame: %s",
-							mad_stream_errorstr(&stream));
-				continue;
-			}
-			else if (stream.error == MAD_ERROR_BUFLEN)
-				continue;
-			else {
-				if (options_get_int("ShowStreamErrors"))
-					error ("Broken frame: %s",
-							mad_stream_errorstr (&stream));
-				break;
-			}
-		}
-
-		/* Bitrate and number or channels can change */
-		if (info.channels != MAD_NCHANNELS(&frame.header) ||
-				info.freq != frame.header.samplerate) {
-			if (!first_frame)
-				audio_close ();
-			
-			if ((info.freq = frame.header.samplerate) == 0) {
-				if (options_get_int("ShowStreamErrors"))
-					error ("Broken file: information "
-							"about the frequency "
-							"couldn't be read.");
-				break;
-			}
-			info.channels = MAD_NCHANNELS(&frame.header);
-			
-			if (!audio_open(16, info.channels, info.freq))
-				break;
-
-			set_info_channels (info.channels);
-			set_info_rate (info.freq / 1000);
-		}
-
-		/* Change of the bitrate? */
-		if (frame.header.bitrate != info.bitrate) {
-			if ((info.bitrate = frame.header.bitrate) == 0) {
-				error ("Broken file: information "
-						"about the bitrate couldn't "
-						"be read.\n");
-				break;
-			}
-
-			set_info_bitrate (info.bitrate / 1000);
-		}
-
-		/* Read some information about the strean from the first frame */
-		if (first_frame) {
-			mad_timer_t duration = frame.header.duration;
-
-			if (xing_parse(&info.xing, stream.anc_ptr,
-						stream.anc_bitlen) != -1) {
-				xing_init (&info.xing);
-				mad_timer_multiply (&duration,
-						info.xing.frames);
-				info.has_xing = 1;
-			}
-			else {
-				mad_timer_multiply (&duration, info.size /
-					(stream.next_frame - stream.this_frame));
-			}
-
-			info.duration = mad_timer_count (duration,
-					MAD_UNITS_SECONDS);
-			set_info_time (info.duration);
-			
-			first_frame = 0;
-		}
-		
-		mad_synth_frame (&synth, &frame);
-		mad_stream_sync (&stream);
-
-		written = write_output (&synth.pcm, &frame.header);
-				
-		if ((request = get_request()) != PR_NOTHING) {
-			buf_stop (out_buf);
-			buf_reset (out_buf);
-	
-			if (request == PR_STOP) {
-				logit ("MP3: stopping");
-				break;
-			}
-			else if (request == PR_SEEK_FORWARD) {
-				logit ("MP3: seek forward");
-				seek = audio_get_time() + 1;
-			}
-			else if (request == PR_SEEK_BACKWARD) {
-				logit ("MP3: seek backward");
-				seek = audio_get_time() - 1;
-			}
-		}
-		else if (!written)
-			logit ("MP3: write refused");
-	}
-		
-	mad_stream_finish (&stream);
-	mad_frame_finish (&frame);
-	mad_synth_finish (&synth);
+static void mp3_close (void *void_data)
+{
+	struct mp3_data *data = (struct mp3_data *)void_data;
 
 #ifdef HAVE_MMAP
-	if (info.mapped && munmap(info.mapped, info.size) == -1)
+	if (data->mapped && munmap(data->mapped, data->size) == -1)
 		logit ("munmap() failed: %s", strerror(errno));
 #endif
 
-	close (info.infile);
+	close (data->infile);
+	
+	mad_stream_finish (&data->stream);
+	mad_frame_finish (&data->frame);
+	mad_synth_finish (&data->synth);
+
+	free (data);
 }
+
+struct decoder_funcs decoder_funcs = {
+	mp3_open,
+	mp3_close,
+	mp3_decode,
+	mp3_seek,
+	mp3_info
+};
+
+struct decoder_funcs *mp3_get_funcs ()
+{
+	return &decoder_funcs;
+}
+

@@ -33,9 +33,9 @@
 #endif
 
 #include "buf.h"
-#include "audio.h"
 #include "protocol.h"
 #include "options.h"
+#include "player.h"
 
 /* FIXME: is 0 a tid that never is valid? */
 static pthread_t playing_thread = 0;  /* tid of play thread */
@@ -44,56 +44,36 @@ static int curr_playing = -1; /* currently played item */
 static pthread_mutex_t curr_playing_mut = PTHREAD_MUTEX_INITIALIZER;
 
 static struct buf out_buf;
-
 static struct hw_funcs hw;
 
 /* Player state */
 static int state = STATE_STOP;
 
 /* request for playing thread */
-static volatile enum play_request request = PR_NOTHING;
 static int stop_playing = 0;
 
 static struct plist playlist;
-
-enum play_request get_request ()
-{
-	int req = request;
-
-	request = PR_NOTHING;
-	
-	return req;
-}
-
-static void make_play_request (const enum play_request req)
-{
-	request = req;
-	buf_abort_put (&out_buf);
-}
 
 static void *play_thread (void *unused)
 {
 	logit ("entering playing thread");
 
 	while (curr_playing != -1) {
-		play_func_t play_func;
 		char *file = plist_get_file (&playlist, curr_playing);
+		struct decoder_funcs *df;
 
 		if (file) {
-			play_func = get_play_func (file);
-			if (play_func) {
+			df = get_decoder_funcs (file);
+			if (df) {
 				logit ("Playing item %d: %s", curr_playing,
 						file);
 				
 				state = STATE_PLAY;
 				buf_time_set (&out_buf, 0.0);
 				state_change ();
-				buf_reset (&out_buf);
 				
-				play_func (file, &out_buf);
+				player (file, df, &out_buf);
 				
-				audio_close ();
-				request = PR_NOTHING; /* good ??? */
 				state = STATE_STOP;
 				set_info_time (0);
 				set_info_rate (0);
@@ -152,8 +132,7 @@ void audio_stop ()
 	if (playing_thread) {
 		logit ("audio_stop()");
 		stop_playing = 1;
-		make_play_request (PR_STOP);
-		buf_stop (&out_buf);
+		player_stop ();
 		logit ("pthread_join(playing_thread, NULL)");
 		if (pthread_join(playing_thread, NULL))
 			logit ("pthread_join() failed: %s", strerror(errno));
@@ -166,11 +145,11 @@ void audio_stop ()
 void audio_play (const char *fname)
 {
 	audio_stop ();
+	player_reset ();
 	
 	LOCK (curr_playing_mut);
 	curr_playing = plist_find_fname (&playlist, fname);
 	if (curr_playing != -1) {
-		request = PR_NOTHING;
 		if (pthread_create(&playing_thread, NULL, play_thread, NULL))
 			error ("can't create thread");
 	}
@@ -182,7 +161,7 @@ void audio_play (const char *fname)
 
 void audio_next ()
 {
-	make_play_request (PR_STOP);
+	player_stop ();
 }
 
 void audio_pause ()
@@ -234,8 +213,6 @@ int audio_get_time ()
 
 void audio_close ()
 {
-	buf_wait_empty (&out_buf);
-	buf_reset (&out_buf);
 	hw.close ();
 }
 
@@ -273,6 +250,7 @@ void audio_exit ()
 	hw.shutdown ();
 	buf_destroy (&out_buf);
 	plist_free (&playlist);
+	player_cleanup ();
 }
 
 void audio_seek (const int sec)
@@ -283,14 +261,8 @@ void audio_seek (const int sec)
 	playing = curr_playing;
 	UNLOCK (curr_playing_mut);
 	
-	if (playing != -1) {
-		if (sec == 1)
-			make_play_request (PR_SEEK_FORWARD);
-		else if (sec == -1)
-			make_play_request (PR_SEEK_BACKWARD);
-		else
-			logit ("Can't seek using this time.");
-	}
+	if (playing != -1)
+		player_seek (sec);
 	else
 		logit ("Seeking when nothing is played.");
 }
