@@ -425,7 +425,7 @@ static void mp3_close (void *void_data)
 	free (data);
 }
 
-struct decoder_funcs decoder_funcs = {
+static struct decoder_funcs decoder_funcs = {
 	mp3_open,
 	mp3_close,
 	mp3_decode,
