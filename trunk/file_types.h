@@ -4,13 +4,6 @@
 #include "playlist.h"
 #include "audio.h"
 
-/* Flags for the info decoder function. */
-enum tags_select
-{
-	TAGS_COMMENTS	= 0x01, /* artist, title, etc. */
-	TAGS_TIME	= 0x02 /* time of the file. */
-};
-
 /* Functions that must be provided to support a file format.
  * void *data is a pointer to private data used by the decoder passed to each
  * function. */
