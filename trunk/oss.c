@@ -88,8 +88,13 @@ static int oss_set_params ()
 	/* Set format */
 	if (params.format == 1)
 		req_format = AFMT_S8;
-	else
+	else if (params.format == 2)
 		req_format = AFMT_S16_LE;
+	else {
+		error ("%dbits format is not supported by the device",
+			params.format * 8);
+		return 0;
+	}
 		
 	if (ioctl(dsp_fd, SNDCTL_DSP_SETFMT, &req_format) == -1) {
 		error ("Can't set audio format: %s", strerror(errno));
@@ -155,8 +160,10 @@ static int oss_open (struct sound_params *sound_params)
 	if (!open_dev())
 		return 0;
 	
-	if (!oss_set_params())
+	if (!oss_set_params()) {
+		oss_close ();
 		return 0;
+	}
 
 	return 1;
 }
