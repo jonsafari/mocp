@@ -197,10 +197,10 @@ int send_time (int sock, time_t i)
 /* Add a string to the dynamicaly allocated buffer which has aready len bytes
  * data and is allocated big. Returns the pointer to the buffer which may be not
  * the same as buf. */
-static char *add_buf_str (char *buf, int *len, int *allocated, const char *str)
+static char *add_buf_str (char *buf, size_t *len, int *allocated, const char *str)
 {
 	int str_len = strlen(str);
-	int needed_space = str_len * sizeof(char) + sizeof(int);
+	size_t needed_space = str_len * sizeof(char) + sizeof(int);
 	
 	if (*allocated - *len < needed_space) {
 		*allocated += needed_space + 256; /* put some more space */
@@ -218,7 +218,7 @@ static char *add_buf_str (char *buf, int *len, int *allocated, const char *str)
 /* Add an integerg to the dynamicaly allocated buffer which has aready len bytes
  * data and is allocated big. Returns the pointer to the buffer which may be not
  * the same as buf. */
-static char *add_buf_int (char *buf, int *len, int *allocated, const int n)
+static char *add_buf_int (char *buf, size_t *len, int *allocated, const int n)
 {
 	if (*allocated - *len < (int)sizeof(n)) {
 		*allocated *= 2;
@@ -234,7 +234,7 @@ static char *add_buf_int (char *buf, int *len, int *allocated, const int n)
 /* Add a long to the dynamicaly allocated buffer which has aready len bytes
  * data and is allocated big. Returns the pointer to the buffer which may be not
  * the same as buf. */
-static char *add_buf_long (char *buf, int *len, int *allocated, const int n)
+static char *add_buf_long (char *buf, size_t *len, int *allocated, const int n)
 {
 	if (*allocated - *len < (int)sizeof(n)) {
 		*allocated *= 2;
