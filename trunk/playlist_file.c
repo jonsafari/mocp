@@ -24,8 +24,6 @@
 #include "main.h"
 #include "files.h"
 
-#define READ_LINE_INIT_SIZE	512
-
 int is_plist_file (char *name)
 {
 	char *ext = ext_pos (name);
@@ -34,41 +32,6 @@ int is_plist_file (char *name)
 		return 1;
 	
 	return 0;
-}
-
-/* Read one line from a file, strip trailing end of line chars. Returned memory
- * is malloc()ed. Return NULL on error or EOF. */
-static char *read_line (FILE *file)
-{
-	int line_alloc = READ_LINE_INIT_SIZE;
-	int len = 0;
-	char *line = (char *)xmalloc (sizeof(char) * READ_LINE_INIT_SIZE);
-
-	while (1) {
-		if (!fgets(line + len, line_alloc - len, file))
-			break;
-		len = strlen(line);
-
-		if (line[len-1] == '\n')
-			break;
-		
-		/* if we are hear, it means that line is longer than the
-		 * buffer */
-		line_alloc *= 2;
-		line = (char *)xrealloc (line, sizeof(char) * line_alloc);
-	}
-
-	if (len == 0) {
-		free (line);
-		return NULL;
-	}
-
-	if (line[len-1] == '\n')
-		line[--len] = 0;
-	if (len > 0 && line[len-1] == '\r')
-		line[--len] = 0;
-
-	return line;
 }
 
 static void make_path (char *buf, const int buf_size,

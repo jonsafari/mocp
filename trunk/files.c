@@ -44,6 +44,7 @@
 #include "log.h"
 
 #define FILE_LIST_INIT_SIZE	64
+#define READ_LINE_INIT_SIZE	256
 
 enum file_type file_type (char *file)
 {
@@ -379,4 +380,39 @@ char *ext_pos (char *file)
 		ext = NULL;
 
 	return ext;
+}
+
+/* Read one line from a file, strip trailing end of line chars. Returned memory
+ * is malloc()ed. Return NULL on error or EOF. */
+char *read_line (FILE *file)
+{
+	int line_alloc = READ_LINE_INIT_SIZE;
+	int len = 0;
+	char *line = (char *)xmalloc (sizeof(char) * READ_LINE_INIT_SIZE);
+
+	while (1) {
+		if (!fgets(line + len, line_alloc - len, file))
+			break;
+		len = strlen(line);
+
+		if (line[len-1] == '\n')
+			break;
+		
+		/* if we are hear, it means that line is longer than the
+		 * buffer */
+		line_alloc *= 2;
+		line = (char *)xrealloc (line, sizeof(char) * line_alloc);
+	}
+
+	if (len == 0) {
+		free (line);
+		return NULL;
+	}
+
+	if (line[len-1] == '\n')
+		line[--len] = 0;
+	if (len > 0 && line[len-1] == '\r')
+		line[--len] = 0;
+
+	return line;
 }
