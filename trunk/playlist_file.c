@@ -29,9 +29,9 @@
 #include "interface.h"
 #include "decoder.h"
 
-int is_plist_file (char *name)
+int is_plist_file (const char *name)
 {
-	char *ext = ext_pos (name);
+	const char *ext = ext_pos (name);
 
 	if (ext && !strcasecmp(ext, "m3u"))
 		return 1;

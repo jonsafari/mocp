@@ -60,7 +60,7 @@ static int is_url (const char *str)
 		|| !strncmp(str, "ftp://", sizeof("ftp://")-1);
 }
 
-enum file_type file_type (char *file)
+enum file_type file_type (const char *file)
 {
 	struct stat file_stat;
 	
