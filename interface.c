@@ -920,19 +920,30 @@ static void set_state (const int state)
 }
 
 /* Find the item on curr_plist and playlist, return 1 if found, 0 otherwise.
- * Pointer to the plist structure and the index are filled. */
-static int find_item_plists (const char *file, int *index, struct plist **plist)
+ * Pointer to the plist structure and the index are filled.
+ * If the file exists on both lists, choose the list where the file has
+ * needed_tags. */
+static int find_item_plists (const char *file, int *index, struct plist **plist,
+		const int needed_tags)
 {
-	int i;
+	int curr_plist_idx, playlist_idx;
 
-	if ((i = plist_find_fname(curr_plist, file)) != -1) {
-		*index = i;
+	if ((curr_plist_idx = plist_find_fname(curr_plist, file)) != -1
+			&& curr_plist->items[curr_plist_idx].tags->filled
+			& needed_tags) {
+		*index = curr_plist_idx;
 		*plist = curr_plist;
 		return 1;
 	}
-	if ((i = plist_find_fname(playlist, file)) != -1) {
-		*index = i;
+	
+	if ((playlist_idx = plist_find_fname(playlist, file)) != -1) {
+		*index = playlist_idx;
 		*plist = playlist;
+		return 1;
+	}
+	else if (curr_plist_idx != -1) {
+		*index = curr_plist_idx;
+		*plist = curr_plist;
 		return 1;
 	}
 
@@ -959,7 +970,7 @@ static char *find_title (char *file)
 	else
 		debug ("Getting file title for %s", file);
 	
-	if (find_item_plists(file, &index, &plist)) {
+	if (find_item_plists(file, &index, &plist, TAGS_COMMENTS)) {
 		debug ("Found title on playlist");
 		plist->items[index].tags = read_file_tags (file,
 				plist->items[index].tags, TAGS_COMMENTS);
@@ -1103,7 +1114,7 @@ static int get_file_time (char *file)
 	else
 		debug ("Getting file time for %s", file);
 	
-	if (find_item_plists(file, &index, &plist)) {
+	if (find_item_plists(file, &index, &plist, TAGS_TIME)) {
 		debug ("Found item on playlist");
 		plist->items[index].tags = read_file_tags (file,
 				plist->items[index].tags, TAGS_TIME);
