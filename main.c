@@ -53,6 +53,24 @@ struct parameters
 	int unpause;
 };
 
+static int im_server = 0; /* I em the server? */
+
+void error (const char *format, ...)
+{
+	va_list va;
+	char msg[256];
+	
+	va_start (va, format);
+	vsnprintf (msg, sizeof(msg), format, va);
+	msg[sizeof(msg) - 1] = 0;
+	va_end (va);
+	
+	if (im_server)
+		server_error (msg);
+	else
+		interface_error (msg);
+}
+
 /* End program with a message. Use when an error occurs and we can't recover. */
 void fatal (const char *format, ...)
 {
@@ -160,7 +178,7 @@ int isdir (const char *file)
 	struct stat file_stat;
 
 	if (stat(file, &file_stat) == -1) {
-		interface_error ("Can't stat %s: %s", file, strerror(errno));
+		error ("Can't stat %s: %s", file, strerror(errno));
 		return -1;
 	}
 	return S_ISDIR(file_stat.st_mode) ? 1 : 0;
@@ -223,6 +241,7 @@ static void start_moc (const struct parameters *params, char **args,
 
 		switch (fork()) {
 			case 0: /* child - start server */
+				im_server = 1;
 				list_sock = server_init (params->debug,
 						params->foreground);
 				write (notify_pipe[1], &i, sizeof(i));
@@ -248,6 +267,7 @@ static void start_moc (const struct parameters *params, char **args,
 	else if (!params->foreground && params->only_server)
 		fatal ("Server is already running");
 	else if (params->foreground && params->only_server) {
+		im_server = 1;
 		list_sock = server_init (params->debug, params->foreground);
 		server_loop (list_sock);
 	}
