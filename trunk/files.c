@@ -100,8 +100,8 @@ static char *get_file (const char *path, const int strip_ext)
 	return fname;
 }
 
-/* Make a title from tags for the item. If hide extension != 0, strip the file
- * name from extension. */
+/* Make a title from the file name for the item. If hide extension != 0, strip
+ * the file name from extension. */
 void make_file_title (struct plist *plist, const int num,
 		const int hide_extension)
 {
