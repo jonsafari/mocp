@@ -13,6 +13,7 @@
 #define EV_EXIT		0x0a /* the server is about to exit */
 #define EV_PONG		0x0b /* response for CMD_PING */
 #define EV_OPTIONS	0x0c /* the options has changed */
+#define EV_SEND_PLIST	0x0d /* Request for sending the playlist. */
 
 /* State of the server. */
 #define STATE_PLAY	0x01
@@ -46,11 +47,15 @@
 #define CMD_GET_ERROR	0x1e /* get the error message */
 #define CMD_GET_FTIME	0x1f /* get time of a file from the server */
 #define CMD_PREV	0x20 /* start playing previous song if available */
+#define CMD_SEND_PLIST	0x21 /* send the playlist to the requesting client */
+#define CMD_GET_PLIST	0x22 /* get the playlist from one of the clients */
 
 char *socket_name ();
 int get_int (int sock, int *i);
 int send_int (int sock, int i);
 char *get_str (int sock);
 int send_str (int sock, const char *str);
+int get_time (int sock, time_t *i);
+int send_time (int sock, time_t i);
 
 #endif
