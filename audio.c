@@ -37,6 +37,7 @@
 #include "protocol.h"
 #include "options.h"
 
+/* FIXME: is 0 a tid that never is valid? */
 static pthread_t playing_thread = 0;  /* tid of play thread */
 
 static int curr_playing = -1; /* currently played item */
@@ -92,6 +93,7 @@ static void *play_thread (void *unused)
 				play_func (file, &out_buf);
 				
 				audio_close ();
+				request = PR_NOTHING; /* good ??? */
 				state = STATE_STOP;
 				set_info_time (0);
 				set_info_rate (0);
@@ -109,7 +111,6 @@ static void *play_thread (void *unused)
 			LOCK (curr_playing_mut);
 			curr_playing = -1;
 			UNLOCK (curr_playing_mut);
-			stop_playing = 0;
 			logit ("play thread: stopped");
 		}
 		else {
@@ -120,9 +121,15 @@ static void *play_thread (void *unused)
 				curr_playing = plist_next (&playlist,
 						curr_playing);
 				if (curr_playing == -1
-						&& options_get_int("Repeat"))
+						&& options_get_int("Repeat")) {
 					curr_playing = plist_next (&playlist,
 							-1);
+					logit ("Going back to the first item.");
+				}
+				else if (curr_playing == -1)
+					logit ("End of the list.");
+				else
+					logit ("Next item.");
 			}
 			UNLOCK (curr_playing_mut);
 		}
@@ -151,6 +158,7 @@ void audio_stop ()
 		if (pthread_join(playing_thread, NULL))
 			logit ("pthread_join() failed: %s", strerror(errno));
 		playing_thread = 0;
+		stop_playing = 0;
 		logit ("done stopping");
 	}
 }
