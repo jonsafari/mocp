@@ -299,6 +299,8 @@ int out_buf_time_get (struct out_buf *buf)
 	time = buf->time - (bps ? buf->hardware_buf_fill / (float)bps : 0);
 	UNLOCK (buf->mutex);
 
+	assert (time >= 0);
+
 	return time;
 }
 
