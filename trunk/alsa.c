@@ -45,14 +45,6 @@ static int chunk_size = -1;
 static char alsa_buf[16384];
 static int alsa_buf_fill = 0;
 
-static void alsa_init ()
-{
-}
-
-static void alsa_shutdown ()
-{
-}
-
 static int alsa_open (struct sound_params *sound_params)
 {
 	snd_pcm_hw_params_t *hw_params;
@@ -321,8 +313,6 @@ static int alsa_get_channels ()
 
 void alsa_funcs (struct hw_funcs *funcs)
 {
-	funcs->init = alsa_init;
-	funcs->shutdown = alsa_shutdown;
 	funcs->open = alsa_open;
 	funcs->close = alsa_close;
 	funcs->play = alsa_play;
