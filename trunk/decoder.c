@@ -92,6 +92,11 @@ struct decoder *get_decoder_by_content (struct io_stream *stream)
 		error ("Stream error: %s", io_strerror(stream));
 		return NULL;
 	}
+
+	if (res < 512) {
+		error ("Stream too short");
+		return NULL;
+	}
 	
 	for (i = 0; i < plugins_num; i++)
 		if (plugins[i].decoder->can_decode
