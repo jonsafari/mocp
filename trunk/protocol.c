@@ -424,6 +424,20 @@ struct file_tags *recv_tags (int sock)
 	if (tags->time != -1)
 		tags->filled |= TAGS_TIME;
 
+	/* Set NULL instead of empty tags. */
+	if (tags->title && !tags->title[0]) {
+		free (tags->title);
+		tags->title = NULL;
+	}
+	if (tags->artist && !tags->artist[0]) {
+		free (tags->artist);
+		tags->artist = NULL;
+	}
+	if (tags->album && !tags->album[0]) {
+		free (tags->album);
+		tags->album = NULL;
+	}
+
 	if (tags->title || tags->artist || tags->album || tags->track != -1)
 		tags->filled |= TAGS_COMMENTS;
 
