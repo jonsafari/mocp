@@ -57,7 +57,7 @@ mocp_LDADD = @EXTRA_OBJS@
 mocp_DEPENDENCIES = @EXTRA_OBJS@
 man_MANS = mocp.8
 EXTRA_DIST = config.example mocp.8 THANKS
-		     config.example
+		     config.example keymap.example
 
 docdir = $(datadir)/doc/$(PACKAGE)
-doc_DATA = config.example THANKS README
+doc_DATA = config.example THANKS README keymap.example
