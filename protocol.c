@@ -20,6 +20,8 @@
 #include <sys/socket.h>
 #include <time.h>
 #include <assert.h>
+#include <unistd.h>
+#include <fcntl.h>
 
 #include "main.h"
 #include "log.h"
@@ -51,6 +53,34 @@ int get_int (int sock, int *i)
 		logit ("recv() failed when getting int: %s", strerror(errno));
 
 	return res == sizeof(int) ? 1 : 0;
+}
+
+/* Get an intiger value from the socket without blocking. */
+enum noblock_io_status get_int_noblock (int sock, int *i)
+{
+	int res;
+	long flags;
+	
+	if ((flags = fcntl(sock, F_GETFL)) == -1)
+		fatal ("fcntl(sock, F_GETFL) failed: %s", strerror(errno));
+	flags |= O_NONBLOCK;
+	if (fcntl(sock, F_SETFL, O_NONBLOCK) == -1)
+		fatal ("Setting O_NONBLOCK for the socket failed: %s",
+				strerror(errno));
+	res = recv (sock, i, sizeof(int), 0);
+	flags &= ~O_NONBLOCK;
+	if (fcntl(sock, F_SETFL, flags) == -1)
+		fatal ("Restoring flags for socket failed: %s",
+				strerror(errno));
+	
+	if (res == sizeof(int))
+		return NB_IO_OK;
+	if (res < 0 && errno == EAGAIN)
+		return NB_IO_BLOCK;
+
+	logit ("recv() failed when getting int (res %d): %s", res,
+			strerror(errno));
+	return NB_IO_ERR;
 }
 
 /* Send an integer value to the socket, return == 0 on error */

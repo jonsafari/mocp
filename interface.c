@@ -310,6 +310,18 @@ static int get_int_from_srv ()
 	return num;
 }
 
+/* Noblocking version of get_int_from_srv(): return 0 if there are no data. */
+static int get_int_from_srv_noblock (int *num)
+{
+	enum noblock_io_status st;
+	
+	if ((st = get_int_noblock(srv_sock, num)) == NB_IO_ERR)
+		interface_fatal ("Can't receive value from the server.");
+
+	return st == NB_IO_OK ? 1 : 0;
+}
+
+
 static void send_item_to_srv (const struct plist_item *item)
 {
 	if (!send_item(srv_sock, item))
@@ -3295,18 +3307,23 @@ static void handle_interrupt ()
 /* Get event from the server and handle it. */
 static void get_and_handle_event ()
 {
-	int type = get_int_from_srv ();
+	int type;
 	void *data;
 
-	/* some events contail data */
-	if (type == EV_PLIST_ADD)
-		data = recv_item_from_srv ();
-	else if (type == EV_PLIST_DEL)
-		data = get_str_from_srv ();
-	else
-		data = NULL;
+	if (get_int_from_srv_noblock(&type)) {
+		
+		/* some events contail data */
+		if (type == EV_PLIST_ADD)
+			data = recv_item_from_srv ();
+		else if (type == EV_PLIST_DEL)
+			data = get_str_from_srv ();
+		else
+			data = NULL;
 
-	server_event (type, data);
+		server_event (type, data);
+	}
+	else
+		debug ("Getting event would block.");
 }
 
 void interface_loop ()
