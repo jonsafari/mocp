@@ -46,6 +46,7 @@
 #include "options.h"
 #include "player.h"
 #include "audio.h"
+#include "files.h"
 
 static pthread_t playing_thread = 0;  /* tid of play thread */
 static int play_thread_running = 0;
@@ -493,13 +494,16 @@ int audio_get_ftime (const char *file)
 {
 	int i;
 	int time;
-
-	/* TODO: also check the mtime. */
+	time_t mtime = get_mtime (file);
 
 	if ((i = plist_find_fname(&playlist, file)) != -1
 			&& (time = get_item_time(&playlist, i)) != -1) {
-		debug ("Found time for %s", file);
-		return time;
+		if (playlist.items[i].mtime == mtime) {
+			debug ("Found time for %s", file);
+			return time;
+		}
+		else
+			logit ("mtime for %s has changed", file);
 	}
 
 	return -1;
@@ -512,7 +516,7 @@ void audio_plist_set_time (const char *file, const int time)
 
 	if ((i = plist_find_fname(&playlist, file)) != -1) {
 		update_item_time (&playlist.items[i], time);
-		/* TODO: also update the mtime */
+		playlist.items[i].mtime = get_mtime (file);
 		debug ("Setting time for %s", file);
 	}
 	else
