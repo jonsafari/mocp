@@ -285,7 +285,7 @@ void audio_seek (const int sec)
 	playing = curr_playing;
 	UNLOCK (curr_playing_mut);
 	
-	if (playing != -1)
+	if (playing != -1 && state == STATE_PLAY)
 		player_seek (sec);
 	else
 		logit ("Seeking when nothing is played.");
