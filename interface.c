@@ -423,6 +423,8 @@ void interface_error (const char *format, ...)
 	else
 		fprintf (stderr, "%s\n", message);
 
+	logit ("ERROR: %s", message);
+
 	va_end (va);
 }
 
@@ -525,7 +527,7 @@ static struct menu *make_menu (struct plist *plist, char **dirs, int ndirs)
 	
 	/* playlist items */
 	for (i = 0, menu_pos = ndirs; i < plist->num; i++) {
-		if (!plist->items[i].deleted) {
+		if (!plist_deleted(plist, i)) {
 			menu_items[menu_pos] = menu_newitem (
 					plist->items[i].title, i);
 			menu_items[menu_pos]->attr_normal = COLOR_PAIR(CLR_ITEM);
@@ -573,7 +575,7 @@ static void send_playlist (struct plist *plist)
 	send_int_to_srv (CMD_LIST_CLEAR);
 	
 	for (i = 0; i < plist->num; i++) {
-		if (!plist->items[i].deleted) {
+		if (!plist_deleted(plist, i)) {
 			send_int_to_srv (CMD_LIST_ADD);
 			send_str_to_srv (plist->items[i].file);
 		}
