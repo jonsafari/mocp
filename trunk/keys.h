@@ -66,5 +66,7 @@ enum key_context
 
 enum key_cmd get_key_cmd (const enum key_context context, const int key);
 void keys_init ();
+void keys_cleanup ();
+char **get_keys_help (int *num);
 
 #endif
