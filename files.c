@@ -107,25 +107,27 @@ void make_titles_tags (struct plist *plist)
 	int i;
 	int hide_extension = options_get_int ("HideFileExtension");
 
-	for (i = 0; i < plist->num; i++) {
-
-		assert (plist->items[i].file != NULL);
-		
-		if (plist->items[i].tags && plist->items[i].tags->title) {
-			char *title;
+	for (i = 0; i < plist->num; i++)
+		if (!plist_deleted(plist, i)) {
+			assert (plist->items[i].file != NULL);
 			
-			title = build_title (plist->items[i].tags);
-			plist_set_title (plist, i, title);
-			free (title);
-		}
-		else {
-			char *fname;
+			if (plist->items[i].tags
+					&& plist->items[i].tags->title) {
+				char *title;
 				
-			fname = get_file (plist->items[i].file, hide_extension);
-			plist_set_title (plist, i, fname);
-			free (fname);
+				title = build_title (plist->items[i].tags);
+				plist_set_title (plist, i, title);
+				free (title);
+			}
+			else {
+				char *fname;
+					
+				fname = get_file (plist->items[i].file,
+						hide_extension);
+				plist_set_title (plist, i, fname);
+				free (fname);
+			}
 		}
-	}
 }
 
 /* Add file to the directory path in buf resolveing '../' and removing './'. */
