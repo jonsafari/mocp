@@ -83,9 +83,7 @@ static char mainwin_title[512] = PACKAGE_STRING;
 static int msg_timeout = 0;
 static int msg_is_error = 0;
 static char message[512] = "Welcome to "PACKAGE_NAME"! "
-	"Please send bug reports to "PACKAGE_BUGREPORT; /* TODO: remove this
-							   message even if
-							   nothing happens */
+	"Please send bug reports to "PACKAGE_BUGREPORT;
 static char interface_status[STATUS_LINE_LEN + 1] = "              ";
 
 static struct plist *curr_plist = NULL; /* Current directory */
@@ -403,9 +401,13 @@ static void interface_message (const char *format, ...)
 	va_list va;
 
 	va_start (va, format);
-	vsnprintf (message, sizeof(message), format, va);
-	message[sizeof(message)-1] = 0;
-	msg_timeout = time(NULL) + 3;
+	if (format) {
+		vsnprintf (message, sizeof(message), format, va);
+		message[sizeof(message)-1] = 0;
+		msg_timeout = time(NULL) + 3;
+	}
+	else
+		msg_timeout = 0;
 	msg_is_error = 0;
 	update_info_win ();
 	wrefresh (info_win);
@@ -1180,6 +1182,7 @@ static void print_help_screen ()
 "  S/R/X        Switch shuffle / repeat / autonext\n"
 "  '.' , ','    Increase, decrease volume by 5%\n"
 "  '>' , '<'    Increase, decrease volume by 1%\n"
+"  M            Hide error/informative message\n"
 "  q            Detach MOC from the server\n"
 "  Q            Quit\n");
 
@@ -1305,6 +1308,11 @@ static void menu_key (const int ch)
 		case 'h':
 			help_screen ();
 			break;
+		case 'M':
+			interface_message (NULL);
+			update_info_win ();
+			wrefresh (info_win);
+			break;
 		case KEY_RESIZE:
 			break;
 		default:
@@ -1353,14 +1361,22 @@ void interface_loop ()
 	while (!want_quit) {
 		fd_set fds;
 		int ret;
+		struct timeval timeout = { 1, 0 };
 		
 		FD_ZERO (&fds);
 		FD_SET (srv_sock, &fds);
 		FD_SET (STDIN_FILENO, &fds);
 
-		ret = select (srv_sock + 1, &fds, NULL, NULL, NULL);
+		ret = select (srv_sock + 1, &fds, NULL, NULL, &timeout);
 		
-		if (ret == -1 && !want_quit && errno != EINTR)
+		if (ret == 0) {
+			if (msg_timeout && msg_timeout < time(NULL)) {
+				update_info_win ();
+				wrefresh (info_win);
+				msg_timeout = 0;
+			}
+		}
+		else if (ret == -1 && !want_quit && errno != EINTR)
 			interface_fatal ("select() failed");
 
 #ifdef SIGWINCH
