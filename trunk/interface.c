@@ -2040,12 +2040,12 @@ static void menu_key (const int ch)
 				make_entry (ENTRY_SEARCH, "SEARCH");
 				break;
 			case 'V':
-				if (visible_plist == playlist)
+				if (plist_count(playlist))
 					make_entry (ENTRY_PLIST_SAVE,
 							"SAVE PLAYLIST");
 				else
-					interface_error ("You must be in "
-							"playlist to save.");
+					interface_error ("The playlist is "
+							"empty.");
 				break;
 			case KEY_RESIZE:
 				break;
