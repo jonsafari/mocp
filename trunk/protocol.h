@@ -38,6 +38,7 @@ enum noblock_io_status
 #define EV_OPTIONS	0x0c /* the options has changed */
 #define EV_SEND_PLIST	0x0d /* Request for sending the playlist. */
 #define EV_TAGS		0x0e /* tags for the current file has changed. */
+#define EV_STATUS_MSG	0x0f /* Followed by a status message */
 
 /* Events caused by a client that wants to modify the playlist (see
  * CMD_CLI_PLIST* commands. */

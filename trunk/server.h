@@ -12,5 +12,6 @@ void set_info_channels (const int channels);
 void set_info_bitrate (const int bitrate);
 void tags_change ();
 void ctime_change ();
+void status_msg (const char *msg);
 
 #endif

@@ -171,13 +171,18 @@ static void *play_thread (void *unused ATTR_UNUSED)
 			struct io_stream *stream = NULL;
 			
 			if (file_type(file) == F_URL) {
+				status_msg ("Connecting...");
 				stream = io_open (file, 1);
 				if (io_ok(stream)) {
+					status_msg ("Precaching...");
 					df = get_decoder_by_content (stream);
 					if (!df) {
 						error ("Format not supported");
 						io_close (stream);
+						status_msg ("");
 					}
+					else
+						status_msg ("Playing...");
 				}
 				else {
 					error ("Could not open URL: %s",

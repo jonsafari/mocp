@@ -225,7 +225,7 @@ static void del_client (struct client *cli)
 			plist_free_item_fields (e->data);
 			free (e->data);
 		}
-		else if (e->type == EV_PLIST_DEL)
+		else if (e->type == EV_PLIST_DEL || e->type == EV_STATUS_MSG)
 			free (e->data);
 		event_pop (&cli->events);
 	}
@@ -329,7 +329,7 @@ static void add_event (struct client *cli, const int event, void *data)
 	UNLOCK (cli->events_mutex);
 }
 
-static void add_event_all (const int event, void *data)
+static void add_event_all (const int event, const void *data)
 {
 	int i;
 	int added = 0;
@@ -343,7 +343,8 @@ static void add_event_all (const int event, void *data)
 					data_copy = plist_new_item ();
 					plist_item_copy (data_copy, data);
 				}
-				else if (event == EV_PLIST_DEL) {
+				else if (event == EV_PLIST_DEL
+						|| event == EV_STATUS_MSG) {
 					data_copy = xstrdup (data);
 				}
 				else
@@ -1178,4 +1179,9 @@ void ctime_change ()
 void tags_change ()
 {
 	add_event_all (EV_TAGS, NULL);
+}
+
+void status_msg (const char *msg)
+{
+	add_event_all (EV_STATUS_MSG, msg);
 }
