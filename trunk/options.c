@@ -138,6 +138,41 @@ void options_init ()
 	option_add_int ("OutputBuffer", 512);
 }
 
+/* Return 1 if a parameter to an integer option is valid. */
+static int check_int_option (const char *name, const int val)
+{
+	/* YES/NO options */
+	if (!strcasecmp(name, "ReadTags")
+			|| !strcasecmp(name, "ShowStreamErrors")
+			|| !strcasecmp(name, "Repeat")
+			|| !strcasecmp(name, "Shuffle")
+			|| !strcasecmp(name, "AutoNext")
+			) {
+		if (!(val == 1 || val == 0))
+			return 0;
+	}
+	else if (!strcasecmp(name, "Priority")) {
+		if (val < -20 || val > 19)
+			return 0;
+	}
+	else if (!strcasecmp(name, "OutputBuffer")) {
+		if (val < 128)
+			return 0;
+	}
+	return 1;
+}
+
+/* Return 1 if a parameter to a string option is valid. */
+static int check_str_option (const char *name, const char *val)
+{
+	if (!strcasecmp(name, "Sort")) {
+		if (strcasecmp(val, "FileName"))
+			return 0;
+	}
+	
+	return 1;
+}
+
 /* Set an option read from the configuration file. Return 0 on error. */
 static int set_option (const char *name, const char *value)
 {
@@ -161,10 +196,15 @@ static int set_option (const char *name, const char *value)
 				return 0;
 		}
 		
+		if (!check_int_option(name, num))
+			return 0;
 		option_set_int (name, num);
 	}
-	else
+	else {
+		if (!check_str_option(name, value))
+			return 0;
 		option_set_str (name, value);
+	}
 	
 	return 1;
 }
