@@ -1765,7 +1765,7 @@ static void menu_key (const int ch)
 				print_help_screen ();
 			}
 		}
-		else {
+		else if (ch != KEY_RESIZE) {
 			
 			/* Switch to menu */
 			werase (main_win);
