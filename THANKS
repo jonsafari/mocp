@@ -9,6 +9,6 @@ Marcin Micha³owski <marcin.mi@gmail.com> - Added default and grey colors, made
 Elimar Riesebieter <riesebie@lxtec.de> - Tests on PPC (made working on big
 	endian architectures).
 Wim Speekenbrink <w.speek@wanadoo.nl> - Author of nightly_theme.
-Kamil Tarkowski <kamilt@interia.pl> - baack command, some fixes and small
+Kamil Tarkowski <kamilt@interia.pl> - back command, some fixes and small
 	improvements.
 Jacek Lehmann <vonschlager@wp.pl> - Green theme and fixes for a few terminals.
