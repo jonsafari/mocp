@@ -413,6 +413,7 @@ static struct special_keys
 	{ "END",		KEY_END },
 	{ "KEYPAD_CENTER",	KEY_B2 },
 	{ "SPACE",		' ' },
+	{ "ESCAPE",		KEY_ESCAPE },
 	{ "F1",			KEY_F(1) },
 	{ "F2",			KEY_F(2) },
 	{ "F3",			KEY_F(3) },
@@ -429,6 +430,12 @@ static struct special_keys
 
 #define COMMANDS_NUM		(sizeof(commands)/sizeof(commands[0]))
 #define SPECIAL_KEYS_NUM	(sizeof(special_keys)/sizeof(special_keys[0]))
+
+/* Number of chars from the left where the help message starts
+ * (skipping the key list). */
+#define HELP_INDENT	15
+
+static char *help[COMMANDS_NUM];
 
 enum key_cmd get_key_cmd (const enum key_context context, const int key)
 {
@@ -602,6 +609,83 @@ static void check_keys ()
 	/* TODO */
 }
 
+/* Get a nice key name.
+ * Returned memory may be static. */
+static char *get_key_name (const int key)
+{
+	unsigned int i;
+	static char key_str[4];
+
+	/* Search for special keys */
+	for (i = 0; i < SPECIAL_KEYS_NUM; i++)
+		if (special_keys[i].key == key)
+			return special_keys[i].name;
+
+	/* CTRL combination */
+	if (!(key & ~CTRL_KEY_CODE)) {
+		key_str[0] = '^';
+		key_str[1] = key + 0x60;
+		key_str[2] = 0;
+
+		return key_str;
+	}
+
+	/* Meta keys */
+	if (key & META_KEY_FLAG) {
+		strcpy (key_str, "M-");
+		key_str[2] = key & ~META_KEY_FLAG;
+		key_str[3] = 0;
+
+		return key_str;
+	}
+
+	/* Normal key */
+	key_str[0] = key;
+	key_str[1] = 0;
+
+	return key_str;
+}
+
+/* Return a string contains the list of keys used for command.
+ * Returned memory is static. */
+static char *get_command_keys (const int idx)
+{
+	static char keys[64];
+	int i = 0;
+
+	keys[0] = 0;
+
+	while (commands[idx].keys[i] != -1) {
+		strncat (keys, get_key_name(commands[idx].keys[i]),
+				sizeof(keys) - strlen(keys) - 1);
+		strncat (keys, " ", sizeof(keys) - strlen(keys) - 1);
+		i++;
+	}
+
+	/* strip the last space */
+	keys[strlen(keys)-1] = 0;
+
+	return keys;
+}
+
+/* Make the help message for keys. */
+static void make_help ()
+{
+	unsigned int i;
+
+	/* TODO: add context information */
+	
+	for (i = 0; i < COMMANDS_NUM; i++) {
+		help[i] = xmalloc (sizeof(char) * 
+				(HELP_INDENT + strlen(commands[i].help) + 1));
+		strncpy (help[i], get_command_keys(i), HELP_INDENT);
+		if (strlen(help[i]) < HELP_INDENT)
+			memset (help[i] + strlen(help[i]), ' ',
+					HELP_INDENT - strlen(help[i]));
+		strcpy (help[i] + HELP_INDENT, commands[i].help);
+	}
+}
+
 /* Load key map. Set default keys if necessary. */
 void keys_init ()
 {
@@ -611,14 +695,23 @@ void keys_init ()
 		load_key_map (file);
 		check_keys ();
 	}
+
+	make_help ();
 }
 
-/* Get a nice key name. */
-static char *get_key_name (const int key)
+/* Free the help message */
+void keys_cleanup ()
 {
+	unsigned int i;
+
+	for (i = 0; i < COMMANDS_NUM; i++)
+		free (help[i]);
 }
 
-/* Return a string contains the list of keys used for command. */
-static char *get_command_keys (const int idx)
+/* Return an array of strings with the keys help. The number of lines is put
+ * in num. */
+char **get_keys_help (int *num)
 {
+	*num = COMMANDS_NUM;
+	return help;
 }
