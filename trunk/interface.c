@@ -1837,7 +1837,11 @@ void init_interface (const int sock, const int debug, char **args,
 	start_color ();
 	set_default_colors ();
 
-	if (options_get_str("Theme"))
+	if (options_get_str("ForceTheme"))
+		load_color_theme (options_get_str("ForceTheme"));
+	else if (has_xterm && options_get_str("XTermTheme"))
+		load_color_theme (options_get_str("XTermTheme"));
+	else if (options_get_str("Theme"))
 		load_color_theme (options_get_str("Theme"));
 
 	/* windows */

@@ -73,6 +73,9 @@ ShowTime		= IfAvailable
 # /usr/share/moc/themes/ (depends on installation prefix) or ~/.moc/themes/
 # Theme			= example_theme
 
+# The theme used when running on on xterm
+# XTermTheme		= transparent-background
+
 # MOC directory - where pid file, socket, and state files are stored.
 # You can use ~ at the begining
 # MOCDir		= ~/.moc
