@@ -31,5 +31,6 @@ void *xrealloc (void *ptr, const size_t size);
 char *xstrdup (const char *s);
 void fatal (const char *format, ...);
 char *create_file_name (const char *file);
+int proper_sound_driver (const char *driver);
 
 #endif

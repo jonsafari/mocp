@@ -1,7 +1,7 @@
 #ifndef SERVER_H
 #define SERVER_H
 
-int server_init (int debug, int foreground, const char *sound_driver);
+int server_init (int debug, int foreground);
 void server_loop (int list_sock);
 void error (const char *format, ...);
 void state_change ();

@@ -30,7 +30,7 @@ void audio_play (const char *fname);
 void audio_next ();
 void audio_pause ();
 void audio_unpause ();
-void audio_init (const char *sound_driver);
+void audio_init ();
 void audio_exit ();
 void audio_seek (const int sec);
 
