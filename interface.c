@@ -1239,9 +1239,11 @@ static void fill_tags_from_playlist (struct plist *plist)
 		}
 }
 
-/* Go to the directory dir, it it is NULL, go to the cwd. If reload == 1,
- * dont use tags from the playlist. Return 1 on success, 0 on error. */
-static int go_to_dir (char *dir, const int reload)
+/* Load the directory content into curr_plist and make curr_plist_menu.
+ * If dir is NULL, go to the cwd.
+ * If reload == 1, dont use tags from the playlist.
+ * Return 1 on success, 0 on error. */
+static int load_dir (char *dir, const int reload)
 {
 	struct plist *old_curr_plist;
 	char last_dir[PATH_MAX];
@@ -1276,7 +1278,6 @@ static int go_to_dir (char *dir, const int reload)
 
 	plist_free (old_curr_plist);
 	free (old_curr_plist);
-	visible_plist = curr_plist;
 
 	if (curr_plist_menu)
 		menu_free (curr_plist_menu);
@@ -1300,19 +1301,28 @@ static int go_to_dir (char *dir, const int reload)
 			qsort_strcmp_func);
 	
 	curr_plist_menu = make_menu (curr_plist, dirs, playlists);
-	curr_menu = curr_plist_menu;
 	file_list_free (dirs);
 	file_list_free (playlists);
 	if (going_up)
-		menu_setcurritem_title (curr_menu, last_dir);
+		menu_setcurritem_title (curr_plist_menu, last_dir);
 	
-	set_title (cwd);
-
-	update_state ();
 	sprintf (msg, "%d files and directories", curr_plist_menu->nitems - 1);
 	set_iface_status_ref (msg);
 
 	return 1;
+}
+
+static int go_to_dir (char *dir)
+{
+	if (load_dir(dir, 0)) {
+		visible_plist = curr_plist;
+		curr_menu = curr_plist_menu;
+		set_title (cwd);
+		update_state ();
+		return 1;
+	}
+
+	return 0;
 }
 
 /* Make new cwd path from CWD and this path */
@@ -1336,16 +1346,16 @@ static void enter_first_dir ()
 		
 		if ((music_dir = options_get_str("MusicDir"))) {
 			make_path (music_dir);
-			if (go_to_dir(NULL, 0))
+			if (go_to_dir(NULL))
 				return;
 		}
 		else
 			interface_error ("MusicDir is not set");
 	}
-	if (read_last_dir() && go_to_dir(NULL, 0))
+	if (read_last_dir() && go_to_dir(NULL))
 		return;
 	set_start_dir ();
-	if (!go_to_dir(NULL, 0))
+	if (!go_to_dir(NULL))
 		interface_fatal ("Can't enter any directory.");
 }
 
@@ -1387,7 +1397,7 @@ static void process_args (char **args, const int num)
 {
 	if (num == 1 && isdir(args[0]) == 1) {
 		make_path (args[0]);
-		if (!go_to_dir(NULL, 0))
+		if (!go_to_dir(NULL))
 			enter_first_dir ();
 	}
 	else {
@@ -1867,7 +1877,7 @@ static void go_file ()
 		else
 			strcpy (dir, menu_item->file);
 
-		go_to_dir (dir, 0);
+		go_to_dir (dir);
 	}
 	else if (menu_item->type == F_DIR && visible_plist == playlist)
 		
@@ -2095,14 +2105,22 @@ static void switch_read_tags ()
 }
 
 /* Reread the directory. */
-static void reread_dir ()
+static void reread_dir (const int set_curr_menu, const int clear_tags)
 {
-	int selected_item = curr_menu->selected;
-	int top_item = curr_menu->top;
+	int selected_item = curr_plist_menu->selected;
+	int top_item = curr_plist_menu->top;
 
-	go_to_dir (NULL, 1);
-	menu_set_top_item (curr_menu, top_item);
-	menu_setcurritem (curr_menu, selected_item);
+	if (load_dir(NULL, clear_tags)) {
+		if (set_curr_menu) {
+			visible_plist = curr_plist;
+			curr_menu = curr_plist_menu;
+		}
+
+		menu_set_top_item (curr_plist_menu, top_item);
+		menu_setcurritem (curr_plist_menu, selected_item);
+
+		update_state ();
+	}
 }
 
 static void delete_item ()
@@ -2246,10 +2264,8 @@ static int entry_plist_save_key (const int ch)
 				if (plist_save(playlist, path, cwd))
 					interface_message ("Playlist saved.");
 				set_iface_status_ref (NULL);
-				if (visible_plist == curr_plist) {
-					reread_dir ();
-					update_menu ();
-				}
+				reread_dir (curr_plist == visible_plist, 0);
+				update_menu ();
 			}
 		}
 		update_info_win ();
@@ -2269,6 +2285,9 @@ static int entry_plist_overwrite_key (const int key)
 			interface_message ("Playlist saved.");
 		set_iface_status_ref (NULL);
 		free (file);
+		
+		reread_dir (curr_plist == visible_plist, 0);
+		update_menu ();
 	}
 	else if (key == 'n') {
 		entry_disable ();
@@ -2536,7 +2555,7 @@ static void menu_key (const int ch)
 				break;
 			case 'r':
 				if (visible_plist == curr_plist) {
-					reread_dir ();
+					reread_dir (1, 1);
 					do_update_menu = 1;
 				}
 				break;
@@ -2545,14 +2564,14 @@ static void menu_key (const int ch)
 						!options_get_int(
 							"ShowHiddenFiles"));
 				if (visible_plist == curr_plist) {
-					reread_dir ();
+					reread_dir (1, 0);
 					do_update_menu = 1;
 				}
 				break;
 			case 'm':
 				if (options_get_str("MusicDir")) {
 					go_to_dir (options_get_str(
-								"MusicDir"), 0);
+								"MusicDir"));
 					do_update_menu = 1;
 				}
 				else
