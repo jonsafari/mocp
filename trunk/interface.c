@@ -1112,8 +1112,8 @@ static char *find_title (char *file)
 		debug ("Found title on the playlist");
 
 		update_file (&playlist->items[idx]);
-		curr_plist->items[idx].tags = read_file_tags (file,
-				curr_plist->items[idx].tags, TAGS_COMMENTS);
+		playlist->items[idx].tags = read_file_tags (file,
+				playlist->items[idx].tags, TAGS_COMMENTS);
 	}
 	else {
 		struct file_tags *tags;
@@ -1356,9 +1356,8 @@ static int load_dir (char *dir)
 	if (options_get_int("ReadTags")) {
 		set_iface_status_ref ("Reading tags...");
 		sync_plists_data (curr_plist, playlist);
-		make_titles_tags (curr_plist);
-		sync_plists_data (playlist, curr_plist);
 		switch_titles_tags (curr_plist);
+		sync_plists_data (playlist, curr_plist);
 	}
 	else {
 		make_titles_file (curr_plist);
