@@ -25,11 +25,11 @@
 #include "server.h"
 #include "audio.h"
 #include "main.h"
+#include "options.h"
 #include "log.h"
 
 #define DEBUG
 
-#define DEVICE		"default"
 #define BUFFER_MAX_USEC	300000
 
 /* TODO:
@@ -61,7 +61,8 @@ static int alsa_open (struct sound_params *sound_params)
 	snd_pcm_uframes_t chunk_frames;
 	snd_pcm_uframes_t buffer_frames;
 
-	if ((err = snd_pcm_open(&handle, DEVICE, SND_PCM_STREAM_PLAYBACK,
+	if ((err = snd_pcm_open(&handle, options_get_str("AlsaDevice"),
+					SND_PCM_STREAM_PLAYBACK,
 					SND_PCM_NONBLOCK)))
 		error ("Can't open audio: %s", snd_strerror(err));
 
@@ -313,6 +314,11 @@ static void alsa_set_mixer (int vol)
 
 static int alsa_get_buff_fill ()
 {
+	if (handle) {
+		snd_pcm_sframes_t delay;
+		snd_pcm_delay (handle, &delay);
+		return delay * bytes_per_frame;
+	}
 	return 0;
 }
 
