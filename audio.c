@@ -236,10 +236,10 @@ static void find_hw_funcs (const char *driver, struct hw_funcs *funcs)
 	fatal ("No valid sound driver");
 }
 
-void audio_init (const char *sound_driver)
+void audio_init ()
 {
 	memset (&hw, 0, sizeof(hw));
-	find_hw_funcs (sound_driver, &hw);
+	find_hw_funcs (options_get_str("SoundDriver"), &hw);
 	hw.init ();
 	buf_init (&out_buf, options_get_int("OutputBuffer") * 1024);
 	plist_init (&playlist);
