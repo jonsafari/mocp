@@ -118,6 +118,7 @@ int server_init (int debug, int foreground, const char *sound_driver)
 		fprintf (stderr, "Server already running with pid %d\n", pid);
 		fatal ("Exiting.");
 	}
+	/* TODO: delete the socket */
 
 	if (foreground)
 		log_init_stream (stdout);	
@@ -221,13 +222,14 @@ static int req_list_add ()
 /* Handle CMD_PLAY, return 0 if ok or EOF on error. */
 static int req_play ()
 {
-	int num;
+	char *file;
 
-	if (!get_int(client_sock, &num))
+	if (!(file = get_str(client_sock)))
 		return EOF;
 
-	logit ("Playing %d", num);
-	audio_play (num);
+	logit ("Playing %s", file);
+	audio_play (file);
+	free (file);
 	
 	return 0;
 }
