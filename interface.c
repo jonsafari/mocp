@@ -117,11 +117,14 @@ static struct file_info {
 	char state[3];
 } file_info;
 
-/* When we are waiting for data from the server an event can occur. The eventa
- * we don't want to forget are EV_STATE and EV_ERROR, so set this variables to
- * 1 if one of them occur. */
-static int must_update_state = 0;
-static int must_update_error = 0;
+/* When we are waiting for data from the server, events can occur. We can't 
+ * handle them while waiting, so we push them on the queue. */
+#define EVENTS_MAX	10
+static struct
+{
+	int queue[EVENTS_MAX];
+	int num;
+} events = { {}, 0 };
 
 enum entry_type
 {
@@ -308,6 +311,24 @@ static char *get_str_from_srv ()
 	return str;
 }
 
+/* Push an event on the queue if it's not already there. */
+static void event_push (const int event)
+{
+	int i;
+
+	for (i = 0; i < events.num; i++)
+		if (events.queue[i] == event) {
+			debug ("Not adding event 0x%02x, it's already in the "
+					"queue.");
+			return;
+		}
+
+	assert (events.num < EVENTS_MAX - 1);
+	events.queue[events.num++] = event;
+
+	debug ("Added event 0x%02x to the queue", event);
+}
+
 /* Get an integer value from the server that will arrive after EV_DATA. */
 static int get_data_int ()
 {
@@ -317,10 +338,8 @@ static int get_data_int ()
 		event = get_int_from_srv ();
 		if (event == EV_DATA)
 			return get_int_from_srv ();
-		else if (event == EV_STATE)
-			 must_update_state = 1;
-		else if (event == EV_ERROR)
-			must_update_error = 1;
+		else
+			event_push (event);
 	}		
 }
 
@@ -676,10 +695,8 @@ static char *get_data_str ()
 		event = get_int_from_srv ();
 		if (event == EV_DATA)
 			return get_str_from_srv ();
-		else if (event == EV_STATE)
-			must_update_state = 1;
-		else if (event == EV_ERROR)
-			must_update_error = 1;
+		else
+			event_push (event);
 	}		
 }
 
@@ -900,8 +917,10 @@ static void update_bitrate ()
 				"%d", bitrate);
 		file_info.bitrate[sizeof(file_info.bitrate)-1] = 0;
 	}
-	else
+	else {
+		debug ("Cleared bitrate");
 		file_info.bitrate[0] = 0;
+	}
 
 	update_info_win ();
 	wrefresh (info_win);
@@ -1343,15 +1362,6 @@ static void server_event (const int event)
 		default:
 			interface_message ("Unknown event: 0x%02x", event);
 			logit ("Unknown event 0x%02x", event);
-	}
-
-	if (must_update_state) {
-		update_state ();
-		must_update_state = 0;
-	}
-	if (must_update_error) {
-		update_error ();
-		must_update_error = 0;
 	}
 }
 
@@ -2060,6 +2070,40 @@ static void do_resize ()
 }
 #endif
 
+/* Handle events from the queue. */
+static void dequeue_events ()
+{
+	/* While handling events, new events could be added to the queue,
+	 * we recognize such situation be checking if number of events has
+	 * changed. */
+
+	debug ("Dequeuing events...");
+
+	while (events.num) {
+		int i;
+		int num_before = events.num; /* number of events can change
+						during events handling */
+		
+		debug ("%d events pending", events.num);
+
+		for (i = 0; i < num_before; i++) {
+			int event = events.queue[i];
+
+			/* "Mark" it as handled. When such event occur before
+			 * we handle all events, we don't lose it in
+			 * push_event(). */
+			events.queue[i] = -1;
+			server_event (event);
+		}
+
+		memmove (events.queue, events.queue + num_before,
+				sizeof(int) * (events.num - num_before));
+		events.num -= num_before;
+	}
+
+	debug ("done");
+}
+
 void interface_loop ()
 {
 	while (!want_quit) {
@@ -2094,9 +2138,9 @@ void interface_loop ()
 				menu_key (wgetch(main_win));
 			if (FD_ISSET(srv_sock, &fds))
 				server_event (get_int_from_srv());
+			dequeue_events ();
 		}
 	}
-
 }
 
 /* Save the current directory path to a file. */
