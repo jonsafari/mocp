@@ -122,7 +122,9 @@ static void ogg_close (void *void_data)
 
 static int ogg_seek (void *void_data, int sec)
 {
-	
+	struct ogg_data *data = (struct ogg_data *)void_data;
+
+	return ov_time_seek (&data->vf, sec) ? -1 : sec;
 }
 
 static int ogg_decode (void *void_data, char *buf, int buf_len,
