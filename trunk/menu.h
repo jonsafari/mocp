@@ -2,7 +2,7 @@
 #define MENU_H
 
 #include <ncurses.h>
-#include "playlist.h"
+#include "files.h"
 
 enum menu_request
 {
@@ -16,10 +16,12 @@ enum menu_request
 
 struct menu_item
 {
-	char *title;		/* The text of the item */
+	char *title;		/* Titile of the item */
 	int attr_normal;	/* Attributes in normal mode */
 	int attr_sel;		/* Attributes in selected mode */
 	int plist_pos;		/* Position of that item on the playlist */
+	char *file;		/* File associated with the item. */ 
+	enum file_type type;	/* Type of the associated file. */
 };
 
 struct menu
@@ -45,7 +47,8 @@ struct menu
 struct menu *menu_new (WINDOW *win, struct menu_item **items, const int nitems,
 		const int attr_normal, const int attr_normal_sel,
 		const int attr_marked, const int attr_marked_sel);
-struct menu_item *menu_newitem (char *title, const int plist_pos);
+struct menu_item *menu_newitem (char *title, const int plist_pos,
+		const enum file_type type, const char *file);
 void menu_free (struct menu *menu);
 void menu_driver (struct menu *menu, enum menu_request req);
 struct menu_item *menu_curritem (struct menu *menu);
