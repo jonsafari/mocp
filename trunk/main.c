@@ -32,6 +32,7 @@
 #include "options.h"
 #include "protocol.h"
 #include "log.h"
+#include "file_types.h"
 
 #define CONFIG_FILE	"config"
 
@@ -146,6 +147,7 @@ static void start_moc (const struct parameters *params)
 
 	options_init ();
 	options_parse (create_file_name(CONFIG_FILE));
+	file_types_init ();
 	srand (time(NULL));
 
 	if (!params->foreground && (server_sock = server_connect()) == -1) {
