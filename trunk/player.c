@@ -308,6 +308,8 @@ void player_cleanup ()
 		logit ("Can't destroy request mutex: %s", strerror(errno));
 	if (pthread_cond_destroy(&request_cond))
 		logit ("Can't destroy request condition: %s", strerror(errno));
+
+	precache_wait (&precache);
 	precache_reset (&precache);
 }
 
