@@ -27,6 +27,7 @@
 #include <time.h>
 #include <errno.h>
 #include <assert.h>
+#include <ctype.h>
 #include "protocol.h"
 #include "main.h"
 #include "playlist.h"
@@ -38,8 +39,8 @@
 #include "interface.h"
 
 #define STATUS_LINE_LEN	25
-
 #define INTERFACE_LOG	"mocp_client_log"
+#define MAX_SEARCH_STRING	(COLS - 6)
 
 /* Socket connection to the server. */
 static int srv_sock = -1;
@@ -117,6 +118,10 @@ static struct file_info {
  * 1 if one of them occur. */
 static int must_update_state = 0;
 static int must_update_error = 0;
+
+/* for CTRL-g - search an item */
+static int search_file_mode = 0;
+static char search_string[256];
 
 /* ^c version of c */
 #ifndef CTRL
@@ -289,10 +294,18 @@ static void draw_mixer () {
 			bar + vol / 5, 20 - (vol / 5));
 }
 
+static void draw_search_entry ()
+{
+	wmove (info_win, 0, 1);
+	wattrset (info_win, COLOR_PAIR(CLR_BAR));
+	wprintw (info_win, "GO: %-*s", MAX_SEARCH_STRING, search_string);
+}
+
 /* Update the info win */
 static void update_info_win ()
 {
 	werase (info_win);
+	wattrset (info_win, COLOR_PAIR(CLR_NUMBERS));
 	info_border ();
 	wattron (info_win, A_BOLD);
 
@@ -367,14 +380,18 @@ static void update_info_win ()
 	
 	wattron (info_win, COLOR_PAIR(CLR_ITEM));
 
-	/* Status line */
-	wattroff (info_win, A_BOLD);
-	mvwaddch (info_win, 0, 5, ACS_RTEE);
-	wattroff (info_win, A_BOLD);
-	mvwaddch (info_win, 0, 5 + STATUS_LINE_LEN + 1, ACS_LTEE);
-	draw_interface_status ();
-			
-	draw_mixer ();
+	if (search_file_mode)
+		draw_search_entry ();
+	else {
+		/* Status line */
+		wattroff (info_win, A_BOLD);
+		mvwaddch (info_win, 0, 5, ACS_RTEE);
+		wattroff (info_win, A_BOLD);
+		mvwaddch (info_win, 0, 5 + STATUS_LINE_LEN + 1, ACS_LTEE);
+		draw_interface_status ();
+				
+		draw_mixer ();
+	}
 }
 
 static void set_interface_status (const char *msg)
@@ -1437,6 +1454,81 @@ static void delete_item ()
 	}
 }
 
+/* Turn on search file mode. */
+void search_file_mode_on ()
+{
+	search_file_mode = 1;
+	search_string[0] = 0;
+	draw_search_entry ();
+	wrefresh (info_win);
+}
+
+void search_file_key (const int ch)
+{
+
+	if (isgraph(ch) || ch == ' ') {
+		int item;
+		int len = strlen (search_string);
+	
+		if (len == MAX_SEARCH_STRING)
+			return;
+		search_string[len++] = ch;
+		search_string[len] = 0;
+
+		item = menu_find_pattern_next (menu, search_string,
+				menu_get_selected(menu));
+
+		if (item != -1) {
+			menu_setcurritem (menu, item);
+			werase (main_win);
+			main_border ();
+			menu_draw (menu);
+			wrefresh (main_win);
+			draw_search_entry ();
+		}
+		else
+			search_string[len-1] = 0;
+	}
+	else if (ch == KEY_BACKSPACE) {
+
+		/* delete last character */
+		if (search_string[0] != 0) {
+			int len = strlen (search_string);
+
+			search_string[len-1] = 0;
+			draw_search_entry ();
+		}
+	}
+	else if (ch == CTRL('x')) {
+
+		/* exit file search */
+		search_file_mode = 0;
+		update_info_win ();
+	}
+	else if (ch == CTRL('g')) {
+		int item;
+
+		/* Find next matching */
+		item = menu_find_pattern_next (menu, search_string,
+				menu_next_turn(menu));
+
+		menu_setcurritem (menu, item);
+		werase (main_win);
+		main_border ();
+		menu_draw (menu);
+		wrefresh (main_win);
+		draw_search_entry ();
+	}
+	else if (ch == '\n') {
+
+		/* go to the file */
+		go_file ();
+		search_file_mode = 0;
+		update_info_win ();
+	}
+	wrefresh (info_win);
+}
+
 /* Handle key */
 static void menu_key (const int ch)
 {
@@ -1454,153 +1546,163 @@ static void menu_key (const int ch)
 		wrefresh (info_win);
 		
 		main_win_mode = WIN_MENU;
+	}
+	else if (search_file_mode) {
+		search_file_key (ch);
 		return;
 	}
-	
-	switch (ch) {
-		case 'q':
-			want_quit = 1;
-			send_int (srv_sock, CMD_DISCONNECT);
-			break;
-		case '\n':
-			go_file ();
-			update_menu = 1;
-			break;
-		case KEY_DOWN:
-			menu_driver (menu, REQ_DOWN);
-			update_menu = 1;
-			break;
-		case KEY_UP:
-			menu_driver (menu, REQ_UP);
-			update_menu = 1;
-			break;
-		case KEY_NPAGE:
-			menu_driver (menu, REQ_PGDOWN);
-			update_menu = 1;
-			break;
-		case KEY_PPAGE:
-			menu_driver (menu, REQ_PGUP);
-			update_menu = 1;
-			break;
-		case KEY_HOME:
-			menu_driver (menu, REQ_TOP);
-			update_menu = 1;
-			break;
-		case KEY_END:
-			menu_driver (menu, REQ_BOTTOM);
-			update_menu = 1;
-			break;
-		case 'Q':
-			send_int_to_srv (CMD_QUIT);
-			want_quit = 1;
-			break;
-		case 's':
-			send_int_to_srv (CMD_STOP);
-			break;
-		case 'n':
-			send_int_to_srv (CMD_NEXT);
-			break;
-		case 'p':
-		case ' ':
-			switch_pause ();
-			break;
-		case 'f':
-			switch_read_tags ();
-			update_menu = 1;
-			break;
-		case 'S':
-			toggle_option ("Shuffle");
-			break;
-		case 'R':
-			toggle_option ("Repeat");
-			break;
-		case 'X':
-			toggle_option ("AutoNext");
-			break;
-		case 'l':
-			toggle_plist ();
-			update_menu = 1;
-			break;
-		case 'a':
-			add_file_plist ();
-			break;
-		case 'C':
-			clear_playlist ();
-			update_menu = 1;
-			break;
-		case 'A':
-			add_dir_plist ();
-			break;
-		case '<':
-			set_mixer (get_mixer() - 1);
-			break;
-		case ',':
-			set_mixer (get_mixer() - 5);
-			break;
-		case '.':
-			set_mixer (get_mixer() + 5);
-			break;
-		case '>':
-			set_mixer (get_mixer() + 1);
-			break;
-		case KEY_LEFT:
-			seek (-1);
-			break;
-		case KEY_RIGHT:
-			seek (1);
-			break;
-		case 'h':
-			help_screen ();
-			break;
-		case 'M':
-			interface_message (NULL);
-			update_info_win ();
-			wrefresh (info_win);
-			break;
-		case CTRL('r'):
-			wclear (info_win);
-			update_info_win ();
-			wrefresh (info_win);
-			wclear (main_win);
-			update_menu = 1;
-			break;
-		case 'r':
-			if (visible_plist == curr_plist) {
-				reread_dir ();
+	else {
+		switch (ch) {
+			case 'q':
+				want_quit = 1;
+				send_int (srv_sock, CMD_DISCONNECT);
+				break;
+			case '\n':
+				go_file ();
 				update_menu = 1;
-			}
-			break;
-		case 'H':
-			option_set_int ("ShowHiddenFiles",
-					!options_get_int("ShowHiddenFiles"));
-			if (visible_plist == curr_plist) {
-				reread_dir ();
+				break;
+			case KEY_DOWN:
+				menu_driver (menu, REQ_DOWN);
 				update_menu = 1;
-			}
-			break;
-		case 'm':
-			if (options_get_str("MusicDir")) {
-				go_to_dir (options_get_str("MusicDir"));
+				break;
+			case KEY_UP:
+				menu_driver (menu, REQ_UP);
 				update_menu = 1;
-			}
-			else
-				interface_error ("MusicDir not defined");
-			break;
-		case 'd':
-			delete_item ();
-			update_menu = 1;
-			break;
-		case KEY_RESIZE:
-			break;
-		default:
-			interface_error ("Bad key");
-	}
+				break;
+			case KEY_NPAGE:
+				menu_driver (menu, REQ_PGDOWN);
+				update_menu = 1;
+				break;
+			case KEY_PPAGE:
+				menu_driver (menu, REQ_PGUP);
+				update_menu = 1;
+				break;
+			case KEY_HOME:
+				menu_driver (menu, REQ_TOP);
+				update_menu = 1;
+				break;
+			case KEY_END:
+				menu_driver (menu, REQ_BOTTOM);
+				update_menu = 1;
+				break;
+			case 'Q':
+				send_int_to_srv (CMD_QUIT);
+				want_quit = 1;
+				break;
+			case 's':
+				send_int_to_srv (CMD_STOP);
+				break;
+			case 'n':
+				send_int_to_srv (CMD_NEXT);
+				break;
+			case 'p':
+			case ' ':
+				switch_pause ();
+				break;
+			case 'f':
+				switch_read_tags ();
+				update_menu = 1;
+				break;
+			case 'S':
+				toggle_option ("Shuffle");
+				break;
+			case 'R':
+				toggle_option ("Repeat");
+				break;
+			case 'X':
+				toggle_option ("AutoNext");
+				break;
+			case 'l':
+				toggle_plist ();
+				update_menu = 1;
+				break;
+			case 'a':
+				add_file_plist ();
+				break;
+			case 'C':
+				clear_playlist ();
+				update_menu = 1;
+				break;
+			case 'A':
+				add_dir_plist ();
+				break;
+			case '<':
+				set_mixer (get_mixer() - 1);
+				break;
+			case ',':
+				set_mixer (get_mixer() - 5);
+				break;
+			case '.':
+				set_mixer (get_mixer() + 5);
+				break;
+			case '>':
+				set_mixer (get_mixer() + 1);
+				break;
+			case KEY_LEFT:
+				seek (-1);
+				break;
+			case KEY_RIGHT:
+				seek (1);
+				break;
+			case 'h':
+				help_screen ();
+				break;
+			case 'M':
+				interface_message (NULL);
+				update_info_win ();
+				wrefresh (info_win);
+				break;
+			case CTRL('r'):
+				wclear (info_win);
+				update_info_win ();
+				wrefresh (info_win);
+				wclear (main_win);
+				update_menu = 1;
+				break;
+			case 'r':
+				if (visible_plist == curr_plist) {
+					reread_dir ();
+					update_menu = 1;
+				}
+				break;
+			case 'H':
+				option_set_int ("ShowHiddenFiles",
+						!options_get_int(
+							"ShowHiddenFiles"));
+				if (visible_plist == curr_plist) {
+					reread_dir ();
+					update_menu = 1;
+				}
+				break;
+			case 'm':
+				if (options_get_str("MusicDir")) {
+					go_to_dir (options_get_str(
+								"MusicDir"));
+					update_menu = 1;
+				}
+				else
+					interface_error ("MusicDir not "
+							"defined");
+				break;
+			case 'd':
+				delete_item ();
+				update_menu = 1;
+				break;
+			case CTRL('g'):
+				search_file_mode_on ();
+				break;
+			case KEY_RESIZE:
+				break;
+			default:
+				interface_error ("Bad key");
+		}
 
-	if (update_menu) {
-		werase (main_win);
-		main_border ();
-		menu_draw (menu);
-		wrefresh (main_win);
+		if (update_menu) {
+			werase (main_win);
+			main_border ();
+			menu_draw (menu);
+			wrefresh (main_win);
+		}
 	}
 }
 
