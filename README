@@ -32,7 +32,7 @@ under development.
 
 Other features:
  - Simple mixer.
- - Colour themes.
+ - Color themes.
  - Searching the menu (the playlist or a directory) like M-s in Midnight
    Commander.
  - The way MOC creates titles from tags is configurable.
@@ -87,7 +87,7 @@ Themes
 
 Yes, there are themes, because people wanted them. :)
 
-Themes can change all colours and only colours. Example theme file with a
+Themes can change all colors and only colors. Example theme file with a
 exhausting description is included (example_theme), it is the default MOC
 apperance.
 
@@ -95,7 +95,7 @@ Theme files should be placed in ~/.moc/themes/ directory, and can be selected
 with the Theme configuration options or the -T command line option (see the man
 page and the example configuration file).
 
-I don't include any other theme files because I know nothing about colours and 
+I don't include any other theme files because I know nothing about colors and 
 I have big problems with designing pretty things. I hope someone will create a
 nice alternative theme that I could include in the distribution. Maybe you? :)
 
