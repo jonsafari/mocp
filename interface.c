@@ -2291,6 +2291,12 @@ static void go_file ()
 		if (plist_load(playlist, menu_item_get_file(curr_menu,
 						selected), cwd))
 			interface_message ("Playlist loaded.");
+		
+		if (options_get_int("SyncPlaylist")) {
+			send_int_to_srv (CMD_CLI_PLIST_CLEAR);
+			send_all_items (playlist);
+		}
+
 		set_iface_status_ref (NULL);
 		toggle_plist ();
 	}
