@@ -159,7 +159,7 @@ void options_init ()
 	option_add_str ("AlsaMixer", "PCM");
 	option_add_int ("HideFileExtension", 0);
 	option_add_int ("ShowFormat", 1);
-	option_add_str ("ShowTime", "no");
+	option_add_str ("ShowTime", "IfAvailable");
 	option_add_str ("Theme", NULL);
 }
 
