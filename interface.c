@@ -1089,6 +1089,14 @@ static void process_args (char **args, const int num)
 	}
 }
 
+/* Load the playlist from .moc directory. */
+static void load_playlist ()
+{
+	char *plist_file = create_file_name ("playlist.m3u");
+	if (file_type(plist_file) == F_PLAYLIST)
+		plist_load (playlist, plist_file, cwd);
+}
+
 /* Initialize the interface. args are command line file names. arg_num is the
  * number of arguments. */
 void init_interface (const int sock, const int debug, char **args,
@@ -1159,6 +1167,7 @@ void init_interface (const int sock, const int debug, char **args,
 		process_args (args, arg_num);
 	else
 		enter_first_dir ();
+	load_playlist ();
 	
 	menu_draw (menu);
 	wrefresh (main_win);
@@ -1935,11 +1944,6 @@ void interface_loop ()
 		}
 	}
 
-	plist_free (curr_plist);
-	plist_free (playlist);
-	menu_free (menu);
-	free (curr_plist);
-	free (playlist);
 }
 
 /* Save the current directory path to a file. */
@@ -1957,10 +1961,28 @@ static void save_curr_dir ()
 	fclose (dir_file);
 }
 
+/* Save the playlist in .moc directory or remove the old playist if the
+ * playlist is empty. */
+static void save_playlist ()
+{
+	char *plist_file = create_file_name("playlist.m3u");
+
+	if (plist_count(playlist))
+		plist_save (playlist, plist_file, NULL);
+	else
+		unlink (plist_file);
+}
+
 void interface_end ()
 {
 	save_curr_dir ();
+	save_playlist ();
 	close (srv_sock);
 	endwin ();
 	xterm_clear_title ();
+	plist_free (curr_plist);
+	plist_free (playlist);
+	menu_free (menu);
+	free (curr_plist);
+	free (playlist);
 }
