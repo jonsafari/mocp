@@ -253,18 +253,21 @@ static void find_common_path (char *buf, const int buf_size,
 		}
 }
 
-/* Save the playlist into the file. Return 0 on error. */
+/* Save the playlist into the file. Return 0 on error. if cwd is NULL, use
+ * absolute paths. */
 int plist_save (struct plist *plist, const char *file, const char *cwd)
 {
 	char common_path[PATH_MAX+1];
 
-	/* TODO: make this a configurable bahaviour (absolute or relative
-	 * paths) */
-	find_common_path (common_path, sizeof(common_path), plist);
+	if (cwd)
+		
+		/* TODO: make this a configurable bahaviour (absolute or
+		 * relative paths) */
+		find_common_path (common_path, sizeof(common_path), plist);
 
 	/* FIXME: checkif it possible to just add some directories to make
 	 * relative path working. */
 	
-	return plist_save_m3u (plist, file,
-			!strcmp(common_path, cwd) ? strlen(common_path) : 0);
+	return plist_save_m3u (plist, file, cwd && !strcmp(common_path, cwd) ?
+			strlen(common_path) : 0);
 }
