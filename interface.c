@@ -2404,11 +2404,8 @@ static int entry_go_dir_key (const int ch)
 		strncpy (buf, complete_dir ? complete_dir : dir, sizeof(buf));
 		entry.text[sizeof(buf)-1] = 0;
 
-		if (complete_dir) {
-			strncat (entry.text, "/", sizeof(buf) - strlen(buf));
-			entry.text[sizeof(buf)-1] = 0;
+		if (complete_dir)
 			free (complete_dir);
-		}
 
 		entry_set_text (buf);
 
