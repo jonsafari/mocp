@@ -3,6 +3,7 @@
 
 #include <stdlib.h>
 #include <stdarg.h>
+#include <ctype.h>
 
 #define CONFIG_DIR      ".moc"
 
@@ -27,6 +28,11 @@
 #define UNLOCK(mutex)	pthread_mutex_unlock (&mutex)
 
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
+
+/* isblank() is a GNU extension */
+#ifndef isblank
+#define isblank(c) (c == ' ' || c == '\t')
+#endif
 
 void *xmalloc (const size_t size);
 void *xrealloc (void *ptr, const size_t size);

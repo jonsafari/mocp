@@ -18,18 +18,12 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <ctype.h>
 #include "main.h"
 #include "log.h"
 #include "options.h"
 
 #define OPTIONS_MAX	64
 #define OPTION_NAME_MAX	32
-
-/* isblank() is a GNU extension */
-#ifndef isblank
-#define isblank(c) (c == ' ' || c == '\t')
-#endif
 
 enum option_type
 {
