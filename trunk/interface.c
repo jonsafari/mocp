@@ -1669,21 +1669,50 @@ static short find_color_name (const char *name)
 	return -1;
 }
 
-static void load_color_theme (const char *fname)
+/* Find path to the theme for the given name. Returned memory is static. */
+static char *find_theme_file (const char *name)
 {
-	FILE *file;
-	char path[PATH_MAX];
-	char *line;
-	int line_num = 0;
+	static char path[PATH_MAX];
+	
+	path[sizeof(path)-1] = 0;
+	if (name[0] == '/') {
 
-	if (fname[0] != '/') {
-		if (snprintf(path, sizeof(path), "themes/%s", fname)
-				>= (int)sizeof(path))
+		/* Absolute path */
+		strncpy (path, name, sizeof(path));
+		if (path[sizeof(path)-1])
 			interface_fatal ("Theme path too long!");
+		return path;
 	}
 
-	if (!(file = fopen(fname[0] == '/' ? fname : create_file_name(path)
-					, "r")))
+	/* Try the system directory */
+	if (snprintf(path, sizeof(path), "%s/%s", SYSTEM_THEMES_DIR,
+				name) >= (int)sizeof(path))
+		interface_fatal ("Theme path too long!");
+	if (file_exists(path))
+		return path;
+
+	/* Try the user directory */
+	if (snprintf(path, sizeof(path), "%s/%s", create_file_name("themes"),
+				name) >= (int)sizeof(path))
+		interface_fatal ("Theme path too long!");
+	if (file_exists(path))
+		return path;
+
+	/* File related to the current directory? */
+	strncpy (path, name, sizeof(path));
+	if (path[sizeof(path)-1])
+		interface_fatal ("Theme path too long!");
+	return path;
+}
+
+static void load_color_theme (const char *name)
+{
+	FILE *file;
+	char *line;
+	int line_num = 0;
+	char *theme_file = find_theme_file (name);
+
+	if (!(file = fopen(theme_file, "r")))
 		interface_fatal ("Can't open theme file: %s", strerror(errno));
 
 	/* The lines should be in format:
@@ -2301,16 +2330,6 @@ static int entry_search_key (const int ch)
 		return 1;
 	}
 
-	return 0;
-}
-
-/* Return != 0 if the file exists. */
-static int file_exists (const char *file)
-{
-	struct stat file_stat;
-
-	if (!stat(file, &file_stat))
-		return 1;
 	return 0;
 }
 
