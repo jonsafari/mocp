@@ -569,7 +569,7 @@ static struct menu *make_menu (struct plist *plist, struct file_list *dirs,
 		if (!plist_deleted(plist, i)) {
 			menu_items[menu_pos] = menu_newitem (
 					plist->items[i].title, i, F_SOUND,
-					plist_get_file(plist, i));
+					plist->items[i].file);
 			menu_items[menu_pos]->attr_normal = COLOR_PAIR(CLR_ITEM);
 			menu_items[menu_pos]->attr_sel = COLOR_PAIR(CLR_SELECTED);
 			menu_pos++;
@@ -1262,6 +1262,18 @@ static void go_file ()
 		
 		/* the only item on the playlist of type F_DIR is '..' */
 		toggle_plist ();
+	else if (menu_item->type == F_PLAYLIST) {
+		if (plist_count(playlist)) {
+			interface_error ("Please clear the playlist, because "
+					"I'm not sure you want to do this.");
+			return;
+		}
+
+		plist_clear (playlist);
+		if (plist_load_m3u(playlist, menu_item->file))
+			interface_message ("Playlist loaded.");
+		toggle_plist ();
+	}
 }
 
 /* pause/unpause */
