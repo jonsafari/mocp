@@ -1370,14 +1370,12 @@ static void add_file_plist ()
 		return;
 	}
 
-	if (menu_item->plist_pos == -1) {
+	if (menu_item->type != F_SOUND) {
 		interface_error ("To add a directory, use the 'A' command.");
 		return;
 	}
 
-	if (plist_find_fname(playlist,
-				curr_plist->items[menu_item->plist_pos].file)
-			== -1) {
+	if (plist_find_fname(playlist, menu_item->file) == -1) {
 		plist_add_from_item (playlist,
 				&curr_plist->items[menu_item->plist_pos]);
 		if (playlist_menu) {
@@ -1406,7 +1404,6 @@ static void clear_playlist ()
 static void add_dir_plist ()
 {
 	struct menu_item *menu_item = menu_curritem (curr_menu);
-	char dir[PATH_MAX + 1];
 	char msg[50];
 
 	if (visible_plist == playlist) {
@@ -1415,17 +1412,14 @@ static void add_dir_plist ()
 		return;
 	}
 
-	if (menu_item->plist_pos != -1) {
+	if (menu_item->type != F_DIR) {
 		interface_error ("To add a file, use the 'a' command.");
 		return;
 	}
 
-	strcpy (dir, cwd);
-	resolve_path (dir, sizeof(dir), menu_item->title);
-
 	set_interface_status ("reading directories...");
 	wrefresh (info_win);
-	read_directory_recurr (dir, playlist);
+	read_directory_recurr (menu_item->file, playlist);
 	if (options_get_int("ReadTags")) {
 		read_tags (playlist);
 		make_titles_tags (playlist);
