@@ -630,3 +630,13 @@ char *find_match_dir (char *pattern)
 
 	return matching_dir;
 }
+
+/* Return != 0 if the file exists. */
+int file_exists (const char *file)
+{
+	struct stat file_stat;
+
+	if (!stat(file, &file_stat))
+		return 1;
+	return 0;
+}
