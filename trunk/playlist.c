@@ -109,6 +109,7 @@ void plist_init (struct plist *plist)
 	plist->not_deleted = 0;
 	plist->items = (struct plist_item *)xmalloc (sizeof(struct plist_item)
 			* INIT_SIZE);
+	plist->serial = -1;
 	pthread_mutex_init (&plist->mutex, NULL);
 }
 
@@ -733,4 +734,14 @@ void plist_swap_first_fname (struct plist *plist, const char *fname)
 
 	if (i != -1)
 		plist_swap (plist, 0, i);
+}
+
+void plist_set_serial (struct plist *plist, const int serial)
+{
+	plist->serial = serial;
+}
+
+int plist_get_serial (const struct plist *plist)
+{
+	return plist->serial;
 }
