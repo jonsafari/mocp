@@ -124,16 +124,20 @@ static void *read_thread (void *arg)
 
 		LOCK (buf->mutex);
 		
-		/* Update buffer position and fill */
-		buf->pos += played;
-		if (buf->pos == buf->size)
-			buf->pos = 0;
-		buf->fill -= played;
+		/* FIXME: quite stupid test: could lead to infinite loop, but
+		 * what can we do? fatal()? */
+		if (played >= 0) {
+			/* Update buffer position and fill */
+			buf->pos += played;
+			if (buf->pos == buf->size)
+				buf->pos = 0;
+			buf->fill -= played;
 
-		/* Update time */
-		if (played && audio_get_bps())
-			buf->time += played / (float)audio_get_bps();
-		buf->hardware_buf_fill = audio_get_buf_fill();
+			/* Update time */
+			if (played && audio_get_bps())
+				buf->time += played / (float)audio_get_bps();
+			buf->hardware_buf_fill = audio_get_buf_fill();
+		}
 		
 		UNLOCK (buf->mutex);
 	}
