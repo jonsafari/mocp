@@ -79,10 +79,10 @@ enum {
 static WINDOW *main_win = NULL;
 static WINDOW *info_win = NULL;
 
-static char mainwin_title[512] = PACKAGE_STRING;
+static char mainwin_title[512];
 static int msg_timeout = 0;
 static int msg_is_error = 0;
-static char message[512] = "Welcome to "PACKAGE_NAME"! "
+static char message[512] = "Welcome to "PACKAGE_STRING"! "
 	"Please send bug reports to "PACKAGE_BUGREPORT;
 static char interface_status[STATUS_LINE_LEN + 1] = "              ";
 
