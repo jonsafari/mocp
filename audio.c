@@ -148,7 +148,13 @@ void audio_play (const char *fname)
 	player_reset ();
 	
 	LOCK (curr_playing_mut);
-	curr_playing = plist_find_fname (&playlist, fname);
+	if (*fname)
+		curr_playing = plist_find_fname (&playlist, fname);
+	else if (plist_count(&playlist))
+		curr_playing = 0;
+	else 
+		curr_playing = -1;
+	
 	if (curr_playing != -1) {
 		if (pthread_create(&playing_thread, NULL, play_thread, NULL))
 			error ("can't create thread");
