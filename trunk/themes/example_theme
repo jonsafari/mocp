@@ -46,6 +46,7 @@
 # entry_title        - the title of an entry
 # error              - error message
 # message            - information message
+# plist_time         - total time of displayed items
 #
 # FOREGOUND_VOLOR and BACKGROUND_COLOR can have one of the following values:
 # black, red, green, yellow, blue, magenta, cyan, white, default (can be
@@ -99,3 +100,4 @@ entry			= white		blue
 entry_title		= black		cyan
 error			= red		blue	bold
 message			= green		blue	bold
+plist_time		= white		blue
