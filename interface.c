@@ -93,8 +93,9 @@ static char interface_status[STATUS_LINE_LEN + 1] = "              ";
 static struct plist *curr_plist = NULL; /* Current directory */
 static struct plist *playlist = NULL; /* The playlist */
 static struct plist *visible_plist = NULL; /* The playlist the user sees */
-static struct menu *menu = NULL;
-static struct menu *saved_menu = NULL; /* Menu associated with curr_plist */
+static struct menu *curr_plist_menu = NULL;
+static struct menu *playlist_menu = NULL;
+static struct menu *curr_menu = NULL;
 
 static enum {
 	WIN_MENU,
@@ -664,13 +665,13 @@ static void mark_file (const char *file)
 		int i = plist_find_fname (visible_plist, file);
 		
 		if (i != -1) {
-			menu_mark_plist_item (menu, i);
+			menu_mark_plist_item (curr_menu, i);
 			if (main_win_mode == WIN_MENU)
-				menu_draw (menu);
+				menu_draw (curr_menu);
 		}
 	}
 	else
-		menu_unmark_item (menu);
+		menu_unmark_item (curr_menu);
 }
 
 /* Update the xterm title. */
@@ -859,7 +860,7 @@ static void update_curr_file ()
 	}
 	else {
 		file_info.title[0] = 0;
-		menu_unmark_item (menu);
+		menu_unmark_item (curr_menu);
 		xterm_set_title ("");
 	}
 
@@ -880,7 +881,7 @@ static void update_state ()
 	update_curr_file ();
 	
 	if (main_win_mode == WIN_MENU) {
-		menu_draw (menu);
+		menu_draw (curr_menu);
 		wrefresh (main_win);
 	}
 
@@ -940,8 +941,8 @@ static int go_to_dir (char *dir)
 	free (old_curr_plist);
 	visible_plist = curr_plist;
 
-	if (menu)
-		menu_free (menu);
+	if (curr_plist_menu)
+		menu_free (curr_plist_menu);
 	
 	if (dir)
 		strcpy (cwd, dir);
@@ -958,16 +959,17 @@ static int go_to_dir (char *dir)
 	qsort (playlists->items, playlists->num, sizeof(char *),
 			qsort_strcmp_func);
 	
-	menu = make_menu (curr_plist, dirs, playlists);
+	curr_plist_menu = make_menu (curr_plist, dirs, playlists);
+	curr_menu = curr_plist_menu;
 	file_list_free (dirs);
 	file_list_free (playlists);
 	if (going_up)
-		menu_setcurritem_title (menu, last_dir);
+		menu_setcurritem_title (curr_menu, last_dir);
 	
 	set_title (cwd);
 
 	update_state ();
-	sprintf (msg, "%d files and directories", menu->nitems - 1);
+	sprintf (msg, "%d files and directories", curr_plist_menu->nitems - 1);
 	set_interface_status (msg);
 	wrefresh (info_win);
 
@@ -1084,7 +1086,8 @@ static void process_args (char **args, const int num)
 			else
 				make_titles_file (playlist);
 
-			menu = make_menu (playlist, NULL, 0);
+			playlist_menu = make_menu (playlist, NULL, 0);
+			curr_menu = playlist_menu;
 			set_title ("Playlist");
 			update_curr_file ();
 			sprintf (msg, "%d files on the list",
@@ -1176,7 +1179,7 @@ void init_interface (const int sock, const int debug, char **args,
 		enter_first_dir ();
 	load_playlist ();
 	
-	menu_draw (menu);
+	menu_draw (curr_menu);
 	wrefresh (main_win);
 	update_state ();
 }
@@ -1262,8 +1265,7 @@ static void toggle_plist ()
 			enter_first_dir ();
 		else {
 			visible_plist = curr_plist;
-			menu_free (menu);
-			menu = saved_menu;
+			curr_menu = curr_plist_menu;
 			set_title (cwd);
 			update_curr_file ();
 			set_interface_status (NULL);
@@ -1273,8 +1275,9 @@ static void toggle_plist ()
 		char msg[50];
 
 		visible_plist = playlist;
-		saved_menu = menu;
-		menu = make_menu (playlist, NULL, NULL);
+		if (!playlist_menu)
+			playlist_menu = make_menu (playlist, NULL, NULL);
+		curr_menu = playlist_menu;
 		set_title ("Playlist");
 		update_curr_file ();
 		sprintf (msg, "%d files on the list", plist_count(playlist));
@@ -1289,7 +1292,7 @@ static void toggle_plist ()
 /* Action when the user selected a file. */
 static void go_file ()
 {
-	struct menu_item *menu_item = menu_curritem (menu);
+	struct menu_item *menu_item = menu_curritem (curr_menu);
 
 	if (menu_item->type == F_SOUND)
 		play_it (menu_item->plist_pos);
@@ -1359,7 +1362,7 @@ static void toggle_option (const char *name)
 /* Add the current selected file to the playlist. */
 static void add_file_plist ()
 {
-	struct menu_item *menu_item = menu_curritem (menu);
+	struct menu_item *menu_item = menu_curritem (curr_menu);
 
 	if (visible_plist == playlist) {
 		interface_error ("Can't add to the playlist a file from the "
@@ -1374,9 +1377,14 @@ static void add_file_plist ()
 
 	if (plist_find_fname(playlist,
 				curr_plist->items[menu_item->plist_pos].file)
-			== -1)
+			== -1) {
 		plist_add_from_item (playlist,
 				&curr_plist->items[menu_item->plist_pos]);
+		if (playlist_menu) {
+			menu_free (playlist_menu);
+			playlist_menu = NULL;
+		}
+	}
 	else
 		interface_error ("The file is already on the playlist.");
 }
@@ -1387,13 +1395,17 @@ static void clear_playlist ()
 	if (visible_plist == playlist)
 		toggle_plist();
 	plist_clear (playlist);
+	if (playlist_menu) {
+		menu_free (playlist_menu);
+		playlist_menu = NULL;
+	}
 	interface_message ("The playlist was cleared.");
 }
 
 /* Recursively add the conted to a directory to the playlist. */
 static void add_dir_plist ()
 {
-	struct menu_item *menu_item = menu_curritem (menu);
+	struct menu_item *menu_item = menu_curritem (curr_menu);
 	char dir[PATH_MAX + 1];
 	char msg[50];
 
@@ -1422,6 +1434,10 @@ static void add_dir_plist ()
 		make_titles_file (playlist);
 	
 	plist_sort_fname (playlist);
+	if (playlist_menu) {
+		menu_free (playlist_menu);
+		playlist_menu = NULL;
+	}
 
 	sprintf (msg, "%d files on the list", plist_count(playlist));
 	set_interface_status (msg);
@@ -1519,25 +1535,23 @@ static void switch_read_tags ()
 		make_titles_tags (curr_plist);
 	}
 
-	if (visible_plist == curr_plist)
-		update_menu_titles (menu, curr_plist);
-	else
-	{
-		update_menu_titles (menu, playlist);
-		update_menu_titles (saved_menu, curr_plist);
-	}
+	if (playlist_menu)
+		update_menu_titles (playlist_menu, playlist);
+	if (curr_plist_menu)
+		update_menu_titles (curr_plist_menu, curr_plist);
+
 	update_curr_file ();
 }
 
 /* Reread the directory. */
 static void reread_dir ()
 {
-	int selected_item = menu->selected;
-	int top_item = menu->top;
+	int selected_item = curr_menu->selected;
+	int top_item = curr_menu->top;
 
 	go_to_dir (NULL);
-	menu_set_top_item (menu, top_item);
-	menu_setcurritem (menu, selected_item);
+	menu_set_top_item (curr_menu, top_item);
+	menu_setcurritem (curr_menu, selected_item);
 }
 
 static void delete_item ()
@@ -1554,10 +1568,10 @@ static void delete_item ()
 
 	assert (playlist->num > 0);
 
-	selected_item = menu->selected;
-	top_item = menu->top;
+	selected_item = curr_menu->selected;
+	top_item = curr_menu->top;
 	
-	menu_item = menu_curritem (menu);
+	menu_item = menu_curritem (curr_menu);
 	send_int_to_srv (CMD_DELETE);
 	send_str_to_srv (playlist->items[menu_item->plist_pos].file);
 
@@ -1565,10 +1579,11 @@ static void delete_item ()
 	if (plist_count(playlist) > 0) {
 		char msg[50];
 		
-		menu_free (menu);
-		menu = make_menu (playlist, NULL, 0);
-		menu_set_top_item (menu, top_item);
-		menu_setcurritem (menu, selected_item);
+		menu_free (playlist_menu);
+		playlist_menu = make_menu (playlist, NULL, 0);
+		menu_set_top_item (playlist_menu, top_item);
+		menu_setcurritem (playlist_menu, selected_item);
+		curr_menu = playlist_menu;
 		update_curr_file ();
 		sprintf (msg, "%d files on the list", plist_count(playlist));
 		set_interface_status (msg);
@@ -1584,7 +1599,7 @@ static void update_menu ()
 {
 	werase (main_win);
 	main_border ();
-	menu_draw (menu);
+	menu_draw (curr_menu);
 	wrefresh (main_win);
 }
 
@@ -1599,11 +1614,11 @@ static int entry_search_key (const int ch)
 		entry.text[len++] = ch;
 		entry.text[len] = 0;
 
-		item = menu_find_pattern_next (menu, entry.text,
-				menu_get_selected(menu));
+		item = menu_find_pattern_next (curr_menu, entry.text,
+				menu_get_selected(curr_menu));
 
 		if (item != -1) {
-			menu_setcurritem (menu, item);
+			menu_setcurritem (curr_menu, item);
 			update_menu ();
 			entry_draw ();
 		}
@@ -1615,10 +1630,10 @@ static int entry_search_key (const int ch)
 		int item;
 
 		/* Find next matching */
-		item = menu_find_pattern_next (menu, entry.text,
-				menu_next_turn(menu));
+		item = menu_find_pattern_next (curr_menu, entry.text,
+				menu_next_turn(curr_menu));
 
-		menu_setcurritem (menu, item);
+		menu_setcurritem (curr_menu, item);
 		update_menu ();
 		return 1;
 	}
@@ -1716,8 +1731,7 @@ static void menu_key (const int ch)
 		/* Switch to menu */
 		werase (main_win);
 		main_border ();
-		menu_update_size (menu, main_win);
-		menu_draw (menu);
+		menu_draw (curr_menu);
 		update_info_win ();
 		wrefresh (main_win);
 		wrefresh (info_win);
@@ -1737,27 +1751,27 @@ static void menu_key (const int ch)
 				do_update_menu = 1;
 				break;
 			case KEY_DOWN:
-				menu_driver (menu, REQ_DOWN);
+				menu_driver (curr_menu, REQ_DOWN);
 				do_update_menu = 1;
 				break;
 			case KEY_UP:
-				menu_driver (menu, REQ_UP);
+				menu_driver (curr_menu, REQ_UP);
 				do_update_menu = 1;
 				break;
 			case KEY_NPAGE:
-				menu_driver (menu, REQ_PGDOWN);
+				menu_driver (curr_menu, REQ_PGDOWN);
 				do_update_menu = 1;
 				break;
 			case KEY_PPAGE:
-				menu_driver (menu, REQ_PGUP);
+				menu_driver (curr_menu, REQ_PGUP);
 				do_update_menu = 1;
 				break;
 			case KEY_HOME:
-				menu_driver (menu, REQ_TOP);
+				menu_driver (curr_menu, REQ_TOP);
 				do_update_menu = 1;
 				break;
 			case KEY_END:
-				menu_driver (menu, REQ_BOTTOM);
+				menu_driver (curr_menu, REQ_BOTTOM);
 				do_update_menu = 1;
 				break;
 			case 'Q':
@@ -1901,8 +1915,12 @@ static void do_resize ()
 
 	if (main_win_mode == WIN_MENU) {
 		main_border ();
-		menu_update_size (menu, main_win);
-		menu_draw (menu);
+		if (curr_plist_menu)
+			menu_update_size (curr_plist_menu, main_win);
+		if (playlist_menu)
+			menu_update_size (playlist_menu, main_win);
+		
+		menu_draw (curr_menu);
 		update_info_win ();	
 		wrefresh (main_win);
 	}
@@ -1990,7 +2008,10 @@ void interface_end ()
 	xterm_clear_title ();
 	plist_free (curr_plist);
 	plist_free (playlist);
-	menu_free (menu);
+	if (playlist_menu)
+		menu_free (playlist_menu);
+	if (curr_plist_menu)
+		menu_free (curr_plist_menu);
 	free (curr_plist);
 	free (playlist);
 }
