@@ -2199,23 +2199,24 @@ static int entry_search_key (const int ch)
 	
 	if (isgraph(ch) || ch == ' ') {
 		int item;
-		int len = strlen (entry.text);
-	
-		if (len == sizeof(entry.text) - 1)
-			return 1;
-		entry.text[len++] = ch;
-		entry.text[len] = 0;
+		char *search;
 
-		item = menu_find_pattern_next (curr_menu, entry.text,
+		search = (char *)xmalloc (sizeof(char) * 
+				(strlen(entry.text) + 2));
+		sprintf (search, "%s%c", entry.text, ch);
+
+		item = menu_find_pattern_next (curr_menu, search,
 				menu_get_selected(curr_menu));
 
 		if (item != -1) {
 			menu_setcurritem (curr_menu, item);
 			update_menu ();
+			entry_add_char (ch);
 			entry_draw ();
 		}
-		else
-			entry.text[len-1] = 0;
+
+		free (search);
+		
 		return 1;
 	}
 	
