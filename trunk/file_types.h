@@ -37,7 +37,10 @@ struct decoder_funcs
 			const int tags_sel);
 
 	/* Return the bitrate in Kbps or -1 if not available. */
-	int (*get_bitrate)(void *date);
+	int (*get_bitrate)(void *data);
+
+	/* Get duration of a filein seconds. Return -1 on error. */
+	int (*get_duration)(void *data);
 };
 
 int is_sound_file (const char *name);
