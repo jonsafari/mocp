@@ -92,13 +92,14 @@ void make_titles_file (struct plist *plist)
 	int hide_extension = options_get_int ("HideFileExtension");
 	int i;
 
-	for (i = 0; i < plist->num; i++) {
-		char *fname;
+	for (i = 0; i < plist->num; i++)
+		if (!plist_deleted(plist, i)) {
+			char *fname;
 
-		fname = get_file (plist->items[i].file, hide_extension);
-		plist_set_title (plist, i, fname);
-		free (fname);
-	}
+			fname = get_file (plist->items[i].file, hide_extension);
+			plist_set_title (plist, i, fname);
+			free (fname);
+		}
 }
 
 /* Make titles for the playlist items from the tags. */
