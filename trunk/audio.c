@@ -70,6 +70,7 @@ static int play_prev = 0;
 static struct plist playlist;
 static struct plist shuffled_plist;
 static struct plist *curr_plist; /* currently used playlist */
+static pthread_mutex_t plist_mut = PTHREAD_MUTEX_INITIALIZER;
 
 /* Is the audio deice opened? */
 static int audio_opened = 0;
@@ -83,6 +84,7 @@ static void go_to_another_file ()
 	int shuffle = options_get_int("Shuffle");
 	
 	LOCK (curr_playing_mut);
+	LOCK (plist_mut);
 	
 	if (shuffle && plist_count(&playlist)
 			&& !plist_count(&shuffled_plist)) {
@@ -93,7 +95,6 @@ static void go_to_another_file ()
 					plist_get_file(curr_plist,
 						curr_playing));
 	}
-
 
 	/* If Shuffle was switched while playing, we must correct curr_playing
 	 * by searching for the current item on the list where we are
@@ -115,17 +116,24 @@ static void go_to_another_file ()
 		curr_plist = &playlist;
 	
 	if (play_prev == 1) { 
+		logit ("Playing previous...");
 		curr_playing = plist_prev (curr_plist, curr_playing);
-		if (curr_playing == -1)
+		if (curr_playing == -1) {
+			if (options_get_int("Repeat"))
+				curr_playing = plist_last (curr_plist);
 			logit ("Beginning of the list.");
+		}
 		else 
 			logit ("Previous item.");
 	}
 	else if (options_get_int("AutoNext") || play_next) {
 		curr_playing = plist_next (curr_plist, curr_playing);
 		if (curr_playing == -1 && options_get_int("Repeat")) {
-			if (shuffle)
+			if (shuffle) {
+				plist_clear (&shuffled_plist);
+				plist_cat (&shuffled_plist, &playlist);
 				plist_shuffle (&shuffled_plist);
+			}
 			curr_playing = plist_next (curr_plist, -1);
 			logit ("Going back to the first item.");
 		}
@@ -139,6 +147,7 @@ static void go_to_another_file ()
 	else
 		debug ("Repeating file");
 
+	UNLOCK (plist_mut);
 	UNLOCK (curr_playing_mut);
 }
 
@@ -147,8 +156,12 @@ static void *play_thread (void *unused ATTR_UNUSED)
 	logit ("entering playing thread");
 
 	while (curr_playing != -1) {
-		char *file = plist_get_file (curr_plist, curr_playing);
+		char *file;
 		struct decoder_funcs *df;
+
+		LOCK (plist_mut);
+		file = plist_get_file (curr_plist, curr_playing);
+		UNLOCK (plist_mut);
 
 		play_next = 0;
 		play_prev = 0;
@@ -159,6 +172,8 @@ static void *play_thread (void *unused ATTR_UNUSED)
 				int next;
 				char *next_file;
 				
+				LOCK (curr_playing_mut);
+				LOCK (plist_mut);
 				logit ("Playing item %d: %s", curr_playing,
 						file);
 				
@@ -168,6 +183,9 @@ static void *play_thread (void *unused ATTR_UNUSED)
 				next_file = next != -1 ?
 					plist_get_file(curr_plist, next)
 					: NULL;
+				UNLOCK (plist_mut);
+				UNLOCK (curr_playing_mut);
+				
 				player (file, next_file, &out_buf);
 				if (next_file)
 					free (next_file);
@@ -232,12 +250,11 @@ void audio_play (const char *fname)
 	player_reset ();
 	
 	LOCK (curr_playing_mut);
+	LOCK (plist_mut);
 	if (options_get_int("Shuffle")) {
-		if (plist_count(&playlist) && !plist_count(&shuffled_plist)) {
-			plist_cat (&shuffled_plist, &playlist);
-			plist_shuffle (&shuffled_plist);
-			plist_swap_first_fname (&shuffled_plist, fname);
-		}
+		plist_cat (&shuffled_plist, &playlist);
+		plist_shuffle (&shuffled_plist);
+		plist_swap_first_fname (&shuffled_plist, fname);
 
 		curr_plist = &shuffled_plist;
 
@@ -268,6 +285,7 @@ void audio_play (const char *fname)
 	else
 		logit ("Client wanted to play a file not present on the "
 				"playlist.");
+	UNLOCK (plist_mut);
 	UNLOCK (curr_playing_mut);
 }
 
@@ -422,6 +440,8 @@ void audio_exit ()
 	player_cleanup ();
 	if (pthread_mutex_destroy(&curr_playing_mut))
 		logit ("Can't destroy curr_playing_mut: %s", strerror(errno));
+	if (pthread_mutex_destroy(&plist_mut))
+		logit ("Can't destroy plist_mut: %s", strerror(errno));
 }
 
 void audio_seek (const int sec)
@@ -445,14 +465,22 @@ int audio_get_state ()
 
 void audio_plist_add (const char *file)
 {
+	LOCK (plist_mut);
 	plist_clear (&shuffled_plist);
 	plist_add (&playlist, file);
+	UNLOCK (plist_mut);
 }
 
 void audio_plist_clear ()
 {
+	/* We must stop before clearing the playlist, because w playing thread
+	 * is accessing the playlist items. */
+	audio_stop ();
+	
+	LOCK (plist_mut);
 	plist_clear (&shuffled_plist);
 	plist_clear (&playlist);
+	UNLOCK (plist_mut);
 }
 
 /* Returned memory is malloc()ed. */
@@ -461,10 +489,12 @@ char *audio_get_sname ()
 	char *sname;
 
 	LOCK (curr_playing_mut);
+	LOCK (plist_mut);
 	if (curr_playing != -1)
 		sname = plist_get_file (curr_plist, curr_playing);
 	else
 		sname = NULL;
+	UNLOCK (plist_mut);
 	UNLOCK (curr_playing_mut);
 
 	return sname;
@@ -487,6 +517,7 @@ void audio_plist_delete (const char *file)
 {
 	int num;
 	
+	LOCK (plist_mut);
 	num = plist_find_fname (&playlist, file);
 	if (num != -1)
 		plist_delete (&playlist, num);
@@ -494,6 +525,7 @@ void audio_plist_delete (const char *file)
 	num = plist_find_fname (&shuffled_plist, file);
 	if (num != -1)
 		plist_delete (&shuffled_plist, num);
+	UNLOCK (plist_mut);
 }
 
 /* Get the time of a file if it is on the playlist and the time is avilable. */
@@ -503,15 +535,18 @@ int audio_get_ftime (const char *file)
 	int time;
 	time_t mtime = get_mtime (file);
 
+	LOCK (plist_mut);
 	if ((i = plist_find_fname(&playlist, file)) != -1
 			&& (time = get_item_time(&playlist, i)) != -1) {
 		if (playlist.items[i].mtime == mtime) {
 			debug ("Found time for %s", file);
+			UNLOCK (plist_mut);
 			return time;
 		}
 		else
 			logit ("mtime for %s has changed", file);
 	}
+	UNLOCK (plist_mut);
 
 	return -1;
 }
@@ -521,6 +556,7 @@ void audio_plist_set_time (const char *file, const int time)
 {
 	int i;
 
+	LOCK (plist_mut);
 	if ((i = plist_find_fname(&playlist, file)) != -1) {
 		update_item_time (&playlist.items[i], time);
 		playlist.items[i].mtime = get_mtime (file);
@@ -529,6 +565,7 @@ void audio_plist_set_time (const char *file, const int time)
 	else
 		logit ("Request for updating time for a file not present on the"
 				" playlist!");
+	UNLOCK (plist_mut);
 }
 
 /* Notify about changing the state (unsed by the player). */
@@ -540,10 +577,18 @@ void audio_state_started_playing ()
 
 int audio_plist_get_serial ()
 {
-	return plist_get_serial (&playlist);
+	int serial;
+
+	LOCK (plist_mut);
+	serial = plist_get_serial (&playlist);
+	UNLOCK (plist_mut);
+	
+	return serial;
 }
 
 void audio_plist_set_serial (const int serial)
 {
+	LOCK (plist_mut);
 	plist_set_serial (&playlist, serial);
+	UNLOCK (plist_mut);
 }
