@@ -141,7 +141,7 @@ static struct file_info {
 
 /* When we are waiting for data from the server, events can occur. We can't 
  * handle them while waiting, so we push them on the queue. */
-#define EVENTS_MAX	10
+#define EVENTS_MAX	20
 static struct
 {
 	int queue[EVENTS_MAX];
