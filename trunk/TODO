@@ -1,4 +1,7 @@
 Before 2.3.0:
+* failing assert (alsa_buffill < chunk_size)
+* remove the mutex from alsa
+* Decoder api versioning.
 * Complete to the matching part of a directory with the i command if a name is
   ambigous.
 * History in the i command.
