@@ -86,9 +86,7 @@ void make_titles_file (struct plist *plist)
 		else
 			fname = plist->items[i].file;
 
-		if (plist->items[i].title)
-			free (plist->items[i].title);
-		plist->items[i].title = xstrdup (fname);
+		plist_set_title (plist, i, fname);
 	}
 }
 
@@ -101,12 +99,9 @@ void make_titles_tags (struct plist *plist)
 
 		assert (plist->items[i].file != NULL);
 		
-		if (plist->items[i].title)
-			free (plist->items[i].title);
-		
 		if (plist->items[i].tags)
-			plist->items[i].title =
-				build_title (plist->items[i].tags);
+			plist_set_title (plist, i,
+					build_title (plist->items[i].tags));
 		else {
 			char *fname = strrchr (plist->items[i].file, '/');
 
@@ -115,7 +110,7 @@ void make_titles_tags (struct plist *plist)
 			else
 				fname = plist->items[i].file;
 
-			plist->items[i].title = xstrdup (fname);
+			plist_set_title (plist, i, fname);
 		}
 	}
 }
@@ -208,7 +203,7 @@ void read_tags (struct plist *plist)
 	assert (plist != NULL);
 
 	for (i = 0; i < plist->num; i++)
-		if (!plist->items[i].tags)
+		if (!plist_deleted(plist, i) && !plist->items[i].tags)
 			plist->items[i].tags = read_file_tags(
 					plist->items[i].file);
 }
