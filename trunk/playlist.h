@@ -40,7 +40,5 @@ int plist_find_fname (struct plist *plist, const char *file);
 struct file_tags *tags_new ();
 void tags_free (struct file_tags *tags);
 char *build_title (const struct file_tags *tags);
-void plist_shuffle (struct plist *plist);
-void plist_copy (struct plist *dst, const struct plist *src);
-
+int plist_rand (struct plist *plist);
 #endif
