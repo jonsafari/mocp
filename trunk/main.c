@@ -254,7 +254,7 @@ static void start_moc (const struct parameters *params, char **args,
 			}
 		}
 		else
-			fatal ("The server is busy (another client is "
+			fatal ("The server is busy (too many clients "
 					"connected)");
 	}
 
