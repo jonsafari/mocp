@@ -274,7 +274,8 @@ static void start_moc (const struct parameters *params, char **args,
 	options_free ();
 }
 
-static void show_version () {
+static void show_version ()
+{
 	printf (PACKAGE_STRING" ");
 
 	/* Show build time */
@@ -298,6 +299,9 @@ static void show_version () {
 #ifdef HAVE_OSS
 	printf (" OSS");
 #endif
+#ifdef HAVE_ALSA
+	printf (" ALSA");
+#endif
 #ifndef NDEBUG
 	printf (" DEBUG");
 #endif
@@ -316,7 +320,7 @@ static void show_usage (const char *prg_name) {
 "-D --debug		Turn on logging to a file.\n"
 "-S --server		Run only the server.\n"
 "-F --foreground		Run server in foreground, log to stdout.\n"
-"-R --sound-driver NAME	Use the specified sound driver (oss, null).\n"
+"-R --sound-driver NAME	Use the specified sound driver (oss, alsa, null).\n"
 "-m --music-dir		Start in MusicDir.\n"
 "-a --append		Append the files passed in command line to the server\n"
 "			playlist and exit.\n"
@@ -332,6 +336,10 @@ int proper_sound_driver (const char *driver)
 {
 #ifdef HAVE_OSS
 	if (!strcasecmp(driver, "oss"))
+		return 1;
+#endif
+#ifdef HAVE_ALSA
+	if(!strcasecmp(driver, "alsa"))
 		return 1;
 #endif
 #ifndef NDEBUG

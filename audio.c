@@ -28,6 +28,9 @@
 #ifdef HAVE_OSS
 # include "oss.h"
 #endif
+#ifdef HAVE_ALSA
+# include "alsa.h"
+#endif
 #ifndef NDEBUG
 # include "null_out.h"
 #endif
@@ -228,6 +231,13 @@ static void find_hw_funcs (const char *driver, struct hw_funcs *funcs)
 #ifdef HAVE_OSS
 	if (!strcasecmp(driver, "oss")) {
 		oss_funcs (funcs);
+		return;
+	}
+#endif
+
+#ifdef HAVE_ALSA
+	if (!strcasecmp(driver, "alsa")) {
+		alsa_funcs (funcs);
 		return;
 	}
 #endif
