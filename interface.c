@@ -65,7 +65,7 @@ struct {
 	int state;
 } xterm_title;
 
-static char cwd[PATH_MAX];
+static char cwd[PATH_MAX] = "";
 
 enum {
 	CLR_ITEM = 1,
@@ -864,9 +864,33 @@ static int go_to_dir (char *dir)
 	return 1;
 }
 
+/* Make new cwd path from CWD and this path */
+static void make_path (char *path)
+{
+	if (path[0] == '/')
+		strcpy (cwd, "/"); /* for absolute path */
+	else if (!cwd[0]) {
+		if (!getcwd(cwd, sizeof(cwd)))
+			interface_fatal ("Can't get CWD");
+	}
+
+	resolve_path (cwd, sizeof(cwd), path);
+}
+
 /* Enter to the initial directory. */
 static void enter_first_dir ()
 {
+	if (options_get_int("StartInMusicDir")) {
+		char *music_dir;
+		
+		if ((music_dir = options_get_str("MusicDir"))) {
+			make_path (music_dir);
+			if (go_to_dir(NULL))
+				return;
+		}
+		else
+			interface_error ("MusicDir is not set");
+	}
 	if (read_last_dir() && go_to_dir(NULL))
 		return;
 	set_start_dir ();
@@ -923,19 +947,9 @@ static int isdir (const char *file)
 static void process_args (char **args, const int num)
 {
 	if (num == 1 && isdir(args[0]) == 1) {
-		if (args[0][0] == '/') {
-
-			/* the path is absolute */
-			strcpy (cwd, "/");
-		}
-		else {
-			/* relative path */
-			if (!getcwd(cwd, sizeof(cwd)))
-				interface_fatal ("Can't get CWD");
-		}
-		
-		resolve_path (cwd, sizeof(cwd), args[0]);
-		go_to_dir (NULL);
+		make_path (args[0]);
+		if (!go_to_dir(NULL))
+			enter_first_dir ();
 	}
 	else {
 		int i;
