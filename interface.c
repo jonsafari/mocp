@@ -2002,7 +2002,7 @@ static void event_plist_del (char *file)
 }
 
 /* Clear the playlist */
-static void clear_playlist ()
+static void clear_playlist (const int notify_server)
 {
 	if (visible_plist == playlist)
 		toggle_plist();
@@ -2011,7 +2011,7 @@ static void clear_playlist ()
 		menu_free (playlist_menu);
 		playlist_menu = NULL;
 	}
-	if (options_get_int("SyncPlaylist"))
+	if (notify_server && options_get_int("SyncPlaylist"))
 		send_int_to_srv (CMD_CLI_PLIST_CLEAR);
 	interface_message ("The playlist was cleared.");
 	set_iface_status_ref (NULL);
@@ -2065,7 +2065,7 @@ static void server_event (const int event, void *data)
 			break;
 		case EV_PLIST_CLEAR:
 			if (options_get_int("SyncPlaylist")) {
-				clear_playlist ();
+				clear_playlist (0);
 				update_menu ();
 			}
 			break;
@@ -2909,7 +2909,7 @@ static void menu_key (const int ch)
 				add_file_plist ();
 				break;
 			case KEY_CMD_PLIST_CLEAR:
-				clear_playlist ();
+				clear_playlist (1);
 				do_update_menu = 1;
 				break;
 			case KEY_CMD_PLIST_ADD_DIR:
