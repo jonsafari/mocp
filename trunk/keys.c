@@ -419,7 +419,7 @@ static int parse_key (const char *symbol)
 		return CTRL(symbol[1]);
 	}
 
-	if (strncasecmp(symbol, "M-", 2)) {
+	if (!strncasecmp(symbol, "M-", 2)) {
 
 		/* Meta char */
 		if (strlen(symbol) != 3)
