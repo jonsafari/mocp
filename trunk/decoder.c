@@ -135,6 +135,9 @@ void decoder_init ()
 
 	if (lt_dlforeachfile(PLUGIN_DIR, &lt_load_plugin, NULL))
 		fatal ("Can't load plugins: %s", lt_dlerror());
+
+	if (plugins_num == 0)
+		fatal ("No decoder plugins has been loaded!");
 }
 
 void decoder_cleanup ()
