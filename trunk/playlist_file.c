@@ -76,6 +76,7 @@ static int plist_load_m3u (struct plist *plist, const char *fname,
 				return added;
 			}
 			
+			/* Find the comma */
 			comma = strchr (line + (sizeof("#EXTINF:") - 1), ',');
 			if (!comma) {
 				interface_error ("Broken M3U file: no comma "
@@ -84,6 +85,7 @@ static int plist_load_m3u (struct plist *plist, const char *fname,
 				return added;
 			}
 	
+			/* Get the time string */
 			time_text[sizeof(time_text)-1] = 0;
 			strncpy (time_text, line + sizeof("#EXTINF:") - 1,
 					MIN(comma - line - (sizeof("#EXTINF:")
@@ -95,6 +97,7 @@ static int plist_load_m3u (struct plist *plist, const char *fname,
 				return added;
 			}
 
+			/* Extract the time */
 			time_sec = strtol (time_text, &num_err, 10);
 			if (*num_err) {
 				interface_error ("Broken M3U file: "
