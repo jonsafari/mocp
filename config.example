@@ -54,3 +54,6 @@ OSSMixerDevice		= /dev/mixer
 
 # OSS Mixer channel: pcm or master
 OSSMixerChannel		= pcm
+
+# Show files with dot at the beginning?
+ShowHiddenFiles		= no
