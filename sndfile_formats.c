@@ -129,13 +129,23 @@ static int sndfile_get_bitrate (void *void_data ATTR_UNUSED)
 	return -1;
 }
 
+static int sndfile_get_duration (void *void_data)
+{
+	struct sndfile_data *data = (struct sndfile_data *)void_data;
+
+	return	data->snd_info.frames <= 0x7FFFFFFF ?
+			data->snd_info.frames / data->snd_info.samplerate
+			: -1;
+}
+
 static struct decoder_funcs decoder_funcs = {
 	sndfile_open,
 	sndfile_close,
 	sndfile_decode,
 	sndfile_seek,
 	sndfile_info,
-	sndfile_get_bitrate
+	sndfile_get_bitrate,
+	sndfile_get_duration
 };
 
 struct decoder_funcs *sndfile_get_funcs ()

@@ -34,6 +34,7 @@ struct ogg_data
 	OggVorbis_File vf;
 	int last_section;
 	int bitrate;
+	int duration;
 };
 
 /* Fill info structure with data from ogg comments */
@@ -123,7 +124,8 @@ static void *ogg_open (const char *file)
 
 	data->last_section = -1;
 	data->bitrate = ov_bitrate(&data->vf, -1) / 1000;
-
+	if ((data->duration = ov_time_total(&data->vf, -1)) == OV_EINVAL)
+		data->duration = -1;
 	return data;
 }
 
@@ -197,13 +199,21 @@ static int ogg_get_bitrate (void *void_data)
 	return data->bitrate;
 }
 
+static int ogg_get_duration (void *void_data)
+{
+	struct ogg_data *data = (struct ogg_data *)void_data;
+
+	return data->duration;
+}
+
 static struct decoder_funcs decoder_funcs = {
 	ogg_open,
 	ogg_close,
 	ogg_decode,
 	ogg_seek,
 	ogg_info,
-	ogg_get_bitrate
+	ogg_get_bitrate,
+	ogg_get_duration
 };
 
 struct decoder_funcs *ogg_get_funcs ()
