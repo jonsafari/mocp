@@ -1446,8 +1446,10 @@ static void update_curr_file ()
 	if (!file_info.curr_file || strcmp(file_info.curr_file, file)) {
 		if (file_info.curr_file)
 			free (file_info.curr_file);
-		if (file_info.tags)
+		if (file_info.tags) {
 			tags_free (file_info.tags);
+			file_info.tags = NULL;
+		}
 
 		if (file[0])
 			file_info.curr_file = file;
