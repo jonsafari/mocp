@@ -1,31 +1,33 @@
-Before 2.0:
-
-* Test on FreeBSD.
-
 Before 2.1.0:
 
-* Remember playlist.
-* Don't do chdir.
+* Handling errors when writing sound to the device.
+* Don't do chdir().
 * Option to hide file name extensions.
-* Playlist files (m3u, pls, (xpl?)).
-* Alsa output and mixer.
-* ESD
+* Configuration options and command line parameters for selecting pid file and
+  socket. A parameter for selecting different configuration file.
 * General procedures for reading files instead of doing this at the decoder
   level.
 * Try mmap() again if size of the file has changed.
 * Start to buffer another file when the decoder ends playing.
 * Configurable sorting.
-* Configuration options and command line parameters for selecting pid file and
-  socket. A parameter for selecting different configuration file.
 * iconv() to fix encoding.
 * Use pathconf() instead of PATH_MAX.
 * Showing the buffer state.
-* configurable colors.
+* configurable colors. Colors of the menu set in menu.c.
 * Scrolled help.
 * Help for searching.
+* Addending the current directory to the playlist. Helps creating sorted
+  playlist.
+* Update alsa mixer when changed by other application.
 
 In future:
 
+* 'D' command must not delete an item from the server playlist if the
+  server is not playing from the playlist.
+* ESD
+* General error/fatal functions that recognize if they are in the interface or
+  in the server.
+* m3u extension.
 * Moving items on the playlist up and down.
 * Add a key for switching sort modes.
 * A bar showing time for current song.
@@ -41,6 +43,9 @@ In future:
 
 Maybe never:
 
+* When starting another client get the playlist from an already running client.
+* Say about ignored options that affects server when the server is not being
+  run.
 * Input buffer with separate thread - like output buffer.
 * Funny ASCII equalizer.
 * Mouse support
