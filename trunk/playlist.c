@@ -141,11 +141,18 @@ int plist_next (struct plist *plist, int num)
 
 static void plist_free_item_fields (struct plist_item *item)
 {
-	free (item->file);
-	if (item->tags)
+	if (item->file) {
+		free (item->file);
+		item->file = NULL;
+	}
+	if (item->tags) {
 		tags_free (item->tags);
-	if (item->title)
+		item->tags = NULL;
+	}
+	if (item->title) {
 		free (item->title);
+		item->title = NULL;
+	}
 }
 
 /* Clear the list. */
@@ -158,7 +165,8 @@ void plist_clear (struct plist *plist)
 	LOCK (plist->mutex);
 	
 	for (i = 0; i < plist->num; i++)
-		plist_free_item_fields (&plist->items[i]);
+		if (!plist->items[i].deleted)
+			plist_free_item_fields (&plist->items[i]);
 	
 	plist->items = (struct plist_item *)xrealloc (plist->items,
 			sizeof(struct plist_item) * INIT_SIZE);
@@ -202,7 +210,8 @@ int plist_find_fname (struct plist *plist, const char *file)
 
 	LOCK (plist->mutex);
 	for (i = 0; i < plist->num; i++)
-		if (!strcmp(plist->items[i].file, file)) {
+		if (!plist->items[i].deleted
+				&& !strcmp(plist->items[i].file, file)) {
 			UNLOCK (plist->mutex);
 			return i;
 		}
@@ -366,7 +375,9 @@ void plist_add_from_item (struct plist *plist, const struct plist_item *item)
 {
 	int pos = plist_add (plist, item->file);
 
-	plist->items[pos].title = strdup (item->title);
+	assert (!item->deleted);
+
+	plist->items[pos].title = xstrdup (item->title);
 	if (item->tags)
 		plist->items[pos].tags = tags_dup (item->tags);
 }
@@ -405,6 +416,7 @@ void plist_delete (struct plist *plist, const int num)
 	assert (plist != NULL);
 	
 	LOCK (plist->mutex);
+	assert (!plist->items[num].deleted);
 	if (num < plist->num) {
 		plist->items[num].deleted = 1;
 		plist_free_item_fields (&plist->items[num]);
