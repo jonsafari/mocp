@@ -13,6 +13,8 @@
 # include "config.h"
 #endif
 
+#define DEBUG
+
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
@@ -195,6 +197,8 @@ static int plist_save_m3u (struct plist *plist, const char *fname,
 {
 	FILE *file;
 	int i;
+
+	debug ("Saving playlist to '%s'", fname);
 
 	if (!(file = fopen(fname, "w"))) {
 		interface_error ("Can't save playlist: %s", strerror(errno));
