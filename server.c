@@ -507,7 +507,8 @@ static int req_get_ftime (struct client *cli)
 
 	if (!(file = get_str(cli->socket)))
 		return 0;
-	send_data_int (cli, audio_get_ftime(file));
+	if (!send_data_int(cli, audio_get_ftime(file)))
+		return 0;
 	free (file);
 	return 1;
 }
