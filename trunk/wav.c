@@ -239,7 +239,7 @@ static int wav_decode (void *void_data, char *buf, int buf_len,
 	return fread (buf, 1, buf_len, data->file);
 }
 
-static int wav_bitrate (void *void_data)
+static int wav_bitrate (void *void_data ATTR_UNUSED)
 {
 	return -1;
 }

@@ -240,13 +240,13 @@ static void interface_fatal (const char *format, ...)
 	fatal ("%s", err_msg);
 }
 
-static void sig_quit (int sig)
+static void sig_quit (int sig ATTR_UNUSED)
 {
 	want_quit = 1;
 }
 
 #ifdef SIGWINCH
-static void sig_winch (int sig)
+static void sig_winch (int sig ATTR_UNUSED)
 {
 	want_resize = 1;
 }

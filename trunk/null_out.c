@@ -11,10 +11,15 @@
 
 /* Fake output device - only for testing. */
 
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+
 #define _XOPEN_SOURCE	500
 #include <unistd.h>
 
 #include "audio.h"
+#include "main.h"
 
 static struct sound_params params = { 0, 0, 0 };
 
@@ -32,7 +37,7 @@ static void null_close ()
 	params.format = 0;
 }
 
-static int null_play (const char *buff, const size_t size)
+static int null_play (const char *buff ATTR_UNUSED, const size_t size)
 {
 	usleep (((float)size / (params.channels * params.rate * params.format))
 			* 1000000);
@@ -44,7 +49,7 @@ static int null_read_mixer ()
 	return 100;
 }
 
-static void null_set_mixer (int vol)
+static void null_set_mixer (int vol ATTR_UNUSED)
 {
 }
 
