@@ -2195,6 +2195,20 @@ static void server_event (const int event, void *data)
 	}
 }
 
+/* Get (generate) a playlist serial from the server and make sure it's not
+ * the same as our playlist's serial. */
+static int get_safe_serial ()
+{
+	int serial;
+
+	do {
+		send_int_to_srv (CMD_GET_SERIAL);
+		serial = get_data_int ();
+	} while (serial == plist_get_serial(playlist));
+
+	return serial;
+}
+
 /* Generate a unique playlist serial number. */
 /* Send the playlist to the server if necessary and request playing this
  * item. */
@@ -2215,11 +2229,16 @@ static void play_it (const int plist_pos)
 		logit ("The server has different playlist");
 
 		/* Set the serial number for this playlist. */
-		send_int_to_srv (CMD_GET_SERIAL);
-		serial = get_data_int ();
-		plist_set_serial (visible_plist, serial);
-		send_int_to_srv (CMD_PLIST_SET_SERIAL);
-		send_int_to_srv (serial);
+		if (visible_plist == playlist) {
+			send_int_to_srv (CMD_PLIST_SET_SERIAL);
+			send_int_to_srv (plist_get_serial(visible_plist));
+		}
+		else {
+			serial = get_safe_serial();
+			plist_set_serial (visible_plist, serial);
+			send_int_to_srv (CMD_PLIST_SET_SERIAL);
+			send_int_to_srv (serial);
+		}
 	
 		send_playlist (visible_plist, 1);
 	}
