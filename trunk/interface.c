@@ -2263,20 +2263,7 @@ static char *make_dir (const char *str)
 
 static int entry_go_dir_key (const int ch)
 {
-	if (isgraph(ch) || ch == ' ') {
-		int len = strlen (entry.text);
-	
-		if (len == sizeof(entry.text) - 1)
-			return 1;
-
-		entry.text[len++] = ch;
-		entry.text[len] = 0;
-
-		entry_draw ();
-
-		return 1;
-	}
-	else if (ch == '\t') {
+	if (ch == '\t') {
 		char *dir;
 		char *complete_dir;
 		
