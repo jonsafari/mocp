@@ -85,8 +85,9 @@ struct file_tags *tags_new ()
 
 struct file_tags *tags_dup (const struct file_tags *tags)
 {
-
 	struct file_tags *dtags;
+
+	assert (tags != NULL);
 
 	dtags = tags_new();
 	tags_copy (dtags, tags);
