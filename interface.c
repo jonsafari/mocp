@@ -544,6 +544,7 @@ static void make_entry (const enum entry_type type, const char *title)
 	strncpy (entry.title, title, sizeof(entry.title));
 	entry.width = COLS - strlen(title) - 4;
 	entry_draw ();
+	curs_set (1);
 	wrefresh (info_win);
 }
 
@@ -554,6 +555,7 @@ static void entry_disable ()
 		free (entry.file);
 		entry.file = NULL;
 	}
+	curs_set (0);
 }
 
 /* Update the info win */
@@ -1900,6 +1902,7 @@ void init_interface (const int sock, const int debug, char **args,
 	menu_draw (curr_menu);
 	wrefresh (main_win);
 	update_state ();
+	curs_set (0);
 }
 
 /* Get error message from the server and show it. */
