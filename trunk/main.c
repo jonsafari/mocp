@@ -173,12 +173,12 @@ static void start_moc (const struct parameters *params)
 				exit (0);
 			case -1:
 				fatal ("fork() failed");
-			default: /* parent - wait for the server */
-				/* TODO: when the server do fatal() before
-				 * sending the message, the client hangs, why? */
-				read (notify_pipe[0], &i, sizeof(i));
-				close (notify_pipe[0]);
+			default:
 				close (notify_pipe[1]);
+				if (read(notify_pipe[0], &i, sizeof(i))
+						!= sizeof(i))
+					fatal ("Server exited");
+				close (notify_pipe[0]);
 				if ((server_sock = server_connect()) == -1) {
 					perror ("server_connect()");
 					fatal ("Can't connect to the server");
