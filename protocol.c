@@ -182,6 +182,15 @@ int send_item (int sock, const struct plist_item *item)
 		logit ("Error while sending file hash");
 		return 0;
 	}
+
+	if (item->title_tags && !send_str(sock, item->title_tags)) {
+		logit ("Error while sending tags title");
+		return 0;
+	}
+	else if (!item->title_tags && !send_str(sock, "")) {
+		logit ("Error while sending empty tags title");
+		return 0;
+	}
 	
 	if (item->tags) {
 		if (!send_str(sock, item->tags->title
@@ -273,15 +282,30 @@ struct plist_item *recv_item (int sock)
 			free (item->file);
 			free (item);
 		}
+
+		if (!(item->title_tags = get_str(sock))) {
+			logit ("Error while receiving tags title");
+			free (item->file);
+			free (item);
+		}
+
+		if (!item->title_tags[0]) {
+			free (item->title_tags);
+			item->title_tags = NULL;
+		}
 		
 		if (!(title = get_str(sock))) {
 			logit ("Error while receiving titile");
+			if (item->title_tags)
+				free (item->title_tags);
 			free (item);
 			return NULL;
 		}
 		
 		if (!(artist = get_str(sock))) {
 			logit ("Error while receiving artist");
+			if (item->title_tags)
+				free (item->title_tags);
 			free (title);
 			free (item);
 			return NULL;
@@ -289,6 +313,8 @@ struct plist_item *recv_item (int sock)
 		
 		if (!(album = get_str(sock))) {
 			logit ("Error while receiving album");
+			if (item->title_tags)
+				free (item->title_tags);
 			free (title);
 			free (artist);
 			free (item);
@@ -297,6 +323,8 @@ struct plist_item *recv_item (int sock)
 			
 		if (!get_int(sock, &track)) {
 			logit ("Error while receiving ");
+			if (item->title_tags)
+				free (item->title_tags);
 			free (title);
 			free (artist);
 			free (item);
@@ -305,6 +333,8 @@ struct plist_item *recv_item (int sock)
 		
 		if (!get_int(sock, &time)) {
 			logit ("Error while receiving time");
+			if (item->title_tags)
+				free (item->title_tags);
 			free (title);
 			free (artist);
 			free (item);
@@ -313,6 +343,8 @@ struct plist_item *recv_item (int sock)
 		
 		if (!get_time(sock, &item->mtime)) {
 			logit ("Error while receiving mtime");
+			if (item->title_tags)
+				free (item->title_tags);
 			free (title);
 			free (artist);
 			free (item);
