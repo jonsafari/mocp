@@ -325,34 +325,39 @@ static int count_time (const char *file)
 }
 
 /* Fill info structure with data from the id3 tag */
-static void mp3_info (const char *file_name, struct file_tags *info)
+static void mp3_info (const char *file_name, struct file_tags *info,
+		const int tags_sel)
 {
-	struct id3_tag *tag;
-	struct id3_file *id3file;
-	char *track = NULL;
-	
-	id3file = id3_file_open (file_name, ID3_FILE_MODE_READONLY);
-	if (!id3file)
-		return;
-	tag = id3_file_tag (id3file);
-	if (tag) {
-		info->artist = get_tag (tag, ID3_FRAME_ARTIST);
-		info->title = get_tag (tag, ID3_FRAME_TITLE);
-		info->album = get_tag (tag, ID3_FRAME_ALBUM);
-		track = get_tag (tag, ID3_FRAME_TRACK);
-		
-		if (track) {
-			char *end;
-			
-			info->track = strtol (track, &end, 10);
-			if (!*end)
-				info->track = -1;
-			free (track);
-		}
-	}
-	id3_file_close (id3file);
 
-	info->time = count_time (file_name);
+	if (tags_sel & TAGS_COMMENTS) {
+		struct id3_tag *tag;
+		struct id3_file *id3file;
+		char *track = NULL;
+		
+		id3file = id3_file_open (file_name, ID3_FILE_MODE_READONLY);
+		if (!id3file)
+			return;
+		tag = id3_file_tag (id3file);
+		if (tag) {
+			info->artist = get_tag (tag, ID3_FRAME_ARTIST);
+			info->title = get_tag (tag, ID3_FRAME_TITLE);
+			info->album = get_tag (tag, ID3_FRAME_ALBUM);
+			track = get_tag (tag, ID3_FRAME_TRACK);
+			
+			if (track) {
+				char *end;
+				
+				info->track = strtol (track, &end, 10);
+				if (!*end)
+					info->track = -1;
+				free (track);
+			}
+		}
+		id3_file_close (id3file);
+	}
+
+	if (tags_sel & TAGS_TIME)
+		info->time = count_time (file_name);
 }
 
 /* Scale PCM data to 16 bit unsigned */

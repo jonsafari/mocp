@@ -201,15 +201,16 @@ static void wav_close (void *void_data)
 	free (data);
 }
 
-static void wav_info (const char *file_name, struct file_tags *info)
+static void wav_info (const char *file_name, struct file_tags *info,
+		const int tags_sel)
 {
 	struct wav_data *data;
 	
-	data = wav_open (file_name);
-	info->time = data->time;
-	wav_close (data);
-
-	return;
+	if (tags_sel & TAGS_TIME) {
+		data = wav_open (file_name);
+		info->time = data->time;
+		wav_close (data);
+	}
 }
 
 static int wav_seek (void *void_data, int sec)
