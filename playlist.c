@@ -65,6 +65,7 @@ struct file_tags *tags_dup (const struct file_tags *tags)
 	dtags->album = xstrdup (tags->album);
 	dtags->track = tags->track;
 	dtags->time = tags->time;
+	dtags->filled = tags->filled;
 
 	return dtags;
 }
