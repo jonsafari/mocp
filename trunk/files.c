@@ -200,7 +200,7 @@ void read_tags (struct plist *plist)
 		plist->items[i].tags = read_file_tags (plist->items[i].file);
 }
 
-/* Read the content of the current directory. Fill the playlist from the sound
+/* Read the content of the current directory. Fill the playlist by the sound
  * files and make a table of directories (malloced). Return 1 if ok. */
 int read_directory (const char *directory, struct plist *plist,
 		char ***dir_tab, int *num_dirs)
@@ -255,4 +255,40 @@ int read_directory (const char *directory, struct plist *plist,
 	closedir (dir);
 
 	return 1;
+}
+
+/* Recursively add files from the directory to the playlist. */
+void read_directory_recurr (const char *directory, struct plist *plist)
+{
+	DIR *dir;
+	struct dirent *entry;
+
+	assert (plist != NULL);
+	assert (directory != NULL);
+
+	if (!(dir = opendir(directory))) {
+		interface_error ("Can't read directory: %s", strerror(errno));
+		return;
+	}
+	
+	while ((entry = readdir(dir))) {
+		char file[PATH_MAX];
+		enum file_type type;
+		
+		if (!strcmp(entry->d_name, ".") || !strcmp(entry->d_name, ".."))
+			continue;
+		if (snprintf(file, sizeof(file), "%s/%s", directory,
+					entry->d_name)
+				>= (int)sizeof(file)) {
+			interface_error ("Path too long!");
+			continue;
+		}
+		type = file_type (file);
+		if (type == F_DIR)
+			read_directory_recurr (file, plist);
+		else if (type == F_SOUND)
+			plist_add (plist, file);
+	}
+
+	closedir (dir);
 }
