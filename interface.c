@@ -1107,10 +1107,6 @@ static struct menu *make_menu (struct plist *plist, struct file_list *dirs,
 /* Check if dir2 is in dir1 */
 static int is_subdir (char *dir1, char *dir2)
 {
-	char *slash = strrchr (dir2, '/');
-
-	assert (slash != NULL);
-
 	return !strncmp(dir1, dir2, strlen(dir1)) ? 1 : 0;
 }
 
