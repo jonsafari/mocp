@@ -683,15 +683,25 @@ static int qsort_strcmp_func (const void *a, const void *b)
 	return strcmp (*(char **)a, *(char **)b);
 }
 
-/* Convert time in second to min:sec text format. */
+/* Convert time in second to min:sec text format. buff must be 6 chars long. */
 static void sec_to_min (char *buff, const int seconds)
 {
-	int min, sec;
+	if (seconds < 6000) {
 
-	min = seconds / 60;
-	sec = seconds % 60;
+		/* the time is less than 99:59 */
+		int min, sec;
+		
+		min = seconds / 60;
+		sec = seconds % 60;
 
-	snprintf (buff, 6, "%02d:%02d", min, sec);
+		snprintf (buff, 6, "%02d:%02d", min, sec);
+	}
+	else if (seconds < 10000 * 60) 
+
+		/* the time is less than 9999 minutes */
+		snprintf (buff, 6, "%04dm", seconds/60);
+	else
+		strcpy (buff, "!!!!!");
 }
 
 /* Make menu using the playlist and directory table. */
