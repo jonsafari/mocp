@@ -102,9 +102,6 @@ static int check_pid_file ()
 	pid_t pid;
 	char *fname = create_file_name (PID_FILE);
 
-	if (fname == NULL)
-		fatal ("Can't create pid file name.");
-
 	/* Read the pid file */
 	if ((file = fopen(fname, "r")) == NULL)
 		return 0;
