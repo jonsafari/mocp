@@ -319,7 +319,7 @@ static void event_push (const int event)
 	for (i = 0; i < events.num; i++)
 		if (events.queue[i] == event) {
 			debug ("Not adding event 0x%02x, it's already in the "
-					"queue.");
+					"queue.", event);
 			return;
 		}
 
@@ -1236,8 +1236,13 @@ static void process_args (char **args, const int num)
 static void load_playlist ()
 {
 	char *plist_file = create_file_name ("playlist.m3u");
+
+	set_interface_status ("Loading playlist...");
+	wrefresh (info_win);
 	if (file_type(plist_file) == F_PLAYLIST)
 		plist_load (playlist, plist_file, cwd);
+	set_interface_status (NULL);
+	wrefresh (info_win);
 }
 
 /* Initialize the interface. args are command line file names. arg_num is the
@@ -1451,8 +1456,12 @@ static void go_file ()
 		}
 
 		plist_clear (playlist);
+		set_interface_status ("Loading playlist...");
+		wrefresh (info_win);
 		if (plist_load(playlist, menu_item->file, cwd))
 			interface_message ("Playlist loaded.");
+		set_interface_status (NULL);
+		wrefresh (info_win);
 		toggle_plist ();
 	}
 }
