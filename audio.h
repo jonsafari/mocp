@@ -27,6 +27,10 @@ struct hw_funcs
 	int (*get_channels) ();
 };
 
+/* Does the parameters p1 and p2 are equal? */
+#define sound_params_eq(p1, p2) ((p1).format == (p2).format \
+		&& (p1).channels == (p2).channels && (p1).rate == (p2).rate)
+
 void audio_stop ();
 void audio_play (const char *fname);
 void audio_next ();
