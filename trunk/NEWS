@@ -10,11 +10,12 @@
 	* Faster reading directory contents.
 	* Displaying time left to the end of the songs.
 	* Fixed moving through symlinked directories.
-TODO	* Added setting scheduler to realtime priority.
+	* Added setting scheduler to realtime priority.
 	* Renamed executable file to mocp due to conflict with QT meta object
 	  compiler.
 	* Configurable mixer channel, OSS output device, and mixer device.
 	* ^r - refresh the screen, r - reread the directory.
+	* H command and ShowHiddenFiles - as the option says.
 	* Do not allow displaying bitrate too fast to read it.
 	* Fixed compilation with pthreads, better configure.
 	* Fixed problems when compiling with gcc 3.3
