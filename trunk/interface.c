@@ -394,8 +394,14 @@ void interface_error (const char *format, ...)
 	message[sizeof(message)-1] = 0;
 	msg_timeout = time(NULL) + 3;
 	msg_is_error = 1;
-	update_info_win ();
-	wrefresh (info_win);
+	
+	/* The interface could have not been initialized yet. */
+	if (main_win) {
+		update_info_win ();
+		wrefresh (info_win);
+	}
+	else
+		fprintf (stderr, "%s\n", message);
 
 	va_end (va);
 }
@@ -930,18 +936,6 @@ static void check_term_size ()
 {
 	if (COLS < 72 || LINES < 7)
 		interface_fatal ("The terminal is too small after resizeing.");
-}
-
-/* Return 1 if the file is a directory, 0 if not, -1 on error. */
-static int isdir (const char *file)
-{
-	struct stat file_stat;
-
-	if (stat(file, &file_stat) == -1) {
-		interface_error ("Can't stat %s: %s", file, strerror(errno));
-		return -1;
-	}
-	return S_ISDIR(file_stat.st_mode) ? 1 : 0;
 }
 
 /* Process file names passwd as arguments. */
