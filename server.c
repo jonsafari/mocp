@@ -62,6 +62,8 @@ struct client
 	struct events events;
 	int requests_plist;	/* is the client waiting for the playlist? */
 	int can_send_plist;	/* can this client send a playlist? */
+	int lock;		/* is this client locking us? */
+	int serial;		/* used for generating unique serial numbers */
 };
 
 static struct client clients[CLIENTS_MAX];
@@ -164,10 +166,57 @@ static int add_client (int sock)
 			clients[i].socket = sock;
 			clients[i].requests_plist = 0;
 			clients[i].can_send_plist = 0;
+			clients[i].lock = 0;
 			return 1;
 		}
 
 	return 0;
+}
+
+/* Return index of a client that has a lock acquired. Return -1 if there is no
+ * lock. */
+static int locking_client ()
+{
+	int i;
+
+	for (i = 0; i < CLIENTS_MAX; i++)
+		if (clients[i].socket != -1 && clients[i].lock)
+			return i;
+	return -1;
+}
+
+/* Acquire a lock for this client. Return 0 on error. */
+static int client_lock (struct client *cli)
+{
+	if (cli->lock) {
+		logit ("Client tants deadlock.");
+		return 0;
+	}
+	
+	assert (locking_client() == -1);
+	
+	cli->lock = 1;
+	logit ("Lock acquired for client with fd %d", cli->socket);
+	return 1;
+}
+
+/* Return != 0 if this client holds a lock. */
+static int is_locking (const struct client *cli)
+{
+	return cli->lock;
+}
+
+/* Release the lock hold by the client. Return 0 on error. */
+static int client_unlock (struct client *cli)
+{
+	if (!cli->lock) {
+		logit ("Client wants to unlock when there is no lock.");
+		return 0;
+	}
+
+	cli->lock = 0;
+	logit ("Lock released by client with fd %d", cli->socket);
+	return 1;
 }
 
 static void del_client (struct client *cli)
@@ -500,6 +549,8 @@ static int delete_item (struct client *cli)
 	if (!(file = get_str(cli->socket)))
 		return 0;
 
+	debug ("Request for deleting %s", file);
+
 	audio_plist_delete (file);
 	free (file);
 	return 1;
@@ -579,6 +630,7 @@ static int req_send_plist (struct client *cli)
 	int requesting = find_cli_requesting_plist ();
 	int send_fd;
 	struct plist_item *item;
+	int serial;
 
 	debug ("Client with fd %d wants to send its playlists", cli->socket);
 
@@ -595,6 +647,18 @@ static int req_send_plist (struct client *cli)
 			del_client (&clients[requesting]);
 			send_fd = -1;
 		}
+	}
+
+	if (!get_int(cli->socket, &serial)) {
+		logit ("Error while getting serial");
+		return 0;
+	}
+
+	if (send_fd != -1 && !send_int(send_fd, serial)) {
+		error ("Error while sending serial, disconnecting the client");
+		close (send_fd);
+		del_client (&clients[requesting]);
+		send_fd = -1;
 	}
 
 	/* Even if no clients are requesting the playlist, we must read it,
@@ -734,6 +798,78 @@ static int plist_sync_cmd (struct client *cli, const int cmd)
 	return 1;
 }
 
+/* Handle CMD_PLIST_GET_SERIAL. Return 0 on error. */
+static int req_plist_get_serial (struct client *cli)
+{
+	if (!send_data_int(cli, audio_plist_get_serial()))
+		return 0;
+	return 1;
+}
+
+/* Handle CMD_PLIST_SET_SERIAL. Return 0 on error. */
+static int req_plist_set_serial (struct client *cli)
+{
+	int serial;
+
+	if (!get_int(cli->socket, &serial))
+		return 0;
+	
+	if (serial < 0) {
+		logit ("Clients wants to set bad serial number");
+		return 0;
+	}
+
+	debug ("Setting the playlist serial number to %d", serial);
+	audio_plist_set_serial (serial);
+
+	return 1;
+}
+
+/* Return the client index from tht clients table. */
+static int client_index (const struct client *cli)
+{
+	int i;
+
+	for (i = 0; i < CLIENTS_MAX; i++)
+		if (clients[i].socket == cli->socket)
+			return i;
+	return -1;
+}
+
+/* Generate a unique playlist serial number. */
+static int gen_serial (const struct client *cli)
+{
+	static int seed = 0;
+	int serial;
+	
+	/* Each client must always get a different serial number, so we use
+	 * also the client index to generate it. It must not be also used by
+	 * our playlist to not confise clients.
+	 * There can be 256 different serial number per client, but it's
+	 * enough, since clients use only two playlists. */
+
+	do {
+		serial = (seed << 8) | client_index(cli);
+		seed = (seed + 1) & 0x07; /* TODO:  it should be 0xFF */
+	} while (serial == audio_plist_get_serial());
+
+	debug ("Generated serial %d for client with fd %d", serial,
+			cli->socket);
+
+	return serial;
+}
+
+/* Send the unique number to the client that no other client has. Return 0 on
+ * error. */
+static int send_serial (struct client *cli)
+{
+	if (!send_data_int(cli, gen_serial(cli))) {
+		logit ("Error when sending serial");
+		return 0;
+	}
+	return 1;
+}
+
 /* Reveive a command from the client and execute it. */
 static void handle_command (struct client *cli)
 {
@@ -865,6 +1001,26 @@ static void handle_command (struct client *cli)
 			if (!plist_sync_cmd(cli, cmd))
 				err = 1;
 			break;
+		case CMD_LOCK:
+			if (!client_lock(cli))
+				err = 1;
+			break;
+		case CMD_UNLOCK:
+			if (!client_unlock(cli))
+				err = 1;
+			break;
+		case CMD_GET_SERIAL:
+			if (!send_serial(cli))
+				err = 1;
+			break;
+		case CMD_PLIST_GET_SERIAL:
+			if (!req_plist_get_serial(cli))
+				err = 1;
+			break;
+		case CMD_PLIST_SET_SERIAL:
+			if (!req_plist_set_serial(cli))
+				err = 1;
+			break;
 		default:
 			logit ("Bad command (0x%x) from the client.", cmd);
 			err = 1;
@@ -908,8 +1064,16 @@ static void handle_clients (fd_set *fds)
 	int i;
 
 	for (i = 0; i < CLIENTS_MAX; i++)
-		if (clients[i].socket != -1 && FD_ISSET(clients[i].socket, fds))
-			handle_command (&clients[i]);
+		if (clients[i].socket != -1
+				&& FD_ISSET(clients[i].socket, fds)) {
+			if (locking_client() == -1
+					|| is_locking(&clients[i]))
+				handle_command (&clients[i]);
+			else
+				debug ("Not getting a command from client with"
+						" fd %d because of lock",
+						clients[i].socket);
+		}
 }
 
 /* Close all client connections sending EV_EXIT. */

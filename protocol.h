@@ -63,6 +63,13 @@
 #define CMD_CLI_PLIST_DEL	0x25 /* delete an item from the clients
 					playlist */
 #define CMD_CLI_PLIST_CLEAR	0x26 /* clear the clients playlist */
+#define CMD_GET_SERIAL	0x27 /* get an unique serial number */
+#define CMD_PLIST_SET_SERIAL	0x28 /* assign a serial number to the server
+					playlist */
+#define CMD_LOCK	0x29 /* acquire a lock */
+#define CMD_UNLOCK	0x2a /* release the lock */
+#define CMD_PLIST_GET_SERIAL	0x2b /* get the serial number of the server's
+					playlist */
 
 char *socket_name ();
 int get_int (int sock, int *i);
