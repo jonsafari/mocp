@@ -36,6 +36,15 @@ AC_CHECK_HEADER([sys/soundcard.h],
 		COMPILE_OSS="yes"],
 		[echo -e "\nWARNING!!! YOU DONT HAVE OSS, THE PROGRAM WILL BE USELESS!\n"])
 
+COMPILE_ALSA="no"
+AM_PATH_ALSA
+if test "$alsa_found" = "yes"
+then
+	COMPILE_ALSA="yes"
+	EXTRA_OBJS="$EXTRA_OBJS alsa.o"
+	AC_DEFINE([HAVE_ALSA], 1, [Define if you have ALSA.])
+fi
+
 AC_ARG_ENABLE(debug, AS_HELP_STRING(--disable-debug,Disable debug code))
 
 if test "x$enable_debug" = "xno"
@@ -156,6 +165,7 @@ echo "MOC will be compiled with:"
 echo "MP3:			"$COMPILE_MAD
 echo "OGG:			"$COMPILE_VORBIS
 echo "OSS:			"$COMPILE_OSS
+echo "ALSA:			"$COMPILE_ALSA
 echo "DEBUG:			"$COMPILE_DEBUG
 echo "----------------------------------------------------------------"
 
