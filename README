@@ -10,11 +10,11 @@ powerful and easy to use.
 
 You just need to select a file from some directory using the menu similar to
 Midnight Commander, and MOC will start playing all files in this directory
-beggining from the chosen file. There is no need to create playlists like in
+beginning from the chosen file. There is no need to create playlists like in
 other players.
 
-If you want to combine some files from one or few directories on one playlist,
-you can do this. The playlist will be remembered between runs or you can save
+If you want to combine some files from one or few directories on one play list,
+you can do this. The play list will be remembered between runs or you can save
 it as an m3u file to load it whenever you want.
 
 Need the console where MOC is running for more important things? Need to close
@@ -33,7 +33,7 @@ Sphere Nist WAV, IRCAM SF, Creative VOC.
 Other features:
  - Simple mixer.
  - Color themes.
- - Searching the menu (the playlist or a directory) like M-s in Midnight
+ - Searching the menu (the play list or a directory) like M-s in Midnight
    Commander.
  - The way MOC creates titles from tags is configurable.
  - Optional character set conversion for file tags using iconv().
@@ -44,7 +44,7 @@ Other features:
 What software is required to compile it?
 --------------------------------------------------------------------------------
 
- - UNIX system with POSIX threads (eg. Linux or FreeBSD)
+ - UNIX system with POSIX threads (eg.. Linux or FreeBSD)
  - ncurses (probably already installed in your system)
 
 To support audio formats you need:
@@ -64,7 +64,7 @@ I've tested it on Linux and FreeBSD.
 How to install it?
 --------------------------------------------------------------------------------
 
-Generic instalation instruction is included in the INSTALL file. In short, just
+Generic installation instruction is included in the INSTALL file. In short, just
 type:
 	./configure
 	make
@@ -94,7 +94,7 @@ Yes, there are themes, because people wanted them. :)
 
 Themes can change all colors and only colors. Example theme file with a
 exhausting description is included (themes/example_theme), it is the
-default MOC apperance.
+default MOC appearance.
 
 Theme files should be placed in ~/.moc/themes/ or $(datadir)/moc/themes/
 (eg. /usr/local/share/moc/themes) directory, and can be selected
