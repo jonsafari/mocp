@@ -9,6 +9,8 @@
  *
  */
 
+/*#define DEBUG*/
+
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
@@ -67,7 +69,9 @@ static void *read_thread (void *arg)
 		if (buf->stop)
 			buf->fill = 0;
 
+#ifdef DEBUG
 		logit ("sending the signal");
+#endif
 		pthread_cond_broadcast (&buf->ready_cond);
 		if (buf->opt_cond) {
 			pthread_mutex_lock (buf->opt_cond_mutex);
@@ -77,9 +81,13 @@ static void *read_thread (void *arg)
 		
 		if ((buf->fill == 0 || buf->pause || buf->stop)
 				&& !buf->exit) {
+#ifdef DEBUG
 			logit ("waiting for someting in the buffer");
+#endif
 			pthread_cond_wait (&buf->play_cond, &buf->mutex);
+#ifdef DEBUG
 			logit ("someting appeard in the buffer");
+#endif
 		}
 		
 		if (buf->exit && buf->fill == 0) {
@@ -111,15 +119,17 @@ static void *read_thread (void *arg)
 					AUDIO_MAX_PLAY_BYTES));
 		UNLOCK (buf->mutex);
 
-		logit ("READER: playing %d bytes from %d", to_play,
+#ifdef DEBUG
+		logit ("playing %d bytes from %d", to_play,
 				buf->pos);
+#endif
 
 		/* We don't need mutex here, because we are the only thread
 		 * that modify buf->pos, and the buffer part we use is
 		 * unchanged. */
-		/*logit ("READER: sending PCM");*/
+		/*logit ("sending PCM");*/
 		played = audio_send_pcm (buf->buf + buf->pos, to_play);
-		/*logit ("READER: done sending PCM");*/
+		/*logit ("done sending PCM");*/
 		/*write (fd, buf->buf + buf->pos, to_play);*/
 
 		LOCK (buf->mutex);
@@ -234,7 +244,7 @@ int buf_put (struct buf *buf, const char *data, int size)
 {
 	int pos = 0;
 	
-	/*logit ("WRITER: got %d bytes to play", size);*/
+	/*logit ("got %d bytes to play", size);*/
 
 	while (size) {
 		int to_write;
@@ -242,9 +252,9 @@ int buf_put (struct buf *buf, const char *data, int size)
 		LOCK (buf->mutex);
 		
 		if (!count_free(buf) && !buf->stop) {
-			/*logit ("WRITER: buffer full, waiting for the signal");*/
+			/*logit ("buffer full, waiting for the signal");*/
 			pthread_cond_wait (&buf->ready_cond, &buf->mutex);
-			/*logit ("WRITER: buffer ready");*/
+			/*logit ("buffer ready");*/
 		}
 
 		if (buf->stop) {
@@ -256,7 +266,7 @@ int buf_put (struct buf *buf, const char *data, int size)
 		to_write = MIN (count_free(buf), size);
 		if (to_write) {
 			memcpy (buf->buf + end_pos(buf), data + pos, to_write);
-			/*logit ("WRITER: writing %d bytes from %d to the buffer",
+			/*logit ("writing %d bytes from %d to the buffer",
 					to_write, end_pos(buf));*/
 			buf->fill += to_write;
 		
