@@ -355,7 +355,8 @@ static void update_info_win ()
 	else {
 
 		/* The title */
-		mvwaddstr (info_win, 1, 4, file_info.title);
+		mvwaddnstr (info_win, 1, 4, file_info.title,
+				COLS - 5);
 
 		/* State of playing */
 		mvwaddstr (info_win, 1, 1, file_info.state);
