@@ -52,6 +52,12 @@ OSSMixerDevice		= /dev/mixer
 # OSS Mixer channel: pcm or master
 OSSMixerChannel		= pcm
 
+# ALSA mixer device
+AlsaMixer 		= PCM
+
+# ALSA output device
+AlsaDevice		= default
+
 # Show files with dot at the beginning?
 ShowHiddenFiles		= no
 
