@@ -6,8 +6,9 @@
 	* Synchronizing the playlist between clients (interface instances).
 	* Going to a directory by typing the path with file-name completion
 	  (i command).
-	* Ability to use default (transparent) and grey color.
-	* Added a theme with transparent background.
+	* Ability to use default (transparent) and grey color
+	  (Marcin Micha³owski).
+	* Added a theme with transparent background (Marcin Micha³owski).
 	* Added nightly_theme (Wim Speekenbrink).
 	* Added green_theme (Jacek Lehmann).
 	* Global theme directory.
