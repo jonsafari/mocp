@@ -395,7 +395,7 @@ int main (int argc, char *argv[])
 		{ "play", 		0, NULL, 'p' },
 		{ "stop",		0, NULL, 's' },
 		{ "exit",		0, NULL, 'x' },
-		{ "theme",		0, NULL, 'T' },
+		{ "theme",		1, NULL, 'T' },
 		{ 0, 0, 0, 0 }
 	};
 	int ret, opt_index = 0;
