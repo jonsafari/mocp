@@ -247,6 +247,18 @@ static void wake_up_server ()
 		logit ("Can't wake up the server: %s", strerror(errno));
 }
 
+/* Thread-safe signal() version */
+static void thread_signal (const int signum, void (*func)(int))
+{
+	struct sigaction act;
+
+	act.sa_handler = func;
+	sigemptyset (&act.sa_mask);
+	
+	if (sigaction(signum, &act, 0) == -1)
+		fatal ("sigaction() failed: %s", strerror(errno));
+}
+
 /* Initialize the server - return fd of the listening socket or -1 on error */
 int server_init (int debug, int foreground)
 {
@@ -288,12 +300,12 @@ int server_init (int debug, int foreground)
 	clients_init ();
 
 	server_tid = pthread_self ();
-	signal (SIGTERM, sig_exit);
-	signal (SIGINT, foreground ? sig_exit : SIG_IGN);
-	signal (SIGHUP, SIG_IGN);
-	signal (SIGQUIT, sig_exit);
-	signal (SIGPIPE, SIG_IGN);
-	signal (SIGUSR1, sig_wake_up);
+	thread_signal (SIGTERM, sig_exit);
+	thread_signal (SIGINT, foreground ? sig_exit : SIG_IGN);
+	thread_signal (SIGHUP, SIG_IGN);
+	thread_signal (SIGQUIT, sig_exit);
+	thread_signal (SIGPIPE, SIG_IGN);
+	thread_signal (SIGUSR1, sig_wake_up);
 
 	write_pid_file ();
 
