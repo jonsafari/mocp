@@ -113,6 +113,7 @@ enum color_index
 	CLR_ENTRY_TITLE,
 	CLR_ERROR,
 	CLR_MESSAGE,
+	CLR_PLIST_TIME,
 	CLR_LAST, /* Fake element to get number of collors */
 	CLR_WRONG
 };
@@ -464,14 +465,57 @@ static void draw_mixer ()
 		sprintf (bar, " Vol  %02d%%           ", vol);
 
 	wattrset (info_win, colors[CLR_FRAME]);
-	mvwaddch (info_win, 0, COLS - 23, ACS_RTEE);
-	mvwaddch (info_win, 0, COLS - 2, ACS_LTEE);
+	mvwaddch (info_win, 0, COLS - 38, ACS_RTEE);
+	mvwaddch (info_win, 0, COLS - 17, ACS_LTEE);
 
 	wattrset (info_win, colors[CLR_BAR_FILL]);
-	mvwaddnstr (info_win, 0, COLS - 22, bar, vol / 5);
+	mvwaddnstr (info_win, 0, COLS - 37, bar, vol / 5);
 
 	wattrset (info_win, colors[CLR_BAR_EMPTY]);
-	mvwaddstr (info_win, 0, COLS - 22 + (vol / 5), bar + vol / 5);
+	mvwaddstr (info_win, 0, COLS - 37 + (vol / 5), bar + vol / 5);
+}
+
+/* Convert time in second to min:sec text format. buff must be 6 chars long. */
+static void sec_to_min (char *buff, const int seconds)
+{
+	assert (seconds >= 0);
+
+	if (seconds < 6000) {
+
+		/* the time is less than 99:59 */
+		int min, sec;
+		
+		min = seconds / 60;
+		sec = seconds % 60;
+
+		snprintf (buff, 6, "%02d:%02d", min, sec);
+	}
+	else if (seconds < 10000 * 60) 
+
+		/* the time is less than 9999 minutes */
+		snprintf (buff, 6, "%04dm", seconds/60);
+	else
+		strcpy (buff, "!!!!!");
+}
+
+/* Draw the playlist time. */
+static void draw_plist_time ()
+{
+	int all_files; /* Does the time count all files? */
+	int time;
+	char buf[6];
+	
+	wattrset (info_win, colors[CLR_FRAME]);
+	mvwaddch (info_win, 0, COLS - 9, ACS_RTEE);
+	mvwaddch (info_win, 0, COLS - 2, ACS_LTEE);
+
+	time = plist_total_time (visible_plist, &all_files);
+	
+	wattrset (info_win, colors[CLR_PLIST_TIME]);
+	sec_to_min (buf, time);
+	wmove (info_win, 0, COLS - 8);
+	waddch (info_win, all_files ? ' ' : '>');
+	waddstr (info_win, buf);
 }
 
 /* Draw the entry. Use this function at the end of screen drawing, because
@@ -611,6 +655,7 @@ static void update_info_win ()
 		
 		draw_interface_status ();		
 		draw_mixer ();
+		draw_plist_time ();
 	}
 }
 
@@ -735,29 +780,6 @@ static int qsort_dirs_func (const void *a, const void *b)
 static int qsort_strcmp_func (const void *a, const void *b)
 {
 	return strcmp (*(char **)a, *(char **)b);
-}
-
-/* Convert time in second to min:sec text format. buff must be 6 chars long. */
-static void sec_to_min (char *buff, const int seconds)
-{
-	assert (seconds >= 0);
-
-	if (seconds < 6000) {
-
-		/* the time is less than 99:59 */
-		int min, sec;
-		
-		min = seconds / 60;
-		sec = seconds % 60;
-
-		snprintf (buff, 6, "%02d:%02d", min, sec);
-	}
-	else if (seconds < 10000 * 60) 
-
-		/* the time is less than 9999 minutes */
-		snprintf (buff, 6, "%04dm", seconds/60);
-	else
-		strcpy (buff, "!!!!!");
 }
 
 /* Get the file time from the server. */
@@ -1597,6 +1619,7 @@ static void set_default_colors ()
 	make_color (CLR_ENTRY_TITLE, COLOR_BLACK, COLOR_CYAN, A_BOLD);
 	make_color (CLR_ERROR, COLOR_RED, COLOR_BLUE, A_BOLD);
 	make_color (CLR_MESSAGE, COLOR_GREEN, COLOR_BLUE, A_BOLD);
+	make_color (CLR_PLIST_TIME, COLOR_WHITE, COLOR_BLUE, A_NORMAL);
 }
 
 static void theme_parse_error (const int line, const char *msg)
