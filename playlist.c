@@ -193,8 +193,13 @@ void plist_free (struct plist *plist)
 
 static int qsort_func_fname (const void *a, const void *b)
 {
-	return strcmp (((struct plist_item *)a)->file,
-			((struct plist_item *)b)->file);
+	struct plist_item *ap = (struct plist_item *)a;
+	struct plist_item *bp = (struct plist_item *)b;
+
+	if (ap->deleted || bp->deleted)
+		return ap->deleted - bp->deleted;
+	
+	return strcmp (ap->file, bp->file);
 }
 
 /* Sort the playlist by file names. We don't use mutex here. */
