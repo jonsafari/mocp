@@ -179,6 +179,9 @@ static void server_shutdown ()
 	audio_exit ();
 	unlink (socket_name());
 	unlink (create_file_name(PID_FILE));
+	if (pthread_mutex_destroy(&client_sock_mut))
+		logit ("Can't destroy client socket mutex: %s",
+				strerror(errno));
 
 	logit ("Server exited");
 }
