@@ -53,7 +53,8 @@ struct mp3_data
 	unsigned long bitrate;
 	unsigned int freq;
 	short channels;
-	signed long duration; /* Total time of the file in seconds*/
+	signed long duration; /* Total time of the file in seconds.
+				 user for seeking. */
 	off_t size; /* Size of the file */
 
 #ifdef HAVE_MMAP
@@ -66,6 +67,8 @@ struct mp3_data
 	struct mad_stream stream;
 	struct mad_frame frame;
 	struct mad_synth synth;
+
+	int first_frame; /* Are we going to decode the first frame now? */
 };
 
 /* Fill in the mad buffer, return number of bytes read, 0 on eof or error */
@@ -130,6 +133,7 @@ static void *mp3_open (const char *file)
 	data->freq = 0;
 	data->channels = 0;
 	data->duration = 0;
+	data->first_frame = 1;
 
 	/* Open the file */
 	if ((data->infile = open(file, O_RDONLY)) == -1) {
@@ -474,6 +478,32 @@ static int mp3_decode (void *void_data, char *buf, int buf_len,
 
 			set_info_bitrate (data->bitrate / 1000);
 		}
+		
+		if (data->first_frame) {
+
+			/* Read the time using the first frame. It's wrong
+			 * with VBR without XING, but we don't want to cause
+			 * delays. The time is only used when seeking. */
+			struct xing xing;
+			mad_timer_t duration = data->frame.header.duration;
+
+			debug ("Getting time");
+
+			if (xing_parse(&xing, data->stream.anc_ptr,
+						data->stream.anc_bitlen) != -1) {
+				xing_init (&xing);
+				mad_timer_multiply (&duration,
+						xing.frames);
+				debug ("Has xing");
+			}
+			else
+				mad_timer_multiply (&duration, data->size /
+					(data->stream.next_frame - data->stream.this_frame));
+
+			data->duration = mad_timer_count (duration,
+					MAD_UNITS_SECONDS);
+			data->first_frame = 0;
+		}
 
 		mad_synth_frame (&data->synth, &data->frame);
 		mad_stream_sync (&data->stream);
@@ -496,6 +526,8 @@ static int mp3_seek (void *void_data, int sec)
 
 	new_position = ((double) sec /
 			(double) data->duration) * data->size;
+
+	debug ("Seeking to %d (%d byte)", sec, new_position);
 
 	if (new_position < 0)
 		new_position = 0;
