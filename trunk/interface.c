@@ -3080,7 +3080,7 @@ static void go_to_file_dir ()
 		char *slash;
 		char *file = xstrdup (file_info.curr_file);
 
-		slash = strrchr (file_info.curr_file, '/');
+		slash = strrchr (file, '/');
 		assert (slash != NULL);
 		*slash = 0;
 
