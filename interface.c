@@ -56,10 +56,6 @@ static volatile int want_quit = 0;
 static volatile int want_resize = 0;
 #endif
 
-/* Some xterms (gnome, kde terms) needs wclear to correctly refresh the
- * screen. */
-static int buggy_xterm = 0;
-
 /* Are we running on xterm? */
 static int has_xterm = 0;
 
@@ -1583,10 +1579,6 @@ void init_interface (const int sock, const int debug, char **args,
 	signal (SIGWINCH, sig_winch);
 #endif
 	
-	/* Try to detect if we are running in buggy X terminal */
-	if (getenv("DISPLAY") && strcmp(getenv("TERM"), "xterm")) 
-		buggy_xterm = 1;
-
 	detect_term ();
 	start_color ();
 	set_default_colours ();
