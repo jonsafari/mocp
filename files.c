@@ -187,11 +187,14 @@ void resolve_path (char *buf, const int size, char *file)
 		buf[--len] = 0;
 }
 
-
-struct file_tags *read_file_tags (char *file)
+/* Read selected tags for a file into tags structure (or create it if NULL).
+ * If some tags are already present, don't read them. */
+struct file_tags *read_file_tags (char *file, struct file_tags *present_tags,
+		const int tags_sel)
 {
 	struct file_tags *tags;
 	struct decoder_funcs *df;
+	int needed_tags;
 
 	assert (file != NULL);
 	df = get_decoder_funcs (file);
@@ -200,8 +203,19 @@ struct file_tags *read_file_tags (char *file)
 		return NULL;
 	}
 
-	tags = tags_new ();
-	df->info (file, tags);
+	if (present_tags) {
+		tags = present_tags;
+		needed_tags = ~tags->filled & tags_sel;
+	}
+	else {
+		tags = tags_new ();
+		needed_tags = tags_sel;
+	}
+	
+	if (needed_tags)
+		df->info (file, tags, needed_tags);
+	tags->filled |= tags_sel;
+	
 	return tags;
 }
 
@@ -212,9 +226,10 @@ void read_tags (struct plist *plist)
 	assert (plist != NULL);
 
 	for (i = 0; i < plist->num; i++)
-		if (!plist_deleted(plist, i) && !plist->items[i].tags)
+		if (!plist_deleted(plist, i))
 			plist->items[i].tags = read_file_tags(
-					plist->items[i].file);
+					plist->items[i].file,
+					plist->items[i].tags, TAGS_COMMENTS);
 }
 
 struct file_list *file_list_new ()
