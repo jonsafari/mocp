@@ -808,9 +808,14 @@ static int qsort_strcmp_func (const void *a, const void *b)
 /* Get the file time from the server. */
 static int get_file_time_server (const char *file)
 {
+	int t;
+	
 	send_int_to_srv (CMD_GET_FTIME);
 	send_str_to_srv (file);
-	return get_data_int ();
+	t = get_data_int ();
+
+	debug ("Server time for %s: %d", file, t);
+	return t;
 }
 
 static void read_item_time (struct plist_item *item)
@@ -820,8 +825,10 @@ static void read_item_time (struct plist_item *item)
 	
 	if ((item->tags->time = get_file_time_server(item->file)) == -1)
 		item->tags = read_file_tags (item->file, item->tags, TAGS_TIME);
-	else
+	else {
+		logit ("Got time from the server.");
 		item->tags->filled |= TAGS_TIME;
+	}
 }
 
 static int read_file_time (const char *file)
@@ -834,6 +841,8 @@ static int read_file_time (const char *file)
 		time = tags->time;
 		tags_free (tags);
 	}
+	else
+		debug ("Got time from the server.");
 
 	return time;
 }
