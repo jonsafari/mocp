@@ -159,6 +159,18 @@ then
 	fi
 fi
 
+dnl FLAC
+COMPILE_FLAC="no"
+AC_ARG_WITH(flac, AS_HELP_STRING(--without-flac,Compile without FLAC support.))
+
+if test "x$with_flac" != "xno"
+then
+	AM_PATH_LIBFLAC([AC_DEFINE([HAVE_FLAC], 1, [Define if you want flac support])
+		COMPILE_FLAC="yes"
+		LIBS="$LIBS $LIBFLAC_LIBS"
+		EXTRA_OBJS="$EXTRA_OBJS flac.o"])
+fi
+
 LIBS="$LIBS -lncurses"
 		
 AC_OUTPUT
@@ -168,6 +180,7 @@ echo "----------------------------------------------------------------"
 echo "MOC will be compiled with:"
 echo "MP3:			"$COMPILE_MAD
 echo "OGG:			"$COMPILE_VORBIS
+echo "FLAC:                   "$COMPILE_FLAC
 echo "OSS:			"$COMPILE_OSS
 echo "ALSA:			"$COMPILE_ALSA
 echo "DEBUG:			"$COMPILE_DEBUG
