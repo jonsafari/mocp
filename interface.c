@@ -1417,6 +1417,11 @@ static void add_dir_plist ()
 		return;
 	}
 
+	if (curr_menu->selected == 0) {
+		interface_error ("Can't add '..'.");
+		return;
+	}
+
 	set_interface_status ("reading directories...");
 	wrefresh (info_win);
 	read_directory_recurr (menu_item->file, playlist);
