@@ -40,6 +40,17 @@ static pthread_mutex_t request_cond_mutex = PTHREAD_MUTEX_INITIALIZER;
 static enum request request = REQ_NOTHING;
 static int req_seek;
 
+static void update_time ()
+{
+	static int last_time = 0;
+	int ctime = audio_get_time ();
+
+	if (ctime != last_time) {
+		last_time = ctime;
+		ctime_change ();
+	}
+}
+
 /* Does the parameters p1 and p2 are equal? */
 #define sound_params_eq(p1, p2) (p1.format == p2.format \
 		&& p1.channels == p2.channels && p1.rate == p2.rate)
@@ -98,6 +109,8 @@ void player (const char *file, struct decoder_funcs *f, struct buf *out_buf)
 		}
 		else
 			UNLOCK (request_cond_mutex);
+
+		update_time ();
 
 		if (request == REQ_STOP) {
 			logit ("stop");
