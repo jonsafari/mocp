@@ -28,6 +28,10 @@
 # include "ogg.h"
 #endif
 
+#ifdef HAVE_FLAC
+# include "flac.h"
+#endif
+
 #include "wav.h"
 
 struct file_type_data {
@@ -95,5 +99,11 @@ void file_types_init ()
 	types[types_num].ext = "ogg";
 	strcpy (types[types_num].name, "OGG");
 	types[types_num++].funcs = ogg_get_funcs ();
+#endif
+
+#ifdef HAVE_FLAC
+	types[types_num].ext = "flac";
+	strcpy (types[types_num].name, "FLA");
+	types[types_num++].funcs = flac_get_funcs ();
 #endif
 }
