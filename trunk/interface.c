@@ -481,7 +481,11 @@ static void entry_draw ()
 	wprintw (info_win, "%s:", entry.title);
 	
 	wattrset (info_win, colors[CLR_ENTRY]);
-	wprintw (info_win, " %-*s", entry.width, entry.text);
+	if ((int)strlen(entry.text) <= entry.width)
+		wprintw (info_win, " %-*s", entry.width, entry.text);
+	else
+		wprintw (info_win, " ...%s", entry.text + strlen(entry.text)
+				- entry.width + 3);
 
 	/* This hopefully will move the cursor to the right position. */
 	wmove (info_win, 0, strlen(entry.title) + 3 + strlen(entry.text));
@@ -2290,7 +2294,7 @@ static int entry_search_key (const int ch)
 		int item;
 		int len = strlen (entry.text);
 	
-		if (len == entry.width)
+		if (len == sizeof(entry.text) - 1)
 			return 1;
 		entry.text[len++] = ch;
 		entry.text[len] = 0;
@@ -2411,7 +2415,7 @@ static int entry_common_key (const int ch)
 	if (isgraph(ch) || ch == ' ') {
 		int len = strlen (entry.text);
 	
-		if (len == entry.width)
+		if (len == sizeof(entry.text) - 1)
 			return 1;
 		
 		entry.text[len++] = ch;
@@ -2487,7 +2491,7 @@ static int entry_go_dir_key (const int ch)
 	if (isgraph(ch) || ch == ' ') {
 		int len = strlen (entry.text);
 	
-		if (len == entry.width)
+		if (len == sizeof(entry.text) - 1)
 			return 1;
 
 		entry.text[len++] = ch;
