@@ -1,40 +1,35 @@
 Before 2.1.0:
 
-* Configurable sorting.
-* r - also reread the playlist.
-* iconv() to fix encoding.
-* Use pathconf() instead of PATH_MAX.
-* Showing the buffer state.
-* Adding the current directory to the playlist. Helps creating sorted
-  playlist.
-* Update alsa mixer when changed by other application.
-* Fix cursor position in the entry field.
-* Fix showing time bigger than 99:59.
-* Reload directory when after backing to curr_plist_menu detected that the
-  directory has changed.
-* Fix losing error messages when something is displayed after them too fast.
-* Finish ALSA.
+To test:
+  - no-gaps
+  - broken playlist files
+  - valgrind
 
 Before 2.2.0:
 * fast going to a directory - when after CTRL-g user enters absolute path
-  or a path that begins with ~.
+  or a path that begins with ~. Tab - completes directories names.
 * flac
+* General error/fatal functions that recognize if they are in the interface or
+  in the server and if ncurses were initialized.
+* Redefining keys.
+* Configurable sorting.
+* configurable saving the playlist at the end: ask, no, not if saved, always.
+* A bar showing time for current song.
+* Do something with big interface.c - general user interface code?
 
 In future:
 
 * handle SIGBUS - when mmap()ed file is truncated.
-* configurable saving the playlist at the end: ask, no, not if saved, always
+* Showing the buffer state.
+* Use pathconf() instead of PATH_MAX.
 * Cache for tags in each directory. (.cache.m3u?)
 * Binary search in options code.
 * True shuffle.
 * 'D' command must not delete an item from the server playlist if the
   server is not playing from the playlist.
 * ESD
-* General error/fatal functions that recognize if they are in the interface or
-  in the server and if ncurses were initialized.
 * Moving items on the playlist up and down.
 * Add a key for switching sort modes.
-* A bar showing time for current song.
 * http://www.speex.org
 * Support for Audio-CD.
 * Support for CDDB.
@@ -45,8 +40,6 @@ In future:
 * Locales.
 * special themes for xterm - after detecting xterm load XtermTheme that
   supports xterm features.
-* Redefining keys.
-* Do something with big interface.c - general user interface code?
 
 Maybe never:
 
