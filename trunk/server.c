@@ -113,7 +113,7 @@ static int valid_pid (const int pid)
 }
 
 /* Initialize the server - return fd of the listening socket or -1 on error */
-int server_init (int debug, int foreground, const char *sound_driver)
+int server_init (int debug, int foreground)
 {
 	struct sockaddr_un sock_name;
 	int server_sock;
@@ -150,7 +150,7 @@ int server_init (int debug, int foreground, const char *sound_driver)
 	if (listen(server_sock, 1) == -1)
 		fatal ("listen() failed: %s", strerror(errno));
 
-	audio_init (sound_driver);
+	audio_init ();
 
 	server_tid = pthread_self ();
 	signal (SIGTERM, sig_exit);
