@@ -1790,14 +1790,24 @@ static int entry_plist_save_key (const int ch)
 					"path");
 		else {
 			char *ext = ext_pos (entry.text);
+			char path[PATH_MAX];
 
 			entry_disable ();
 			if (!ext || strcmp(ext, "m3u"))
-				strcat (entry.text, ".m3u");
+				strncat (entry.text, ".m3u", sizeof(entry.text)
+						- strlen(entry.text) - 1);
+
+			path[sizeof(path)-1] = 0;
+			if (snprintf(path, sizeof(path), "%s/%s", cwd,
+						entry.text)
+					>= (int)sizeof(path)) {
+				interface_error ("Path too long!");
+				return 1;
+			}
 
 			set_interface_status ("Saving the playlist...");
 			wrefresh (info_win);
-			if (plist_save(playlist, entry.text, cwd))
+			if (plist_save(playlist, path, cwd))
 				interface_message ("Playlist saved.");
 			set_interface_status (NULL);
 			wrefresh (info_win);
