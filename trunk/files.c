@@ -559,7 +559,6 @@ int read_directory_recurr (const char *directory, struct plist *plist,
 
 	assert (plist != NULL);
 	assert (directory != NULL);
-	assert (check_duplicates || (!check_duplicates && plist->num == 0));
 
 	if (!(dir = opendir(directory))) {
 		error ("Can't read directory: %s", strerror(errno));
