@@ -25,7 +25,7 @@ int read_directory_recurr (const char *directory, struct plist *plist);
 void make_titles_file (struct plist *plist);
 void make_titles_tags (struct plist *plist);
 void read_tags (struct plist *plist);
-void resolve_path (char *buf, const int size, char *file);
+void resolve_path (char *buf, const int size, const char *file);
 struct file_tags *read_file_tags (char *file, struct file_tags *present_tags,
 		const int tags_sel);
 char *ext_pos (char *file);
