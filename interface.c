@@ -429,6 +429,8 @@ static void draw_mixer () {
 	mvwaddstr (info_win, 0, COLS - 22 + (vol / 5), bar + vol / 5);
 }
 
+/* Draw the entry. Use this function at the end of screen drawing, because
+ * it should set the cursor position in the right place. */
 static void entry_draw ()
 {
 	wmove (info_win, 0, 1);
@@ -437,6 +439,9 @@ static void entry_draw ()
 	
 	wattrset (info_win, colours[CLR_ENTRY]);
 	wprintw (info_win, " %-*s", entry.width, entry.text);
+
+	/* This hopefully will move the cursor to the right position. */
+	wmove (info_win, 0, strlen(entry.title) + 3 + strlen(entry.text));
 }
 
 static void make_entry (const enum entry_type type, const char *title)
