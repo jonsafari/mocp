@@ -433,11 +433,10 @@ static void entry_draw ()
 {
 	wmove (info_win, 0, 1);
 	wattrset (info_win, colours[CLR_ENTRY_TITLE]);
-	wprintw (info_win, "%s: ", entry.title);
+	wprintw (info_win, "%s:", entry.title);
 	
 	wattrset (info_win, colours[CLR_ENTRY]);
-	wprintw (info_win, "%-*s", entry.width - strlen(entry.title) - 2,
-			entry.text);
+	wprintw (info_win, " %-*s", entry.width, entry.text);
 }
 
 static void make_entry (const enum entry_type type, const char *title)
@@ -2209,6 +2208,10 @@ static int entry_plist_save_key (const int ch)
 				if (plist_save(playlist, path, cwd))
 					interface_message ("Playlist saved.");
 				set_iface_status_ref (NULL);
+				if (visible_plist == curr_plist) {
+					reread_dir ();
+					update_menu ();
+				}
 			}
 		}
 		update_info_win ();
