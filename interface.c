@@ -1748,15 +1748,10 @@ static void load_playlist ()
 	set_iface_status_ref (NULL);
 }
 
-/* Request the playlist from the server (given by another client). Return 0
- * if such a list doesn't exists. */
-static int get_server_playlist (struct plist *plist)
+static int recv_server_plist (struct plist *plist)
 {
-	struct plist_item *item;
 	int end_of_list = 0;
-	
-	set_iface_status_ref ("Getting the playlist...");
-	debug ("Getting the playlist...");
+	struct plist_item *item;
 	
 	send_int_to_srv (CMD_GET_PLIST);
 	if (get_int_from_srv() != EV_DATA)
@@ -1786,12 +1781,24 @@ static int get_server_playlist (struct plist *plist)
 		free (item);
 	} while (!end_of_list);
 
-	if (options_get_int("ReadTags")) {
-		set_iface_status_ref ("Reading tags...");
-		switch_titles_tags (playlist);
+	return 1;
+}
+
+/* Request the playlist from the server (given by another client). Make the
+ * titles. Return 0 if such a list doesn't exists. */
+static int get_server_playlist (struct plist *plist)
+{
+	set_iface_status_ref ("Getting the playlist...");
+	debug ("Getting the playlist...");
+	if (recv_server_plist(plist)) {
+		
+		if (options_get_int("ReadTags")) {
+			set_iface_status_ref ("Reading tags...");
+			switch_titles_tags (playlist);
+		}
+		else
+			switch_titles_file (plist);
 	}
-	else
-		switch_titles_file (plist);
 
 	set_iface_status_ref (NULL);
 	
@@ -1834,13 +1841,25 @@ static void send_all_items (struct plist *plist)
 {
 	int i;
 	
-	set_iface_status_ref ("Notifying clients...");
 	for (i = 0; i < plist->num; i++)
 		if (!plist_deleted(plist, i)) {
 			send_int_to_srv (CMD_CLI_PLIST_ADD);
 			send_item_to_srv (&plist->items[i]);
 		}
-	set_iface_status_ref (NULL);
+}
+
+/* Make sure that the server's playlist has different serial from ours. */
+static void change_srv_plist_serial ()
+{
+	send_int_to_srv (CMD_PLIST_GET_SERIAL);
+	if (get_data_int() == plist_get_serial(playlist)) {
+		int serial;
+		
+		send_int_to_srv (CMD_GET_SERIAL);
+		serial = get_data_int ();
+		send_int_to_srv (CMD_PLIST_SET_SERIAL);
+		send_int_to_srv (serial);
+	}
 }
 
 /* Initialize the interface. args are command line file names. arg_num is the
@@ -1922,20 +1941,12 @@ void init_interface (const int sock, const int logging, char **args,
 		get_server_playlist (&tmp_plist);
 		plist_set_serial (playlist, plist_get_serial(&tmp_plist));
 		plist_free (&tmp_plist);
-	
-		/* Assign the server's playlist different id, we don't
-		 * want to stop playing from the old playlist. */
-		send_int_to_srv (CMD_PLIST_GET_SERIAL);
-		if (get_data_int() == plist_get_serial(playlist)) {
-			int serial;
-			
-			send_int_to_srv (CMD_GET_SERIAL);
-			serial = get_data_int ();
-			send_int_to_srv (CMD_PLIST_SET_SERIAL);
-			send_int_to_srv (serial);
-		}
 
+		change_srv_plist_serial ();
+	
+		set_iface_status_ref ("Notifying clients...");
 		send_all_items (playlist);
+		set_iface_status_ref (NULL);
 		send_int_to_srv (CMD_UNLOCK);
 	}
 	
@@ -2110,19 +2121,9 @@ static void clear_playlist (const int notify_server)
 	if (notify_server) {
 		if (options_get_int("SyncPlaylist"))
 			send_int_to_srv (CMD_CLI_PLIST_CLEAR);
-	
-		/* Assign the server's playlist different id, we don't
-		 * want to stop playing from the old playlist. */
+		
 		send_int_to_srv (CMD_LOCK);
-		send_int_to_srv (CMD_PLIST_GET_SERIAL);
-		if (get_data_int() == plist_get_serial(playlist)) {
-			int serial;
-			
-			send_int_to_srv (CMD_GET_SERIAL);
-			serial = get_data_int ();
-			send_int_to_srv (CMD_PLIST_SET_SERIAL);
-			send_int_to_srv (serial);
-		}
+		change_srv_plist_serial ();
 		send_int_to_srv (CMD_UNLOCK);
 	}
 	
@@ -2287,7 +2288,9 @@ static void go_file ()
 		if (options_get_int("SyncPlaylist")) {
 			send_int_to_srv (CMD_LOCK);
 			send_int_to_srv (CMD_CLI_PLIST_CLEAR);
+			set_iface_status_ref ("Notifying clients...");
 			send_all_items (playlist);
+			set_iface_status_ref (NULL);
 			send_int_to_srv (CMD_UNLOCK);
 		}
 
@@ -2414,7 +2417,9 @@ static void add_dir_plist ()
 
 	if (options_get_int("SyncPlaylist")) {
 		send_int_to_srv (CMD_LOCK);
+		set_iface_status_ref ("Notifying clients...");
 		send_all_items (&plist);
+		set_iface_status_ref (NULL);
 		send_int_to_srv (CMD_UNLOCK);
 	}
 	
@@ -3443,4 +3448,107 @@ void interface_end ()
 	putchar ('\n');
 
 	logit ("Interface exited");
+}
+
+/* Clear the playlist. Command was given from the command line and the
+ * interface is not initialized. */
+void interface_cmdline_clear_plist (int server_sock)
+{
+	srv_sock = server_sock; /* the interface is not initialized, so set it
+				   here */
+	
+	if (options_get_int("SyncPlaylist"))
+		send_int_to_srv (CMD_CLI_PLIST_CLEAR);
+
+	send_int_to_srv (CMD_LOCK);
+	change_srv_plist_serial ();
+	send_int_to_srv (CMD_LIST_CLEAR);
+	send_int_to_srv (CMD_UNLOCK);
+}
+
+/* Append files given on command line. The interface is not initialized. */
+void interface_cmdline_append (int server_sock, char **args,
+		const int arg_num)
+{
+	int i;
+	struct plist plist;
+
+	srv_sock = server_sock; /* the interface is not initialized, so set it
+				   here */
+
+	plist_init (&plist);
+
+	for (i = 0; i < arg_num; i++) {
+		int dir = isdir(args[i]);
+
+		if (dir == 1)
+			read_directory_recurr (args[i], &plist, 1);
+		else if (dir == 0 && is_sound_file(args[i]))
+			plist_add (&plist, args[i]);
+	}
+
+	if (plist_count(&plist)) {
+		if (options_get_int("SyncPlaylist")) {
+			struct plist clients_plist;
+
+			plist_init (&clients_plist);
+			if (recv_server_plist(&clients_plist)) {
+				int serial;
+
+				send_int_to_srv (CMD_LOCK);
+				send_all_items (&plist);
+
+				send_int_to_srv (CMD_PLIST_GET_SERIAL);
+				serial = get_data_int ();
+				if (serial == plist_get_serial(&clients_plist))
+					send_playlist (&plist, 0);
+			}
+			else {
+				send_int_to_srv (CMD_LOCK);
+				send_playlist (&plist, 0);
+				send_int_to_srv (CMD_UNLOCK);
+			}
+
+			plist_free (&clients_plist);
+		}
+		else {
+			send_int_to_srv (CMD_LOCK);
+			change_srv_plist_serial ();
+			send_playlist (&plist, 0);
+			send_int_to_srv (CMD_UNLOCK);
+		}
+	}
+	else
+		fatal ("No files could be added");
+
+	plist_free (&plist);
+}
+
+void interface_cmdline_play_first (int server_sock)
+{
+	struct plist clients_plist;
+
+	srv_sock = server_sock; /* the interface is not initialized, so set it
+				   here */
+
+	plist_init (&clients_plist);
+	if (recv_server_plist(&clients_plist)) {
+		int serial;
+
+		send_int_to_srv (CMD_LOCK);
+		send_int_to_srv (CMD_PLIST_GET_SERIAL);
+		serial = get_data_int ();
+		if (serial != plist_get_serial(&clients_plist)) {
+			send_playlist (&clients_plist, 1);
+			send_int_to_srv (CMD_PLIST_SET_SERIAL);
+			send_int_to_srv (plist_get_serial(&clients_plist));
+		}
+		
+		send_int_to_srv (CMD_UNLOCK);
+	}
+	
+	send_int_to_srv (CMD_PLAY);
+	send_str_to_srv ("");
+
+	plist_free (&clients_plist);
 }
