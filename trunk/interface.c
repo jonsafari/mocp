@@ -1701,6 +1701,7 @@ static void load_playlist ()
  * if such a list doesn't exists. */
 static int get_server_playlist ()
 {
+	set_iface_status_ref ("Getting the playlist...");
 	debug ("Getting the playlist...");
 	
 	send_int_to_srv (CMD_GET_PLIST);
@@ -1779,10 +1780,11 @@ static int get_server_playlist ()
 	if (options_get_int("ReadTags")) {
 		set_iface_status_ref ("Reading tags...");
 		switch_titles_tags (playlist);
-		set_iface_status_ref (NULL);
 	}
 	else
 		switch_titles_file (playlist);
+
+	set_iface_status_ref (NULL);
 	
 	return 1;
 }
