@@ -210,6 +210,7 @@ int read_directory (const char *directory, struct plist *plist,
 	DIR *dir;
 	struct dirent *entry;
 	int ndirs, dir_alloc = 64;
+	int show_hidden = options_get_int ("ShowHiddenFiles");
 	
 	assert (plist != NULL);
 	assert (dir_tab != NULL);
@@ -228,6 +229,8 @@ int read_directory (const char *directory, struct plist *plist,
 		enum file_type type;
 		
 		if (!strcmp(entry->d_name, ".") || !strcmp(entry->d_name, ".."))
+			continue;
+		if (!show_hidden && entry->d_name[0] == '.')
 			continue;
 		if (snprintf(file, sizeof(file), "%s/%s", directory,
 					entry->d_name)
