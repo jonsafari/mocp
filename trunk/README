@@ -10,7 +10,8 @@ style. Features:
 	* Play files from directory changing automatically to the next one
 	  without any playlist.
 	* Supports id3tag, VBR and Xing header for MP3.
-	* Simple mixer.
+	* OSS or ALSA output.
+	* Mixer.
 	* Interface can be detached frm the player to play in background.
 	* Fast switching to your music directory.
 	* Playlists (without read/write to a file).
