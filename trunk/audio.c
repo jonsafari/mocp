@@ -41,8 +41,8 @@
 #include "player.h"
 #include "audio.h"
 
-/* FIXME: is 0 a tid that never is valid? */
 static pthread_t playing_thread = 0;  /* tid of play thread */
+static int play_thread_running = 0;
 
 static int curr_playing = -1; /* currently played item */
 static pthread_mutex_t curr_playing_mut = PTHREAD_MUTEX_INITIALIZER;
@@ -64,7 +64,7 @@ static int audio_opened = 0;
 /* Current sound parameters. */
 static struct sound_params sound_params;
 
-static void *play_thread (void *unused)
+static void *play_thread (void *unused ATTR_UNUSED)
 {
 	logit ("entering playing thread");
 
@@ -145,7 +145,7 @@ void audio_reset ()
 
 void audio_stop ()
 {
-	if (playing_thread) {
+	if (play_thread_running) {
 		logit ("audio_stop()");
 		stop_playing = 1;
 		player_stop ();
@@ -153,6 +153,7 @@ void audio_stop ()
 		if (pthread_join(playing_thread, NULL))
 			logit ("pthread_join() failed: %s", strerror(errno));
 		playing_thread = 0;
+		play_thread_running = 0;
 		stop_playing = 0;
 		logit ("done stopping");
 	}
@@ -174,6 +175,7 @@ void audio_play (const char *fname)
 	if (curr_playing != -1) {
 		if (pthread_create(&playing_thread, NULL, play_thread, NULL))
 			error ("can't create thread");
+		play_thread_running = 1;
 	}
 	else
 		logit ("Client wanted to play a file not present on the "
