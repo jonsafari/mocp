@@ -94,6 +94,24 @@ static int debug_callback (CURL *curl ATTR_UNUSED, curl_infotype i, char *msg,
 	return 0;
 }
 
+/* Read messages given by curl and set the stream status. */
+static void check_curl_stream (struct io_stream *s)
+{
+	CURLMsg *msg;
+	int msg_queue_num;
+	
+	while ((msg = curl_multi_info_read(s->curl_multi_handle,
+					&msg_queue_num)))
+		if (msg->msg == CURLMSG_DONE && s->curl_handle) {
+			s->curl_status = msg->data.result;
+			curl_multi_remove_handle (s->curl_multi_handle,
+					s->curl_handle);
+			curl_easy_cleanup (s->curl_handle);
+			s->curl_handle = NULL;
+			break;
+		}
+}
+
 void io_curl_open (struct io_stream *s, const char *url)
 {
 	int running;
@@ -141,14 +159,18 @@ void io_curl_open (struct io_stream *s, const char *url)
 	*/
 
 	if ((s->curl_multi_status = curl_multi_add_handle(s->curl_multi_handle,
-					s->curl_handle)) != CURLM_OK)
+					s->curl_handle)) != CURLM_OK) {
+		logit ("curl_multi_add_handle() failed");
 		return;
+	}
 
 	debug ("Starting curl...");
 	do {
 		s->curl_multi_status = curl_multi_perform (s->curl_multi_handle,
 			&running);
 	} while (s->curl_multi_status == CURLM_CALL_MULTI_PERFORM);
+
+	check_curl_stream (s);
 
 	s->opened = 1;
 }
@@ -176,15 +198,12 @@ void io_curl_close (struct io_stream *s)
 ssize_t io_curl_read (struct io_stream *s, char *buf, size_t count)
 {
 	int running = 1;
-	CURLMsg *msg;
-	int msg_queue_num;
-	
+
 	assert (s != NULL);
 	assert (s->source == IO_SOURCE_CURL);
 	assert (s->curl_multi_handle != NULL);
-	assert (s->curl_handle != NULL);
 
-	while (!s->curl_buf_fill && running && s->curl_handle
+	while (s->opened && !s->curl_buf_fill && running && s->curl_handle
 			&& (s->curl_multi_status == CURLM_CALL_MULTI_PERFORM
 				|| s->curl_multi_status == CURLM_OK)) {
 		if (s->curl_multi_status != CURLM_CALL_MULTI_PERFORM) {
@@ -227,19 +246,14 @@ ssize_t io_curl_read (struct io_stream *s, char *buf, size_t count)
 
 	debug ("running: %d", running);
 
-	while ((msg = curl_multi_info_read(s->curl_multi_handle,
-					&msg_queue_num)))
-		if (msg->msg == CURLMSG_DONE) {
-			s->curl_status = msg->data.result;
-			curl_easy_cleanup (s->curl_handle);
-			s->curl_handle = NULL;
-			break;
-		}
 
-	if ((s->curl_multi_status == CURLM_OK || s->curl_multi_status
+	if (s->opened && (s->curl_multi_status == CURLM_OK
+				|| s->curl_multi_status
 				== CURLM_CALL_MULTI_PERFORM)
 			&& s->curl_status == CURLE_OK) {
 		long to_copy = MIN ((long)count, s->curl_buf_fill);
+
+		check_curl_stream (s);
 
 		debug ("Copying %ld bytes", to_copy);
 
@@ -262,10 +276,7 @@ void io_curl_strerror (struct io_stream *s)
 	assert (s != NULL);
 	assert (s->source == IO_SOURCE_CURL);
 
-	if (!s->curl_multi_handle || !s->curl_handle) {
-		err = "Could not create a curl handle";
-	}
-	else if (s->curl_multi_status != CURLM_OK)
+	if (s->curl_multi_status != CURLM_OK)
 		err = curl_multi_strerror(s->curl_multi_status);
 	else if (s->curl_status != CURLE_OK)
 		err = curl_easy_strerror(s->curl_status);
