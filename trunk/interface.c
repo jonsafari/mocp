@@ -905,14 +905,6 @@ static int go_to_dir (char *dir)
 	set_interface_status ("reading directory...");
 	wrefresh (info_win);
 
-	if (chdir(new_dir)) {
-		set_interface_status (NULL);
-		wrefresh (info_win);
-		interface_error ("Can't chdir() to %s, %s", new_dir,
-				strerror(errno));
-		return 0;
-	}
-
 	if (dir && is_subdir(dir, cwd)) {
 		strcpy (last_dir, strrchr(cwd, '/') + 1);
 		going_up = 1;
