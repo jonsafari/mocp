@@ -1757,7 +1757,7 @@ static int get_server_playlist (struct plist *plist)
 
 	set_iface_status_ref (NULL);
 	
-	return 1;
+	return 0;
 }
 
 /* Send the playlist to the server to be forwarded to another client. */
