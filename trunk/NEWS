@@ -2,10 +2,21 @@
 	* Multiple clients. You can have moc interface on many
 	  consoles/terminals.
 	* Searching the menu (CTRL-g) like M-s in Midnight Commander.
-	* Playlist load/save support (m3u).
+	* Playlist load/save support (m3u files).
+	* The apperance can be customized using themes.
+	* Displaying file time and format in the menu.
+	* Precaching files and not the closing the audio device when playing
+	  the next file - no more gaps between two songs.
 	* ALSA support.
+	* Optional character set conversion using iconv().
 	* MOC remembers the playlist between runs.
 	* Option to hide file names extension.
+	* Use of mmap() can be turned off (usefull on NFS).
+	* Ability to use different config file/directory tan the default.
+	* Pressing CTRL-C interrupts long operations that blocks the interface
+	  like reding tags for hundreds of files.
+	* Fixed seeking and counting time in VBR mp3 files.
+	* Fixes for systems where threads are not processes.
 	* Small fixes and cleanups.
 2.0.1
 	* Do not allow to add '..' to the playlist.
