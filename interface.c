@@ -2007,6 +2007,22 @@ static void toggle_plist ()
 	wrefresh (info_win);
 }
 
+static void go_dir_up ()
+{
+	char dir[PATH_MAX + 1];
+	char *slash;
+
+	strcpy (dir, cwd);				
+	slash = strrchr (dir, '/');
+	assert (slash != NULL);
+	if (slash == dir)
+		*(slash + 1) = 0;
+	else
+		*slash = 0;
+
+	go_to_dir (dir);
+}
+
 /* Action when the user selected a file. */
 static void go_file ()
 {
@@ -2014,25 +2030,8 @@ static void go_file ()
 
 	if (menu_item->type == F_SOUND)
 		play_it (menu_item->plist_pos);
-	else if (menu_item->type == F_DIR && visible_plist == curr_plist) {
-		char dir[PATH_MAX + 1];
-		
-		if (!strcmp(menu_item->file, "..")) {
-			char *slash;
-
-			strcpy (dir, cwd);				
-			slash = strrchr (dir, '/');
-			assert (slash != NULL);
-			if (slash == dir)
-				*(slash + 1) = 0;
-			else
-				*slash = 0;
-		}
-		else
-			strcpy (dir, menu_item->file);
-
-		go_to_dir (dir);
-	}
+	else if (menu_item->type == F_DIR && visible_plist == curr_plist)
+		go_dir_up ();
 	else if (menu_item->type == F_DIR && visible_plist == playlist)
 		
 		/* the only item on the playlist of type F_DIR is '..' */
@@ -2875,6 +2874,11 @@ static void menu_key (const int ch)
 				break;
 			case 'i':
 				make_entry (ENTRY_GO_DIR, "GO");
+				break;
+			/*case CTRL(KEY_PPAGE):*/
+			case 'U':
+				go_dir_up ();
+				do_update_menu = 1;
 				break;
 			case KEY_RESIZE:
 				break;
