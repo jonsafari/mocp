@@ -29,6 +29,12 @@
 
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 
+#ifdef HAVE__ATTRIBUTE__
+# define ATTR_UNUSED __attribute__((unused))
+#else
+# define ATTR_UNUSED
+#endif
+
 /* isblank() is a GNU extension */
 #ifndef isblank
 #define isblank(c) (c == ' ' || c == '\t')
