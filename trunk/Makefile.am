@@ -1,4 +1,5 @@
 SUBDIRS = themes
+AM_CPPFLAGS = -DSYSTEM_THEMES_DIR=\"$(pkgdatadir)/themes\"
 
 bin_PROGRAMS = mocp
 mocp_SOURCES = log.c \
