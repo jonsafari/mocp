@@ -1012,6 +1012,7 @@ static int find_item_plists (const char *file, int *index, struct plist **plist,
 	int curr_plist_idx, playlist_idx;
 
 	if ((curr_plist_idx = plist_find_fname(curr_plist, file)) != -1
+			&& curr_plist->items[curr_plist_idx].tags
 			&& curr_plist->items[curr_plist_idx].tags->filled
 			& needed_tags) {
 		*index = curr_plist_idx;
