@@ -198,6 +198,25 @@ int plist_next (struct plist *plist, int num)
 	return i < plist->num ? i : -1;
 }
 
+/* Get the number of the previous item on the list (skipping deleted items). 
+ * If num == -1, get the first item.             
+ * Return -1 if it is beginning of playlist. 
+ */                                                                                                                                              
+int plist_prev (struct plist *plist, int num)
+{
+	int i = num - 1;
+	
+	assert (plist != NULL);
+	assert (num >= -1);
+
+	LOCK (plist->mutex);
+	while (i >= 0 && plist->items[i].deleted)
+		i--;
+	UNLOCK (plist->mutex);
+
+	return i >= 0 ? i : -1;
+}
+
 static void plist_free_item_fields (struct plist_item *item)
 {
 	if (item->file) {
