@@ -50,23 +50,19 @@ configuration file as StartInMusicDir.
 
 .TP
 .I -a --append
-Append files given after options to the server playlist and don't run the
-interface. (see -p)
+Append files given after options to the playlist. If there are any clients
+running with SyncPlaylist option set, add to their playlist or add directly
+to the server playlist if not.
 
 .TP
 .I -c --clear
-Clear the server playlist. (see -p)
+Clear the playlist. If there are any clientsrunning with SyncPlaylist option
+set, clear their playlist or clear the server playlist if not.
 
 .TP
 .I -p --play
-Play the first item on the playlist and don't run the interface. This can be
-used in conjunction with -p or -c and is most useful in this way:
-
-.BR
-mocp -a -c -p file1 file2 directory
-
-.BR
-(Clear the server playlist, add files and start playing)
+Play the first item on the playlist (clients' playlist if there are any and
+SyncPlaylist is set or the server playlist if not).
 
 .TP
 .I -s --stop

@@ -184,34 +184,6 @@ int isdir (const char *file)
 	return S_ISDIR(file_stat.st_mode) ? 1 : 0;
 }
 
-/* Append files and directories to the server playlist. */
-static void append_items (int sock, char **args, int num)
-{
-	int i;
-	struct plist plist;
-
-	plist_init (&plist);
-
-	for (i = 0; i < num; i++) {
-		int dir = isdir(args[i]);
-
-		if (dir == 1)
-			read_directory_recurr (args[i], &plist, 1);
-		else if (dir == 0 && is_sound_file(args[i]))
-			plist_add (&plist, args[i]);
-	}
-
-	if (plist.num) {
-		for (i = 0; i < plist.num; i++)
-			if (!send_int(sock, CMD_LIST_ADD)
-					|| !send_str(sock, plist.items[i].file))
-				fatal ("Can't add an item");
-	}
-	else
-		fatal ("No files could be added");
-
-}
-
 static void sig_chld (int sig ATTR_UNUSED)
 {
 	logit ("Got SIGCHLD");
@@ -289,13 +261,12 @@ static void start_moc (const struct parameters *params, char **args,
 	}
 
 	if (params->dont_run_iface) {
-		if (params->clear && !send_int(server_sock, CMD_LIST_CLEAR))
-			fatal ("Can't clear the list");
+		if (params->clear)
+			interface_cmdline_clear_plist (server_sock);
 		if (params->append)
-			append_items (server_sock, args, arg_num);
-		if (params->play && (!send_int(server_sock, CMD_PLAY)
-					|| !send_str(server_sock, "")))
-			fatal ("Can't play");
+			interface_cmdline_append (server_sock, args, arg_num);
+		if (params->play)
+			interface_cmdline_play_first (server_sock);
 		send_int (server_sock, CMD_DISCONNECT);
 	}
 	else if (params->only_server)
@@ -362,10 +333,10 @@ static void show_usage (const char *prg_name) {
 "-F --foreground        Run server in foreground, log to stdout.\n"
 "-R --sound-driver NAME Use the specified sound driver (oss, alsa, null).\n"
 "-m --music-dir         Start in MusicDir.\n"
-"-a --append            Append the files passed in command line to the server\n"
-"                       playlist and exit.\n"
-"-c --clear             Clear the server playlist and exit.\n"
-"-p --play              Play first item on the server playlist and exit.\n"
+"-a --append            Append the files passed in command line to playlist\n"
+"                       and exit.\n"
+"-c --clear             Clear the playlist and exit.\n"
+"-p --play              Play first item on the playlist and exit.\n"
 "-s --stop              Stop playing.\n"
 "-x --exit              Shutdown the server.\n"
 "-T --theme theme       Use selected theme file (read from ~/.moc/themes if\n"
