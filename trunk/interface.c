@@ -292,6 +292,12 @@ static void send_int_to_srv (const int num)
 		interface_fatal ("Can't send() int to the server.");
 }
 
+static void send_time_to_srv (const time_t num)
+{
+	if (!send_time(srv_sock, num))
+		interface_fatal ("Can't send() time to the server.");
+}
+
 static void send_str_to_srv (const char *str)
 {
 	if (!send_str(srv_sock, str))
@@ -303,6 +309,16 @@ static int get_int_from_srv ()
 	int num;
 	
 	if (!get_int(srv_sock, &num))
+		interface_fatal ("Can't receive value from the server.");
+
+	return num;
+}
+
+static time_t get_time_from_srv ()
+{
+	time_t num;
+	
+	if (!get_time(srv_sock, &num))
 		interface_fatal ("Can't receive value from the server.");
 
 	return num;
@@ -1681,6 +1697,136 @@ static void load_playlist ()
 	set_iface_status_ref (NULL);
 }
 
+/* Request the playlist from the server (given by another client). Return 0
+ * if such a list doesn't exists. */
+static int get_server_playlist ()
+{
+	debug ("Getting the playlist...");
+	
+	send_int_to_srv (CMD_GET_PLIST);
+	if (get_int_from_srv() != EV_DATA)
+		fatal ("Server didn't send data while requesting for the"
+				" playlist.");
+
+	if (!get_int_from_srv()) {
+		debug ("There is no playlist");
+		return 0; /* there are no other clients with a playlist */
+	}
+
+	debug ("There is a playlist, getting...");
+
+	if (get_int_from_srv() != EV_DATA)
+		fatal ("Server didnt send EV_DATA when it was supposed to send"
+				" the playlist.");
+
+	while (1) {
+		char *file, *title, *artist, *album;
+		int track, time;
+		time_t mtime;
+		int a;
+
+		/* get the file name */
+		file = get_str_from_srv ();
+		if (!file[0])
+			break; /* end of the list */
+		title = get_str_from_srv ();
+		artist = get_str_from_srv ();
+		album = get_str_from_srv ();
+		track = get_int_from_srv ();
+		time = get_int_from_srv ();
+		mtime = get_time_from_srv ();
+
+		a = plist_add (playlist, file);
+		playlist->items[a].mtime = mtime;
+		if (*title || *artist || *album || track != -1 || time != -1) {
+			playlist->items[a].tags = tags_new ();
+
+			if (*title || *artist || *album) {
+				playlist->items[a].tags->filled	|=
+					TAGS_COMMENTS;
+
+				if (*title)
+					playlist->items[a].tags->title = title;
+				else
+					free (title);
+				
+				if (*artist)
+					playlist->items[a].tags->artist =
+						artist;
+				else
+					free (artist);
+				
+				if (*album)
+					playlist->items[a].tags->album = album;
+				else
+					free (album);
+			}
+			
+			if (time != -1) {
+				playlist->items[a].tags->filled |= TAGS_TIME;
+				playlist->items[a].tags->time = time;
+			}
+		}
+		else {
+			free (title);
+			free (artist);
+			free (album);
+		}
+		
+		free (file);
+	}
+
+	if (options_get_int("ReadTags")) {
+		set_iface_status_ref ("Reading tags...");
+		switch_titles_tags (playlist);
+		set_iface_status_ref (NULL);
+	}
+	else
+		switch_titles_file (playlist);
+	
+	return 1;
+}
+
+/* Send the playlist to the server to be forwarded to another client. */
+static void forward_playlist ()
+{
+	int i;
+
+	debug ("Forwarding the playlist...");
+	
+	send_int_to_srv (CMD_SEND_PLIST);
+
+	for (i = 0; i < playlist->num; i++)
+		if (!plist_deleted(playlist, i)) {
+			send_str_to_srv (plist_get_file(playlist, i));
+			if (playlist->items[i].tags) {
+				struct file_tags *t =
+					playlist->items[i].tags;
+				
+				send_str_to_srv (t->title ? t->title : "");
+				send_str_to_srv (t->artist ? t->artist : "");
+				send_str_to_srv (t->album ? t->album : "");
+				send_int_to_srv (t->track);
+				send_int_to_srv (t->filled & TAGS_TIME
+						? t->time : -1);
+			}
+			else {
+				
+				/* empty tags */
+				send_str_to_srv (""); /* title */
+				send_str_to_srv (""); /* artist */
+				send_str_to_srv (""); /* album */
+				send_int_to_srv (-1); /* track */
+				send_int_to_srv (-1); /* time */
+			}
+
+			send_time_to_srv (playlist->items[i].mtime);
+		}
+
+	/* end of the list */
+	send_str_to_srv ("");
+}
+
 /* Initialize the interface. args are command line file names. arg_num is the
  * number of arguments. */
 void init_interface (const int sock, const int debug, char **args,
@@ -1699,7 +1845,6 @@ void init_interface (const int sock, const int debug, char **args,
 	plist_init (curr_plist);
 	playlist = (struct plist *)xmalloc (sizeof(struct plist));
 	plist_init (playlist);
-	send_int_to_srv (CMD_SEND_EVENTS);
 
 	iconv_init ();
 	keys_init ();
@@ -1712,7 +1857,7 @@ void init_interface (const int sock, const int debug, char **args,
 	check_term_size ();
 
 	signal (SIGQUIT, sig_quit);
-	//signal (SIGTERM, sig_quit);
+	/*signal (SIGTERM, sig_quit);*/
 	signal (SIGINT, sig_interrupt);
 	
 #ifdef SIGWINCH
@@ -1739,16 +1884,22 @@ void init_interface (const int sock, const int debug, char **args,
 	
 	main_border ();
 	get_server_options ();
-
 	
 	if (arg_num)
 		process_args (args, arg_num);
 	else
 		enter_first_dir ();
 
-	if (plist_count(playlist) == 0)
-		load_playlist ();
+	if (plist_count(playlist) == 0) {
+		if (!get_server_playlist())
+			load_playlist ();
+	}
+	else {
+		/* TODO: we have the playlist from the command line.
+		 * Playlists of other clients are bad? */
+	}
 	
+	send_int_to_srv (CMD_SEND_EVENTS);
 	menu_draw (curr_menu);
 	wrefresh (main_win);
 	update_state ();
@@ -1801,6 +1952,9 @@ static void server_event (const int event)
 			get_server_options ();
 			update_info_win ();
 			wrefresh (info_win);
+			break;
+		case EV_SEND_PLIST:
+			forward_playlist ();
 			break;
 		default:
 			interface_message ("Unknown event: 0x%02x", event);

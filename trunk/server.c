@@ -31,7 +31,7 @@
 #include <pthread.h>
 #include <assert.h>
 
-/*#define DEBUG*/
+#define DEBUG
 
 #include "log.h"
 #include "protocol.h"
@@ -59,6 +59,7 @@ struct client
 	int socket; 		/* -1 if inactive */
 	int wants_events;	/* requested events? */
 	struct events events;
+	int requests_plist;	/* is the client waiting for the playlist? */
 };
 
 static struct client clients[CLIENTS_MAX];
@@ -159,6 +160,7 @@ static int add_client (int sock)
 			clients[i].wants_events = 0;
 			clients[i].events.num = 0;
 			clients[i].socket = sock;
+			clients[i].requests_plist = 0;
 			return 1;
 		}
 
@@ -513,6 +515,212 @@ static int req_get_ftime (struct client *cli)
 	return 1;
 }
 
+/* Return the index of the first conencted client that is able to send the
+ * playlist or -1 if there isn't any. */
+static int first_connected_client ()
+{
+	int i;
+	
+	for (i = 0; i < CLIENTS_MAX; i++)
+		if (clients[i].socket != -1 && !clients[i].requests_plist)
+			return i;
+	return -1;
+}
+
+/* Handle CMD_GET_PLIST. Return 0 on error. */
+static int get_client_plist (struct client *cli)
+{
+	int first;
+
+	debug ("Client with fd %d requests the playlist.", cli->socket);
+
+	/* Find the first connected client, and ask it to send the playlist.
+	 * Here, send 1 if there is a client with the playlist, or 0 if there
+	 * isn't. */
+
+	cli->requests_plist = 1;
+	
+	first = first_connected_client ();
+	if (first == -1) {
+		debug ("No clients with the playlist.");
+		cli->requests_plist = 0;
+		if (!send_data_int(cli, 0))
+			return 0;
+		return 1;
+	}
+	
+	if (!send_data_int(cli, 1))
+		return 0;
+
+	if (!send_int(clients[first].socket, EV_SEND_PLIST))
+		return 0;
+
+	return 1;
+}
+
+/* Find the client requesting for the playlist. */
+static int find_cli_requesting_plist ()
+{
+	int i;
+	
+	for (i = 0; i < CLIENTS_MAX; i++)
+		if (clients[i].requests_plist)
+			return i;
+	return -1;
+}
+
+/* Get string from one fd, send it to the second fd. Don't send anything if
+ * to_fd == -1. If from_fd == -1, send an empty string. Put the pointer to the
+ * string in *s (malloc()ed).
+ * Return 0 on error. */
+static int get_send_str (int from_fd, int to_fd, char **s)
+{
+	if (from_fd == -1 || !(*s = get_str(from_fd))) {
+		
+		if (to_fd != -1) /* just say, that it's end of the list */
+			send_str(to_fd, "");
+		return from_fd == -1 ? 1 : 0;
+	}
+
+	if (to_fd != -1 && !send_str(to_fd, *s))
+		return 0;
+
+	return 1;
+}
+
+/* Get an integer value from one fd, send it to the second fd. Don't send
+ * anything if to_fd == -1. If from_fd == -1, send -1.
+ * Return 0 on error or end of the list. */
+static int get_send_int (int from_fd, int to_fd)
+{
+	int d;
+	
+	if (from_fd == -1 || !get_int(from_fd, &d)) {
+		if (to_fd != -1 && !send_int(to_fd, -1))
+			return 0;
+		return from_fd == -1 ? 1 : 0;
+	}
+
+	if (!send_int(to_fd, d))
+		return 0;
+
+	return 1;
+}
+
+/* Get a time_t value from one fd, send it to the second fd. Don't send
+ * anything if to_fd == -1. If from_fd == -1, send (time_t)-1.
+ * Return 0 on error or end of the list. */
+static int get_send_time (int from_fd, int to_fd)
+{
+	time_t d;
+	
+	if (from_fd == -1 || !get_time(from_fd, &d)) {
+		if (to_fd != -1 && !send_time(to_fd, -1))
+			return 0;
+		return from_fd == -1 ? 1 : 0;
+	}
+
+	if (!send_time(to_fd, d))
+		return 0;
+
+	return 1;
+}
+
+/* Handle CMD_SEND_PLIST. Some client requested to get the playlist, so we asked
+ * another client to send it (EV_SEND_PLIST). */
+static int req_send_plist (struct client *cli)
+{
+	int requesting = find_cli_requesting_plist ();
+	int send_fd;
+	int recv_fd;
+
+	debug ("Client with fd %d wants to send its playlists", cli->socket);
+
+	if (requesting == -1) {
+		logit ("No clients are requesting the playlist.");
+		send_fd = -1;
+	}
+	else {
+		send_fd = clients[requesting].socket;
+		if (!send_int(send_fd, EV_DATA))
+			return 0;
+	}
+
+	recv_fd = cli->socket;
+
+	/* Even if no clients are requesting the playlist, we must read it,
+	 * because there is no way to say that we don't need it. */
+	while (recv_fd != -1) {
+		char *s;
+		
+		/* file */
+		if (!get_send_str(recv_fd, send_fd, &s)) {
+			if (requesting != -1)
+				clients[requesting].requests_plist = 0;
+			debug ("Error when sending/receiving the file path");
+			return 0;
+		}
+
+		if (!s[0]) {
+			if (requesting != -1)
+				clients[requesting].requests_plist = 0;
+			debug ("End of the list");
+			free (s);
+			return 1;
+		}
+		free (s);
+		
+		/* title */
+		if (!get_send_str(recv_fd, send_fd, &s)) {
+			logit ("Error when sending/receiving the title tag");
+			recv_fd = -1;
+		}
+		else
+			free (s);
+		
+		/* artist */
+		if (!get_send_str(recv_fd, send_fd, &s)) {
+			logit ("Error when sending/receiving the artist tag");
+			recv_fd = -1;
+		}
+		else
+			free (s);
+
+		/* album */
+		if (!get_send_str(recv_fd, send_fd, &s)) {
+			logit ("Error when sending/receiving the album tag");
+			recv_fd = -1;
+		}
+		else
+			free (s);
+		
+		/* track */
+		if (!get_send_int(recv_fd, send_fd)) {
+			logit ("Error when sending/receiving the track tag");
+			recv_fd = -1;
+		}
+
+		/* time */
+		if (!get_send_int(recv_fd, send_fd)) {
+			logit ("Error when sending/receiving the time tag");
+			recv_fd = -1;
+		}
+
+		/* modification time */
+		if (!get_send_time(recv_fd, send_fd)) {
+			logit ("Error when sending/receiving the mtime");
+			recv_fd = -1;
+		}
+	}
+
+	debug ("Error when sending the playlist.");
+
+	if (requesting != -1)
+		clients[requesting].requests_plist = 0;
+	
+	return 0;
+}
+
 /* Reveive a command from the client and execute it. */
 static void handle_command (struct client *cli)
 {
@@ -625,6 +833,14 @@ static void handle_command (struct client *cli)
 			break;
 		case CMD_GET_FTIME:
 			if (!req_get_ftime(cli))
+				err = 1;
+			break;
+		case CMD_GET_PLIST:
+			if (!get_client_plist(cli))
+				err = 1;
+			break;
+		case CMD_SEND_PLIST:
+			if (!req_send_plist(cli))
 				err = 1;
 			break;
 		default:

@@ -1,6 +1,6 @@
 /*
  * MOC - music on console
- * Copyright (C) 2003,2004 Damian Pietras <daper@daper.net>
+ * Copyright (C) 2003,2004,2005 Damian Pietras <daper@daper.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,8 +18,10 @@
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <time.h>
 #include "main.h"
 #include "log.h"
+#include "protocol.h"
 
 /* Maximal socket name. */
 #define UNIX_PATH_MAX	108
@@ -70,8 +72,10 @@ char *get_str (int sock)
 	if (!get_int(sock, &len))
 		return NULL;
 
-	if (len < 0 || len > MAX_SEND_STRING)
+	if (len < 0 || len > MAX_SEND_STRING) {
+		logit ("Bad string length.");
 		return NULL;
+	}
 
 	str = (char *)xmalloc (sizeof(char) * (len + 1));
 	while (nread < len) {
@@ -107,3 +111,26 @@ int send_str (int sock, const char *str)
 	return 1;
 }
 
+/* Get a time_t value from the socket, return == 0 on error. */
+int get_time (int sock, time_t *i)
+{
+	int res;
+	
+	res = recv (sock, i, sizeof(time_t), 0);
+	if (res == -1)
+		logit ("recv() failed when getting time_t: %s", strerror(errno));
+
+	return res == sizeof(time_t) ? 1 : 0;
+}
+
+/* Send a time_t value to the socket, return == 0 on error */
+int send_time (int sock, time_t i)
+{
+	int res;
+	
+	res = send (sock, &i, sizeof(time_t), 0);
+	if (res == -1)
+		logit ("send() failed: %s", strerror(errno));
+
+	return res == sizeof(time_t) ? 1 : 0;
+}
