@@ -2063,8 +2063,8 @@ static void event_plist_del (char *file)
 	free (file);
 }
 
-/* Clear the playlist */
-static void clear_playlist (const int notify_server)
+/* Clear the playlist locally */
+static void clear_playlist ()
 {
 	if (visible_plist == playlist)
 		toggle_plist();
@@ -2073,18 +2073,22 @@ static void clear_playlist (const int notify_server)
 		menu_free (playlist_menu);
 		playlist_menu = NULL;
 	}
-
-	if (notify_server) {
-		if (options_get_int("SyncPlaylist"))
-			send_int_to_srv (CMD_CLI_PLIST_CLEAR);
-		
-		send_int_to_srv (CMD_LOCK);
-		change_srv_plist_serial ();
-		send_int_to_srv (CMD_UNLOCK);
-	}
 	
 	interface_message ("The playlist was cleared.");
 	set_iface_status_ref (NULL);
+}
+
+/* Clear the playlist on user request. */
+static void cmd_clear_playlist ()
+{
+	if (options_get_int("SyncPlaylist")) {
+		send_int_to_srv (CMD_LOCK);
+		send_int_to_srv (CMD_CLI_PLIST_CLEAR);
+		change_srv_plist_serial ();
+		send_int_to_srv (CMD_UNLOCK);
+	}
+	else
+		clear_playlist ();
 }
 
 /* Handle server event. */
@@ -2135,7 +2139,7 @@ static void server_event (const int event, void *data)
 			break;
 		case EV_PLIST_CLEAR:
 			if (options_get_int("SyncPlaylist")) {
-				clear_playlist (0);
+				clear_playlist ();
 				update_menu ();
 			}
 			break;
@@ -2180,21 +2184,15 @@ static void play_it (const int plist_pos)
 	send_int_to_srv (CMD_PLIST_GET_SERIAL);
 	serial = get_data_int ();
 	
-	if (serial != plist_get_serial(visible_plist)) {
+	if (plist_get_serial(visible_plist) == -1
+			|| serial != plist_get_serial(visible_plist)) {
 
 		logit ("The server has different playlist");
 
-		/* Set the serial number for this playlist. */
-		if (visible_plist == playlist) {
-			send_int_to_srv (CMD_PLIST_SET_SERIAL);
-			send_int_to_srv (plist_get_serial(visible_plist));
-		}
-		else {
-			serial = get_safe_serial();
-			plist_set_serial (visible_plist, serial);
-			send_int_to_srv (CMD_PLIST_SET_SERIAL);
-			send_int_to_srv (serial);
-		}
+		serial = get_safe_serial();
+		plist_set_serial (visible_plist, serial);
+		send_int_to_srv (CMD_PLIST_SET_SERIAL);
+		send_int_to_srv (serial);
 	
 		send_playlist (visible_plist, 1);
 	}
@@ -2320,25 +2318,28 @@ static void add_file_plist ()
 				menu_item_get_file(curr_menu, selected)) == -1) {
 		struct plist_item *item = &curr_plist->items[
 			menu_item_get_plist_pos(curr_menu, selected)];
-		int added = plist_add_from_item (playlist, item);
+
+		send_int_to_srv (CMD_LOCK);
 
 		if (options_get_int("SyncPlaylist")) {
 			send_int_to_srv (CMD_CLI_PLIST_ADD);
 			send_item_to_srv (item);
 		}
-
+		else {
+			int added = plist_add_from_item (playlist, item);
+			
+			if (playlist_menu)
+				add_to_menu (playlist_menu, playlist, added);
+		}
+				
 		/* Add to the server's playlist if the server has our
 		 * playlist */
-		send_int_to_srv (CMD_LOCK);
 		send_int_to_srv (CMD_PLIST_GET_SERIAL);
 		if (get_data_int() == plist_get_serial(playlist)) {
 			send_int_to_srv (CMD_LIST_ADD);
-			send_str_to_srv (plist_get_file(playlist, added));
+			send_str_to_srv (item->file);
 		}
 		send_int_to_srv (CMD_UNLOCK);
-		
-		if (playlist_menu)
-			add_to_menu (playlist_menu, playlist, added);
 	}
 	else
 		error ("The file is already on the playlist.");
@@ -2349,7 +2350,6 @@ static void add_dir_plist ()
 {
 	int selected = menu_curritem (curr_menu);
 	struct plist plist;
-	char msg[50];
 
 	if (visible_plist == playlist) {
 		error ("Can't add to the playlist a file from the "
@@ -2380,31 +2380,36 @@ static void add_dir_plist ()
 		switch_titles_file (&plist);
 
 	plist_sort_fname (&plist);
-	plist_cat (playlist, &plist);
+
+	send_int_to_srv (CMD_LOCK);
 
 	/* Add the new files to the server's playlist if the server has our
 	 * playlist */
-	send_int_to_srv (CMD_LOCK);
 	send_int_to_srv (CMD_PLIST_GET_SERIAL);
 	if (get_data_int() == plist_get_serial(playlist))
 		send_playlist (&plist, 0);
-	send_int_to_srv (CMD_UNLOCK);
 
 	if (options_get_int("SyncPlaylist")) {
-		send_int_to_srv (CMD_LOCK);
 		set_iface_status_ref ("Notifying clients...");
 		send_all_items (&plist);
 		set_iface_status_ref (NULL);
-		send_int_to_srv (CMD_UNLOCK);
 	}
-	
-	if (playlist_menu) {
-		menu_free (playlist_menu);
-		playlist_menu = NULL;
+	else {
+		char msg[50];
+
+		plist_cat (playlist, &plist);
+		
+		if (playlist_menu) {
+			menu_free (playlist_menu);
+			playlist_menu = NULL;
+		}
+		
+		sprintf (msg, "%d files on the list", plist_count(playlist));
+		set_iface_status_ref (msg);
 	}
 
-	sprintf (msg, "%d files on the list", plist_count(playlist));
-	set_iface_status_ref (msg);
+	send_int_to_srv (CMD_UNLOCK);
+	
 	wrefresh (info_win);
 	plist_free (&plist);
 }
@@ -2547,39 +2552,43 @@ static void delete_item ()
 		interface_error ("You can't delete '..'");
 		return;
 	}
+
+	send_int_to_srv (CMD_LOCK);
 	
 	if (options_get_int("SyncPlaylist")) {
 		send_int_to_srv (CMD_CLI_PLIST_DEL);
 		send_str_to_srv (menu_item_get_file(curr_menu, selected));
 	}
+	else {
+		plist_delete (playlist, menu_item_get_plist_pos(curr_menu,
+					selected));
+		if ((num = plist_count(playlist)) > 0) {
+			char msg[50];
+			
+			menu_free (playlist_menu);
+			playlist_menu = make_menu (playlist, NULL, 0);
+			menu_set_top_item (playlist_menu, top_item);
+			menu_setcurritem (playlist_menu, selected);
+			curr_menu = playlist_menu;
+			update_curr_file ();
+			sprintf (msg, "%d files on the list", num);
+			set_iface_status_ref (msg);
+			update_info_win ();
+			wrefresh (info_win);
+		}
+		else
+			clear_playlist ();
+	}
 
 	/* Delete this item from the server's playlist if it has our
 	 * playlist */
-	send_int_to_srv (CMD_LOCK);
 	send_int_to_srv (CMD_PLIST_GET_SERIAL);
 	if (get_data_int() == plist_get_serial(playlist)) {
 		send_int_to_srv (CMD_DELETE);
 		send_str_to_srv (menu_item_get_file(curr_menu, selected));
 	}
+	
 	send_int_to_srv (CMD_UNLOCK);
-
-	plist_delete (playlist, menu_item_get_plist_pos(curr_menu, selected));
-	if ((num = plist_count(playlist)) > 0) {
-		char msg[50];
-		
-		menu_free (playlist_menu);
-		playlist_menu = make_menu (playlist, NULL, 0);
-		menu_set_top_item (playlist_menu, top_item);
-		menu_setcurritem (playlist_menu, selected);
-		curr_menu = playlist_menu;
-		update_curr_file ();
-		sprintf (msg, "%d files on the list", num);
-		set_iface_status_ref (msg);
-		update_info_win ();
-		wrefresh (info_win);
-	}
-	else
-		clear_playlist (1);
 }
 
 static int entry_search_key (const int ch)
@@ -3104,7 +3113,7 @@ static void menu_key (const int ch)
 				add_file_plist ();
 				break;
 			case KEY_CMD_PLIST_CLEAR:
-				clear_playlist (1);
+				cmd_clear_playlist ();
 				do_update_menu = 1;
 				break;
 			case KEY_CMD_PLIST_ADD_DIR:
