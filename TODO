@@ -1,6 +1,7 @@
 Before 2.0:
 
-* Global input buffer.
+* Don't count time at the buffer level, do it in player.c
+
 * Try mmap() again if size of the file has changed.
 * Generic ^r, r - reread directory.
 * Shuffle as in madplay (line 1302 of player.c)
@@ -13,10 +14,11 @@ Before 2.0:
   should be checked and purged after handling the client command.
 * Option and a key to ignore hidden files.
 * AUDIO_MAX_PLAY based on bps.
-* config for mixed device (master, pcm etc)
+* config for mixer device (master, pcm etc)
 * Configure the bahaviour when another client is connecting: EV_BUSY or drop
   the previous connection.
 * Command for turning off message/error text immediately.
+* Configurable pcm and mixer device.
 
 * Prebuffering.
 * iconv() to fix encoding.
@@ -24,6 +26,8 @@ Before 2.0:
 * configurable colors.
 * Update DOCS.
 * Showing the buffer state.
+* General procedures for reading files instead of doing this at the decoder
+  level.
 
 In future:
 
