@@ -21,6 +21,7 @@
 #include <ctype.h>
 #include "main.h"
 #include "menu.h"
+#include "files.h"
 
 #ifndef HAVE_STRCASESTR
 /* Case insensitive version od strstr(). */
@@ -60,6 +61,8 @@ void menu_draw (struct menu *menu)
 
 	for (i = menu->top; i < menu->nitems && i - menu->top < menu->maxy;
 			i++) {
+		int title_len;
+		
 		wmove (menu->win, i - menu->top + 1, 1);
 		
 		/* Set attributes */
@@ -68,11 +71,21 @@ void menu_draw (struct menu *menu)
 		else
 			wattrset (menu->win, menu->items[i]->attr_normal);
 		
-		waddnstr (menu->win, menu->items[i]->title, menu->maxx);
+		if (menu->items[i]->type == F_DIR) {
+			waddnstr (menu->win, menu->items[i]->title,
+					menu->maxx - 1);
+			waddch (menu->win, '/');
+			title_len = strlen (menu->items[i]->title) + 1;
+		}
+		else {
+			waddnstr (menu->win, menu->items[i]->title, menu->maxx);
+			title_len = strlen (menu->items[i]->title);
+		}
+		
 		
 		/* Make blank line to the right side of the screen */
 		if (i == menu->selected) {
-			for (j = strlen (menu->items[i]->title) + 1;
+			for (j = title_len + 1;
 					j <= menu->maxx; j++)
 				waddch (menu->win, ' ');
 		}
@@ -117,7 +130,8 @@ void menu_update_size (struct menu *menu, WINDOW *win)
 	menu->maxy--; /* Border without bottom line */
 }
 
-struct menu_item *menu_newitem (char *title, const int plist_pos)
+struct menu_item *menu_newitem (char *title, const int plist_pos,
+		const enum file_type type, const char *file)
 {
 	struct menu_item *item;
 
@@ -129,6 +143,8 @@ struct menu_item *menu_newitem (char *title, const int plist_pos)
 	item->plist_pos = plist_pos;
 	item->attr_normal = 0;
 	item->attr_sel = 0;
+	item->type = type;
+	item->file = xstrdup (file);
 
 	return item;
 }
@@ -143,6 +159,8 @@ void menu_free (struct menu *menu)
 	for (i = 0; i < menu->nitems; i++) {
 		free (menu->items[i]->title);
 		free (menu->items[i]);
+		if (menu->items[i]->file)
+			free (menu->items[i]->file);
 	}
 
 	free (menu->items);
