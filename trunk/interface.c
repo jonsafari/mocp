@@ -593,6 +593,26 @@ static void entry_curs_right ()
 	}
 }
 
+/* Move the cursor to the end of the entry text. */
+static void entry_end ()
+{
+	int len = strlen(entry.text);
+	
+	entry.cur_pos = len;
+	
+	if (len > entry.width)
+		entry.display_from = len - entry.width;
+	else
+		entry.display_from = 0;
+}
+
+/* Move the cursor to the beginning of the entry field. */
+static void entry_home ()
+{
+	entry.display_from = 0;
+	entry.cur_pos = 0;
+}
+
 static void entry_disable ()
 {
 	entry.type = ENTRY_DISABLED;
@@ -2335,6 +2355,18 @@ static int entry_common_key (const int ch)
 		return 1;
 	}
 
+	if (ch == KEY_HOME) {
+		entry_home ();
+		entry_draw ();
+		return 1;
+	}
+
+	if (ch == KEY_END) {
+		entry_end ();
+		entry_draw ();
+		return 1;
+	}
+
 	cmd = get_key_cmd (CON_ENTRY, ch);
 	
 	if (cmd == KEY_CMD_CANCEL) {
@@ -2758,11 +2790,7 @@ static void do_resize ()
 	werase (main_win);
 	
 	entry.width = COLS - strlen(entry.title) - 4;
-	entry.cur_pos = strlen(entry.text);
-	if (strlen(entry.text) > (unsigned)entry.width)
-		entry.display_from = strlen(entry.text) - entry.width;
-	else
-		entry.display_from = 0;
+	entry_end ();
 
 	if (curr_plist_menu)
 		menu_update_size (curr_plist_menu, main_win);
