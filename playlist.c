@@ -53,6 +53,19 @@ struct file_tags *tags_new ()
 	return tags;
 }
 
+struct file_tags *tags_dup (const struct file_tags *tags)
+{
+	struct file_tags *dtags;
+
+	dtags = (struct file_tags *)xmalloc (sizeof(struct file_tags));
+	dtags->title = xstrdup (tags->title);
+	dtags->artist = xstrdup (tags->artist);
+	dtags->album = xstrdup (tags->album);
+	dtags->track = tags->track;
+
+	return dtags;
+}
+
 /* Initialize the playlist. */
 void plist_init (struct plist *plist)
 {
@@ -68,6 +81,7 @@ int plist_add (struct plist *plist, const char *file_name)
 {
 	LOCK (plist->mutex);
 	
+	assert (plist != NULL);
 	assert (plist->items != NULL);
 		
 	if (plist->allocated == plist->num) {
@@ -96,6 +110,7 @@ char *plist_get_file (struct plist *plist, int i)
 	char *file = NULL;
 
 	assert (i >= 0);
+	assert (plist != NULL);
 
 	LOCK (plist->mutex);
 	if (i < plist->num)
@@ -112,6 +127,7 @@ int plist_find (struct plist *plist, int num)
 	int i = 0;
 
 	assert (num >= 0);
+	assert (plist != NULL);
 	
 	LOCK (plist->mutex);
 	while (i < plist->num && num > 0) {
@@ -130,6 +146,7 @@ int plist_find (struct plist *plist, int num)
  */
 int plist_next (struct plist *plist, int num)
 {
+	assert (plist != NULL);
 	assert (num >= 0);
 	return  num + 1 < plist->num ? num + 1 : -1;
 }
@@ -138,6 +155,8 @@ int plist_next (struct plist *plist, int num)
 void plist_clear (struct plist *plist)
 {
 	int i;
+
+	assert (plist != NULL);
 	
 	LOCK (plist->mutex);
 	
@@ -159,6 +178,8 @@ void plist_clear (struct plist *plist)
 /* Destroy the list freeing memory, the list can't be used after that. */
 void plist_free (struct plist *plist)
 {
+	assert (plist != NULL);
+	
 	plist_clear (plist);
 	free (plist->items);
 	plist->allocated = 0;
@@ -342,3 +363,14 @@ char *build_title (const struct file_tags *tags)
 			tags);
 	return xstrdup (title);
 }
+
+/* Copy the item to the playlist. */
+void plist_add_from_item (struct plist *plist, const struct plist_item *item)
+{
+	int pos = plist_add (plist, item->file);
+
+	plist->items[pos].title = strdup (item->title);
+	if (item->tags)
+		plist->items[pos].tags = tags_dup (item->tags);
+}
+
