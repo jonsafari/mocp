@@ -1849,11 +1849,11 @@ static void send_all_items (struct plist *plist)
 
 /* Initialize the interface. args are command line file names. arg_num is the
  * number of arguments. */
-void init_interface (const int sock, const int debug, char **args,
+void init_interface (const int sock, const int logging, char **args,
 		const int arg_num)
 {
 	srv_sock = sock;
-	if (debug) {
+	if (logging) {
 		FILE *logfp;
 
 		if (!(logfp = fopen(INTERFACE_LOG, "a")))
