@@ -185,8 +185,8 @@ then
 			   LIBS="$LIBS $sndfile_LIBS"
 			   CFLAGS="$CFLAGS $sndfile_CFLAGS"
 			   EXTRA_OBJS="$EXTRA_OBJS sndfile_formats.o"
-			   COMPILE_SNDFILE="yes"]
-			    )
+			   COMPILE_SNDFILE="yes"],
+			   [true])
 fi
 
 LIBS="$LIBS -lncurses"

@@ -559,9 +559,9 @@ static char *add_dir_file (const char *base, const char *name)
 
 	base_is_root = !strcmp (base, "/") ? 1 : 0;
 	path = (char *)xmalloc (sizeof(char) *
-			(base_is_root ? 0 : strlen(base) + strlen(name) + 2));
+			(strlen(base) + strlen(name) + 2));
 	
-	sprintf (path, "%s/%s", base_is_root ? "": base, name);
+	sprintf (path, "%s/%s", base_is_root ? "" : base, name);
 
 	return path;
 }
@@ -616,6 +616,7 @@ char *find_match_dir (char *pattern)
 					/* More matching directories */
 					free (matching_dir);
 					free (path);
+					free (search_dir);
 					return NULL;
 				}
 
@@ -627,6 +628,7 @@ char *find_match_dir (char *pattern)
 	}
 	
 	closedir (dir);
+	free (search_dir);
 
 	return matching_dir;
 }

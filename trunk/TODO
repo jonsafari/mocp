@@ -1,13 +1,14 @@
 Before 2.2.0:
-* General 24-bit to 16-bit conversion.
-* Different themes for xterm.
-* speed up saving the playlist when the titles are known to be made from tags.
+* speed up saving the playlist when the titles are known to be made from
+  tags or playlist - r rereads tags.
+* Ctrl-C to exit from an entry.
+* When playing file - use the time read by the server in the interface.
+* configurable saving the playlist at the end: ask, no, not if saved, always.
+* A bar showing time for current song.
 * General error/fatal functions that recognize if they are in the interface or
   in the server and if ncurses were initialized.
 * Redefining keys.
 * Configurable sorting.
-* configurable saving the playlist at the end: ask, no, not if saved, always.
-* A bar showing time for current song.
 * Do something with big interface.c - general user interface code?
 * Arrow keys working in the entry field.
 * Share the playlist between interfaces - one interface is a "master"?.
@@ -37,8 +38,6 @@ In future:
 * Use 24-bit output if output device supports it.
 * Seek forward using the content of the output buffer.
 * Locales.
-* special themes for xterm - after detecting xterm load XtermTheme that
-  supports xterm features.
 * Song ratings.
 
 Maybe never:
