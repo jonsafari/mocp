@@ -2423,14 +2423,13 @@ static char *match_dir (const char *str)
 			return NULL;
 		}
 		
-		strncat (dir, "/", sizeof(dir) - strlen(dir));
-		
+		strncat (dir, str + 1, sizeof(dir) - strlen(dir));
+
 		if (dir[sizeof(dir)-1]) {
 			logit ("Path too long!");
 			return NULL;
 		}
 
-		strncat (dir, str, sizeof(dir) - strlen(dir));
 	}
 	else if (str[0] != '/') {
 		if (snprintf(dir, sizeof(dir), "%s/%s", cwd, str)
