@@ -48,7 +48,8 @@
 # message            - information message
 #
 # FOREGOUND_VOLOR and BACKGROUND_COLOR can have one of the following values:
-# black, red, green, yellow, blue, magenta, cyan, white
+# black, red, green, yellow, blue, magenta, cyan, white, default (can be
+# transparent), grey (not standard, but works)
 #
 # Optional ATTRIBUTE parameters can be (from ncurses manual):
 # normal      - default (no highlight)
