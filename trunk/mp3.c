@@ -251,7 +251,8 @@ static int put_output (char *buf, int buf_len, struct mad_pcm *pcm,
 	return olen;
 }
 
-static int mp3_decode (void *void_data, char *buf, int buf_len)
+static int mp3_decode (void *void_data, char *buf, int buf_len,
+		struct sound_params *sound_params)
 {
 	struct mp3_data *data = (struct mp3_data *)void_data;
 
@@ -292,27 +293,15 @@ static int mp3_decode (void *void_data, char *buf, int buf_len)
 			}
 		}
 
-		/* Bitrate and number or channels can change */
-		if (data->channels != MAD_NCHANNELS(&data->frame.header) ||
-				data->freq != data->frame.header.samplerate) {
-			if (!data->first_frame)
-				audio_close ();
-			
-			if ((data->freq = data->frame.header.samplerate) == 0) {
-				error ("Broken file: information "
-						"about the frequency "
-						"couldn't be read.");
-				return 0;
-			}
-			data->channels = MAD_NCHANNELS(&data->frame.header);
-			
-			if (!audio_open(16, data->channels, data->freq))
-				return 0;
-
-			set_info_channels (data->channels);
-			set_info_rate (data->freq / 1000);
+		/* Sound parameters. */
+		if (!(sound_params->rate = data->frame.header.samplerate)) {
+			error ("Broken file: information about the frequency "
+					"couldn't be read.");
+			return 0;
 		}
-
+		sound_params->channels = MAD_NCHANNELS(&data->frame.header);
+		sound_params->format = 2;
+		
 		/* Change of the bitrate? */
 		if (data->frame.header.bitrate != data->bitrate) {
 			if ((data->bitrate = data->frame.header.bitrate) == 0) {

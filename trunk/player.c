@@ -22,12 +22,12 @@
 #include "file_types.h"
 #include "audio.h"
 #include "buf.h"
+#include "server.h"
 
 enum request
 {
 	REQ_NOTHING,
-	REQ_SEEK_FORWARD,
-	REQ_SEEK_BACKWARD,
+	REQ_SEEK,
 	REQ_STOP
 };
 
@@ -36,6 +36,11 @@ static pthread_cond_t request_cond = PTHREAD_COND_INITIALIZER;
 static pthread_mutex_t request_cond_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 static enum request request = REQ_NOTHING;
+static int req_seek;
+
+/* Does the parameters p1 and p2 are equal? */
+#define sound_params_eq(p1, p2) (p1.format == p2.format \
+		&& p1.channels == p2.channels && p1.rate == p2.rate)
 
 /* Open a file, decode it and put output to the buffer. */
 void player (const char *file, struct decoder_funcs *f, struct buf *out_buf)
@@ -44,6 +49,10 @@ void player (const char *file, struct decoder_funcs *f, struct buf *out_buf)
 	char buf[8096];
 	void *decoder_data;
 	int decoded = 0;
+	struct sound_params sound_params = { 0, 0, 0 };
+	struct sound_params new_sound_params;
+	int sound_params_change = 0;
+	int audio_opened = 0;
 	
 	buf_set_notify_cond (out_buf, &request_cond, &request_cond_mutex);
 	buf_reset (out_buf);
@@ -57,21 +66,29 @@ void player (const char *file, struct decoder_funcs *f, struct buf *out_buf)
 		logit ("loop...");
 		
 		LOCK (request_cond_mutex);
-		if (!eof && !decoded && buf_get_free(out_buf)) {
+		if (!eof && !decoded) {
 			UNLOCK (request_cond_mutex);
-			decoded = f->decode (decoder_data, buf, sizeof(buf));
+			decoded = f->decode (decoder_data, buf, sizeof(buf),
+					&new_sound_params);
 			if (!decoded) {
 				eof = 1;
 				logit ("EOF from decoder");
 			}
-			else
+			else {
 				logit ("decoded %d bytes", decoded);
+				if (!sound_params_eq(new_sound_params,
+							sound_params))
+					sound_params_change = 1;
+			}
 		}
-		else {
+		else if (decoded > buf_get_free(out_buf)
+				|| (eof && buf_get_free(out_buf))) {
 			logit ("waiting...");
 			pthread_cond_wait (&request_cond, &request_cond_mutex);
 			UNLOCK (request_cond_mutex);
 		}
+		else
+			UNLOCK (request_cond_mutex);
 
 		if (request == REQ_STOP) {
 			logit ("stop");
@@ -79,9 +96,27 @@ void player (const char *file, struct decoder_funcs *f, struct buf *out_buf)
 			request = REQ_NOTHING;
 			break;
 		}
-		else if (!eof && decoded <= buf_get_free(out_buf)) {
+		else if (request == REQ_SEEK) {
+			buf_stop (out_buf);
+			buf_reset (out_buf);
+			f->seek (decoder_data, req_seek);
+			request = REQ_NOTHING;
+		}
+		else if (!eof && decoded <= buf_get_free(out_buf)
+				&& !sound_params_change) {
 			buf_put (out_buf, buf, decoded);
 			decoded = 0;
+		}
+		else if (!eof && sound_params_change && out_buf->fill == 0) {
+			logit ("sound parameters has changed.");
+			if (audio_opened)
+				audio_close ();
+			sound_params = new_sound_params;
+			sound_params_change = 0;
+			set_info_channels (sound_params.channels);
+			set_info_rate (sound_params.rate / 1000);
+			audio_open (&sound_params);
+			audio_opened = 1;
 		}
 		else if (eof && out_buf->fill == 0) {
 			logit ("played everything");
@@ -118,4 +153,9 @@ void player_stop ()
 
 void player_seek (const int sec)
 {
+	request = REQ_SEEK;
+	req_seek = sec;
+	LOCK (request_cond_mutex);
+	pthread_cond_signal (&request_cond);
+	UNLOCK (request_cond_mutex);
 }
