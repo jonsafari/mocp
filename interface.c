@@ -278,10 +278,8 @@ static void sig_interrupt (int sig)
 /* Return 1 if user wants interrupt an operation by pressing CTRL-C. */
 int user_wants_interrupt ()
 {
-	if (wants_interrupt) {
-		wants_interrupt = 0;
+	if (wants_interrupt)
 		return 1;
-	}
 	return 0;
 }
 

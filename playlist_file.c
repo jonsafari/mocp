@@ -303,6 +303,11 @@ int plist_save (struct plist *plist, const char *file, const char *cwd)
 
 	make_titles_tags (plist);
 
+	if (user_wants_interrupt()) {
+		interface_error ("Saving the playlist aborted");
+		return 0;
+	}
+
 	/* Get times */
 	for (i = 0; i < plist->num; i++)
 		if (!plist_deleted(plist, i)) {
