@@ -1,6 +1,6 @@
 /*
  * MOC - music on console
- * Copyright (C) 2004 Damian Pietras <daper@daper.net>
+ * Copyright (C) 2004,2005 Damian Pietras <daper@daper.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,7 +29,8 @@
 #include "main.h"
 #include "audio.h"
 #include "log.h"
-#include "buf.h"
+#include "fifo_buf.h"
+#include "out_buf.h"
 
 /* Don't play more than that value (in seconds) in one audio_play().
  * This prevent locking. */
@@ -38,24 +39,18 @@
 
 /*static int fd;*/
 
-/* Get the size of continuos filled space in the buffer. */
-static int count_fill (const struct buf *buf)
-{
-	if (buf->pos + buf->fill <= buf->size)
-		return buf->fill;
-	else
-		return buf->size - buf->pos;
-}
-
 /* Reading thread of the buffer. */
 static void *read_thread (void *arg)
 {
-	struct buf *buf = (struct buf *)arg;
+	struct out_buf *buf = (struct out_buf *)arg;
 
 	logit ("entering output buffer thread");
 
 	while (1) {
-		int to_play, played;
+		int played;
+		char play_buf[AUDIO_MAX_PLAY_BYTES];
+		int play_buf_fill;
+		int play_buf_pos = 0;
 		
 		LOCK (buf->mutex);
 		
@@ -65,7 +60,7 @@ static void *read_thread (void *arg)
 		}
 
 		if (buf->stop)
-			buf->fill = 0;
+			fifo_buf_clear (&buf->buf);
 
 		debug ("sending the signal");
 		pthread_cond_broadcast (&buf->ready_cond);
@@ -75,20 +70,21 @@ static void *read_thread (void *arg)
 			pthread_mutex_unlock (buf->opt_cond_mutex);
 		}
 		
-		if ((buf->fill == 0 || buf->pause || buf->stop)
+		if ((fifo_buf_get_fill(&buf->buf) == 0 || buf->pause
+					|| buf->stop)
 				&& !buf->exit) {
 			debug ("waiting for someting in the buffer");
 			pthread_cond_wait (&buf->play_cond, &buf->mutex);
 			debug ("someting appeard in the buffer");
 		}
 		
-		if (buf->exit && buf->fill == 0) {
-			logit ("exit");
-			UNLOCK (buf->mutex);
-			break;
-		}
+		if (fifo_buf_get_fill(&buf->buf) == 0) {
+			if (buf->exit) {
+				logit ("exit");
+				UNLOCK (buf->mutex);
+				break;
+			}
 
-		if (buf->fill == 0) {
 			logit ("buffer empty");
 			UNLOCK (buf->mutex);
 			continue;
@@ -106,38 +102,28 @@ static void *read_thread (void *arg)
 			continue;
 		}
 				
-		to_play = MIN (count_fill(buf),
+		play_buf_fill = fifo_buf_get(&buf->buf, play_buf,
 				MIN(audio_get_bps() * AUDIO_MAX_PLAY,
 					AUDIO_MAX_PLAY_BYTES));
 		UNLOCK (buf->mutex);
 
-		debug ("playing %d bytes from %d", to_play,
-				buf->pos);
+		debug ("playing %d bytes", play_buf_fill);
 
-		/* We don't need mutex here, because we are the only thread
-		 * that modify buf->pos, and the buffer part we use is
-		 * unchanged. */
-		/*logit ("sending PCM");*/
-		played = audio_send_pcm (buf->buf + buf->pos, to_play);
+		while (play_buf_pos < play_buf_fill) {
+			played = audio_send_pcm (play_buf + play_buf_pos,
+					play_buf_fill - play_buf_pos);
+			play_buf_pos += played;
+		}
+
 		/*logit ("done sending PCM");*/
 		/*write (fd, buf->buf + buf->pos, to_play);*/
 
 		LOCK (buf->mutex);
 		
-		/* FIXME: quite stupid test: could lead to infinite loop, but
-		 * what can we do? fatal()? */
-		if (played >= 0) {
-			/* Update buffer position and fill */
-			buf->pos += played;
-			if (buf->pos == buf->size)
-				buf->pos = 0;
-			buf->fill -= played;
-
-			/* Update time */
-			if (played && audio_get_bps())
-				buf->time += played / (float)audio_get_bps();
-			buf->hardware_buf_fill = audio_get_buf_fill();
-		}
+		/* Update time */
+		if (played && audio_get_bps())
+			buf->time += played / (float)audio_get_bps();
+		buf->hardware_buf_fill = audio_get_buf_fill();
 		
 		UNLOCK (buf->mutex);
 	}
@@ -148,16 +134,13 @@ static void *read_thread (void *arg)
 }
 
 /* Initialize the buf structure, size is the buffer size. */
-void buf_init (struct buf *buf, int size)
+void out_buf_init (struct out_buf *buf, int size)
 {
 	assert (buf != NULL);
 	assert (size > 0);
 	
-	buf->buf = (char *)xmalloc (sizeof(char) * size);
-	buf->size = size;
-	buf->pos = 0;
+	fifo_buf_init (&buf->buf, size);
 	buf->exit = 0;
-	buf->fill = 0;
 	buf->pause = 0;
 	buf->stop = 0;
 	buf->time = 0.0;
@@ -179,10 +162,9 @@ void buf_init (struct buf *buf, int size)
 
 /* Wait for empty buffer, end playing, free resources allocated for the buf
  * structure. Can be used only if nothing is played */
-void buf_destroy (struct buf *buf)
+void out_buf_destroy (struct out_buf *buf)
 {
 	assert (buf != NULL);
-	assert (buf->buf != NULL);
 
 	LOCK (buf->mutex);
 	buf->exit = 1;
@@ -194,13 +176,11 @@ void buf_destroy (struct buf *buf)
 	/* Let know other threads using this buffer that the state of the
 	 * buffer is different. */
 	LOCK (buf->mutex);
-	buf->fill = 0;
+	fifo_buf_clear (&buf->buf);
 	pthread_cond_broadcast (&buf->ready_cond);
 	UNLOCK (buf->mutex);
 
-	free (buf->buf);
-	buf->size = 0;
-	buf->buf = NULL;
+	fifo_buf_destroy (&buf->buf);
 	if (pthread_mutex_destroy(&buf->mutex))
 		logit ("Destroying buffer mutex failed: %s", strerror(errno));
 	if (pthread_cond_destroy(&buf->play_cond))
@@ -215,37 +195,19 @@ void buf_destroy (struct buf *buf)
 	/*close (fd);*/
 }
 
-/* Get the amount of free continuos space in the buffer. */
-static int count_free (const struct buf *buf)
-{
-	if (buf->pos + buf->fill < buf->size)
-		return buf->size - (buf->pos + buf->fill);
-	else
-		return buf->size - buf->fill;
-}
-
-/* Return the position of the first free byte in the buffer. */
-static int end_pos (const struct buf *buf)
-{
-	if (buf->pos + buf->fill < buf->size)
-		return buf->pos + buf->fill;
-	else
-		return buf->fill - buf->size + buf->pos;
-}
-
 /* Put data at the end of the buffer, return 0 if nothing was put. */
-int buf_put (struct buf *buf, const char *data, int size)
+int out_buf_put (struct out_buf *buf, const char *data, int size)
 {
 	int pos = 0;
 	
 	/*logit ("got %d bytes to play", size);*/
 
 	while (size) {
-		int to_write;
+		int written;
 		
 		LOCK (buf->mutex);
 		
-		if (!count_free(buf) && !buf->stop) {
+		if (fifo_buf_get_space(&buf->buf) == 0 && !buf->stop) {
 			/*logit ("buffer full, waiting for the signal");*/
 			pthread_cond_wait (&buf->ready_cond, &buf->mutex);
 			/*logit ("buffer ready");*/
@@ -256,27 +218,23 @@ int buf_put (struct buf *buf, const char *data, int size)
 			UNLOCK (buf->mutex);
 			return 0;
 		}
+
+		written = fifo_buf_put (&buf->buf, data + pos, size);
 		
-		to_write = MIN (count_free(buf), size);
-		if (to_write) {
-			memcpy (buf->buf + end_pos(buf), data + pos, to_write);
-			/*logit ("writing %d bytes from %d to the buffer",
-					to_write, end_pos(buf));*/
-			buf->fill += to_write;
-		
+		if (written) {
 			pthread_cond_signal (&buf->play_cond);
+			size -= written;
+			pos += written;
 		}
 
 		UNLOCK (buf->mutex);
 
-		size -= to_write;
-		pos += to_write;
 	}
 
 	return 1;
 }
 
-void buf_pause (struct buf *buf)
+void out_buf_pause (struct out_buf *buf)
 {
 	LOCK (buf->mutex);
 	buf->pause = 1;
@@ -284,7 +242,7 @@ void buf_pause (struct buf *buf)
 	UNLOCK (buf->mutex);
 }
 
-void buf_unpause (struct buf *buf)
+void out_buf_unpause (struct out_buf *buf)
 {
 	LOCK (buf->mutex);
 	buf->pause = 0;
@@ -294,7 +252,7 @@ void buf_unpause (struct buf *buf)
 
 /* Stop playing, after that buffer will refuse to play anything and ignore data
  * sent by buf_put(). */
-void buf_stop (struct buf *buf)
+void out_buf_stop (struct out_buf *buf)
 {
 	logit ("stopping the buffer");
 	LOCK (buf->mutex);
@@ -311,14 +269,13 @@ void buf_stop (struct buf *buf)
 
 /* Reset the buffer state: this can by called ONLY when the buffer is stopped
  * and buf_put is not used! */
-void buf_reset (struct buf *buf)
+void out_buf_reset (struct out_buf *buf)
 {
 	logit ("resetting the buffer");
 	
 	LOCK (buf->mutex);
+	fifo_buf_clear (&buf->buf);
 	buf->stop = 0;
-	buf->pos = 0;
-	buf->fill = 0;
 	buf->pause = 0;
 	buf->reset_dev = 0;
 	buf->hardware_buf_fill = 0;
@@ -326,14 +283,14 @@ void buf_reset (struct buf *buf)
 	UNLOCK (buf->mutex);
 }
 
-void buf_time_set (struct buf *buf, const float time)
+void out_buf_time_set (struct out_buf *buf, const float time)
 {
 	LOCK (buf->mutex);
 	buf->time = time;
 	UNLOCK (buf->mutex);
 }
 
-float buf_time_get (struct buf *buf)
+float out_buf_time_get (struct out_buf *buf)
 {
 	float time;
 	int bps = audio_get_bps ();
@@ -345,7 +302,7 @@ float buf_time_get (struct buf *buf)
 	return time;
 }
 
-void buf_set_notify_cond (struct buf *buf, pthread_cond_t *cond,
+void out_buf_set_notify_cond (struct out_buf *buf, pthread_cond_t *cond,
 		pthread_mutex_t *mutex)
 {
 	assert (buf != NULL);
@@ -354,9 +311,28 @@ void buf_set_notify_cond (struct buf *buf, pthread_cond_t *cond,
 	buf->opt_cond_mutex = mutex;
 }
 
-int buf_get_free (struct buf *buf)
+int out_buf_get_free (struct out_buf *buf)
 {
+	int space;
+	
 	assert (buf != NULL);
 
-	return buf->size - buf->fill;
+	LOCK (buf->mutex);
+	space = fifo_buf_get_space (&buf->buf);
+	UNLOCK (buf->mutex);
+
+	return space;
+}
+
+int out_buf_get_fill (struct out_buf *buf)
+{
+	int fill;
+	
+	assert (buf != NULL);
+
+	LOCK (buf->mutex);
+	fill = fifo_buf_get_fill (&buf->buf);
+	UNLOCK (buf->mutex);
+
+	return fill;
 }

@@ -13,8 +13,10 @@ mocp_SOURCES = log.c \
 	       main.h \
 	       playlist.c \
 	       playlist.h \
-	       buf.c \
-	       buf.h \
+	       fifo_buf.c \
+	       fifo_buf.h \
+	       out_buf.c \
+	       out_buf.h \
 	       audio.c \
 	       audio.h \
 	       decoder.c \

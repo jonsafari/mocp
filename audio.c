@@ -41,7 +41,7 @@
 # include "null_out.h"
 #endif
 
-#include "buf.h"
+#include "out_buf.h"
 #include "protocol.h"
 #include "options.h"
 #include "player.h"
@@ -55,7 +55,7 @@ static int play_thread_running = 0;
 static int curr_playing = -1;
 static pthread_mutex_t curr_playing_mut = PTHREAD_MUTEX_INITIALIZER;
 
-static struct buf out_buf;
+static struct out_buf out_buf;
 static struct hw_funcs hw;
 
 /* Player state */
@@ -177,7 +177,7 @@ static void *play_thread (void *unused ATTR_UNUSED)
 				logit ("Playing item %d: %s", curr_playing,
 						file);
 				
-				buf_time_set (&out_buf, 0.0);
+				out_buf_time_set (&out_buf, 0.0);
 				
 				next = plist_next (curr_plist, curr_playing);
 				next_file = next != -1 ?
@@ -194,7 +194,7 @@ static void *play_thread (void *unused ATTR_UNUSED)
 				set_info_rate (0);
 				set_info_bitrate (0);
 				set_info_channels (1);
-				buf_time_set (&out_buf, 0.0);
+				out_buf_time_set (&out_buf, 0.0);
 			}
 			else
 				logit ("Unknown file type of item %d: %s",
@@ -307,14 +307,14 @@ void audio_prev ()
 
 void audio_pause ()
 {
-	buf_pause (&out_buf);
+	out_buf_pause (&out_buf);
 	state = STATE_PAUSE;
 	state_change ();
 }
 
 void audio_unpause ()
 {
-	buf_unpause (&out_buf);
+	out_buf_unpause (&out_buf);
 	state = STATE_PLAY;
 	state_change ();
 }
@@ -355,7 +355,7 @@ int audio_open (struct sound_params *req_sound_params)
 
 int audio_send_buf (const char *buf, const size_t size)
 {
-	return buf_put (&out_buf, buf, size);
+	return out_buf_put (&out_buf, buf, size);
 }
 
 /* Get the current audio format bits per second value. May return 0 if the
@@ -378,7 +378,7 @@ int audio_send_pcm (const char *buf, const size_t size)
 /* Get current time of the song in seconds. */
 int audio_get_time ()
 {
-	return state != STATE_STOP ? buf_time_get (&out_buf) : 0;
+	return state != STATE_STOP ? out_buf_time_get (&out_buf) : 0;
 }
 
 void audio_close ()
@@ -423,7 +423,7 @@ void audio_init ()
 	find_hw_funcs (options_get_str("SoundDriver"), &hw);
 	if (hw.init)
 		hw.init ();
-	buf_init (&out_buf, options_get_int("OutputBuffer") * 1024);
+	out_buf_init (&out_buf, options_get_int("OutputBuffer") * 1024);
 	plist_init (&playlist);
 	plist_init (&shuffled_plist);
 	player_init ();
@@ -434,7 +434,7 @@ void audio_exit ()
 	audio_stop ();
 	if (hw.shutdown)
 		hw.shutdown ();
-	buf_destroy (&out_buf);
+	out_buf_destroy (&out_buf);
 	plist_free (&playlist);
 	plist_free (&shuffled_plist);
 	player_cleanup ();
