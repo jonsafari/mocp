@@ -162,6 +162,7 @@ void options_init ()
 	option_add_int ("Precache", 1);
 	option_add_str ("TagsIconv", NULL);
 	option_add_int ("SavePlaylist", 1);
+	option_add_str ("Keymap", NULL);
 }
 
 /* Return 1 if a parameter to an integer option is valid. */
