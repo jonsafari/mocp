@@ -14,24 +14,30 @@
 #endif
 
 #include <string.h>
-#include <stdio.h> /* Only for debug! */
+#include <stdio.h>
 #include <errno.h>
+#include <assert.h>
 #include <vorbis/vorbisfile.h>
 #include <vorbis/codec.h>
 
 #include "server.h"
 #include "main.h"
 #include "log.h"
-#include "playlist.h"
 #include "audio.h"
 #include "buf.h"
 #include "options.h"
+#include "file_types.h"
 
-
-#define PCM_BUFF_SIZE	4096
+struct ogg_data
+{
+	FILE *file;
+	OggVorbis_File vf;
+	int last_section;
+	int bitrate;
+};
 
 /* Fill info structure with data from ogg comments */
-void ogg_info (const char *file_name, struct file_tags *info)
+static void ogg_info (const char *file_name, struct file_tags *info)
 {
 	int i;
 	vorbis_comment *comments;
@@ -76,94 +82,101 @@ void ogg_info (const char *file_name, struct file_tags *info)
 	ov_clear (&vf);
 }
 
-/* Decode and play stream */
-void ogg_play (const char *file_name, struct buf *out_buf)
+static void *ogg_open (const char *file)
 {
-	FILE *file;
-	OggVorbis_File vf;
-	char pcm_buff[PCM_BUFF_SIZE];
-	int current_section;
-	int last_section = -1;
-	long ret, bitrate;
+	struct ogg_data *data;
 	vorbis_info *info;
-	enum play_request request;
 
-	if (!(file = fopen (file_name, "r"))) {
+	data = (struct ogg_data *)xmalloc (sizeof(struct ogg_data));
+
+	if (!(data->file = fopen (file, "r"))) {
 		error ("Can't load OGG: %s", strerror(errno));
-		return;
+		free (data);
+		return NULL;
 	}
 
-	if (ov_open(file, &vf, NULL, 0) < 0) {
+	if (ov_open(data->file, &data->vf, NULL, 0) < 0) {
 		error ("ov_open() failed!");
-		return;
+		fclose (data->file);
+		free (data);
+		return NULL;
 	}
 
-	info = ov_info (&vf, -1);
-	if (!audio_open(16, info->channels, info->rate))
-		return;
+	data->last_section = -1;
+
+	info = ov_info (&data->vf, -1);
 	
-	set_info_rate (info->rate / 1000);
-	set_info_time (ov_time_total (&vf, -1));
-	set_info_channels (info->channels);
-	set_info_bitrate (ov_bitrate(&vf, -1) / 1000);
+	set_info_time (ov_time_total(&data->vf, -1));
+	set_info_bitrate (ov_bitrate(&data->vf, -1) / 1000);
+
+	return data;
+}
+
+static void ogg_close (void *void_data)
+{
+	struct ogg_data *data = (struct ogg_data *)void_data;
+
+	ov_clear (&data->vf);
+	free (data);
+}
+
+static int ogg_seek (void *void_data, int sec)
+{
+	
+}
+
+static int ogg_decode (void *void_data, char *buf, int buf_len,
+		struct sound_params *sound_params)
+{
+	struct ogg_data *data = (struct ogg_data *)void_data;
+	int ret;
+	int current_section;
+	int bitrate;
 
 	while (1) {
-		int written;
-		
-		ret = ov_read(&vf, pcm_buff, PCM_BUFF_SIZE, 0,
-				2, 1, &current_section);
+		ret = ov_read(&data->vf, buf, buf_len, 0, 2, 1,
+				&current_section);
 		if (ret == 0)
-			break;
+			return 0;
 		if (ret < 0) {
 			if (options_get_int("ShowStreamErrors")) 
 				error ("Error in the stream!");
 			continue;
 		}
 		
-		if (last_section != current_section
-				&& last_section >= 0) {
-			audio_close ();
-			info = ov_info (&vf, -1);
-			if (!audio_open(16, info->channels, info->rate))
-				break;
-			set_info_rate (info->rate / 1000);
-			set_info_channels (info->channels);
+		if (current_section != data->last_section) {
+			vorbis_info *info;
+
+			logit ("section change or first section");
+			
+			data->last_section = current_section;
+			info = ov_info (&data->vf, -1);
+			assert (info != NULL);
+			sound_params->channels = info->channels;
+			sound_params->rate = info->rate;
+			sound_params->format = 2;
 		}
 
-		written = audio_send_buf (pcm_buff, ret);
-		
 		/* Update the bitrate information */
-		bitrate = ov_bitrate_instant (&vf);
+		bitrate = ov_bitrate_instant (&data->vf);
 		if (bitrate > 0)
 			set_info_bitrate (bitrate / 1000);
-		last_section = current_section;
 
-		if ((request = get_request()) != PR_NOTHING) {
-			buf_stop (out_buf);
-			buf_reset (out_buf);
-
-			if (request == PR_STOP) {
-				logit ("OGG: stopping");
-				break;
-			}
-			else if (request == PR_SEEK_FORWARD) {
-				float time = ov_time_tell(&vf) + 1;
-				
-				logit ("OGG: seek forward");
-				ov_time_seek (&vf, time);
-				buf_time_set (out_buf, time);
-			}
-			else if (request == PR_SEEK_BACKWARD) {
-				float time = ov_time_tell(&vf) - 1;
-				
-				logit ("OGG: seek backward");
-				ov_time_seek (&vf, time);
-				buf_time_set (out_buf, time);
-			}
-		}
-		else if (!written)
-			logit ("OGG: write refused");
+		break;
 	}
-	
-	ov_clear (&vf);
+
+	return ret;
+}
+
+static struct decoder_funcs decoder_funcs = {
+	ogg_open,
+	ogg_close,
+	ogg_decode,
+	ogg_seek,
+	ogg_info
+};
+
+struct decoder_funcs *ogg_get_funcs ()
+{
+	return &decoder_funcs;
 }
