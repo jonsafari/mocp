@@ -165,7 +165,7 @@ void io_curl_close (struct io_stream *s)
 	if (s->curl_buf)
 		free (s->curl_buf);
 
-	if (s->curl_multi_handle)
+	if (s->curl_multi_handle && s->curl_handle)
 		curl_multi_remove_handle (s->curl_multi_handle, s->curl_handle);
 	if (s->curl_handle)
 		curl_easy_cleanup (s->curl_handle);
@@ -184,7 +184,7 @@ ssize_t io_curl_read (struct io_stream *s, char *buf, size_t count)
 	assert (s->curl_multi_handle != NULL);
 	assert (s->curl_handle != NULL);
 
-	while (!s->curl_buf_fill && running
+	while (!s->curl_buf_fill && running && s->curl_handle
 			&& (s->curl_multi_status == CURLM_CALL_MULTI_PERFORM
 				|| s->curl_multi_status == CURLM_OK)) {
 		if (s->curl_multi_status != CURLM_CALL_MULTI_PERFORM) {
@@ -231,6 +231,8 @@ ssize_t io_curl_read (struct io_stream *s, char *buf, size_t count)
 					&msg_queue_num)))
 		if (msg->msg == CURLMSG_DONE) {
 			s->curl_status = msg->data.result;
+			curl_easy_cleanup (s->curl_handle);
+			s->curl_handle = NULL;
 			break;
 		}
 
