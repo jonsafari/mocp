@@ -3433,14 +3433,18 @@ void interface_end ()
  * interface is not initialized. */
 void interface_cmdline_clear_plist (int server_sock)
 {
+	int serial;
 	srv_sock = server_sock; /* the interface is not initialized, so set it
 				   here */
 	
+	send_int_to_srv (CMD_LOCK);
 	if (options_get_int("SyncPlaylist"))
 		send_int_to_srv (CMD_CLI_PLIST_CLEAR);
 
-	send_int_to_srv (CMD_LOCK);
-	change_srv_plist_serial ();
+	send_int_to_srv (CMD_GET_SERIAL);
+	serial = get_data_int ();
+	send_int_to_srv (CMD_PLIST_SET_SERIAL);
+	send_int_to_srv (serial);
 	send_int_to_srv (CMD_LIST_CLEAR);
 	send_int_to_srv (CMD_UNLOCK);
 }
