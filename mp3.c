@@ -192,7 +192,7 @@ static void *mp3_open (const char *file)
 	else {
 		mad_stream_buffer (&data->stream, data->mapped, data->mapped_size);
 		data->stream.error = 0;
-		logit ("mmapped() %ld bytes of file", data->size);
+		logit ("mmapped() %ld bytes of file", (long)data->size);
 	}
 #endif
 
