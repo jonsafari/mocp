@@ -117,6 +117,7 @@ static struct file_info {
 	char state[3];
 	int state_code;
 	char *curr_file;
+	struct file_tags *tags;
 } file_info;
 
 struct event_queue events;
@@ -354,6 +355,16 @@ static struct plist_item *recv_item_from_srv ()
 	return item;
 }
 
+static struct file_tags *get_tags_from_srv ()
+{
+	struct file_tags *tags;
+
+	if (!(tags = recv_tags(srv_sock)))
+		interface_fatal ("Can't receive tags from the server.");
+
+	return tags;
+}
+
 /* Wait for EV_DATA handling other events. */
 static void wait_for_data ()
 {
@@ -366,6 +377,8 @@ static void wait_for_data ()
 			event_push (&events, event, recv_item_from_srv());
 		else if (event == EV_PLIST_DEL)
 			event_push (&events, event, get_str_from_srv());
+		else if (event == EV_TAGS)
+			event_push (&events, event, get_tags_from_srv());
 		else if (event != EV_DATA)
 			event_push (&events, event, NULL);
 	 } while (event != EV_DATA);
@@ -1216,7 +1229,12 @@ static char *find_title (char *file)
 	else
 		debug ("Getting file title for %s", file);
 
-	if ((idx = plist_find_fname(curr_plist, file)) != -1
+	if (file_type(file) == F_URL) {
+		if (file_info.tags && file_info.curr_file
+				&& !strcmp(file_info.curr_file, file))
+			title = build_title (file_info.tags);
+	}
+	else if ((idx = plist_find_fname(curr_plist, file)) != -1
 			&& (curr_plist->items[idx].title_tags
 			   || (curr_plist->items[idx].tags
 				   && curr_plist->items[idx].tags->filled
@@ -1257,8 +1275,8 @@ static char *find_title (char *file)
 	}
 	
 	if (!title)
-		title = strrchr(file, '/') ? xstrdup (strrchr(file, '/') + 1)
-			: xstrdup (file);
+		title = file_type(file) != F_URL && strrchr(file, '/')
+			? xstrdup (strrchr(file, '/') + 1) : xstrdup (file);
 
 	if (cache_file) {
 		free (cache_file);
@@ -1380,6 +1398,9 @@ static int get_file_time (char *file)
 	
 	int ftime = -1;
 	int file_mtime;
+
+	if (file_type(file) == F_URL)
+		return -1;
 	
 	file_mtime = get_mtime(file);
 
@@ -1418,25 +1439,11 @@ static void update_curr_file ()
 	if (curr_plist_menu)
 		menu_unmark_item (curr_plist_menu);
 
-	if (file[0]) {
-		char *title = find_title (file);
-
-		strncpy (file_info.title, title,
-				sizeof(file_info.title) - 1);
-		file_info.title[sizeof(file_info.title)-1] = 0;
-		set_time (get_file_time(file));
-		xterm_set_title (file_info.title);
-		mark_file (file);
-		free (title);
-	}
-	else {
-		file_info.title[0] = 0;
-		xterm_set_title ("");
-	}
-	
 	if (!file_info.curr_file || strcmp(file_info.curr_file, file)) {
 		if (file_info.curr_file)
 			free (file_info.curr_file);
+		if (file_info.tags)
+			tags_free (file_info.tags);
 
 		if (file[0])
 			file_info.curr_file = file;
@@ -1451,6 +1458,22 @@ static void update_curr_file ()
 	}
 	else
 		free (file);
+
+	if (file_info.curr_file && file_info.curr_file[0]) {
+		char *title = find_title (file_info.curr_file);
+
+		strncpy (file_info.title, title,
+				sizeof(file_info.title) - 1);
+		file_info.title[sizeof(file_info.title)-1] = 0;
+		set_time (get_file_time(file_info.curr_file));
+		xterm_set_title (file_info.title);
+		mark_file (file_info.curr_file);
+		free (title);
+	}
+	else {
+		file_info.title[0] = 0;
+		xterm_set_title ("");
+	}
 }
 
 /* Get and show the server state. */
@@ -2110,6 +2133,28 @@ static void cmd_clear_playlist ()
 		clear_playlist ();
 }
 
+/* Use these tags for current file title. */
+static void update_curr_tags (struct file_tags *tags)
+{
+	char *title;
+	
+	if (file_info.tags)
+		tags_free (file_info.tags);
+	file_info.tags = tags;
+	
+	title = build_title (tags);
+
+	if (title) {
+		strncpy (file_info.title, title,
+				sizeof(file_info.title) - 1);
+		file_info.title[sizeof(file_info.title)-1] = 0;
+		free (title);
+	}
+
+	update_info_win ();
+	wrefresh (info_win);
+}
+
 /* Handle server event. */
 static void server_event (const int event, void *data)
 {
@@ -2170,6 +2215,9 @@ static void server_event (const int event, void *data)
 				update_menu ();
 			}
 			free (data);
+			break;
+		case EV_TAGS:
+			update_curr_tags (data);
 			break;
 		default:
 			interface_message ("Unknown event: 0x%02x", event);
@@ -3377,6 +3425,8 @@ static void get_and_handle_event ()
 			data = recv_item_from_srv ();
 		else if (type == EV_PLIST_DEL)
 			data = get_str_from_srv ();
+		else if (type == EV_TAGS)
+			data = get_tags_from_srv ();
 		else
 			data = NULL;
 

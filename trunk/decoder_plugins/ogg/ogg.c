@@ -36,14 +36,49 @@ struct ogg_data
 	int duration;
 	struct decoder_error error;
 	int ok; /* was this stream successfully opened? */
+
+	int tags_change; /* the tags were changed from the last call of
+			    ogg_current_tags */
+	struct file_tags *tags;
 };
+
+static void get_comment_tags (OggVorbis_File *vf, struct file_tags *info)
+{
+	int i;
+	vorbis_comment *comments;
+
+	comments = ov_comment (vf, -1);
+	for (i = 0; i < comments->comments; i++) {
+		if (!strncasecmp(comments->user_comments[i], "title=",
+				 strlen ("title=")))
+			info->title = xstrdup(comments->user_comments[i]
+					+ strlen ("title="));
+		else if (!strncasecmp(comments->user_comments[i],
+					"artist=", strlen ("artist=")))
+			info->artist = xstrdup (
+					comments->user_comments[i]
+					+ strlen ("artiat="));
+		else if (!strncasecmp(comments->user_comments[i],
+					"album=", strlen ("album=")))
+			info->album = xstrdup (
+					comments->user_comments[i]
+					+ strlen ("album="));
+		else if (!strncasecmp(comments->user_comments[i],
+					"tracknumber=",
+					strlen ("tracknumber=")))
+			info->track = atoi (comments->user_comments[i]
+					+ strlen ("tracknumber="));
+		else if (!strncasecmp(comments->user_comments[i],
+					"track=", strlen ("track=")))
+			info->track = atoi (comments->user_comments[i]
+					+ strlen ("track="));
+	}
+}
 
 /* Fill info structure with data from ogg comments */
 static void ogg_info (const char *file_name, struct file_tags *info,
 		const int tags_sel)
 {
-	int i;
-	vorbis_comment *comments;
 	OggVorbis_File vf;
 	FILE *file;
 	int ogg_time;
@@ -68,34 +103,8 @@ static void ogg_info (const char *file_name, struct file_tags *info,
 		}
 	}
 
-	if (tags_sel & TAGS_COMMENTS) {
-	comments = ov_comment (&vf, -1);
-		for (i = 0; i < comments->comments; i++) {
-			if (!strncasecmp(comments->user_comments[i], "title=",
-					 strlen ("title=")))
-				info->title = xstrdup(comments->user_comments[i]
-						+ strlen ("title="));
-			else if (!strncasecmp(comments->user_comments[i],
-						"artist=", strlen ("artist=")))
-				info->artist = xstrdup (
-						comments->user_comments[i]
-						+ strlen ("artiat="));
-			else if (!strncasecmp(comments->user_comments[i],
-						"album=", strlen ("album=")))
-				info->album = xstrdup (
-						comments->user_comments[i]
-						+ strlen ("album="));
-			else if (!strncasecmp(comments->user_comments[i],
-						"tracknumber=",
-						strlen ("tracknumber=")))
-				info->track = atoi (comments->user_comments[i]
-						+ strlen ("tracknumber="));
-			else if (!strncasecmp(comments->user_comments[i],
-						"track=", strlen ("track=")))
-				info->track = atoi (comments->user_comments[i]
-						+ strlen ("track="));
-		}
-	}
+	if (tags_sel & TAGS_COMMENTS)
+		get_comment_tags (&vf, info);
 
 	if ((tags_sel & TAGS_TIME)
 			&& (ogg_time = ov_time_total(&vf, -1)) != OV_EINVAL)
@@ -153,6 +162,8 @@ static void ogg_open_stream_internal (struct ogg_data *data)
 		close_callback,
 		tell_callback
 	};
+
+	data->tags = tags_new ();
 	
 	if ((res = ov_open_callbacks(data->stream, &data->vf, NULL, 0,
 					callbacks)) < 0) {
@@ -168,6 +179,7 @@ static void ogg_open_stream_internal (struct ogg_data *data)
 				== OV_EINVAL)
 			data->duration = -1;
 		data->ok = 1;
+		get_comment_tags (&data->vf, data->tags);
 	}
 }
 
@@ -178,6 +190,7 @@ static void *ogg_open (const char *file)
 	data->ok = 0;
 
 	decoder_error_init (&data->error);
+	data->tags_change = 0;
 
 	data->stream = io_open (file, 1);
 	if (!io_ok(data->stream)) {
@@ -224,6 +237,7 @@ static void ogg_close (void *prv_data)
 	if (data->ok)
 		ov_clear (&data->vf);
 	decoder_error_clear (&data->error);
+	tags_free (data->tags);
 	free (data);
 }
 
@@ -265,6 +279,10 @@ static int ogg_decode (void *prv_data, char *buf, int buf_len,
 			logit ("section change or first section");
 			
 			data->last_section = current_section;
+			data->tags_change = 1;
+			tags_free (data->tags);
+			data->tags = tags_new ();
+			get_comment_tags (&data->vf, data->tags);
 		}
 
 		info = ov_info (&data->vf, -1);
@@ -282,6 +300,20 @@ static int ogg_decode (void *prv_data, char *buf, int buf_len,
 	}
 
 	return ret;
+}
+
+static int ogg_current_tags (void *prv_data, struct file_tags *tags)
+{
+	struct ogg_data *data = (struct ogg_data *)prv_data;
+
+	tags_copy (tags, data->tags);
+
+	if (data->tags_change) {
+		data->tags_change = 0;
+		return 1;
+	}
+
+	return 0;
 }
 
 static int ogg_get_bitrate (void *prv_data)
@@ -328,7 +360,8 @@ static struct decoder ogg_decoder = {
 	ogg_get_duration,
 	ogg_get_error,
 	ogg_our_format_ext,
-	ogg_get_name
+	ogg_get_name,
+	ogg_current_tags
 };
 
 struct decoder *plugin_init ()

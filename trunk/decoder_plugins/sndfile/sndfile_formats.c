@@ -192,7 +192,8 @@ static struct decoder sndfile_decoder = {
 	sndfile_get_duration,
 	sndfile_get_error,
 	sndfile_our_format_ext,
-	sndfile_get_name
+	sndfile_get_name,
+	NULL
 };
 
 struct decoder *plugin_init ()

@@ -543,7 +543,8 @@ static struct decoder flac_decoder = {
 	flac_get_duration,
 	flac_get_error,
 	flac_our_format_ext,
-	flac_get_name
+	flac_get_name,
+	NULL
 };
 
 struct decoder *plugin_init ()
