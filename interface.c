@@ -2295,6 +2295,8 @@ static int entry_plist_save_key (const int ch)
 		if (strchr(entry.text, '/'))
 			interface_error ("Only file name is accepted, not a "
 					"path");
+		else if (!entry.text[0])
+			entry_disable ();
 		else {
 			char *ext = ext_pos (entry.text);
 			char path[PATH_MAX];
