@@ -191,6 +191,7 @@ static void *ogg_open (const char *file)
 
 	decoder_error_init (&data->error);
 	data->tags_change = 0;
+	data->tags = NULL;
 
 	data->stream = io_open (file, 1);
 	if (!io_ok(data->stream)) {
@@ -237,7 +238,8 @@ static void ogg_close (void *prv_data)
 	if (data->ok)
 		ov_clear (&data->vf);
 	decoder_error_clear (&data->error);
-	tags_free (data->tags);
+	if (data->tags)
+		tags_free (data->tags);
 	free (data);
 }
 
