@@ -21,7 +21,9 @@
 #include <string.h>
 #include <errno.h>
 #include <stdlib.h>
-#include <iconv.h>
+#ifdef HAVE_ICONV
+# include <iconv.h>
+#endif
 
 /* Include dirent for various systems */
 #ifdef HAVE_DIRENT_H
@@ -47,7 +49,9 @@
 #define FILE_LIST_INIT_SIZE	64
 #define READ_LINE_INIT_SIZE	256
 
+#ifdef HAVE_ICONV
 static iconv_t iconv_desc = (iconv_t)(-1);
+#endif
 
 enum file_type file_type (char *file)
 {
@@ -198,6 +202,7 @@ void resolve_path (char *buf, const int size, char *file)
 
 void iconv_init ()
 {
+#ifdef HAVE_ICONV
 	char conv_str[100];
 	char *from, *to;
 
@@ -219,12 +224,14 @@ void iconv_init ()
 	if ((iconv_desc = iconv_open(to, from)) == (iconv_t)(-1))
 		fatal ("Can't use specified TagsIconv value: %s",
 				strerror(errno));
+#endif
 }
 
 /* Return a malloc()ed string converted using iconv(). Does free(str).
  * For NULL returns NULL. */
 char *iconv_str (char *str)
 {
+#ifdef HAVE_ICONV
 	char buf[512];
 	char *inbuf, *outbuf;
 	size_t inbytesleft, outbytesleft;
@@ -271,19 +278,26 @@ char *iconv_str (char *str)
 	free (str);
 	
 	return converted;
+#else
+	return str;
+#endif
 }
 
+#ifdef HAVE_ICONV
 static void do_iconv (struct file_tags *tags)
 {
 	tags->title = iconv_str (tags->title);
 	tags->artist = iconv_str (tags->artist);
 	tags->album = iconv_str (tags->album);
 }
+#endif
 
 void iconv_cleanup ()
 {
+#ifdef HAVE_ICONV
 	if (iconv_desc != (iconv_t)(-1) && iconv_close(iconv_desc) == -1)
 		logit ("iconv_close() failed: %s", strerror(errno));
+#endif
 }
 
 /* Read selected tags for a file into tags structure (or create it if NULL).
@@ -313,8 +327,10 @@ struct file_tags *read_file_tags (char *file, struct file_tags *present_tags,
 
 	if (needed_tags) {
 		df->info (file, tags, needed_tags);
+#ifdef HAVE_ICONV
 		if (needed_tags & TAGS_COMMENTS)
 			do_iconv (tags);
+#endif
 		tags->filled |= tags_sel;
 	}
 	else

@@ -18,9 +18,14 @@ AC_HEADER_STDC
 AC_CHECK_HEADERS([fcntl.h string.h sys/param.h unistd.h sys/un.h \
 		  sys/socket.h sys/types.h signal.h sys/time.h \
 		  sys/wait.h sys/ioctl.h \
-		  time.h errno.h sys/stat.h assert.h iconv.h],,
+		  time.h errno.h sys/stat.h assert.h],,
 		 AC_MSG_ERROR([Can't find required header files.]))
 AC_CHECK_HEADERS([sys/select.h])
+
+AC_CHECK_HEADERS([iconv.h],
+		 [AC_DEFINE([HAVE_ICONV], 1, [Define if you have iconv.h])
+		 COMPILE_ICONV=yes],
+		 [COMPILE_ICONV=no])
 
 AC_C_CONST
 AC_C_INLINE
@@ -164,6 +169,7 @@ echo "OGG:			"$COMPILE_VORBIS
 echo "OSS:			"$COMPILE_OSS
 echo "ALSA:			"$COMPILE_ALSA
 echo "DEBUG:			"$COMPILE_DEBUG
+echo "ICONV:			"$COMPILE_ICONV
 echo "----------------------------------------------------------------"
 
 echo "WARNING: since MOC version 2 the executable file name was changed to mocp!"
