@@ -2,7 +2,7 @@
 	* Fixed playing mp3 with UseMmap turned on.
 	* Fixed handling ALSA device open errors.
 	* Proper handling 8, 16, and 24 bit sound, raise error if using
-	  anything other.
+	  anything else.
 	* Fixed a (almost :) deadlock when pressing stop when seeking.
 2.1.1
 	* Added missing example_theme.
