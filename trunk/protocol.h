@@ -42,6 +42,7 @@
 #define CMD_GET_MIXER	0x1a /* get the volume level */
 #define CMD_SET_MIXER	0x1b /* set the volume level */
 #define CMD_DELETE	0x1c /* delete an item from the playlist */
+#define CMD_SEND_EVENTS 0x1d /* request for events */
 
 char *socket_name ();
 int get_int (int sock, int *i);
