@@ -29,6 +29,8 @@ struct out_buf
 
 	float time;	/* Time of played sound .*/
 	int hardware_buf_fill;	/* How the sound card buffer is filled */
+
+	int read_thread_waiting; /* is the read thread waiting for data? */
 };
 
 void out_buf_init (struct out_buf *buf, int size);
@@ -44,5 +46,6 @@ void out_buf_set_notify_cond (struct out_buf *buf, pthread_cond_t *cond,
 		pthread_mutex_t *mutex);
 int out_buf_get_free (struct out_buf *buf);
 int out_buf_get_fill (struct out_buf *buf);
+void out_buf_wait (struct out_buf *buf);
 
 #endif

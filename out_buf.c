@@ -9,7 +9,7 @@
  *
  */
 
-/*#define DEBUG*/
+#define DEBUG
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
@@ -62,6 +62,11 @@ static void *read_thread (void *arg)
 		if (buf->stop)
 			fifo_buf_clear (&buf->buf);
 
+		if (fifo_buf_get_fill(&buf->buf) == 0) {
+			debug ("Setting read_thread_waiting flag");
+			buf->read_thread_waiting = 1;
+		}
+		
 		debug ("sending the signal");
 		pthread_cond_broadcast (&buf->ready_cond);
 		if (buf->opt_cond) {
@@ -77,6 +82,8 @@ static void *read_thread (void *arg)
 			pthread_cond_wait (&buf->play_cond, &buf->mutex);
 			debug ("someting appeard in the buffer");
 		}
+
+		buf->read_thread_waiting = 0;
 		
 		if (fifo_buf_get_fill(&buf->buf) == 0) {
 			if (buf->exit) {
@@ -146,6 +153,7 @@ void out_buf_init (struct out_buf *buf, int size)
 	buf->time = 0.0;
 	buf->reset_dev = 0;
 	buf->hardware_buf_fill = 0;
+	buf->read_thread_waiting = 0;
 	buf->opt_cond = NULL;
 	
 	pthread_mutex_init (&buf->mutex, NULL);
@@ -337,4 +345,23 @@ int out_buf_get_fill (struct out_buf *buf)
 	UNLOCK (buf->mutex);
 
 	return fill;
+}
+
+/* Wait until the read thread will stop and wait for data to come.
+ * This makes sur ethat the audio device isn't used (of course only if you
+ * don't put anything in the buffer). */
+void out_buf_wait (struct out_buf *buf)
+{
+	assert (buf != NULL);
+
+	logit ("Waiting for read thread to suspend...");
+
+	LOCK (buf->mutex);
+	while (!buf->read_thread_waiting) {
+		debug ("waiting....");
+		pthread_cond_wait (&buf->ready_cond, &buf->mutex);
+	}
+	UNLOCK (buf->mutex);
+
+	logit ("done");
 }

@@ -349,6 +349,7 @@ static void decode_loop (const struct decoder *f, void *decoder_data,
 			sound_params_change = 0;
 			set_info_channels (sound_params.channels);
 			set_info_rate (sound_params.rate / 1000);
+			out_buf_wait (out_buf);
 			if (!audio_open(&sound_params))
 				break;
 		}
@@ -371,6 +372,8 @@ static void decode_loop (const struct decoder *f, void *decoder_data,
 		curr_tags = NULL;
 	}
 	UNLOCK (curr_tags_mut);
+
+	out_buf_wait (out_buf);
 }
 
 /* Open a file, decode it and put output into the buffer. At the end, start
