@@ -1046,6 +1046,26 @@ static void update_ctime ()
 	wrefresh (info_win);
 }
 
+/* Update time in the menus an items for playlist and curr_plist for the given
+ * file. */
+void update_times (const char *file, const int time)
+{
+	char time_str[6];
+	int i;
+
+	sec_to_min (time_str, time);
+
+	if ((i = plist_find_fname(curr_plist, file)) != -1) {
+		curr_plist->items[i].tags->time = time;
+		menu_item_set_time_plist (curr_plist_menu, i, time_str);
+	}
+	
+	if ((i = plist_find_fname(playlist, file)) != -1) {
+		playlist->items[i].tags->time = time;
+		menu_item_set_time_plist (playlist_menu, i, time_str);
+	}
+}
+
 /* Return the file time, or -1 on error. */
 static int get_file_time (char *file)
 {
@@ -1070,6 +1090,8 @@ static int get_file_time (char *file)
 		plist->items[index].tags = read_file_tags (file,
 				plist->items[index].tags, TAGS_TIME);
 		ftime = plist->items[index].tags->time;
+		
+		update_times (file, plist->items[index].tags->time);
 	}
 	else if ((tags = read_file_tags(file, NULL, TAGS_TIME))) {
 		ftime = tags->time;
