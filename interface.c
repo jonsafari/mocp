@@ -1867,7 +1867,7 @@ static void add_dir_plist ()
 		sync_plists_data (curr_plist, &plist);
 	}
 	else
-		make_titles_file (&plist);
+		switch_titles_file (&plist);
 
 	plist_sort_fname (&plist);
 	plist_cat (playlist, &plist);
