@@ -1893,6 +1893,9 @@ static void event_plist_add (struct plist_item *item)
 		else
 			make_file_title (playlist, item_num,
 					options_get_int("HideFileExtension"));
+
+		if (playlist_menu)
+			menu_free (playlist_menu);
 		
 		if (curr_menu == playlist_menu) {
 			playlist_menu = make_menu (playlist, NULL, NULL);
