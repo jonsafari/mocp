@@ -15,11 +15,11 @@
 /* Maximum path length, we don't consider exceptions like mounted NFS */
 #ifndef PATH_MAX
 # if defined(_POSIX_PATH_MAX)
-#  define MAX_PATH	_POSIX_PATH_MAX /* Posix */
+#  define PATH_MAX	_POSIX_PATH_MAX /* Posix */
 # elif defined(MAXPATHLEN)
-#  define MAX_PATH	MAXPATHLEN      /* Solaris? Also linux...*/
+#  define PATH_MAX	MAXPATHLEN      /* Solaris? Also linux...*/
 # else
-#  define PATH_MAX	512             /* Suppose, we have 512 */
+#  define PATH_MAX	4096             /* Suppose, we have 4096 */
 # endif
 #endif
 
