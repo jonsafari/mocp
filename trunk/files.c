@@ -286,7 +286,7 @@ void read_directory_recurr (const char *directory, struct plist *plist)
 		type = file_type (file);
 		if (type == F_DIR)
 			read_directory_recurr (file, plist);
-		else if (type == F_SOUND)
+		else if (type == F_SOUND && plist_find_fname(plist, file) == -1)
 			plist_add (plist, file);
 	}
 
