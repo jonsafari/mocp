@@ -64,6 +64,30 @@ int send_int (int sock, int i)
 	return res == sizeof(int) ? 1 : 0;
 }
 
+/* Get a long value from the socket, return == 0 on error. */
+static int get_long (int sock, long *i)
+{
+	int res;
+	
+	res = recv (sock, i, sizeof(long), 0);
+	if (res == -1)
+		logit ("recv() failed when getting int: %s", strerror(errno));
+
+	return res == sizeof(long) ? 1 : 0;
+}
+
+/* Send a long value to the socket, return == 0 on error */
+static int send_long (int sock, long i)
+{
+	int res;
+	
+	res = send (sock, &i, sizeof(long), 0);
+	if (res == -1)
+		logit ("send() failed: %s", strerror(errno));
+
+	return res == sizeof(long) ? 1 : 0;
+}
+
 /* Get the string from socket, return NULL on error. The memory is malloced. */
 char *get_str (int sock)
 {
@@ -153,6 +177,12 @@ int send_item (int sock, const struct plist_item *item)
 		logit ("Error while sending file name");
 		return 0;
 	}
+
+	if (!send_long(sock, item->file_hash)) {
+		logit ("Error while sending file hash");
+		return 0;
+	}
+	
 	if (item->tags) {
 		if (!send_str(sock, item->tags->title
 					? item->tags->title : "")) {
@@ -233,10 +263,16 @@ struct plist_item *recv_item (int sock)
 		free (item);
 		return NULL;
 	}
-	
+
 	if (item->file[0]) {
 		char *title, *artist, *album;
 		int track, time;
+		
+		if (!(get_long(sock, &item->file_hash))) {
+			logit ("Error while receiving file hash");
+			free (item->file);
+			free (item);
+		}
 		
 		if (!(title = get_str(sock))) {
 			logit ("Error while receiving titile");
