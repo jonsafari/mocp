@@ -1,4 +1,4 @@
-.TH MOC 8 "18 october 2004" "Version 2.1.0" "music on console"
+.TH MOC 8 "29 october 2004" "Version 2.1.0" "music on console"
 
 .SH NAME
 MOC \- console audio player
@@ -77,6 +77,11 @@ Request stop playing from the server.
 Bring down the server.
 
 .TP
+.I -T --theme theme
+Use a theme file. If the path is not absolute, the file will be read
+from ~/.moc/themes.
+
+.TP
 .I -h --help
 Print list of options with short description and exit.
 
@@ -97,6 +102,11 @@ MOC directory for configuration file, socket, pid file, and other data.
 Configuration file of MOC. Format is very simple, to see how to use it,
 look into example configuration file (config.example) distributed with the
 program.
+
+.TP
+.I ~/.moc/themes
+
+Default directory for theme files.
 
 .SH BUGS
 Command line options that affects the server bahaviour (like --sound-driver) are
