@@ -1913,6 +1913,8 @@ static void event_plist_add (struct plist_item *item)
  * (curr_plist/playlist). */
 static void toggle_plist ()
 {
+	int num;
+	
 	if (visible_plist == playlist) {
 		if (!cwd[0])
 			
@@ -1926,7 +1928,7 @@ static void toggle_plist ()
 			set_interface_status (NULL);
 		}
 	}
-	else if (plist_count(playlist)) {
+	else if ((num = plist_count(playlist))) {
 		char msg[50];
 
 		visible_plist = playlist;
@@ -1935,7 +1937,7 @@ static void toggle_plist ()
 		curr_menu = playlist_menu;
 		set_title ("Playlist");
 		update_curr_file ();
-		sprintf (msg, "%d files on the list", plist_count(playlist));
+		sprintf (msg, "%d files on the list", num);
 		set_interface_status (msg);
 	}
 	else
@@ -1953,6 +1955,7 @@ static void event_plist_del (char *file)
 	if (item != -1) {
 		int selected_item = 0;
 		int top_item = 0;
+		int num;
 		
 		plist_delete (playlist, item);
 		
@@ -1962,7 +1965,7 @@ static void event_plist_del (char *file)
 			menu_free (playlist_menu);
 		}
 
-		if (plist_count(playlist) > 0) {
+		if ((num = plist_count(playlist)) > 0) {
 			if (curr_menu == playlist_menu) {
 				char msg[50];
 				
@@ -1974,8 +1977,7 @@ static void event_plist_del (char *file)
 				update_info_win ();
 				wrefresh (info_win);
 				
-				sprintf (msg, "%d files on the list",
-						plist_count(playlist));
+				sprintf (msg, "%d files on the list", num);
 				set_iface_status_ref (msg);
 			}
 			else 
@@ -2387,6 +2389,7 @@ static void delete_item ()
 	struct menu_item *menu_item;
 	int selected_item;
 	int top_item;
+	int num;
 
 	if (visible_plist != playlist) {
 		error ("You can only delete an item from the "
@@ -2410,7 +2413,7 @@ static void delete_item ()
 	send_str_to_srv (playlist->items[menu_item->plist_pos].file);
 
 	plist_delete (playlist, menu_item->plist_pos);
-	if (plist_count(playlist) > 0) {
+	if ((num = plist_count(playlist)) > 0) {
 		char msg[50];
 		
 		menu_free (playlist_menu);
@@ -2419,7 +2422,7 @@ static void delete_item ()
 		menu_setcurritem (playlist_menu, selected_item);
 		curr_menu = playlist_menu;
 		update_curr_file ();
-		sprintf (msg, "%d files on the list", plist_count(playlist));
+		sprintf (msg, "%d files on the list", num);
 		set_iface_status_ref (msg);
 		update_info_win ();
 		wrefresh (info_win);
