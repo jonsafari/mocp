@@ -1,39 +1,63 @@
 				MOC
 		     m u s i c  o n  c o n s o l e
 
+--------------------------------------------------------------------------------
 What is it?
+--------------------------------------------------------------------------------
 
-MOC is a console audio player with simple ncurses interface in playmp3list
-style. Features:
+MOC (music on console) is a console audio player for LINUX/UNIX designed to be
+powerfull and easy to use.
 
-	* Supports MP3, WAV, and OGG formats.
-	* Play files from directory changing automatically to the next one
-	  without any playlist.
-	* Supports id3tag, VBR and Xing header for MP3.
-	* OSS or ALSA output.
-	* Mixer.
-	* Colour themes.
-	* Interface can be detached frm the player to play in background.
-	* Fast switching to your music directory.
-	* Playlists (without read/write to a .m3u file).
-	* Shuffle and repeat.
-	* Output buffer in separate thread.
-	
+You just need to select a file from some directory using the menu similar to
+Midnight Commander, and MOC will start playing all files in this directory
+beggining from the choosen file. There is no need to create playlists like in
+other players.
 
+If you want to combine some files from one or few directories on one playlist,
+you can do this. The playlist will be remembered between runs or you can save
+it as an m3u file to load it whenever you want.
+
+Need the console where MOC is running for more important things? Need to close
+the X terminal emulator? You don't have to stop playing - just press q and the
+interface will be detached leaving the server running. You can attach it later,
+or you can attach one interface in the console, and another in the X terminal
+emulator, no need to switch just to play another file.
+
+MOC plays smoothly, regardless of system or I/O load because it uses the output
+buffer in a separate thread. It doesn't cause gaps between files, because the
+next file to be played is precached while playing the current file.
+
+Supported file formats are: MP3, OGG Vorbis, WAVE, and new formats support is
+under development.
+
+Other features:
+ - Simple mixer.
+ - Colour themes.
+ - Searching the menu (the playlist or a directory) like M-s in Midnight
+   Commander.
+ - The way MOC creates titles from tags is configurable.
+ - Optional character set conversion for file tags using iconv().
+ - OSS or ALSA output.
+
+--------------------------------------------------------------------------------
 What software is required to compile it?
-	* UNIX system with POSIX threads (Linux or FreeBSD with linuxthread
-	  port)
-	* ncurses (probably already installed in your system)
-	* libvorbis - only for OGG (http://www.xiph.org/ogg/vorbis/download/)
-	* libmad with libid3tag only for MP3 (ftp://ftp.mars.org/pub/mpeg/)
-	* zlib for libid3tag - only MP3 (probably already installed in your
-	  system)
+--------------------------------------------------------------------------------
 
-What system is MOC running on?
+ - UNIX system with POSIX threads (eg. Linux or FreeBSD)
+ - ncurses (probably already installed in your system)
+ - libvorbis - only for OGG (http://www.xiph.org/ogg/vorbis/download/)
+ - libmad with libid3tag only for MP3 (ftp://ftp.mars.org/pub/mpeg/)
+ - zlib for libid3tag - only MP3 (probably already installed in your system)
+
+--------------------------------------------------------------------------------
+Which systems is MOC running on?
+--------------------------------------------------------------------------------
 
 I've tested it on Linux and FreeBSD.
 
+--------------------------------------------------------------------------------
 How to install it?
+--------------------------------------------------------------------------------
 
 Generic instalation instruction is included in the INSTALL file. In short, just
 type:
@@ -42,14 +66,43 @@ type:
 And as root:
 	make install
 
-You can use config file, see comments in config.example how to do it.
-
-Run program with the 'mocp' command. If you need help, press 'h' and read
-man mocp.
-
 If you use FreeBSD, you may have to run configure in this way:
 ./configure LDFLAGS=-L/usr/local/lib CPPFLAGS=-I/usr/local/include
 
+--------------------------------------------------------------------------------
+How to use it?
+--------------------------------------------------------------------------------
+
+Run program with the 'mocp' command. The usage is simple, if you need help,
+press 'h' and/or read man mocp. There is no complicated command line, nor
+cryptic commands. Using MOC is as easy as using basic functions of Midnight
+Commander.
+
+You can use a configuration file placed in ~/.moc/config, but it's not required.
+See config.example provided with MOC.
+
+--------------------------------------------------------------------------------
+Themes
+--------------------------------------------------------------------------------
+
+Yes, there are themes, because people wanted them. :)
+
+Themes can change all colours and only colours. Example theme file with a
+exhausting description is included (example_theme), it is the default MOC
+apperance.
+
+Theme files should be placed in ~/.moc/themes/ directory, and can be selected
+with the Theme configuration options or the -T command line option (see the man
+page and the example configuration file).
+
+I don't include any other theme files because I know nothing about colours and 
+I have big problems with designing pretty things. I hope someone will create a
+nice alternative theme that I could include in the distribution. Maybe you? :)
+
+Please send me themes you have created.
+
+--------------------------------------------------------------------------------
 Who wrote that? Where can I send bug reports, questions or comments?
+--------------------------------------------------------------------------------
 
 	* Damian Pietras <daper@daper.net>
