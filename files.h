@@ -21,7 +21,7 @@ struct file_list
 
 int read_directory (const char *directory, struct file_list *dirs,
 		struct file_list *playlists, struct plist *plist);
-void read_directory_recurr (const char *directory, struct plist *plist);
+int read_directory_recurr (const char *directory, struct plist *plist);
 void make_titles_file (struct plist *plist);
 void make_titles_tags (struct plist *plist);
 void read_tags (struct plist *plist);
