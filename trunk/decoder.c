@@ -25,22 +25,6 @@
 #include "files.h"
 #include "log.h"
 
-#ifdef HAVE_MAD
-# include "mp3.h"
-#endif
-
-#ifdef HAVE_VORBIS
-# include "ogg.h"
-#endif
-
-#ifdef HAVE_FLAC
-# include "flac.h"
-#endif
-
-#ifdef HAVE_SNDFILE
-# include "sndfile_formats.h"
-#endif
-
 static struct plugin {
 	lt_dlhandle handle;
 	struct decoder *decoder;
