@@ -780,6 +780,26 @@ static void set_state (const int state)
 	xterm_set_state (state);
 }
 
+/* Find the item on curr_plist and playlist, return 1 if found, 0 otherwise.
+ * Pointer to the plist structure and the index are filled. */
+static int find_item_plists (const char *file, int *index, struct plist **plist)
+{
+	int i;
+
+	if ((i = plist_find_fname(curr_plist, file)) != -1) {
+		*index = i;
+		*plist = curr_plist;
+		return 1;
+	}
+	if ((i = plist_find_fname(playlist, file)) != -1) {
+		*index = i;
+		*plist = playlist;
+		return 1;
+	}
+
+	return 0;
+}
+
 /* Find the title for a file. Check if it's on the playlist, if not, try to
  * make the title. Returned memory is malloc()ed. */
 static char *find_title (char *file)
@@ -791,6 +811,7 @@ static char *find_title (char *file)
 	int index;
 	struct file_tags *tags;
 	char *title = NULL;
+	struct plist *plist;
 
 	if (cache_file && !strcmp(cache_file, file)) {
 		debug ("Using cache");
@@ -799,12 +820,12 @@ static char *find_title (char *file)
 	else
 		debug ("Getting file title for %s", file);
 	
-	if ((index = plist_find_fname(visible_plist, file)) != -1) {
-		if (!visible_plist->items[index].tags)
-		visible_plist->items[index].tags = read_file_tags (file,
-				visible_plist->items[index].tags, TAGS_COMMENTS);
-		if (visible_plist->items[index].tags->title)
-			title = build_title (visible_plist->items[index].tags);
+	if (find_item_plists(file, &index, &plist)) {
+		debug ("Found title on playlist");
+		plist->items[index].tags = read_file_tags (file,
+				plist->items[index].tags, TAGS_COMMENTS);
+		if (plist->items[index].tags->title)
+			title = build_title (plist->items[index].tags);
 	}
 	else if ((tags = read_file_tags(file, NULL, TAGS_COMMENTS))) {
 		if (tags->title)
@@ -917,6 +938,7 @@ static int get_file_time (char *file)
 	int index;
 	struct file_tags *tags;
 	int ftime = -1;
+	struct plist *plist;
 
 	if (cache_file && !strcmp(cache_file, file)) {
 		debug ("Using cache");
@@ -925,12 +947,11 @@ static int get_file_time (char *file)
 	else
 		debug ("Getting file time for %s", file);
 	
-	/* TODO: common code instead of this block: search on curr_plist and
-	 * the playlist. */
-	if ((index = plist_find_fname(visible_plist, file)) != -1) {
-		visible_plist->items[index].tags = read_file_tags (file,
-				visible_plist->items[index].tags, TAGS_TIME);
-		ftime = visible_plist->items[index].tags->time;
+	if (find_item_plists(file, &index, &plist)) {
+		debug ("Found item on playlist");
+		plist->items[index].tags = read_file_tags (file,
+				plist->items[index].tags, TAGS_TIME);
+		ftime = plist->items[index].tags->time;
 	}
 	else if ((tags = read_file_tags(file, NULL, TAGS_TIME))) {
 		ftime = tags->time;
