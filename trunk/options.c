@@ -48,6 +48,8 @@ struct option
 	char name[OPTION_NAME_MAX];
 	enum option_type type;
 	union option_value value;
+	int ignore_in_config; /* TODO: function to set this flag to ignore this
+				 option when parsing config file. */
 };
 
 static struct option options[OPTIONS_MAX];
@@ -136,6 +138,10 @@ void options_init ()
 	option_add_str ("FormatString",
 			"%(n:%n :)%(a:%a - :)%(t:%t:)%(A: \\(%A\\):)");
 	option_add_int ("OutputBuffer", 512);
+	option_add_str ("OSSDevice", "/dev/dsp");
+	option_add_str ("OSSMixerDevice", "/dev/mixer");
+	option_add_str ("OSSMixerChannel", "pcm");
+	option_add_str ("SoundDriver", "OSS");
 }
 
 /* Return 1 if a parameter to an integer option is valid. */
@@ -167,6 +173,14 @@ static int check_str_option (const char *name, const char *val)
 {
 	if (!strcasecmp(name, "Sort")) {
 		if (strcasecmp(val, "FileName"))
+			return 0;
+	}
+	else if (!strcasecmp(name, "OSSMixerChannel")) {
+		if (strcasecmp(val, "master") && strcasecmp(val, "pcm"))
+			return 0;
+	}
+	else if (!strcasecmp(name, "OutputDriver")) {
+		if (!proper_sound_driver(val))
 			return 0;
 	}
 	
