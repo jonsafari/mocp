@@ -267,6 +267,9 @@ static void start_moc (const struct parameters *params, char **args,
 			fatal ("Can't play");
 		send_int (server_sock, CMD_DISCONNECT);
 	}
+	else if (params->only_server)
+		send_int (server_sock, CMD_DISCONNECT);
+
 	
 	options_free ();
 }
