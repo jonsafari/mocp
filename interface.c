@@ -1953,12 +1953,13 @@ static void do_resize ()
 	werase (main_win);
 	entry.width = COLS - strlen(entry.title) - 4;
 
+	if (curr_plist_menu)
+		menu_update_size (curr_plist_menu, main_win);
+	if (playlist_menu)
+		menu_update_size (playlist_menu, main_win);
+
 	if (main_win_mode == WIN_MENU) {
 		main_border ();
-		if (curr_plist_menu)
-			menu_update_size (curr_plist_menu, main_win);
-		if (playlist_menu)
-			menu_update_size (playlist_menu, main_win);
 		
 		menu_draw (curr_menu);
 		update_info_win ();	
