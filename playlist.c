@@ -180,8 +180,7 @@ int plist_add (struct plist *plist, const char *file_name)
 }
 
 /* Copy all fields of item src to dst. */
-static void plist_item_copy (struct plist_item *dst,
-		const struct plist_item *src)
+void plist_item_copy (struct plist_item *dst, const struct plist_item *src)
 {
 	dst->file = xstrdup (src->file);
 	dst->file_hash = src->file_hash != -1
