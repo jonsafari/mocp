@@ -1247,9 +1247,15 @@ static int get_file_time (char *file)
 	/* To remember last file time - counting time can be expensive. */
 	static char *cache_file = NULL;
 	static int cache_time = -1;
+	static time_t cache_mtime = (time_t)-1;
+	
 	int ftime = -1;
+	int file_mtime;
+	
+	file_mtime = get_mtime(file);
 
-	if (cache_file && !strcmp(cache_file, file)) {
+	if (cache_file && !strcmp(cache_file, file)
+			&& cache_mtime == file_mtime) {
 		debug ("Using cache");
 		return cache_time;
 	}
@@ -1263,6 +1269,7 @@ static int get_file_time (char *file)
 		free (cache_file);
 	cache_file = xstrdup (file);
 	cache_time = ftime;
+	cache_mtime = file_mtime;
 	
 	return ftime;
 }
