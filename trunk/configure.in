@@ -90,15 +90,6 @@ AC_CHECK_LIB(ncurses, initscr, [
 	[AC_MSG_ERROR([You need ncurses library.])]
 )
 
-dnl Can we change priority?
-AC_CHECK_HEADER([sys/resource.h],
-		[AC_CHECK_FUNCS([setuid setreuid setpriority],
-			      [AC_DEFINE([HAVE_PRIORITY], 1, [Define if we can change priority])])])
-
-AC_CHECK_HEADER([sched.h],
-		[AC_CHECK_FUNCS([sched_setscheduler],
-				[AC_DEFINE([HAVE_SCHED_SETSCHEDULER], 1, [Define if we have sched_setscheduler()])])])
-
 AC_ARG_WITH(mp3, AS_HELP_STRING(--without-mp3,Compile without mp3 support (libmad)))
 
 dnl getopt

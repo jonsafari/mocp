@@ -22,9 +22,6 @@
 #include <sys/time.h>
 #include <sys/un.h>
 #include <time.h>
-#ifdef HAVE_PRIORITY
-# include <sys/resource.h>
-#endif
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
@@ -122,33 +119,6 @@ static int valid_pid (const int pid)
 	return kill(pid, 0) == 0 ? 1 : 0;
 }
 
-/* The priority is only for buffer thread. This function drops it. */
-void drop_priority ()
-{
-#ifdef HAVE_SCHED_SETSCHEDULER
-	struct sched_param p;
-#endif
-
-#ifdef HAVE_PRIORITY
-	if (options_get_int("Priority") < 0) {
-		logit ("Dropping priority");
-		if (setpriority(PRIO_PROCESS, 0, 0) == -1)
-			logit ("setpriority() failed: %s\n",
-					strerror(errno));
-#ifdef HAVE_SCHED_SETSCHEDULER
-		if ((p.sched_priority = sched_get_priority_max(SCHED_OTHER))
-				== -1)
-			logit ("sched_get_priority_max() failed: %s\n",
-					strerror(errno));
-		else if (sched_setscheduler(0, SCHED_OTHER, &p) == -1)
-			logit ("sched_setscheduler() failed: %s\n",
-					strerror(errno));
-#endif
-
-	}
-#endif
-}
-
 /* Initialize the server - return fd of the listening socket or -1 on error */
 int server_init (int debug, int foreground)
 {
@@ -171,7 +141,6 @@ int server_init (int debug, int foreground)
 		log_init_stream (logf);
 	}
 
-	drop_priority ();
 	unlink (socket_name());
 
 	/* Create a socket */

@@ -18,9 +18,6 @@ Sort			= FileName
 # files
 ShowStreamErrors	= no
 
-# Process priority to set, 0 to disable. Setuid to the MOC binary is required.
-Priority		= -2
-
 # Turn on repeat.
 Repeat			= no
 
