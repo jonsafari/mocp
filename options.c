@@ -155,6 +155,8 @@ void options_init ()
 	option_add_str ("OSSMixerChannel", "pcm");
 	option_add_str ("SoundDriver", "OSS");
 	option_add_int ("ShowHiddenFiles", 1);
+	option_add_str ("AlsaDevice", "default");
+	option_add_str ("AlsaMixer", "PCM");
 }
 
 /* Return 1 if a parameter to an integer option is valid. */
