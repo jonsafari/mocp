@@ -46,6 +46,7 @@
 #include "interface.h"
 #include "playlist_file.h"
 #include "themes.h"
+#include "keys.h"
 
 #define STATUS_LINE_LEN	25
 #define INTERFACE_LOG	"mocp_client_log"
@@ -146,15 +147,6 @@ static struct
 	NULL,
 	0
 };
-
-/* ^c version of c */
-#ifndef CTRL
-# define CTRL(c) ((c) & 0x1F)
-#endif
-
-#ifndef KEY_ESCAPE
-# define KEY_ESCAPE	27
-#endif
 
 static char *help_text[] = {
 "       " PACKAGE_STRING,
@@ -1609,10 +1601,12 @@ void init_interface (const int sock, const int debug, char **args,
 	send_int_to_srv (CMD_SEND_EVENTS);
 
 	iconv_init ();
+	keys_init ();
 	
 	initscr ();
 	cbreak ();
 	noecho ();
+	nodelay (stdscr, TRUE);
 	use_default_colors ();
 
 	check_term_size ();
@@ -2096,6 +2090,8 @@ static void update_menu ()
 
 static int entry_search_key (const int ch)
 {
+	enum key_cmd cmd;
+	
 	if (isgraph(ch) || ch == ' ') {
 		int item;
 		int len = strlen (entry.text);
@@ -2117,18 +2113,8 @@ static int entry_search_key (const int ch)
 			entry.text[len-1] = 0;
 		return 1;
 	}
-	if (ch == CTRL('g') || (ch == CTRL('n'))) {
-		int item;
-
-		/* Find next matching */
-		item = menu_find_pattern_next (curr_menu, entry.text,
-				menu_next_turn(curr_menu));
-
-		menu_setcurritem (curr_menu, item);
-		update_menu ();
-		return 1;
-	}
-	else if (ch == '\n') {
+	
+	if (ch == '\n') {
 
 		if (entry.text[0])
 			go_file ();
@@ -2139,6 +2125,22 @@ static int entry_search_key (const int ch)
 
 		return 1;
 	}
+
+	cmd = get_key_cmd (CON_ENTRY_SEARCH, ch);
+	
+	if (cmd == KEY_CMD_NEXT_SEARCH) {
+		int item;
+
+		/* Find next matching */
+		item = menu_find_pattern_next (curr_menu, entry.text,
+				menu_next_turn(curr_menu));
+
+		menu_setcurritem (curr_menu, item);
+		update_menu ();
+		return 1;
+	}
+
+	interface_error ("Bad key");
 
 	return 0;
 }
@@ -2218,6 +2220,8 @@ static int entry_plist_overwrite_key (const int key)
 /* Handle common entry key. Return 1 if a key was handled. */
 static int entry_common_key (const int ch)
 {
+	enum key_cmd cmd;
+	
 	if (isgraph(ch) || ch == ' ') {
 		int len = strlen (entry.text);
 	
@@ -2229,11 +2233,7 @@ static int entry_common_key (const int ch)
 		entry_draw ();
 		return 1;
 	}
-	if (ch == CTRL('x') || ch == KEY_ESCAPE) {
-		entry_disable ();
-		update_info_win ();
-		return 1;
-	}
+
 	if (ch == KEY_BACKSPACE) {
 
 		/* delete last character */
@@ -2246,6 +2246,14 @@ static int entry_common_key (const int ch)
 		return 1;
 	}
 
+	cmd = get_key_cmd (CON_ENTRY, ch);
+	
+	if (cmd == KEY_CMD_CANCEL) {
+		entry_disable ();
+		update_info_win ();
+		return 1;
+	}
+	
 	return 0;
 }
 
@@ -2363,7 +2371,7 @@ static int entry_go_dir_key (const int ch)
 static void entry_key (const int ch)
 {
 	int handled = 0;
-	
+
 	if (entry.type == ENTRY_GO_DIR)
 		handled = entry_go_dir_key (ch);
 	if (entry.type == ENTRY_SEARCH)
@@ -2476,124 +2484,124 @@ static void menu_key (const int ch)
 	}
 	else if (entry.type != ENTRY_DISABLED)
 		entry_key (ch);
-	else {
-		switch (ch) {
-			case 'q':
+	else if (ch != KEY_RESIZE) {
+		enum key_cmd cmd = get_key_cmd (CON_MENU, ch);
+		
+		switch (cmd) {
+			case KEY_CMD_QUIT_CLIENT:
 				want_quit = 1;
 				break;
-			case '\n':
+			case KEY_CMD_GO:
 				go_file ();
 				do_update_menu = 1;
 				break;
-			case KEY_DOWN:
+			case KEY_CMD_MENU_DOWN:
 				menu_driver (curr_menu, REQ_DOWN);
 				do_update_menu = 1;
 				break;
-			case KEY_UP:
+			case KEY_CMD_MENU_UP:
 				menu_driver (curr_menu, REQ_UP);
 				do_update_menu = 1;
 				break;
-			case KEY_NPAGE:
+			case KEY_CMD_MENU_NPAGE:
 				menu_driver (curr_menu, REQ_PGDOWN);
 				do_update_menu = 1;
 				break;
-			case KEY_PPAGE:
+			case KEY_CMD_MENU_PPAGE:
 				menu_driver (curr_menu, REQ_PGUP);
 				do_update_menu = 1;
 				break;
-			case KEY_HOME:
+			case KEY_CMD_MENU_FIRST:
 				menu_driver (curr_menu, REQ_TOP);
 				do_update_menu = 1;
 				break;
-			case KEY_END:
+			case KEY_CMD_MENU_LAST:
 				menu_driver (curr_menu, REQ_BOTTOM);
 				do_update_menu = 1;
 				break;
-			case 'Q':
+			case KEY_CMD_QUIT:
 				send_int_to_srv (CMD_QUIT);
 				want_quit = 1;
 				break;
-			case 's':
+			case KEY_CMD_STOP:
 				send_int_to_srv (CMD_STOP);
 				break;
-			case 'n':
+			case KEY_CMD_NEXT:
 				send_int_to_srv (CMD_NEXT);
 				break;
-			case 'b':
+			case KEY_CMD_PREVIOUS:
 				send_int_to_srv (CMD_PREV);
 				break;
-			case 'p':
-			case ' ':
+			case KEY_CMD_PAUSE:
 				switch_pause ();
 				break;
-			case 'f':
+			case KEY_CMD_TOGGLE_READ_TAGS:
 				switch_read_tags ();
 				do_update_menu = 1;
 				break;
-			case 'S':
+			case KEY_CMD_TOGGLE_SHUFFLE:
 				toggle_option ("Shuffle");
 				break;
-			case 'R':
+			case KEY_CMD_TOGGLE_REPEAT:
 				toggle_option ("Repeat");
 				break;
-			case 'X':
+			case KEY_CMD_TOGGLE_AUTO_NEXT:
 				toggle_option ("AutoNext");
 				break;
-			case 'l':
+			case KEY_CMD_TOGGLE_PLAYLIST:
 				toggle_plist ();
 				do_update_menu = 1;
 				break;
-			case 'a':
+			case KEY_CMD_PLIST_ADD_FILE:
 				add_file_plist ();
 				break;
-			case 'C':
+			case KEY_CMD_PLIST_CLEAR:
 				clear_playlist ();
 				do_update_menu = 1;
 				break;
-			case 'A':
+			case KEY_CMD_PLIST_ADD_DIR:
 				add_dir_plist ();
 				break;
-			case '<':
+			case KEY_CMD_MIXED_DEC_1:
 				set_mixer (get_mixer() - 1);
 				break;
-			case ',':
+			case KEY_CMD_MIXER_DEC_5:
 				set_mixer (get_mixer() - 5);
 				break;
-			case '.':
+			case KEY_CMD_MIXER_INC_5:
 				set_mixer (get_mixer() + 5);
 				break;
-			case '>':
+			case KEY_CMD_MIXER_INC_1:
 				set_mixer (get_mixer() + 1);
 				break;
-			case KEY_LEFT:
+			case KEY_CMD_SEEK_BACKWARD_1:
 				seek (-1);
 				break;
-			case KEY_RIGHT:
+			case KEY_CMD_SEEK_FORWARD_1:
 				seek (1);
 				break;
-			case 'h':
-			case '?':
+			case KEY_CMD_HELP:
 				help_screen ();
 				break;
-			case 'M':
+			case KEY_CMD_HIDE_MESSAGE:
 				interface_message (NULL);
 				update_info_win ();
 				wrefresh (info_win);
 				break;
-			case CTRL('r'):
+			case KEY_CMD_REFRESH:
 				wclear (info_win);
 				update_info_win ();
 				wrefresh (info_win);
 				wclear (main_win);
 				do_update_menu = 1;
 				break;
-			case 'r':
+			case KEY_CMD_RELOAD:
 				if (visible_plist == curr_plist) {
 					reread_dir (1);
 					do_update_menu = 1;
 				}
 				break;
-			case 'H':
+			case KEY_CMD_TOGGLE_SHOW_HIDDEN_FILES:
 				option_set_int ("ShowHiddenFiles",
 						!options_get_int(
 							"ShowHiddenFiles"));
@@ -2602,7 +2610,7 @@ static void menu_key (const int ch)
 					do_update_menu = 1;
 				}
 				break;
-			case 'm':
+			case KEY_CMD_GO_MUSIC_DIR:
 				if (options_get_str("MusicDir")) {
 					go_to_dir (options_get_str(
 								"MusicDir"));
@@ -2612,15 +2620,14 @@ static void menu_key (const int ch)
 					error ("MusicDir not "
 							"defined");
 				break;
-			case 'd':
+			case KEY_CMD_PLIST_DEL:
 				delete_item ();
 				do_update_menu = 1;
 				break;
-			case 'g':
-			case '/':
+			case KEY_CMD_MENU_SEARCH:
 				make_entry (ENTRY_SEARCH, "SEARCH");
 				break;
-			case 'V':
+			case KEY_CMD_PLIST_SAVE:
 				if (plist_count(playlist))
 					make_entry (ENTRY_PLIST_SAVE,
 							"SAVE PLAYLIST");
@@ -2628,29 +2635,31 @@ static void menu_key (const int ch)
 					error ("The playlist is "
 							"empty.");
 				break;
-			case CTRL('t'):
+			case KEY_CMD_TOGGLE_SHOW_TIME:
 				toggle_show_time ();
 				do_update_menu = 1;
 				break;
-			case CTRL('f'):
+			case KEY_CMD_TOGGLE_SHOW_FORMAT:
 				toggle_show_format ();
 				do_update_menu = 1;
 				break;
-			case 'G':
+			case KEY_CMD_GO_TO_PLAYING_FILE:
 				go_to_file_dir ();
 				do_update_menu = 1;
 				break;
-			case 'i':
+			case KEY_CMD_GO_DIR:
 				make_entry (ENTRY_GO_DIR, "GO");
 				break;
-			case 'U':
+			case KEY_CMD_GO_DIR_UP:
 				go_dir_up ();
 				do_update_menu = 1;
 				break;
-			case KEY_RESIZE:
+			case KEY_CMD_WRONG:
+				error ("Bad command");
 				break;
 			default:
-				error ("Bad key");
+				debug ("Unhandled command: %d", cmd);
+				fatal ("Unhandled command");
 		}
 
 		if (do_update_menu)
@@ -2768,8 +2777,18 @@ void interface_loop ()
 
 		if (ret > 0) {
 			if (FD_ISSET(STDIN_FILENO, &fds)) {
+				int meta;
+				int ch = wgetch(main_win);
+				
 				clear_interrupt ();
-				menu_key (wgetch(main_win));
+
+				/* Recognize meta sequences */
+				if (ch == KEY_ESCAPE
+						&& (meta = wgetch(stdscr))
+						!= ERR)
+					ch = meta | META_KEY_FLAG;
+				
+				menu_key (ch);
 			}
 			if (FD_ISSET(srv_sock, &fds))
 				server_event (get_int_from_srv());
