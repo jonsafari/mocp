@@ -36,6 +36,7 @@ struct plist
 {
 	int num;		/* Number of elements on the list */
 	int allocated;		/* Number of allocated elements */
+	int not_deleted;	/* Number of not deleted items */
 	pthread_mutex_t mutex;
 	struct plist_item *items;
 };
