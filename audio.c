@@ -333,9 +333,23 @@ void audio_prev ()
 
 void audio_pause ()
 {
-	out_buf_pause (&out_buf);
-	state = STATE_PAUSE;
-	state_change ();
+	LOCK (curr_playing_mut);
+	LOCK (plist_mut);
+	
+	if (curr_playing != -1) {
+		char *sname = plist_get_file (curr_plist, curr_playing);
+		
+		if (file_type(sname) != F_URL) {
+			out_buf_pause (&out_buf);
+			state = STATE_PAUSE;
+			state_change ();
+		}
+		
+		free (sname);
+	}
+
+	UNLOCK (plist_mut);
+	UNLOCK (curr_playing_mut);
 }
 
 void audio_unpause ()
