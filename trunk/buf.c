@@ -57,8 +57,10 @@ static void *read_thread (void *arg)
 		
 		LOCK (buf->mutex);
 		
-		if (buf->pause || buf->stop)
+		if (buf->reset_dev) {
 			audio_reset ();
+			buf->reset_dev = 0;
+		}
 
 		if (buf->stop)
 			buf->fill = 0;
@@ -146,6 +148,7 @@ void buf_init (struct buf *buf, int size)
 	buf->pause = 0;
 	buf->stop = 0;
 	buf->time = 0.0;
+	buf->reset_dev = 0;
 	buf->hardware_buf_fill = 0;
 	
 	pthread_mutex_init (&buf->mutex, NULL);
@@ -184,6 +187,14 @@ void buf_destroy (struct buf *buf)
 	free (buf->buf);
 	buf->size = 0;
 	buf->buf = NULL;
+	if (pthread_mutex_destroy(&buf->mutex))
+		logit ("Destroying buffer mutex failed: %s", strerror(errno));
+	if (pthread_cond_destroy(&buf->play_cond))
+		logit ("Destroying buffer play condition failed: %s",
+				strerror(errno));
+	if (pthread_cond_destroy(&buf->ready_cond))
+		logit ("Destroying buffer ready condition failed: %s",
+				strerror(errno));
 
 	logit ("WRITER: buffer destroyed");
 
@@ -255,6 +266,7 @@ void buf_pause (struct buf *buf)
 {
 	LOCK (buf->mutex);
 	buf->pause = 1;
+	buf->reset_dev = 1;
 	UNLOCK (buf->mutex);
 }
 
@@ -274,6 +286,7 @@ void buf_stop (struct buf *buf)
 	LOCK (buf->mutex);
 	buf->stop = 1;
 	buf->pause = 0;
+	buf->reset_dev = 1;
 	logit ("buf_stop(): sending signal");
 	pthread_cond_signal (&buf->play_cond);
 	logit ("buf_stop(): waiting for signal");
@@ -304,12 +317,9 @@ void buf_reset (struct buf *buf)
 	buf->pos = 0;
 	buf->fill = 0;
 	buf->pause = 0;
+	buf->reset_dev = 0;
 	buf->hardware_buf_fill = 0;
 	
-	/* Let know other threads using this buffer that the state of the
-	 * buffer is different. */
-	/*pthread_cond_broadcast (&buf->ready_cond);*/
-
 	UNLOCK (buf->mutex);
 }
 
