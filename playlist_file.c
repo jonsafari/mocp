@@ -161,7 +161,7 @@ int plist_load (struct plist *plist, const char *fname, const char *cwd)
 			if (!plist->items[i].tags)
 				plist->items[i].tags = read_file_tags (
 						plist->items[i].file);
-			if (plist->items[i].tags)
+			if (plist->items[i].tags && plist->items[i].tags->title)
 				plist->items[i].title = build_title (
 						plist->items[i].tags);
 			else

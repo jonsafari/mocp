@@ -108,7 +108,7 @@ void make_titles_tags (struct plist *plist)
 
 		assert (plist->items[i].file != NULL);
 		
-		if (plist->items[i].tags) {
+		if (plist->items[i].tags && plist->items[i].tags->title) {
 			char *title;
 			
 			title = build_title (plist->items[i].tags);
