@@ -2802,7 +2802,12 @@ void interface_end ()
 	save_playlist ();
 	send_int (srv_sock, CMD_DISCONNECT);
 	close (srv_sock);
-	endwin ();
+	
+	/* endwin() sometimes fails on x terminals when we get SIGCHLD
+	 * at this moment. Double invokation seems to solve this. */
+	if (endwin() == ERR && endwin() == ERR)
+		logit ("endwin() failed!");
+	
 	keys_cleanup ();
 	xterm_clear_title ();
 	plist_free (curr_plist);
