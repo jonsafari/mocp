@@ -11,6 +11,11 @@
 
 /* Based on aplay copyright (c) by Jaroslav Kysela <perex@suse.cz> */
 
+/* TODO:
+ * - When another application changes the mixer settings, they are not visible
+ *   here.
+ */
+
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
@@ -34,7 +39,7 @@
 
 static snd_pcm_t *handle = NULL;
 static struct sound_params params = { 0, 0, 0 };
-static int chunk_size = -1;
+static int chunk_size = -1; /* in frames */
 static char alsa_buf[16384];
 static int alsa_buf_fill = 0;
 static int bytes_per_frame;
@@ -239,9 +244,87 @@ static int alsa_open (struct sound_params *sound_params)
 	return 1;
 }
 
+/* Play from alsa_buf as many chunks as possible. Move the remaining data
+ * to the beginning of the buffer. Return the number of bytes written
+ * or -1 on error. */
+static int play_buf_chunks ()
+{
+	int written = 0;
+	
+	while (alsa_buf_fill >= chunk_size) {
+		int err;
+		
+		err = snd_pcm_writei (handle, alsa_buf + written,
+				chunk_size / bytes_per_frame);
+		if (err == -EAGAIN) {
+			UNLOCK (buf_mutex);
+			snd_pcm_wait (handle, 5000);
+			LOCK (buf_mutex);
+		}
+		else if (err == -EPIPE) {
+			logit ("underrun!");
+			if ((err = snd_pcm_prepare(handle)) < 0) {
+				error ("Can't recover after underrun: %s",
+						snd_strerror(err));
+				/* TODO: reopen the device */
+				UNLOCK (buf_mutex);
+				return -1;
+			}
+		}
+		else if (err == -ESTRPIPE) {
+			logit ("Suspend, trying to resume");
+			while ((err = snd_pcm_resume(handle))
+					== -EAGAIN)
+				sleep (1);
+			if (err < 0) {
+				logit ("Failed, restarting");
+				if ((err = snd_pcm_prepare(handle))
+						< 0) {
+					error ("Failed to restart "
+							"device: %s.",
+							snd_strerror(err));
+					UNLOCK (buf_mutex);
+					return -1;
+				}
+			}
+		}
+		else if (err < 0) {
+			error ("Can't play: %s", snd_strerror(err));
+			UNLOCK (buf_mutex);
+			return -1;
+		}
+		else {
+			int written_bytes = err * bytes_per_frame;
+
+			written += written_bytes;
+			alsa_buf_fill -= written_bytes;
+
+			debug ("Played %d bytes", written_bytes);
+		}
+	}
+
+	debug ("%d bytes remain in alsa_buf", alsa_buf_fill);
+	memmove (alsa_buf, alsa_buf + written, alsa_buf_fill);
+
+	return written * bytes_per_frame;
+}
+
 static void alsa_close ()
 {
-	/* FIXME: play buf_remain */
+	/* play what remained in the buffer */
+	if (alsa_buf_fill) {
+		assert (alsa_buf_fill < chunk_size);
+
+		/* FIXME: why the last argument is multiplied by number of
+		 * channels? */
+		snd_pcm_format_set_silence (params.format == 1
+				? SND_PCM_FORMAT_S8 : SND_PCM_FORMAT_S16_LE,
+				alsa_buf + alsa_buf_fill,
+				(chunk_size - alsa_buf_fill) / bytes_per_frame
+				* params.channels);
+		play_buf_chunks ();
+	}
+	
 	params.format = 0;
 	params.rate = 0;
 	params.channels = 0;
@@ -261,7 +344,6 @@ static int alsa_play (const char *buff, const size_t size)
 
 	LOCK (buf_mutex);
 	while (to_write) {
-		int written = 0;
 		int to_copy = MIN((size_t)to_write,
 				sizeof(alsa_buf) - (size_t)alsa_buf_fill);
 		
@@ -273,61 +355,8 @@ static int alsa_play (const char *buff, const size_t size)
 		debug ("Copied %d bytes to alsa_buf (now is filled with %d "
 				"bytes)", to_copy, alsa_buf_fill);
 		
-		while (alsa_buf_fill >= chunk_size) {
-			int err;
-			
-			err = snd_pcm_writei (handle, alsa_buf + written,
-					chunk_size / bytes_per_frame);
-			if (err == -EAGAIN) {
-				UNLOCK (buf_mutex);
-				snd_pcm_wait (handle, 5000);
-				LOCK (buf_mutex);
-			}
-			else if (err == -EPIPE) {
-				logit ("underrun!");
-				if ((err = snd_pcm_prepare(handle)) < 0) {
-					error ("Can't recover after underrun: %s",
-							snd_strerror(err));
-					/* TODO: reopen the device */
-					UNLOCK (buf_mutex);
-					return -1;
-				}
-			}
-			else if (err == -ESTRPIPE) {
-				logit ("Suspend, trying to resume");
-				while ((err = snd_pcm_resume(handle))
-						== -EAGAIN)
-					sleep (1);
-				if (err < 0) {
-					logit ("Failed, restarting");
-					if ((err = snd_pcm_prepare(handle))
-							< 0) {
-						error ("Failed to restart "
-								"device: %s.",
-								snd_strerror(err));
-						UNLOCK (buf_mutex);
-						return -1;
-					}
-				}
-			}
-			else if (err < 0) {
-				error ("Can't play: %s", snd_strerror(err));
-				UNLOCK (buf_mutex);
-				return -1;
-			}
-			else {
-				int written_bytes = err * bytes_per_frame;
-
-				written += written_bytes;
-				alsa_buf_fill -= written_bytes;
-
-				debug ("Played %d bytes", written_bytes);
-			}
-		}
-
-		memmove (alsa_buf, alsa_buf + written, alsa_buf_fill);
-
-		debug ("%d bytes remain in alsa_buf", alsa_buf_fill);
+		if (play_buf_chunks() < 0)
+			return -1;
 	}
 	UNLOCK (buf_mutex);
 
