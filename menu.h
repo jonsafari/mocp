@@ -56,5 +56,6 @@ void menu_mark_plist_item (struct menu *menu, const int plist_item);
 void set_menu_state (struct menu *menu, int selected, int top);
 void menu_update_size (struct menu *menu, WINDOW *win);
 void menu_unmark_item (struct menu *menu);
+void menu_set_top_item (struct menu *menu, const int num);
 
 #endif
