@@ -64,7 +64,9 @@ static char *read_line (FILE *file)
 	}
 
 	if (line[len-1] == '\n')
-		line[len-1] = 0;
+		line[--len] = 0;
+	if (len > 0 && line[len-1] == '\r')
+		line[--len] = 0;
 
 	return line;
 }
