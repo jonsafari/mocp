@@ -2279,8 +2279,9 @@ static int entry_search_key (const int ch)
 	}
 	else if (ch == '\n') {
 
-		/* go to the file */
-		go_file ();
+		if (entry.text[0])
+			go_file ();
+		
 		entry_disable ();
 		update_info_win ();
 		update_menu ();
@@ -2481,7 +2482,7 @@ static int entry_go_dir_key (const int ch)
 		return 1;
 	}
 	else if (ch == '\n') {
-		if (strlen(entry.text) > 0) {
+		if (entry.text[0]) {
 			char *dir = xstrdup (entry.text);
 			int len = strlen (dir);
 			
@@ -2496,8 +2497,10 @@ static int entry_go_dir_key (const int ch)
 			update_menu ();
 			free (dir);
 		}
-		else
+		else {
 			entry_disable ();
+			update_info_win ();
+		}
 		
 		return 1;
 	}
