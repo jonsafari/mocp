@@ -154,6 +154,9 @@ static struct
 static int silent_seek_pos = -1;
 static time_t silent_seek_key_last = (time_t)0; /* when the silent seek key was
 						   last used */
+static int waiting_for_plist_load = 0; /* Are we waiting for the playlist we
+					  have loaded and sent to the clients?
+					  */
 
 static void xterm_clear_title ()
 {
@@ -1947,43 +1950,6 @@ static void update_menu ()
 	wrefresh (main_win);
 }
 
-/* Handle EV_PLIST_ADD. */
-static void event_plist_add (struct plist_item *item)
-{
-	if (plist_find_fname(playlist, item->file) == -1) {
-		char msg[50];
-		int item_num = plist_add_from_item (playlist, item);
-		
-		if (options_get_int("ReadTags")) {
-			make_tags_title (playlist, item_num);
-
-			if (playlist->items[item_num].title_tags)
-				playlist->items[item_num].title =
-					playlist->items[item_num].title_tags;
-			else {
-				make_file_title (playlist, item_num,
-						options_get_int(
-							"HideFileExtension"));
-				playlist->items[item_num].title =
-					playlist->items[item_num].title_file;
-			}
-		}
-		else {
-			make_file_title (playlist, item_num,
-					options_get_int("HideFileExtension"));
-			playlist->items[item_num].title =
-				playlist->items[item_num].title_file;
-		}
-
-
-		if (playlist_menu)
-			add_to_menu (playlist_menu, playlist, item_num);
-		
-		sprintf (msg, "%d files on the list", plist_count(playlist));
-		set_iface_status_ref (msg);
-	}
-}
-
 /* Switch between the current playlist and the playlist
  * (curr_plist/playlist). */
 static void toggle_plist ()
@@ -2020,6 +1986,49 @@ static void toggle_plist ()
 
 	update_info_win ();
 	wrefresh (info_win);
+}
+
+/* Handle EV_PLIST_ADD. */
+static void event_plist_add (struct plist_item *item)
+{
+	if (plist_find_fname(playlist, item->file) == -1) {
+		char msg[50];
+		int item_num = plist_add_from_item (playlist, item);
+		
+		if (options_get_int("ReadTags")) {
+			make_tags_title (playlist, item_num);
+
+			if (playlist->items[item_num].title_tags)
+				playlist->items[item_num].title =
+					playlist->items[item_num].title_tags;
+			else {
+				make_file_title (playlist, item_num,
+						options_get_int(
+							"HideFileExtension"));
+				playlist->items[item_num].title =
+					playlist->items[item_num].title_file;
+			}
+		}
+		else {
+			make_file_title (playlist, item_num,
+					options_get_int("HideFileExtension"));
+			playlist->items[item_num].title =
+				playlist->items[item_num].title_file;
+		}
+
+		if (playlist_menu)
+			add_to_menu (playlist_menu, playlist, item_num);
+		
+		sprintf (msg, "%d files on the list", plist_count(playlist));
+		set_iface_status_ref (msg);
+
+		if (waiting_for_plist_load) {
+			if (visible_plist == curr_plist)
+				toggle_plist ();
+			waiting_for_plist_load = 0;
+		}
+
+	}
 }
 
 /* Handle EV_PLIST_DEL. */
@@ -2082,7 +2091,8 @@ static void clear_playlist ()
 		playlist_menu = NULL;
 	}
 	
-	interface_message ("The playlist was cleared.");
+	if (!waiting_for_plist_load)
+		interface_message ("The playlist was cleared.");
 	set_iface_status_ref (NULL);
 }
 
@@ -2263,21 +2273,33 @@ static void go_file ()
 			return;
 		}
 
-		send_int_to_srv (CMD_LOCK);
-		clear_playlist ();
+		plist_clear (playlist);
+
 		set_iface_status_ref ("Loading playlist...");
 		if (plist_load(playlist, menu_item_get_file(curr_menu,
-						selected), cwd))
+						selected), cwd)) {
 			interface_message ("Playlist loaded.");
 		
-		if (options_get_int("SyncPlaylist")) {
-			change_srv_plist_serial ();
-			send_int_to_srv (CMD_CLI_PLIST_CLEAR);
-			set_iface_status_ref ("Notifying clients...");
-			send_all_items (playlist);
-			set_iface_status_ref (NULL);
+			if (options_get_int("SyncPlaylist")) {
+				send_int_to_srv (CMD_LOCK);
+				change_srv_plist_serial ();
+				send_int_to_srv (CMD_CLI_PLIST_CLEAR);
+				set_iface_status_ref ("Notifying clients...");
+				send_all_items (playlist);
+				set_iface_status_ref (NULL);
+				waiting_for_plist_load = 1;
+				send_int_to_srv (CMD_UNLOCK);
+
+				/* We'll use the playlist received from the
+				 * server to be synchronized with other clients
+				 */
+				plist_clear (playlist);
+			}
+			else
+				toggle_plist ();
 		}
-		send_int_to_srv (CMD_UNLOCK);
+		else
+			interface_message ("The playlist is empty");
 
 		set_iface_status_ref (NULL);
 	}
