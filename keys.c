@@ -619,12 +619,6 @@ static void load_key_map (const char *file_name)
 	fclose (file);
 }
 
-/* Check if any used default key is not defined for something else. */
-static void check_keys ()
-{
-	/* TODO */
-}
-
 /* Get a nice key name.
  * Returned memory may be static. */
 static char *get_key_name (const int key)
@@ -660,6 +654,37 @@ static char *get_key_name (const int key)
 	key_str[1] = 0;
 
 	return key_str;
+}
+
+/* Check if keys for cmd1 and cmd2 are different, if not, issue an error. */
+static void compare_keys (struct command *cmd1, struct command *cmd2)
+{
+	int i = 0;
+
+	while (cmd1->keys[i] != -1) {
+		int j = 0;
+
+		while (cmd2->keys[j] != -1 && cmd2->keys[j] != cmd1->keys[i])
+			j++;
+		if (cmd2->keys[j] != -1)
+			fatal ("Key %s is defined for %s and %s",
+					get_key_name(cmd2->keys[j]),
+					cmd1->name, cmd2->name);
+		i++;
+	}
+}
+
+/* Check if some key is ont defined more than once. */
+static void check_keys ()
+{
+	unsigned int i, j;
+
+	for (i = 0; i < COMMANDS_NUM; i++) {
+		for (j = 0; j < COMMANDS_NUM; j++)
+			if (j != i && commands[i].context
+					== commands[j].context)
+				compare_keys (&commands[i], &commands[j]);
+	}
 }
 
 /* Return a string contains the list of keys used for command.
