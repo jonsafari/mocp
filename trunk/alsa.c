@@ -139,8 +139,10 @@ static int alsa_open (struct sound_params *sound_params)
 
 	if ((err = snd_pcm_open(&handle, options_get_str("AlsaDevice"),
 					SND_PCM_STREAM_PLAYBACK,
-					SND_PCM_NONBLOCK)))
+					SND_PCM_NONBLOCK)) < 0) {
 		error ("Can't open audio: %s", snd_strerror(err));
+		return 0;
+	}
 
 	if ((err = snd_pcm_hw_params_malloc(&hw_params)) < 0) {
 		error ("Can't allocate alsa hardware parameters structure: %s",
