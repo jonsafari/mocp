@@ -1,7 +1,12 @@
 #ifndef MENU_H
 #define MENU_H
 
-#include <ncurses.h>
+#ifdef HAVE_NCURSES_H
+# include <ncurses.h>
+#elif HAVE_CURSES_H
+# include <curses.h>
+#endif
+
 #include "files.h"
 
 enum menu_request
