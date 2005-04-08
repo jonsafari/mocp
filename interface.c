@@ -2209,7 +2209,7 @@ static void server_event (const int event, void *data)
 		case EV_CHANNELS:
 			update_channels ();
 			break;
-		case EV_ERROR:
+		case EV_SRV_ERROR:
 			update_error ();
 			break;
 		case EV_OPTIONS:

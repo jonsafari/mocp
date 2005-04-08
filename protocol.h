@@ -27,7 +27,7 @@ enum noblock_io_status
 /* Definition of events send by server to the client */
 #define EV_STATE	0x01 /* server has changed the state */
 #define EV_CTIME	0x02 /* current time of the song has changed */
-#define EV_ERROR	0x04 /* an error occured */
+#define EV_SRV_ERROR	0x04 /* an error occured */
 #define EV_BUSY		0x05 /* another client is connected to the server */
 #define EV_DATA		0x06 /* data in response to a request will arrive */
 #define EV_BITRATE	0x07 /* the bitrate has changed */
