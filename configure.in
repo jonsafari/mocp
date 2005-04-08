@@ -62,7 +62,8 @@ AC_CHECK_HEADER([sys/soundcard.h],
 		[echo -e "\nWARNING!!! YOU DONT HAVE OSS, THE PROGRAM CAN BE USELESS!\n"])
 if test "$COMPILE_OSS" = yes
 then
-	AC_CHECK_LIB([ossaudio], [ioctl], [EXTRA_LIBS="$EXTRA_LIBS -lossaudio"])
+	AC_CHECK_LIB([ossaudio], [_oss_ioctl],
+		     [EXTRA_LIBS="$EXTRA_LIBS -lossaudio"])
 fi
 
 PKG_CHECK_MODULES(ALSA, [alsa >= 0.9],
