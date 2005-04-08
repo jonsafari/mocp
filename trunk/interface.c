@@ -26,7 +26,13 @@
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <unistd.h>
-#include <ncurses.h>
+
+#ifdef HAVE_NCURSES_H
+# include <ncurses.h>
+#elif HAVE_CURSES_H
+# include <curses.h>
+#endif
+
 #include <string.h>
 #include <signal.h>
 #include <time.h>

@@ -13,7 +13,12 @@
 # include "config.h"
 #endif
 
-#include <ncurses.h>
+#ifdef HAVE_NCURSES_H
+# include <ncurses.h>
+#elif HAVE_CURSES_H
+# include <curses.h>
+#endif
+
 #include <assert.h>
 #include <string.h>
 #include <errno.h>

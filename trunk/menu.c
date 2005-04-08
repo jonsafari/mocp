@@ -16,7 +16,13 @@
 #define _GNU_SOURCE
 #include <stdlib.h>
 #include <string.h>
-#include <ncurses.h>
+
+#ifdef HAVE_NCURSES_H
+# include <ncurses.h>
+#elif HAVE_CURSES_H
+# include <curses.h>
+#endif
+
 #include <assert.h>
 #include <ctype.h>
 #include "main.h"
