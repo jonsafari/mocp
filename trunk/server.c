@@ -477,7 +477,7 @@ void server_error (const char *msg)
 	strncpy (err_msg, msg, sizeof(err_msg) - 1);
 	err_msg[sizeof(err_msg) - 1] = 0;
 	logit ("ERROR: %s", err_msg);
-	add_event_all (EV_ERROR, NULL);
+	add_event_all (EV_SRV_ERROR, NULL);
 }
 
 /* Send the song name to the client. Return 0 on error. */
