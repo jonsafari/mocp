@@ -57,6 +57,9 @@ To support audio formats you need:
  - WAVE, AU, AIFF, SVX, SPH, IRC, VOC - libsndfile
      (http://www.mega-nerd.com/libsndfile/)
 
+For network streams:
+ - libcurl 7.12.0 or newer (http://curl.haxx.se)
+
 --------------------------------------------------------------------------------
 Which systems is MOC running on?
 --------------------------------------------------------------------------------
