@@ -218,11 +218,23 @@ then
 	AC_CHECK_PROG([CURL_CONFIG], [curl-config], [yes])
 	if test "x$CURL_CONFIG" = "xyes"
 	then
-		CFLAGS="$CFLAGS `curl-config --cflags`"
-		EXTRA_LIBS="$EXTRA_LIBS `curl-config --libs`"
-		EXTRA_OBJS="$EXTRA_OBJS io_curl.o"
-		AC_DEFINE([HAVE_CURL], 1, [Define if you have libcurl])
-		COMPILE_CURL="yes"
+		AC_MSG_CHECKING([libcurl version])
+		curl_ver=`curl-config --version | awk '{print $2}'`
+		curl_ver_major=`echo $curl_ver | awk -F. '{print $1}'`
+		curl_ver_minor=`echo $curl_ver | awk -F. '{print $2}'`
+
+		if test \( $curl_ver_major -ge 7 -a $curl_ver_minor -ge 12 \) \
+			-o $curl_ver_major -ge 8
+		then
+			AC_MSG_RESULT([$curl_ver, OK])
+			CFLAGS="$CFLAGS `curl-config --cflags`"
+			EXTRA_LIBS="$EXTRA_LIBS `curl-config --libs`"
+			EXTRA_OBJS="$EXTRA_OBJS io_curl.o"
+			AC_DEFINE([HAVE_CURL], 1, [Define if you have libcurl])
+			COMPILE_CURL="yes"
+		else
+			AC_MSG_RESULT([$curl_ver, but minimum is 7.12.0])
+		fi
 	fi
 fi
 
