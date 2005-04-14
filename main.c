@@ -299,6 +299,9 @@ static void show_version ()
 #ifdef HAVE_ALSA
 	printf (" ALSA");
 #endif
+#ifdef HAVE_JACK
+	printf (" JACK");
+#endif
 #ifndef NDEBUG
 	printf (" DEBUG");
 #endif
@@ -319,7 +322,7 @@ static void show_usage (const char *prg_name) {
 #endif
 "-S --server            Run only the server.\n"
 "-F --foreground        Run server in foreground, log to stdout.\n"
-"-R --sound-driver NAME Use the specified sound driver (oss, alsa, null).\n"
+"-R --sound-driver NAME Use the specified sound driver (oss, alsa, jack, null).\n"
 "-m --music-dir         Start in MusicDir.\n"
 "-a --append            Append the files passed in command line to playlist\n"
 "                       and exit.\n"
@@ -347,6 +350,10 @@ int proper_sound_driver (const char *driver)
 #endif
 #ifdef HAVE_ALSA
 	if(!strcasecmp(driver, "alsa"))
+		return 1;
+#endif
+#ifdef HAVE_JACK
+	if (!strcasecmp(driver, "jack"))
 		return 1;
 #endif
 #ifndef NDEBUG

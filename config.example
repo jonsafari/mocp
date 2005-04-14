@@ -49,8 +49,12 @@ InputBuffer		= 512
 # delay between what you can hear and what is broadcasted.
 Prebuffering		= 64
 
-# Sound driver - OSS, ALSA, or null (only for debugging)
+# Sound driver - OSS, ALSA, JACK, or null (only for debugging)
 SoundDriver		= OSS
+
+# Jack output settings
+JackOutLeft		= "alsa_pcm:playback_1"
+JackOutRight		= "alsa_pcm:playback_2"
 
 # OSS output device
 OSSDevice		= /dev/dsp
