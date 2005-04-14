@@ -51,7 +51,9 @@ EXTRA_mocp_SOURCES = gnugetopt.h \
 		     oss.c \
 		     oss.h \
 		     alsa.c \
-		     alsa.h
+		     alsa.h \
+		     jack.c \
+		     jack.h
 man_MANS = mocp.8
 mocp_LDADD = @EXTRA_OBJS@
 mocp_DEPENDENCIES = @EXTRA_OBJS@

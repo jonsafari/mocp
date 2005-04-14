@@ -40,6 +40,9 @@
 #ifndef NDEBUG
 # include "null_out.h"
 #endif
+#ifdef HAVE_JACK
+# include "jack.h"
+#endif
 
 #include "out_buf.h"
 #include "protocol.h"
@@ -447,6 +450,13 @@ static void find_hw_funcs (const char *driver, struct hw_funcs *funcs)
 	}
 #endif
 
+#ifdef HAVE_JACK
+	if (!strcasecmp(driver, "jack")) {
+		moc_jack_funcs (funcs);
+		return;
+	}
+#endif
+	
 #ifndef NDEBUG
 	if (!strcasecmp(driver, "null")) {
 		null_funcs (funcs);
