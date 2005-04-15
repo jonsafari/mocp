@@ -2702,6 +2702,49 @@ static void delete_item ()
 	send_int_to_srv (CMD_UNLOCK);
 }
 
+/* Make a directory from the string resolving ~, './' and '..'.
+ * Return the directory, the memory is malloc()ed.
+ * Return NULL on error. */
+static char *make_dir (const char *str)
+{
+	char *dir;
+	int add_slash = 0;
+
+	dir = (char *)xmalloc (sizeof(char) * (PATH_MAX + 1));
+
+	dir[PATH_MAX] = 0;
+
+	/* If the string ends with a slash and is not just '/', add this
+	 * slash. */
+	if (strlen(str) > 1 && str[strlen(str)-1] == '/')
+		add_slash = 1;
+	
+	if (str[0] == '~') {
+		strncpy (dir, getenv("HOME"), PATH_MAX);
+		
+		if (dir[PATH_MAX]) {
+			logit ("Path too long!");
+			return NULL;
+		}
+
+		if (!strcmp(str, "~"))
+			add_slash = 1;
+		
+		str++;
+	}
+	else if (str[0] != '/')
+		strcpy (dir, cwd);
+	else
+		strcpy (dir, "/");
+
+	resolve_path (dir, PATH_MAX, str);
+
+	if (add_slash && strlen(dir) < PATH_MAX)
+		strcat (dir, "/");
+
+	return dir;
+}
+
 static int entry_search_key (const int ch)
 {
 	enum key_cmd cmd;
@@ -2765,14 +2808,11 @@ static int entry_search_key (const int ch)
 static int entry_plist_save_key (const int ch)
 {
 	if (ch == '\n') {
-		if (strchr(entry.text, '/'))
-			error ("Only file name is accepted, not a "
-					"path");
-		else if (!entry.text[0])
+		if (!entry.text[0])
 			entry_disable ();
 		else {
 			char *ext = ext_pos (entry.text);
-			char path[PATH_MAX];
+			char *file;
 
 			entry_disable ();
 			update_info_win ();
@@ -2780,26 +2820,23 @@ static int entry_plist_save_key (const int ch)
 				strncat (entry.text, ".m3u", sizeof(entry.text)
 						- strlen(entry.text) - 1);
 
-			path[sizeof(path)-1] = 0;
-			if (snprintf(path, sizeof(path), "%s/%s", cwd,
-						entry.text)
-					>= (int)sizeof(path)) {
-				error ("Path too long!");
-				return 1;
-			}
+			file = make_dir (entry.text);
 
-			if (file_exists(path)) {
+			if (file_exists(file)) {
 				make_entry (ENTRY_PLIST_OVERWRITE,
 						"File exists, owerwrite?");
-				entry.file = xstrdup (path);
+				entry.file = file;
 			}
 			else {
 				set_iface_status_ref ("Saving the playlist...");
-				if (plist_save(playlist, path, cwd))
+				if (plist_save(playlist, file,
+							strchr(entry.text, '/')
+							? NULL : cwd))
 					interface_message ("Playlist saved.");
 				set_iface_status_ref (NULL);
 				reread_dir (curr_plist == visible_plist);
 				update_menu ();
+				free (file);
 			}
 		}
 		update_info_win ();
@@ -2816,7 +2853,7 @@ static int entry_plist_overwrite_key (const int key)
 		entry_disable ();
 		update_info_win ();
 		set_iface_status_ref ("Saving the playlist...");
-		if (plist_save(playlist, file, cwd))
+		if (plist_save(playlist, file, NULL)) /* FIXME: not always NULL! */
 			interface_message ("Playlist saved.");
 		set_iface_status_ref (NULL);
 		free (file);
@@ -2889,49 +2926,6 @@ static int entry_common_key (const int ch)
 	}
 	
 	return 0;
-}
-
-/* Make a directory from the string resolving ~, './' and '..'.
- * Return the directory, the memory is malloc()ed.
- * Return NULL on error. */
-static char *make_dir (const char *str)
-{
-	char *dir;
-	int add_slash = 0;
-
-	dir = (char *)xmalloc (sizeof(char) * (PATH_MAX + 1));
-
-	dir[PATH_MAX] = 0;
-
-	/* If the string ends with a slash and is not just '/', add this
-	 * slash. */
-	if (strlen(str) > 1 && str[strlen(str)-1] == '/')
-		add_slash = 1;
-	
-	if (str[0] == '~') {
-		strncpy (dir, getenv("HOME"), PATH_MAX);
-		
-		if (dir[PATH_MAX]) {
-			logit ("Path too long!");
-			return NULL;
-		}
-
-		if (!strcmp(str, "~"))
-			add_slash = 1;
-		
-		str++;
-	}
-	else if (str[0] != '/')
-		strcpy (dir, cwd);
-	else
-		strcpy (dir, "/");
-
-	resolve_path (dir, PATH_MAX, str);
-
-	if (add_slash && strlen(dir) < PATH_MAX)
-		strcat (dir, "/");
-
-	return dir;
 }
 
 static int entry_go_dir_key (const int ch)
