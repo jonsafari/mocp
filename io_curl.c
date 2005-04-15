@@ -116,13 +116,12 @@ static void check_curl_stream (struct io_stream *s)
 
 void io_curl_open (struct io_stream *s, const char *url)
 {
-	int running;
-	
 	s->source = IO_SOURCE_CURL;
 	s->url = NULL;
 	s->http_headers = NULL;
 	s->curl_buf = NULL;
 	s->curl_buf_fill = 0;
+	s->need_perform_loop = 1;
 
 	if (!(s->curl_multi_handle = curl_multi_init())) {
 		logit ("curl_multi_init() returned NULL");
@@ -166,14 +165,6 @@ void io_curl_open (struct io_stream *s, const char *url)
 		return;
 	}
 
-	debug ("Starting curl...");
-	do {
-		s->curl_multi_status = curl_multi_perform (s->curl_multi_handle,
-			&running);
-	} while (s->curl_multi_status == CURLM_CALL_MULTI_PERFORM);
-
-	check_curl_stream (s);
-
 	s->opened = 1;
 }
 
@@ -199,12 +190,27 @@ void io_curl_close (struct io_stream *s)
 
 ssize_t io_curl_read (struct io_stream *s, char *buf, size_t count)
 {
-	int running = 1;
+	int running;
 
 	assert (s != NULL);
 	assert (s->source == IO_SOURCE_CURL);
 	assert (s->curl_multi_handle != NULL);
 
+	if (s->need_perform_loop) {
+		debug ("Starting curl...");
+
+		do {
+			s->curl_multi_status = curl_multi_perform (
+					s->curl_multi_handle, &running);
+		} while (s->curl_multi_status == CURLM_CALL_MULTI_PERFORM);
+		
+		check_curl_stream (s);
+
+		s->need_perform_loop = 0;
+	}
+
+	running = 1;
+	
 	while (s->opened && !s->curl_buf_fill && running && s->curl_handle
 			&& (s->curl_multi_status == CURLM_CALL_MULTI_PERFORM
 				|| s->curl_multi_status == CURLM_OK)) {
@@ -247,7 +253,6 @@ ssize_t io_curl_read (struct io_stream *s, char *buf, size_t count)
 	}
 
 	debug ("running: %d", running);
-
 
 	if (s->opened && (s->curl_multi_status == CURLM_OK
 				|| s->curl_multi_status

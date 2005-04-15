@@ -57,6 +57,7 @@ struct io_stream
 						   the request */
 	char *curl_buf;			/* buffer for data the curl gives us */
 	long curl_buf_fill;
+	int need_perform_loop;		/* do we need the perform() loop? */
 	
 #endif
 
