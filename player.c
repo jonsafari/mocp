@@ -376,16 +376,12 @@ static void decode_loop (const struct decoder *f, void *decoder_data,
 	out_buf_wait (out_buf);
 }
 
-/* Open a file, decode it and put output into the buffer. At the end, start
- * precaching next_file. */
-void player (const char *file, const char *next_file, struct out_buf *out_buf)
+/* Play a file (disk file) using the given decoder. next_file is precached. */
+static void play_file (const char *file, const struct decoder *f,
+		const char *next_file, struct out_buf *out_buf)
 {
 	void *decoder_data;
 	struct sound_params sound_params = { 0, 0, 0 };
-	struct decoder *f;
-
-	f = get_decoder (file);
-	assert (f != NULL);
 	
 	out_buf_set_notify_cond (out_buf, &request_cond, &request_cond_mutex);
 	out_buf_reset (out_buf);
@@ -443,11 +439,10 @@ void player (const char *file, const char *next_file, struct out_buf *out_buf)
 	decode_loop (f, decoder_data, next_file, out_buf, sound_params);
 
 	out_buf_set_notify_cond (out_buf, NULL, NULL);
-	logit ("exiting");
 }
 
-void player_by_stream (struct io_stream *stream, const struct decoder *df,
-		struct out_buf *out_buf)
+/* Play the stream (global decoder_stream) using the given decoder. */
+static void play_stream (const struct decoder *f, struct out_buf *out_buf)
 {
 	void *decoder_data;
 	struct sound_params sound_params = { 0, 0, 0 };
@@ -456,22 +451,76 @@ void player_by_stream (struct io_stream *stream, const struct decoder *df,
 	out_buf_set_notify_cond (out_buf, &request_cond, &request_cond_mutex);
 	out_buf_reset (out_buf);
 	
-	assert (df->open_stream != NULL);
+	assert (f->open_stream != NULL);
 
-	decoder_data = df->open_stream (stream);
-	df->get_error (decoder_data, &err);
+	decoder_data = f->open_stream (decoder_stream);
+	f->get_error (decoder_data, &err);
 	if (err.type != ERROR_OK) {
-		df->close (decoder_data);
+		LOCK (decoder_stream_mut);
+		decoder_stream = NULL;
+		UNLOCK (decoder_stream_mut);
+
+		f->close (decoder_data);
 		error ("%s", err.err);
 		decoder_error_clear (&err);
 		logit ("Can't open file");
 	}
 	else {
 		audio_state_started_playing ();
-		decode_loop (df, decoder_data, NULL, out_buf, sound_params);
+		decode_loop (f, decoder_data, NULL, out_buf, sound_params);
 		out_buf_set_notify_cond (out_buf, NULL, NULL);
 	}
-	
+}
+
+/* Open a file, decode it and put output into the buffer. At the end, start
+ * precaching next_file. */
+void player (const char *file, const char *next_file, struct out_buf *out_buf)
+{
+	struct decoder *f;
+
+	if (file_type(file) == F_URL) {
+		status_msg ("Connecting...");
+		
+		LOCK (decoder_stream_mut);
+		decoder_stream = io_open (file, 1);
+		if (!io_ok(decoder_stream)) {
+			error ("Could not open URL: %s",
+					io_strerror(decoder_stream));
+			io_close (decoder_stream);
+			decoder_stream = NULL;
+			UNLOCK (decoder_stream_mut);
+			return;
+		}
+		UNLOCK (decoder_stream_mut);
+
+		status_msg ("Prebuffering...");
+		f = get_decoder_by_content (decoder_stream);
+		if (!f) {
+			error ("Format not supported");
+			LOCK (decoder_stream_mut);
+			io_close (decoder_stream);
+			status_msg ("");
+			decoder_stream = NULL;
+			UNLOCK (decoder_stream_mut);
+			return;
+		}
+
+		play_stream (f, out_buf);
+	}
+	else {
+		f = get_decoder (file);
+		LOCK (decoder_stream_mut);
+		decoder_stream = NULL;
+		UNLOCK (decoder_stream_mut);
+
+		if (!f) {
+			error ("Can't get decoder for %s", file);
+			return;
+		}
+
+		play_file (file, f, next_file, out_buf);
+	}
+
 	logit ("exiting");
 }
 
@@ -501,8 +550,10 @@ void player_stop ()
 	request = REQ_STOP;
 	
 	LOCK (decoder_stream_mut);
-	if (decoder_stream)
+	if (decoder_stream) {
+		logit ("decoder_stream present, aborting...");
 		io_abort (decoder_stream);
+	}
 	UNLOCK (decoder_stream_mut);
 
 	LOCK (request_cond_mutex);
