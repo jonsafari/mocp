@@ -142,9 +142,8 @@ static int seek_callback (void *datasource, ogg_int64_t offset, int whence)
 	return io_seek (datasource, offset, whence);
 }
 
-static int close_callback (void *datasource)
+static int close_callback (void *datasource ATTR_UNUSED)
 {
-	io_close (datasource);
 	return 0;
 }
 
@@ -235,8 +234,11 @@ static void ogg_close (void *prv_data)
 {
 	struct ogg_data *data = (struct ogg_data *)prv_data;
 
-	if (data->ok)
+	if (data->ok) {
 		ov_clear (&data->vf);
+		io_close (data->stream);
+	}
+
 	decoder_error_clear (&data->error);
 	if (data->tags)
 		tags_free (data->tags);
