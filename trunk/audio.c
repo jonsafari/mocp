@@ -69,6 +69,7 @@ static int state = STATE_STOP;
 static int stop_playing = 0;
 static int play_next = 0;
 static int play_prev = 0;
+static pthread_mutex_t request_mut = PTHREAD_MUTEX_INITIALIZER;
 
 /* Playlists. */
 static struct plist playlist;
@@ -161,7 +162,6 @@ static void *play_thread (void *unused ATTR_UNUSED)
 
 	while (curr_playing != -1) {
 		char *file;
-		struct decoder *df = NULL;
 
 		LOCK (plist_mut);
 		file = plist_get_file (curr_plist, curr_playing);
@@ -171,63 +171,30 @@ static void *play_thread (void *unused ATTR_UNUSED)
 		play_prev = 0;
 
 		if (file) {
-			struct io_stream *stream = NULL;
-			
-			if (file_type(file) == F_URL) {
-				status_msg ("Connecting...");
-				stream = io_open (file, 1);
-				if (io_ok(stream)) {
-					status_msg ("Prebuffering...");
-					df = get_decoder_by_content (stream);
-					if (!df) {
-						error ("Format not supported");
-						io_close (stream);
-						status_msg ("");
-					}
-				}
-				else {
-					error ("Could not open URL: %s",
-							io_strerror(stream));
-					io_close (stream);
-				}
-			}
-			else
-				df = get_decoder (file);
-			
-			if (df) {
-				int next;
-				char *next_file;
+			int next;
+			char *next_file;
 				
-				LOCK (curr_playing_mut);
-				LOCK (plist_mut);
-				logit ("Playing item %d: %s", curr_playing,
-						file);
+			LOCK (curr_playing_mut);
+			LOCK (plist_mut);
+			logit ("Playing item %d: %s", curr_playing, file);
 				
-				out_buf_time_set (&out_buf, 0.0);
+			out_buf_time_set (&out_buf, 0.0);
 				
-				next = plist_next (curr_plist, curr_playing);
-				next_file = next != -1 ?
-					plist_get_file(curr_plist, next)
-					: NULL;
-				UNLOCK (plist_mut);
-				UNLOCK (curr_playing_mut);
+			next = plist_next (curr_plist, curr_playing);
+			next_file = next != -1
+				? plist_get_file(curr_plist, next) : NULL;
+			UNLOCK (plist_mut);
+			UNLOCK (curr_playing_mut);
 				
-				if (!stream)
-					player (file, next_file, &out_buf);
-				else
-					player_by_stream (stream, df, &out_buf);
-				if (next_file)
-					free (next_file);
+			player (file, next_file, &out_buf);
+			if (next_file)
+				free (next_file);
 
-				state = STATE_STOP;
-				set_info_rate (0);
-				set_info_bitrate (0);
-				set_info_channels (1);
-				out_buf_time_set (&out_buf, 0.0);
-			}
-			else
-				logit ("Unknown file type of item %d: %s",
-						curr_playing, file);
+			state = STATE_STOP;
+			set_info_rate (0);
+			set_info_bitrate (0);
+			set_info_channels (1);
+			out_buf_time_set (&out_buf, 0.0);
 			free (file);
 		}
 
@@ -259,7 +226,9 @@ void audio_stop ()
 {
 	if (play_thread_running) {
 		logit ("audio_stop()");
+		LOCK (request_mut);
 		stop_playing = 1;
+		UNLOCK (request_mut);
 		player_stop ();
 		logit ("pthread_join(playing_thread, NULL)");
 		if (pthread_join(playing_thread, NULL))
@@ -492,6 +461,8 @@ void audio_exit ()
 		logit ("Can't destroy curr_playing_mut: %s", strerror(errno));
 	if (pthread_mutex_destroy(&plist_mut))
 		logit ("Can't destroy plist_mut: %s", strerror(errno));
+	if (pthread_mutex_destroy(&request_mut))
+		logit ("Can't destroy request_mut: %s", strerror(errno));
 }
 
 void audio_seek (const int sec)
