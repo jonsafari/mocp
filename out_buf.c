@@ -70,9 +70,15 @@ static void *read_thread (void *arg)
 		debug ("sending the signal");
 		pthread_cond_broadcast (&buf->ready_cond);
 		if (buf->opt_cond) {
+
+			/* to avoid a deadlock, we must unlock this mutex,
+			 * because the client can hold buf->opt_cond_mutex
+			 * and do other operations on the buffer. */
+			UNLOCK (buf->mutex);
 			pthread_mutex_lock (buf->opt_cond_mutex);
 			pthread_cond_broadcast (buf->opt_cond);
 			pthread_mutex_unlock (buf->opt_cond_mutex);
+			LOCK (buf->mutex);
 		}
 		
 		if ((fifo_buf_get_fill(&buf->buf) == 0 || buf->pause
