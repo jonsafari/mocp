@@ -1,3 +1,15 @@
+2.2.1
+	* Fixed missing titles of files without tags when added to the playlist.
+	* Fixed refreshing the screen after searching.
+	* Fixed recognizing AIFF file extension.
+	* Fixed compiler warnings on 64bit systems.
+	* Fixed detecting ncurses, now also works with curses.
+	* Fixed compilation errors on ioctl() use on some systems.
+	* Support for libossaudio (NetBSD).
+	* Fixed an compiler warning about EV_ERROR on NetBSD.
+	* Better checking for vorbis.
+	* Fixed --without-sndfile configure option.
+	* Fixed a rare deadlock.
 2.2.0
 	* Added support for FLAC audio format.
 	* Added suport for various file formats like au, aiff, voc, and more
