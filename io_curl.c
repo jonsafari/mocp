@@ -110,6 +110,7 @@ static void check_curl_stream (struct io_stream *s)
 					s->curl_handle);
 			curl_easy_cleanup (s->curl_handle);
 			s->curl_handle = NULL;
+			debug ("EOF");
 			break;
 		}
 }
@@ -250,17 +251,13 @@ ssize_t io_curl_read (struct io_stream *s, char *buf, size_t count)
 
 		s->curl_multi_status = curl_multi_perform (s->curl_multi_handle,
 			&running);
+		check_curl_stream (s);
 	}
 
 	debug ("running: %d", running);
 
-	if (s->opened && (s->curl_multi_status == CURLM_OK
-				|| s->curl_multi_status
-				== CURLM_CALL_MULTI_PERFORM)
-			&& s->curl_status == CURLE_OK) {
+	if (s->curl_buf_fill) {
 		long to_copy = MIN ((long)count, s->curl_buf_fill);
-
-		check_curl_stream (s);
 
 		debug ("Copying %ld bytes", to_copy);
 
@@ -272,7 +269,7 @@ ssize_t io_curl_read (struct io_stream *s, char *buf, size_t count)
 		return to_copy;
 	}
 
-	return -1;
+	return 0;
 }
 
 /* Set the error string for the stream. */
@@ -296,11 +293,10 @@ int io_curl_ok (const struct io_stream *s)
 	assert (s != NULL);
 	assert (s->source == IO_SOURCE_CURL);
 
-	return s->curl_multi_handle
-		&& s->curl_handle
+	return s->curl_buf_fill || (s->curl_multi_handle
 		&& (s->curl_multi_status == CURLM_OK
 				|| s->curl_multi_status
 				== CURLM_CALL_MULTI_PERFORM)
 		&& s->curl_status == CURLE_OK
-		&& !s->errno_val;
+		&& !s->errno_val);
 }
