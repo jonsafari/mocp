@@ -88,9 +88,7 @@ void set_menu_state (struct menu *menu, int selected, int top);
 void menu_update_size (struct menu *menu, WINDOW *win);
 void menu_unmark_item (struct menu *menu);
 void menu_set_top_item (struct menu *menu, const int num);
-int menu_find_pattern_next (struct menu *menu, const char *pattern,
-		const int current);
-int menu_next_turn (const struct menu *menu);
+struct menu *menu_filter_pattern (struct menu *menu, const char *pattern);
 void menu_set_show_time (struct menu *menu, const int t);
 void menu_set_show_format (struct menu *menu, const int t);
 void menu_set_info_attr (struct menu *menu, const int attr);

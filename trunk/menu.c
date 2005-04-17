@@ -62,11 +62,55 @@ static char *strcasestr (const char *haystack, const char *needle)
 }
 #endif
 
+/* Draw menu item on a given position from the top of the menu. */
+static void draw_item (const struct menu *menu, const int num, const int pos,
+		const int item_info_pos, const int title_space)
+{
+	int title_len;
+	const struct menu_item *item = &menu->items[num];
+	int j;
+
+	wmove (menu->win, pos, 1);
+	
+	/* Set attributes */
+	if (num == menu->selected && num == menu->marked)
+		wattrset (menu->win, item->attr_sel_marked);
+	else if (num == menu->selected)
+		wattrset (menu->win, item->attr_sel);
+	else if (num == menu->marked)
+		wattrset (menu->win, item->attr_marked);
+	else
+		wattrset (menu->win, item->attr_normal);
+	
+	waddnstr (menu->win, item->title, title_space);
+	title_len = strlen (item->title);
+	
+	/* Make blank line to the right side of the screen */
+	if (num == menu->selected) {
+		for (j = title_len + 1; j <= title_space; j++)
+			waddch (menu->win, ' ');
+	}
+
+	/* Description */
+	wattrset (menu->win, menu->info_attr);
+	wmove (menu->win, pos, item_info_pos);
+
+	if (menu->show_time && menu->show_format
+			&& (*item->time || *item->format))
+		wprintw (menu->win, "[%5s|%3s]",
+				item->time ? item->time : "     ",
+				item->format);
+	else if (menu->show_time && item->time[0])
+		wprintw (menu->win, "[%5s]", item->time);
+	else if (menu->show_format && item->format[0])
+		wprintw (menu->win, "[%3s]", item->format);
+}
+
 void menu_draw (struct menu *menu)
 {
-	int i, j;
+	int i;
 	int title_width;
-	int info_pos = 0;
+	int info_pos;
 
 	assert (menu != NULL);
 
@@ -80,51 +124,14 @@ void menu_draw (struct menu *menu)
 			title_width--; /* for | */
 		info_pos = title_width + 1; /* +1 for the frame */
 	}
-	else
+	else {
 		title_width = menu->maxx;
+		info_pos = 0;
+	}
 
 	for (i = menu->top; i < menu->nitems && i - menu->top < menu->maxy;
-			i++) {
-		int title_len;
-		
-		wmove (menu->win, i - menu->top + 1, 1);
-		
-		/* Set attributes */
-		if (i == menu->selected && i == menu->marked)
-			wattrset (menu->win, menu->items[i].attr_sel_marked);
-		else if (i == menu->selected)
-			wattrset (menu->win, menu->items[i].attr_sel);
-		else if (i == menu->marked)
-			wattrset (menu->win, menu->items[i].attr_marked);
-		else
-			wattrset (menu->win, menu->items[i].attr_normal);
-		
-		waddnstr (menu->win, menu->items[i].title, title_width);
-		title_len = strlen (menu->items[i].title);
-		
-		
-		/* Make blank line to the right side of the screen */
-		if (i == menu->selected) {
-			for (j = title_len + 1; j <= title_width; j++)
-				waddch (menu->win, ' ');
-		}
-
-		/* Description */
-		wattrset (menu->win, menu->info_attr);
-		wmove (menu->win, i - menu->top + 1, info_pos);
-
-		if (menu->show_time && menu->show_format
-				&& (*menu->items[i].time
-					|| *menu->items[i].format))
-			wprintw (menu->win, "[%5s|%3s]",
-					menu->items[i].time
-					? menu->items[i].time : "     ",
-					menu->items[i].format);
-		else if (menu->show_time && menu->items[i].time[0])
-			wprintw (menu->win, "[%5s]", menu->items[i].time);
-		else if (menu->show_format && menu->items[i].format[0])
-			wprintw (menu->win, "[%3s]", menu->items[i].format);
-	}
+			i++)
+		draw_item (menu, i, i - menu->top + 1, info_pos, title_width);
 }
 
 /* menu_items must be malloc()ed memory! */
@@ -175,6 +182,32 @@ int menu_add (struct menu *menu, char *title, const int plist_pos,
 	menu->items[menu->nitems].attr_sel_marked = A_NORMAL;
 	menu->items[menu->nitems].time[0] = 0;
 	menu->items[menu->nitems].format[0] = 0;
+
+	return menu->nitems++;
+}
+
+static int menu_add_from_item (struct menu *menu, const struct menu_item *item)
+{
+	assert (menu != NULL);
+	assert (item != NULL);
+
+	if (menu->allocated == menu->nitems) {
+		menu->allocated *= 2;
+		menu->items = (struct menu_item *)xrealloc (menu->items,
+				sizeof(struct menu_item) * menu->allocated);
+	}
+
+	menu->items[menu->nitems].title = xstrdup (item->title);
+	menu->items[menu->nitems].plist_pos = item->plist_pos;
+	menu->items[menu->nitems].type = item->type;
+	menu->items[menu->nitems].file = xstrdup (item->file);
+
+	menu->items[menu->nitems].attr_normal = item->attr_normal;
+	menu->items[menu->nitems].attr_sel = item->attr_sel;
+	menu->items[menu->nitems].attr_marked = item->attr_marked;
+	menu->items[menu->nitems].attr_sel_marked = item->attr_sel_marked;
+	strcpy (menu->items[menu->nitems].time, item->time);
+	strcpy (menu->items[menu->nitems].format, item->format);
 
 	return menu->nitems++;
 }
@@ -371,39 +404,29 @@ void menu_set_top_item (struct menu *menu, const int num)
 		menu->top = num;
 }
 
-/* Find an item that title's contain the string, begin searching from current.
- * Return the item index or -1 if not found. */
-int menu_find_pattern_next (struct menu *menu, const char *pattern,
-		const int current)
+/* Make a new menu from elements matching pattern. */
+struct menu *menu_filter_pattern (struct menu *menu, const char *pattern)
 {
 	int i;
+	struct menu *new;
+
+	new = menu_new (menu->win);
+	new->show_time = menu->show_time;
+	new->show_format = menu->show_format;
+	new->info_attr = menu->info_attr;
 	
 	assert (menu != NULL);
 	assert (pattern != NULL);
-	assert (current >= 0 && current < menu->nitems);
 
-	for (i = current; i < menu->nitems; i++)
-		if (strcasestr(menu->items[i].title, pattern))
-			return i;
+	for (i = 0; i < menu->nitems; i++)
+		if (strcasestr(menu->items[i].title, pattern)) {
+			int added = menu_add_from_item (new, &menu->items[i]);
+			
+			if (menu->marked == i)
+				new->marked = added;
+		}
 
-	/* Not found? */
-	for (i = 0; i < current; i++)
-		if (strcasestr(menu->items[i].title, pattern))
-			return i;
-
-	return -1;
-}
-
-/* Get index of the next item after selected. If last item is selected, return
- * 0. */
-int menu_next_turn (const struct menu *menu)
-{
-	assert (menu != NULL);
-
-	if (menu->selected < menu->nitems - 1)
-		return menu->selected + 1;
-	else
-		return 0;
+	return new;
 }
 
 void menu_item_set_attr_normal (struct menu *menu, const int num,
