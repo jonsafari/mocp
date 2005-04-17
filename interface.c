@@ -2787,63 +2787,85 @@ static char *make_dir (const char *str)
 	return dir;
 }
 
+/* A special value of ch -1 disables the entry. */
 static int entry_search_key (const int ch)
 {
+	/* saved menus that we replace with a menu with filtered elements. */
+	static struct menu *old_curr_menu = NULL;
+	static struct menu *old_playlist_menu = NULL;
+	static struct menu *old_curr_plist_menu = NULL;
+
 	enum key_cmd cmd;
 	
-	if (isgraph(ch) || ch == ' ') {
-		int item;
-		char *search;
+	/* in this entry, we also operate on the menu */
+	if ((cmd = get_key_cmd(CON_ENTRY, ch)) == KEY_CMD_WRONG)
+		cmd = get_key_cmd(CON_MENU, ch);
 
-		search = (char *)xmalloc (sizeof(char) * 
-				(strlen(entry.text) + 2));
-		sprintf (search, "%s%c", entry.text, ch);
-
-		item = menu_find_pattern_next (curr_menu, search,
-				menu_curritem(curr_menu));
-
-		if (item != -1) {
-			menu_setcurritem (curr_menu, item);
-			update_menu ();
+	/* isgraph() can return wrong values if ch is not in unsigned char
+	 * scope */
+	if ((ch >= 0 && ch <= 255 && isgraph(ch)) || ch == ' '
+			|| ch == KEY_BACKSPACE) {
+		if (ch == KEY_BACKSPACE)
+			entry_back_space ();
+		else
 			entry_add_char (ch);
-			entry_draw ();
+
+		if (!old_curr_menu) {
+			
+			/* save the old menus */
+			old_curr_menu = curr_menu;
+			old_playlist_menu = playlist_menu;
+			old_curr_plist_menu = curr_plist_menu;
 		}
-
-		free (search);
+		else
+			menu_free (curr_menu); /* free previous filtered menu */
 		
-		return 1;
-	}
-	
-	if (ch == '\n') {
+		curr_menu = menu_filter_pattern (old_curr_menu, entry.text);
+		if (old_curr_menu == old_playlist_menu)
+			playlist_menu = curr_menu;
+		else
+			curr_plist_menu = curr_menu;
 
-	
+		entry_draw ();
+	}
+	else if (cmd == KEY_CMD_MENU_UP)
+		menu_driver (curr_menu, REQ_UP);
+	else if (cmd == KEY_CMD_MENU_DOWN)
+		menu_driver (curr_menu, REQ_DOWN);
+	else if (cmd == KEY_CMD_MENU_NPAGE)
+		menu_driver (curr_menu, REQ_PGDOWN);
+	else if (cmd == KEY_CMD_MENU_PPAGE)
+		menu_driver (curr_menu, REQ_PGUP);
+	else if (cmd == KEY_CMD_MENU_FIRST)
+		menu_driver (curr_menu, REQ_TOP);
+	else if (cmd == KEY_CMD_MENU_LAST)
+		menu_driver (curr_menu, REQ_BOTTOM);
+	else if (ch == '\n' || cmd == KEY_CMD_CANCEL || ch == -1) {
 		entry_disable ();
 		update_info_win ();
 		wrefresh (info_win);
-
-		if (entry.text[0])
+		
+		if (ch == '\n' && entry.text[0])
 			go_file ();
 
-		update_menu ();
-
-		return 1;
+		if (old_curr_menu) {
+			
+			/* restore the original menu */
+			menu_free (curr_menu);
+			playlist_menu = old_playlist_menu;
+			curr_plist_menu = old_curr_plist_menu;
+			curr_menu = old_curr_menu;
+			old_curr_menu = NULL;
+		}
+		
+		update_curr_file ();
 	}
 
-	cmd = get_key_cmd (CON_ENTRY_SEARCH, ch);
+	update_menu ();
 	
-	if (cmd == KEY_CMD_NEXT_SEARCH) {
-		int item;
-
-		/* Find next matching */
-		item = menu_find_pattern_next (curr_menu, entry.text,
-				menu_next_turn(curr_menu));
-
-		menu_setcurritem (curr_menu, item);
-		update_menu ();
-		return 1;
-	}
-
-	return 0;
+	/* Ignore every other key, because if something else cause exiting from
+	 * the entry, we will lose the original menu. */
+	return 1;
 }
 
 /* Handle keys specific to ENTRY_PLIST_SAVE. Return 1 if a key was handled. */
@@ -3468,7 +3490,13 @@ static void dequeue_events ()
 /* Handle interrupt (CTRL-C) */
 static void handle_interrupt ()
 {
-	if (entry.type != ENTRY_DISABLED) {
+	if (entry.type == ENTRY_SEARCH) {
+		
+		/* ENTRY_SEARCH requires more than just ENTRY_DISABLE,
+		 * so simulate exit key */
+		entry_search_key (-1);
+	}
+	else if (entry.type != ENTRY_DISABLED) {
 		entry_disable ();
 		update_info_win ();
 		wrefresh (info_win);
