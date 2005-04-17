@@ -103,6 +103,19 @@ static struct menu *curr_plist_menu = NULL;
 static struct menu *playlist_menu = NULL;
 static struct menu *curr_menu = NULL;
 
+/* Chars used to make lines (for borders etc.). */
+static struct
+{
+	chtype vert;	/* vertical */
+	chtype horiz;	/* horizontal */
+	chtype ulcorn;	/* upper left corner */
+	chtype urcorn;	/* upper right corner */
+	chtype llcorn;	/* lower left corner */
+	chtype lrcorn;	/* lower right corner */
+	chtype rtee;	/* right tee */
+	chtype ltee;	/* left tee */
+} lines;
+
 static enum
 {
 	WIN_MENU,
@@ -246,20 +259,20 @@ static void main_border ()
 {
 	/* Border */
 	wattrset (main_win, get_color(CLR_FRAME));
-	wborder (main_win, ACS_VLINE, ACS_VLINE, ACS_HLINE, ' ',
-			ACS_ULCORNER, ACS_URCORNER, ACS_VLINE, ACS_VLINE);
+	wborder (main_win, lines.vert, lines.vert, lines.horiz, ' ',
+			lines.ulcorn, lines.urcorn, lines.vert, lines.vert);
 
 	/* The title */
 	wmove (main_win, 0, COLS / 2 - strlen(mainwin_title) / 2 - 1);
 	
 	wattrset (main_win, get_color(CLR_FRAME));
-	waddch (main_win, ACS_RTEE);
+	waddch (main_win, lines.rtee);
 	
 	wattrset (main_win, get_color(CLR_WIN_TITLE));
 	waddstr (main_win, mainwin_title);
 	
 	wattrset (main_win, get_color(CLR_FRAME));
-	waddch (main_win, ACS_LTEE);
+	waddch (main_win, lines.ltee);
 }
 
 static void set_title (const char *title)
@@ -281,8 +294,8 @@ static void set_title (const char *title)
 static void info_border ()
 {
 	wattrset (info_win, get_color(CLR_FRAME));
-	wborder (info_win, ACS_VLINE, ACS_VLINE, ACS_HLINE, ACS_HLINE,
-			ACS_LTEE, ACS_RTEE, ACS_LLCORNER, ACS_LRCORNER);
+	wborder (info_win, lines.vert, lines.vert, lines.horiz, lines.horiz,
+			lines.ltee, lines.rtee, lines.llcorn, lines.lrcorn);
 	
 	wmove (info_win, 2, 25);
 	wattrset (info_win, get_color(CLR_LEGEND));
@@ -418,8 +431,8 @@ static void draw_mixer ()
 		sprintf (bar, " Vol  %02d%%           ", vol);
 
 	wattrset (info_win, get_color(CLR_FRAME));
-	mvwaddch (info_win, 0, COLS - 38, ACS_RTEE);
-	mvwaddch (info_win, 0, COLS - 17, ACS_LTEE);
+	mvwaddch (info_win, 0, COLS - 38, lines.rtee);
+	mvwaddch (info_win, 0, COLS - 17, lines.ltee);
 
 	wattrset (info_win, get_color(CLR_MIXER_BAR_FILL));
 	mvwaddnstr (info_win, 0, COLS - 37, bar, vol / 5);
@@ -478,8 +491,8 @@ static void draw_plist_time ()
 	char buf[10];
 	
 	wattrset (info_win, get_color(CLR_FRAME));
-	mvwaddch (info_win, 0, COLS - 13, ACS_RTEE);
-	mvwaddch (info_win, 0, COLS - 2, ACS_LTEE);
+	mvwaddch (info_win, 0, COLS - 13, lines.rtee);
+	mvwaddch (info_win, 0, COLS - 2, lines.ltee);
 
 	time = plist_total_time (visible_plist, &all_files);
 	
@@ -677,8 +690,8 @@ static void draw_curr_time_bar ()
 		? silent_seek_pos : file_info.curr_time_num;
 	
 	wattrset (info_win, get_color(CLR_FRAME));
-	mvwaddch (info_win, 3, COLS - 2, ACS_LTEE);
-	mvwaddch (info_win, 3, 1, ACS_RTEE);
+	mvwaddch (info_win, 3, COLS - 2, lines.ltee);
+	mvwaddch (info_win, 3, 1, lines.rtee);
 
 	if (curr_time)
 
@@ -811,8 +824,8 @@ static void update_info_win ()
 	else {
 		/* Status line */
 		wattrset (info_win, get_color(CLR_FRAME));
-		mvwaddch (info_win, 0, 5, ACS_RTEE);
-		mvwaddch (info_win, 0, 5 + STATUS_LINE_LEN + 1, ACS_LTEE);
+		mvwaddch (info_win, 0, 5, lines.rtee);
+		mvwaddch (info_win, 0, 5 + STATUS_LINE_LEN + 1, lines.ltee);
 		
 		draw_interface_status ();		
 		draw_mixer ();
@@ -1879,6 +1892,32 @@ static void change_srv_plist_serial ()
 	}
 }
 
+/* Based on ASCIILines option initialize line characters with curses lines or
+ * ASCII characters. */
+static void init_lines ()
+{
+	if (options_get_int("ASCIILines")) {
+		lines.vert = '|';
+		lines.horiz = '-';
+		lines.ulcorn = '+';
+		lines.urcorn = '+';
+		lines.llcorn = '+';
+		lines.lrcorn = '+';
+		lines.rtee = '|';
+		lines.ltee = '|';
+	}
+	else {
+		lines.vert = ACS_VLINE;
+		lines.horiz = ACS_HLINE;
+		lines.ulcorn = ACS_ULCORNER;
+		lines.urcorn = ACS_URCORNER;
+		lines.llcorn = ACS_LLCORNER;
+		lines.lrcorn = ACS_LRCORNER;
+		lines.rtee = ACS_RTEE;
+		lines.ltee = ACS_LTEE;
+	}
+}
+
 /* Initialize the interface. args are command line file names. arg_num is the
  * number of arguments. */
 void init_interface (const int sock, const int logging, char **args,
@@ -1917,6 +1956,7 @@ void init_interface (const int sock, const int logging, char **args,
 	detect_term ();
 	start_color ();
 	theme_init (has_xterm);
+	init_lines ();
 
 	/* windows */
 	main_win = newwin (LINES - 4, COLS, 0, 0);

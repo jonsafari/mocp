@@ -168,6 +168,7 @@ void options_init ()
 	option_add_int ("Prebuffering", 64);
 	option_add_str ("JackOutLeft", "alsa_pcm:playback_1");
 	option_add_str ("JackOutRight", "alsa_pcm:playback_2");
+	option_add_int ("ASCIILines", 0);
 }
 
 /* Return 1 if a parameter to an integer option is valid. */
