@@ -25,7 +25,6 @@
 #include <stdlib.h>
 #include <alsa/asoundlib.h>
 #include <assert.h>
-#include <pthread.h>
 #include <string.h>
 #include <errno.h>
 #include <unistd.h>
@@ -43,7 +42,6 @@ static int chunk_size = -1; /* in frames */
 static char alsa_buf[16 * 1024];
 static int alsa_buf_fill = 0;
 static int bytes_per_frame;
-static pthread_mutex_t buf_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 static snd_mixer_t *mixer_handle = NULL;
 static snd_mixer_elem_t *mixer_elem = NULL;
@@ -55,8 +53,6 @@ static void alsa_shutdown ()
 {
 	int err;
 	
-	if (pthread_mutex_destroy(&buf_mutex))
-		logit ("Can't destrou mutex: %s", strerror(errno));
 	if (mixer_handle && (err = snd_mixer_close(mixer_handle)) < 0)
 		logit ("Can't close mixer: %s", snd_strerror(err));
 }
@@ -274,10 +270,8 @@ static int play_buf_chunks ()
 		err = snd_pcm_writei (handle, alsa_buf + written,
 				chunk_size / bytes_per_frame);
 		if (err == -EAGAIN) {
-			UNLOCK (buf_mutex);
 			if (snd_pcm_wait(handle, 5000) < 0)
 				logit ("snd_pcm_wait() failed");
-			LOCK (buf_mutex);
 		}
 		else if (err == -EPIPE) {
 			logit ("underrun!");
@@ -285,7 +279,6 @@ static int play_buf_chunks ()
 				error ("Can't recover after underrun: %s",
 						snd_strerror(err));
 				/* TODO: reopen the device */
-				UNLOCK (buf_mutex);
 				return -1;
 			}
 		}
@@ -301,14 +294,12 @@ static int play_buf_chunks ()
 					error ("Failed to restart "
 							"device: %s.",
 							snd_strerror(err));
-					UNLOCK (buf_mutex);
 					return -1;
 				}
 			}
 		}
 		else if (err < 0) {
 			error ("Can't play: %s", snd_strerror(err));
-			UNLOCK (buf_mutex);
 			return -1;
 		}
 		else {
@@ -363,7 +354,6 @@ static int alsa_play (const char *buff, const size_t size)
 
 	debug ("Got %d bytes to play", (int)size);
 
-	LOCK (buf_mutex);
 	while (to_write) {
 		int to_copy = MIN((size_t)to_write,
 				sizeof(alsa_buf) - (size_t)alsa_buf_fill);
@@ -379,7 +369,6 @@ static int alsa_play (const char *buff, const size_t size)
 		if (play_buf_chunks() < 0)
 			return -1;
 	}
-	UNLOCK (buf_mutex);
 
 	debug ("Played everything");
 
@@ -491,22 +480,18 @@ static int alsa_reset ()
 	if (handle) {
 		int err;
 		
-		LOCK (buf_mutex);
 		if ((err = snd_pcm_drop(handle)) < 0) {
 			error ("Can't reset the device: %s",
 					snd_strerror(err));
-			UNLOCK (buf_mutex);
 			return 0;
 		}
 		if ((err = snd_pcm_prepare(handle)) < 0) {
 			error ("Can't prepare anfter reset: %s",
 					snd_strerror(err));
-			UNLOCK (buf_mutex);
 			return 0;
 		}
 
 		alsa_buf_fill = 0;
-		UNLOCK (buf_mutex);
 	}
 	else
 		logit ("alsa_reset() when the device is not opened.");
