@@ -338,6 +338,7 @@ static void show_usage (const char *prg_name) {
 "-U --unpause           Unpause.\n"
 "-y --sync              Synchronize the playlist with other clients.\n"
 "-n --nosync            Don't synchronize the playlist with other clients.\n"
+"-A --ascii             Use ASCII characters to draw lines.\n"
 , prg_name);
 }
 
@@ -424,6 +425,7 @@ int main (int argc, char *argv[])
 		{ "unpause",		0, NULL, 'U' },
 		{ "sync",		0, NULL, 'y' },
 		{ "nosync",		0, NULL, 'n' },
+		{ "ascii",		0, NULL, 'A' },
 		{ 0, 0, 0, 0 }
 	};
 	int ret, opt_index = 0;
@@ -433,7 +435,7 @@ int main (int argc, char *argv[])
 	memset (&params, 0, sizeof(params));
 	options_init ();
 
-	while ((ret = getopt_long(argc, argv, "VhDSFR:macpsxT:C:M:PUyn",
+	while ((ret = getopt_long(argc, argv, "VhDSFR:macpsxT:C:M:PUynA",
 					long_options, &opt_index)) != -1) {
 		switch (ret) {
 			case 'V':
@@ -508,6 +510,10 @@ int main (int argc, char *argv[])
 			case 'n':
 				option_set_int ("SyncPlaylist", 0);
 				option_ignore_config ("SyncPlaylist");
+				break;
+			case 'A':
+				option_set_int ("ASCIILines", 1);
+				option_ignore_config ("ASCIILines");
 				break;
 			default:
 				show_usage (argv[0]);

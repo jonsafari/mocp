@@ -123,3 +123,7 @@ SyncPlaylist		= yes
 # Choose a keymap file (relative to ~/.moc/ or absolute path)
 # Example keymap with description is included (keymap.example).
 #Keymap			= my_keymap
+
+# Use ASCII characters instead of graphic for drawing lines. This helps on
+# some terminals.
+ASCIILines		= no
