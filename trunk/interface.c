@@ -2074,7 +2074,9 @@ static void event_plist_add (struct plist_item *item)
 				toggle_plist ();
 			waiting_for_plist_load = 0;
 		}
-
+		else if (visible_plist == playlist)
+			update_curr_file (); /* toggle_plist() above already
+						does it. */
 	}
 }
 
