@@ -44,7 +44,7 @@ static int colors[CLR_LAST];
 /* Initialize a color item of given index (CLR_*) with colors and
  * attributes. Do nothing if the item is already initialized. */
 static void make_color (const enum color_index index, const short foreground,
-		const short background,	const int attr)
+		const short background,	const attr_t attr)
 {
 	static int pair = 1;
 
@@ -238,7 +238,7 @@ static void load_color_theme (const char *name)
 		char *name;
 		char *tmp;
 		char *foreground, *background, *attributes;
-		int curses_attr = 0;
+		attr_t curses_attr = 0;
 		enum color_index element;
 		short clr_fore, clr_back;
 		
