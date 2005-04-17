@@ -3425,6 +3425,33 @@ static void menu_key (const int ch)
 			case KEY_CMD_SEEK_BACKWARD_5:
 				seek_silent (-5);
 				break;
+			case KEY_CMD_VOLUME_10:
+				set_mixer (10);
+				break;
+			case KEY_CMD_VOLUME_20:
+				set_mixer (20);
+				break;
+			case KEY_CMD_VOLUME_30:
+				set_mixer (30);
+				break;
+			case KEY_CMD_VOLUME_40:
+				set_mixer (40);
+				break;
+			case KEY_CMD_VOLUME_50:
+				set_mixer (50);
+				break;
+			case KEY_CMD_VOLUME_60:
+				set_mixer (60);
+				break;
+			case KEY_CMD_VOLUME_70:
+				set_mixer (70);
+				break;
+			case KEY_CMD_VOLUME_80:
+				set_mixer (80);
+				break;
+			case KEY_CMD_VOLUME_90:
+				set_mixer (90);
+				break;
 			default:
 				debug ("Unhandled command: %d", cmd);
 				fatal ("Unhandled command");
