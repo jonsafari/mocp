@@ -275,6 +275,7 @@ static void start_moc (const struct parameters *params, char **args,
 	
 	options_free ();
 	decoder_cleanup ();
+	compat_cleanup ();
 }
 
 static void show_version ()

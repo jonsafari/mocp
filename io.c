@@ -44,6 +44,7 @@
 #ifdef HAVE_CURL
 # include "io_curl.h"
 #endif
+#include "compat.h"
 
 #ifdef HAVE_MMAP
 static ssize_t io_read_mmap (struct io_stream *s, const int dont_move,
