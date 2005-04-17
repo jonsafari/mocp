@@ -182,6 +182,8 @@ static FLAC__SeekableStreamDecoderReadStatus read_callback (
 		return FLAC__STREAM_DECODER_READ_STATUS_END_OF_STREAM;
 	}
 
+	error ("read error: %s", io_strerror(data->stream));
+
 	return FLAC__STREAM_DECODER_READ_STATUS_ABORT;
 }
 
