@@ -98,7 +98,7 @@ struct decoder *get_decoder_by_content (struct io_stream *stream)
 	}
 
 	if (res < 512) {
-		error ("Stream too short");
+		logit ("Stream too short");
 		return NULL;
 	}
 	
