@@ -131,8 +131,9 @@ void make_tags_title (struct plist *plist, const int num)
 
 	update_file (&plist->items[num]);
 
-	if (!plist->items[num].title_tags
-			&& file_type(plist->items[num].file) != F_URL) {
+	if (file_type(plist->items[num].file) == F_URL)
+		make_file_title (plist, num, 0);
+	else if (!plist->items[num].title_tags) {
 		char *title;
 		assert (plist->items[num].file != NULL);
 
