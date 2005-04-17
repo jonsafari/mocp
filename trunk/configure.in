@@ -107,9 +107,11 @@ AC_FUNC_STAT
 AC_CHECK_FUNCS([getcwd memmove strcasecmp strdup strerror strncasecmp strrchr \
 		socket gettimeofday getenv fork setsid kill bind listen \
 		accept time connect unlink send recv select strftime \
-		localtime_r strerror_r],,
+		localtime_r],,
 	       AC_MSG_ERROR([Required standard C functions are not present.]))
-AC_CHECK_FUNCS([strcasestr])
+
+dnl optional functions
+AC_CHECK_FUNCS([strcasestr strerror_r])
 
 dnl FIXME: Support for this in the source code
 AC_HEADER_DIRENT

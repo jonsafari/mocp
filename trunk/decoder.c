@@ -27,6 +27,7 @@
 #include "files.h"
 #include "log.h"
 #include "io.h"
+#include "compat.h"
 
 static struct plugin {
 	lt_dlhandle handle;
