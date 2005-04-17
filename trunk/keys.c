@@ -420,6 +420,78 @@ static struct command commands[] = {
 		CON_MENU,
 		{ '[', -1 },
 		1
+	},
+	{
+		KEY_CMD_VOLUME_10,
+		"volume_10",
+		"Set volume to 10%",
+		CON_MENU,
+		{ '1' | META_KEY_FLAG, -1 },
+		1
+	},
+	{
+		KEY_CMD_VOLUME_20,
+		"volume_20",
+		"Set volume to 20%",
+		CON_MENU,
+		{ '2' | META_KEY_FLAG, -1 },
+		1
+	},
+	{
+		KEY_CMD_VOLUME_30,
+		"volume_30",
+		"Set volume to 30%",
+		CON_MENU,
+		{ '3' | META_KEY_FLAG, -1 },
+		1
+	},
+	{
+		KEY_CMD_VOLUME_40,
+		"volume_40",
+		"Set volume to 40%",
+		CON_MENU,
+		{ '4' | META_KEY_FLAG, -1 },
+		1
+	},
+	{
+		KEY_CMD_VOLUME_50,
+		"volume_50",
+		"Set volume to 50%",
+		CON_MENU,
+		{ '5' | META_KEY_FLAG, -1 },
+		1
+	},
+	{
+		KEY_CMD_VOLUME_60,
+		"volume_60",
+		"Set volume to 60%",
+		CON_MENU,
+		{ '6' | META_KEY_FLAG, -1 },
+		1
+	},
+	{
+		KEY_CMD_VOLUME_70,
+		"volume_70",
+		"Set volume to 70%",
+		CON_MENU,
+		{ '7' | META_KEY_FLAG, -1 },
+		1
+	},
+	{
+		KEY_CMD_VOLUME_80,
+		"volume_80",
+		"Set volume to 80%",
+		CON_MENU,
+		{ '8' | META_KEY_FLAG, -1 },
+		1
+	},
+	{
+		KEY_CMD_VOLUME_90,
+		"volume_90",
+		"Set volume to 90%",
+		CON_MENU,
+		{ '9' | META_KEY_FLAG, -1 },
+		1
 	}
 };
 
