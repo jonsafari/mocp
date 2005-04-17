@@ -36,6 +36,7 @@
 #include "log.h"
 #include "files.h"
 #include "playlist.h"
+#include "compat.h"
 
 struct parameters
 {
