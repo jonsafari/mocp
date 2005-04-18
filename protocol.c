@@ -270,7 +270,7 @@ static char *add_buf_time (char *buf, size_t *len, size_t *allocated,
 /* Add data to the dynamicaly allocated buffer which has aready len bytes
  * data and is allocated big. Returns the pointer to the buffer which may be not
  * the same as buf. */
-static char *add_buf_data (char *buf, int *len, size_t *allocated,
+static char *add_buf_data (char *buf, size_t *len, size_t *allocated,
 		const char *data, const size_t data_len)
 {
 	if (*allocated - *len < data_len) {
