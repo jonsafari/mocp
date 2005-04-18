@@ -110,9 +110,9 @@ static int alsa_open (struct sound_params *sound_params)
 {
 	snd_pcm_hw_params_t *hw_params;
 	int err;
-	int rate;
-	int period_time;
-	int buffer_time;
+	unsigned int rate;
+	unsigned int period_time;
+	unsigned int buffer_time;
 	snd_pcm_uframes_t chunk_frames;
 	snd_pcm_uframes_t buffer_frames;
 	snd_pcm_format_t format;
