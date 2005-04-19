@@ -127,3 +127,16 @@ SyncPlaylist		= yes
 # Use ASCII characters instead of graphic for drawing lines. This helps on
 # some terminals.
 ASCIILines		= no
+
+# FastDirs, these allow you jump directly to a directory, the key bindings are
+# in the keymap file.
+#Fastdir1 = /mp3/rock
+#Fastdir2 = /mp3/electronic
+#Fastdir3 = /mp3/rap
+#Fastdir4 = /mp3/etc
+#Fastdir5 = 
+#Fastdir6 = 
+#Fastdir7 = 
+#Fastdir8 = 
+#Fastdir9 = 
+#Fastdir10 =

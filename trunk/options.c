@@ -169,6 +169,16 @@ void options_init ()
 	option_add_str ("JackOutLeft", "alsa_pcm:playback_1");
 	option_add_str ("JackOutRight", "alsa_pcm:playback_2");
 	option_add_int ("ASCIILines", 0);
+	option_add_str ("FastDir1", NULL);
+	option_add_str ("FastDir2", NULL);
+	option_add_str ("FastDir3", NULL);
+	option_add_str ("FastDir4", NULL);
+	option_add_str ("FastDir5", NULL);
+	option_add_str ("FastDir6", NULL);
+	option_add_str ("FastDir7", NULL);
+	option_add_str ("FastDir8", NULL);
+	option_add_str ("FastDir9", NULL);
+	option_add_str ("FastDir10", NULL);
 }
 
 /* Return 1 if a parameter to an integer option is valid. */
