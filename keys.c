@@ -492,7 +492,87 @@ static struct command commands[] = {
 		CON_MENU,
 		{ '9' | META_KEY_FLAG, -1 },
 		1
-	}
+	},
+ 	{
+ 		KEY_CMD_FAST_DIR_1,
+ 		"go_to_fast_dir1",
+ 		"Go to a fast dir 1",
+ 		CON_MENU,
+ 		{ '!', -1 },
+ 		1
+ 	},
+ 	{
+ 		KEY_CMD_FAST_DIR_2,
+ 		"go_to_fast_dir2",
+ 		"Go to a fast dir 2",
+ 		CON_MENU,
+ 		{ '@', -1 },
+ 		1
+ 	},
+ 	{
+ 		KEY_CMD_FAST_DIR_3,
+ 		"go_to_fast_dir3",
+ 		"Go to a fast dir 3",
+ 		CON_MENU,
+ 		{ '#', -1 },
+ 		1
+ 	},
+ 	{
+ 		KEY_CMD_FAST_DIR_4,
+ 		"go_to_fast_dir4",
+ 		"Go to a fast dir 4",
+ 		CON_MENU,
+ 		{ '$', -1 },
+ 		1
+ 	},
+ 	{
+ 		KEY_CMD_FAST_DIR_5,
+ 		"go_to_fast_dir5",
+ 		"Go to a fast dir 5",
+ 		CON_MENU,
+ 		{ '%', -1 },
+ 		1
+ 	},
+ 	{
+ 		KEY_CMD_FAST_DIR_6,
+ 		"go_to_fast_dir6",
+ 		"Go to a fast dir 6",
+ 		CON_MENU,
+ 		{ '^', -1 },
+ 		1
+ 	},
+ 	{
+ 		KEY_CMD_FAST_DIR_7,
+ 		"go_to_fast_dir7",
+ 		"Go to a fast dir 7",
+ 		CON_MENU,
+ 		{ '&', -1 },
+ 		1
+ 	},
+ 	{
+ 		KEY_CMD_FAST_DIR_8,
+ 		"go_to_fast_dir8",
+ 		"Go to a fast dir 8",
+ 		CON_MENU,
+ 		{ '*', -1 },
+ 		1
+ 	},
+ 	{
+ 		KEY_CMD_FAST_DIR_9,
+ 		"go_to_fast_dir9",
+ 		"Go to a fast dir 9",
+ 		CON_MENU,
+ 		{ '(', -1 },
+ 		1
+ 	},
+ 	{
+ 		KEY_CMD_FAST_DIR_10,
+ 		"go_to_fast_dir10",
+ 		"Go to a fast dir 10",
+ 		CON_MENU,
+ 		{ ')', -1 },
+ 		1
+  	}
 };
 
 static struct special_keys

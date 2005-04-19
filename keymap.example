@@ -91,3 +91,15 @@ volume_60 =		M-6
 volume_70 =		M-7
 volume_80 =		M-8
 volume_90 =		M-9
+# defaults are Shift-number
+# shift 1 = ! = Fastdir1
+go_to_fast_dir1 = !
+go_to_fast_dir2 = @
+go_to_fast_dir3 = \#
+go_to_fast_dir4 = $
+go_to_fast_dir5 = %
+go_to_fast_dir6 = ^
+go_to_fast_dir7 = &
+go_to_fast_dir8 = *
+go_to_fast_dir9 = (
+go_to_fast_dir10 = )

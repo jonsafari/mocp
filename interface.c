@@ -3452,6 +3452,106 @@ static void menu_key (const int ch)
 			case KEY_CMD_VOLUME_90:
 				set_mixer (90);
 				break;
+			case KEY_CMD_FAST_DIR_1:
+				if (options_get_str("FastDir1")) {
+					go_to_dir (options_get_str(
+								"FastDir1"));
+					do_update_menu = 1;
+				}
+				else
+					error ("FastDir1 not "
+							"defined");
+				break;
+			case KEY_CMD_FAST_DIR_2:
+				if (options_get_str("FastDir2")) {
+					go_to_dir (options_get_str(
+								"FastDir2"));
+					do_update_menu = 1;
+				}
+				else
+					error ("FastDir2 not "
+							"defined");
+				break;
+			case KEY_CMD_FAST_DIR_3:
+				if (options_get_str("FastDir3")) {
+					go_to_dir (options_get_str(
+								"FastDir3"));
+					do_update_menu = 1;
+				}
+				else
+					error ("FastDir3 not "
+							"defined");
+				break;
+			case KEY_CMD_FAST_DIR_4:
+				if (options_get_str("FastDir4")) {
+					go_to_dir (options_get_str(
+								"FastDir4"));
+					do_update_menu = 1;
+				}
+				else
+					error ("FastDir4 not "
+							"defined");
+				break;
+			case KEY_CMD_FAST_DIR_5:
+				if (options_get_str("FastDir5")) {
+					go_to_dir (options_get_str(
+								"FastDir5"));
+					do_update_menu = 1;
+				}
+				else
+					error ("FastDir5 not "
+							"defined");
+				break;
+			case KEY_CMD_FAST_DIR_6:
+				if (options_get_str("FastDir6")) {
+					go_to_dir (options_get_str(
+								"FastDir6"));
+					do_update_menu = 1;
+				}
+				else
+					error ("FastDir6 not "
+							"defined");
+				break;
+			case KEY_CMD_FAST_DIR_7:
+				if (options_get_str("FastDir7")) {
+					go_to_dir (options_get_str(
+								"FastDir7"));
+					do_update_menu = 1;
+				}
+				else
+					error ("FastDir7 not "
+							"defined");
+				break;
+			case KEY_CMD_FAST_DIR_8:
+				if (options_get_str("FastDir8")) {
+					go_to_dir (options_get_str(
+								"FastDir8"));
+					do_update_menu = 1;
+				}
+				else
+					error ("FastDir8 not "
+							"defined");
+				break;
+			case KEY_CMD_FAST_DIR_9:
+				if (options_get_str("FastDir9")) {
+					go_to_dir (options_get_str(
+								"FastDir9"));
+					do_update_menu = 1;
+				}
+				else
+					error ("FastDir9 not "
+							"defined");
+				break;
+			case KEY_CMD_FAST_DIR_10:
+				if (options_get_str("FastDir10")) {
+					go_to_dir (options_get_str(
+								"FastDir10"));
+					do_update_menu = 1;
+				}
+				else
+					error ("FastDir10 not "
+							"defined");
+				break;
 			default:
 				debug ("Unhandled command: %d", cmd);
 				fatal ("Unhandled command");
