@@ -13,4 +13,4 @@ Kamil Tarkowski <kamilt@interia.pl> - back command, some fixes and small
 	improvements.
 Jacek Lehmann <vonschlager@wp.pl> - Green theme and fixes for a few terminals.
 Morten Grunnet Buhl - Yellow/Red theme
-Alex Norman <alex@neisis.net> - JACK output
+Alex Norman <alex@neisis.net> - JACK output, FastDir option.
