@@ -70,7 +70,7 @@ PKG_CHECK_MODULES(ALSA, [alsa >= 0.9],
 	     [COMPILE_ALSA="yes"
 	      EXTRA_OBJS="$EXTRA_OBJS alsa.o"
 	      AC_DEFINE([HAVE_ALSA], 1, [Define if you have ALSA.])
-	      EXTRA_LIBS="$EXTRA_LIBA $ALSA_LIBS"
+	      EXTRA_LIBS="$EXTRA_LIBS $ALSA_LIBS"
 	      CFLAGS="$CFLAGS $ALSA_CFLAGS"],
 	     [COMPILE_ALSA="no"])
 
