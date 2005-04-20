@@ -60,7 +60,7 @@ man_MANS = mocp.8
 mocp_LDADD = @EXTRA_OBJS@
 mocp_DEPENDENCIES = @EXTRA_OBJS@
 mocp_LDFLAGS = @EXTRA_LIBS@
-EXTRA_DIST = config.example mocp.8 THANKS keymap.example
+EXTRA_DIST = config.example mocp.8 THANKS keymap.example Doxyfile
 
 docdir = $(datadir)/doc/$(PACKAGE)
 doc_DATA = config.example THANKS README keymap.example
