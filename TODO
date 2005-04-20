@@ -1,14 +1,18 @@
 Before 2.3.0:
-* interrupt prebuffering doesn't work
+* Resampling.
+* FastGo instead of FastDir: go to a directory, URL or a playlist.
 * io_stream should provide information about mime-type.
 * prebuffer again if buffer fill drops to 0
+* support for b/w terminals.
+* Fix screen refreshing on NetBSD.
+* mp3 intermet streams
 * Handling stream *.pls files (PLSv2 http://www.scvi.net/pls.htm) and m3u
 * iconv() for internet tags.
 * Complete to the matching part of a directory with the i command if a name is
   ambigous.
 * History in the i command.
+* List of sound output methods to test and choose the first working.
 * Move interface primitives (windows, entry, etc.) to a separate file.
-* Setting volume using 1-9 keys.
 * Fake increase/decrease volume in alsa by 1% if such resolution is not
   possible.
 * A command to change the mixer device.
@@ -19,16 +23,12 @@ Before 2.3.0:
 * Support for CDDB.
 * www.musepack.net (www.caddr.com)
 * http://www.speex.org
-* config and command line option to use ASCII chars for drawing lines.
 * Command line option to show information about the currently played file.
 * Add --recursive command line option: if a command line argument is a
   directory, add files from it to the playlist recursively.
-* --next, --previous command line options.
 * interface.c uses packet items when sending
 * Ability to use all xterm colors.
 * After start load the defined playlist and switch to it.
-* When searching using /, filter out not matching items and allow to use arrow
-  keys for browsing the results.
 * After saving the playlist, we have times. Update the playlist menu.
 * Remember the playlist with the serial number.
 * G points to the currently played file, not only the right "view"
@@ -36,10 +36,13 @@ Before 2.3.0:
 * Describe how plugins work.
 * Refuse to clear the playlist before loadin a new one only if the playlist was
   modified (or custom made).
-* remove the mutex from alsa
+* Add border color.
+* Fix "interface.c:478: warning: `0' flag used with `%s' printf format" on
+  NetBSD.
 
 In future:
 
+* Ability to play from a playlist made of items found after searching.
 * WMA.
 * Read tags for sndfile formats.
 * Number items on the playlist.
@@ -61,6 +64,8 @@ In future:
 * Song ratings or something like Q in XMMS.
 * Configurable sorting.
 * Equalizel like in Beep Media Player
+* Make equal volume level for every song like in http://volnorm.sourceforge.net
+* Seek to arbitrary position (by typing a number).
 
 Maybe never:
 
