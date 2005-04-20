@@ -52,6 +52,8 @@ struct parameters
 	int exit;
 	int pause;
 	int unpause;
+	int next;
+	int previous;
 };
 
 static int im_server = 0; /* I em the server? */
@@ -331,6 +333,8 @@ static void show_usage (const char *prg_name) {
 "-c --clear             Clear the playlist and exit.\n"
 "-p --play              Play first item on the playlist and exit.\n"
 "-s --stop              Stop playing.\n"
+"-f --next              Play next song.\n"
+"-r --previous          Play previous song.\n"
 "-x --exit              Shutdown the server.\n"
 "-T --theme theme       Use selected theme file (read from ~/.moc/themes if\n"
 "                       the path is not absolute.\n"
@@ -391,6 +395,16 @@ static void server_command (struct parameters *params)
 					|| !send_int(sock, CMD_DISCONNECT))
 				fatal ("Can't send commands");
 		}
+		else if (params->next) {
+			if (!send_int(sock, CMD_NEXT)
+					|| !send_int(sock, CMD_DISCONNECT))
+				fatal ("Can't send commands");
+		}
+		else if (params->previous) {
+			if (!send_int(sock, CMD_PREV)
+					|| !send_int(sock, CMD_DISCONNECT))
+				fatal ("Can't send commands");
+		}
 		else if (params->unpause) {
 			if (!send_int(sock, CMD_UNPAUSE)
 					|| !send_int(sock, CMD_DISCONNECT))
@@ -419,6 +433,8 @@ int main (int argc, char *argv[])
 		{ "clear", 		0, NULL, 'c' },
 		{ "play", 		0, NULL, 'p' },
 		{ "stop",		0, NULL, 's' },
+		{ "next",		0, NULL, 'f' },
+		{ "previous",	0, NULL, 'r' },
 		{ "exit",		0, NULL, 'x' },
 		{ "theme",		1, NULL, 'T' },
 		{ "config",		1, NULL, 'C' },
@@ -437,7 +453,7 @@ int main (int argc, char *argv[])
 	memset (&params, 0, sizeof(params));
 	options_init ();
 
-	while ((ret = getopt_long(argc, argv, "VhDSFR:macpsxT:C:M:PUynA",
+	while ((ret = getopt_long(argc, argv, "VhDSFR:macpsxT:C:M:PUynArf",
 					long_options, &opt_index)) != -1) {
 		switch (ret) {
 			case 'V':
@@ -481,6 +497,14 @@ int main (int argc, char *argv[])
 				break;
 			case 's':
 				params.stop = 1;
+				params.dont_run_server = 1;
+				break;
+			case 'f':
+				params.next = 1;
+				params.dont_run_server = 1;
+				break;
+			case 'r':
+				params.previous = 1;
 				params.dont_run_server = 1;
 				break;
 			case 'x':
