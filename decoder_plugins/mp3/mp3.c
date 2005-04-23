@@ -102,7 +102,7 @@ static char *get_tag (struct id3_tag *tag, const char *what)
 	struct id3_frame *frame;
 	union id3_field *field;
 	const id3_ucs4_t *ucs4;
-	char *comm = NULL;
+	unsigned char *comm = NULL;
 
 	frame = id3_tag_findframe (tag, what, 0);
 	if (frame && (field = &frame->fields[1])) {
@@ -111,7 +111,7 @@ static char *get_tag (struct id3_tag *tag, const char *what)
 			comm = id3_ucs4_latin1duplicate (ucs4);
 	}
 
-	return comm;
+	return (char *)comm;
 }
 
 static int count_time_internal (struct mp3_data *data)

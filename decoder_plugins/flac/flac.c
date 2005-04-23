@@ -331,7 +331,7 @@ static void fill_tag (FLAC__StreamMetadata_VorbisComment_Entry *comm,
 		return;
 
 	name = (char *)xmalloc (sizeof(char) * (eq - comm->entry + 1));
-	strncpy (name, comm->entry, eq - comm->entry);
+	strncpy (name, (char *)comm->entry, eq - comm->entry);
 	name[eq - comm->entry] = 0;
 	value_length = comm->length - (eq - comm->entry + 1);
 	
@@ -341,7 +341,7 @@ static void fill_tag (FLAC__StreamMetadata_VorbisComment_Entry *comm,
 	}
 
 	value = (char *)xmalloc (sizeof(char) * (value_length + 1));
-	strncpy (value, eq + 1, value_length);
+	strncpy (value, (char *)(eq + 1), value_length);
 	value[value_length] = 0;
 
 	if (!strcasecmp(name, "title"))
