@@ -1,4 +1,4 @@
-.TH MOC 8 "11 February 2005" "Version 2.2.0" "music on console"
+.TH MOC 8 "23 April 2005" "Version 2.3.0" "music on console"
 
 .SH NAME
 MOC \- console audio player
@@ -66,6 +66,14 @@ Play the first item on the playlist (clients' playlist if there are any and
 SyncPlaylist is set or the server playlist if not).
 
 .TP
+.I -f --next
+Request playing the next song from the server's playlist.
+
+.TP
+.I -r --previous
+Request playing the previous song from the server's playlist.
+
+.TP
 .I -s --stop
 Request stop playing from the server.
 
@@ -106,6 +114,14 @@ clients. This option is calles SyncPlaylist in the configuration file.
 .I -n --nosync
 This copy of the interface will not be synchronizing its playlist with other
 clients (see above).
+
+.TP
+.I -A --ascii
+Use ASCII characters to draw lines (helps on some terminals).
+
+.TP
+.I -i --info
+Print the information about the currently played file.
 
 .TP
 .I -h --help
