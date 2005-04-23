@@ -3989,7 +3989,7 @@ void interface_cmdline_file_info (const int server_sock)
 			printf ("CurrentTime: %s\n", file_info.curr_time);
 			printf ("TimeLeft: %s\n", file_info.time_left);
 			printf ("TotalSec: %d\n", file_info.time_num);
-			printf ("CurrentSec :%d\n", file_info.curr_time_num);
+			printf ("CurrentSec: %d\n", file_info.curr_time_num);
 			printf ("Bitrate: %sKbps\n", file_info.bitrate);
 			printf ("Rate: %sKHz\n", file_info.rate);
 		}
