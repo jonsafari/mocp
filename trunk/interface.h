@@ -20,4 +20,5 @@ void interface_cmdline_clear_plist (int server_sock);
 void interface_cmdline_append (int server_sock, char **args,
 		const int arg_num);
 void interface_cmdline_play_first (int server_sock);
+void interface_cmdline_file_info (const int server_sock);
 #endif
