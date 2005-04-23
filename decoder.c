@@ -123,11 +123,13 @@ static int present_handle (const lt_dlhandle h)
 	return 0;
 }
 
-static int lt_load_plugin (const char *file, lt_ptr data ATTR_UNUSED)
+static int lt_load_plugin (const char *file, lt_ptr debug_info_ptr)
 {
 	const char *name = strrchr (file, '/') ? strrchr(file, '/') + 1 : file;
-	
-	printf ("Loading plugin %s...\n", name);
+	int debug_info = *(int *)debug_info_ptr;
+
+	if (debug_info)
+		printf ("Loading plugin %s...\n", name);
 	
 	if (plugins_num == sizeof(plugins)/sizeof(plugins[0])) {
 		fprintf (stderr, "Can't load plugin, besause maximum number "
@@ -161,23 +163,25 @@ static int lt_load_plugin (const char *file, lt_ptr data ATTR_UNUSED)
 			}
 			else {
 				plugins_num++;
-				printf ("OK\n");
+				if (debug_info)
+					printf ("OK\n");
 			}
 		}
 	}
-	else
+	else if (debug_info)
 		printf ("Already loaded\n");
 	
 	return 0;
 }
 
-void decoder_init ()
+void decoder_init (int debug_info)
 {
-	printf ("Loading plugins from %s...\n", PLUGIN_DIR);
+	if (debug_info)
+		printf ("Loading plugins from %s...\n", PLUGIN_DIR);
 	if (lt_dlinit())
 		fatal ("lt_dlinit() failed: %s", lt_dlerror());
 
-	if (lt_dlforeachfile(PLUGIN_DIR, &lt_load_plugin, NULL))
+	if (lt_dlforeachfile(PLUGIN_DIR, &lt_load_plugin, &debug_info))
 		fatal ("Can't load plugins: %s", lt_dlerror());
 
 	if (plugins_num == 0)
