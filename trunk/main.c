@@ -202,7 +202,7 @@ static void start_moc (const struct parameters *params, char **args,
 	int list_sock;
 	int server_sock = -1;
 
-	decoder_init ();
+	decoder_init (params->debug);
 	srand (time(NULL));
 
 	if (!params->foreground && (server_sock = server_connect()) == -1) {

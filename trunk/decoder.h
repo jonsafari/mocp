@@ -91,7 +91,7 @@ typedef struct decoder *(*plugin_init_func)();
 int is_sound_file (const char *name);
 struct decoder *get_decoder (const char *file);
 struct decoder *get_decoder_by_content (struct io_stream *stream);
-void decoder_init ();
+void decoder_init (int debug_info);
 void decoder_cleanup ();
 char *file_type_name (const char *file);
 
