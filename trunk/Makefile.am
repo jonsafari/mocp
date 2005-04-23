@@ -53,7 +53,7 @@ EXTRA_mocp_SOURCES = gnugetopt.h \
 		     alsa.c \
 		     alsa.h \
 		     io_curl.c \
-		     io_curl.h
+		     io_curl.h \
 		     jack.c \
 		     jack.h
 man_MANS = mocp.8
