@@ -837,17 +837,22 @@ static void set_interface_status (const char *msg)
 {
 	assert (!msg || strlen(msg) <= STATUS_LINE_LEN);
 
-	if (msg)
-		strncpy (interface_status, msg, sizeof(interface_status));
-	else
-		interface_status[0] = 0;
-	draw_interface_status ();
+	if (info_win) {
+		if (msg)
+			strncpy (interface_status, msg,
+					sizeof(interface_status));
+		else
+			interface_status[0] = 0;
+		draw_interface_status ();
+	}
 }
 
 static void set_iface_status_ref (const char *msg)
 {
-	set_interface_status (msg);
-	wrefresh (info_win);
+	if (info_win) {
+		set_interface_status (msg);
+		wrefresh (info_win);
+	}
 }
 
 void interface_error (const char *msg)
@@ -3878,4 +3883,122 @@ void interface_cmdline_play_first (int server_sock)
 	send_str_to_srv ("");
 
 	plist_free (&clients_plist);
+}
+
+/* Print all information about the currentply played file.
+ * 
+ * Based on the code by Michael Banks.
+ */
+void interface_cmdline_file_info (const int server_sock)
+{
+	int state;
+	has_xterm = 0;
+
+	srv_sock = server_sock;	/* the interface is not initialized, so set it
+				   here */
+	init_playlists ();
+	
+	send_int_to_srv (CMD_GET_STATE);
+	state = get_data_int ();
+	if (state == STATE_STOP)
+		puts ("State: STOP");
+	else {
+		int rate;
+		char *file;
+		int bitrate;
+		int left;
+		int curr_time;
+		struct file_tags *tags = NULL;
+		
+		if (state == STATE_PLAY)
+			puts ("State: PLAY");
+		else if (state == STATE_PAUSE)
+			puts ("State: PAUSE");
+
+		send_int_to_srv (CMD_GET_SNAME);
+		file = get_data_str ();
+
+		if (file[0]) {
+			tags = read_file_tags (file, NULL, TAGS_COMMENTS);
+			if (tags->title) {
+				char *title = build_title (tags);
+			
+				strncpy (file_info.title, title,
+						sizeof(file_info.title) - 1);
+				file_info.title[sizeof (file_info.title) - 1]
+					= 0;
+				free (title);
+			}
+			else
+				file_info.title[0] = 0;
+			
+			set_time (get_file_time (file));
+		}
+		else
+			file_info.title[0] = 0;
+
+		send_int_to_srv (CMD_GET_CHANNELS);
+		file_info.channels = get_data_int ();
+		
+		send_int_to_srv (CMD_GET_RATE);
+		if ((rate = get_data_int ()) > 0)
+			sprintf (file_info.rate, "%d", rate);
+		else
+			file_info.rate[0] = 0;
+
+		send_int_to_srv (CMD_GET_BITRATE);
+		if ((bitrate = get_data_int ()) > 0) {
+			if (bitrate < 9999) {
+				snprintf (file_info.bitrate,
+						sizeof(file_info.bitrate),
+						"%d", bitrate);
+				file_info.bitrate[sizeof(file_info.bitrate)
+					- 1] = 0;
+			}
+		}
+		else
+			file_info.bitrate[0] = 0;
+
+		send_int_to_srv (CMD_GET_CTIME);
+		curr_time = file_info.curr_time_num = get_data_int ();
+		set_time (read_file_time(file));
+
+		if (file_info.time_num != -1) {
+			sec_to_min (file_info.curr_time, curr_time);
+			left = file_info.time_num - curr_time;
+			sec_to_min (file_info.time_left, left > 0 ? left : 0);
+		}
+		else {
+			strcpy (file_info.curr_time, "00:00");
+			file_info.time_left[0] = 0;
+		}
+
+		printf ("Title: %s\n", file_info.title);
+
+		if (tags) {
+			printf ("Artist: %s\n",
+					tags->artist ? tags->artist : "");
+			printf ("SongTitle: %s\n",
+					tags->title ? tags->title : "");
+			printf ("Album: %s\n",
+					tags->album ? tags->album : "");
+		}
+
+		if (file_info.time_num >= 0) {
+			printf ("TotalTime: %s\n", file_info.time);
+			printf ("CurrentTime: %s\n", file_info.curr_time);
+			printf ("TimeLeft: %s\n", file_info.time_left);
+			printf ("TotalSec: %d\n", file_info.time_num);
+			printf ("CurrentSec :%d\n", file_info.curr_time_num);
+			printf ("Bitrate: %sKbps\n", file_info.bitrate);
+			printf ("Rate: %sKHz\n", file_info.rate);
+		}
+
+		free (file);
+		if (tags)
+			tags_free (tags);
+	}
+
+	plist_free (curr_plist);
+	plist_free (playlist);
 }

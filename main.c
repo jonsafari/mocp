@@ -54,6 +54,7 @@ struct parameters
 	int unpause;
 	int next;
 	int previous;
+	int get_file_info;
 };
 
 static int im_server = 0; /* I em the server? */
@@ -270,6 +271,8 @@ static void start_moc (const struct parameters *params, char **args,
 			interface_cmdline_append (server_sock, args, arg_num);
 		if (params->play)
 			interface_cmdline_play_first (server_sock);
+		if (params->get_file_info)
+			interface_cmdline_file_info (server_sock);
 		send_int (server_sock, CMD_DISCONNECT);
 	}
 	else if (params->only_server)
@@ -345,6 +348,7 @@ static void show_usage (const char *prg_name) {
 "-y --sync              Synchronize the playlist with other clients.\n"
 "-n --nosync            Don't synchronize the playlist with other clients.\n"
 "-A --ascii             Use ASCII characters to draw lines.\n"
+"-i --info              Print the information about the currently played file.\n"
 , prg_name);
 }
 
@@ -444,6 +448,7 @@ int main (int argc, char *argv[])
 		{ "sync",		0, NULL, 'y' },
 		{ "nosync",		0, NULL, 'n' },
 		{ "ascii",		0, NULL, 'A' },
+		{ "info",		0, NULL, 'i' },
 		{ 0, 0, 0, 0 }
 	};
 	int ret, opt_index = 0;
@@ -453,7 +458,7 @@ int main (int argc, char *argv[])
 	memset (&params, 0, sizeof(params));
 	options_init ();
 
-	while ((ret = getopt_long(argc, argv, "VhDSFR:macpsxT:C:M:PUynArf",
+	while ((ret = getopt_long(argc, argv, "VhDSFR:macpsxT:C:M:PUynArfi",
 					long_options, &opt_index)) != -1) {
 		switch (ret) {
 			case 'V':
@@ -489,6 +494,10 @@ int main (int argc, char *argv[])
 				break;
 			case 'c':
 				params.clear = 1;
+				params.dont_run_iface = 1;
+				break;
+			case 'i':
+				params.get_file_info = 1;
 				params.dont_run_iface = 1;
 				break;
 			case 'p':
