@@ -18,6 +18,10 @@ Sort			= FileName
 # files
 ShowStreamErrors	= no
 
+# Ignore CRC errors in MP3 files. Most players do that, so the default value is
+# set to yes.
+Mp3IgnoreCRCErrors	= yes
+
 # Turn on repeat.
 Repeat			= no
 
