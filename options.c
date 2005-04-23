@@ -179,6 +179,7 @@ void options_init ()
 	option_add_str ("FastDir8", NULL);
 	option_add_str ("FastDir9", NULL);
 	option_add_str ("FastDir10", NULL);
+	option_add_int ("Mp3IgnoreCRCErrors", 1);
 }
 
 /* Return 1 if a parameter to an integer option is valid. */
@@ -196,6 +197,7 @@ int check_int_option (const char *name, const int val)
 			|| !strcasecmp(name, "ShowFormat")
 			|| !strcasecmp(name, "SavePlaylist")
 			|| !strcasecmp(name, "SyncPlaylist")
+			|| !strcasecmp(name, "Mp3IgnoreCRCErrors")
 			) {
 		if (!(val == 1 || val == 0))
 			return 0;

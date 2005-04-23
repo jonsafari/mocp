@@ -37,6 +37,7 @@
 #include "audio.h"
 #include "decoder.h"
 #include "io.h"
+#include "options.h"
 
 #define INPUT_BUFFER	(32 * 1024)
 
@@ -266,6 +267,10 @@ static struct mp3_data *mp3_open_internal (const char *file,
 		mad_stream_init (&data->stream);
 		mad_frame_init (&data->frame);
 		mad_synth_init (&data->synth);
+
+		if (options_get_int("Mp3IgnoreCRCErrors"))
+				mad_stream_options (&data->stream,
+					MAD_OPTION_IGNORECRC);
 		
 		data->duration = count_time_internal (data);
 		mad_frame_mute (&data->frame);
