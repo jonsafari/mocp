@@ -339,7 +339,7 @@ static void decode_loop (const struct decoder *f, void *decoder_data,
 		else if (!eof && decoded <= out_buf_get_free(out_buf)
 				&& !sound_params_change) {
 			debug ("putting into the buffer %d bytes", decoded);
-			out_buf_put (out_buf, buf, decoded);
+			audio_send_buf (buf, decoded);
 			decoded = 0;
 		}
 		else if (!eof && sound_params_change
