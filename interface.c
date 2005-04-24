@@ -3338,11 +3338,11 @@ static void menu_key (const int ch)
 			case KEY_CMD_MIXER_INC_1:
 				set_mixer (get_mixer() + 1);
 				break;
-			case KEY_CMD_SEEK_BACKWARD_1:
-				seek (-1);
+			case KEY_CMD_SEEK_BACKWARD:
+				seek (-options_get_int("SeekTime"));
 				break;
-			case KEY_CMD_SEEK_FORWARD_1:
-				seek (1);
+			case KEY_CMD_SEEK_FORWARD:
+				seek (options_get_int("SeekTime"));
 				break;
 			case KEY_CMD_HELP:
 				help_screen ();
