@@ -254,17 +254,17 @@ static struct command commands[] = {
 		1
 	},
 	{
-		KEY_CMD_SEEK_FORWARD_1,
-		"seek_forward_1",
-		"Seek forward by 1s",
+		KEY_CMD_SEEK_FORWARD,
+		"seek_forward",
+		"Seek forward by n-s",
 		CON_MENU,
 		{ KEY_RIGHT, -1 },
 		1
 	},
 	{
-		KEY_CMD_SEEK_BACKWARD_1,
-		"seek_backward_1",
-		"Seek backward by 1s",
+		KEY_CMD_SEEK_BACKWARD,
+		"seek_backward",
+		"Seek backward by n-s",
 		CON_MENU,
 		{ KEY_LEFT, -1},
 		1

@@ -144,3 +144,7 @@ ASCIILines		= no
 #Fastdir8 = 
 #Fastdir9 = 
 #Fastdir10 =
+
+# How fast to seek? Number of seconds per key stroke.
+#SeekTime		= 1
+
