@@ -312,6 +312,9 @@ static void show_version ()
 #ifndef NDEBUG
 	printf (" DEBUG");
 #endif
+#ifdef HAVE_CURL
+	printf (" internet streams");
+#endif
 	
 	putchar ('\n');
 	
