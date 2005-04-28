@@ -224,7 +224,7 @@ AC_ARG_WITH(samplerate, AS_HELP_STRING(--without-samplerate,
 COMPILE_SAMPLERATE="no"
 if test "x$with_samplerate" != "xno"
 then
-	PKG_CHECK_MODULES(samplerate, samplerate >= 0.1.2,
+	PKG_CHECK_MODULES(samplerate, samplerate >= 0.1.0,
 			  [EXTRA_LIBS="$EXTRA_LIBS $samplerate_LIBS"
 			   CFLAGS="$CFLAGS $samplerate_CFLAGS"
 			   AC_DEFINE([HAVE_SAMPLERATE], 1,
