@@ -166,3 +166,7 @@ ASCIILines		= no
 # Linear - a bit better and a bit slower
 #
 #ResampleMethod		= Linear
+
+# Always use this sample rate when opening the audio device (and resample the
+# sound is necessary). When set to 0 the device is opened with the file's rate.
+#ForceSampleRate	= 48000

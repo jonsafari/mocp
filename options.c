@@ -182,6 +182,7 @@ void options_init ()
 	option_add_int ("Mp3IgnoreCRCErrors", 1);
 	option_add_int ("SeekTime", 1);
 	option_add_str ("ResampleMethod", "Linear");
+	option_add_int ("ForceSampleRate", 0);
 }
 
 /* Return 1 if a parameter to an integer option is valid. */
@@ -218,6 +219,10 @@ int check_int_option (const char *name, const int val)
 	}
 	else if (!strcasecmp(name, "SeekTime")) {
 		if (val < 1)
+			return 0;
+	}
+	else if (strcasecmp(name, "ForceSampleRate")) {
+		if (val < 0 || val > 500000)
 			return 0;
 	}
 	return 1;

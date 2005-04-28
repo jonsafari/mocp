@@ -379,7 +379,9 @@ int audio_open (struct sound_params *sound_params)
 	/* Set driver_sound_params to parameters supported by the driver that
 	 * are nearly the requested parameters */
 	
-	if (driver_sound_params.rate > hw_caps.max.rate)
+	if (options_get_int("ForceSampleRate"))
+		driver_sound_params.rate = options_get_int("ForceSampleRate");
+	else if (driver_sound_params.rate > hw_caps.max.rate)
 		driver_sound_params.rate = hw_caps.max.rate;
 	else if (driver_sound_params.rate < hw_caps.min.rate)
 		driver_sound_params.rate = hw_caps.min.rate;
