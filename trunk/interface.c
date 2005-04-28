@@ -3973,6 +3973,7 @@ void interface_cmdline_file_info (const int server_sock)
 			file_info.time_left[0] = 0;
 		}
 
+		printf ("File: %s\n", file);
 		printf ("Title: %s\n", file_info.title);
 
 		if (tags) {
