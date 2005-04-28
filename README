@@ -40,7 +40,7 @@ Other features:
    Commander.
  - The way MOC creates titles from tags is configurable.
  - Optional character set conversion for file tags using iconv().
- - OSS or ALSA output.
+ - OSS, ALSA, and JACK output.
  - User defined keys.
 
 --------------------------------------------------------------------------------
@@ -62,6 +62,9 @@ For network streams:
 
 For resampling (playing files with sample rate not supported by your hardware):
  - libresamplerate 0.1.2 or newer (http://www.mega-nerd.com/SRC/index.html)
+
+For JACK (low-latency audio server):
+ - http://jackit.sourceforge.net/
 
 --------------------------------------------------------------------------------
 Which systems is MOC running on?
