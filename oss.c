@@ -37,7 +37,93 @@ static int mixer_channel;
 
 static struct sound_params params = { 0, 0, 0 };
 
-static void oss_init ()
+static int open_dev ()
+{
+	if ((dsp_fd = open(options_get_str("OSSDevice"), O_WRONLY)) == -1) {
+		error ("Can't open %s, %s", options_get_str("OSSDevice"),
+				strerror(errno));
+		return 0;
+	}
+
+	logit ("Audio device opened");
+	
+	return 1;
+}
+
+static void set_capabilities (struct output_driver_caps *caps)
+{
+	int format_mask;
+
+	if (!open_dev())
+		fatal ("Can't open the device.");
+
+	if (ioctl(dsp_fd, SNDCTL_DSP_GETFMTS, &format_mask) == -1)
+		fatal ("Can't get supported audio formats: %s",
+				strerror(errno));
+
+	if (format_mask & AFMT_S8)
+		caps->min.format = caps->max.format = 1;
+	else
+		caps->min.format = caps->max.format = -1;
+
+	if (format_mask & (AFMT_S16_NE | AFMT_U16_LE | AFMT_U16_BE)) {
+		caps->max.format = 2;
+		if (caps->min.format == -1)
+			caps->min.format = 2;
+	}
+
+#if 0
+	/* FIXME: Convertion from native endian would be needed. */
+	if (format_mask & AFMT_S32_LE) {
+		caps->max.format = 4;
+		if (caps->min.format == -1)
+			caps->min.format = 4;
+	}
+#endif
+
+	if (caps->min.format == -1)
+		fatal ("No know format supported by the audio device.");
+
+	caps->min.channels = caps->max.channels = 1;
+	if (ioctl(dsp_fd, SNDCTL_DSP_CHANNELS, &caps->min.channels))
+		fatal ("Can't set number of channels: %s", strerror(errno));
+
+	close (dsp_fd);
+	if (!open_dev())
+		fatal ("Can't open the device.");
+
+	if (caps->min.channels != 1)
+		caps->min.channels = 2;
+	caps->max.channels = 2;
+	if (ioctl(dsp_fd, SNDCTL_DSP_CHANNELS, &caps->max.channels))
+		fatal ("Can't set number of channels: %s", strerror(errno));
+
+	if (caps->max.channels != 2) {
+		if (caps->min.channels == 2)
+			fatal ("Can't get any supported number of channels.");
+		caps->max.channels = 1;
+	}
+
+	close (dsp_fd);
+	if (!open_dev())
+		fatal ("Can't open the device.");
+	if (ioctl(dsp_fd, SNDCTL_DSP_CHANNELS, &caps->max.channels))
+		fatal ("Can't set number of channels: %s", strerror(errno));
+
+	caps->min.rate = 1;
+	caps->max.rate = 1000000;
+
+	if (ioctl(dsp_fd, SNDCTL_DSP_SPEED, &caps->min.rate))
+		fatal ("Can't get the minimum sample rate: %s",
+				strerror(errno));
+	if (ioctl(dsp_fd, SNDCTL_DSP_SPEED, &caps->max.rate))
+		fatal ("Can't get the maximum sample rate: %s",
+				strerror(errno));
+
+	close (dsp_fd);
+}
+
+static void oss_init (struct output_driver_caps *caps)
 {
 	/* Open the mixer device */
 	mixer_fd = open (options_get_str("OSSMixerDevice"), O_RDWR);
@@ -55,6 +141,8 @@ static void oss_init ()
 		else
 			fatal ("Bad OSS mixer channel!");
 	}
+
+	set_capabilities (caps);
 }
 
 static void oss_shutdown ()
@@ -138,19 +226,6 @@ static int oss_set_params ()
 	logit ("Audio parameters set to: %dbit, %d channels, %dHz",
 			params.format * 8, params.channels, params.rate);
 
-	return 1;
-}
-
-static int open_dev ()
-{
-	if ((dsp_fd = open(options_get_str("OSSDevice"), O_WRONLY)) == -1) {
-		error ("Can't open %s, %s", options_get_str("OSSDevice"),
-				strerror(errno));
-		return 0;
-	}
-
-	logit ("Audio device opened");
-	
 	return 1;
 }
 
@@ -257,22 +332,6 @@ static int oss_reset ()
 	return 1;
 }
 
-/* Return the number of bytes of current format (1 or 2) */
-static int oss_get_format ()
-{
-	return params.format;
-}
-
-static int oss_get_rate ()
-{
-	return params.rate;
-}
-
-static int oss_get_channels ()
-{
-	return params.channels;
-}
-
 void oss_funcs (struct hw_funcs *funcs)
 {
 	funcs->init = oss_init;
@@ -284,7 +343,4 @@ void oss_funcs (struct hw_funcs *funcs)
 	funcs->set_mixer = oss_set_mixer;
 	funcs->get_buff_fill = oss_get_buff_fill;
 	funcs->reset = oss_reset;
-	funcs->get_format = oss_get_format;
-	funcs->get_rate = oss_get_rate;
-	funcs->get_channels = oss_get_channels;
 }

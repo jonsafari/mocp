@@ -60,6 +60,9 @@ To support audio formats you need:
 For network streams:
  - libcurl 7.12.0 or newer (http://curl.haxx.se)
 
+For resampling (playing files with sample rate not supported by your hardware):
+ - libresamplerate 0.1.2 or newer (http://www.mega-nerd.com/SRC/index.html)
+
 --------------------------------------------------------------------------------
 Which systems is MOC running on?
 --------------------------------------------------------------------------------

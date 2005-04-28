@@ -23,7 +23,7 @@
 #include <errno.h>
 #include <assert.h>
 
-/*#define DEBUG*/
+#define DEBUG
 
 #include "server.h"
 #include "main.h"
@@ -51,6 +51,7 @@
 #include "audio.h"
 #include "files.h"
 #include "io.h"
+#include "audio_convertion.h"
 
 static pthread_t playing_thread = 0;  /* tid of play thread */
 static int play_thread_running = 0;
@@ -61,6 +62,8 @@ static pthread_mutex_t curr_playing_mut = PTHREAD_MUTEX_INITIALIZER;
 
 static struct out_buf out_buf;
 static struct hw_funcs hw;
+static struct output_driver_caps hw_caps; /* capabilities of the output
+					     driver */
 
 /* Player state */
 static int state = STATE_STOP;
@@ -80,8 +83,14 @@ static pthread_mutex_t plist_mut = PTHREAD_MUTEX_INITIALIZER;
 /* Is the audio deice opened? */
 static int audio_opened = 0;
 
-/* Current sound parameters. */
-static struct sound_params sound_params;
+/* Current sound parameters (which the device is opened with). */
+static struct sound_params driver_sound_params;
+
+/* Sound parameters requestet by the decoder. */
+static struct sound_params req_sound_params = { 0, 0, 0 };
+
+static struct audio_convertion sound_conv;
+static int need_audio_convertion = 0;
 
 /* Move to the next file depending on set options and the user request. */
 static void go_to_another_file ()
@@ -331,12 +340,19 @@ void audio_unpause ()
 	state_change ();
 }
 
+static void reset_sound_params (struct sound_params *params)
+{
+	params->rate = 0;
+	params->channels = 0;
+	params->format = 0;
+}
+
 /* Return 0 on error. */
-int audio_open (struct sound_params *req_sound_params)
+int audio_open (struct sound_params *sound_params)
 {
 	int res;
-	
-	if (audio_opened && sound_params_eq(*req_sound_params, sound_params)) {
+
+	if (audio_opened && sound_params_eq(req_sound_params, *sound_params)) {
 		if (audio_get_bps() < 88200) {
 			logit ("Reopening device due to low bps.");
 			
@@ -344,7 +360,7 @@ int audio_open (struct sound_params *req_sound_params)
 			 * sound from the previuous file stays in the buffer
 			 * and the user will see old data, so close it. */
 			hw.close ();
-			res = hw.open (req_sound_params);
+			res = hw.open (&driver_sound_params);
 			if (res)
 				audio_opened = 1;
 			return res;
@@ -356,25 +372,73 @@ int audio_open (struct sound_params *req_sound_params)
 		return 1;
 	}
 	else if (audio_opened)
-		hw.close ();
+		audio_close ();
 
-	sound_params = *req_sound_params;
-	res = hw.open (req_sound_params);
-	if (res)
+	req_sound_params = driver_sound_params = *sound_params;
+
+	/* Set driver_sound_params to parameters supported by the driver that
+	 * are nearly the requested parameters */
+	
+	if (driver_sound_params.rate > hw_caps.max.rate)
+		driver_sound_params.rate = hw_caps.max.rate;
+	else if (driver_sound_params.rate < hw_caps.min.rate)
+		driver_sound_params.rate = hw_caps.min.rate;
+	
+	if (driver_sound_params.format > hw_caps.max.format)
+		driver_sound_params.format = hw_caps.max.format;
+	else if (driver_sound_params.format < hw_caps.min.format)
+		driver_sound_params.format = hw_caps.min.format;
+	
+	if (driver_sound_params.channels > hw_caps.max.channels)
+		driver_sound_params.channels = hw_caps.max.channels;
+	else if (driver_sound_params.channels < hw_caps.min.channels)
+		driver_sound_params.channels = hw_caps.min.channels;
+
+
+	res = hw.open (&driver_sound_params);
+	if (res) {
+		if (!sound_params_eq(driver_sound_params, req_sound_params)) {
+			if (!audio_conv_new (&sound_conv, &req_sound_params,
+					&driver_sound_params)) {
+				hw.close ();
+				reset_sound_params (&req_sound_params);
+				return 0;
+			}
+			need_audio_convertion = 1;
+		}
 		audio_opened = 1;
+	}
 	return res;
 }
 
 int audio_send_buf (const char *buf, const size_t size)
 {
-	return out_buf_put (&out_buf, buf, size);
+	size_t out_data_len = size;
+	int res;
+	char *converted = NULL;
+	
+	if (need_audio_convertion)
+		converted = audio_conv (&sound_conv, buf, size, &out_data_len);
+	
+	if (need_audio_convertion && converted)
+		res = out_buf_put (&out_buf, converted,	out_data_len);
+	else if (!need_audio_convertion)
+		res = out_buf_put (&out_buf, buf, size);
+	else
+		res = 0;
+
+	if (converted)
+		free (converted);
+
+	return res;
 }
 
 /* Get the current audio format bits per second value. May return 0 if the
  * audio device is closed. */
 int audio_get_bps ()
 {
-	return hw.get_format() * hw.get_rate() * hw.get_channels();
+	return driver_sound_params.rate * driver_sound_params.channels
+		* driver_sound_params.format;
 }
 
 int audio_get_buf_fill ()
@@ -396,7 +460,12 @@ int audio_get_time ()
 void audio_close ()
 {
 	if (audio_opened) {
+		reset_sound_params (&req_sound_params);
 		hw.close ();
+		if (need_audio_convertion) {
+			audio_conv_destroy (&sound_conv);
+			need_audio_convertion = 0;
+		}
 		audio_opened = 0;
 	}
 }
@@ -436,12 +505,27 @@ static void find_hw_funcs (const char *driver, struct hw_funcs *funcs)
 	fatal ("No valid sound driver");
 }
 
+static void print_output_capabilities (const struct output_driver_caps *caps)
+{
+	logit ("Sound driver capabilities: channels %d - %d, "
+			"sample rate %d - %d, bps: %d - %d",
+			caps->min.channels, caps->max.channels,
+			caps->min.rate, caps->max.rate,
+			caps->min.format * 8, caps->max.format * 8);
+}
+
 void audio_init ()
 {
 	memset (&hw, 0, sizeof(hw));
 	find_hw_funcs (options_get_str("SoundDriver"), &hw);
-	if (hw.init)
-		hw.init ();
+	hw.init (&hw_caps);
+
+	assert (hw_caps.max.channels >= hw_caps.min.channels);
+	assert (hw_caps.max.rate >= hw_caps.min.rate);
+	assert (hw_caps.max.format >= hw_caps.min.format);
+
+	print_output_capabilities (&hw_caps);
+	
 	out_buf_init (&out_buf, options_get_int("OutputBuffer") * 1024);
 	plist_init (&playlist);
 	plist_init (&shuffled_plist);

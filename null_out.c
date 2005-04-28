@@ -63,23 +63,19 @@ static int null_reset ()
 	return 1;
 }
 
-static int null_get_format ()
+static void null_init (struct output_driver_caps *caps)
 {
-	return params.format;
-}
-
-static int null_get_rate ()
-{
-	return params.rate;
-}
-
-static int null_get_channels ()
-{
-	return params.channels;
+	caps->min.format = 1;
+	caps->max.format = 2;
+	caps->min.rate = 8000;
+	caps->max.rate = 44100;
+	caps->min.channels = 1;
+	caps->max.channels = 2;
 }
 
 void null_funcs (struct hw_funcs *funcs)
 {
+	funcs->init = null_init;
 	funcs->open = null_open;
 	funcs->close = null_close;
 	funcs->play = null_play;
@@ -87,8 +83,4 @@ void null_funcs (struct hw_funcs *funcs)
 	funcs->set_mixer = null_set_mixer;
 	funcs->get_buff_fill = null_get_buff_fill;
 	funcs->reset = null_reset;
-	funcs->get_format = null_get_format;
-	funcs->get_rate = null_get_rate;
-	funcs->get_channels = null_get_channels;
 }
-

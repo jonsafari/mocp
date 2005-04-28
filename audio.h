@@ -16,6 +16,17 @@ struct sound_params
 		      or 2 - 16 bits). */
 };
 
+/** Output driver capabilities.
+ *
+ * A structure describing the output driver capabilities: maximum and minimum
+ * values of the sound parameters it can handle.
+ */
+struct output_driver_caps
+{
+	struct sound_params min; /*!< Minimum parameters. */
+	struct sound_params max; /*!< Maximum parameters. */
+};
+
 /** Functions to control the audio "driver".
  *
  * The structure holds pointers to functions that must be provided by the audio
@@ -27,8 +38,11 @@ struct hw_funcs
 	/** Initialize the driver.
 	 *
 	 * This function is invoked only once when the MOC server starts.
+	 *
+	 * \param caps Capabilities of the driver which must be filled by the
+	 * function.
 	 */
-	void (*init) ();
+	void (*init) (struct output_driver_caps *caps);
 
 	/** Clean up at exit.
 	 *
@@ -44,6 +58,9 @@ struct hw_funcs
 	 * This function should open the sound device with the proper
 	 * parameters. The function should return 1 on success and 0 otherwise.
 	 * After returning 1 functions like play(), get_buff_fill() can be used.
+	 *
+	 * The sample rate of the driver can differ from the requestet rate.
+	 * If so, get_rate() should return the actual rate.
 	 * 
 	 * \param sound_params Pointer to the sound_params structure holding
 	 * the required poarameters.
@@ -110,24 +127,13 @@ struct hw_funcs
 	 */
 	int (*reset) ();
 
-	/** \name Get the sound format.
-	 * Those functions should return values like fields from the
-	 * sound_params structure. They can be slightly different from what was
-	 * provided to open(), but the must by actual parameters (It is
-	 * necessary to count time).
+	/** Get the current sample rate setting.
+	 *
+	 * Get the actual sample rate setting of the autio driver.
+	 *
+	 * \return Sample rate in Hz.
 	 */
-	/*@{*/
-	
-	/** Get the number of bytes in the word (1 or 2). */
-	int (*get_format) ();
-
-	/** Get the rate in Hz. */
 	int (*get_rate) ();
-
-	/** Get the number of channels (1 or 2). */
-	int (*get_channels) ();
-	
-	/*@}*/
 };
 
 /* Does the parameters p1 and p2 are equal? */

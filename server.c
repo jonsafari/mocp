@@ -812,7 +812,7 @@ static int gen_serial (const struct client *cli)
 
 	do {
 		serial = (seed << 8) | client_index(cli);
-		seed = (seed + 1) & 0x07; /* TODO:  it should be 0xFF */
+		seed = (seed + 1) & 0xFF;
 	} while (serial == audio_plist_get_serial());
 
 	debug ("Generated serial %d for client with fd %d", serial,

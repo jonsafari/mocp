@@ -2,9 +2,7 @@
  * moc by Copyright (C) 2004 Damian Pietras <daper@daper.net>
  * use at your own risk
  *
- * currently only supports 2 channels, and the jack server must
- * be set to the sampling rate of the audio, which in most cases
- * is 44100, resampling should be done before sending to jack
+ * Currently only supports 2 channels.
  */
 
 #ifdef HAVE_CONFIG_H
@@ -85,7 +83,7 @@ static void error_callback (const char *msg)
 	error ("JACK: %s", msg);
 }
 
-static void moc_jack_init()
+static void moc_jack_init (struct output_driver_caps *caps)
 {
 	jack_set_error_function (error_callback);
 	
@@ -129,6 +127,11 @@ static void moc_jack_init()
 		if(jack_connect(client,"moc:output1", options_get_str("JackOutRight")))
 			fprintf(stderr,"%s is not a valid Jack Client / Port", options_get_str("JackOutRight"));
 	}
+
+	caps->max.format = caps->min.format = 2;
+	caps->max.rate = caps->min.rate = jack_get_sample_rate (client);
+	caps->max.channels = caps->min.channels = 2;
+	
 	logit ("jack init");
 }
 
@@ -187,21 +190,6 @@ static int moc_jack_reset ()
 	return 1;
 }
 
-static int moc_jack_get_format ()
-{
-	return params.format;
-}
-
-static int moc_jack_get_rate ()
-{
-	return params.rate;
-}
-
-static int moc_jack_get_channels ()
-{
-	return params.channels;
-}
-
 /* do any cleanup that needs to be done */
 static void moc_jack_shutdown(){
 	jack_port_unregister(client,output_port[0]);
@@ -221,9 +209,6 @@ void moc_jack_funcs (struct hw_funcs *funcs)
 	funcs->set_mixer = moc_jack_set_mixer;
 	funcs->get_buff_fill = moc_jack_get_buff_fill;
 	funcs->reset = moc_jack_reset;
-	funcs->get_format = moc_jack_get_format;
-	funcs->get_rate = moc_jack_get_rate;
-	funcs->get_channels = moc_jack_get_channels;
 	funcs->shutdown = moc_jack_shutdown;
 }
 

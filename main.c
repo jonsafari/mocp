@@ -315,6 +315,9 @@ static void show_version ()
 #ifdef HAVE_CURL
 	printf (" internet streams");
 #endif
+#ifdef HAVE_SAMPLERATE
+	printf (" resample");
+#endif
 	
 	putchar ('\n');
 	
