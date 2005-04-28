@@ -133,13 +133,18 @@ int audio_conv_new (struct audio_convertion *conv,
 		return 0;
 #endif
 	}
+#ifdef HAVE_SAMPLERATE
 	else
 		conv->src_state = NULL;
+#endif
 	
 	conv->from = *from;
 	conv->to = *to;
+
+#ifdef HAVE_SAMPLERATE
 	conv->resample_buf = NULL;
 	conv->resample_buf_nsamples = 0;
+#endif
 
 	return 1;
 }
@@ -260,8 +265,10 @@ void audio_conv_destroy (struct audio_convertion *conv)
 {
 	assert (conv != NULL);
 
+#ifdef HAVE_SAMPLERATE
 	if (conv->resample_buf)
 		free (conv->resample_buf);
 	if (conv->src_state)
 		src_delete (conv->src_state);
+#endif
 }
