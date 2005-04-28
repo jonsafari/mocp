@@ -148,3 +148,21 @@ ASCIILines		= no
 # How fast to seek? Number of seconds per key stroke.
 #SeekTime		= 1
 
+# Resample method to use. There are few methods of resampling sound supported
+# by libresamplerate. The default is the fastest (linear). Better description
+# is here: http://www.mega-nerd.com/libsamplerate/api_misc.html#Converters
+#
+# High quality (based on bandlimited interpolation), but slow methods:
+#
+# SincBestQuality - really slow (I know you probably have an xx GHz processor,
+#			but it's not enough to not see this in the top output :)
+#			The worst case Signal-to-Noise Ratio is 97dB.
+# SincMediumQuality - much faster
+# SincFastest - the fastest bandlimited interpolation
+#
+# Poor quality, but much faster methods:
+#
+# ZeroOrderHold - really poor quality, but it's really fast
+# Linear - a bit better and a bit slower
+#
+#ResampleMethod		= Linear
