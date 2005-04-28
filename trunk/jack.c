@@ -137,12 +137,23 @@ static void moc_jack_init (struct output_driver_caps *caps)
 
 static int moc_jack_open (struct sound_params *sound_params)
 {
+	if (sound_params->format != 2) {
+		error ("Unsupported sound format.");
+		return 0;
+	}
+	if (sound_params->channels != 2) {
+		error ("Unsupported number of channels");
+		return 0;
+	}
+	if (sound_params->rate != (int)jack_get_sample_rate(client)) {
+		error ("Unsupported sample rate.");
+		return 0;
+	}
+	
 	params = *sound_params;
-	params.format = 2;
-	params.channels = 2;
-	params.rate = jack_get_sample_rate(client);
 	logit ("jack open");
 	play = 1;
+
 	return 1;
 }
 
