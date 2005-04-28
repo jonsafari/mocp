@@ -30,6 +30,7 @@
 #include <stdint.h>
 #include <math.h>
 #include <string.h>
+#include <strings.h>
 
 #ifdef HAVE_SAMPLERATE
 # include <samplerate.h>
@@ -40,6 +41,7 @@
 #include "audio_convertion.h"
 #include "main.h"
 #include "log.h"
+#include "options.h"
 
 static void audio_conv_float_to_s16 (const float *in, char *out,
 		const size_t samples)
@@ -103,8 +105,23 @@ int audio_conv_new (struct audio_convertion *conv,
 
 	if (from->rate != to->rate) {
 #ifdef HAVE_SAMPLERATE
-		conv->src_state = src_new (SRC_SINC_BEST_QUALITY,
-				to->channels, &err);
+		int resample_type = -1;
+		char *method = options_get_str ("ResampleMethod");
+
+		if (!strcasecmp(method, "SincBestQuality"))
+			resample_type = SRC_SINC_BEST_QUALITY;
+		else if (!strcasecmp(method, "SincMediumQuality"))
+			resample_type = SRC_SINC_MEDIUM_QUALITY;
+		else if (!strcasecmp(method, "SincFastest"))
+			resample_type = SRC_SINC_FASTEST;
+		else if (!strcasecmp(method, "ZeroOrderHold"))
+			resample_type = SRC_ZERO_ORDER_HOLD;
+		else if (!strcasecmp(method, "Linear"))
+			resample_type = SRC_LINEAR;
+		else
+			fatal ("Bad ResampleMethod option");
+		
+		conv->src_state = src_new (resample_type, to->channels, &err);
 		if (!conv->src_state) {
 			error ("Can't resammple from %dHz to %dHz: %s",
 					from->rate, to->rate,

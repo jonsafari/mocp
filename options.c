@@ -181,6 +181,7 @@ void options_init ()
 	option_add_str ("FastDir10", NULL);
 	option_add_int ("Mp3IgnoreCRCErrors", 1);
 	option_add_int ("SeekTime", 1);
+	option_add_str ("ResampleMethod", "Linear");
 }
 
 /* Return 1 if a parameter to an integer option is valid. */
@@ -248,6 +249,14 @@ int check_str_option (const char *name, const char *val)
 		/* simple check if val is FORMAT1:FORMAT2 */
 		if (!(colon = strchr(val, ':')) || strchr(colon + 1, ':')
 				|| *(colon + 1) == 0 || colon == val)
+			return 0;
+	}
+	else if (!strcmp(name, "ResampleMethod")) {
+		if (strcasecmp(val, "SincBestQuality")
+				&& strcasecmp(val, "SincMediumQuality")
+				&& strcasecmp(val, "SincFastest")
+				&& strcasecmp(val, "ZeroOrderHold")
+				&& strcasecmp(val, "Linear"))
 			return 0;
 	}
 	
