@@ -57,7 +57,90 @@ static void alsa_shutdown ()
 		logit ("Can't close mixer: %s", snd_strerror(err));
 }
 
-static void alsa_init ()
+static void fill_capabilities (struct output_driver_caps *caps)
+{
+	snd_pcm_hw_params_t *hw_params;
+	snd_pcm_format_mask_t *format_mask;
+	int err;
+	int val;
+
+	if ((err = snd_pcm_open(&handle, options_get_str("AlsaDevice"),
+					SND_PCM_STREAM_PLAYBACK,
+					SND_PCM_NONBLOCK)) < 0) {
+		fatal ("Can't open audio: %s", snd_strerror(err));
+	}
+
+	if ((err = snd_pcm_hw_params_malloc(&hw_params)) < 0) {
+		fatal ("Can't allocate alsa hardware parameters structure: %s",
+				snd_strerror(err));
+	}
+
+	if ((err = snd_pcm_hw_params_any (handle, hw_params)) < 0) {
+		fatal ("Can't initialize hardware parameters structure: %s",
+				snd_strerror(err));
+	}
+
+	if ((err = snd_pcm_hw_params_get_channels_min (hw_params, &val)) < 0) {
+		fatal ("Can't get the minimum number of channels: %s",
+				snd_strerror(err));
+	}
+	caps->min.channels = val;
+	
+	if ((err = snd_pcm_hw_params_get_channels_max (hw_params, &val)) < 0) {
+		fatal ("Can't get the maximum number of channels: %s",
+				snd_strerror(err));
+	}
+	caps->max.channels = val;
+
+	if ((err = snd_pcm_hw_params_get_rate_min (hw_params, &val, 0)) < 0) {
+		fatal ("Can't get the minimum sample rate: %s",
+				snd_strerror(err));
+	}
+	caps->min.rate = val;
+	
+	if ((err = snd_pcm_hw_params_get_rate_max (hw_params, &val, 0)) < 0) {
+		fatal ("Can't get the maximum sample rate: %s",
+				snd_strerror(err));
+	}
+	caps->max.rate = val;
+
+	if ((err = snd_pcm_format_mask_malloc(&format_mask)) < 0) {
+		fatal ("Can't allocate format mask: %s", snd_strerror(err));
+	}
+	snd_pcm_hw_params_get_format_mask (hw_params, format_mask);
+
+	caps->min.format = 0;
+	caps->max.format = 0;
+	
+	if (snd_pcm_format_mask_test(format_mask, SND_PCM_FORMAT_S8)) {
+		caps->min.format = 1;
+		caps->max.format = 1;
+	}
+
+	if (snd_pcm_format_mask_test(format_mask, SND_PCM_FORMAT_S16)) {
+		if (!caps->min.format)
+			caps->min.format = 2;
+		caps->max.format = 2;
+	}
+
+	if (snd_pcm_format_mask_test(format_mask, SND_PCM_FORMAT_S24)) {
+		if (!caps->min.format)
+			caps->min.format = 3;
+		caps->max.format = 3;
+	}
+	if (snd_pcm_format_mask_test(format_mask, SND_PCM_FORMAT_S32)) {
+		if (!caps->min.format)
+			caps->min.format = 4;
+		caps->max.format = 4;
+	}
+
+	snd_pcm_format_mask_free (format_mask);
+	snd_pcm_hw_params_free (hw_params);
+	snd_pcm_close (handle);
+	handle = NULL;
+}
+
+static void alsa_init (struct output_driver_caps *caps)
 {
 	int err;
 	snd_mixer_selem_id_t *mixer_sid;
@@ -104,6 +187,8 @@ static void alsa_init ()
 		logit ("Opened mixer, volume range: %ld-%ld", mixer_min,
 				mixer_max);
 	}
+
+	fill_capabilities (caps);
 }
 
 static int alsa_open (struct sound_params *sound_params)
@@ -498,21 +583,6 @@ static int alsa_reset ()
 	return 1;
 }
 
-static int alsa_get_format ()
-{
-	return params.format;
-}
-
-static int alsa_get_rate ()
-{
-	return params.rate;
-}
-
-static int alsa_get_channels ()
-{
-	return params.channels;
-}
-
 void alsa_funcs (struct hw_funcs *funcs)
 {
 	funcs->init = alsa_init;
@@ -524,7 +594,4 @@ void alsa_funcs (struct hw_funcs *funcs)
 	funcs->set_mixer = alsa_set_mixer;
 	funcs->get_buff_fill = alsa_get_buff_fill;
 	funcs->reset = alsa_reset;
-	funcs->get_format = alsa_get_format;
-	funcs->get_rate = alsa_get_rate;
-	funcs->get_channels = alsa_get_channels;
 }
