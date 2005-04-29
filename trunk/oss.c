@@ -105,22 +105,6 @@ static void set_capabilities (struct output_driver_caps *caps)
 	}
 
 	close (dsp_fd);
-	if (!open_dev())
-		fatal ("Can't open the device.");
-	if (ioctl(dsp_fd, SNDCTL_DSP_CHANNELS, &caps->max.channels))
-		fatal ("Can't set number of channels: %s", strerror(errno));
-
-	caps->min.rate = 1;
-	caps->max.rate = 1000000;
-
-	if (ioctl(dsp_fd, SNDCTL_DSP_SPEED, &caps->min.rate))
-		fatal ("Can't get the minimum sample rate: %s",
-				strerror(errno));
-	if (ioctl(dsp_fd, SNDCTL_DSP_SPEED, &caps->max.rate))
-		fatal ("Can't get the maximum sample rate: %s",
-				strerror(errno));
-
-	close (dsp_fd);
 }
 
 static void oss_init (struct output_driver_caps *caps)

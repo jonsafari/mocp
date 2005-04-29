@@ -92,18 +92,6 @@ static void fill_capabilities (struct output_driver_caps *caps)
 	}
 	caps->max.channels = val;
 
-	if ((err = snd_pcm_hw_params_get_rate_min (hw_params, &val, 0)) < 0) {
-		fatal ("Can't get the minimum sample rate: %s",
-				snd_strerror(err));
-	}
-	caps->min.rate = val;
-	
-	if ((err = snd_pcm_hw_params_get_rate_max (hw_params, &val, 0)) < 0) {
-		fatal ("Can't get the maximum sample rate: %s",
-				snd_strerror(err));
-	}
-	caps->max.rate = val;
-
 	if ((err = snd_pcm_format_mask_malloc(&format_mask)) < 0) {
 		fatal ("Can't allocate format mask: %s", snd_strerror(err));
 	}
