@@ -500,7 +500,7 @@ static void draw_plist_time ()
 	sec_to_min_plist (buf, time);
 	wmove (info_win, 0, COLS - 12);
 	waddch (info_win, all_files ? ' ' : '>');
-	wprintw (info_win, "%09s", buf);
+	wprintw (info_win, "%s", buf);
 }
 
 /* Draw the entry. Use this function at the end of screen drawing, because
