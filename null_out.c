@@ -73,6 +73,11 @@ static void null_init (struct output_driver_caps *caps)
 	caps->max.channels = 2;
 }
 
+static int null_get_rate ()
+{
+	return params.rate;
+}
+
 void null_funcs (struct hw_funcs *funcs)
 {
 	funcs->init = null_init;
@@ -83,4 +88,5 @@ void null_funcs (struct hw_funcs *funcs)
 	funcs->set_mixer = null_set_mixer;
 	funcs->get_buff_fill = null_get_buff_fill;
 	funcs->reset = null_reset;
+	funcs->get_rate = null_get_rate;
 }

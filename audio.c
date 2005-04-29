@@ -92,6 +92,10 @@ static struct sound_params req_sound_params = { 0, 0, 0 };
 static struct audio_convertion sound_conv;
 static int need_audio_convertion = 0;
 
+/* Check if the two sample rates don't differ as much that we can't play. */
+#define sample_rate_compat(sound, device) ((device) * 1.05 >= sound \
+		&& (device) * 0.95 <= sound)
+
 /* Move to the next file depending on set options and the user request. */
 static void go_to_another_file ()
 {
@@ -351,6 +355,7 @@ static void reset_sound_params (struct sound_params *params)
 int audio_open (struct sound_params *sound_params)
 {
 	int res;
+	int actual_rate;
 
 	if (audio_opened && sound_params_eq(req_sound_params, *sound_params)) {
 		if (audio_get_bps() < 88200) {
@@ -381,10 +386,6 @@ int audio_open (struct sound_params *sound_params)
 	
 	if (options_get_int("ForceSampleRate"))
 		driver_sound_params.rate = options_get_int("ForceSampleRate");
-	else if (driver_sound_params.rate > hw_caps.max.rate)
-		driver_sound_params.rate = hw_caps.max.rate;
-	else if (driver_sound_params.rate < hw_caps.min.rate)
-		driver_sound_params.rate = hw_caps.min.rate;
 	
 	if (driver_sound_params.format > hw_caps.max.format)
 		driver_sound_params.format = hw_caps.max.format;
@@ -398,8 +399,16 @@ int audio_open (struct sound_params *sound_params)
 
 
 	res = hw.open (&driver_sound_params);
+	actual_rate = hw.get_rate ();
 	if (res) {
-		if (!sound_params_eq(driver_sound_params, req_sound_params)) {
+		if (driver_sound_params.format != req_sound_params.format
+				|| driver_sound_params.channels
+				!= req_sound_params.channels
+				|| (!sample_rate_compat(
+						req_sound_params.rate,
+						actual_rate))) {
+			logit ("Convertion of the sound is needed.");
+			driver_sound_params.rate = actual_rate;
 			if (!audio_conv_new (&sound_conv, &req_sound_params,
 					&driver_sound_params)) {
 				hw.close ();
@@ -408,8 +417,20 @@ int audio_open (struct sound_params *sound_params)
 			}
 			need_audio_convertion = 1;
 		}
+		else
+			driver_sound_params.rate = actual_rate;
 		audio_opened = 1;
+
+		logit ("Requestet sound parameters: %dbps, %d channels, %dHz",
+				req_sound_params.format * 8,
+				req_sound_params.channels,
+				req_sound_params.rate);
+		logit ("Driver sound parameters: %dbps, %d channels, %dHz",
+				driver_sound_params.format * 8,
+				driver_sound_params.channels,
+				driver_sound_params.rate);
 	}
+	
 	return res;
 }
 
