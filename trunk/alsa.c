@@ -259,15 +259,8 @@ static int alsa_open (struct sound_params *sound_params)
 		return 0;
 	}
 
-	if ((float)rate * 1.05 < sound_params->rate
-			|| (float)rate * 0.95 > sound_params->rate) {
-		error ("Can't set acurative rate: %dHz vs %dHz",
-				sound_params->rate, rate);
-		snd_pcm_hw_params_free (hw_params);
-		return 0;
-	}
-
-	logit ("Set rate to %d", rate);
+	params.rate = rate;
+	logit ("Set rate to %d", params.rate);
 	
 	if ((err = snd_pcm_hw_params_set_channels (handle, hw_params,
 					sound_params->channels)) < 0) {
@@ -337,7 +330,6 @@ static int alsa_open (struct sound_params *sound_params)
 	
 	params.format = sound_params->format;
 	params.channels = sound_params->channels;
-	params.rate = rate;
 	alsa_buf_fill = 0;
 	return 1;
 }
@@ -583,6 +575,11 @@ static int alsa_reset ()
 	return 1;
 }
 
+static int alsa_get_rate ()
+{
+	return params.rate;
+}
+
 void alsa_funcs (struct hw_funcs *funcs)
 {
 	funcs->init = alsa_init;
@@ -594,4 +591,5 @@ void alsa_funcs (struct hw_funcs *funcs)
 	funcs->set_mixer = alsa_set_mixer;
 	funcs->get_buff_fill = alsa_get_buff_fill;
 	funcs->reset = alsa_reset;
+	funcs->get_rate = alsa_get_rate;
 }

@@ -145,10 +145,6 @@ static int moc_jack_open (struct sound_params *sound_params)
 		error ("Unsupported number of channels");
 		return 0;
 	}
-	if (sound_params->rate != (int)jack_get_sample_rate(client)) {
-		error ("Unsupported sample rate.");
-		return 0;
-	}
 	
 	params = *sound_params;
 	logit ("jack open");
@@ -210,6 +206,11 @@ static void moc_jack_shutdown(){
 	jack_ringbuffer_free(ringbuffer);
 }
 
+static int moc_jack_get_rate ()
+{	
+	return jack_get_sample_rate(client);
+}
+
 void moc_jack_funcs (struct hw_funcs *funcs)
 {
 	funcs->init = moc_jack_init;
@@ -221,5 +222,5 @@ void moc_jack_funcs (struct hw_funcs *funcs)
 	funcs->get_buff_fill = moc_jack_get_buff_fill;
 	funcs->reset = moc_jack_reset;
 	funcs->shutdown = moc_jack_shutdown;
+	funcs->get_rate = moc_jack_get_rate;
 }
-

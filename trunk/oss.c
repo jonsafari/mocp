@@ -171,7 +171,6 @@ static int oss_set_params ()
 {
 	int req_format;
 	int req_channels;
-	int req_rate;
 
 	/* Set format */
 	switch (params.format) {
@@ -209,16 +208,9 @@ static int oss_set_params ()
 	}
 
 	/* Set sample rate */
-	req_rate = params.rate;
-	if (ioctl(dsp_fd, SNDCTL_DSP_SPEED, &req_rate) == -1) {
+	if (ioctl(dsp_fd, SNDCTL_DSP_SPEED, &params.rate) == -1) {
 		error ("Can't set sampling rate to %d, %s", params.rate,
 				strerror(errno));
-		oss_close ();
-		return 0;
-	}
-	if (params.rate != req_rate) {
-		error ("Can't set sample rate %d, device doesn't support this value",
-				params.rate);
 		oss_close ();
 		return 0;
 	}
@@ -332,6 +324,11 @@ static int oss_reset ()
 	return 1;
 }
 
+static int oss_get_rate ()
+{
+	return params.rate;
+}
+
 void oss_funcs (struct hw_funcs *funcs)
 {
 	funcs->init = oss_init;
@@ -343,4 +340,5 @@ void oss_funcs (struct hw_funcs *funcs)
 	funcs->set_mixer = oss_set_mixer;
 	funcs->get_buff_fill = oss_get_buff_fill;
 	funcs->reset = oss_reset;
+	funcs->get_rate = oss_get_rate;
 }
