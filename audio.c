@@ -530,10 +530,8 @@ static void find_hw_funcs (const char *driver, struct hw_funcs *funcs)
 
 static void print_output_capabilities (const struct output_driver_caps *caps)
 {
-	logit ("Sound driver capabilities: channels %d - %d, "
-			"sample rate %d - %d, bps: %d - %d",
+	logit ("Sound driver capabilities: channels %d - %d, bps: %d - %d",
 			caps->min.channels, caps->max.channels,
-			caps->min.rate, caps->max.rate,
 			caps->min.format * 8, caps->max.format * 8);
 }
 
