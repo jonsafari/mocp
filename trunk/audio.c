@@ -51,7 +51,7 @@
 #include "audio.h"
 #include "files.h"
 #include "io.h"
-#include "audio_convertion.h"
+#include "audio_conversion.h"
 
 static pthread_t playing_thread = 0;  /* tid of play thread */
 static int play_thread_running = 0;
@@ -89,8 +89,8 @@ static struct sound_params driver_sound_params;
 /* Sound parameters requestet by the decoder. */
 static struct sound_params req_sound_params = { 0, 0, 0 };
 
-static struct audio_convertion sound_conv;
-static int need_audio_convertion = 0;
+static struct audio_conversion sound_conv;
+static int need_audio_conversion = 0;
 
 /* Check if the two sample rates don't differ as much that we can't play. */
 #define sample_rate_compat(sound, device) ((device) * 1.05 >= sound \
@@ -407,7 +407,7 @@ int audio_open (struct sound_params *sound_params)
 				|| (!sample_rate_compat(
 						req_sound_params.rate,
 						actual_rate))) {
-			logit ("Convertion of the sound is needed.");
+			logit ("Conversion of the sound is needed.");
 			driver_sound_params.rate = actual_rate;
 			if (!audio_conv_new (&sound_conv, &req_sound_params,
 					&driver_sound_params)) {
@@ -415,7 +415,7 @@ int audio_open (struct sound_params *sound_params)
 				reset_sound_params (&req_sound_params);
 				return 0;
 			}
-			need_audio_convertion = 1;
+			need_audio_conversion = 1;
 		}
 		else
 			driver_sound_params.rate = actual_rate;
@@ -440,12 +440,12 @@ int audio_send_buf (const char *buf, const size_t size)
 	int res;
 	char *converted = NULL;
 	
-	if (need_audio_convertion)
+	if (need_audio_conversion)
 		converted = audio_conv (&sound_conv, buf, size, &out_data_len);
 	
-	if (need_audio_convertion && converted)
+	if (need_audio_conversion && converted)
 		res = out_buf_put (&out_buf, converted,	out_data_len);
-	else if (!need_audio_convertion)
+	else if (!need_audio_conversion)
 		res = out_buf_put (&out_buf, buf, size);
 	else
 		res = 0;
@@ -485,9 +485,9 @@ void audio_close ()
 	if (audio_opened) {
 		reset_sound_params (&req_sound_params);
 		hw.close ();
-		if (need_audio_convertion) {
+		if (need_audio_conversion) {
 			audio_conv_destroy (&sound_conv);
-			need_audio_convertion = 0;
+			need_audio_conversion = 0;
 		}
 		audio_opened = 0;
 	}

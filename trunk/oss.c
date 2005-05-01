@@ -73,7 +73,7 @@ static void set_capabilities (struct output_driver_caps *caps)
 	}
 
 #if 0
-	/* FIXME: Convertion from native endian would be needed. */
+	/* FIXME: Conversion from native endian would be needed. */
 	if (format_mask & AFMT_S32_LE) {
 		caps->max.format = 4;
 		if (caps->min.format == -1)

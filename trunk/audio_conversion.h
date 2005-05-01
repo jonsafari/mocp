@@ -1,5 +1,5 @@
-#ifndef AUDIO_CONVERTION_H
-#define AUDIO_CONVERTION_H
+#ifndef AUDIO_CONVERSION_H
+#define AUDIO_CONVERSION_H
 
 #include <sys/types.h>
 
@@ -9,7 +9,7 @@
 
 #include "audio.h"
 
-struct audio_convertion
+struct audio_conversion
 {
 	struct sound_params from;
 	struct sound_params to;
@@ -22,11 +22,11 @@ struct audio_convertion
 	
 };
 
-int audio_conv_new (struct audio_convertion *conv,
+int audio_conv_new (struct audio_conversion *conv,
 		const struct sound_params *from,
 		const struct sound_params *to);
-char *audio_conv (struct audio_convertion *conv,
+char *audio_conv (struct audio_conversion *conv,
 		const char *buf, const size_t size, size_t *conv_len);
-void audio_conv_destroy (struct audio_convertion *conv);
+void audio_conv_destroy (struct audio_conversion *conv);
 
 #endif
