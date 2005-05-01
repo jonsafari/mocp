@@ -7,12 +7,12 @@
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
  *
- * Code for convertion between float and fixed point types is based on
+ * Code for conversion between float and fixed point types is based on
  * libsamplerate:
  * Copyright (C) 2002-2004 Erik de Castro Lopo <erikd@mega-nerd.com>
  */
 
-/* For future: audio convertion should be performed in order:
+/* For future: audio conversion should be performed in order:
  * channels -> rate -> format
  */
 
@@ -38,7 +38,7 @@
 
 #define DEBUG
 
-#include "audio_convertion.h"
+#include "audio_conversion.h"
 #include "main.h"
 #include "log.h"
 #include "options.h"
@@ -82,9 +82,9 @@ static void audio_conv_s16_to_float (const char *in, float *out,
 		out[i] = *((short *)(in + i*2)) / (float)INT16_MAX;
 }
 
-/* Initialize the audio_convertion structure for convertion between parameters
+/* Initialize the audio_conversion structure for conversion between parameters
  * from and to. Return 0 on error. */
-int audio_conv_new (struct audio_convertion *conv,
+int audio_conv_new (struct audio_conversion *conv,
 		const struct sound_params *from,
 		const struct sound_params *to)
 {
@@ -94,7 +94,7 @@ int audio_conv_new (struct audio_convertion *conv,
 			|| from->channels != to->channels);
 	
 	if (from->format != to->format) {
-		error ("PCM format convertion not supported");
+		error ("PCM format conversion not supported");
 		return 0;
 	}
 
@@ -150,7 +150,7 @@ int audio_conv_new (struct audio_convertion *conv,
 }
 
 #ifdef HAVE_SAMPLERATE
-static char *resample_sound (struct audio_convertion *conv, const char *buf,
+static char *resample_sound (struct audio_conversion *conv, const char *buf,
 		const size_t size, size_t *resampled_size)
 {
 	SRC_DATA resample_data;
@@ -251,7 +251,7 @@ static char *resample_sound (struct audio_convertion *conv, const char *buf,
 }
 #endif
 
-char *audio_conv (struct audio_convertion *conv, const char *buf,
+char *audio_conv (struct audio_conversion *conv, const char *buf,
 		const size_t size, size_t *conv_len)
 {
 #ifdef HAVE_SAMPLERATE
@@ -261,7 +261,7 @@ char *audio_conv (struct audio_convertion *conv, const char *buf,
 	return NULL;
 }
 
-void audio_conv_destroy (struct audio_convertion *conv)
+void audio_conv_destroy (struct audio_conversion *conv)
 {
 	assert (conv != NULL);
 
