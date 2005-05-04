@@ -780,7 +780,7 @@ int plist_last (struct plist *plist)
 {
 	int i;
 
-	i = plist->num;
+	i = plist->num - 1;
 	
 	while (i > 0 && plist_deleted(plist, i))
 		i--;
