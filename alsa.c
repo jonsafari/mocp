@@ -20,7 +20,7 @@
 # include "config.h"
 #endif
 
-/*#define DEBUG*/
+#define DEBUG
 
 #include <stdlib.h>
 #include <alsa/asoundlib.h>
@@ -37,9 +37,16 @@
 #define BUFFER_MAX_USEC	300000
 
 static snd_pcm_t *handle = NULL;
-static struct sound_params params = { 0, 0, 0 };
+
+static struct
+{
+	unsigned channels;
+	unsigned rate;
+	snd_pcm_format_t format;
+} params = { 0, 0, SND_PCM_FORMAT_UNKNOWN };
+
 static int chunk_size = -1; /* in frames */
-static char alsa_buf[16 * 1024];
+static char alsa_buf[64 * 1024];
 static int alsa_buf_fill = 0;
 static int bytes_per_frame;
 
@@ -84,43 +91,36 @@ static void fill_capabilities (struct output_driver_caps *caps)
 		fatal ("Can't get the minimum number of channels: %s",
 				snd_strerror(err));
 	}
-	caps->min.channels = val;
+	caps->min_channels = val;
 	
 	if ((err = snd_pcm_hw_params_get_channels_max (hw_params, &val)) < 0) {
 		fatal ("Can't get the maximum number of channels: %s",
 				snd_strerror(err));
 	}
-	caps->max.channels = val;
+	caps->max_channels = val;
 
 	if ((err = snd_pcm_format_mask_malloc(&format_mask)) < 0) {
 		fatal ("Can't allocate format mask: %s", snd_strerror(err));
 	}
 	snd_pcm_hw_params_get_format_mask (hw_params, format_mask);
 
-	caps->min.format = 0;
-	caps->max.format = 0;
-	
-	if (snd_pcm_format_mask_test(format_mask, SND_PCM_FORMAT_S8)) {
-		caps->min.format = 1;
-		caps->max.format = 1;
-	}
-
-	if (snd_pcm_format_mask_test(format_mask, SND_PCM_FORMAT_S16)) {
-		if (!caps->min.format)
-			caps->min.format = 2;
-		caps->max.format = 2;
-	}
-
-	if (snd_pcm_format_mask_test(format_mask, SND_PCM_FORMAT_S24)) {
-		if (!caps->min.format)
-			caps->min.format = 3;
-		caps->max.format = 3;
-	}
-	if (snd_pcm_format_mask_test(format_mask, SND_PCM_FORMAT_S32)) {
-		if (!caps->min.format)
-			caps->min.format = 4;
-		caps->max.format = 4;
-	}
+	caps->formats = SFMT_LE;
+	if (snd_pcm_format_mask_test(format_mask, SND_PCM_FORMAT_S8))
+		caps->formats |= SFMT_S8;
+	if (snd_pcm_format_mask_test(format_mask, SND_PCM_FORMAT_U8))
+		caps->formats |= SFMT_U8;
+	if (snd_pcm_format_mask_test(format_mask, SND_PCM_FORMAT_S16))
+		caps->formats |= SFMT_S16;
+	if (snd_pcm_format_mask_test(format_mask, SND_PCM_FORMAT_U16))
+		caps->formats |= SFMT_U16;
+#if 0
+	if (snd_pcm_format_mask_test(format_mask, SND_PCM_FORMAT_S24))
+		caps->formats |= SFMT_S32; /* conversion needed */
+#endif
+	if (snd_pcm_format_mask_test(format_mask, SND_PCM_FORMAT_S32))
+		caps->formats |= SFMT_S32;
+	if (snd_pcm_format_mask_test(format_mask, SND_PCM_FORMAT_U32))
+		caps->formats |= SFMT_U32;
 
 	snd_pcm_format_mask_free (format_mask);
 	snd_pcm_hw_params_free (hw_params);
@@ -183,26 +183,36 @@ static int alsa_open (struct sound_params *sound_params)
 {
 	snd_pcm_hw_params_t *hw_params;
 	int err;
-	unsigned int rate;
 	unsigned int period_time;
 	unsigned int buffer_time;
 	snd_pcm_uframes_t chunk_frames;
 	snd_pcm_uframes_t buffer_frames;
-	snd_pcm_format_t format;
+	char fmt_name[128];
 
-	switch (sound_params->format) {
-		case 1:
-			format = SND_PCM_FORMAT_S8;
+	switch (sound_params->fmt & SFMT_MASK_FORMAT) {
+		case SFMT_S8:
+			params.format = SND_PCM_FORMAT_S8;
 			break;
-		case 2:
-			format = SND_PCM_FORMAT_S16;
+		case SFMT_U8:
+			params.format = SND_PCM_FORMAT_U8;
 			break;
-		case 3:
-			format = SND_PCM_FORMAT_S24;
+		case SFMT_S16:
+			params.format = SND_PCM_FORMAT_S16;
+			break;
+		case SFMT_U16:
+			params.format = SND_PCM_FORMAT_U16;
+			break;
+		case SFMT_S32:
+			params.format = SND_PCM_FORMAT_S32;
+			break;
+		case SFMT_U32:
+			params.format = SND_PCM_FORMAT_U32;
 			break;
 		default:
-			error ("Unknown bps value: %d",
-					sound_params->format * 8);
+			error ("Unknown sample format: %s",
+					sfmt_str(sound_params->fmt, fmt_name,
+						sizeof(fmt_name)));
+			params.format = SND_PCM_FORMAT_UNKNOWN;
 			return 0;
 	}
 
@@ -232,22 +242,21 @@ static int alsa_open (struct sound_params *sound_params)
 		return 0;
 	}
 
-	if ((err = snd_pcm_hw_params_set_format (handle, hw_params, format))
-			< 0) {
+	if ((err = snd_pcm_hw_params_set_format (handle, hw_params,
+					params.format)) < 0) {
 		error ("Can't set sample format: %s", snd_strerror(err));
 		snd_pcm_hw_params_free (hw_params);
 		return 0;
 	}
 
-	rate = sound_params->rate;
+	params.rate = sound_params->rate;
 	if ((err = snd_pcm_hw_params_set_rate_near (handle, hw_params,
-					&rate, 0)) < 0) {
+					&params.rate, 0)) < 0) {
 		error ("Can't set sample rate: %s", snd_strerror(err));
 		snd_pcm_hw_params_free (hw_params);
 		return 0;
 	}
 
-	params.rate = rate;
 	logit ("Set rate to %d", params.rate);
 	
 	if ((err = snd_pcm_hw_params_set_channels (handle, hw_params,
@@ -291,7 +300,8 @@ static int alsa_open (struct sound_params *sound_params)
 	snd_pcm_hw_params_get_period_size (hw_params, &chunk_frames, 0);
 	snd_pcm_hw_params_get_buffer_size (hw_params, &buffer_frames);
 
-	bytes_per_frame = sound_params->channels * sound_params->format;
+	bytes_per_frame = sound_params->channels
+		* sfmt_Bps(sound_params->fmt);
 
 	logit ("Buffer time: %ldus", buffer_frames * bytes_per_frame);
 
@@ -316,7 +326,6 @@ static int alsa_open (struct sound_params *sound_params)
 
 	debug ("ALSA device initialized");
 	
-	params.format = sound_params->format;
 	params.channels = sound_params->channels;
 	alsa_buf_fill = 0;
 	return 1;
@@ -394,8 +403,7 @@ static void alsa_close ()
 
 		/* FIXME: why the last argument is multiplied by number of
 		 * channels? */
-		snd_pcm_format_set_silence (params.format == 1
-				? SND_PCM_FORMAT_S8 : SND_PCM_FORMAT_S16_LE,
+		snd_pcm_format_set_silence (params.format,
 				alsa_buf + alsa_buf_fill,
 				(chunk_size - alsa_buf_fill) / bytes_per_frame
 				* params.channels);
