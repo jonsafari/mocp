@@ -28,6 +28,7 @@
 
 #include <assert.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <math.h>
 #include <string.h>
 #include <strings.h>
@@ -43,7 +44,37 @@
 #include "log.h"
 #include "options.h"
 
-static void audio_conv_float_to_s16 (const float *in, char *out,
+/* Byte order conversion */
+/* TODO: use functions from byteswap.h if available */
+#define SWAP_INT16(l) ((int16_t) \
+			( (l) << 8) | ((l) >> 8) )
+#define SWAP_INT32(l) ((int32_t) (\
+			(((l) & 0x000000ff) << 24) | \
+			(((l) & 0x0000ff00) << 8) | \
+			(((l) & 0x00ff0000) >> 8) | \
+			(((l) & 0xff000000) >> 24) \
+			) \
+		)
+
+#if 0
+#ifdef WORDS_BIGENDIAN
+# define INT16_BE_TO_NE(l)	(l)
+# define INT16_LE_TO_NE(l)	SWAP_INT16 (l)
+# define INT32_BE_TO_NE(l)	(l)
+# define INT32_LE_TO_NE(l)	SWAP_INT32 (l)
+#else
+# define INT16_BE_TO_NE(l)	SWAP_INT16 (l)
+# define INT16_LE_TO_NE(l)	(l)
+# define INT32_BE_TO_NE(l)	SWAP_INT32 (l)
+# define INT32_LE_TO_NE(l)	(l)
+#endif
+
+/* The byte order conversion is simetris, so this is true: */
+#define INT16_NE_TO_LE		INT16_LE_TO_NE (l)
+#define INT32_NE_TO_BE		INT32_BE_TO_NE (l)
+#endif
+
+static void float_to_s16 (const float *in, char *out,
 		const size_t samples)
 {
 	size_t i;
@@ -52,7 +83,7 @@ static void audio_conv_float_to_s16 (const float *in, char *out,
 	assert (out != NULL);
 
 	for (i = 0; i < samples; i++) {
-		short *out_val = (short *)(out + i*2);
+		int16_t *out_val = (int16_t *)(out + i*2);
 		float f = in[i] * INT32_MAX;
 		
 		if (f >= INT32_MAX)
@@ -70,7 +101,38 @@ static void audio_conv_float_to_s16 (const float *in, char *out,
 	}
 }
 
-static void audio_conv_s16_to_float (const char *in, float *out,
+static void float_to_s32 (const float *in, char *out,
+		const size_t samples)
+{
+	size_t i;
+
+	/* maximum and minimum values of 32-bit samples */
+	const int S32_MAX = (1 << 23) - 1;
+	const int S32_MIN = -(1 << 23);
+
+	assert (in != NULL);
+	assert (out != NULL);
+
+	for (i = 0; i < samples; i++) {
+		int32_t *out_val = (int32_t *)(out + i*sizeof(int32_t));
+		float f = in[i] * S32_MAX;
+		
+		if (f >= S32_MAX)
+			*out_val = S32_MAX;
+		else if (f <= S32_MIN)
+			*out_val = S32_MIN;
+		else {
+#ifdef HAVE_LRINTF
+			*out_val = lrintf(f) << 8;
+#else
+			*out_val = (int32_t)f << 8;
+#endif
+		}
+		
+	}
+}
+
+static void s8_to_float (const char *in, float *out,
 		const size_t samples)
 {
 	size_t i;
@@ -79,7 +141,195 @@ static void audio_conv_s16_to_float (const char *in, float *out,
 	assert (out != NULL);
 	
 	for (i = 0; i < samples; i++)
-		out[i] = *((short *)(in + i*2)) / (float)INT16_MAX;
+		out[i] = *in++ / (float)INT8_MAX;
+}
+
+static void s16_to_float (const char *in, float *out,
+		const size_t samples)
+{
+	size_t i;
+	const int16_t *in_16 = (int16_t *)in;
+
+	assert (in != NULL);
+	assert (out != NULL);
+	
+	for (i = 0; i < samples; i++)
+		out[i] = *in_16++ / (float)INT16_MAX;
+}
+
+static void s32_to_float (const char *in, float *out,
+		const size_t samples)
+{
+	size_t i;
+	const int32_t *in_32 = (int32_t *)in;
+
+	assert (in != NULL);
+	assert (out != NULL);
+	
+	for (i = 0; i < samples; i++)
+		out[i] = *in_32++ / (float)INT32_MAX;
+}
+
+/* Convert fixed point samples in format fmt (size in bytes) to float.
+ * Size of converted sound is put in bew_size. Returned memory is malloc()ed. */
+static float *fixed_to_float (const char *buf, const size_t size,
+		const long fmt, size_t *new_size)
+{
+	float *out = NULL;
+	char fmt_name[128];
+	
+	switch (fmt & SFMT_MASK_FORMAT) {
+		case SFMT_S8:
+			*new_size = sizeof(float) * size;
+			out = (float *)xmalloc (*new_size);
+			s8_to_float (buf, out, size);
+			break;
+		case SFMT_S16:
+			*new_size = sizeof(float) * size / 2;
+			out = (float *)xmalloc (*new_size);
+			s16_to_float (buf, out, size / 2);
+			break;
+		case SFMT_S32:
+			*new_size = sizeof(float) * size / 4;
+			out = (float *)xmalloc (*new_size);
+			s32_to_float (buf, out, size / 4);
+			break;
+		default:
+			 error ("Can't convert %s to float!",
+					 sfmt_str(fmt, fmt_name,
+						 sizeof(fmt_name)));
+	}
+
+	return out;
+}
+
+/* Convert float samples to fixed point format fmt. Returned sames of size
+ * new_size bytes is malloc()ed. */
+static char *float_to_fixed (const float *buf, const size_t samples,
+		const long fmt, size_t *new_size)
+{
+	char fmt_name[128];
+	char *new_snd = NULL;
+	
+	switch (fmt & SFMT_MASK_FORMAT) {
+		case SFMT_S16:
+			*new_size = samples * 2;
+			new_snd = (char *) xmalloc(*new_size);
+			float_to_s16 (buf, new_snd, samples);
+			break;
+		case SFMT_S32:
+			*new_size = samples * 4;
+			new_snd = (char *) xmalloc(*new_size);
+			float_to_s32 (buf, new_snd, samples);
+			break;
+		default:
+			error ("Can't convert from float to %s",
+					sfmt_str(fmt, fmt_name,
+						sizeof(fmt_name)));
+			abort ();
+	}
+
+	return new_snd;
+}
+
+static void change_sign_8 (uint8_t *buf, const size_t samples)
+{
+	size_t i;
+
+	for (i = 0; i < samples; i++)
+		*buf++ ^= 1 << 7;
+}
+static void change_sign_16 (uint16_t *buf, const size_t samples)
+{
+	size_t i;
+
+	for (i = 0; i < samples; i++)
+		*buf++ ^= 1 << 15;
+}
+
+static void change_sign_32 (uint32_t *buf, const size_t samples)
+{
+	size_t i;
+
+	for (i = 0; i < samples; i++)
+		*buf++ ^= 1 << 31;
+}
+
+/* Change the signes of samples in format *fmt. Also changes fmt to the new
+ * format. */
+static void change_sign (char *buf, const size_t size, long *fmt)
+{
+	char fmt_name[128];
+	
+	switch (*fmt & SFMT_MASK_FORMAT) {
+		case SFMT_S8:
+		case SFMT_U8:
+			change_sign_8 ((uint8_t *)buf, size);
+			if (*fmt & SFMT_S8)
+				*fmt = sfmt_set_fmt (*fmt, SFMT_U8);
+			else
+				*fmt = sfmt_set_fmt (*fmt, SFMT_S8);
+			break;
+		case SFMT_S16:
+		case SFMT_U16:
+			change_sign_16 ((uint16_t *)buf, size / 2);
+			if (*fmt & SFMT_S16)
+				*fmt = sfmt_set_fmt (*fmt, SFMT_U16);
+			else
+				*fmt = sfmt_set_fmt (*fmt, SFMT_S16);
+			break;
+		case SFMT_S32:
+		case SFMT_U32:
+			change_sign_32 ((uint32_t *)buf, size/4);
+			if (*fmt & SFMT_S32)
+				*fmt = sfmt_set_fmt (*fmt, SFMT_U32);
+			else
+				*fmt = sfmt_set_fmt (*fmt, SFMT_S32);
+			break;
+		default:
+			error ("Request for changing sign of unknown format: %s",
+					sfmt_str(*fmt, fmt_name,
+						sizeof(fmt_name)));
+			abort ();
+	}
+}
+
+static void int16_bswap_array (int16_t *buf, const size_t num)
+{
+	size_t i;
+
+	for (i = 0; i < num; i++)
+		buf[i] = SWAP_INT16 (buf[i]);
+}
+
+static void int32_bswap_array (int32_t *buf, const size_t num)
+{
+	size_t i;
+
+	for (i = 0; i < num; i++)
+		buf[i] = SWAP_INT32 (buf[i]);
+}
+
+/* Change fixed point samples sound to native endianes. */
+static void to_ne (char *buf, const size_t size, const long fmt)
+{
+	if ((fmt & (SFMT_S8 | SFMT_U8 | SFMT_FLOAT))
+			|| (fmt & SFMT_NE))
+		return;
+
+	switch (fmt & SFMT_MASK_FORMAT) {
+		case SFMT_S16:
+		case SFMT_U16:
+			int16_bswap_array ((int16_t *)buf, size / 2);
+			break;
+		case SFMT_S32:
+		case SFMT_U32:
+			int32_bswap_array ((int32_t *)buf, size / 4);
+			break;
+		default:
+			error ("Can't convert to native endian!");
+			abort (); /* we can't do any smarter thing */
+	}
 }
 
 /* Initialize the audio_conversion structure for conversion between parameters
@@ -90,14 +340,9 @@ int audio_conv_new (struct audio_conversion *conv,
 {
 	int err;
 	
-	assert (from->rate != to->rate || from->format != to->format
+	assert (from->rate != to->rate || from->fmt != to->fmt
 			|| from->channels != to->channels);
 	
-	if (from->format != to->format) {
-		error ("PCM format conversion not supported");
-		return 0;
-	}
-
 	if (from->channels != to->channels) {
 		error ("Can't change number of channels");
 		return 0;
@@ -150,52 +395,44 @@ int audio_conv_new (struct audio_conversion *conv,
 }
 
 #ifdef HAVE_SAMPLERATE
-static char *resample_sound (struct audio_conversion *conv, const char *buf,
-		const size_t size, size_t *resampled_size)
+static float *resample_sound (struct audio_conversion *conv, const float *buf,
+		const size_t samples, const int nchannels,
+		size_t *resampled_samples)
 {
 	SRC_DATA resample_data;
 	float *output;
 	float *new_input_start;
 	int output_samples = 0;
-	char *resampled;
 
 	resample_data.end_of_input = 0;
 	resample_data.src_ratio = conv->to.rate / (double)conv->from.rate;
 	
-	resample_data.input_frames = size / conv->from.format
-		/ conv->to.channels
-		+ conv->resample_buf_nsamples / conv->to.channels;
+	resample_data.input_frames = samples / nchannels
+		+ conv->resample_buf_nsamples / nchannels;
 	resample_data.output_frames = resample_data.input_frames
 		* resample_data.src_ratio;
 
 	if (conv->resample_buf) {
 		conv->resample_buf = (float *)xrealloc (conv->resample_buf,
 				sizeof(float) * resample_data.input_frames
-				* conv->to.channels);
+				* nchannels);
 		new_input_start = conv->resample_buf
 			+ conv->resample_buf_nsamples;
 	}
 	else {
 		conv->resample_buf = (float *)xmalloc (sizeof(float)
 				* resample_data.input_frames
-				* conv->to.channels);
+				* nchannels);
 		new_input_start = conv->resample_buf;
 	}
 
 	output = (float *)xmalloc (sizeof(float) * resample_data.input_frames
-				* conv->to.channels * resample_data.src_ratio);
+				* nchannels * resample_data.src_ratio);
 
 	/*debug ("Resampling %lu bytes of data by ratio %f", (unsigned long)size,
 			resample_data.src_ratio);*/
 	
-	if (conv->from.format == 2)
-		audio_conv_s16_to_float (buf, new_input_start, size/2);
-	else if (conv->from.format == 1)
-		/* TODO */;
-	else
-		fatal ("Unsupported format for conversion: %dbps",
-				conv->from.format * 8);
-
+	memcpy (new_input_start, buf, samples * sizeof(float));
 	resample_data.data_in = conv->resample_buf;
 	resample_data.data_out = output;
 
@@ -209,35 +446,29 @@ static char *resample_sound (struct audio_conversion *conv, const char *buf,
 		}
 
 		resample_data.data_in += resample_data.input_frames_used
-			* conv->to.channels;
+			* nchannels;
 		resample_data.input_frames -= resample_data.input_frames_used;
 		resample_data.data_out += resample_data.output_frames_gen
-			* conv->to.channels;
+			* nchannels;
 		resample_data.output_frames -= resample_data.output_frames_gen;
-		output_samples += resample_data.output_frames_gen
-			* conv->to.channels;
+		output_samples += resample_data.output_frames_gen * nchannels;
 	} while (resample_data.input_frames && resample_data.output_frames_gen
 			&& resample_data.output_frames);
 
-	resampled = (char *)xmalloc (sizeof(short) * output_samples);
-	if (conv->from.format == 2) {
-		audio_conv_float_to_s16 (output, resampled, output_samples);
-		*resampled_size = output_samples * 2;
-	}
-#if 0
-	else
-		/* TODO */;
-#endif
+	*resampled_samples = output_samples;
 
 	if (resample_data.input_frames) {
 		conv->resample_buf_nsamples = resample_data.input_frames
-			* conv->to.channels;
-		if (conv->resample_buf != resample_data.data_in)
+			* nchannels;
+		if (conv->resample_buf != resample_data.data_in) {
+			conv->resample_buf = (float *)xrealloc (
+					conv->resample_buf,
+					sizeof(float)
+					* conv->resample_buf_nsamples);
 			memmove (conv->resample_buf, resample_data.data_in,
 					sizeof(float)
 					* conv->resample_buf_nsamples);
-		conv->resample_buf = (float *) xrealloc (conv->resample_buf,
-				sizeof(float) * conv->resample_buf_nsamples);
+		}
 	}
 	else {
 		free (conv->resample_buf);
@@ -245,20 +476,82 @@ static char *resample_sound (struct audio_conversion *conv, const char *buf,
 		conv->resample_buf_nsamples = 0;
 	}
 	
-	free (output);
-
-	return resampled;
+	return output;
 }
 #endif
 
+/* Do the sound conversion. buf of size sizse is the sample buffer to convert
+ * and the size of the converted sound is put into *conv_len.
+ * Return the converted sound in malloc()ed memory. */
 char *audio_conv (struct audio_conversion *conv, const char *buf,
 		const size_t size, size_t *conv_len)
 {
+	char *curr_sound;
+	long curr_sfmt = conv->from.fmt;
+	
+	*conv_len = size;
+
+	curr_sound = (char *)xmalloc (size);
+	memcpy (curr_sound, buf, size);
+
+	/* convert to float if necessary */
+	if ((conv->from.rate != conv->to.rate
+				|| conv->to.fmt == SFMT_FLOAT
+				|| !sfmt_same_bps(conv->to.fmt, conv->from.fmt))
+			&& conv->from.fmt != SFMT_FLOAT) {
+		char *new_sound;
+		
+		if (!(conv->from.fmt & SFMT_NE)) {
+			to_ne (curr_sound, size, curr_sfmt);
+			curr_sfmt = sfmt_set_endian (curr_sfmt, SFMT_NE);
+		}
+		
+		new_sound = (char *)fixed_to_float (curr_sound, *conv_len,
+				curr_sfmt, conv_len);
+		curr_sfmt = sfmt_set_fmt (curr_sfmt, SFMT_FLOAT);
+		assert (new_sound != NULL);
+		
+		if (curr_sound != buf)
+			free (curr_sound);
+		curr_sound = new_sound;
+	}
+	
 #ifdef HAVE_SAMPLERATE
-	if (conv->from.rate != conv->to.rate)
-		return resample_sound (conv, buf, size, conv_len);
+	if (conv->from.rate != conv->to.rate) {
+		char *new_sound = (char *)resample_sound (conv,
+				(float *)curr_sound,
+				*conv_len / sizeof(float), conv->to.channels,
+				conv_len);
+		*conv_len *= sizeof(float);
+		if (curr_sound != buf)
+			free (curr_sound);
+		curr_sound = new_sound;
+	}
 #endif
-	return NULL;
+
+	if ((curr_sfmt & SFMT_MASK_FORMAT)
+			!= (conv->to.fmt & SFMT_MASK_FORMAT)) {
+
+		if (sfmt_same_bps(curr_sfmt, conv->to.fmt))
+			change_sign (curr_sound, size, &curr_sfmt);
+		else {
+			char *new_sound;
+			
+			assert (curr_sfmt & SFMT_FLOAT);
+			
+			new_sound = float_to_fixed ((float *)curr_sound,
+					*conv_len / sizeof(float),
+					conv->to.fmt, conv_len);
+			curr_sfmt = sfmt_set_fmt (curr_sfmt, conv->to.fmt);
+			assert (new_sound != NULL);
+		
+			if (curr_sound != buf)
+				free (curr_sound);
+			curr_sound = new_sound;
+		}
+	}
+	
+	return curr_sound;
 }
 
 void audio_conv_destroy (struct audio_conversion *conv)

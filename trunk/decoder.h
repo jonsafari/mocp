@@ -7,7 +7,7 @@
 
 /* On every change in the decoder API this number will be changed, so MOC will
  * not load plugins compiled with older/newer decoder.h. */
-#define DECODER_API_VERSION	3
+#define DECODER_API_VERSION	4
 
 enum decoder_error_type
 {

@@ -368,20 +368,16 @@ static void mp3_info (const char *file_name, struct file_tags *info,
 		info->time = count_time (file_name);
 }
 
-/* Scale PCM data to 16 bit unsigned */
-static inline signed int scale (mad_fixed_t sample)
-{	
-	/* round */
-	sample += (1L << (MAD_F_FRACBITS - 16));
+static inline int32_t round_sample (mad_fixed_t sample)
+{
+	sample = sample + (1L << (MAD_F_FRACBITS - 24));
 
-	/* clip */
-	if (sample >= MAD_F_ONE)
+	if (sample > MAD_F_ONE - 1)
 		sample = MAD_F_ONE - 1;
 	else if (sample < -MAD_F_ONE)
 		sample = -MAD_F_ONE;
 
-	/* quantize */
-	return sample >> (MAD_F_FRACBITS + 1 - 16);
+	return sample >> (MAD_F_FRACBITS + 1 - 24);
 }
 
 static int put_output (char *buf, int buf_len, struct mad_pcm *pcm,
@@ -390,12 +386,11 @@ static int put_output (char *buf, int buf_len, struct mad_pcm *pcm,
 	unsigned int nsamples;
 	mad_fixed_t const *left_ch, *right_ch;
 	int olen;
-	int pos = 0;
 
 	nsamples = pcm->length;
 	left_ch = pcm->samples[0];
 	right_ch = pcm->samples[1];
-	olen = nsamples * MAD_NCHANNELS (header) * 2;
+	olen = nsamples * MAD_NCHANNELS (header) * 4;
 
 	if (olen > buf_len) {
 		logit ("PCM buffer to small!");
@@ -403,28 +398,25 @@ static int put_output (char *buf, int buf_len, struct mad_pcm *pcm,
 	}
 	
 	while (nsamples--) {
-		signed int sample;
-
-		/* output sample(s) in 16-bit signed little-endian PCM */
-		sample = scale (*left_ch++);
+		long sample0 = round_sample (*left_ch++);
 		
-#ifdef WORDS_BIGENDIAN
-		buf[pos++] = (sample >> 8) & 0xff;
-		buf[pos++] = (sample >> 0) & 0xff;
-#else
-		buf[pos++] = (sample >> 0) & 0xff;
-		buf[pos++] = (sample >> 8) & 0xff;
-#endif
+		buf[0] = 0;
+		buf[1] = sample0;
+		buf[2] = sample0 >> 8;
+		buf[3] = sample0 >> 16;
+		buf += 4;
 
-		if (MAD_NCHANNELS (header) == 2) {
-			sample = scale (*right_ch++);
-#ifdef WORDS_BIGENDIAN
-			buf[pos++] = (sample >> 8) & 0xff;
-			buf[pos++] = (sample >> 0) & 0xff;
-#else
-			buf[pos++] = (sample >> 0) & 0xff;
-			buf[pos++] = (sample >> 8) & 0xff;
-#endif
+		if (MAD_NCHANNELS(header) == 2) {
+			long sample1;
+			
+			sample1 = round_sample (*right_ch++);
+
+			buf[0] = 0;
+			buf[1] = sample1;
+			buf[2] = sample1 >> 8;
+			buf[3] = sample1 >> 16;
+
+			buf += 4;
 		}
 	}
 
@@ -487,8 +479,9 @@ static int mp3_decode (void *void_data, char *buf, int buf_len,
 					" frequency couldn't be read.");
 			return 0;
 		}
+		
 		sound_params->channels = MAD_NCHANNELS(&data->frame.header);
-		sound_params->format = 2;
+		sound_params->fmt = SFMT_S32 | SFMT_NE;
 		
 		/* Change of the bitrate? */
 		if (data->frame.header.bitrate != data->bitrate) {

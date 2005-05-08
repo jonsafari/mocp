@@ -84,7 +84,7 @@ static pthread_mutex_t plist_mut = PTHREAD_MUTEX_INITIALIZER;
 static int audio_opened = 0;
 
 /* Current sound parameters (which the device is opened with). */
-static struct sound_params driver_sound_params;
+static struct sound_params driver_sound_params = { 0, 0, 0};
 
 /* Sound parameters requestet by the decoder. */
 static struct sound_params req_sound_params = { 0, 0, 0 };
@@ -95,6 +95,172 @@ static int need_audio_conversion = 0;
 /* Check if the two sample rates don't differ as much that we can't play. */
 #define sample_rate_compat(sound, device) ((device) * 1.05 >= sound \
 		&& (device) * 0.95 <= sound)
+
+/* Make a human readable description of the sound sample format(s).
+ * Put the description in msg which is of size buf_size.
+ * Return msg. */
+char *sfmt_str (const long format, char *msg, const size_t buf_size)
+{
+	assert (sound_format_ok(format));
+
+	assert (buf_size > 0);
+	msg[0] = 0;
+
+	if (format & SFMT_S8)
+		strncat (msg, ", 8-bit signed", buf_size - strlen(msg) - 1);
+	if (format & SFMT_U8)
+		strncat (msg, ", 8-bit unsigned", buf_size - strlen(msg) - 1);
+	if (format & SFMT_S16)
+		strncat (msg, ", 16-bit signed", buf_size - strlen(msg) - 1);
+	if (format & SFMT_U16)
+		strncat (msg, ", 16-bit unsigned", buf_size - strlen(msg) - 1);
+	if (format & SFMT_S32)
+		strncat (msg, ", 24-bit signed (as 32-bit samples)",
+				buf_size - strlen(msg) - 1);
+	if (format & SFMT_U32)
+		strncat (msg, ", 24-bit unsigned (as 32-bit samples)",
+				buf_size - strlen(msg) - 1);
+	if (format & SFMT_FLOAT)
+		strncat (msg, ", float",
+				buf_size - strlen(msg) - 1);
+
+	if (format & SFMT_LE)
+		strncat (msg, " little-endian", buf_size - strlen(msg) - 1);
+	else if (format & SFMT_BE)
+		strncat (msg, " big-endian", buf_size - strlen(msg) - 1);
+	if (format & SFMT_NE)
+		strncat (msg, " (native)", buf_size - strlen(msg) - 1);
+
+	/* skip first ", " */
+	if (msg[0])
+		memmove (msg, msg + 2, strlen(msg) + 1);
+	
+	return msg;
+}
+
+/* Return != 0 if fmt1 and fmt2 have the same sample width. */
+int sfmt_same_bps (const long fmt1, const long fmt2)
+{
+	if (fmt1 & (SFMT_S8 | SFMT_U8)
+			&& fmt2 & (SFMT_S8 | SFMT_U8))
+		return 1;
+	if (fmt1 & (SFMT_S16 | SFMT_U16)
+			&& fmt2 & (SFMT_S16 | SFMT_U16))
+		return 1;
+	if (fmt1 & (SFMT_S8 | SFMT_U8)
+			&& fmt2 & (SFMT_S32 | SFMT_U32))
+		return 1;
+	if (fmt1 & fmt2 & SFMT_FLOAT)
+		return 1;
+
+	return 0;
+}
+
+/* Return the best matching sample format for the requested format and
+ * available format mask. */
+static long sfmt_best_matching (const long formats_with_endian,
+		const long req_with_endian)
+{
+	long formats = formats_with_endian & SFMT_MASK_FORMAT;
+	long req = req_with_endian & SFMT_MASK_FORMAT;
+	long best = 0;
+	
+#ifdef DEBUG
+	char fmt_name1[128];
+	char fmt_name2[128];
+#endif
+	
+	if (formats & req)
+		best = req;
+	else if (req == SFMT_S8 || req == SFMT_U8) {
+		if (formats & SFMT_U8)
+			best = SFMT_U8;
+		else if (formats & SFMT_S8)
+			best = SFMT_S8;
+		else if (formats & SFMT_S16)
+			best = SFMT_S16;
+		else if (formats & SFMT_U16)
+			best = SFMT_U16;
+		else if (formats & SFMT_S32)
+			best = SFMT_S32;
+		else if (formats & SFMT_U32)
+			best = SFMT_U32;
+		else if (formats & SFMT_FLOAT)
+			best = SFMT_FLOAT;
+	}
+	else if (req == SFMT_S16 || req == SFMT_U16) {
+		if (formats & SFMT_S16)
+			best = SFMT_S16;
+		else if (formats & SFMT_U16)
+			best = SFMT_U16;
+		else if (formats & SFMT_S32)
+			best = SFMT_S32;
+		else if (formats & SFMT_U32)
+			best = SFMT_U32;
+		else if (formats & SFMT_FLOAT)
+			best = SFMT_FLOAT;
+		else if (formats & SFMT_U8)
+			best = SFMT_U8;
+		else if (formats & SFMT_S8)
+			best = SFMT_S8;
+	}
+	else if (req == SFMT_S32 || req == SFMT_U32 || req == SFMT_FLOAT) {
+		if (formats & SFMT_S32)
+			best = SFMT_S32;
+		else if (formats & SFMT_U32)
+			best = SFMT_U32;
+		else if (formats & SFMT_S16)
+			best = SFMT_S16;
+		else if (formats & SFMT_U16)
+			best = SFMT_U16;
+		else if (formats & SFMT_FLOAT)
+			best = SFMT_FLOAT;
+		else if (formats & SFMT_U8)
+			best = SFMT_U8;
+		else if (formats & SFMT_S8)
+			best = SFMT_S8;
+	}
+
+	assert (best != 0);
+
+	if (!(best & (SFMT_S8 | SFMT_U8)))
+		best |= formats_with_endian & SFMT_MASK_ENDIANES;
+
+	debug ("Choosed %s as the best matching %s",
+			sfmt_str(best, fmt_name1, sizeof(fmt_name1)),
+			sfmt_str(req_with_endian, fmt_name2,
+				sizeof(fmt_name2)));
+	
+	return best;
+}
+
+/* Return the number of bytes per sample for the given format. */
+int sfmt_Bps (const long format)
+{
+	int Bps = -1;
+	
+	switch (format & SFMT_MASK_FORMAT) {
+		case SFMT_S8:
+		case SFMT_U8:
+			Bps = 1;
+			break;
+		case SFMT_S16:
+		case SFMT_U16:
+			Bps = 2;
+			break;
+		case SFMT_S32:
+		case SFMT_U32:
+			Bps = 4;
+			break;
+		case SFMT_FLOAT:
+			Bps = sizeof (float);
+			break;
+	}
+
+	assert (Bps > 0);
+
+	return Bps;
+}
 
 /* Move to the next file depending on set options and the user request. */
 static void go_to_another_file ()
@@ -348,14 +514,15 @@ static void reset_sound_params (struct sound_params *params)
 {
 	params->rate = 0;
 	params->channels = 0;
-	params->format = 0;
+	params->fmt = 0;
 }
 
 /* Return 0 on error. */
 int audio_open (struct sound_params *sound_params)
 {
 	int res;
-	int actual_rate;
+
+	assert (sound_format_ok(sound_params->fmt));
 
 	if (audio_opened && sound_params_eq(req_sound_params, *sound_params)) {
 		if (audio_get_bps() < 88200) {
@@ -379,36 +546,43 @@ int audio_open (struct sound_params *sound_params)
 	else if (audio_opened)
 		audio_close ();
 
-	req_sound_params = driver_sound_params = *sound_params;
+	req_sound_params = *sound_params;
 
 	/* Set driver_sound_params to parameters supported by the driver that
 	 * are nearly the requested parameters */
 	
-	if (options_get_int("ForceSampleRate"))
+	if (options_get_int("ForceSampleRate")) {
 		driver_sound_params.rate = options_get_int("ForceSampleRate");
+		logit ("Setting forced driver sample rate to %dHz",
+				driver_sound_params.rate);
+	}
+	else
+		driver_sound_params.rate = req_sound_params.rate;
 	
-	if (driver_sound_params.format > hw_caps.max.format)
-		driver_sound_params.format = hw_caps.max.format;
-	else if (driver_sound_params.format < hw_caps.min.format)
-		driver_sound_params.format = hw_caps.min.format;
+	driver_sound_params.fmt = sfmt_best_matching (hw_caps.formats,
+			req_sound_params.fmt);
 	
-	if (driver_sound_params.channels > hw_caps.max.channels)
-		driver_sound_params.channels = hw_caps.max.channels;
-	else if (driver_sound_params.channels < hw_caps.min.channels)
-		driver_sound_params.channels = hw_caps.min.channels;
-
+	/* number of channels */
+	if (req_sound_params.channels > hw_caps.max_channels)
+		driver_sound_params.channels = hw_caps.max_channels;
+	else if (req_sound_params.channels < hw_caps.min_channels)
+		driver_sound_params.channels = hw_caps.min_channels;
+	else
+		driver_sound_params.channels = req_sound_params.channels;
 
 	res = hw.open (&driver_sound_params);
-	actual_rate = hw.get_rate ();
+	driver_sound_params.rate = hw.get_rate ();
+
 	if (res) {
-		if (driver_sound_params.format != req_sound_params.format
+		char fmt_name[128];
+		
+		if (driver_sound_params.fmt != req_sound_params.fmt
 				|| driver_sound_params.channels
 				!= req_sound_params.channels
 				|| (!sample_rate_compat(
 						req_sound_params.rate,
-						actual_rate))) {
+						driver_sound_params.rate))) {
 			logit ("Conversion of the sound is needed.");
-			driver_sound_params.rate = actual_rate;
 			if (!audio_conv_new (&sound_conv, &req_sound_params,
 					&driver_sound_params)) {
 				hw.close ();
@@ -417,16 +591,16 @@ int audio_open (struct sound_params *sound_params)
 			}
 			need_audio_conversion = 1;
 		}
-		else
-			driver_sound_params.rate = actual_rate;
 		audio_opened = 1;
 
-		logit ("Requestet sound parameters: %dbps, %d channels, %dHz",
-				req_sound_params.format * 8,
+		logit ("Requestet sound parameters: %s, %d channels, %dHz",
+				sfmt_str(req_sound_params.fmt, fmt_name,
+					sizeof(fmt_name)),
 				req_sound_params.channels,
 				req_sound_params.rate);
-		logit ("Driver sound parameters: %dbps, %d channels, %dHz",
-				driver_sound_params.format * 8,
+		logit ("Driver sound parameters: %s, %d channels, %dHz",
+				sfmt_str(driver_sound_params.fmt, fmt_name,
+					sizeof(fmt_name)),
 				driver_sound_params.channels,
 				driver_sound_params.rate);
 	}
@@ -456,12 +630,13 @@ int audio_send_buf (const char *buf, const size_t size)
 	return res;
 }
 
-/* Get the current audio format bits per second value. May return 0 if the
+/* Get the current audio format bytes per second value. May return 0 if the
  * audio device is closed. */
 int audio_get_bps ()
 {
 	return driver_sound_params.rate * driver_sound_params.channels
-		* driver_sound_params.format;
+		* (driver_sound_params.fmt ? sfmt_Bps(driver_sound_params.fmt)
+				: 0);
 }
 
 int audio_get_buf_fill ()
@@ -484,6 +659,7 @@ void audio_close ()
 {
 	if (audio_opened) {
 		reset_sound_params (&req_sound_params);
+		reset_sound_params (&driver_sound_params);
 		hw.close ();
 		if (need_audio_conversion) {
 			audio_conv_destroy (&sound_conv);
@@ -530,9 +706,11 @@ static void find_hw_funcs (const char *driver, struct hw_funcs *funcs)
 
 static void print_output_capabilities (const struct output_driver_caps *caps)
 {
-	logit ("Sound driver capabilities: channels %d - %d, bps: %d - %d",
-			caps->min.channels, caps->max.channels,
-			caps->min.format * 8, caps->max.format * 8);
+	char fmt_name[128];
+	
+	logit ("Sound driver capabilities: channels %d - %d, formats: %s",
+			caps->min_channels, caps->max_channels,
+			sfmt_str(caps->formats, fmt_name, sizeof(fmt_name)));
 }
 
 void audio_init ()
@@ -541,9 +719,8 @@ void audio_init ()
 	find_hw_funcs (options_get_str("SoundDriver"), &hw);
 	hw.init (&hw_caps);
 
-	assert (hw_caps.max.channels >= hw_caps.min.channels);
-	assert (hw_caps.max.rate >= hw_caps.min.rate);
-	assert (hw_caps.max.format >= hw_caps.min.format);
+	assert (hw_caps.max_channels >= hw_caps.min_channels);
+	assert (sound_format_ok(hw_caps.formats));
 
 	print_output_capabilities (&hw_caps);
 	
@@ -723,4 +900,5 @@ struct file_tags *audio_get_curr_tags ()
 {
 	return player_get_curr_tags ();
 }
+
 

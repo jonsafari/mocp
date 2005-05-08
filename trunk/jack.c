@@ -1,8 +1,6 @@
 /* Jack plugin for moc by Alex Norman <alex@neisis.net> 2005
  * moc by Copyright (C) 2004 Damian Pietras <daper@daper.net>
  * use at your own risk
- *
- * Currently only supports 2 channels.
  */
 
 #ifdef HAVE_CONFIG_H
@@ -11,6 +9,8 @@
 
 #define _XOPEN_SOURCE	500
 #include <unistd.h>
+
+#define DEBUG
 
 #include "audio.h"
 #include "main.h"
@@ -25,8 +25,6 @@
 
 #define RINGBUF_SZ 32768
 
-static struct sound_params params = { 0, 0, 0 };
-
 /* the client */
 static jack_client_t *client;
 /* an array of output ports */
@@ -37,8 +35,8 @@ static jack_ringbuffer_t *ringbuffer[2];
 static jack_default_audio_sample_t volume;
 /* indicates if we should be playing or not */
 static int play;
-/* a value used to scale between integers (-2**15 - 1 to 2**15) and floats (-1 to 1) */
-static jack_default_audio_sample_t audio_convert_scalar;
+/* current sample rate */
+static int rate;
 
 /* this is the function that jack calls to get audio samples from us */
 static int moc_jack_process(jack_nframes_t nframes, void *arg ATTR_UNUSED)
@@ -87,9 +85,10 @@ static int moc_jack_process(jack_nframes_t nframes, void *arg ATTR_UNUSED)
 }
 
 /* this is called if jack changes its sample rate */
-static int moc_jack_update_sample_rate(jack_nframes_t rate, void *arg ATTR_UNUSED)
+static int moc_jack_update_sample_rate(jack_nframes_t new_rate,
+		void *arg ATTR_UNUSED)
 {
-	params.rate = rate;
+	rate = new_rate;
 	return 0;
 }
 
@@ -114,13 +113,7 @@ static void moc_jack_init (struct output_driver_caps *caps)
 	output_port[0] = jack_port_register (client, "output0", JACK_DEFAULT_AUDIO_TYPE, JackPortIsOutput, 0);
 	output_port[1] = jack_port_register (client, "output1", JACK_DEFAULT_AUDIO_TYPE, JackPortIsOutput, 0);
 	
-	/* do this division so that we don't have to do it in the call back
-	 * this number is used to convert between shorts and floats
-	 */
-	audio_convert_scalar = 1.0 / 32768;
-	
 	volume = 0.9;
-	play = 0;
 
 	/* create the ring buffers */
 	ringbuffer[0] = jack_ringbuffer_create(RINGBUF_SZ);
@@ -145,17 +138,21 @@ static void moc_jack_init (struct output_driver_caps *caps)
 			fprintf(stderr,"%s is not a valid Jack Client / Port", options_get_str("JackOutRight"));
 	}
 
-	caps->max.format = caps->min.format = 2;
-	caps->max.rate = caps->min.rate = jack_get_sample_rate (client);
-	caps->max.channels = caps->min.channels = 2;
+	caps->formats = SFMT_FLOAT;
+	rate = jack_get_sample_rate (client);
+	caps->max_channels = caps->min_channels = 2;
 	
 	logit ("jack init");
 }
 
 static int moc_jack_open (struct sound_params *sound_params)
 {
-	if (sound_params->format != 2) {
-		error ("Unsupported sound format.");
+	if (sound_params->fmt != SFMT_FLOAT) {
+		char fmt_name[128];
+
+		error ("Unsupported sound format: %s.",
+				sfmt_str(sound_params->fmt, fmt_name,
+					sizeof(fmt_name)));
 		return 0;
 	}
 	if (sound_params->channels != 2) {
@@ -163,7 +160,6 @@ static int moc_jack_open (struct sound_params *sound_params)
 		return 0;
 	}
 	
-	params = *sound_params;
 	logit ("jack open");
 	play = 1;
 
@@ -172,45 +168,56 @@ static int moc_jack_open (struct sound_params *sound_params)
 
 static void moc_jack_close ()
 {
-	params.channels = 0;
-	params.rate = 0;
-	params.format = 0;
 	logit ("jack close");
 	play = 0;
 }
 
 static int moc_jack_play (const char *buff, const size_t size)
 {
-	unsigned int i;
-	jack_default_audio_sample_t sample[2];
-	unsigned int written = 0;
-	int temp;
-	/* the size will be different in the ring buffer because we convert to 
-	 * jack_default_audio_sample_t (floats) 
-	 */
-	unsigned int size_in_buf = size * sizeof(jack_default_audio_sample_t) / (sizeof(short) * 2);
+	size_t remain = size;
+	size_t pos = 0;
 
-	assert (size_in_buf <= RINGBUF_SZ);
-	
-	if (size_in_buf == 0)
-		return 0;
-	/* wait until there is enough room in the buffer */
-	while (jack_ringbuffer_write_space(ringbuffer[0]) < size_in_buf 
-			&& jack_ringbuffer_write_space(ringbuffer[1]) < size_in_buf)
-		usleep (RINGBUF_SZ / (float)(params.format * params.rate
-					* params.channels)/10);
-	/* write all the data into the ringbuffers.. convert to jack_default_audio_sample_t first */
-	for  (i = 0; i < (size / sizeof(short)); i = i + 2){
-		sample[0] = audio_convert_scalar * (jack_default_audio_sample_t)*((short *)buff + i);
-		sample[1] = audio_convert_scalar * (jack_default_audio_sample_t)*((short *)buff + i + 1);
-		temp = jack_ringbuffer_write(ringbuffer[0], (void *)&sample[0], sizeof(jack_default_audio_sample_t));
-		temp += jack_ringbuffer_write(ringbuffer[1], (void *)&sample[1], sizeof(jack_default_audio_sample_t));
-		/* since the number of bytes differs between the types we have to do
-		 * this conversion to get an accurate number of the input bytes written
-		 */
-		written += sizeof(short) * temp / sizeof(jack_default_audio_sample_t);
+	debug ("Playing %luB", (unsigned long)size);
+
+	while (remain) {
+		size_t space;
+
+		/* check if some space is available only in the second
+		 * ringbuffer, because it is read later than the first. */
+		if ((space = jack_ringbuffer_write_space(ringbuffer[1]))
+				> sizeof(jack_default_audio_sample_t)) {
+			size_t to_write;
+			
+			/* FIXME: we should also change the volume here */
+
+			space *= 2; /* we have 2 channels */
+			debug ("Space in the ringbuffer: %luB",
+					(unsigned long)space);
+
+			to_write = MIN (space, remain);
+
+			remain -= to_write;
+			to_write /= sizeof(jack_default_audio_sample_t) * 2;
+			while (to_write--) {
+				jack_ringbuffer_write (ringbuffer[0],
+						(char *)(buff + pos),
+						sizeof(jack_default_audio_sample_t));
+				pos += sizeof(jack_default_audio_sample_t);
+				jack_ringbuffer_write (ringbuffer[1],
+						(char *)(buff + pos),
+						sizeof(jack_default_audio_sample_t));
+				pos += sizeof(jack_default_audio_sample_t);
+			}
+		}
+		else {
+			debug ("Sleeping for %uus", (unsigned)(RINGBUF_SZ
+					/ (float)(audio_get_bps()) * 100000.0));
+			usleep (RINGBUF_SZ / (float)(audio_get_bps())
+				* 100000.0);
+		}
 	}
-	return written;
+
+	return size;
 }
 
 static int moc_jack_read_mixer ()
@@ -220,13 +227,15 @@ static int moc_jack_read_mixer ()
 
 static void moc_jack_set_mixer (int vol)
 {
-	volume = (jack_default_audio_sample_t)vol / 100;
+	volume = (jack_default_audio_sample_t)vol / 100.0;
 }
 
 static int moc_jack_get_buff_fill ()
 {
 	/* FIXME: should we also use jack_port_get_latency() here? */
-	return sizeof(short) * (jack_ringbuffer_read_space(ringbuffer[0]) + jack_ringbuffer_read_space(ringbuffer[1])) / sizeof(jack_default_audio_sample_t);
+	return sizeof(float) * (jack_ringbuffer_read_space(ringbuffer[0])
+			+ jack_ringbuffer_read_space(ringbuffer[1]))
+		/ sizeof(jack_default_audio_sample_t);
 }
 
 static int moc_jack_reset ()
@@ -247,7 +256,7 @@ static void moc_jack_shutdown(){
 
 static int moc_jack_get_rate ()
 {	
-	return jack_get_sample_rate(client);
+	return rate;
 }
 
 void moc_jack_funcs (struct hw_funcs *funcs)
