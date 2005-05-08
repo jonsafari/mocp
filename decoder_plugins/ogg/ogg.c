@@ -26,6 +26,7 @@
 #include "log.h"
 #include "decoder.h"
 #include "io.h"
+#include "audio.h"
 
 struct ogg_data
 {
@@ -264,13 +265,8 @@ static int ogg_decode (void *prv_data, char *buf, int buf_len,
 	decoder_error_clear (&data->error);
 
 	while (1) {
-#ifdef WORDS_BIGENDIAN
-		ret = ov_read(&data->vf, buf, buf_len, 1, 2, 1,
-				&current_section);
-#else
 		ret = ov_read(&data->vf, buf, buf_len, 0, 2, 1,
 				&current_section);
-#endif
 		if (ret == 0)
 			return 0;
 		if (ret < 0) {
@@ -293,7 +289,7 @@ static int ogg_decode (void *prv_data, char *buf, int buf_len,
 		assert (info != NULL);
 		sound_params->channels = info->channels;
 		sound_params->rate = info->rate;
-		sound_params->format = 2;
+		sound_params->fmt = SFMT_S16 | SFMT_LE;
 
 		/* Update the bitrate information */
 		bitrate = ov_bitrate_instant (&data->vf);

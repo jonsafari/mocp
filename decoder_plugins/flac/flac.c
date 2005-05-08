@@ -81,25 +81,12 @@ static size_t pack_pcm_signed (FLAC__byte *data,
 				case 8:
 					data[0] = sample ^ 0x80;
 					break;
-
-#ifdef WORDS_BIGENDIAN
-				case 16:
-					data[0] = (FLAC__byte)(sample >> 8);
-					data[1] = (FLAC__byte)sample;
-					break;
-				case 24:
-					data[0] = (FLAC__byte)(sample >> 16);
-					data[1] = (FLAC__byte)(sample >> 8);
-					data[2] = (FLAC__byte)sample;
-					break;
-#else
 				case 24:
 					data[2] = (FLAC__byte)(sample >> 16);
 					/* fall through */
 				case 16:
 					data[1] = (FLAC__byte)(sample >> 8);
 					data[0] = (FLAC__byte)sample;
-#endif
 			}
 
 			data += incr;
@@ -448,7 +435,19 @@ static int flac_decode (void *void_data, char *buf, int buf_len,
 	FLAC__uint64 decode_position;
 
 	bytes_per_sample = data->bits_per_sample / 8;
-	sound_params->format = bytes_per_sample;
+
+	switch (bytes_per_sample) {
+		case 1:
+			sound_params->fmt = SFMT_S8;
+			break;
+		case 2:
+			sound_params->fmt = SFMT_S16 | SFMT_LE;
+			break;
+		case 3:
+			sound_params->fmt = SFMT_S32 | SFMT_LE;
+			break;
+	}
+
 	sound_params->rate = data->sample_rate;
 	sound_params->channels = data->channels;
 

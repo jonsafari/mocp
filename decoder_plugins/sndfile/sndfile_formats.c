@@ -120,11 +120,11 @@ static int sndfile_decode (void *void_data, char *buf, int buf_len,
 
 	sound_params->channels = data->snd_info.channels;
 	sound_params->rate = data->snd_info.samplerate;
-	sound_params->format = 2;
+	sound_params->fmt = SFMT_FLOAT;
 	
-	return sf_readf_short (data->sndfile, (short *)buf,
-			buf_len / 2 / data->snd_info.channels)
-		* 2 * data->snd_info.channels;
+	return sf_readf_float (data->sndfile, (float *)buf,
+			buf_len / sizeof(float) / data->snd_info.channels)
+		* sizeof(float) * data->snd_info.channels;
 }
 
 static int sndfile_get_bitrate (void *void_data ATTR_UNUSED)

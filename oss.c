@@ -61,47 +61,41 @@ static void set_capabilities (struct output_driver_caps *caps)
 		fatal ("Can't get supported audio formats: %s",
 				strerror(errno));
 
+	caps->formats = 0;
 	if (format_mask & AFMT_S8)
-		caps->min.format = caps->max.format = 1;
-	else
-		caps->min.format = caps->max.format = -1;
+		caps->formats |= SFMT_S8;
+	if (format_mask & AFMT_U8)
+		caps->formats |= SFMT_U8;
+	if (format_mask & AFMT_S16_NE)
+		caps->formats |= SFMT_S16;
+	if (format_mask & AFMT_S32_LE)
+		caps->formats |= SFMT_S32;
+	if (format_mask & AFMT_U32_LE)
+		caps->formats |= SFMT_U32;
 
-	if (format_mask & (AFMT_S16_NE | AFMT_U16_LE | AFMT_U16_BE)) {
-		caps->max.format = 2;
-		if (caps->min.format == -1)
-			caps->min.format = 2;
-	}
+	caps->formats |= SFMT_LE;
 
-#if 0
-	/* FIXME: Conversion from native endian would be needed. */
-	if (format_mask & AFMT_S32_LE) {
-		caps->max.format = 4;
-		if (caps->min.format == -1)
-			caps->min.format = 4;
-	}
-#endif
+	if (!caps->formats)
+		fatal ("No known format supported by the audio device.");
 
-	if (caps->min.format == -1)
-		fatal ("No know format supported by the audio device.");
-
-	caps->min.channels = caps->max.channels = 1;
-	if (ioctl(dsp_fd, SNDCTL_DSP_CHANNELS, &caps->min.channels))
+	caps->min_channels = caps->max_channels = 1;
+	if (ioctl(dsp_fd, SNDCTL_DSP_CHANNELS, &caps->min_channels))
 		fatal ("Can't set number of channels: %s", strerror(errno));
 
 	close (dsp_fd);
 	if (!open_dev())
 		fatal ("Can't open the device.");
 
-	if (caps->min.channels != 1)
-		caps->min.channels = 2;
-	caps->max.channels = 2;
-	if (ioctl(dsp_fd, SNDCTL_DSP_CHANNELS, &caps->max.channels))
+	if (caps->min_channels != 1)
+		caps->min_channels = 2;
+	caps->max_channels = 2;
+	if (ioctl(dsp_fd, SNDCTL_DSP_CHANNELS, &caps->max_channels))
 		fatal ("Can't set number of channels: %s", strerror(errno));
 
-	if (caps->max.channels != 2) {
-		if (caps->min.channels == 2)
+	if (caps->max_channels != 2) {
+		if (caps->min_channels == 2)
 			fatal ("Can't get any supported number of channels.");
-		caps->max.channels = 1;
+		caps->max_channels = 1;
 	}
 
 	close (dsp_fd);
@@ -147,7 +141,7 @@ static void oss_close ()
 
 	params.channels = 0;
 	params.rate = 0;
-	params.format = 0;
+	params.fmt = 0;
 }
 
 /* Return 0 on error. */
@@ -155,18 +149,29 @@ static int oss_set_params ()
 {
 	int req_format;
 	int req_channels;
+	char fmt_name[128];
 
 	/* Set format */
-	switch (params.format) {
-		case 1:
+	switch (params.fmt & SFMT_MASK_FORMAT) {
+		case SFMT_S8:
 			req_format = AFMT_S8;
 			break;
-		case 2:
-			req_format = AFMT_S16_NE;
+		case SFMT_U8:
+			req_format = AFMT_U8;
+			break;
+		case SFMT_S16:
+			req_format = AFMT_S16_LE;
+			break;
+		case SFMT_S32:
+			req_format = AFMT_S32_LE;
+			break;
+		case SFMT_U32:
+			req_format = AFMT_U32_LE;
 			break;
 		default:
-			error ("%dbits format is not supported by the device",
-				params.format * 8);
+			error ("format %s is not supported by the device",
+				sfmt_str(params.fmt, fmt_name,
+					sizeof(fmt_name)));
 			return 0;
 	}
 		
@@ -199,8 +204,9 @@ static int oss_set_params ()
 		return 0;
 	}
 
-	logit ("Audio parameters set to: %dbit, %d channels, %dHz",
-			params.format * 8, params.channels, params.rate);
+	logit ("Audio parameters set to: %s, %d channels, %dHz",
+			sfmt_str(params.fmt, fmt_name, sizeof(fmt_name)),
+			params.channels, params.rate);
 
 	return 1;
 }

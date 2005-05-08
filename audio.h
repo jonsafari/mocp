@@ -3,6 +3,59 @@
 
 #include <stdlib.h>
 
+/** Sound formats.
+ *
+ * Sound format bits. Only one can be set in the format, the exception is
+ * when we want to hold a list of supported formats - they can be bitwise-or'd.
+ */
+enum sfmt_fmt
+{
+	SFMT_S8 =	0x00000001, /*!< signed 8-bit */
+	SFMT_U8	=	0x00000002, /*!< unsigned 8-bit */
+	SFMT_S16 =	0x00000004, /*!< signed 16-bit */
+	SFMT_U16 =	0x00000008, /*!< unsigned 16-bit */
+	SFMT_S32 =	0x00000010, /*!< signed 24-bit (LSB is 0) */
+	SFMT_U32 =	0x00000020, /*!< unsigned 24-bit (LSB set to 0) */
+	SFMT_FLOAT =	0x00000040, /*!< float in range -1.0 to 1.0 */
+};
+
+/** Sample endianes.
+ *
+ * Sample endianes - one of them must be set for 16-bit and 24-bit formats.
+ */
+enum sfmt_endianes
+{
+	SFMT_LE =	0x00001000, /*!< little-endian */
+	SFMT_BE =	0x00002000, /*!< big-endian */
+
+/** Define native endianes to SFMT_LE or SFMT_BE. */
+#ifdef WORDS_BIGENDIAN
+	SFMT_NE =	SFMT_BE
+#else
+	SFMT_NE =	SFMT_LE
+#endif
+};
+
+/** @name Masks for the sample format.
+ *
+ * Masks used to extract only one type of information from the sound format.
+ */
+/*@{*/
+#define SFMT_MASK_FORMAT	0x00000fff /*!< sample format */
+#define SFMT_MASK_ENDIANES	0x00003000 /*!< sample endianes */
+/*@}*/
+
+/** Return a value other than 0 if the sound format seems to be proper. */
+#define sound_format_ok(f) (((f) & SFMT_MASK_FORMAT) \
+		&& (((f) & (SFMT_S8 | SFMT_U8 | SFMT_FLOAT)) \
+			|| (f) & SFMT_MASK_ENDIANES))
+
+/** Change the sample format to new_fmt (without endianes) */
+#define sfmt_set_fmt(f, new_fmt) (((f) & ~SFMT_MASK_FORMAT) | new_fmt)
+
+/** Change the sample format endianes to endian */
+#define sfmt_set_endian(f, endian) (((f) & ~SFMT_MASK_ENDIANES) | endian)
+
 /** Sound parameters.
  *
  * A structure describing sound parameters. The format is always PCM signed,
@@ -12,19 +65,19 @@ struct sound_params
 {
 	int channels; /*!< Number of channels: 1 or 2 */
 	int rate; /*!< Rate in Hz */
-	int format; /*!< Nubmer of bytes in the data word (1 - 8 bits
-		      or 2 - 16 bits). */
+	long fmt; /*!< Format of the samples (SFMT_* bits) */
 };
 
 /** Output driver capabilities.
  *
- * A structure describing the output driver capabilities: maximum and minimum
- * values of the sound parameters it can handle.
+ * A structure describing the output driver capabilities.
  */
 struct output_driver_caps
 {
-	struct sound_params min; /*!< Minimum parameters. */
-	struct sound_params max; /*!< Maximum parameters. */
+	int min_channels; /*!< Minimum number of channels */
+	int max_channels; /*!< Maximum number of channels */
+	long formats; /*!< Supported sample formats (or'd sfmt_fmt mask
+			with endianes') */
 };
 
 /** Functions to control the audio "driver".
@@ -137,8 +190,12 @@ struct hw_funcs
 };
 
 /* Does the parameters p1 and p2 are equal? */
-#define sound_params_eq(p1, p2) ((p1).format == (p2).format \
+#define sound_params_eq(p1, p2) ((p1).fmt == (p2).fmt \
 		&& (p1).channels == (p2).channels && (p1).rate == (p2).rate)
+
+char *sfmt_str (const long format, char *msg, const size_t buf_size);
+int sfmt_Bps (const long format);
+int sfmt_same_bps (const long fmt1, const long fmt2);
 
 void audio_stop ();
 void audio_play (const char *fname);
