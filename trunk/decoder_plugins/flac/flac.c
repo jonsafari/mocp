@@ -31,7 +31,7 @@
 #define MAX_SUPPORTED_CHANNELS		2
 
 #define SAMPLES_PER_WRITE		512
-#define SAMPLE_BUFFER_SIZE ((FLAC__MAX_BLOCK_SIZE + SAMPLES_PER_WRITE) * MAX_SUPPORTED_CHANNELS * (24/8))
+#define SAMPLE_BUFFER_SIZE ((FLAC__MAX_BLOCK_SIZE + SAMPLES_PER_WRITE) * MAX_SUPPORTED_CHANNELS * (32/8))
 
 struct flac_data
 {
@@ -66,8 +66,13 @@ static size_t pack_pcm_signed (FLAC__byte *data,
 	FLAC__int32 sample;
 	const FLAC__int32 *input_;
 	unsigned samples, channel;
-	const unsigned bytes_per_sample = bps / 8;
-	const unsigned incr = bytes_per_sample * channels;
+	unsigned bytes_per_sample;
+	unsigned incr;
+
+	if (bps == 24)
+		bps = 32; /* we encode to 32-bit words */
+	bytes_per_sample = bps / 8;
+	incr = bytes_per_sample * channels;
 
 	for (channel = 0; channel < channels; channel++) {
 		samples = wide_samples;
@@ -81,21 +86,26 @@ static size_t pack_pcm_signed (FLAC__byte *data,
 				case 8:
 					data[0] = sample ^ 0x80;
 					break;
-				case 24:
-					data[2] = (FLAC__byte)(sample >> 16);
-					/* fall through */
 				case 16:
 					data[1] = (FLAC__byte)(sample >> 8);
 					data[0] = (FLAC__byte)sample;
+					break;
+				case 32:
+					data[3] = (FLAC__byte)(sample >> 16);
+					data[2] = (FLAC__byte)(sample >> 8);
+					data[1] = (FLAC__byte)sample;
+					data[0] = 0;
+					break;
 			}
 
 			data += incr;
 		}
 	}
 
-	debug ("Converted %d bytes", wide_samples * channels * (bps/8));
+	debug ("Converted %d bytes",
+			wide_samples * channels * bytes_per_sample);
 
-	return wide_samples * channels * (bps/8);
+	return wide_samples * channels * bytes_per_sample;
 }
 
 static FLAC__StreamDecoderWriteStatus write_callback (
