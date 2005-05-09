@@ -593,7 +593,7 @@ int audio_open (struct sound_params *sound_params)
 		}
 		audio_opened = 1;
 
-		logit ("Requestet sound parameters: %s, %d channels, %dHz",
+		logit ("Requested sound parameters: %s, %d channels, %dHz",
 				sfmt_str(req_sound_params.fmt, fmt_name,
 					sizeof(fmt_name)),
 				req_sound_params.channels,
