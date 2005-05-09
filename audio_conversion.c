@@ -192,7 +192,7 @@ static void s32_to_float (const char *in, float *out,
 	assert (out != NULL);
 	
 	for (i = 0; i < samples; i++)
-		out[i] = *in_32++ / (float)(INT32_MAX + 1);
+		out[i] = *in_32++ / ((float)INT32_MAX + 1.0);
 }
 
 /* Convert fixed point samples in format fmt (size in bytes) to float.
