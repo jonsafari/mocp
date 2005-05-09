@@ -166,7 +166,7 @@ static void s8_to_float (const char *in, float *out,
 	assert (out != NULL);
 	
 	for (i = 0; i < samples; i++)
-		out[i] = *in++ / (float)INT8_MAX;
+		out[i] = *in++ / (float)(INT8_MAX + 1);
 }
 
 static void s16_to_float (const char *in, float *out,
@@ -179,7 +179,7 @@ static void s16_to_float (const char *in, float *out,
 	assert (out != NULL);
 	
 	for (i = 0; i < samples; i++)
-		out[i] = *in_16++ / (float)INT16_MAX;
+		out[i] = *in_16++ / (float)(INT16_MAX + 1);
 }
 
 static void s32_to_float (const char *in, float *out,
@@ -192,7 +192,7 @@ static void s32_to_float (const char *in, float *out,
 	assert (out != NULL);
 	
 	for (i = 0; i < samples; i++)
-		out[i] = *in_32++ / (float)INT32_MAX;
+		out[i] = *in_32++ / (float)(INT32_MAX + 1);
 }
 
 /* Convert fixed point samples in format fmt (size in bytes) to float.
