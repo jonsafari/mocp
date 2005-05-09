@@ -355,7 +355,7 @@ int out_buf_get_fill (struct out_buf *buf)
 }
 
 /* Wait until the read thread will stop and wait for data to come.
- * This makes sur ethat the audio device isn't used (of course only if you
+ * This makes sure that the audio device isn't used (of course only if you
  * don't put anything in the buffer). */
 void out_buf_wait (struct out_buf *buf)
 {
