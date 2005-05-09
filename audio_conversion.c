@@ -74,6 +74,31 @@
 #define INT32_NE_TO_BE		INT32_BE_TO_NE (l)
 #endif
 
+static void float_to_s8 (const float *in, char *out, const size_t samples)
+{
+	size_t i;
+
+	assert (in != NULL);
+	assert (out != NULL);
+
+	for (i = 0; i < samples; i++) {
+		float f = in[i] * INT32_MAX;
+		
+		if (f >= INT32_MAX)
+			out[i] = INT8_MAX;
+		else if (f <= INT32_MIN)
+			out[i] = INT8_MIN;
+		else {
+#ifdef HAVE_LRINTF
+			out[i] = lrintf(f) >> 24;
+#else
+			out[i] = (int)f >> 24;
+#endif
+		}
+		
+	}
+}
+
 static void float_to_s16 (const float *in, char *out,
 		const size_t samples)
 {
@@ -212,6 +237,11 @@ static char *float_to_fixed (const float *buf, const size_t samples,
 	char *new_snd = NULL;
 	
 	switch (fmt & SFMT_MASK_FORMAT) {
+		case SFMT_S8:
+			*new_size = samples;
+			new_snd = (char *) xmalloc(samples);
+			float_to_s8 (buf, new_snd, samples);
+			break;
 		case SFMT_S16:
 			*new_size = samples * 2;
 			new_snd = (char *) xmalloc(*new_size);
