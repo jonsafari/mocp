@@ -32,7 +32,7 @@ static jack_port_t **output_port;
 /* the ring buffer, used to store the sound data before jack takes it */
 static jack_ringbuffer_t *ringbuffer[2];
 /* volume */
-static jack_default_audio_sample_t volume;
+static jack_default_audio_sample_t volume = 0.8;
 /* indicates if we should be playing or not */
 static int play;
 /* current sample rate */
@@ -41,46 +41,51 @@ static int rate;
 /* this is the function that jack calls to get audio samples from us */
 static int moc_jack_process(jack_nframes_t nframes, void *arg ATTR_UNUSED)
 {
-	unsigned int i;
-	jack_default_audio_sample_t myvol;
 	jack_default_audio_sample_t *out[2];
-	jack_default_audio_sample_t sample[2];
 
 	if (nframes <= 0)
 		return 0;
-	myvol = play * volume;
 
 	/* get the jack output ports */
-	out[0] = (jack_default_audio_sample_t *) jack_port_get_buffer (output_port[0], nframes);
-	out[1] = (jack_default_audio_sample_t *) jack_port_get_buffer (output_port[1], nframes);
+	out[0] = (jack_default_audio_sample_t *) jack_port_get_buffer (
+			output_port[0], nframes);
+	out[1] = (jack_default_audio_sample_t *) jack_port_get_buffer (
+			output_port[1], nframes);
 
-	/* if we have enough frames then write them out */
-	if(((jack_ringbuffer_read_space(ringbuffer[0]) / sizeof(jack_default_audio_sample_t)) >= nframes) &&
-			((jack_ringbuffer_read_space(ringbuffer[1]) / sizeof(jack_default_audio_sample_t)) >= nframes)){
-		for(i = 0; i < nframes; i++){
-			jack_ringbuffer_read(ringbuffer[0], (void *)&sample[0], sizeof(jack_default_audio_sample_t));
-			jack_ringbuffer_read(ringbuffer[1], (void *)&sample[1], sizeof(jack_default_audio_sample_t));
-			*(out[0] + i) = sample[0] * myvol;
-			*(out[1] + i) = sample[1] * myvol;
+	if (play) {
+		size_t i;
+		
+		/* ringbuffer[1] is filled later, so we only need to check
+		 * it's space. */
+		size_t avail_data = jack_ringbuffer_read_space(ringbuffer[1]);
+		size_t avail_frames = avail_data
+			/ sizeof(jack_default_audio_sample_t);
+
+		if (avail_frames > nframes) {
+			avail_frames = nframes;
+			avail_data = nframes
+				* sizeof(jack_default_audio_sample_t);
 		}
-	/* otherwise write out as many as we have */
-	} else{
-		i = 0; //init the count
-		//so while we haven't emptied the buffers and while we haven't exceeded the nframes
-		while(jack_ringbuffer_read_space(ringbuffer[0]) >= sizeof(jack_default_audio_sample_t) && 
-					jack_ringbuffer_read_space(ringbuffer[1]) >= sizeof(jack_default_audio_sample_t) &&
-					i < nframes){
-			//increment the count
-			i++;
-			jack_ringbuffer_read(ringbuffer[0], (void *)&sample[0], sizeof(jack_default_audio_sample_t));
-			jack_ringbuffer_read(ringbuffer[1], (void *)&sample[1], sizeof(jack_default_audio_sample_t));
-			*(out[0] + i) = sample[0] * myvol;
-			*(out[1] + i) = sample[1] * myvol;
-		}
-		//finish of by filling with zeros
-		for(/*start from where we left off*/; i < nframes; i++)
-			*(out[0] + i) = *(out[1] + i) = 0;
+		
+		jack_ringbuffer_read (ringbuffer[0], (char *)out[0],
+				avail_data);
+		jack_ringbuffer_read (ringbuffer[1], (char *)out[1],
+				avail_data);
+
+		/* we must provide nframes data, so fill with silence
+		 * the remaining space. */
+		for (i = avail_frames; i < nframes; i++)
+			out[0][i] = out[1][i] = 0.0;
 	}
+	else {
+		size_t i;
+
+		for (i = 0; i < nframes; i++) {
+			out[0][i] = 0.0;
+			out[1][i] = 0.0;
+		}
+	}
+
 	return 0;
 }
 
@@ -113,8 +118,6 @@ static void moc_jack_init (struct output_driver_caps *caps)
 	output_port[0] = jack_port_register (client, "output0", JACK_DEFAULT_AUDIO_TYPE, JackPortIsOutput, 0);
 	output_port[1] = jack_port_register (client, "output1", JACK_DEFAULT_AUDIO_TYPE, JackPortIsOutput, 0);
 	
-	volume = 0.9;
-
 	/* create the ring buffers */
 	ringbuffer[0] = jack_ringbuffer_create(RINGBUF_SZ);
 	ringbuffer[1] = jack_ringbuffer_create(RINGBUF_SZ);
@@ -188,8 +191,6 @@ static int moc_jack_play (const char *buff, const size_t size)
 				> sizeof(jack_default_audio_sample_t)) {
 			size_t to_write;
 			
-			/* FIXME: we should also change the volume here */
-
 			space *= 2; /* we have 2 channels */
 			debug ("Space in the ringbuffer: %luB",
 					(unsigned long)space);
@@ -199,14 +200,21 @@ static int moc_jack_play (const char *buff, const size_t size)
 			remain -= to_write;
 			to_write /= sizeof(jack_default_audio_sample_t) * 2;
 			while (to_write--) {
+				jack_default_audio_sample_t sample;
+
+				sample = *(jack_default_audio_sample_t *)
+					(buff + pos) * volume;
+				pos += sizeof (jack_default_audio_sample_t);
 				jack_ringbuffer_write (ringbuffer[0],
-						(char *)(buff + pos),
-						sizeof(jack_default_audio_sample_t));
-				pos += sizeof(jack_default_audio_sample_t);
+						(char *)&sample,
+						sizeof(sample));
+
+				sample = *(jack_default_audio_sample_t *)
+					(buff + pos) * volume;
+				pos += sizeof (jack_default_audio_sample_t);
 				jack_ringbuffer_write (ringbuffer[1],
-						(char *)(buff + pos),
-						sizeof(jack_default_audio_sample_t));
-				pos += sizeof(jack_default_audio_sample_t);
+						(char *)&sample,
+						sizeof(sample));
 			}
 		}
 		else {
@@ -222,7 +230,7 @@ static int moc_jack_play (const char *buff, const size_t size)
 
 static int moc_jack_read_mixer ()
 {
-	return (int)(volume * 100);
+	return (int)(volume * 100.0);
 }
 
 static void moc_jack_set_mixer (int vol)
