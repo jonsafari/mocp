@@ -37,6 +37,9 @@ static jack_default_audio_sample_t volume = 0.8;
 static int play;
 /* current sample rate */
 static int rate;
+/* flag set if xrun occured that was our fault (the ringbuffer doesn't contain
+ * enough data in the process callback) */
+static int our_xrun = 0;
 
 /* this is the function that jack calls to get audio samples from us */
 static int moc_jack_process(jack_nframes_t nframes, void *arg ATTR_UNUSED)
@@ -72,10 +75,15 @@ static int moc_jack_process(jack_nframes_t nframes, void *arg ATTR_UNUSED)
 		jack_ringbuffer_read (ringbuffer[1], (char *)out[1],
 				avail_data);
 
+
 		/* we must provide nframes data, so fill with silence
 		 * the remaining space. */
-		for (i = avail_frames; i < nframes; i++)
-			out[0][i] = out[1][i] = 0.0;
+		if (avail_frames < nframes) {
+			our_xrun = 1;
+
+			for (i = avail_frames; i < nframes; i++)
+				out[0][i] = out[1][i] = 0.0;
+		}
 	}
 	else {
 		size_t i;
@@ -187,6 +195,11 @@ static int moc_jack_play (const char *buff, const size_t size)
 	size_t pos = 0;
 
 	debug ("Playing %luB", (unsigned long)size);
+
+	if (our_xrun) {
+		logit ("xrun");
+		our_xrun = 0;
+	}
 
 	while (remain) {
 		size_t space;
