@@ -68,10 +68,14 @@ static void set_capabilities (struct output_driver_caps *caps)
 		caps->formats |= SFMT_U8;
 	if (format_mask & AFMT_S16_NE)
 		caps->formats |= SFMT_S16;
+#ifdef AFMT_S32_LE
 	if (format_mask & AFMT_S32_LE)
 		caps->formats |= SFMT_S32;
+#endif
+#ifdef AFMT_U32_LE
 	if (format_mask & AFMT_U32_LE)
 		caps->formats |= SFMT_U32;
+#endif
 
 	caps->formats |= SFMT_LE;
 
@@ -162,12 +166,16 @@ static int oss_set_params ()
 		case SFMT_S16:
 			req_format = AFMT_S16_LE;
 			break;
+#ifdef AFMT_S32_LE
 		case SFMT_S32:
 			req_format = AFMT_S32_LE;
 			break;
+#endif
+#ifdef AFMT_U32_LE
 		case SFMT_U32:
 			req_format = AFMT_U32_LE;
 			break;
+#endif
 		default:
 			error ("format %s is not supported by the device",
 				sfmt_str(params.fmt, fmt_name,
