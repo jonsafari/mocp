@@ -79,6 +79,12 @@ static int moc_jack_process(jack_nframes_t nframes, void *arg ATTR_UNUSED)
 	}
 	else {
 		size_t i;
+		size_t size;
+		
+		/* consume the input */
+		size = jack_ringbuffer_read_space(ringbuffer[1]);
+		jack_ringbuffer_read_advance (ringbuffer[0], size);
+		jack_ringbuffer_read_advance (ringbuffer[1], size);
 
 		for (i = 0; i < nframes; i++) {
 			out[0][i] = 0.0;
