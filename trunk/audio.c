@@ -531,17 +531,14 @@ int audio_open (struct sound_params *sound_params)
 			/* Not closing the device would cause that much
 			 * sound from the previuous file stays in the buffer
 			 * and the user will see old data, so close it. */
-			hw.close ();
-			res = hw.open (&driver_sound_params);
-			if (res)
-				audio_opened = 1;
-			return res;
+			audio_close ();
 		}
-		else
+		else {
 			logit ("Audio device already opened with such "
 					"parameters.");
 
-		return 1;
+			return 1;
+		}	
 	}
 	else if (audio_opened)
 		audio_close ();
