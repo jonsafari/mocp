@@ -406,7 +406,7 @@ static void play_file (const char *file, const struct decoder *f,
 		set_info_rate (sound_params.rate / 1000);
 		if (!audio_open(&sound_params))
 			return;
-		out_buf_put (out_buf, precache.buf, precache.buf_fill);
+		audio_send_buf (precache.buf, precache.buf_fill);
 
 		precache.f->get_error (precache.decoder_data, &err);
 		if (err.type != ERROR_OK) {
