@@ -37,9 +37,7 @@ static void null_close ()
 
 static int null_play (const char *buff ATTR_UNUSED, const size_t size)
 {
-	usleep (((float)size / (params.channels * params.rate
-					* audio_get_bps(params.fmt)))
-			* 1000000);
+	usleep (size * 1000000.0 / audio_get_bps(params.fmt));
 	return size;
 }
 
@@ -64,7 +62,7 @@ static int null_reset ()
 
 static void null_init (struct output_driver_caps *caps)
 {
-	caps->formats = SFMT_S8 | SFMT_S16;
+	caps->formats = SFMT_S8 | SFMT_S16 | SFMT_LE;
 	caps->min_channels = 1;
 	caps->max_channels = 2;
 }
