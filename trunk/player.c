@@ -437,8 +437,6 @@ static void play_file (const char *file, const struct decoder *f,
 	precache_reset (&precache);
 
 	decode_loop (f, decoder_data, next_file, out_buf, sound_params);
-
-	out_buf_set_notify_cond (out_buf, NULL, NULL);
 }
 
 /* Play the stream (global decoder_stream) using the given decoder. */
@@ -468,7 +466,6 @@ static void play_stream (const struct decoder *f, struct out_buf *out_buf)
 	else {
 		audio_state_started_playing ();
 		decode_loop (f, decoder_data, NULL, out_buf, sound_params);
-		out_buf_set_notify_cond (out_buf, NULL, NULL);
 	}
 }
 
