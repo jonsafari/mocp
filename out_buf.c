@@ -319,12 +319,12 @@ int out_buf_time_get (struct out_buf *buf)
 	return time;
 }
 
+/* Using this function more than once leads to race conditions. */
 void out_buf_set_notify_cond (struct out_buf *buf, pthread_cond_t *cond,
 		pthread_mutex_t *mutex)
 {
 	assert (buf != NULL);
 	
-	out_buf_wait (buf);
 	buf->opt_cond_mutex = mutex;
 	buf->opt_cond = cond;
 }
