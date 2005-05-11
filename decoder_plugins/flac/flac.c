@@ -314,6 +314,8 @@ static void flac_close (void *void_data)
 		}
 		io_close (data->stream);
 	}
+
+	free (data);
 }
 
 static void fill_tag (FLAC__StreamMetadata_VorbisComment_Entry *comm,
