@@ -86,6 +86,7 @@ static void *precache_thread (void *data)
 	struct precache *precache = (struct precache *)data;
 	int decoded;
 	struct sound_params new_sound_params;
+	struct decoder_error err;
 
 	precache->buf_fill = 0;
 	precache->sound_params.channels = 0; /* mark that sound_params were not
@@ -93,8 +94,12 @@ static void *precache_thread (void *data)
 	precache->f = get_decoder (precache->file);
 	assert (precache->f != NULL);
 
-	if (!(precache->decoder_data = precache->f->open(precache->file))) {
-		logit ("Failed to open the file for precache.");
+	precache->decoder_data = precache->f->open(precache->file);
+	precache->f->get_error(precache->decoder_data, &err);
+	if (err.type != ERROR_OK) {
+		logit ("Failed to open the file for precache: %s", err.err);
+		decoder_error_clear (&err);
+		precache->f->close (precache->decoder_data);
 		return NULL;
 	}
 
@@ -104,7 +109,6 @@ static void *precache_thread (void *data)
 	/* Stop at PCM_BUF_SIZE, because when we decode too much, there is no
 	 * place when we can put the data that don't fit into the buffer. */
 	while (precache->buf_fill < PCM_BUF_SIZE) {
-		struct decoder_error err;
 		
 		decoded = precache->f->decode (precache->decoder_data,
 				precache->buf + precache->buf_fill,
