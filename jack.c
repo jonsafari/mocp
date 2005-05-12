@@ -32,7 +32,9 @@ static jack_port_t **output_port;
 /* the ring buffer, used to store the sound data before jack takes it */
 static jack_ringbuffer_t *ringbuffer[2];
 /* volume */
-static jack_default_audio_sample_t volume = 0.8;
+static jack_default_audio_sample_t volume = 1.0;
+/* volume as an integer - needed to avoid cast errors on set/read */
+static int volume_integer = 100;
 /* indicates if we should be playing or not */
 static int play;
 /* current sample rate */
@@ -249,11 +251,12 @@ static int moc_jack_play (const char *buff, const size_t size)
 
 static int moc_jack_read_mixer ()
 {
-	return (int)(volume * 100.0);
+	return volume_integer;
 }
 
 static void moc_jack_set_mixer (int vol)
 {
+	volume_integer = vol;
 	volume = (jack_default_audio_sample_t)vol / 100.0;
 }
 
