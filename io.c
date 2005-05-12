@@ -515,6 +515,9 @@ static int io_ok_nolock (struct io_stream *s)
 int io_ok (struct io_stream *s)
 {
 	int res;
+
+	if (!s->opened)
+		return 0;
 	
 	LOCK (s->io_mutex);
 	res = io_ok_nolock (s);
