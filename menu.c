@@ -418,13 +418,17 @@ struct menu *menu_filter_pattern (struct menu *menu, const char *pattern)
 	assert (menu != NULL);
 	assert (pattern != NULL);
 
-	for (i = 0; i < menu->nitems; i++)
-		if (strcasestr(menu->items[i].title, pattern)) {
-			int added = menu_add_from_item (new, &menu->items[i]);
+	for (i = 0; i < menu->nitems; i++) {
+		struct menu_item *item = &menu->items[i];
+		
+		if ((item->type == F_SOUND || item->type == F_URL)
+				&& strcasestr(menu->items[i].title, pattern)) {
+			int added = menu_add_from_item (new, item);
 			
 			if (menu->marked == i)
 				new->marked = added;
 		}
+	}
 
 	return new;
 }
