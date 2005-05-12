@@ -69,7 +69,7 @@ static void fill_capabilities (struct output_driver_caps *caps)
 	snd_pcm_hw_params_t *hw_params;
 	snd_pcm_format_mask_t *format_mask;
 	int err;
-	int val;
+	unsigned val;
 
 	if ((err = snd_pcm_open(&handle, options_get_str("AlsaDevice"),
 					SND_PCM_STREAM_PLAYBACK,
