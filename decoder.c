@@ -83,14 +83,41 @@ struct decoder *get_decoder (const char *file)
 	return NULL;
 }
 
+/* Return the decoder by the mime type of the stream or NULL if not found. */
+static struct decoder *get_decoder_by_mime_type (struct io_stream *stream)
+{
+	int i;
+	char *mime = io_get_mime_type (stream);
+
+	if (mime) {
+		for (i = 0; i < plugins_num; i++)
+			if (plugins[i].decoder->our_format_mime
+					&& plugins[i].decoder->our_format_mime(
+						mime)) {
+				logit ("Found decoder for mime type %s",
+						mime);
+				return plugins[i].decoder;
+			}
+	}
+	else
+		logit ("No mime type.");
+
+	return NULL;
+}
+
+/* Return the decoder for this stream. */
 struct decoder *get_decoder_by_content (struct io_stream *stream)
 {
 	char buf[8096];
 	ssize_t res;
 	int i;
+	struct decoder *decoder_by_mime_type;
+
+	assert (stream != NULL);
 
 	/* Peek up some data to check if they are available. If not, there is
-	 * no sense to try decoders, each of them would issue an error. */
+	 * no sense to try decoders, each of them would issue an error.
+	 * This is also needed to actually get the mime type. */
 	logit ("Testing the stream...");
 	res = io_peek (stream, buf, sizeof(buf));
 	if (res < 0) {
@@ -103,6 +130,9 @@ struct decoder *get_decoder_by_content (struct io_stream *stream)
 		return NULL;
 	}
 	
+	if ((decoder_by_mime_type = get_decoder_by_mime_type(stream)))
+		return decoder_by_mime_type;
+
 	for (i = 0; i < plugins_num; i++)
 		if (plugins[i].decoder->can_decode
 				&& plugins[i].decoder->can_decode(stream))

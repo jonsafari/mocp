@@ -62,6 +62,41 @@ static size_t write_callback (void *data, size_t size, size_t nmemb,
 	return s->curl_buf_fill;
 }
 
+static size_t header_callback (void *data, size_t size, size_t nmemb,
+		void *stream)
+{
+	struct io_stream *s = (struct io_stream *)stream;
+	char *header;
+	size_t header_size;
+
+	assert (s != NULL);
+
+	if (size * nmemb <= 2)
+		return size * nmemb;
+		
+	/* we dont need '\r\n', so cut it. */
+	header_size = sizeof(char) * (size * nmemb + 1 - 2);
+
+	/* copy the header to char* array*/
+	header = (char *)xmalloc (header_size);
+	memcpy (header, data, size * nmemb - 2);
+	header[header_size-1] = 0;
+
+	if (!strncasecmp(header, "Content-Type: ", sizeof("Content-Type: ")-1)) {
+		if (s->mime_type)
+			logit ("Another Content-Type header!");
+		else {
+			s->mime_type = xstrdup (header
+					+ (sizeof("Content-Type: ") - 1));
+			debug ("Mime type: '%s'", s->mime_type);
+		}
+	}
+
+	free (header);
+	
+	return size * nmemb;
+}
+
 static int debug_callback (CURL *curl ATTR_UNUSED, curl_infotype i, char *msg,
 		size_t size, void *d ATTR_UNUSED)
 {
@@ -143,6 +178,9 @@ void io_curl_open (struct io_stream *s, const char *url)
 	curl_easy_setopt (s->curl_handle, CURLOPT_WRITEFUNCTION,
 			write_callback);
 	curl_easy_setopt (s->curl_handle, CURLOPT_WRITEDATA, s);
+	curl_easy_setopt (s->curl_handle, CURLOPT_HEADERFUNCTION,
+			header_callback);
+	curl_easy_setopt (s->curl_handle, CURLOPT_WRITEHEADER, s);
 	curl_easy_setopt (s->curl_handle, CURLOPT_USERAGENT,
 			PACKAGE_NAME"/"PACKAGE_VERSION);
 	curl_easy_setopt (s->curl_handle, CURLOPT_FOLLOWLOCATION, 1);
@@ -180,6 +218,8 @@ void io_curl_close (struct io_stream *s)
 		curl_slist_free_all (s->http_headers);
 	if (s->curl_buf)
 		free (s->curl_buf);
+	if (s->mime_type)
+		free (s->mime_type);
 
 	if (s->curl_multi_handle && s->curl_handle)
 		curl_multi_remove_handle (s->curl_multi_handle, s->curl_handle);

@@ -457,6 +457,7 @@ struct io_stream *io_open (const char *file, const int buffered)
 	s->opened = 0;
 
 #ifdef HAVE_CURL
+	s->mime_type = NULL;
 	if (!strncasecmp(file, "http://", sizeof("http://")-1)
 			|| !strncasecmp(file, "ftp://", sizeof("ftp://")-1))
 		io_curl_open (s, file);
@@ -736,3 +737,10 @@ void io_cleanup ()
 #endif
 }
 
+/* Return the mime type if available or NULL.
+ * The mime type is read by curl only after the first read (or peek), until
+ * then it's NULL. */
+char *io_get_mime_type (struct io_stream *s)
+{
+	return s->mime_type;
+}
