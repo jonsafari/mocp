@@ -354,6 +354,12 @@ static void ogg_get_error (void *prv_data, struct decoder_error *error)
 	decoder_error_copy (error, &data->error);
 }
 
+static int ogg_our_mime (const char *mime)
+{
+	return !strcmp(mime, "application/ogg")
+		|| !strcmp(mime, "application/x-ogg");
+}
+
 static struct decoder ogg_decoder = {
 	DECODER_API_VERSION,
 	ogg_open,
@@ -367,6 +373,7 @@ static struct decoder ogg_decoder = {
 	ogg_get_duration,
 	ogg_get_error,
 	ogg_our_format_ext,
+	ogg_our_mime,
 	ogg_get_name,
 	ogg_current_tags,
 	ogg_get_stream

@@ -7,7 +7,7 @@
 
 /* On every change in the decoder API this number will be changed, so MOC will
  * not load plugins compiled with older/newer decoder.h. */
-#define DECODER_API_VERSION	4
+#define DECODER_API_VERSION	5
 
 enum decoder_error_type
 {
@@ -70,6 +70,10 @@ struct decoder
 	
 	/* Return != 0 if this file extension is supported by this decoder. */
 	int (*our_format_ext)(const char *ext);
+
+	/* Return != 0 if a stream with this mime type is supported by this
+	 * decoder. Optional. */
+	int (*our_format_mime)(const char *mime_type);
 
 	/* Put the 3-chars null-terminated format name for this file into buf.
 	 */

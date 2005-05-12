@@ -58,7 +58,7 @@ struct io_stream
 	char *curl_buf;			/* buffer for data the curl gives us */
 	long curl_buf_fill;
 	int need_perform_loop;		/* do we need the perform() loop? */
-	
+	char *mime_type;		/* mime type of the stream */
 #endif
 
 	struct fifo_buf buf;
@@ -84,5 +84,6 @@ int io_eof (struct io_stream *s);
 void io_init ();
 void io_cleanup ();
 void io_abort (struct io_stream *s);
+char *io_get_mime_type (struct io_stream *s);
 
 #endif
