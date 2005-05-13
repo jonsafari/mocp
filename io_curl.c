@@ -159,6 +159,9 @@ void io_curl_open (struct io_stream *s, const char *url)
 	s->curl_buf_fill = 0;
 	s->need_perform_loop = 1;
 
+	s->curl_wake_up_pipe[0] = -1;
+	s->curl_wake_up_pipe[1] = -1;
+
 	if (!(s->curl_multi_handle = curl_multi_init())) {
 		logit ("curl_multi_init() returned NULL");
 		return;
@@ -204,6 +207,11 @@ void io_curl_open (struct io_stream *s, const char *url)
 		return;
 	}
 
+	if (pipe(s->curl_wake_up_pipe) < 0) {
+		logit ("pipe() failed: %s", strerror(errno));
+		return;
+	}
+
 	s->opened = 1;
 }
 
@@ -227,6 +235,11 @@ void io_curl_close (struct io_stream *s)
 		curl_easy_cleanup (s->curl_handle);
 	if (s->curl_multi_handle)
 		curl_multi_cleanup (s->curl_multi_handle);
+
+	if (s->curl_wake_up_pipe[0] != -1) {
+		close (s->curl_wake_up_pipe[0]);
+		close (s->curl_wake_up_pipe[1]);
+	}
 }
 
 ssize_t io_curl_read (struct io_stream *s, char *buf, size_t count)
@@ -275,6 +288,10 @@ ssize_t io_curl_read (struct io_stream *s, char *buf, size_t count)
 				return -1;
 			}
 
+			FD_SET (s->curl_wake_up_pipe[0], &read_fds);
+			if (s->curl_wake_up_pipe[0] > max_fd)
+				max_fd = s->curl_wake_up_pipe[0];
+
 			ret = select (max_fd + 1, &read_fds, &write_fds,
 					&exc_fds, NULL);
 
@@ -286,6 +303,11 @@ ssize_t io_curl_read (struct io_stream *s, char *buf, size_t count)
 				s->errno_val == errno;
 				logit ("select() failed");
 				return -1;
+			}
+
+			if (FD_ISSET(s->curl_wake_up_pipe[0], &read_fds)) {
+				logit ("Got wake up - exiting");
+				return 0;
 			}
 		}
 
@@ -339,4 +361,13 @@ int io_curl_ok (const struct io_stream *s)
 				== CURLM_CALL_MULTI_PERFORM)
 		&& s->curl_status == CURLE_OK
 		&& !s->errno_val);
+}
+
+void io_curl_wake_up (struct io_stream *s)
+{
+	int w = 1;
+
+	if (write(s->curl_wake_up_pipe[1], &w, sizeof(w)) < 0)
+		logit ("Can't wake up curl thread: write() failed: %s",
+				strerror(errno));
 }
