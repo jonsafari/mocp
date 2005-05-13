@@ -742,5 +742,9 @@ void io_cleanup ()
  * then it's NULL. */
 char *io_get_mime_type (struct io_stream *s)
 {
+#ifdef HAVE_CURL
 	return s->mime_type;
+#else
+	return NULL;
+#endif
 }
