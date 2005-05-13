@@ -64,6 +64,9 @@ static struct client clients[CLIENTS_MAX];
 /* Thread ID of the server thread. */
 static pthread_t server_tid;
 
+/* Pipe used to wake up the server from select() from another thread. */
+static int wake_up_pipe[2];
+
 /* Set to 1 when a signal arrived causing the program to exit. */
 static volatile int server_quit = 0;
 
@@ -117,11 +120,6 @@ static void sig_exit (int sig)
 
 	if (server_tid != pthread_self())
 		pthread_kill (server_tid, sig);
-}
-
-static void sig_wake_up (int sig ATTR_UNUSED)
-{
-	/*debug ("got wake up signal");*/
 }
 
 static void clients_init ()
@@ -242,9 +240,13 @@ static int valid_pid (const int pid)
 
 static void wake_up_server ()
 {
+	int w = 1;
+	
 	debug ("Waking up the server");
-	if (pthread_kill(server_tid, SIGUSR1))
-		logit ("Can't wake up the server: %s", strerror(errno));
+
+	if (write(wake_up_pipe[1], &w, sizeof(1)) < 0)
+		logit ("Can't wake up the server: (write() failed) %s",
+				strerror(errno));
 }
 
 /* Thread-safe signal() version */
@@ -282,6 +284,9 @@ int server_init (int debug, int foreground)
 		log_init_stream (logf);
 	}
 
+	if (pipe(wake_up_pipe) < 0)
+		fatal ("pipe() failed: %s", strerror(errno));
+
 	unlink (socket_name());
 
 	/* Create a socket */
@@ -306,7 +311,6 @@ int server_init (int debug, int foreground)
 	thread_signal (SIGHUP, SIG_IGN);
 	thread_signal (SIGQUIT, sig_exit);
 	thread_signal (SIGPIPE, SIG_IGN);
-	thread_signal (SIGUSR1, sig_wake_up);
 
 	write_pid_file ();
 
@@ -1046,6 +1050,9 @@ static int max_fd (int max)
 {
 	int i;
 
+	if (wake_up_pipe[0] > max)
+		max = wake_up_pipe[0];
+
 	for (i = 0; i < CLIENTS_MAX; i++)
 		if (clients[i].socket > max)
 			max = clients[i].socket;
@@ -1099,6 +1106,7 @@ void server_loop (int list_sock)
 		FD_ZERO (&fds_read);
 		FD_ZERO (&fds_write);
 		FD_SET (list_sock, &fds_read);
+		FD_SET (wake_up_pipe[0], &fds_read);
 		add_clients_fds (&fds_read, &fds_write);
 		
 		if (!server_quit)
@@ -1126,6 +1134,16 @@ void server_loop (int list_sock)
 				logit ("Incoming connection");
 				if (!add_client(client_sock))
 					busy (client_sock);
+			}
+
+			if (FD_ISSET(wake_up_pipe[0], &fds_read)) {
+				int w;
+				
+				logit ("Got 'wake up'");
+
+				if (read(wake_up_pipe[0], &w, sizeof(w)) < 0)
+					fatal ("Can't read wake up signal: %s",
+							strerror(errno));
 			}
 
 			send_events (&fds_write);

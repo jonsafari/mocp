@@ -59,6 +59,8 @@ struct io_stream
 	long curl_buf_fill;
 	int need_perform_loop;		/* do we need the perform() loop? */
 	char *mime_type;		/* mime type of the stream */
+	int curl_wake_up_pipe[2];	/* pipes used to wake up the curl read
+					   loop that does select() */
 #endif
 
 	struct fifo_buf buf;

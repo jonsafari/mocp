@@ -241,6 +241,14 @@ off_t io_seek (struct io_stream *s, off_t offset, int whence)
 	return res;
 }
 
+/* Wake up the IO reading thread */
+static void io_wake_up (struct io_stream *s)
+{
+#ifdef HAVE_CURL
+	io_curl_wake_up (s);
+#endif
+}
+
 /* Abort an IO operation from another thread. */
 void io_abort (struct io_stream *s)
 {
@@ -250,7 +258,7 @@ void io_abort (struct io_stream *s)
 		logit ("Aborting...");
 		LOCK (s->buf_mutex);
 		s->stop_read_thread = 1;
-		pthread_kill (s->read_thread, SIGUSR1);
+		io_wake_up (s);
 		pthread_cond_broadcast (&s->buf_fill_cond);
 		pthread_cond_broadcast (&s->buf_free_cond);
 		UNLOCK (s->buf_mutex);
