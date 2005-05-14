@@ -1886,15 +1886,16 @@ static void send_all_items (struct plist *plist)
 /* Make sure that the server's playlist has different serial from ours. */
 static void change_srv_plist_serial ()
 {
-	send_int_to_srv (CMD_PLIST_GET_SERIAL);
-	if (get_data_int() == plist_get_serial(playlist)) {
-		int serial;
-		
+	int serial;
+	
+	do {	
 		send_int_to_srv (CMD_GET_SERIAL);
 		serial = get_data_int ();
-		send_int_to_srv (CMD_PLIST_SET_SERIAL);
-		send_int_to_srv (serial);
-	}
+	 } while (serial == plist_get_serial(playlist)
+			|| serial == plist_get_serial(curr_plist));
+
+	send_int_to_srv (CMD_PLIST_SET_SERIAL);
+	send_int_to_srv (serial);
 }
 
 /* Based on ASCIILines option initialize line characters with curses lines or
