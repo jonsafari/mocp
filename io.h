@@ -61,6 +61,8 @@ struct io_stream
 	char *mime_type;		/* mime type of the stream */
 	int curl_wake_up_pipe[2];	/* pipes used to wake up the curl read
 					   loop that does select() */
+	struct curl_slist *http200_aliases; /* list of aliases for http
+						response's status line */
 #endif
 
 	struct fifo_buf buf;
