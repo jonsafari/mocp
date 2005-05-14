@@ -54,7 +54,8 @@ static snd_mixer_t *mixer_handle = NULL;
 static snd_mixer_elem_t *mixer_elem = NULL;
 static long mixer_min = -1, mixer_max = -1;
 
-#define mixer_percent(vol) ((((vol) - mixer_min)*100)/(mixer_max - mixer_min))
+/* Volume in range 1-100 despite the actual device resolution. */
+static int volume;
 
 static void alsa_shutdown ()
 {
@@ -128,6 +129,43 @@ static void fill_capabilities (struct output_driver_caps *caps)
 	handle = NULL;
 }
 
+static int alsa_read_mixer_raw ()
+{
+	if (mixer_handle) {
+		long volume = 0;
+		int nchannels = 0;
+		int i;
+
+		for (i = 0; i < SND_MIXER_SCHN_LAST; i++)
+			if (snd_mixer_selem_has_playback_channel(mixer_elem,
+						1 << i)) {
+				int err;
+				long vol;
+				
+				nchannels++;
+				if ((err = snd_mixer_selem_get_playback_volume(
+								mixer_elem,
+								1 << i,
+								&vol)) < 0) {
+					error ("Can't read mixer: %s",
+							snd_strerror(err));
+					return -1;
+						
+				}
+				/*logit ("Vol %d: %ld", i, vol);*/
+				volume += vol;
+			}
+
+		volume /= nchannels;
+
+		/*logit ("Max: %ld, Min: %ld", mixer_max, mixer_min);*/
+		return volume;
+
+	}
+	else
+		return -1;
+}
+
 static void alsa_init (struct output_driver_caps *caps)
 {
 	int err;
@@ -174,6 +212,12 @@ static void alsa_init (struct output_driver_caps *caps)
 				&mixer_min, &mixer_max);
 		logit ("Opened mixer, volume range: %ld-%ld", mixer_min,
 				mixer_max);
+	}
+
+	if ((volume = alsa_read_mixer_raw()) != -1) {
+
+		/* Scale the mixer value to 0-100 range */
+		volume = (volume - mixer_min) * 100 / (mixer_max - mixer_min);
 	}
 
 	fill_capabilities (caps);
@@ -448,83 +492,22 @@ static int alsa_play (const char *buff, const size_t size)
 	return size;
 }
 
-static int alsa_read_mixer_raw ()
-{
-	if (mixer_handle) {
-		long volume = 0;
-		int nchannels = 0;
-		int i;
-
-		for (i = 0; i < SND_MIXER_SCHN_LAST; i++)
-			if (snd_mixer_selem_has_playback_channel(mixer_elem,
-						1 << i)) {
-				int err;
-				long vol;
-				
-				nchannels++;
-				if ((err = snd_mixer_selem_get_playback_volume(
-								mixer_elem,
-								1 << i,
-								&vol)) < 0) {
-					error ("Can't read mixer: %s",
-							snd_strerror(err));
-					return -1;
-						
-				}
-				/*logit ("Vol %d: %ld", i, vol);*/
-				volume += vol;
-			}
-
-		volume /= nchannels;
-
-		/*logit ("Max: %ld, Min: %ld", mixer_max, mixer_min);*/
-		return volume;
-
-	}
-	else
-		return -1;
-}
-
 static int alsa_read_mixer ()
 {
-	int vol = alsa_read_mixer_raw ();
-
-	if (vol != -1)
-		return mixer_percent(vol);
-	return -1;
+	return volume;
 }
 
 static void alsa_set_mixer (int vol)
 {
 	if (mixer_handle) {
 		int err;
-		long curr_vol = alsa_read_mixer_raw ();
 		long vol_alsa;
 
-		if (vol < 0)
-			vol = 0;
-		else if (vol > 100)
-			vol = 100;
+		volume = vol;
+		vol_alsa = volume * (mixer_max - mixer_min) / 100;
 
-		debug ("Setting vol to %d%%", vol);
+		debug ("Setting vol to %ld", vol_alsa);
 
-		vol_alsa = mixer_min + (mixer_max - mixer_min) * vol/100.0;
-		
-		if (vol_alsa == curr_vol) {
-
-			/* Problem with ALSA mixer resolution: it could be
-			 * worse than 1% */
-			if (vol > mixer_percent(curr_vol))
-				vol_alsa++;
-			else if (vol < mixer_percent(curr_vol))
-				vol_alsa--;
-		}
-
-		if (vol_alsa > mixer_max)
-			vol_alsa = mixer_max;
-		else if (vol_alsa < mixer_min)
-			vol_alsa = mixer_min;
-		
 		if ((err = snd_mixer_selem_set_playback_volume_all(
 						mixer_elem, vol_alsa)) < 0)
 			error ("Can't set mixer: %s", snd_strerror(err));
