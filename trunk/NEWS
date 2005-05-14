@@ -1,3 +1,23 @@
+2.2.2
+	* Added an option to ignore CRC errors in mp3 files (set to yes by
+	  default, like most players do). This fixes playing mp3 files that
+	  have bad CRC checksums but are actually good.
+	* Fixed marking the currently played item when a new item on the
+	  playlist appears.
+	* Fixed a crash when going back at the first item with Repeat turned
+	  on (Debian Bug#307651).
+	* Fixed handling FLAC files with 8-bit samples.
+	* Added mp2 and mpga to the list of supported extensions by MAD: this
+	  makes possible to play MPEG Layer I and II files.
+	* Fixed a race condition that crashes MOC when switching songs quickly.
+	* Fixed a small memory leak in FLAC.
+	* Ogg Vorbis is not required for compilation (a bug in the configure
+	  script).
+	* Use a pipe to wake up another thread from select() instead of a
+	  signal. Helps on NetBSD where pthread_kill() doesn't interrupt
+	  select().
+	* Fixes for compiler warnings on 64-bit systems.
+	* Fixed a warning about wprintw() usage on some systems.
 2.2.1
 	* Fixed missing titles of files without tags when added to the playlist.
 	* Fixed refreshing the screen after searching.
