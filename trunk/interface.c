@@ -1022,7 +1022,7 @@ static void fill_times (struct plist *plist, struct menu *menu)
 
 			read_item_time (&plist->items[i]);
 
-			if (menu && get_item_time(plist, i)) {
+			if (menu && get_item_time(plist, i) != -1) {
 				char time_str[6];
 				sec_to_min (time_str, get_item_time(plist, i));
 				menu_item_set_time_plist (menu, i, time_str);
