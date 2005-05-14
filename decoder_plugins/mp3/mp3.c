@@ -38,6 +38,7 @@
 #include "decoder.h"
 #include "io.h"
 #include "options.h"
+#include "files.h"
 
 #define INPUT_BUFFER	(32 * 1024)
 
@@ -554,14 +555,23 @@ static int mp3_get_duration (void *void_data)
 	return data->duration;
 }
 
-static void mp3_get_name (const char *file ATTR_UNUSED, char buf[4])
+static void mp3_get_name (const char *file, char buf[4])
 {
-	strcpy (buf, "MP3");
+	char *ext = ext_pos (file);
+	
+	if (!strcasecmp(ext, "mp3"))
+		strcpy (buf, "MP3");
+	else if (!strcasecmp(ext, "mp2"))
+		strcpy (buf, "MP2");
+	else if (!strcasecmp(ext, "mpga"))
+		strcpy (buf, "MPG");
 }
 
 static int mp3_our_format_ext (const char *ext)
 {
-	return !strcasecmp(ext, "mp3");
+	return !strcasecmp(ext, "mp3")
+		|| !strcasecmp(ext, "mpga")
+		|| !strcasecmp(ext, "mp2");
 }
 
 static void mp3_get_error (void *prv_data, struct decoder_error *error)
