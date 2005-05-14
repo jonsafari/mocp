@@ -76,6 +76,34 @@ static void get_comment_tags (OggVorbis_File *vf, struct file_tags *info)
 	}
 }
 
+/* Return a malloc()ed description of an ov_*() error. */
+static char *ogg_strerror (const int code)
+{
+	char *err;
+	
+	switch (code) {
+		case OV_EREAD:
+			err = "read error";
+			break;
+		case OV_ENOTVORBIS:
+			err = "not a vorbis file";
+			break;
+		case OV_EVERSION:
+			err = "vorbis version mismatch";
+			break;
+		case OV_EBADHEADER:
+			err = "invalid Vorbis bitstream header";
+			break;
+		case OV_EFAULT:
+			err = "internal (vorbis) logic fault";
+			break;
+		default:
+			err = "unknown error";
+	}
+
+	return xstrdup (err);
+}
+
 /* Fill info structure with data from ogg comments */
 static void ogg_info (const char *file_name, struct file_tags *info,
 		const int tags_sel)
@@ -83,23 +111,32 @@ static void ogg_info (const char *file_name, struct file_tags *info,
 	OggVorbis_File vf;
 	FILE *file;
 	int ogg_time;
+	int err_code;
 
 	if (!(file = fopen (file_name, "r"))) {
-		logit ("Can't load %s: %s", file_name, strerror(errno));
+		logit ("Can't open an OGG file: %s", strerror(errno));
 		return;
 	}
 
 	/* ov_test() is faster than ov_open(), but we can't read file time
 	 * with it. */
 	if (tags_sel & TAGS_TIME) {
-		if (ov_open(file, &vf, NULL, 0) < 0) {
-			logit ("ov_test() for %s failed!", file_name);
+		if ((err_code = ov_open(file, &vf, NULL, 0)) < 0) {
+			char *ogg_err = ogg_strerror (err_code);
+			
+			logit ("Can't open %s: %s", file_name, ogg_err);
+			free (ogg_err);
+			
 			return;
 		}
 	}
 	else {
-		if (ov_test(file, &vf, NULL, 0) < 0) {
-			logit ("ov_test() for %s failed!", file_name);
+		if ((err_code = ov_test(file, &vf, NULL, 0)) < 0) {
+			char *ogg_err = ogg_strerror (err_code);
+			
+			logit ("Can't open %s: %s", file_name, ogg_err);
+			free (ogg_err);
+			
 			return;
 		}
 	}
@@ -167,9 +204,13 @@ static void ogg_open_stream_internal (struct ogg_data *data)
 	
 	if ((res = ov_open_callbacks(data->stream, &data->vf, NULL, 0,
 					callbacks)) < 0) {
+		char *ogg_err = ogg_strerror (res);
+		
 		decoder_error (&data->error, ERROR_FATAL, 0,
-				"ov_open() failed!");
-		debug ("ov_open error: %d", res);
+				ogg_err);
+		debug ("ov_open error: %s", ogg_err);
+		free (ogg_err);
+
 		io_close (data->stream);
 	}
 	else {
