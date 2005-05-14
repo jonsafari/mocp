@@ -44,6 +44,7 @@ struct option
 	enum option_type type;
 	union option_value value;
 	int ignore_in_config;
+	int set_in_config;
 };
 
 static struct option options[OPTIONS_MAX];
@@ -60,6 +61,7 @@ static void option_add_int (const char *name, const int value)
 	options[options_num].type = OPTION_INT;
 	options[options_num].value.num = value;
 	options[options_num].ignore_in_config = 0;
+	options[options_num].set_in_config = 0;
 
 	options_num++;
 }
@@ -75,6 +77,7 @@ static void option_add_str (const char *name, const char *value)
 	options[options_num].type = OPTION_STR;
 	options[options_num].value.str = xstrdup (value);
 	options[options_num].ignore_in_config = 0;
+	options[options_num].set_in_config = 0;
 
 	options_num++;
 }
@@ -278,6 +281,11 @@ static int set_option (const char *name, const char *value)
 
 	if (options[i].ignore_in_config)
 		return 1;
+
+	if (options[i].set_in_config)
+		return 0;
+
+	options[i].set_in_config = 1;
 
 	if (options[i].type == OPTION_INT) {
 		int num;
