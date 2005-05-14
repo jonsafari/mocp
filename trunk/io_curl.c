@@ -177,6 +177,8 @@ void io_curl_open (struct io_stream *s, const char *url)
 
 	s->url = xstrdup (url);
 
+	s->http200_aliases = curl_slist_append (NULL, "ICY");
+
 	curl_easy_setopt (s->curl_handle, CURLOPT_NOPROGRESS, 1);
 	curl_easy_setopt (s->curl_handle, CURLOPT_WRITEFUNCTION,
 			write_callback);
@@ -190,7 +192,8 @@ void io_curl_open (struct io_stream *s, const char *url)
 	curl_easy_setopt (s->curl_handle, CURLOPT_URL, s->url);
 	curl_easy_setopt (s->curl_handle, CURLOPT_FOLLOWLOCATION, 1);
 	curl_easy_setopt (s->curl_handle, CURLOPT_MAXREDIRS, 15);
-
+	curl_easy_setopt (s->curl_handle, CURLOPT_HTTP200ALIASES,
+			s->http200_aliases);
 #ifdef DEBUG
 	curl_easy_setopt (s->curl_handle, CURLOPT_VERBOSE, 1);
 	curl_easy_setopt (s->curl_handle, CURLOPT_DEBUGFUNCTION,
@@ -240,6 +243,9 @@ void io_curl_close (struct io_stream *s)
 		close (s->curl_wake_up_pipe[0]);
 		close (s->curl_wake_up_pipe[1]);
 	}
+
+	if (s->http200_aliases)
+		curl_slist_free_all (s->http200_aliases);
 }
 
 ssize_t io_curl_read (struct io_stream *s, char *buf, size_t count)
