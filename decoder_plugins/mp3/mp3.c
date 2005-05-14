@@ -563,6 +563,8 @@ static void mp3_get_name (const char *file, char buf[4])
 		strcpy (buf, "MP3");
 	else if (!strcasecmp(ext, "mp2"))
 		strcpy (buf, "MP2");
+	else if (!strcasecmp(ext, "mp2"))
+		strcpy (buf, "MP1");
 	else if (!strcasecmp(ext, "mpga"))
 		strcpy (buf, "MPG");
 }
@@ -571,7 +573,8 @@ static int mp3_our_format_ext (const char *ext)
 {
 	return !strcasecmp(ext, "mp3")
 		|| !strcasecmp(ext, "mpga")
-		|| !strcasecmp(ext, "mp2");
+		|| !strcasecmp(ext, "mp2")
+		|| !strcasecmp(ext, "mp1");
 }
 
 static void mp3_get_error (void *prv_data, struct decoder_error *error)
