@@ -6,6 +6,7 @@
 	  playlist appears.
 	* Fixed a crash when going back at the first item with Repeat turned
 	  on (Debian Bug#307651).
+	* Fixed a crash when the time of a file can't be read.
 	* Fixed handling FLAC files with 8-bit samples.
 	* Added mp2 and mpga to the list of supported extensions by MAD: this
 	  makes possible to play MPEG Layer I and II files.
