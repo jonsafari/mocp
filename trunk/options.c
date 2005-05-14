@@ -276,14 +276,19 @@ static int set_option (const char *name, const char *value)
 {
 	int i = find_option (name, OPTION_ANY);
 
-	if (i == -1)
+	if (i == -1) {
+		fprintf (stderr, "Wrong option name: '%s'.", name);
 		return 0;
+	}
 
-	if (options[i].ignore_in_config)
+	if (options[i].ignore_in_config) 
 		return 1;
 
-	if (options[i].set_in_config)
+	if (options[i].set_in_config) {
+		fprintf (stderr, "Tried to set an option that has been already "
+				"set in the config file ('%s').", name);
 		return 0;
+	}
 
 	options[i].set_in_config = 1;
 
