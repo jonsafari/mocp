@@ -302,7 +302,36 @@ static struct mp3_data *mp3_open_internal (const char *file,
 
 static void *mp3_open (const char *file)
 {
-	return mp3_open_internal(file, 1);
+	return mp3_open_internal (file, 1);
+}
+
+static void *mp3_open_stream (struct io_stream *stream)
+{
+	struct mp3_data *data;
+
+	data = (struct mp3_data *)xmalloc (sizeof(struct mp3_data));
+	data->ok = 1;
+	decoder_error_init (&data->error);
+
+	/* Reset information about the file */
+	data->freq = 0;
+	data->channels = 0;
+	data->skip_frames = 0;
+	data->bitrate = -1;
+	data->io_stream = stream;
+	data->duration = -1;
+
+	data->size = (off_t)-1;
+
+	mad_stream_init (&data->stream);
+	mad_frame_init (&data->frame);
+	mad_synth_init (&data->synth);
+
+	if (options_get_int("Mp3IgnoreCRCErrors"))
+			mad_stream_options (&data->stream,
+				MAD_OPTION_IGNORECRC);
+	
+	return data;
 }
 
 static void mp3_close (void *void_data)
@@ -584,11 +613,37 @@ static void mp3_get_error (void *prv_data, struct decoder_error *error)
 	decoder_error_copy (error, &data->error);
 }
 
+static struct io_stream *mp3_get_stream (void *prv_data)
+{
+	struct mp3_data *data = (struct mp3_data *)prv_data;
+
+	return data->io_stream;
+}
+
+static int mp3_our_mime (const char *mime)
+{
+	return !strcmp(mime, "audio/mpeg");
+}
+
+static int mp3_can_decode (struct io_stream *stream)
+{
+	char buf[2];
+
+	if (io_peek(stream, buf, 2) == 2) {
+		short magic = buf[0] | (buf[1] << 8);
+
+		if ((magic & 0xfff0) == 0xfff0)
+			return 1;
+	}
+
+	return 0;
+}
+
 static struct decoder mp3_decoder = {
 	DECODER_API_VERSION,
 	mp3_open,
-	NULL,
-	NULL,
+	mp3_open_stream,
+	mp3_can_decode,
 	mp3_close,
 	mp3_decode,
 	mp3_seek,
@@ -597,10 +652,10 @@ static struct decoder mp3_decoder = {
 	mp3_get_duration,
 	mp3_get_error,
 	mp3_our_format_ext,
-	NULL,
+	mp3_our_mime,
 	mp3_get_name,
 	NULL,
-	NULL
+	mp3_get_stream
 };
 
 struct decoder *plugin_init ()
