@@ -666,37 +666,63 @@ void audio_close ()
 	}
 }
 
-static void find_hw_funcs (const char *driver, struct hw_funcs *funcs)
+/* Try to initialize drivers from the list and fill the funcs with the
+ * funtions of the first working driver. */
+static void find_working_driver (const char *drivers, struct hw_funcs *funcs)
 {
+	const char *pos = drivers;
+	
 	memset (funcs, 0, sizeof(funcs));
 
+	while (pos[0]) {
+		size_t t;
+		char name[32];
+		
+		if (!(t = strcspn(pos, " \t,")) || t >= sizeof(name))
+			fatal ("Invalid sound driver list");
+
+		strncpy (name, pos, t);
+		name[t] = 0;
+		
+		pos += t;
+		pos += strspn (pos, " \t,");
+
 #ifdef HAVE_OSS
-	if (!strcasecmp(driver, "oss")) {
-		oss_funcs (funcs);
-		return;
-	}
+		if (!strcasecmp(name, "oss")) {
+			oss_funcs (funcs);
+			printf ("Trying OSS...\n");
+			if (funcs->init(&hw_caps))
+				return;
+		}
 #endif
 
 #ifdef HAVE_ALSA
-	if (!strcasecmp(driver, "alsa")) {
-		alsa_funcs (funcs);
-		return;
-	}
+		if (!strcasecmp(name, "alsa")) {
+			alsa_funcs (funcs);
+			printf ("Trying ALSA...\n");
+			if (funcs->init(&hw_caps))
+				return;
+		}
 #endif
 
 #ifdef HAVE_JACK
-	if (!strcasecmp(driver, "jack")) {
-		moc_jack_funcs (funcs);
-		return;
-	}
+		if (!strcasecmp(name, "jack")) {
+			moc_jack_funcs (funcs);
+			printf ("Trying JACK...\n");
+			if (funcs->init(&hw_caps))
+				return;
+		}
 #endif
 	
 #ifndef NDEBUG
-	if (!strcasecmp(driver, "null")) {
-		null_funcs (funcs);
-		return;
-	}
+		if (!strcasecmp(name, "null")) {
+			null_funcs (funcs);
+			printf ("Trying NULL...\n");
+			if (funcs->init(&hw_caps))
+				return;
+		}
 #endif
+	}
 
 	fatal ("No valid sound driver");
 }
@@ -712,9 +738,7 @@ static void print_output_capabilities (const struct output_driver_caps *caps)
 
 void audio_init ()
 {
-	memset (&hw, 0, sizeof(hw));
-	find_hw_funcs (options_get_str("SoundDriver"), &hw);
-	hw.init (&hw_caps);
+	find_working_driver (options_get_str("SoundDriver"), &hw);
 
 	assert (hw_caps.max_channels >= hw_caps.min_channels);
 	assert (sound_format_ok(hw_caps.formats));

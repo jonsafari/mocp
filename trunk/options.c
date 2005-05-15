@@ -150,7 +150,7 @@ void options_init ()
 	option_add_str ("OSSDevice", "/dev/dsp");
 	option_add_str ("OSSMixerDevice", "/dev/mixer");
 	option_add_str ("OSSMixerChannel", "pcm");
-	option_add_str ("SoundDriver", "OSS");
+	option_add_str ("SoundDriver", "Jack, ALSA, OSS");
 	option_add_int ("ShowHiddenFiles", 1);
 	option_add_str ("AlsaDevice", "default");
 	option_add_str ("AlsaMixer", "PCM");
@@ -240,10 +240,6 @@ int check_str_option (const char *name, const char *val)
 	}
 	else if (!strcasecmp(name, "OSSMixerChannel")) {
 		if (strcasecmp(val, "master") && strcasecmp(val, "pcm"))
-			return 0;
-	}
-	else if (!strcasecmp(name, "OutputDriver")) {
-		if (!proper_sound_driver(val))
 			return 0;
 	}
 	else if (!strcasecmp(name, "ShowTime")) {

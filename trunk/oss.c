@@ -50,16 +50,22 @@ static int open_dev ()
 	return 1;
 }
 
-static void set_capabilities (struct output_driver_caps *caps)
+/* Fill caps with the device capabilities. Return 0 on error. */
+static int set_capabilities (struct output_driver_caps *caps)
 {
 	int format_mask;
 
-	if (!open_dev())
-		fatal ("Can't open the device.");
+	if (!open_dev()) {
+		error ("Can't open the device.");
+		return 0;
+	}
 
-	if (ioctl(dsp_fd, SNDCTL_DSP_GETFMTS, &format_mask) == -1)
-		fatal ("Can't get supported audio formats: %s",
+	if (ioctl(dsp_fd, SNDCTL_DSP_GETFMTS, &format_mask) == -1) {
+		error ("Can't get supported audio formats: %s",
 				strerror(errno));
+		close (dsp_fd);
+		return 0;
+	}
 
 	caps->formats = 0;
 	if (format_mask & AFMT_S8)
@@ -79,33 +85,49 @@ static void set_capabilities (struct output_driver_caps *caps)
 
 	caps->formats |= SFMT_LE;
 
-	if (!caps->formats)
-		fatal ("No known format supported by the audio device.");
+	if (!caps->formats) {
+		error ("No known format supported by the audio device.");
+		close (dsp_fd);
+		return 0;
+	}
 
 	caps->min_channels = caps->max_channels = 1;
-	if (ioctl(dsp_fd, SNDCTL_DSP_CHANNELS, &caps->min_channels))
-		fatal ("Can't set number of channels: %s", strerror(errno));
+	if (ioctl(dsp_fd, SNDCTL_DSP_CHANNELS, &caps->min_channels)) {
+		error ("Can't set number of channels: %s", strerror(errno));
+		close (dsp_fd);
+		return 0;
+	}
 
 	close (dsp_fd);
-	if (!open_dev())
-		fatal ("Can't open the device.");
+	if (!open_dev()) {
+		error ("Can't open the device.");
+		return 0;
+	}
 
 	if (caps->min_channels != 1)
 		caps->min_channels = 2;
 	caps->max_channels = 2;
-	if (ioctl(dsp_fd, SNDCTL_DSP_CHANNELS, &caps->max_channels))
-		fatal ("Can't set number of channels: %s", strerror(errno));
+	if (ioctl(dsp_fd, SNDCTL_DSP_CHANNELS, &caps->max_channels)) {
+		error ("Can't set number of channels: %s", strerror(errno));
+		close (dsp_fd);
+		return 0;
+	}
 
 	if (caps->max_channels != 2) {
-		if (caps->min_channels == 2)
-			fatal ("Can't get any supported number of channels.");
+		if (caps->min_channels == 2) {
+			error ("Can't get any supported number of channels.");
+			close (dsp_fd);
+			return 0;
+		}
 		caps->max_channels = 1;
 	}
 
 	close (dsp_fd);
+
+	return 1;
 }
 
-static void oss_init (struct output_driver_caps *caps)
+static int oss_init (struct output_driver_caps *caps)
 {
 	/* Open the mixer device */
 	mixer_fd = open (options_get_str("OSSMixerDevice"), O_RDWR);
@@ -124,7 +146,7 @@ static void oss_init (struct output_driver_caps *caps)
 			fatal ("Bad OSS mixer channel!");
 	}
 
-	set_capabilities (caps);
+	return set_capabilities (caps);
 }
 
 static void oss_shutdown ()

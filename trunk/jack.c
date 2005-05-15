@@ -119,14 +119,14 @@ static void error_callback (const char *msg)
 	error ("JACK: %s", msg);
 }
 
-static void moc_jack_init (struct output_driver_caps *caps)
+static int moc_jack_init (struct output_driver_caps *caps)
 {
 	jack_set_error_function (error_callback);
 	
 	/* try to become a client of the JACK server */
 	if ((client = jack_client_new ("moc")) == 0) {
-		fatal ("cannot create client jack server not running?");
-		return;
+		error ("cannot create client jack server not running?");
+		return 0;
 	}
 	
 	/* allocate memory for an array of 2 output ports */
@@ -142,7 +142,8 @@ static void moc_jack_init (struct output_driver_caps *caps)
 	jack_set_process_callback (client, moc_jack_process, NULL);
 	jack_set_sample_rate_callback(client, moc_jack_update_sample_rate, NULL);
 	if (jack_activate (client)) {
-		fprintf (stderr, "cannot activate client");
+		error ("cannot activate client");
+		return 0;
 	}
 
 	/* connect ports 
@@ -162,6 +163,8 @@ static void moc_jack_init (struct output_driver_caps *caps)
 	caps->max_channels = caps->min_channels = 2;
 	
 	logit ("jack init");
+
+	return 1;
 }
 
 static int moc_jack_open (struct sound_params *sound_params)

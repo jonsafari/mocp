@@ -358,29 +358,6 @@ static void show_usage (const char *prg_name) {
 , prg_name);
 }
 
-/* Check if the sound driver string presents a proper driver. */
-int proper_sound_driver (const char *driver)
-{
-#ifdef HAVE_OSS
-	if (!strcasecmp(driver, "oss"))
-		return 1;
-#endif
-#ifdef HAVE_ALSA
-	if(!strcasecmp(driver, "alsa"))
-		return 1;
-#endif
-#ifdef HAVE_JACK
-	if (!strcasecmp(driver, "jack"))
-		return 1;
-#endif
-#ifndef NDEBUG
-	if (!strcasecmp(driver, "null"))
-		return 1;
-#endif
-
-	return 0;
-}
-
 /* Send commands requested in params to the server. */
 static void server_command (struct parameters *params)
 {
