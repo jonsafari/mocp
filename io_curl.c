@@ -342,6 +342,9 @@ ssize_t io_curl_read (struct io_stream *s, char *buf, size_t count)
 				logit ("Got wake up - exiting");
 				return 0;
 			}
+
+			if (s->stop_read_thread)
+				return 0;
 		}
 
 		s->curl_multi_status = curl_multi_perform (s->curl_multi_handle,
