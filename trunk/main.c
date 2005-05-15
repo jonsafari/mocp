@@ -55,6 +55,7 @@ struct parameters
 	int next;
 	int previous;
 	int get_file_info;
+	int toggle_pause;
 };
 
 static int im_server = 0; /* I em the server? */
@@ -351,6 +352,7 @@ static void show_usage (const char *prg_name) {
 "-M --moc-dir DIR       Use the specified MOC directory instead of the default.\n"
 "-P --pause             Pause.\n"
 "-U --unpause           Unpause.\n"
+"-G --toggle-pause      Toggle between play/pause.\n"
 "-y --sync              Synchronize the playlist with other clients.\n"
 "-n --nosync            Don't synchronize the playlist with other clients.\n"
 "-A --ascii             Use ASCII characters to draw lines.\n"
@@ -397,6 +399,27 @@ static void server_command (struct parameters *params)
 					|| !send_int(sock, CMD_DISCONNECT))
 				fatal ("Can't send commands");
 		}
+		else if (params->toggle_pause) {
+			int state;
+			int ev;
+			int cmd = -1;
+			
+			if (!send_int(sock, CMD_GET_STATE))
+				fatal ("Can't send commands");
+			if (!get_int(sock, &ev) || ev != EV_DATA
+					|| !get_int(sock, &state))
+				fatal ("Can't get data from the server");
+
+			if (state == STATE_PAUSE)
+				cmd = CMD_UNPAUSE;
+			else if (state == STATE_PLAY)
+				cmd = CMD_PAUSE;
+
+			if (cmd != -1 && !send_int(sock, cmd))
+				fatal ("Can't send commands");
+			if (!send_int(sock, CMD_DISCONNECT))
+				fatal ("Can't send commands");
+		}
 	}
 	else
 		fatal ("Can't connect to the server.");
@@ -421,13 +444,14 @@ int main (int argc, char *argv[])
 		{ "play", 		0, NULL, 'p' },
 		{ "stop",		0, NULL, 's' },
 		{ "next",		0, NULL, 'f' },
-		{ "previous",	0, NULL, 'r' },
+		{ "previous",		0, NULL, 'r' },
 		{ "exit",		0, NULL, 'x' },
 		{ "theme",		1, NULL, 'T' },
 		{ "config",		1, NULL, 'C' },
 		{ "moc-dir",		1, NULL, 'M' },
 		{ "pause",		0, NULL, 'P' },
 		{ "unpause",		0, NULL, 'U' },
+		{ "toggle-pause",	0, NULL, 'G' },
 		{ "sync",		0, NULL, 'y' },
 		{ "nosync",		0, NULL, 'n' },
 		{ "ascii",		0, NULL, 'A' },
@@ -441,7 +465,7 @@ int main (int argc, char *argv[])
 	memset (&params, 0, sizeof(params));
 	options_init ();
 
-	while ((ret = getopt_long(argc, argv, "VhDSFR:macpsxT:C:M:PUynArfi",
+	while ((ret = getopt_long(argc, argv, "VhDSFR:macpsxT:C:M:PUynArfiG",
 					long_options, &opt_index)) != -1) {
 		switch (ret) {
 			case 'V':
@@ -532,6 +556,10 @@ int main (int argc, char *argv[])
 			case 'A':
 				option_set_int ("ASCIILines", 1);
 				option_ignore_config ("ASCIILines");
+				break;
+			case 'G':
+				params.toggle_pause = 1;
+				params.dont_run_server = 1;
 				break;
 			default:
 				show_usage (argv[0]);
