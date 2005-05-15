@@ -906,6 +906,7 @@ static void reset_file_info ()
 	file_info.channels = 1;
 	strcpy (file_info.state, "[]");
 	file_info.curr_file = NULL;
+	file_info.tags = NULL;
 }
 
 /* Set cwd to last directory written to a file, return 1 on success. */
