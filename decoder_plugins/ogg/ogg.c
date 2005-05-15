@@ -249,10 +249,10 @@ static void *ogg_open (const char *file)
 
 static int ogg_can_decode (struct io_stream *stream)
 {
-	char buf[5];
+	char buf[34];
 
-	/* FIXME: this test is too simple */
-	if (io_peek(stream, buf, 5) == 5 && !memcmp(buf, "OggS", 5))
+	if (io_peek(stream, buf, 34) == 34 && !memcmp(buf, "OggS", 5)
+			&& !memcpy(buf + 28, "vorbis", 6))
 		return 1;
 
 	return 0;
