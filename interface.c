@@ -2209,13 +2209,11 @@ static void update_curr_tags ()
 {
 	char *title;
 	
-	if (file_info.tags)
+	if (file_info.tags) {
 		tags_free (file_info.tags);
+		file_info.tags = NULL;
+	}
 
-	send_int_to_srv (CMD_GET_TAGS);
-	wait_for_data ();
-	file_info.tags = get_tags_from_srv ();
-	
 	if (file_info.curr_file) {
 		title = find_title (file_info.curr_file);
 
