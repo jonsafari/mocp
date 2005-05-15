@@ -232,6 +232,16 @@ static void decode_loop (const struct decoder *f, void *decoder_data,
 		LOCK (decoder_stream_mut);
 		decoder_stream = f->get_stream (decoder_data);
 		UNLOCK (decoder_stream_mut);
+
+		if (io_get_title(decoder_stream)) {
+			LOCK (curr_tags_mut);
+			curr_tags = tags_new ();
+			curr_tags->title = io_get_title (decoder_stream);
+			debug ("Got title from the io stream: %s",
+					curr_tags->title);
+			UNLOCK (curr_tags_mut);
+			tags_change ();
+		}
 	}
 	else
 		logit ("No get_stream() function");

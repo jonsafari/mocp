@@ -73,6 +73,8 @@ struct io_stream
 	pthread_t read_thread;
 	int stop_read_thread;		/* request for stopping the read
 					   thread */
+
+	char *title;	/* title of the stream */
 };
 
 struct io_stream *io_open (const char *file, const int buffered);
@@ -89,5 +91,6 @@ void io_init ();
 void io_cleanup ();
 void io_abort (struct io_stream *s);
 char *io_get_mime_type (struct io_stream *s);
+char *io_get_title (struct io_stream *s);
 
 #endif

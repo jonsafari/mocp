@@ -91,6 +91,19 @@ static size_t header_callback (void *data, size_t size, size_t nmemb,
 			debug ("Mime type: '%s'", s->mime_type);
 		}
 	}
+	else if (!strncasecmp(header, "icy-name:", sizeof("icy-name:")-1)
+			|| !strncasecmp(header, "x-audiocast-name",
+				sizeof("x-audiocast-name")-1)) {
+		char *value = strchr (header, ':') + 1;
+		
+		if (s->title)
+			free (s->title);
+
+		while (isblank(value[0]))
+			value++;
+
+		s->title = xstrdup (value);
+	}
 
 	free (header);
 	
