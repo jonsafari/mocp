@@ -54,7 +54,9 @@ InputBuffer		= 512
 Prebuffering		= 64
 
 # Sound driver - OSS, ALSA, JACK, or null (only for debugging)
-SoundDriver		= OSS
+# You can enter more than one driver separated by a coma. The first working
+# driver will be used.
+SoundDriver		= JACK, ALSA, OSS
 
 # Jack output settings
 JackOutLeft		= "alsa_pcm:playback_1"

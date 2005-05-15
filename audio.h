@@ -94,8 +94,9 @@ struct hw_funcs
 	 *
 	 * \param caps Capabilities of the driver which must be filled by the
 	 * function.
+	 * \return 1 on success and 0 otherwise.
 	 */
-	void (*init) (struct output_driver_caps *caps);
+	int (*init) (struct output_driver_caps *caps);
 
 	/** Clean up at exit.
 	 *

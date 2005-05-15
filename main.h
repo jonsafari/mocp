@@ -53,7 +53,6 @@ void error (const char *format, ...);
 #endif
 
 char *create_file_name (const char *file);
-int proper_sound_driver (const char *driver);
 int isdir (const char *file);
 
 #endif

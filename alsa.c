@@ -65,7 +65,8 @@ static void alsa_shutdown ()
 		logit ("Can't close mixer: %s", snd_strerror(err));
 }
 
-static void fill_capabilities (struct output_driver_caps *caps)
+/* Fill caps with the device capabilities. Return 0 on error. */
+static int fill_capabilities (struct output_driver_caps *caps)
 {
 	snd_pcm_hw_params_t *hw_params;
 	snd_pcm_format_mask_t *format_mask;
@@ -75,33 +76,48 @@ static void fill_capabilities (struct output_driver_caps *caps)
 	if ((err = snd_pcm_open(&handle, options_get_str("AlsaDevice"),
 					SND_PCM_STREAM_PLAYBACK,
 					SND_PCM_NONBLOCK)) < 0) {
-		fatal ("Can't open audio: %s", snd_strerror(err));
+		error ("Can't open audio: %s", snd_strerror(err));
+		return 0;
 	}
 
 	if ((err = snd_pcm_hw_params_malloc(&hw_params)) < 0) {
-		fatal ("Can't allocate alsa hardware parameters structure: %s",
+		error ("Can't allocate alsa hardware parameters structure: %s",
 				snd_strerror(err));
+		snd_pcm_close (handle);
+		return 0;
 	}
 
 	if ((err = snd_pcm_hw_params_any (handle, hw_params)) < 0) {
-		fatal ("Can't initialize hardware parameters structure: %s",
+		error ("Can't initialize hardware parameters structure: %s",
 				snd_strerror(err));
+		snd_pcm_hw_params_free (hw_params);
+		snd_pcm_close (handle);
+		return 0;
 	}
 
 	if ((err = snd_pcm_hw_params_get_channels_min (hw_params, &val)) < 0) {
-		fatal ("Can't get the minimum number of channels: %s",
+		error ("Can't get the minimum number of channels: %s",
 				snd_strerror(err));
+		snd_pcm_hw_params_free (hw_params);
+		snd_pcm_close (handle);
+		return 0;
 	}
 	caps->min_channels = val;
 	
 	if ((err = snd_pcm_hw_params_get_channels_max (hw_params, &val)) < 0) {
-		fatal ("Can't get the maximum number of channels: %s",
+		error ("Can't get the maximum number of channels: %s",
 				snd_strerror(err));
+		snd_pcm_hw_params_free (hw_params);
+		snd_pcm_close (handle);
+		return 0;
 	}
 	caps->max_channels = val;
 
 	if ((err = snd_pcm_format_mask_malloc(&format_mask)) < 0) {
-		fatal ("Can't allocate format mask: %s", snd_strerror(err));
+		error ("Can't allocate format mask: %s", snd_strerror(err));
+		snd_pcm_hw_params_free (hw_params);
+		snd_pcm_close (handle);
+		return 0;
 	}
 	snd_pcm_hw_params_get_format_mask (hw_params, format_mask);
 
@@ -127,6 +143,8 @@ static void fill_capabilities (struct output_driver_caps *caps)
 	snd_pcm_hw_params_free (hw_params);
 	snd_pcm_close (handle);
 	handle = NULL;
+
+	return 1;
 }
 
 static int alsa_read_mixer_raw ()
@@ -166,7 +184,7 @@ static int alsa_read_mixer_raw ()
 		return -1;
 }
 
-static void alsa_init (struct output_driver_caps *caps)
+static int alsa_init (struct output_driver_caps *caps)
 {
 	int err;
 	snd_mixer_selem_id_t *mixer_sid;
@@ -220,7 +238,7 @@ static void alsa_init (struct output_driver_caps *caps)
 		volume = (volume - mixer_min) * 100 / (mixer_max - mixer_min);
 	}
 
-	fill_capabilities (caps);
+	return fill_capabilities (caps);
 }
 
 static int alsa_open (struct sound_params *sound_params)

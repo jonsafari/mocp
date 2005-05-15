@@ -60,11 +60,13 @@ static int null_reset ()
 	return 1;
 }
 
-static void null_init (struct output_driver_caps *caps)
+static int null_init (struct output_driver_caps *caps)
 {
 	caps->formats = SFMT_S8 | SFMT_S16 | SFMT_LE;
 	caps->min_channels = 1;
 	caps->max_channels = 2;
+
+	return 1;
 }
 
 static int null_get_rate ()
