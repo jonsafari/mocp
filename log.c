@@ -15,6 +15,7 @@
 
 #include <stdio.h>
 #include <stdarg.h>
+#include <sys/time.h>
 #include <time.h>
 #include "main.h"
 
@@ -26,7 +27,7 @@ void internal_logit (const char *file, const int line, const char *function,
 {
 	char msg[256];
 	char time_str[20];
-	time_t utc_time;
+	struct timeval utc_time;
 	va_list va;
 	struct tm tm_time;
 
@@ -37,12 +38,12 @@ void internal_logit (const char *file, const int line, const char *function,
 	vsnprintf (msg, sizeof(msg), format, va);
 	msg[sizeof(msg) - 1] = 0;
 
-	time (&utc_time);
-	localtime_r (&utc_time, &tm_time);
+	gettimeofday (&utc_time, NULL);
+	localtime_r (&utc_time.tv_sec, &tm_time);
 	strftime (time_str, sizeof(time_str), "%b %e %T", &tm_time);
 
-	fprintf (logfp, "%s: %s:%d %s(): %s\n", time_str, file, line, function,
-			msg);
+	fprintf (logfp, "%s.%u: %s:%d %s(): %s\n", time_str,
+			(unsigned)utc_time.tv_usec, file, line, function, msg);
 	fflush (logfp);
 
 	va_end (va);
