@@ -82,12 +82,16 @@ static size_t header_callback (void *data, size_t size, size_t nmemb,
 	memcpy (header, data, size * nmemb - 2);
 	header[header_size-1] = 0;
 
-	if (!strncasecmp(header, "Content-Type: ", sizeof("Content-Type: ")-1)) {
+	if (!strncasecmp(header, "Content-Type:", sizeof("Content-Type:")-1)) {
 		if (s->mime_type)
 			logit ("Another Content-Type header!");
 		else {
-			s->mime_type = xstrdup (header
-					+ (sizeof("Content-Type: ") - 1));
+			char *value = header + sizeof("Content-Type:") - 1;
+
+			while (isblank(value[0]))
+				value++;
+			
+			s->mime_type = xstrdup (value);
 			debug ("Mime type: '%s'", s->mime_type);
 		}
 	}
