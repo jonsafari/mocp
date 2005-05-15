@@ -29,6 +29,7 @@ struct io_stream
 	int fd;
 	size_t size;	/* source of the file if needed */
 	int errno_val;	/* errno value of the last operation  - 0 if ok */
+	int read_error; /* set to != 0 if the last read operation dailed */
 	char *strerror;	/* error string */
 	int opened;	/* was the stream opened (open(), mmap(), etc.)? */
 	int eof;	/* was the end of file reached? */
