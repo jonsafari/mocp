@@ -319,6 +319,8 @@ void io_close (struct io_stream *s)
 
 	if (s->strerror)
 		free (s->strerror);
+	if (s->title)
+		free (s->title);
 	free (s);
 
 	logit ("done");
@@ -463,6 +465,7 @@ struct io_stream *io_open (const char *file, const int buffered)
 	s->errno_val = 0;
 	s->strerror = NULL;
 	s->opened = 0;
+	s->title = NULL;
 
 #ifdef HAVE_CURL
 	s->mime_type = NULL;
@@ -755,4 +758,10 @@ char *io_get_mime_type (struct io_stream *s)
 #else
 	return NULL;
 #endif
+}
+
+/* Return the malloc()ed stream title if available or NULL. */
+char *io_get_title (struct io_stream *s)
+{
+	return xstrdup (s->title);
 }
