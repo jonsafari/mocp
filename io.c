@@ -359,6 +359,7 @@ static void *io_read_thread (void *data)
 		if (read_buf_fill < 0) {
 
 			s->errno_val = errno;
+			s->read_error = 1;
 			logit ("Exiting due tu read error.");
 			pthread_cond_broadcast (&s->buf_fill_cond);
 			UNLOCK (s->buf_mutex);
@@ -463,6 +464,7 @@ struct io_stream *io_open (const char *file, const int buffered)
 
 	s = xmalloc (sizeof(struct io_stream));
 	s->errno_val = 0;
+	s->read_error = 0;
 	s->strerror = NULL;
 	s->opened = 0;
 	s->title = NULL;
@@ -505,36 +507,18 @@ struct io_stream *io_open (const char *file, const int buffered)
 /* Return != 0 if the there were no errors in the stream. */
 static int io_ok_nolock (struct io_stream *s)
 {
-	int res = 1;
-
-	if (!s->opened)
-		res = 0;
-	else
-	
-#ifdef HAVE_CURL
-	if (s->source == IO_SOURCE_CURL && !io_curl_ok(s))
-		res = 0;
-	else
-#endif
-	if ((s->source == IO_SOURCE_FD || s->source == IO_SOURCE_MMAP)
-			&& s->errno_val)
-		res = 0;
-
-	return res;
+	return !s->read_error;
 }
 
 /* Return != 0 if the there were no errors in the stream. */
 int io_ok (struct io_stream *s)
 {
 	int res;
-
-	if (!s->opened)
-		return 0;
 	
-	LOCK (s->io_mutex);
+	LOCK (s->buf_mutex);
 	res = io_ok_nolock (s);
-	UNLOCK (s->io_mutex);
-
+	UNLOCK (s->buf_mutex);
+	
 	return res;
 }
 
@@ -592,9 +576,9 @@ static ssize_t io_read_buffered (struct io_stream *s, void *buf, size_t count)
 		s->prebuffer = 0;
 	}
 
-	while (received < (ssize_t)count && io_ok_nolock(s)
-			&& !s->stop_read_thread
-			&& (!s->eof || fifo_buf_get_fill(&s->buf))) {
+	while (received < (ssize_t)count && !s->stop_read_thread
+			&& ((!s->eof && !s->read_error)
+				|| fifo_buf_get_fill(&s->buf))) {
 		if (fifo_buf_get_fill(&s->buf)) {
 			received += fifo_buf_get (&s->buf, buf + received,
 					count - received);
@@ -612,7 +596,7 @@ static ssize_t io_read_buffered (struct io_stream *s, void *buf, size_t count)
 
 	UNLOCK (s->buf_mutex);
 	
-	return io_ok(s) ? (!s->stop_read_thread ? received : 0) : -1;
+	return received ? received : (s->read_error ? -1 : 0);
 }
 
 /* Read data from the stream without buffering. If dont_move was set, the
@@ -666,7 +650,7 @@ ssize_t io_peek (struct io_stream *s, void *buf, size_t count)
 	else
 		received = io_read_unbuffered (s, 1, buf, count);
 
-	return received;
+	return io_ok(s) ? received : -1;
 }
 
 /* Get the string describing the error associated with the stream. */
@@ -678,7 +662,7 @@ char *io_strerror (struct io_stream *s)
 		free (s->strerror);
 	
 #ifdef HAVE_CURL
-	if (s->source == IO_SOURCE_CURL && !io_curl_ok(s))
+	if (s->source == IO_SOURCE_CURL)
 		io_curl_strerror (s);
 	else
 #endif

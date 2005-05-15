@@ -148,16 +148,21 @@ static int debug_callback (CURL *curl ATTR_UNUSED, curl_infotype i, char *msg,
 	return 0;
 }
 
-/* Read messages given by curl and set the stream status. */
-static void check_curl_stream (struct io_stream *s)
+/* Read messages given by curl and set the stream status. Return 0 on error. */
+static int check_curl_stream (struct io_stream *s)
 {
 	CURLMsg *msg;
 	int msg_queue_num;
+	int res = 1;
 	
 	while ((msg = curl_multi_info_read(s->curl_multi_handle,
 					&msg_queue_num)))
-		if (msg->msg == CURLMSG_DONE && s->curl_handle) {
+		if (msg->msg == CURLMSG_DONE) {
 			s->curl_status = msg->data.result;
+			if (s->curl_status != CURLE_OK) {
+				debug ("Read error");
+				res = 0;
+			}
 			curl_multi_remove_handle (s->curl_multi_handle,
 					s->curl_handle);
 			curl_easy_cleanup (s->curl_handle);
@@ -165,6 +170,8 @@ static void check_curl_stream (struct io_stream *s)
 			debug ("EOF");
 			break;
 		}
+
+	return res;
 }
 
 void io_curl_open (struct io_stream *s, const char *url)
@@ -208,6 +215,7 @@ void io_curl_open (struct io_stream *s, const char *url)
 	curl_easy_setopt (s->curl_handle, CURLOPT_FOLLOWLOCATION, 1);
 	curl_easy_setopt (s->curl_handle, CURLOPT_URL, s->url);
 	curl_easy_setopt (s->curl_handle, CURLOPT_FOLLOWLOCATION, 1);
+	curl_easy_setopt (s->curl_handle, CURLOPT_FAILONERROR, 1);
 	curl_easy_setopt (s->curl_handle, CURLOPT_MAXREDIRS, 15);
 	curl_easy_setopt (s->curl_handle, CURLOPT_HTTP200ALIASES,
 			s->http200_aliases);
@@ -281,7 +289,8 @@ ssize_t io_curl_read (struct io_stream *s, char *buf, size_t count)
 					s->curl_multi_handle, &running);
 		} while (s->curl_multi_status == CURLM_CALL_MULTI_PERFORM);
 		
-		check_curl_stream (s);
+		if (!check_curl_stream(s))
+			return -1;
 
 		s->need_perform_loop = 0;
 	}
@@ -322,6 +331,7 @@ ssize_t io_curl_read (struct io_stream *s, char *buf, size_t count)
 				logit ("Interrupted");
 				return 0;
 			}
+			
 			if (ret < 0) {
 				s->errno_val == errno;
 				logit ("select() failed");
@@ -336,7 +346,9 @@ ssize_t io_curl_read (struct io_stream *s, char *buf, size_t count)
 
 		s->curl_multi_status = curl_multi_perform (s->curl_multi_handle,
 			&running);
-		check_curl_stream (s);
+		
+		if (!check_curl_stream(s))
+			return -1;
 	}
 
 	debug ("running: %d", running);
@@ -371,19 +383,6 @@ void io_curl_strerror (struct io_stream *s)
 		err = curl_easy_strerror(s->curl_status);
 
 	s->strerror = xstrdup (err);
-}
-
-int io_curl_ok (const struct io_stream *s)
-{
-	assert (s != NULL);
-	assert (s->source == IO_SOURCE_CURL);
-
-	return s->curl_buf_fill || (s->curl_multi_handle
-		&& (s->curl_multi_status == CURLM_OK
-				|| s->curl_multi_status
-				== CURLM_CALL_MULTI_PERFORM)
-		&& s->curl_status == CURLE_OK
-		&& !s->errno_val);
 }
 
 void io_curl_wake_up (struct io_stream *s)
