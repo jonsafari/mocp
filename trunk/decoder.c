@@ -138,6 +138,7 @@ struct decoder *get_decoder_by_content (struct io_stream *stream)
 				&& plugins[i].decoder->can_decode(stream))
 			return plugins[i].decoder;
 
+	error ("Format not supported");
 	return NULL;
 }
 

@@ -507,8 +507,6 @@ void player (const char *file, const char *next_file, struct out_buf *out_buf)
 		status_msg ("Prebuffering...");
 		f = get_decoder_by_content (decoder_stream);
 		if (!f) {
-			if (request != REQ_STOP)
-				error ("Format not supported");
 			LOCK (decoder_stream_mut);
 			io_close (decoder_stream);
 			status_msg ("");
