@@ -194,8 +194,9 @@ if test "x$with_ogg" != "xno"
 then
 	PKG_CHECK_MODULES(OGG_VORBIS, [ogg >= 1.0 vorbis >= 1.0 vorbisfile >= 1.0],
 			  [AC_SUBST(OGG_VORBIS_LIBS)
-			   DECODER_PLUGINS="$DECODER_PLUGINS ogg"],
-			   [true])
+			  AC_SUBST(OGG_VORBIS_CFLAGS)
+			  DECODER_PLUGINS="$DECODER_PLUGINS ogg"],
+			  [true])
 fi
 
 dnl FLAC
