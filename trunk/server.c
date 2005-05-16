@@ -418,6 +418,8 @@ static void server_shutdown ()
 	audio_exit ();
 	unlink (socket_name());
 	unlink (create_file_name(PID_FILE));
+	close (wake_up_pipe[0]);
+	close (wake_up_pipe[1]);
 	logit ("Server exited");
 }
 
