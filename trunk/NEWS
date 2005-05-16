@@ -19,6 +19,7 @@
 	  select().
 	* Fixes for compiler warnings on 64-bit systems.
 	* Fixed a warning about wprintw() usage on some systems.
+	* Fixed setting compiler flags for vorbis.
 2.2.1
 	* Fixed missing titles of files without tags when added to the playlist.
 	* Fixed refreshing the screen after searching.
