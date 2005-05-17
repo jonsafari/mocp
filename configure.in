@@ -220,6 +220,18 @@ then
 			   [true])
 fi
 
+dnl speex
+AC_ARG_WITH(speex, AS_HELP_STRING(--without-speex,
+	    Compile without speex support))
+if test "x$with_speex" != "xno"
+then
+	PKG_CHECK_MODULES(speex, speex >= 1.0.0,
+			  [AC_SUBST(speex_LIBS)
+			  AC_SUBST(speex_CFLAGS)
+			  DECODER_PLUGINS="$DECODER_PLUGINS speex"],
+			  [true])
+fi
+
 dnl samplerate
 AC_ARG_WITH(samplerate, AS_HELP_STRING(--without-samplerate,
 	    Compile without libsamplerate))
@@ -275,6 +287,7 @@ AC_OUTPUT([Makefile
 	  decoder_plugins/ogg/Makefile
 	  decoder_plugins/flac/Makefile
 	  decoder_plugins/sndfile/Makefile
+	  decoder_plugins/speex/Makefile
 	  ])
 
 echo
