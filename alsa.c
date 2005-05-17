@@ -406,7 +406,7 @@ static int play_buf_chunks ()
 		err = snd_pcm_writei (handle, alsa_buf + written,
 				chunk_size / bytes_per_frame);
 		if (err == -EAGAIN) {
-			if (snd_pcm_wait(handle, 5000) < 0)
+			if (snd_pcm_wait(handle, 500) < 0)
 				logit ("snd_pcm_wait() failed");
 		}
 		else if (err == -EPIPE) {
