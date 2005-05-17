@@ -605,11 +605,16 @@ static ssize_t io_read_unbuffered (struct io_stream *s, const int dont_move,
 		void *buf, size_t count)
 {
 	ssize_t res;
+
+	assert (!s->eof);
 	
 	res = io_internal_read (s, dont_move, buf, count);
 
-	if (!dont_move)
+	if (!dont_move) {
 		s->pos += res;
+		if (res == 0)
+			s->eof = 1;
+	}
 
 	return res;
 }
