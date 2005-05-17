@@ -18,7 +18,7 @@
 #include <errno.h>
 #include <assert.h>
 
-#define DEBUG
+/*#define DEBUG*/
 
 #include "main.h"
 #include "log.h"
