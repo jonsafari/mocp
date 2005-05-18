@@ -184,6 +184,17 @@ static short find_color_name (const char *name)
 	return -1;
 }
 
+static void new_colordef (const int line_num, const char *name, const short red,
+		const short green, const short blue)
+{
+	short color = find_color_name (name);
+
+	if (color == -1)
+		theme_parse_error (line_num, "bad color name");
+	if (can_change_color())
+		init_color (color, red, green, blue);
+}
+
 /* Find path to the theme for the given name. Returned memory is static. */
 static char *find_theme_file (const char *name)
 {
@@ -220,6 +231,133 @@ static char *find_theme_file (const char *name)
 	return path;
 }
 
+/* Parse a theme element line. strtok() should be already invoked and consumed
+ * the element name. */
+static void parse_theme_element (const int line_num, const char *name)
+{
+	char *tmp;
+	char *foreground, *background, *attributes;
+	attr_t curses_attr = 0;
+	enum color_index element;
+	short clr_fore, clr_back;
+
+	if (!(tmp = strtok(NULL, " \t")) || strcmp(tmp, "="))
+		theme_parse_error (line_num, "expected '='");
+	if (!(foreground = strtok(NULL, " \t")))
+		theme_parse_error (line_num, "foreground color not "
+				"specified");
+	if (!(background = strtok(NULL, " \t")))
+		theme_parse_error (line_num, "background color not "
+				"specified");
+	if ((attributes = strtok(NULL, " \t"))) {
+		char *attr;
+
+		if ((tmp = strtok(NULL, " \t")))
+			theme_parse_error (line_num,
+					"unexpected chars at the end "
+					"of line");
+		
+		attr = strtok (attributes, ",");
+
+		do {
+			if (!strcasecmp(attr, "normal"))
+				curses_attr |= A_NORMAL;
+			else if (!strcasecmp(attr, "standout"))
+				curses_attr |= A_STANDOUT;
+			else if (!strcasecmp(attr, "underline"))
+				curses_attr |= A_UNDERLINE;
+			else if (!strcasecmp(attr, "reverse"))
+				curses_attr |= A_REVERSE;
+			else if (!strcasecmp(attr, "blink"))
+				curses_attr |= A_BLINK;
+			else if (!strcasecmp(attr, "dim"))
+				curses_attr |= A_DIM;
+			else if (!strcasecmp(attr, "bold"))
+				curses_attr |= A_BOLD;
+			else if (!strcasecmp(attr, "protected"))
+				curses_attr |= A_PROTECT;
+			else
+				theme_parse_error (line_num,
+						"unknown attribute");
+		} while ((attr = strtok(NULL, ",")));
+	}
+
+	if ((element = find_color_element_name(name)) == CLR_WRONG)
+		theme_parse_error (line_num, "unknown element");
+	if ((clr_fore = find_color_name(foreground)) == -1)
+		theme_parse_error (line_num,
+				"bad foreground color name");
+	if ((clr_back = find_color_name(background)) == -1)
+		theme_parse_error (line_num,
+				"bad background color name");
+
+	make_color (element, clr_fore, clr_back, curses_attr);
+}
+
+/* Parse a color value. strtok() should be already invoked and should "point"
+ * to the number. */
+static short parse_rgb_color_value (const int line_num)
+{
+	char *tmp;
+	char *end;
+	long color;
+
+	if (!(tmp = strtok(NULL, " \t")))
+		theme_parse_error (line_num, "3 color values expected");
+	color = strtol (tmp, &end, 10);
+	if (*end)
+		theme_parse_error (line_num, "color value is not a valid"
+				" number");
+	if (color < 0 || color > 1000)
+		theme_parse_error (line_num, "color value should be in range"
+				" 0-1000");
+
+	return color;
+}
+
+/* Parse a theme color definition. strtok() should be already invoked and
+ * consumed 'colordef'. */
+static void parse_theme_colordef (const int line_num)
+{
+	char *name;
+	char *tmp;
+	short red, green, blue;
+
+	if (!(name = strtok(NULL, " \t")))
+		theme_parse_error (line_num, "expected color name");	
+	if (!(tmp = strtok(NULL, " \t")) || strcmp(tmp, "="))
+		theme_parse_error (line_num, "expected '='");
+	
+	red = parse_rgb_color_value (line_num);
+	green = parse_rgb_color_value (line_num);
+	blue = parse_rgb_color_value (line_num);
+
+	new_colordef (line_num, name, red, green, blue);
+}
+
+/* The lines should be in format:
+ * 
+ * ELEMENT = FOREGROUND BACKGROUND [ATTRIBUTE[,ATTRIBUTE,..]]
+ * or:
+ * colordef COLORNAME = RED GREEN BLUE
+ * 
+ * Blank lines and beginning with # are ignored, see example_theme. */
+static void parse_theme_line (const int line_num, char *line)
+{
+	char *name;
+	
+	if (line[0] == '#' || !(name = strtok(line, " \t"))) {
+
+		/* empty line or a comment */
+		return;
+	}
+
+	if (!strcasecmp(name, "colordef"))
+		parse_theme_colordef (line_num);
+	else
+		parse_theme_element (line_num, name);
+}
+
 static void load_color_theme (const char *name)
 {
 	FILE *file;
@@ -230,78 +368,9 @@ static void load_color_theme (const char *name)
 	if (!(file = fopen(theme_file, "r")))
 		interface_fatal ("Can't open theme file: %s", strerror(errno));
 
-	/* The lines should be in format:
-	 * ELEMENT = FOREGROUND BACKGROUND [ATTRIBUTE[,ATTRIBUTE,..]]
-	 * Blank lines and beginning with # are ignored, see example_theme. */
-
 	while ((line = read_line(file))) {
-		char *name;
-		char *tmp;
-		char *foreground, *background, *attributes;
-		attr_t curses_attr = 0;
-		enum color_index element;
-		short clr_fore, clr_back;
-		
 		line_num++;
-		if (line[0] == '#' || !(name = strtok(line, " \t"))) {
-
-			/* empty line or a comment */
-			free (line);
-			continue;
-		}
-
-		if (!(tmp = strtok(NULL, " \t")) || strcmp(tmp, "="))
-			theme_parse_error (line_num, "expected '='");
-		if (!(foreground = strtok(NULL, " \t")))
-			theme_parse_error (line_num, "foreground color not "
-					"specified");
-		if (!(background = strtok(NULL, " \t")))
-			theme_parse_error (line_num, "background color not "
-					"specified");
-		if ((attributes = strtok(NULL, " \t"))) {
-			char *attr;
-
-			if ((tmp = strtok(NULL, " \t")))
-				theme_parse_error (line_num,
-						"unexpected chars at the end "
-						"of line");
-			
-			attr = strtok (attributes, ",");
-
-			do {
-				if (!strcasecmp(attr, "normal"))
-					curses_attr |= A_NORMAL;
-				else if (!strcasecmp(attr, "standout"))
-					curses_attr |= A_STANDOUT;
-				else if (!strcasecmp(attr, "underline"))
-					curses_attr |= A_UNDERLINE;
-				else if (!strcasecmp(attr, "reverse"))
-					curses_attr |= A_REVERSE;
-				else if (!strcasecmp(attr, "blink"))
-					curses_attr |= A_BLINK;
-				else if (!strcasecmp(attr, "dim"))
-					curses_attr |= A_DIM;
-				else if (!strcasecmp(attr, "bold"))
-					curses_attr |= A_BOLD;
-				else if (!strcasecmp(attr, "protected"))
-					curses_attr |= A_PROTECT;
-				else
-					theme_parse_error (line_num,
-							"unknown attribute");
-			} while ((attr = strtok(NULL, ",")));
-		}
-
-		if ((element = find_color_element_name(name)) == CLR_WRONG)
-			theme_parse_error (line_num, "unknown element");
-		if ((clr_fore = find_color_name(foreground)) == -1)
-			theme_parse_error (line_num,
-					"bad foreground color name");
-		if ((clr_back = find_color_name(background)) == -1)
-			theme_parse_error (line_num,
-					"bad background color name");
-
-		make_color (element, clr_fore, clr_back, curses_attr);
-		
+		parse_theme_line (line_num, line);
 		free (line);
 	}
 
