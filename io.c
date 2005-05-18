@@ -470,7 +470,7 @@ struct io_stream *io_open (const char *file, const int buffered)
 	s->title = NULL;
 
 #ifdef HAVE_CURL
-	s->mime_type = NULL;
+	s->curl.mime_type = NULL;
 	if (!strncasecmp(file, "http://", sizeof("http://")-1)
 			|| !strncasecmp(file, "ftp://", sizeof("ftp://")-1))
 		io_curl_open (s, file);
@@ -743,7 +743,7 @@ void io_cleanup ()
 char *io_get_mime_type (struct io_stream *s)
 {
 #ifdef HAVE_CURL
-	return s->mime_type;
+	return s->curl.mime_type;
 #else
 	return NULL;
 #endif
