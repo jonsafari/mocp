@@ -48,6 +48,24 @@ void tags_free (struct file_tags *tags)
 	free (tags);
 }
 
+void tags_clear (struct file_tags *tags)
+{
+	assert (tags != NULL);
+
+	if (tags->title)
+		free (tags->title);
+	if (tags->artist)
+		free (tags->artist);
+	if (tags->album)
+		free (tags->album);
+
+	tags->title = NULL;
+	tags->artist = NULL;
+	tags->album = NULL;
+	tags->track = -1;
+	tags->time = -1;
+}
+
 /* Copy the tags data from src to dst freeing old fields if necessary. */
 void tags_copy (struct file_tags *dst, const struct file_tags *src)
 {
