@@ -43,8 +43,10 @@ struct io_stream_curl
 					   loop that does select() */
 	struct curl_slist *http200_aliases; /* list of aliases for http
 						response's status line */
-	int icy_metadata_interval;	/* how often are icy metadata sent?
-					   0 - disabled, in bytes */
+	size_t icy_meta_int;	/* how often are icy metadata sent?
+				   0 - disabled, in bytes */
+	size_t icy_meta_count;	/* how many bytes was read from the last
+				   metadate packet */
 };
 #endif
 
@@ -83,7 +85,11 @@ struct io_stream
 	int stop_read_thread;		/* request for stopping the read
 					   thread */
 
-	char *title;	/* title of the stream */
+	struct stream_metadata {
+		pthread_mutex_t mutex;
+		char *title;	/* title of the stream */
+		char *url;
+	} metadata;
 };
 
 struct io_stream *io_open (const char *file, const int buffered);
@@ -101,5 +107,9 @@ void io_cleanup ();
 void io_abort (struct io_stream *s);
 char *io_get_mime_type (struct io_stream *s);
 char *io_get_title (struct io_stream *s);
+char *io_get_metadata_title (struct io_stream *s);
+char *io_get_metadata_url (struct io_stream *s);
+void io_set_metadata_title (struct io_stream *s, const char *title);
+void io_set_metadata_url (struct io_stream *s, const char *url);
 
 #endif
