@@ -105,7 +105,7 @@ void *xrealloc (void *ptr, const size_t size)
 {
 	void *p;
 
-	if ((p = realloc(ptr, size)) == NULL)
+	if ((p = realloc(ptr, size)) == NULL && size != 0)
 		fatal ("Can't allocate memory!");
 	return p;
 
