@@ -12,6 +12,10 @@
 #
 # ELEMENT = FOREGROUND_COLOR BACKGROUND_COLOR [ATTRIBUTE[,ATTRIBUTE,..]]
 #
+# or
+#
+# colordef COLOR = RED GREEEN BLUE
+#
 # Where names are case insensitive.
 #
 # ELEMENT is an element of MOC interface. This can be:
@@ -66,6 +70,13 @@
 #
 # You can specify a list of attributes separated by commas: attr1,attr2,attr3.
 # Don't use spaces anywhere in such a list.
+#
+# With colordef you can chend the definition of a color. It works only if
+# your termina supports it, if not those lines will be silently ignored.
+# COLOR must be a valid color name and the RED GREEN and BLUE are numbers
+# from 0 to 1000. Example:
+#
+# colordef red = 1000 0 0
 #
 # HINT: you have only 8 colors, but combined with attributes bold and/or
 # reversed you actually get more colors.
