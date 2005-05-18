@@ -274,7 +274,7 @@ static void parse_theme_element (const int line_num, const char *name)
 				curses_attr |= A_DIM;
 			else if (!strcasecmp(attr, "bold"))
 				curses_attr |= A_BOLD;
-			else if (!strcasecmp(attr, "protected"))
+			else if (!strcasecmp(attr, "protect"))
 				curses_attr |= A_PROTECT;
 			else
 				theme_parse_error (line_num,
