@@ -207,6 +207,33 @@ static void show_tags (const struct file_tags *tags)
 	debug ("TAG[track]: %d", tags->track);
 }
 
+/* Update tags if tags from the decoder or the stream are available. */
+static void update_tags (const struct decoder *f, void *decoder_data,
+		struct io_stream *s)
+{
+	char *stream_title;
+	int tags_changed = 0;
+
+	LOCK (curr_tags_mut);
+	if (f->current_tags && f->current_tags(decoder_data, curr_tags)) {
+		tags_changed = 1;
+		debug ("Tags change");
+		show_tags (curr_tags);
+	}
+
+	if (s && (stream_title = io_get_metadata_title(s))) {
+		debug ("Setting tags from the io stream");
+		tags_clear (curr_tags);
+		curr_tags->title = stream_title;
+		tags_changed = 1;
+	}
+
+	if (tags_changed)
+		tags_change ();
+	
+	UNLOCK (curr_tags_mut);
+}
+
 /* Decoder loop for already opened and probably running for some time decoder.
  * next_file will be precached at eof. */
 static void decode_loop (const struct decoder *f, void *decoder_data,
@@ -220,28 +247,14 @@ static void decode_loop (const struct decoder *f, void *decoder_data,
 	int bitrate = -1;
 	int sound_params_change = 0;
 
-	if (f->current_tags) {
-		LOCK (curr_tags_mut);
-		curr_tags = tags_new ();
-		UNLOCK (curr_tags_mut);
-	}
-	else
-		logit ("No current_tags() function");
+	LOCK (curr_tags_mut);
+	curr_tags = tags_new ();
+	UNLOCK (curr_tags_mut);
 
 	if (f->get_stream) {
 		LOCK (decoder_stream_mut);
 		decoder_stream = f->get_stream (decoder_data);
 		UNLOCK (decoder_stream_mut);
-
-		if (io_get_title(decoder_stream)) {
-			LOCK (curr_tags_mut);
-			curr_tags = tags_new ();
-			curr_tags->title = io_get_title (decoder_stream);
-			debug ("Got title from the io stream: %s",
-					curr_tags->title);
-			UNLOCK (curr_tags_mut);
-			tags_change ();
-		}
 	}
 	else
 		logit ("No get_stream() function");
@@ -286,15 +299,7 @@ static void decode_loop (const struct decoder *f, void *decoder_data,
 					set_info_bitrate (bitrate);
 				}
 
-				LOCK (curr_tags_mut);
-				if (f->current_tags && f->current_tags(
-							decoder_data,
-							curr_tags)) {
-					tags_change ();
-					debug ("Tags change");
-					show_tags (curr_tags);
-				}
-				UNLOCK (curr_tags_mut);
+				update_tags (f, decoder_data, decoder_stream);
 			}
 		}
 

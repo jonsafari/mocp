@@ -305,6 +305,9 @@ void io_close (struct io_stream *s)
 		if (pthread_mutex_destroy(&s->io_mutex))
 			logit ("Destroying io_mutex failed: %s",
 					strerror(errno));
+		if (pthread_mutex_destroy(&s->metadata.mutex))
+			logit ("Destroying metadata mutex failed: %s",
+					strerror(errno));
 
 		if (s->buffered) {
 			fifo_buf_destroy (&s->buf);
@@ -315,12 +318,15 @@ void io_close (struct io_stream *s)
 				logit ("Destroying buf_fill_cond faild: %s",
 						strerror(errno));
 		}
+
+		if (s->metadata.title)
+			free (s->metadata.title);
+		if (s->metadata.url)
+			free (s->metadata.url);
 	}
 
 	if (s->strerror)
 		free (s->strerror);
-	if (s->title)
-		free (s->title);
 	free (s);
 
 	logit ("done");
@@ -467,7 +473,6 @@ struct io_stream *io_open (const char *file, const int buffered)
 	s->read_error = 0;
 	s->strerror = NULL;
 	s->opened = 0;
-	s->title = NULL;
 
 #ifdef HAVE_CURL
 	s->curl.mime_type = NULL;
@@ -486,9 +491,11 @@ struct io_stream *io_open (const char *file, const int buffered)
 	s->after_seek = 0;
 	s->buffered = buffered;
 	s->pos = 0;
+	memset (&s->metadata, 0, sizeof(s->metadata));
 
 	pthread_mutex_init (&s->buf_mutex, NULL);
 	pthread_mutex_init (&s->io_mutex, NULL);
+	pthread_mutex_init (&s->metadata.mutex, NULL);
 
 	if (buffered) {
 		fifo_buf_init (&s->buf, options_get_int("InputBuffer") * 1024);
@@ -750,7 +757,45 @@ char *io_get_mime_type (struct io_stream *s)
 }
 
 /* Return the malloc()ed stream title if available or NULL. */
-char *io_get_title (struct io_stream *s)
+char *io_get_metadata_title (struct io_stream *s)
 {
-	return xstrdup (s->title);
+	char *t;
+
+	LOCK (s->metadata.mutex);
+	t = xstrdup (s->metadata.title);
+	UNLOCK (s->metadata.mutex);
+
+	return t;
+}
+
+/* Return the malloc()ed stream url (from metadata) if available or NULL. */
+char *io_get_metadata_url (struct io_stream *s)
+{
+	char *t;
+
+	LOCK (s->metadata.mutex);
+	t = xstrdup (s->metadata.url);
+	UNLOCK (s->metadata.mutex);
+
+	return t;
+}
+
+/* Set the metadata title of the stream. */
+void io_set_metadata_title (struct io_stream *s, const char *title)
+{
+	LOCK (s->metadata.mutex);
+	if (s->metadata.title)
+		free (s->metadata.title);
+	s->metadata.title = xstrdup (title);
+	UNLOCK (s->metadata.mutex);
+}
+
+/* Set the metadata url for the stream. */
+void io_set_metadata_url (struct io_stream *s, const char *url)
+{
+	LOCK (s->metadata.mutex);
+	if (s->metadata.url)
+		free (s->metadata.url);
+	s->metadata.url = xstrdup (url);
+	UNLOCK (s->metadata.mutex);
 }

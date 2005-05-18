@@ -24,6 +24,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <assert.h>
+#include <stdint.h>
 
 #define DEBUG
 
@@ -99,13 +100,35 @@ static size_t header_callback (void *data, size_t size, size_t nmemb,
 				sizeof("x-audiocast-name")-1)) {
 		char *value = strchr (header, ':') + 1;
 		
-		if (s->title)
-			free (s->title);
-
 		while (isblank(value[0]))
 			value++;
 
-		s->title = xstrdup (value);
+		io_set_metadata_title (s, value);
+	}
+	else if (!strncasecmp(header, "icy-url:", sizeof("icy-url:")-1)) {
+		char *value = strchr (header, ':') + 1;
+		
+		while (isblank(value[0]))
+			value++;
+
+		io_set_metadata_url (s, value);
+	}
+	else if (!strncasecmp(header, "icy-metaint:",
+				sizeof("icy-metaint:")-1)) {
+		char *end;
+		char *value = strchr (header, ':') + 1;
+		
+		while (isblank(value[0]))
+			value++;
+
+		s->curl.icy_meta_int = strtol (value, &end, 10);
+		if (*end) {
+			s->curl.icy_meta_int = 0;
+			logit ("Bad icy-metaint value");
+		}
+		else
+			debug ("Icy metadata interval: %ld",
+					(long)s->curl.icy_meta_int);
 	}
 
 	free (header);
@@ -199,9 +222,11 @@ void io_curl_open (struct io_stream *s, const char *url)
 	s->curl.status = CURLE_OK;
 
 	s->curl.url = xstrdup (url);
+	s->curl.icy_meta_int = 0;
+	s->curl.icy_meta_count = 0;
 
 	s->curl.http200_aliases = curl_slist_append (NULL, "ICY");
-	/*s->curl.http_headers = curl_slist_append (NULL, "Icy-MetaData: 1");*/
+	s->curl.http_headers = curl_slist_append (NULL, "Icy-MetaData: 1");
 
 	curl_easy_setopt (s->curl.handle, CURLOPT_NOPROGRESS, 1);
 	curl_easy_setopt (s->curl.handle, CURLOPT_WRITEFUNCTION,
@@ -219,8 +244,8 @@ void io_curl_open (struct io_stream *s, const char *url)
 	curl_easy_setopt (s->curl.handle, CURLOPT_MAXREDIRS, 15);
 	curl_easy_setopt (s->curl.handle, CURLOPT_HTTP200ALIASES,
 			s->curl.http200_aliases);
-	/*curl_easy_setopt (s->curl.handle, CURLOPT_HTTPHEADER,
-			s->curl.http_headers);*/
+	curl_easy_setopt (s->curl.handle, CURLOPT_HTTPHEADER,
+			s->curl.http_headers);
 #ifdef DEBUG
 	curl_easy_setopt (s->curl.handle, CURLOPT_VERBOSE, 1);
 	curl_easy_setopt (s->curl.handle, CURLOPT_DEBUGFUNCTION,
@@ -357,7 +382,7 @@ static size_t read_from_buffer (struct io_stream *s, char *buf, size_t count)
 	if (s->curl.buf_fill) {
 		long to_copy = MIN ((long)count, s->curl.buf_fill);
 
-		debug ("Copying %ld bytes", to_copy);
+		/*debug ("Copying %ld bytes", to_copy);*/
 
 		memcpy (buf, s->curl.buf, to_copy);
 		s->curl.buf_fill -= to_copy;
@@ -379,6 +404,123 @@ static size_t read_from_buffer (struct io_stream *s, char *buf, size_t count)
 	return 0;
 }
 
+/* Parse icy string in form: StreamTitle='my music';StreamUrl='www.x.com' */
+static void parse_icy_string (struct io_stream *s, const char *str)
+{
+	const char *c = str;
+
+	while (*c) {
+		char name[64];
+		char value[256];
+		const char *t;
+
+		/* get the name */
+		t = c;
+		while (*c && *c != '=')
+			c++;
+		if (*c != '=' || c - t >= (int)sizeof(name)) {
+			logit ("malformed metadata");
+			return;
+		}
+		strncpy (name, t, c - t);
+		name[c - t] = 0;
+		
+		/* move to a char after ' */
+		c++;
+		if (*c != '\'') {
+			logit ("malformed metadata");
+			return;
+		}
+		c++;
+
+		/* read the value */
+		t = c;
+		while (*c && *c != '\'')
+			c++;
+
+		if (!*c) {
+			logit ("malformed metadata");
+			return;
+		}
+		
+		strncpy (value, t, MIN(c - t, (int)sizeof(value) - 1));
+		value[MIN(c - t, (int)sizeof(value) - 1)] = 0;
+		
+		/* eat ' */
+		c++;
+
+		/* eat semicolon */
+		if (*c == ';')
+			c++;
+
+		debug ("METADATA name: '%s' value: '%s'", name, value);
+
+		if (!strcasecmp(name, "StreamTitle"))
+			io_set_metadata_title (s, value);
+		else if (!strcasecmp(name, "StreamUrl"))
+			io_set_metadata_url (s, value);
+		else
+			logit ("Unknown metadata element '%s'", name);
+	}
+}
+
+/* Parse the IceCast metadata packet. */
+static void parse_icy_metadata (struct io_stream *s, const char *packet,
+		const int size)
+{
+	const char *c = packet;
+
+	while (c - packet < size) {
+		const char *p = c;
+		
+		while (*c && c - packet < size)
+			c++;
+		if (!*c)
+			parse_icy_string (s, p);
+		
+		/* pass the padding */
+		while (!*c && c - packet < size)
+			c++;
+	}
+}
+
+/* Read icy metadata from the curl stream. The stream should be at the
+ * beginning of the metadata. Return 0 on error. */
+static int read_icy_metadata (struct io_stream *s)
+{
+	uint8_t size_packet;
+	int size;
+	char *packet;
+
+	/* read the packet size */
+	if (s->curl.buf_fill == 0 && !curl_read_internal(s))
+		return 0;
+	read_from_buffer (s, &size_packet, sizeof(size_packet));
+	if (size == 0) {
+		debug ("Got empty metadata packet");
+		return 1;
+	}
+	size = size_packet * 16;
+
+	/* make sure that the whole packet is in the buffer */
+	while (s->curl.buf_fill < size && s->curl.handle)
+		if (!curl_read_internal(s))
+			return -1;
+
+	if (s->curl.buf_fill < size) {
+		logit ("Icy metadata packet broken");
+		return -1;
+	}
+
+	packet = (char *)xmalloc (size);
+	read_from_buffer (s, packet, size);
+	debug ("Received metadata packet %d bytes long", size);
+	parse_icy_metadata (s, packet, size);
+	free (packet);
+
+	return 1;
+}
+
 ssize_t io_curl_read (struct io_stream *s, char *buf, size_t count)
 {
 	size_t nread = 0;
@@ -388,7 +530,28 @@ ssize_t io_curl_read (struct io_stream *s, char *buf, size_t count)
 	assert (s->curl.multi_handle != NULL);
 
 	do {
-		nread += read_from_buffer (s, buf + nread, count - nread);
+		size_t to_read;
+		size_t res;
+		
+		if (s->curl.icy_meta_int && s->curl.icy_meta_count
+				== s->curl.icy_meta_int) {
+			s->curl.icy_meta_count = 0;
+			if (!read_icy_metadata(s))
+				return -1;
+		}
+
+		if (s->curl.icy_meta_int)
+			to_read = MIN (count - nread, s->curl.icy_meta_int -
+					s->curl.icy_meta_count);
+		else
+			to_read = count - nread;
+				
+		res = read_from_buffer (s, buf + nread, to_read);
+		if (s->curl.icy_meta_int)
+			s->curl.icy_meta_count += res;
+		nread += res;
+		debug ("Read %d bytes from the buffer (%d bytes full)",
+				(int)res, (int)nread);
 
 		if (nread < count && !curl_read_internal(s))
 			return -1;
