@@ -50,16 +50,15 @@ static size_t write_callback (void *data, size_t size, size_t nmemb,
 		void *stream)
 {
 	struct io_stream *s = (struct io_stream *)stream;
+	size_t buf_start = s->curl.buf_fill;
+	size_t data_size = size * nmemb;
 
-	if (s->curl_buf)
-		free (s->curl_buf);
+	s->curl.buf_fill += data_size;
+	debug ("Got %lu bytes", (unsigned long)data_size);
+	s->curl.buf = (char *)xrealloc (s->curl.buf, s->curl.buf_fill);
+	memcpy (s->curl.buf + buf_start, data, data_size);
 
-	s->curl_buf_fill = size * nmemb;
-	debug ("Got %ld bytes", s->curl_buf_fill);
-	s->curl_buf = (char *)xmalloc (s->curl_buf_fill);
-	memcpy (s->curl_buf, data, s->curl_buf_fill);
-
-	return s->curl_buf_fill;
+	return s->curl.buf_fill;
 }
 
 static size_t header_callback (void *data, size_t size, size_t nmemb,
@@ -83,7 +82,7 @@ static size_t header_callback (void *data, size_t size, size_t nmemb,
 	header[header_size-1] = 0;
 
 	if (!strncasecmp(header, "Content-Type:", sizeof("Content-Type:")-1)) {
-		if (s->mime_type)
+		if (s->curl.mime_type)
 			logit ("Another Content-Type header!");
 		else {
 			char *value = header + sizeof("Content-Type:") - 1;
@@ -91,8 +90,8 @@ static size_t header_callback (void *data, size_t size, size_t nmemb,
 			while (isblank(value[0]))
 				value++;
 			
-			s->mime_type = xstrdup (value);
-			debug ("Mime type: '%s'", s->mime_type);
+			s->curl.mime_type = xstrdup (value);
+			debug ("Mime type: '%s'", s->curl.mime_type);
 		}
 	}
 	else if (!strncasecmp(header, "icy-name:", sizeof("icy-name:")-1)
@@ -155,18 +154,18 @@ static int check_curl_stream (struct io_stream *s)
 	int msg_queue_num;
 	int res = 1;
 	
-	while ((msg = curl_multi_info_read(s->curl_multi_handle,
+	while ((msg = curl_multi_info_read(s->curl.multi_handle,
 					&msg_queue_num)))
 		if (msg->msg == CURLMSG_DONE) {
-			s->curl_status = msg->data.result;
-			if (s->curl_status != CURLE_OK) {
+			s->curl.status = msg->data.result;
+			if (s->curl.status != CURLE_OK) {
 				debug ("Read error");
 				res = 0;
 			}
-			curl_multi_remove_handle (s->curl_multi_handle,
-					s->curl_handle);
-			curl_easy_cleanup (s->curl_handle);
-			s->curl_handle = NULL;
+			curl_multi_remove_handle (s->curl.multi_handle,
+					s->curl.handle);
+			curl_easy_cleanup (s->curl.handle);
+			s->curl.handle = NULL;
 			debug ("EOF");
 			break;
 		}
@@ -177,65 +176,65 @@ static int check_curl_stream (struct io_stream *s)
 void io_curl_open (struct io_stream *s, const char *url)
 {
 	s->source = IO_SOURCE_CURL;
-	s->url = NULL;
-	s->http_headers = NULL;
-	s->curl_buf = NULL;
-	s->curl_buf_fill = 0;
-	s->need_perform_loop = 1;
+	s->curl.url = NULL;
+	s->curl.http_headers = NULL;
+	s->curl.buf = NULL;
+	s->curl.buf_fill = 0;
+	s->curl.need_perform_loop = 1;
 
-	s->curl_wake_up_pipe[0] = -1;
-	s->curl_wake_up_pipe[1] = -1;
+	s->curl.wake_up_pipe[0] = -1;
+	s->curl.wake_up_pipe[1] = -1;
 
-	if (!(s->curl_multi_handle = curl_multi_init())) {
+	if (!(s->curl.multi_handle = curl_multi_init())) {
 		logit ("curl_multi_init() returned NULL");
 		return;
 	}
 	
-	if (!(s->curl_handle = curl_easy_init())) {
+	if (!(s->curl.handle = curl_easy_init())) {
 		logit ("curl_easy_init() returned NULL");
 		return;
 	}
 
-	s->curl_multi_status = CURLM_OK;
-	s->curl_status = CURLE_OK;
+	s->curl.multi_status = CURLM_OK;
+	s->curl.status = CURLE_OK;
 
-	s->url = xstrdup (url);
+	s->curl.url = xstrdup (url);
 
-	s->http200_aliases = curl_slist_append (NULL, "ICY");
+	s->curl.http200_aliases = curl_slist_append (NULL, "ICY");
+	/*s->curl.http_headers = curl_slist_append (NULL, "Icy-MetaData: 1");*/
 
-	curl_easy_setopt (s->curl_handle, CURLOPT_NOPROGRESS, 1);
-	curl_easy_setopt (s->curl_handle, CURLOPT_WRITEFUNCTION,
+	curl_easy_setopt (s->curl.handle, CURLOPT_NOPROGRESS, 1);
+	curl_easy_setopt (s->curl.handle, CURLOPT_WRITEFUNCTION,
 			write_callback);
-	curl_easy_setopt (s->curl_handle, CURLOPT_WRITEDATA, s);
-	curl_easy_setopt (s->curl_handle, CURLOPT_HEADERFUNCTION,
+	curl_easy_setopt (s->curl.handle, CURLOPT_WRITEDATA, s);
+	curl_easy_setopt (s->curl.handle, CURLOPT_HEADERFUNCTION,
 			header_callback);
-	curl_easy_setopt (s->curl_handle, CURLOPT_WRITEHEADER, s);
-	curl_easy_setopt (s->curl_handle, CURLOPT_USERAGENT,
+	curl_easy_setopt (s->curl.handle, CURLOPT_WRITEHEADER, s);
+	curl_easy_setopt (s->curl.handle, CURLOPT_USERAGENT,
 			PACKAGE_NAME"/"PACKAGE_VERSION);
-	curl_easy_setopt (s->curl_handle, CURLOPT_FOLLOWLOCATION, 1);
-	curl_easy_setopt (s->curl_handle, CURLOPT_URL, s->url);
-	curl_easy_setopt (s->curl_handle, CURLOPT_FOLLOWLOCATION, 1);
-	curl_easy_setopt (s->curl_handle, CURLOPT_FAILONERROR, 1);
-	curl_easy_setopt (s->curl_handle, CURLOPT_MAXREDIRS, 15);
-	curl_easy_setopt (s->curl_handle, CURLOPT_HTTP200ALIASES,
-			s->http200_aliases);
+	curl_easy_setopt (s->curl.handle, CURLOPT_FOLLOWLOCATION, 1);
+	curl_easy_setopt (s->curl.handle, CURLOPT_URL, s->curl.url);
+	curl_easy_setopt (s->curl.handle, CURLOPT_FOLLOWLOCATION, 1);
+	curl_easy_setopt (s->curl.handle, CURLOPT_FAILONERROR, 1);
+	curl_easy_setopt (s->curl.handle, CURLOPT_MAXREDIRS, 15);
+	curl_easy_setopt (s->curl.handle, CURLOPT_HTTP200ALIASES,
+			s->curl.http200_aliases);
+	/*curl_easy_setopt (s->curl.handle, CURLOPT_HTTPHEADER,
+			s->curl.http_headers);*/
 #ifdef DEBUG
-	curl_easy_setopt (s->curl_handle, CURLOPT_VERBOSE, 1);
-	curl_easy_setopt (s->curl_handle, CURLOPT_DEBUGFUNCTION,
+	curl_easy_setopt (s->curl.handle, CURLOPT_VERBOSE, 1);
+	curl_easy_setopt (s->curl.handle, CURLOPT_DEBUGFUNCTION,
 			debug_callback);
 #endif
 	
-	/* TODO: 
-	curl_easy_setopt (s->curl_handle, CURLOPT_HTTPHEADER, s->http_headers);
-	*/
 
-	if ((s->curl_multi_status = curl_multi_add_handle(s->curl_multi_handle,
-					s->curl_handle)) != CURLM_OK) {
+	if ((s->curl.multi_status = curl_multi_add_handle(s->curl.multi_handle,
+					s->curl.handle)) != CURLM_OK) {
 		logit ("curl_multi_add_handle() failed");
 		return;
 	}
 
-	if (pipe(s->curl_wake_up_pipe) < 0) {
+	if (pipe(s->curl.wake_up_pipe) < 0) {
 		logit ("pipe() failed: %s", strerror(errno));
 		return;
 	}
@@ -248,59 +247,55 @@ void io_curl_close (struct io_stream *s)
 	assert (s != NULL);
 	assert (s->source == IO_SOURCE_CURL);
 
-	if (s->url)
-		free (s->url);
-	if (s->http_headers)
-		curl_slist_free_all (s->http_headers);
-	if (s->curl_buf)
-		free (s->curl_buf);
-	if (s->mime_type)
-		free (s->mime_type);
+	if (s->curl.url)
+		free (s->curl.url);
+	if (s->curl.http_headers)
+		curl_slist_free_all (s->curl.http_headers);
+	if (s->curl.buf)
+		free (s->curl.buf);
+	if (s->curl.mime_type)
+		free (s->curl.mime_type);
 
-	if (s->curl_multi_handle && s->curl_handle)
-		curl_multi_remove_handle (s->curl_multi_handle, s->curl_handle);
-	if (s->curl_handle)
-		curl_easy_cleanup (s->curl_handle);
-	if (s->curl_multi_handle)
-		curl_multi_cleanup (s->curl_multi_handle);
+	if (s->curl.multi_handle && s->curl.handle)
+		curl_multi_remove_handle (s->curl.multi_handle, s->curl.handle);
+	if (s->curl.handle)
+		curl_easy_cleanup (s->curl.handle);
+	if (s->curl.multi_handle)
+		curl_multi_cleanup (s->curl.multi_handle);
 
-	if (s->curl_wake_up_pipe[0] != -1) {
-		close (s->curl_wake_up_pipe[0]);
-		close (s->curl_wake_up_pipe[1]);
+	if (s->curl.wake_up_pipe[0] != -1) {
+		close (s->curl.wake_up_pipe[0]);
+		close (s->curl.wake_up_pipe[1]);
 	}
 
-	if (s->http200_aliases)
-		curl_slist_free_all (s->http200_aliases);
+	if (s->curl.http200_aliases)
+		curl_slist_free_all (s->curl.http200_aliases);
 }
 
-ssize_t io_curl_read (struct io_stream *s, char *buf, size_t count)
+/* Get data using curl and put them into the internal buffer.
+ * Return 0 on error. */
+static int curl_read_internal (struct io_stream *s)
 {
-	int running;
+	int running = 1;
 
-	assert (s != NULL);
-	assert (s->source == IO_SOURCE_CURL);
-	assert (s->curl_multi_handle != NULL);
-
-	if (s->need_perform_loop) {
+	if (s->curl.need_perform_loop) {
 		debug ("Starting curl...");
 
 		do {
-			s->curl_multi_status = curl_multi_perform (
-					s->curl_multi_handle, &running);
-		} while (s->curl_multi_status == CURLM_CALL_MULTI_PERFORM);
+			s->curl.multi_status = curl_multi_perform (
+					s->curl.multi_handle, &running);
+		} while (s->curl.multi_status == CURLM_CALL_MULTI_PERFORM);
 		
 		if (!check_curl_stream(s))
-			return -1;
+			return 0;
 
-		s->need_perform_loop = 0;
+		s->curl.need_perform_loop = 0;
 	}
 
-	running = 1;
-	
-	while (s->opened && !s->curl_buf_fill && running && s->curl_handle
-			&& (s->curl_multi_status == CURLM_CALL_MULTI_PERFORM
-				|| s->curl_multi_status == CURLM_OK)) {
-		if (s->curl_multi_status != CURLM_CALL_MULTI_PERFORM) {
+	while (s->opened && !s->curl.buf_fill && running && s->curl.handle
+			&& (s->curl.multi_status == CURLM_CALL_MULTI_PERFORM
+				|| s->curl.multi_status == CURLM_OK)) {
+		if (s->curl.multi_status != CURLM_CALL_MULTI_PERFORM) {
 			fd_set read_fds, write_fds, exc_fds;
 			int max_fd;
 			int ret;
@@ -311,18 +306,16 @@ ssize_t io_curl_read (struct io_stream *s, char *buf, size_t count)
 			FD_ZERO (&write_fds);
 			FD_ZERO (&exc_fds);
 
-			s->curl_multi_status == curl_multi_fdset (
-					s->curl_multi_handle,
+			s->curl.multi_status == curl_multi_fdset (
+					s->curl.multi_handle,
 					&read_fds, &write_fds, &exc_fds,
 					&max_fd);
-			if (s->curl_multi_status != CURLM_OK) {
+			if (s->curl.multi_status != CURLM_OK)
 				logit ("curl_multi_fdset() failed");
-				return -1;
-			}
 
-			FD_SET (s->curl_wake_up_pipe[0], &read_fds);
-			if (s->curl_wake_up_pipe[0] > max_fd)
-				max_fd = s->curl_wake_up_pipe[0];
+			FD_SET (s->curl.wake_up_pipe[0], &read_fds);
+			if (s->curl.wake_up_pipe[0] > max_fd)
+				max_fd = s->curl.wake_up_pipe[0];
 
 			ret = select (max_fd + 1, &read_fds, &write_fds,
 					&exc_fds, NULL);
@@ -335,10 +328,10 @@ ssize_t io_curl_read (struct io_stream *s, char *buf, size_t count)
 			if (ret < 0) {
 				s->errno_val == errno;
 				logit ("select() failed");
-				return -1;
+				return 0;
 			}
 
-			if (FD_ISSET(s->curl_wake_up_pipe[0], &read_fds)) {
+			if (FD_ISSET(s->curl.wake_up_pipe[0], &read_fds)) {
 				logit ("Got wake up - exiting");
 				return 0;
 			}
@@ -347,29 +340,62 @@ ssize_t io_curl_read (struct io_stream *s, char *buf, size_t count)
 				return 0;
 		}
 
-		s->curl_multi_status = curl_multi_perform (s->curl_multi_handle,
+		s->curl.multi_status = curl_multi_perform (s->curl.multi_handle,
 			&running);
 		
 		if (!check_curl_stream(s))
-			return -1;
+			return 0;
 	}
 
-	debug ("running: %d", running);
+	return 1;
+}
 
-	if (s->curl_buf_fill) {
-		long to_copy = MIN ((long)count, s->curl_buf_fill);
+/* Read data from the internal buffer to buf. Return the number of bytes read.
+ */
+static size_t read_from_buffer (struct io_stream *s, char *buf, size_t count)
+{
+	if (s->curl.buf_fill) {
+		long to_copy = MIN ((long)count, s->curl.buf_fill);
 
 		debug ("Copying %ld bytes", to_copy);
 
-		memcpy (buf, s->curl_buf, to_copy);
-		s->curl_buf_fill -= to_copy;
-		memmove (s->curl_buf, s->curl_buf + to_copy,
-				s->curl_buf_fill);
-		
+		memcpy (buf, s->curl.buf, to_copy);
+		s->curl.buf_fill -= to_copy;
+
+		if (s->curl.buf_fill) {
+			memmove (s->curl.buf, s->curl.buf + to_copy,
+					s->curl.buf_fill);
+			s->curl.buf = (char *)xrealloc (s->curl.buf,
+					s->curl.buf_fill);
+		}
+		else {
+			free (s->curl.buf);
+			s->curl.buf = NULL;
+		}
+
 		return to_copy;
 	}
-
+	
 	return 0;
+}
+
+ssize_t io_curl_read (struct io_stream *s, char *buf, size_t count)
+{
+	size_t nread = 0;
+	
+	assert (s != NULL);
+	assert (s->source == IO_SOURCE_CURL);
+	assert (s->curl.multi_handle != NULL);
+
+	do {
+		nread += read_from_buffer (s, buf + nread, count - nread);
+
+		if (nread < count && !curl_read_internal(s))
+			return -1;
+	} while (nread < count && s->curl.handle); /* s->curl.handle == NULL
+						      on EOF */
+
+	return nread;
 }
 
 /* Set the error string for the stream. */
@@ -380,10 +406,10 @@ void io_curl_strerror (struct io_stream *s)
 	assert (s != NULL);
 	assert (s->source == IO_SOURCE_CURL);
 
-	if (s->curl_multi_status != CURLM_OK)
-		err = curl_multi_strerror(s->curl_multi_status);
-	else if (s->curl_status != CURLE_OK)
-		err = curl_easy_strerror(s->curl_status);
+	if (s->curl.multi_status != CURLM_OK)
+		err = curl_multi_strerror(s->curl.multi_status);
+	else if (s->curl.status != CURLE_OK)
+		err = curl_easy_strerror(s->curl.status);
 
 	s->strerror = xstrdup (err);
 }
@@ -392,7 +418,7 @@ void io_curl_wake_up (struct io_stream *s)
 {
 	int w = 1;
 
-	if (write(s->curl_wake_up_pipe[1], &w, sizeof(w)) < 0)
+	if (write(s->curl.wake_up_pipe[1], &w, sizeof(w)) < 0)
 		logit ("Can't wake up curl thread: write() failed: %s",
 				strerror(errno));
 }
