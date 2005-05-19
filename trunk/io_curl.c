@@ -504,7 +504,7 @@ static int read_icy_metadata (struct io_stream *s)
 
 	/* make sure that the whole packet is in the buffer */
 	while (s->curl.buf_fill < size && s->curl.handle)
-		if (!curl_read_internal(s))
+		if (!curl_read_internal(s) || !check_curl_stream (s))
 			return -1;
 
 	if (s->curl.buf_fill < size) {
