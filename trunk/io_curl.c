@@ -413,6 +413,8 @@ static void parse_icy_string (struct io_stream *s, const char *str)
 {
 	const char *c = str;
 
+	debug ("Got metadata string: %s", str);
+
 	while (*c) {
 		char name[64];
 		char value[256];
@@ -437,9 +439,11 @@ static void parse_icy_string (struct io_stream *s, const char *str)
 		}
 		c++;
 
-		/* read the value */
+		/* read the value  - it can contain a quotation mark so we
+		 * recognize if it ends the value by checking if there is a
+		 * semicolon after it or if it's the end of the string */
 		t = c;
-		while (*c && *c != '\'')
+		while (*c && (*c != '\'' || (*(c+1) != ';' && *(c+1))))
 			c++;
 
 		if (!*c) {
