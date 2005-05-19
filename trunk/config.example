@@ -53,6 +53,10 @@ InputBuffer		= 512
 # delay between what you can hear and what is broadcasted.
 Prebuffering		= 64
 
+# Use this HTTP proxy server for internet streams. If not set, the
+# environmential variables http_proxy and ALL_PROXY will be used if present.
+#HTTPProxy		= my_proxy:port
+
 # Sound driver - OSS, ALSA, JACK, or null (only for debugging)
 # You can enter more than one driver separated by a coma. The first working
 # driver will be used.

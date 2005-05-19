@@ -32,10 +32,7 @@
 #include "log.h"
 #include "io.h"
 #include "io_curl.h"
-
-/* TODO:
- *   - proxy support
- */
+#include "options.h"
 
 void io_curl_init ()
 {
@@ -246,6 +243,9 @@ void io_curl_open (struct io_stream *s, const char *url)
 			s->curl.http200_aliases);
 	curl_easy_setopt (s->curl.handle, CURLOPT_HTTPHEADER,
 			s->curl.http_headers);
+	if (options_get_str("HTTPProxy"))
+		curl_easy_setopt (s->curl.handle, CURLOPT_PROXY,
+				options_get_str("HTTPProxy"));
 #ifdef DEBUG
 	curl_easy_setopt (s->curl.handle, CURLOPT_VERBOSE, 1);
 	curl_easy_setopt (s->curl.handle, CURLOPT_DEBUGFUNCTION,
