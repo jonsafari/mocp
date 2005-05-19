@@ -56,7 +56,7 @@ static size_t write_callback (void *data, size_t size, size_t nmemb,
 	s->curl.buf = (char *)xrealloc (s->curl.buf, s->curl.buf_fill);
 	memcpy (s->curl.buf + buf_start, data, data_size);
 
-	return s->curl.buf_fill;
+	return data_size;
 }
 
 static size_t header_callback (void *data, size_t size, size_t nmemb,
@@ -298,10 +298,12 @@ void io_curl_close (struct io_stream *s)
 }
 
 /* Get data using curl and put them into the internal buffer.
+ * Even if the internal buffer is not empty, more data will be read.
  * Return 0 on error. */
 static int curl_read_internal (struct io_stream *s)
 {
 	int running = 1;
+	long buf_fill_before = s->curl.buf_fill;
 
 	if (s->curl.need_perform_loop) {
 		debug ("Starting curl...");
@@ -317,7 +319,8 @@ static int curl_read_internal (struct io_stream *s)
 		s->curl.need_perform_loop = 0;
 	}
 
-	while (s->opened && !s->curl.buf_fill && running && s->curl.handle
+	while (s->opened && running && buf_fill_before == s->curl.buf_fill
+			&& s->curl.handle
 			&& (s->curl.multi_status == CURLM_CALL_MULTI_PERFORM
 				|| s->curl.multi_status == CURLM_OK)) {
 		if (s->curl.multi_status != CURLM_CALL_MULTI_PERFORM) {
@@ -356,13 +359,14 @@ static int curl_read_internal (struct io_stream *s)
 				return 0;
 			}
 
+			if (s->stop_read_thread)
+				return 1;
+
 			if (FD_ISSET(s->curl.wake_up_pipe[0], &read_fds)) {
 				logit ("Got wake up - exiting");
 				return 1;
 			}
 
-			if (s->stop_read_thread)
-				return 1;
 		}
 
 		s->curl.multi_status = curl_multi_perform (s->curl.multi_handle,
@@ -503,7 +507,8 @@ static int read_icy_metadata (struct io_stream *s)
 	size = size_packet * 16;
 
 	/* make sure that the whole packet is in the buffer */
-	while (s->curl.buf_fill < size && s->curl.handle)
+	while (s->curl.buf_fill < size && s->curl.handle
+			&& !s->stop_read_thread)
 		if (!curl_read_internal(s))
 			return -1;
 
@@ -555,8 +560,8 @@ ssize_t io_curl_read (struct io_stream *s, char *buf, size_t count)
 
 		if (nread < count && !curl_read_internal(s))
 			return -1;
-	} while (nread < count && s->curl.handle); /* s->curl.handle == NULL
-						      on EOF */
+	} while (nread < count && !s->stop_read_thread
+			&& s->curl.handle); /* s->curl.handle == NULL on EOF */
 
 	return nread;
 }
