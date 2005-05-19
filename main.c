@@ -132,7 +132,8 @@ char *create_file_name (const char *file)
 		if (!(home_dir = getenv("HOME")))
 			fatal ("No HOME environmential variable.");
 		if (snprintf(fname, sizeof(fname), "%s/%s/%s", home_dir,
-					moc_dir + 1, file)
+				(moc_dir[1] == '/') ? moc_dir + 2 : moc_dir + 1,
+				file)
 				>= (int)sizeof(fname))
 			fatal ("Path too long.");
 	}
