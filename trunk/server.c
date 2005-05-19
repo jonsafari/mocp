@@ -271,7 +271,11 @@ int server_init (int debug, int foreground)
 
 	pid = check_pid_file ();
 	if (pid && valid_pid(pid)) {
-		fprintf (stderr, "Server already running with pid %d\n", pid);
+		fprintf (stderr, "\nIt seems that the server is already running"
+				" with pid %d.\n", pid);
+		fprintf (stderr, "If it is not true, remove the pid file (%s)"
+				" and try again.\n",
+				create_file_name(PID_FILE));
 		fatal ("Exiting.");
 	}
 
