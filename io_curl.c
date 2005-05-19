@@ -358,11 +358,11 @@ static int curl_read_internal (struct io_stream *s)
 
 			if (FD_ISSET(s->curl.wake_up_pipe[0], &read_fds)) {
 				logit ("Got wake up - exiting");
-				return 0;
+				return 1;
 			}
 
 			if (s->stop_read_thread)
-				return 0;
+				return 1;
 		}
 
 		s->curl.multi_status = curl_multi_perform (s->curl.multi_handle,
@@ -504,7 +504,7 @@ static int read_icy_metadata (struct io_stream *s)
 
 	/* make sure that the whole packet is in the buffer */
 	while (s->curl.buf_fill < size && s->curl.handle)
-		if (!curl_read_internal(s) || !check_curl_stream (s))
+		if (!curl_read_internal(s))
 			return -1;
 
 	if (s->curl.buf_fill < size) {
