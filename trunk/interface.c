@@ -3919,20 +3919,28 @@ void interface_cmdline_file_info (const int server_sock)
 		file = get_data_str ();
 
 		if (file[0]) {
-			tags = read_file_tags (file, NULL, TAGS_COMMENTS);
+
+			/* get tags */
+			if (file_type(file) == F_URL) {
+				send_int_to_srv (CMD_GET_TAGS);
+				wait_for_data ();
+				tags = get_tags_from_srv ();
+			}
+			else
+				tags = read_file_tags (file, NULL,
+						TAGS_COMMENTS);
+			
+			/* get the title */
 			if (tags->title) {
 				char *title = build_title (tags);
-			
+
 				strncpy (file_info.title, title,
 						sizeof(file_info.title) - 1);
-				file_info.title[sizeof (file_info.title) - 1]
-					= 0;
+				file_info.title[sizeof (file_info.title) - 1] = 0;
 				free (title);
 			}
 			else
 				file_info.title[0] = 0;
-			
-			set_time (get_file_time (file));
 		}
 		else
 			file_info.title[0] = 0;
