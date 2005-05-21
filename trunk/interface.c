@@ -1389,15 +1389,14 @@ static void update_ctime ()
 		curr_time = file_info.curr_time_num = get_data_int ();
 	}
 
+	sec_to_min (file_info.curr_time, curr_time);
+
 	if (file_info.time_num != -1) {
-		sec_to_min (file_info.curr_time, curr_time);
 		left = file_info.time_num - curr_time;
 		sec_to_min (file_info.time_left, left > 0 ? left : 0);
 	}
-	else {
-		strcpy (file_info.curr_time, "00:00");
+	else
 		file_info.time_left[0] = 0;
-	}
 
 
 	update_info_win ();
