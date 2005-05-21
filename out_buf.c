@@ -47,14 +47,14 @@ static void *read_thread (void *arg)
 
 	logit ("entering output buffer thread");
 
+	LOCK (buf->mutex);
+
 	while (1) {
 		int played = 0;
 		char play_buf[AUDIO_MAX_PLAY_BYTES];
 		int play_buf_fill;
 		int play_buf_pos = 0;
 		
-		LOCK (buf->mutex);
-	
 		if (buf->reset_dev && !audio_dev_closed) {
 			audio_reset ();
 			buf->reset_dev = 0;
@@ -110,24 +110,20 @@ static void *read_thread (void *arg)
 		if (fifo_buf_get_fill(&buf->buf) == 0) {
 			if (buf->exit) {
 				logit ("exit");
-				UNLOCK (buf->mutex);
 				break;
 			}
 
 			logit ("buffer empty");
-			UNLOCK (buf->mutex);
 			continue;
 		}
 
 		if (buf->pause) {
 			logit ("paused");
-			UNLOCK (buf->mutex);
 			continue;
 		}
 
 		if (buf->stop) {
 			logit ("stopped");
-			UNLOCK (buf->mutex);
 			continue;
 		}
 			
@@ -156,11 +152,11 @@ static void *read_thread (void *arg)
 			if (played && audio_get_bps())
 				buf->time += played / (float)audio_get_bps();
 			buf->hardware_buf_fill = audio_get_buf_fill();
-		}
-		
-		UNLOCK (buf->mutex);
+		}	
 	}
 
+	UNLOCK (buf->mutex);
+	
 	logit ("exiting");
 	
 	return NULL;
