@@ -213,23 +213,32 @@ static void update_tags (const struct decoder *f, void *decoder_data,
 {
 	char *stream_title;
 	int tags_changed = 0;
+	struct file_tags *new_tags;
+
+	new_tags = tags_new ();
 
 	LOCK (curr_tags_mut);
-	if (f->current_tags && f->current_tags(decoder_data, curr_tags)) {
+	if (f->current_tags && f->current_tags(decoder_data, new_tags)
+			&& new_tags->title) {
 		tags_changed = 1;
-		debug ("Tags change");
+		tags_copy (curr_tags, new_tags);
+		logit ("Tags change from the decoder");
 		show_tags (curr_tags);
 	}
-
-	if (s && (stream_title = io_get_metadata_title(s))) {
-		debug ("Setting tags from the io stream");
+	else if (s && (stream_title = io_get_metadata_title(s))
+			&& (!curr_tags->title
+				|| strcmp(stream_title, curr_tags->title))) {
+		logit ("New io stream tags");
 		tags_clear (curr_tags);
 		curr_tags->title = stream_title;
+		show_tags (curr_tags);
 		tags_changed = 1;
 	}
 
 	if (tags_changed)
 		tags_change ();
+
+	tags_free (new_tags);
 	
 	UNLOCK (curr_tags_mut);
 }
