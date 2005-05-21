@@ -243,6 +243,16 @@ static void update_tags (const struct decoder *f, void *decoder_data,
 	UNLOCK (curr_tags_mut);
 }
 
+/* Called when some free space in the output buffer appears. */
+static void buf_free_callback ()
+{
+	LOCK (request_cond_mutex);
+	pthread_cond_broadcast (&request_cond);
+	UNLOCK (request_cond_mutex);
+
+	update_time ();
+}
+
 /* Decoder loop for already opened and probably running for some time decoder.
  * next_file will be precached at eof. */
 static void decode_loop (const struct decoder *f, void *decoder_data,
@@ -256,6 +266,8 @@ static void decode_loop (const struct decoder *f, void *decoder_data,
 	int bitrate = -1;
 	int sound_params_change = 0;
 
+	out_buf_set_free_callback (out_buf, buf_free_callback);
+	
 	LOCK (curr_tags_mut);
 	curr_tags = tags_new ();
 	UNLOCK (curr_tags_mut);
@@ -326,8 +338,6 @@ static void decode_loop (const struct decoder *f, void *decoder_data,
 		}
 		else
 			UNLOCK (request_cond_mutex);
-
-		update_time ();
 
 		/* When clearing request, we must make sure, that another
 		 * request will not arrive at the moment, so we check if
@@ -411,7 +421,6 @@ static void play_file (const char *file, const struct decoder *f,
 	void *decoder_data;
 	struct sound_params sound_params = { 0, 0, 0 };
 	
-	out_buf_set_notify_cond (out_buf, &request_cond, &request_cond_mutex);
 	out_buf_reset (out_buf);
 	
 	precache_wait (&precache);
@@ -474,7 +483,6 @@ static void play_stream (const struct decoder *f, struct out_buf *out_buf)
 	struct sound_params sound_params = { 0, 0, 0 };
 	struct decoder_error err;
 
-	out_buf_set_notify_cond (out_buf, &request_cond, &request_cond_mutex);
 	out_buf_reset (out_buf);
 	
 	assert (f->open_stream != NULL);
