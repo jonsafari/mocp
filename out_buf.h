@@ -4,6 +4,8 @@
 #include <pthread.h>
 #include "fifo_buf.h"
 
+typedef void (out_buf_free_callback)();
+
 struct out_buf
 {
 	struct fifo_buf buf;
@@ -14,10 +16,9 @@ struct out_buf
 	pthread_cond_t play_cond;	/* Something was written to the buffer. */
 	pthread_cond_t ready_cond;	/* There is some space in the buffer. */
 
-	/* Optional conditional signal send when there is some free space in
+	/* Optional callback called when there is some free space in
 	 * the buffer. */
-	pthread_cond_t *opt_cond;
-	pthread_mutex_t *opt_cond_mutex;
+	out_buf_free_callback *free_callback;
 
 	/* State flags of the buffer. */
 	int pause;
@@ -42,8 +43,8 @@ void out_buf_stop (struct out_buf *buf);
 void out_buf_reset (struct out_buf *buf);
 void out_buf_time_set (struct out_buf *buf, const float time);
 int out_buf_time_get (struct out_buf *buf);
-void out_buf_set_notify_cond (struct out_buf *buf, pthread_cond_t *cond,
-		pthread_mutex_t *mutex);
+void out_buf_set_free_callback (struct out_buf *buf,
+		out_buf_free_callback callback);
 int out_buf_get_free (struct out_buf *buf);
 int out_buf_get_fill (struct out_buf *buf);
 void out_buf_wait (struct out_buf *buf);

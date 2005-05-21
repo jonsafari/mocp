@@ -70,15 +70,13 @@ static void *read_thread (void *arg)
 		
 		debug ("sending the signal");
 		pthread_cond_broadcast (&buf->ready_cond);
-		if (buf->opt_cond) {
+		
+		if (buf->free_callback) {
 
-			/* to avoid a deadlock, we must unlock this mutex,
-			 * because the client can hold buf->opt_cond_mutex
-			 * and do other operations on the buffer. */
+			/* unlock the mutex to make calls to out_buf functions
+			 * possible in the callback */
 			UNLOCK (buf->mutex);
-			pthread_mutex_lock (buf->opt_cond_mutex);
-			pthread_cond_broadcast (buf->opt_cond);
-			pthread_mutex_unlock (buf->opt_cond_mutex);
+			buf->free_callback ();
 			LOCK (buf->mutex);
 		}
 		
@@ -182,7 +180,7 @@ void out_buf_init (struct out_buf *buf, int size)
 	buf->reset_dev = 0;
 	buf->hardware_buf_fill = 0;
 	buf->read_thread_waiting = 0;
-	buf->opt_cond = NULL;
+	buf->free_callback = NULL;
 	
 	pthread_mutex_init (&buf->mutex, NULL);
 	pthread_cond_init (&buf->play_cond, NULL);
@@ -340,14 +338,14 @@ int out_buf_time_get (struct out_buf *buf)
 	return time;
 }
 
-/* Using this function more than once leads to race conditions. */
-void out_buf_set_notify_cond (struct out_buf *buf, pthread_cond_t *cond,
-		pthread_mutex_t *mutex)
+void out_buf_set_free_callback (struct out_buf *buf,
+		out_buf_free_callback callback)
 {
 	assert (buf != NULL);
 	
-	buf->opt_cond_mutex = mutex;
-	buf->opt_cond = cond;
+	LOCK (buf->mutex);
+	buf->free_callback = callback;
+	UNLOCK (buf->mutex);
 }
 
 int out_buf_get_free (struct out_buf *buf)
