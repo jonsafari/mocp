@@ -517,10 +517,17 @@ static void reset_sound_params (struct sound_params *params)
 	params->fmt = 0;
 }
 
-/* Return 0 on error. */
+/* Return 0 on error. If sound params == NULL, open the device with the last
+ * parameters. */
 int audio_open (struct sound_params *sound_params)
 {
 	int res;
+	static struct sound_params last_params = { 0, 0, 0 };
+
+	if (!sound_params)
+		sound_params = &last_params;
+	else
+		last_params = *sound_params;
 
 	assert (sound_format_ok(sound_params->fmt));
 

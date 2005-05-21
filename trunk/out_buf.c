@@ -43,6 +43,7 @@
 static void *read_thread (void *arg)
 {
 	struct out_buf *buf = (struct out_buf *)arg;
+	int audio_dev_closed = 0;
 
 	logit ("entering output buffer thread");
 
@@ -53,8 +54,8 @@ static void *read_thread (void *arg)
 		int play_buf_pos = 0;
 		
 		LOCK (buf->mutex);
-		
-		if (buf->reset_dev) {
+	
+		if (buf->reset_dev && !audio_dev_closed) {
 			audio_reset ();
 			buf->reset_dev = 0;
 		}
@@ -84,12 +85,29 @@ static void *read_thread (void *arg)
 		if ((fifo_buf_get_fill(&buf->buf) == 0 || buf->pause
 					|| buf->stop)
 				&& !buf->exit) {
+			if (buf->pause && !audio_dev_closed) {
+				logit ("Closing the device due to pause");
+				audio_close ();
+				audio_dev_closed = 1;
+			}
+			
 			debug ("waiting for someting in the buffer");
 			pthread_cond_wait (&buf->play_cond, &buf->mutex);
 			debug ("someting appeard in the buffer");
+
 		}
 
 		buf->read_thread_waiting = 0;
+		
+		if (audio_dev_closed && !buf->pause) {
+			logit ("Opening the device again after pause");
+			if (!audio_open(NULL)) {
+				logit ("Can't reopen the device! sleeping...");
+				sleep (1); /* there is no way to exit :( */
+			}
+			else
+				audio_dev_closed = 0;
+		}
 		
 		if (fifo_buf_get_fill(&buf->buf) == 0) {
 			if (buf->exit) {
@@ -114,30 +132,33 @@ static void *read_thread (void *arg)
 			UNLOCK (buf->mutex);
 			continue;
 		}
-				
-		play_buf_fill = fifo_buf_get(&buf->buf, play_buf,
-				MIN(audio_get_bps() * AUDIO_MAX_PLAY,
-					AUDIO_MAX_PLAY_BYTES));
-		UNLOCK (buf->mutex);
+			
+		if (!audio_dev_closed) {
+			play_buf_fill = fifo_buf_get(&buf->buf, play_buf,
+					MIN(audio_get_bps() * AUDIO_MAX_PLAY,
+						AUDIO_MAX_PLAY_BYTES));
+			UNLOCK (buf->mutex);
 
-		debug ("playing %d bytes", play_buf_fill);
+			debug ("playing %d bytes", play_buf_fill);
 
-		while (play_buf_pos < play_buf_fill) {
-			played = audio_send_pcm (play_buf + play_buf_pos,
-					play_buf_fill - play_buf_pos);
-			assert (played > 0);
-			play_buf_pos += played;
-		}
+			while (play_buf_pos < play_buf_fill) {
+				played = audio_send_pcm (
+						play_buf + play_buf_pos,
+						play_buf_fill - play_buf_pos);
+				assert (played > 0);
+				play_buf_pos += played;
+			}
 
-		/*logit ("done sending PCM");*/
-		/*write (fd, buf->buf + buf->pos, to_play);*/
+			/*logit ("done sending PCM");*/
+			/*write (fd, buf->buf + buf->pos, to_play);*/
 
-		LOCK (buf->mutex);
+			LOCK (buf->mutex);
 		
-		/* Update time */
-		if (played && audio_get_bps())
-			buf->time += played / (float)audio_get_bps();
-		buf->hardware_buf_fill = audio_get_buf_fill();
+			/* Update time */
+			if (played && audio_get_bps())
+				buf->time += played / (float)audio_get_bps();
+			buf->hardware_buf_fill = audio_get_buf_fill();
+		}
 		
 		UNLOCK (buf->mutex);
 	}
