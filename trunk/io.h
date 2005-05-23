@@ -111,5 +111,6 @@ char *io_get_metadata_title (struct io_stream *s);
 char *io_get_metadata_url (struct io_stream *s);
 void io_set_metadata_title (struct io_stream *s, const char *title);
 void io_set_metadata_url (struct io_stream *s, const char *url);
+void io_prebuffer (struct io_stream *s, const size_t to_fill);
 
 #endif

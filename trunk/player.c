@@ -526,7 +526,6 @@ void player (const char *file, const char *next_file, struct out_buf *out_buf)
 		}
 		UNLOCK (decoder_stream_mut);
 
-		status_msg ("Prebuffering...");
 		f = get_decoder_by_content (decoder_stream);
 		if (!f) {
 			LOCK (decoder_stream_mut);
@@ -536,7 +535,12 @@ void player (const char *file, const char *next_file, struct out_buf *out_buf)
 			UNLOCK (decoder_stream_mut);
 			return;
 		}
+		
+		status_msg ("Prebuffering...");
+		io_prebuffer (decoder_stream,
+				options_get_int("Prebuffering") * 1024);
 
+		status_msg ("Playing...");
 		play_stream (f, out_buf);
 	}
 	else {

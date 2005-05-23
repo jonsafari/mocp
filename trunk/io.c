@@ -558,16 +558,18 @@ static ssize_t io_peek_internal (struct io_stream *s, void *buf, size_t count)
 
 /* Wait until there will be s->prebuffer bytes in the buffer or some event
  * occurs causing that the prebuffering is not possible. */
-static void prebuffer (struct io_stream *s)
+void io_prebuffer (struct io_stream *s, const size_t to_fill)
 {
-	logit ("prebuffering to %lu bytes...", (unsigned long)s->prebuffer);
+	logit ("prebuffering to %lu bytes...", (unsigned long)to_fill);
 	
+	LOCK (s->buf_mutex);
 	while (io_ok_nolock(s) && !s->stop_read_thread && !s->eof
-			&& s->prebuffer > fifo_buf_get_fill(&s->buf)) {
+			&& to_fill > fifo_buf_get_fill(&s->buf)) {
 		debug ("waiting (buffer %lu bytes full)",
 				(unsigned long)fifo_buf_get_fill(&s->buf));
 		pthread_cond_wait (&s->buf_fill_cond, &s->buf_mutex);
 	}
+	UNLOCK (s->buf_mutex);
 
 	logit ("done");
 }
@@ -577,11 +579,6 @@ static ssize_t io_read_buffered (struct io_stream *s, void *buf, size_t count)
 	ssize_t received = 0;
 
 	LOCK (s->buf_mutex);
-
-	if (s->prebuffer) {
-		prebuffer (s);
-		s->prebuffer = 0;
-	}
 
 	while (received < (ssize_t)count && !s->stop_read_thread
 			&& ((!s->eof && !s->read_error)
