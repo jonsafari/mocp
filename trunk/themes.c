@@ -100,6 +100,43 @@ static void set_default_colors ()
 	make_color (CLR_PLIST_TIME, COLOR_WHITE, COLOR_BLUE, A_NORMAL);
 }
 
+/* Set default colors for black and white terminal .*/
+static void set_bw_colors ()
+{
+	colors[CLR_BACKGROUND] = A_NORMAL;
+	colors[CLR_FRAME] = A_NORMAL;
+	colors[CLR_WIN_TITLE] = A_NORMAL;
+	colors[CLR_MENU_ITEM_DIR] = A_NORMAL;
+	colors[CLR_MENU_ITEM_DIR_SELECTED] = A_REVERSE;
+	colors[CLR_MENU_ITEM_PLAYLIST] = A_NORMAL;
+	colors[CLR_MENU_ITEM_PLAYLIST_SELECTED] = A_REVERSE;
+	colors[CLR_MENU_ITEM_FILE] = A_NORMAL;
+	colors[CLR_MENU_ITEM_FILE_SELECTED] = A_REVERSE;
+	colors[CLR_MENU_ITEM_FILE_MARKED] = A_BOLD;
+	colors[CLR_MENU_ITEM_FILE_MARKED_SELECTED] = A_BOLD | A_REVERSE;
+	colors[CLR_MENU_ITEM_INFO] = A_BOLD;
+	colors[CLR_STATUS] = A_NORMAL;
+	colors[CLR_TITLE] = A_BOLD;
+	colors[CLR_STATE] = A_BOLD;
+	colors[CLR_TIME_CURRENT] = A_BOLD;
+	colors[CLR_TIME_LEFT] = A_BOLD;
+	colors[CLR_TIME_TOTAL_FRAMES] = A_NORMAL;
+	colors[CLR_TIME_TOTAL] = A_BOLD;
+	colors[CLR_SOUND_PARAMS] = A_BOLD;
+	colors[CLR_LEGEND] = A_NORMAL;
+	colors[CLR_INFO_DISABLED] = A_BOLD;
+	colors[CLR_INFO_ENABLED] = A_BOLD;
+	colors[CLR_MIXER_BAR_EMPTY] = A_NORMAL;
+	colors[CLR_MIXER_BAR_FILL] = A_REVERSE;
+	colors[CLR_TIME_BAR_EMPTY] = A_NORMAL;
+	colors[CLR_TIME_BAR_FILL] = A_REVERSE;
+	colors[CLR_ENTRY] = A_NORMAL;
+	colors[CLR_ENTRY_TITLE] = A_BOLD;
+	colors[CLR_ERROR] = A_BOLD;
+	colors[CLR_MESSAGE] = A_BOLD;
+	colors[CLR_PLIST_TIME] = A_NORMAL;
+}
+
 static void theme_parse_error (const int line, const char *msg)
 {
 	interface_fatal ("Parse error in theme file line %d: %s", line, msg);
@@ -389,14 +426,18 @@ void theme_init (const int has_xterm)
 {
 	reset_colors_table ();
 
-	if (options_get_str("ForceTheme"))
-		load_color_theme (options_get_str("ForceTheme"));
-	else if (has_xterm && options_get_str("XTermTheme"))
-		load_color_theme (options_get_str("XTermTheme"));
-	else if (options_get_str("Theme"))
-		load_color_theme (options_get_str("Theme"));
+	if (has_colors()) {
+		if (options_get_str("ForceTheme"))
+			load_color_theme (options_get_str("ForceTheme"));
+		else if (has_xterm && options_get_str("XTermTheme"))
+			load_color_theme (options_get_str("XTermTheme"));
+		else if (options_get_str("Theme"))
+			load_color_theme (options_get_str("Theme"));
 
-	set_default_colors ();
+		set_default_colors ();
+	}
+	else
+		set_bw_colors ();
 }
 
 int get_color (const enum color_index index)
