@@ -374,8 +374,12 @@ int audio_conv_new (struct audio_conversion *conv,
 			|| from->channels != to->channels);
 	
 	if (from->channels != to->channels) {
-		error ("Can't change number of channels");
-		return 0;
+
+		/* the only conversion we can do */
+		if (!(from->channels == 1 && to->channels == 2)) {
+			error ("Can't change number of channels");
+			return 0;
+		}
 	}
 
 	if (from->rate != to->rate) {
@@ -510,6 +514,25 @@ static float *resample_sound (struct audio_conversion *conv, const float *buf,
 }
 #endif
 
+/* Double the channels from */
+static char *mono_to_stereo (const char *mono, const size_t size,
+		const long format)
+{
+	int Bps = sfmt_Bps (format);
+	size_t i;
+	char *stereo;
+
+	stereo = (char *)xmalloc (size * 2);
+
+	for (i = 0; i < size; i += Bps) {
+		memcpy (stereo + (i * 2), mono + i, Bps);
+		memcpy (stereo + (i * 2 + Bps), mono + i, Bps);
+	}
+
+	return stereo;
+	
+}
+
 /* Do the sound conversion. buf of size sizse is the sample buffer to convert
  * and the size of the converted sound is put into *conv_len.
  * Return the converted sound in malloc()ed memory. */
@@ -579,6 +602,18 @@ char *audio_conv (struct audio_conversion *conv, const char *buf,
 				free (curr_sound);
 			curr_sound = new_sound;
 		}
+	}
+
+	if (conv->from.channels == 1 && conv->to.channels == 2) {
+		char *new_sound;
+
+		new_sound = mono_to_stereo (curr_sound, *conv_len,
+				conv->from.fmt);
+		*conv_len *= 2;
+				
+		if (curr_sound != buf)
+			free (curr_sound);
+		curr_sound = new_sound;
 	}
 	
 	return curr_sound;
