@@ -244,7 +244,7 @@ static void wake_up_server ()
 	
 	debug ("Waking up the server");
 
-	if (write(wake_up_pipe[1], &w, sizeof(1)) < 0)
+	if (write(wake_up_pipe[1], &w, sizeof(w)) < 0)
 		logit ("Can't wake up the server: (write() failed) %s",
 				strerror(errno));
 }
