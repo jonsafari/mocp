@@ -70,6 +70,8 @@ static pthread_mutex_t curr_tags_mut = PTHREAD_MUTEX_INITIALIZER;
 static struct io_stream *decoder_stream = NULL;
 static pthread_mutex_t decoder_stream_mut = PTHREAD_MUTEX_INITIALIZER;
 
+static int prebuffering = 0; /* are we prebuffering now? */
+
 static void update_time ()
 {
 	static int last_time = 0;
@@ -505,6 +507,19 @@ static void play_stream (const struct decoder *f, struct out_buf *out_buf)
 	}
 }
 
+/* Callback for io buffer fill - show the prebuffering state. */
+static void fill_callback (struct io_stream *s ATTR_UNUSED, size_t fill,
+		size_t buf_size ATTR_UNUSED, void *data_ptr ATTR_UNUSED)
+{
+	if (prebuffering) {
+		char msg[32];
+
+		sprintf (msg, "Prebuffering %d/%d KB", (int)(fill / 1024),
+				options_get_int("Prebuffering"));
+		status_msg (msg);
+	}
+}
+
 /* Open a file, decode it and put output into the buffer. At the end, start
  * precaching next_file. */
 void player (const char *file, const char *next_file, struct out_buf *out_buf)
@@ -537,8 +552,11 @@ void player (const char *file, const char *next_file, struct out_buf *out_buf)
 		}
 		
 		status_msg ("Prebuffering...");
+		prebuffering = 1;
+		io_set_buf_fill_callback (decoder_stream, fill_callback, NULL);
 		io_prebuffer (decoder_stream,
 				options_get_int("Prebuffering") * 1024);
+		prebuffering = 0;
 
 		status_msg ("Playing...");
 		play_stream (f, out_buf);

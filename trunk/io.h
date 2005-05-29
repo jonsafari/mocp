@@ -50,6 +50,11 @@ struct io_stream_curl
 };
 #endif
 
+struct io_stream;
+
+typedef void (*buf_fill_callback_t) (struct io_stream *s, size_t fill,
+		size_t buf_size, void *data_ptr);
+
 struct io_stream
 {
 	enum io_source source;
@@ -90,6 +95,10 @@ struct io_stream
 		char *title;	/* title of the stream */
 		char *url;
 	} metadata;
+
+	/* callbacks */
+	buf_fill_callback_t buf_fill_callback;
+	void *buf_fill_callback_data;
 };
 
 struct io_stream *io_open (const char *file, const int buffered);
@@ -112,5 +121,7 @@ char *io_get_metadata_url (struct io_stream *s);
 void io_set_metadata_title (struct io_stream *s, const char *title);
 void io_set_metadata_url (struct io_stream *s, const char *url);
 void io_prebuffer (struct io_stream *s, const size_t to_fill);
+void io_set_buf_fill_callback (struct io_stream *s,
+		buf_fill_callback_t callback, void *data_ptr);
 
 #endif

@@ -400,6 +400,14 @@ static void *io_read_thread (void *data)
 
 			if (put > 0) {
 				debug ("Put %d bytes into the buffer", put);
+				if (s->buf_fill_callback) {
+					UNLOCK (s->buf_mutex);
+					s->buf_fill_callback (s,
+						fifo_buf_get_fill(&s->buf),
+						fifo_buf_get_size(&s->buf),
+						s->buf_fill_callback_data);
+					LOCK (s->buf_mutex);
+				}
 				pthread_cond_broadcast (&s->buf_fill_cond);
 				read_buf_pos += put;
 			}
@@ -474,6 +482,7 @@ struct io_stream *io_open (const char *file, const int buffered)
 	s->read_error = 0;
 	s->strerror = NULL;
 	s->opened = 0;
+	s->buf_fill_callback = NULL;
 
 #ifdef HAVE_CURL
 	s->curl.mime_type = NULL;
@@ -796,4 +805,19 @@ void io_set_metadata_url (struct io_stream *s, const char *url)
 		free (s->metadata.url);
 	s->metadata.url = xstrdup (url);
 	UNLOCK (s->metadata.mutex);
+}
+
+/* Set the callback function invokedwhen the fill of the buffer changes.
+ * data_ptr is a pointer passed to this function along with the pointer
+ * to the stream. */
+void io_set_buf_fill_callback (struct io_stream *s,
+		buf_fill_callback_t callback, void *data_ptr)
+{
+	assert (s != NULL);
+	assert (callback != NULL);
+	
+	LOCK (s->buf_mutex);
+	s->buf_fill_callback = callback;
+	s->buf_fill_callback_data = data_ptr;
+	UNLOCK (s->buf_mutex);
 }
