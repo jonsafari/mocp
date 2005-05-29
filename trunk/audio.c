@@ -166,8 +166,8 @@ static long sfmt_best_matching (const long formats_with_endian,
 	long best = 0;
 	
 #ifdef DEBUG
-	char fmt_name1[128];
-	char fmt_name2[128];
+	char fmt_name1[SFMT_STR_MAX];
+	char fmt_name2[SFMT_STR_MAX];
 #endif
 	
 	if (formats & req)
@@ -578,7 +578,7 @@ int audio_open (struct sound_params *sound_params)
 	driver_sound_params.rate = hw.get_rate ();
 
 	if (res) {
-		char fmt_name[128];
+		char fmt_name[SFMT_STR_MAX];
 		
 		if (driver_sound_params.fmt != req_sound_params.fmt
 				|| driver_sound_params.channels
@@ -736,7 +736,7 @@ static void find_working_driver (const char *drivers, struct hw_funcs *funcs)
 
 static void print_output_capabilities (const struct output_driver_caps *caps)
 {
-	char fmt_name[128];
+	char fmt_name[SFMT_STR_MAX];
 	
 	logit ("Sound driver capabilities: channels %d - %d, formats: %s",
 			caps->min_channels, caps->max_channels,

@@ -175,7 +175,7 @@ static int oss_set_params ()
 {
 	int req_format;
 	int req_channels;
-	char fmt_name[128];
+	char fmt_name[SFMT_STR_MAX];
 
 	/* Set format */
 	switch (params.fmt & SFMT_MASK_FORMAT) {
