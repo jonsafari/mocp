@@ -201,7 +201,7 @@ static float *fixed_to_float (const char *buf, const size_t size,
 		const long fmt, size_t *new_size)
 {
 	float *out = NULL;
-	char fmt_name[128];
+	char fmt_name[SFMT_STR_MAX];
 	
 	switch (fmt & SFMT_MASK_FORMAT) {
 		case SFMT_S8:
@@ -233,7 +233,7 @@ static float *fixed_to_float (const char *buf, const size_t size,
 static char *float_to_fixed (const float *buf, const size_t samples,
 		const long fmt, size_t *new_size)
 {
-	char fmt_name[128];
+	char fmt_name[SFMT_STR_MAX];
 	char *new_snd = NULL;
 	
 	switch (fmt & SFMT_MASK_FORMAT) {
@@ -289,7 +289,7 @@ static void change_sign_32 (uint32_t *buf, const size_t samples)
  * format. */
 static void change_sign (char *buf, const size_t size, long *fmt)
 {
-	char fmt_name[128];
+	char fmt_name[SFMT_STR_MAX];
 	
 	switch (*fmt & SFMT_MASK_FORMAT) {
 		case SFMT_S8:

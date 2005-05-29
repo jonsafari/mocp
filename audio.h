@@ -194,6 +194,9 @@ struct hw_funcs
 #define sound_params_eq(p1, p2) ((p1).fmt == (p2).fmt \
 		&& (p1).channels == (p2).channels && (p1).rate == (p2).rate)
 
+/* Maximum size of a string needed to hold the value returned by sfmt_str(). */
+#define SFMT_STR_MAX	265
+
 char *sfmt_str (const long format, char *msg, const size_t buf_size);
 int sfmt_Bps (const long format);
 int sfmt_same_bps (const long fmt1, const long fmt2);

@@ -170,7 +170,7 @@ static int moc_jack_init (struct output_driver_caps *caps)
 static int moc_jack_open (struct sound_params *sound_params)
 {
 	if (sound_params->fmt != SFMT_FLOAT) {
-		char fmt_name[128];
+		char fmt_name[SFMT_STR_MAX];
 
 		error ("Unsupported sound format: %s.",
 				sfmt_str(sound_params->fmt, fmt_name,
