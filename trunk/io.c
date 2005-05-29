@@ -245,7 +245,8 @@ off_t io_seek (struct io_stream *s, off_t offset, int whence)
 static void io_wake_up (struct io_stream *s)
 {
 #ifdef HAVE_CURL
-	io_curl_wake_up (s);
+	if (s->source == IO_SOURCE_CURL)
+		io_curl_wake_up (s);
 #endif
 }
 
