@@ -221,8 +221,8 @@ static int moc_jack_play (const char *buff, const size_t size)
 
 			to_write = MIN (space, remain);
 
-			remain -= to_write;
 			to_write /= sizeof(jack_default_audio_sample_t) * 2;
+			remain -= to_write * sizeof(float) * 2;
 			while (to_write--) {
 				jack_default_audio_sample_t sample;
 
