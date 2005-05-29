@@ -51,10 +51,10 @@ enum sfmt_endianes
 			|| (f) & SFMT_MASK_ENDIANES))
 
 /** Change the sample format to new_fmt (without endianes) */
-#define sfmt_set_fmt(f, new_fmt) (((f) & ~SFMT_MASK_FORMAT) | new_fmt)
+#define sfmt_set_fmt(f, new_fmt) (((f) & ~SFMT_MASK_FORMAT) | (new_fmt))
 
 /** Change the sample format endianes to endian */
-#define sfmt_set_endian(f, endian) (((f) & ~SFMT_MASK_ENDIANES) | endian)
+#define sfmt_set_endian(f, endian) (((f) & ~SFMT_MASK_ENDIANES) | (endian))
 
 /** Sound parameters.
  *
