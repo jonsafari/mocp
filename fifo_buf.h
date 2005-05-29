@@ -21,5 +21,6 @@ size_t fifo_buf_peek (struct fifo_buf *b, char *user_buf,
 size_t fifo_buf_get_space (const struct fifo_buf *b);
 void fifo_buf_clear (struct fifo_buf *b);
 size_t fifo_buf_get_fill (const struct fifo_buf *b);
+size_t fifo_buf_get_size (const struct fifo_buf *b);
 
 #endif
