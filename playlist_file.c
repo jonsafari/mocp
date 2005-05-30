@@ -428,8 +428,7 @@ static int plist_save_m3u (struct plist *plist, const char *fname,
 		if (!plist_deleted(plist, i)) {
 
 			/* EXTM3U */
-			if (plist->items[i].tags->time != -1
-					&& fprintf(file, "#EXTINF:%d,%s\r\n",
+			if (fprintf(file, "#EXTINF:%d,%s\r\n",
 						plist->items[i].tags->time,
 						plist->items[i].title_tags ?
 						plist->items[i].title_tags
