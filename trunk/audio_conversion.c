@@ -47,7 +47,7 @@
 /* Byte order conversion */
 /* TODO: use functions from byteswap.h if available */
 #define SWAP_INT16(l) ((int16_t) \
-			( (l) << 8) | ((l) >> 8) )
+			( (l & 0xff) << 8) | (((l) >> 8) & 0xff))
 #define SWAP_INT32(l) ((int32_t) (\
 			(((l) & 0x000000ff) << 24) | \
 			(((l) & 0x0000ff00) << 8) | \
@@ -340,11 +340,10 @@ static void int32_bswap_array (int32_t *buf, const size_t num)
 		buf[i] = SWAP_INT32 (buf[i]);
 }
 
-/* Change fixed point samples sound to native endianes. */
-static void to_ne (char *buf, const size_t size, const long fmt)
+/* Swap endianes of fixed point samples. */
+static void swap_endian (char *buf, const size_t size, const long fmt)
 {
-	if ((fmt & (SFMT_S8 | SFMT_U8 | SFMT_FLOAT))
-			|| (fmt & SFMT_NE))
+	if ((fmt & (SFMT_S8 | SFMT_U8 | SFMT_FLOAT)))
 		return;
 
 	switch (fmt & SFMT_MASK_FORMAT) {
@@ -547,17 +546,17 @@ char *audio_conv (struct audio_conversion *conv, const char *buf,
 	curr_sound = (char *)xmalloc (size);
 	memcpy (curr_sound, buf, size);
 
+	if (!(curr_sfmt & SFMT_NE)) {
+		swap_endian (curr_sound, *conv_len, curr_sfmt);
+		curr_sfmt = sfmt_set_endian (curr_sfmt, SFMT_NE);
+	}
+
 	/* convert to float if necessary */
 	if ((conv->from.rate != conv->to.rate
 				|| conv->to.fmt == SFMT_FLOAT
 				|| !sfmt_same_bps(conv->to.fmt, conv->from.fmt))
 			&& conv->from.fmt != SFMT_FLOAT) {
 		char *new_sound;
-		
-		if (!(conv->from.fmt & SFMT_NE)) {
-			to_ne (curr_sound, size, curr_sfmt);
-			curr_sfmt = sfmt_set_endian (curr_sfmt, SFMT_NE);
-		}
 		
 		new_sound = (char *)fixed_to_float (curr_sound, *conv_len,
 				curr_sfmt, conv_len);
@@ -602,6 +601,13 @@ char *audio_conv (struct audio_conversion *conv, const char *buf,
 				free (curr_sound);
 			curr_sound = new_sound;
 		}
+	}
+
+	if ((curr_sfmt & SFMT_MASK_ENDIANES)
+			!= (conv->to.fmt & SFMT_MASK_ENDIANES)) {
+		swap_endian (curr_sound, *conv_len, curr_sfmt);
+		curr_sfmt = sfmt_set_endian (curr_sfmt,
+				conv->to.fmt & SFMT_MASK_ENDIANES);
 	}
 
 	if (conv->from.channels == 1 && conv->to.channels == 2) {
