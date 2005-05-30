@@ -407,6 +407,9 @@ struct file_tags *read_file_tags (const char *file,
 		return tags;
 	}
 
+	if (file_type(file) == F_URL)
+		return tags;
+
 	if (needed_tags) {
 		df->info (file, tags, needed_tags);
 #ifdef HAVE_ICONV
