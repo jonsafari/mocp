@@ -392,7 +392,7 @@ struct file_tags *read_file_tags (const char *file,
 	int needed_tags;
 
 	assert (file != NULL);
-	df = get_decoder (file);
+
 	if (present_tags) {
 		tags = present_tags;
 		needed_tags = ~tags->filled & tags_sel;
@@ -402,13 +402,15 @@ struct file_tags *read_file_tags (const char *file,
 		needed_tags = tags_sel;
 	}
 
+	if (file_type(file) == F_URL)
+		return tags;
+
+	df = get_decoder (file);
+
 	if (!df) {
 		logit ("Can't find decoder functions for %s", file);
 		return tags;
 	}
-
-	if (file_type(file) == F_URL)
-		return tags;
 
 	if (needed_tags) {
 		df->info (file, tags, needed_tags);
