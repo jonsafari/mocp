@@ -160,8 +160,7 @@ static int plist_load_m3u (struct plist *plist, const char *fname,
 			if (strlen(line) <= PATH_MAX) {
 				make_path (path, sizeof(path), cwd, line);
 
-				if (plist_find_fname(plist, path) == -1
-						&& is_sound_file(path)) {
+				if (plist_find_fname(plist, path) == -1) {
 					if (after_extinf)
 						plist_set_file (plist,
 								last_added,
