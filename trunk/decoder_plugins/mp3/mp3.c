@@ -511,7 +511,7 @@ static int mp3_decode (void *void_data, char *buf, int buf_len,
 		}
 		
 		sound_params->channels = MAD_NCHANNELS(&data->frame.header);
-		sound_params->fmt = SFMT_S32 | SFMT_NE;
+		sound_params->fmt = SFMT_S32 | SFMT_LE;
 		
 		/* Change of the bitrate? */
 		if (data->frame.header.bitrate != data->bitrate) {

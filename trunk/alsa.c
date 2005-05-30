@@ -121,7 +121,7 @@ static int fill_capabilities (struct output_driver_caps *caps)
 	}
 	snd_pcm_hw_params_get_format_mask (hw_params, format_mask);
 
-	caps->formats = SFMT_LE;
+	caps->formats = SFMT_NE;
 	if (snd_pcm_format_mask_test(format_mask, SND_PCM_FORMAT_S8))
 		caps->formats |= SFMT_S8;
 	if (snd_pcm_format_mask_test(format_mask, SND_PCM_FORMAT_U8))
