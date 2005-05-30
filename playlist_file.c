@@ -33,7 +33,7 @@ int is_plist_file (const char *name)
 {
 	const char *ext = ext_pos (name);
 
-	if (ext && !strcasecmp(ext, "m3u"))
+	if (ext && (!strcasecmp(ext, "m3u") || !strcasecmp(ext, "pls")))
 		return 1;
 	
 	return 0;
@@ -189,14 +189,200 @@ static int plist_load_m3u (struct plist *plist, const char *fname,
 	return added;
 }
 
+/* Return 1 if the line contains only blank characters, 0 otherwise. */
+static int is_blank_line (const char *l)
+{
+	while (*l && isblank(*l))
+		l++;
+	
+	if (*l)
+		return 0;
+	return 1;
+}
+
+/* Read a value from the given section from .INI file. file should be opened
+ * and seeking will be performed on it. Return the malloc()ed value or NULL
+ * if not present or error occured. */
+static char *read_ini_value (FILE *file, const char *section, const char *key)
+{
+	char *line = NULL;
+	int in_section = 0;
+	char *value = NULL;
+	
+	if (fseek(file, 0, SEEK_SET)) {
+		error ("File fseek() error: %s", strerror(errno));
+		return NULL;
+	}
+
+	while ((line = read_line(file))) {
+		if (line[0] == '[') {
+			if (in_section) {
+
+				/* we are outside of the interesting section */
+				free (line);
+				break;
+			}
+			else {
+				char *close = strchr (line, ']');
+
+				if (!close) {
+					error ("Parse error in the INI file");
+					free (line);
+					break;
+				}
+
+				if (!strncasecmp(line + 1, section,
+							close - line - 1))
+					in_section = 1;
+			}
+		}
+		else if (in_section && line[0] != '#' && !is_blank_line(line)) {
+			char *t, *t2;
+			
+			t2 = t = strchr (line, '=');
+
+			if (!t) {
+				error ("Parse error in the INI file");
+				free (line);
+				break;
+			}
+
+			/* go back to the last cha in the name */
+			while (t2 >= t && (isblank(*t2) || *t2 == '='))
+				t2--;
+
+			if (t2 == t) {
+				error ("Parse error in the INI file");
+				free (line);
+				break;
+			}
+
+			if (!strncasecmp(line, key, t2 - line + 1)) {
+				value = t + 1;
+
+				while (isblank(value[0]))
+					value++;
+
+				if (value[0] == '"') {
+					char *q = strchr (value + 1, '"');
+
+					if (!q) {
+						error ("Parse error in the INI"
+								" file");
+						free (line);
+						break;
+					}
+
+					*q = 0;
+				}
+				
+				value = xstrdup (value);
+				free (line);
+				break;
+			}
+		}
+
+		free (line);
+	}
+
+	return value;
+}
+
+/* Load PLS file into plist. Return number of items read. */
+static int plist_load_pls (struct plist *plist, const char *fname,
+		const char *cwd)
+{
+	FILE *file;
+	char *line;
+	long i, nitems, added = 0;
+	char *e;
+
+	if (!(file = fopen(fname, "r"))) {
+		error ("Can't open playlist file: %s",
+				strerror(errno));
+		return 0;
+	}
+
+	line = read_ini_value (file, "playlist", "NumberOfEntries");
+	if (!line) {
+
+		/* Assume that it is a pls file version 1 - plist_load_m3u()
+		 * should handle it like m3u file without m3u extensions */
+		fclose (file);
+		return plist_load_m3u (plist, fname, cwd);
+	}
+	
+	nitems = strtol (line, &e, 10);
+	if (*e) {
+		error ("Broken PLS file");
+		free (line);
+		return 0;
+	}
+	free (line);
+
+	for (i = 1; i <= nitems; i++) {
+		char *pls_file, *pls_title, *pls_length;
+		char key[16];
+		int time;
+		int last_added;
+
+		sprintf (key, "File%ld", i);
+		if (!(pls_file = read_ini_value(file, "playlist", key))) {
+			error ("Broken PLS file");
+			break;
+		}
+		
+		sprintf (key, "Title%ld", i);
+		pls_title = read_ini_value(file, "playlist", key);
+
+		sprintf (key, "Length%ld", i);
+		pls_length = read_ini_value(file, "playlist", key);
+
+		if (pls_length) {
+			time = strtol (pls_length, &e, 10);
+			if (*e)
+				time = -1;
+		}
+		else
+			time = -1;
+		
+		last_added = plist_add (plist, pls_file);
+
+		if (pls_title && pls_title[0])
+			plist_set_title_tags (plist, last_added, pls_title);
+
+		if (time > 0) {
+			plist->items[last_added].tags = tags_new ();
+			plist->items[last_added].tags->time = time;
+			plist->items[last_added].tags->filled |= TAGS_TIME;
+		}
+	
+		free (pls_file);
+		if (pls_title)
+			free (pls_title);
+		if (pls_length)
+			free (pls_length);
+		added++;
+	}
+
+	fclose (file);
+
+	return added;
+}
+
 /* Load a playlist into plist. Return the number of items on the list. */
 /* The playlist may have deleted items. */
 int plist_load (struct plist *plist, const char *fname, const char *cwd)
 {
 	int num;
 	int read_tags = options_get_int ("ReadTags");
+	const char *ext = ext_pos (fname);
 
-	num = plist_load_m3u (plist, fname, cwd);
+
+	if (ext && !strcasecmp(ext, "pls"))
+		num = plist_load_pls (plist, fname, cwd);
+	else
+		num = plist_load_m3u (plist, fname, cwd);
 
 	if (read_tags)
 		switch_titles_tags (plist);
