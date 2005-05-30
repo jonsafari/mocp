@@ -324,6 +324,7 @@ static int plist_load_pls (struct plist *plist, const char *fname,
 		char key[16];
 		int time;
 		int last_added;
+		char path[2*PATH_MAX];
 
 		sprintf (key, "File%ld", i);
 		if (!(pls_file = read_ini_value(file, "playlist", key))) {
@@ -345,15 +346,24 @@ static int plist_load_pls (struct plist *plist, const char *fname,
 		else
 			time = -1;
 		
-		last_added = plist_add (plist, pls_file);
+		if (strlen(pls_file) <= PATH_MAX) {
+			make_path (path, sizeof(path), cwd, pls_file);
+			if (plist_find_fname(plist, path) == -1) {
+				last_added = plist_add (plist, path);
 
-		if (pls_title && pls_title[0])
-			plist_set_title_tags (plist, last_added, pls_title);
-
-		if (time > 0) {
-			plist->items[last_added].tags = tags_new ();
-			plist->items[last_added].tags->time = time;
-			plist->items[last_added].tags->filled |= TAGS_TIME;
+				if (pls_title && pls_title[0])
+					plist_set_title_tags (plist, last_added,
+							pls_title);
+				
+				if (time > 0) {
+					plist->items[last_added].tags
+						= tags_new ();
+					plist->items[last_added].tags->time
+						= time;
+					plist->items[last_added].tags->filled
+						|= TAGS_TIME;
+				}
+			}
 		}
 	
 		free (pls_file);
