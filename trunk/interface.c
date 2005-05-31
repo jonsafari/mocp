@@ -2902,6 +2902,11 @@ static int entry_plist_save_key (const int ch)
 							? NULL : cwd))
 					interface_message ("Playlist saved.");
 				set_iface_status_ref (NULL);
+
+				/* plist_save() also reads times for all items,
+				 * so we can show times "for free" here */
+				fill_times (playlist, playlist_menu);
+
 				reread_dir (curr_plist == visible_plist);
 				update_menu ();
 				free (file);
