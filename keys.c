@@ -290,7 +290,7 @@ static struct command commands[] = {
 		"refresh",
 		"Refresh the screen",
 		CON_MENU,
-		{ CTRL('r'), -1},
+		{ CTRL('r'), CTRL('l'), -1},
 		1
 	},
 	{
