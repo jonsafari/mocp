@@ -80,7 +80,8 @@ struct output_driver_caps
 			with endianes') */
 };
 
-/** Functions to control the audio "driver".
+/** \struct hw_funcs
+ * Functions to control the audio "driver".
  *
  * The structure holds pointers to functions that must be provided by the audio
  * "driver". All functions are executed only by one thread, so you don't need
