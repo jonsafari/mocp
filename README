@@ -123,7 +123,27 @@ You can redefine standard keys. See the instructions in the keymap.example
 file.
 
 --------------------------------------------------------------------------------
+Hacking
+--------------------------------------------------------------------------------
+
+Want to modify MOC? You are welcome, I'd love to see patches.
+
+MOC is written in C, so you must at least know this language to make simple
+changes. It is multi-thread program, but there are placec where you don't need
+to worry about that (the interface is only a one thread process). It uses
+autoconf, automake, and libtool chain to generate configuration/compilation
+stuff, so you must know how to use it for example if you need to link to an
+additional library.
+
+There is documentation for some parts of the internal API for creating decoder
+plugins (file format support) and sound output drivers. You must have Doxygen
+(http://www.doxygen.org) to generate HTML pages from the comments in the source
+code. Just run doxygen command from the MOC source directory.
+
+If you need help, just mail or contact me using Jabber.
+
+--------------------------------------------------------------------------------
 Who wrote that? Where can I send bug reports, questions or comments?
 --------------------------------------------------------------------------------
 
-	* Damian Pietras <daper@daper.net>
+	* Damian Pietras <daper@daper.net> (it is also my jabber ID)
