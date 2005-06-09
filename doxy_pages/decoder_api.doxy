@@ -1,0 +1,164 @@
+/** \page decoder_api Decoder API
+
+\section decoder_api_introduction Introduction
+
+This document is intended to make easier adding support for new file formats
+to MOC. It points requirements of such as plugin and some useful functions.
+It also says how to start.
+
+\section decoder_plugin_idea The idea
+
+Each file format is supported by code in a plugin. It's something similar to
+plugins in popular audio players like XMMS with exception that there is no
+separate library and dedicated header files to build such a plugin. It means
+that for creating a plugin you need to add it to the MOC's source directory. It
+will be build with the program and a file named like my_plugin.so will be
+created and placed in the plugin directory after installation. So why plugins?
+The idea is to drop dependency of the mocp binary on various libraries used just
+to support some exotic formats. If a plugin with unresolved dependency is found
+at startup it's just not loaded.
+
+\section decoder_plugin_how_to_add_source How to add the plugin code
+
+Let's create a plugin named myplug. First create a directory in the
+decoder_plugins directory named myplug, you will place the sources there.
+Let's have 2 source files: myplug1.c and myplug2.c in you plugin's directory.
+Now you must create Makefile.am file there that contains the following lines:
+
+\code
+lib_LTLIBRARIES = libmyplug_decoder.la
+libdir = $(plugindir)/$(DECODER_PLUGIN_DIR)
+libmyplug_decoder_la_LDFLAGS = @PLUGIN_LDFLAGS@
+libmyplug_decoder_la_LIBADD = $(MYPLUG_LIBS)
+libmyplug_decoder_la_CFLAGS = $(MYPLUG_CFLAGS) -I$(top_srcdir)
+libmyplug_decoder_la_SOURCES = myplug1.c myplug2.c
+\endcode
+
+Also, add an entry with "decoder_plugins/myplug/Makefile" to the end of
+configure.in in AC_OUTPUT command after other similar lines.
+
+Almost done, now the hard part. As you may already noticed, the code in
+Makefile.am uses two useful variables: MYPLUG_CFLAGS and MYPLUG_LIBS. They
+contain additional compiler flags used to compile your plugin and linker flags.
+They are set by the configure script. You must modify configure.in to detect
+libraries and compiler flags needed to build the plugin and add myplug to
+DECODER_PLUGINS variable. As an example lets look at the code detecting libFLAC
+which is using an autoconf macro provided by the FLAC library and is very
+simple:
+
+\code
+AC_ARG_WITH(flac, AS_HELP_STRING(--without-flac,Compile without FLAC support.))
+if test "x$with_flac" != "xno"
+then
+        AM_PATH_LIBFLAC([AC_SUBST(LIBFLAC_LIBS)
+	                AC_SUBST(LIBFLAC_CFLAGS)
+	                DECODER_PLUGINS="$DECODER_PLUGINS flac"])
+fi
+\endcode					
+
+If you don't know autoconf, you can add something like the lines below after the
+line with AC_OUTPUT:
+
+\code
+MYPLUG_LIBS='-lrequired_library'
+AC_SUBST(MYPLUG_LIBS)
+MYPLUG_CFLAGS='-I/usr/include/required_library_includes'
+AC_SUBST(MYPLUG_CFLAGS)
+DECODER_PLUGINS="$DECODER_PLUGINS myplug"
+\endcode
+
+Now you must recreate the configure script and all Makefile.in files: run
+autogen.sh, it requires autoconf, automake, and libtool. Newest versions
+of these tools are preferred, older may not work.
+
+\section decoder_plugin_how_to_begin First code
+
+The only public (not static) function that your plugin must contain is a
+function named plugin_init. It returns a structure (struct decoder) with
+pointers to functions provided by the plugin. Let's look at the ogg's plugin
+code:
+
+\code
+static struct decoder ogg_decoder = {
+	DECODER_API_VERSION,
+	ogg_open,
+	ogg_open_stream,
+	ogg_can_decode,
+	ogg_close,
+	ogg_decode,
+	ogg_seek,
+	ogg_info,
+	ogg_get_bitrate,
+	ogg_get_duration,
+	ogg_get_error,
+	ogg_our_format_ext,
+	ogg_our_mime,
+	ogg_get_name,
+	ogg_current_tags,
+	ogg_get_stream
+};
+
+struct decoder *plugin_init ()
+{
+	return &ogg_decoder;
+}
+\endcode
+
+This is something that every plugin has.
+
+Also first lines of code in each .c file should be:
+
+\code
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+\endcode
+
+You may place comments above them, for example containing copyright information.
+
+Includes you need are:
+
+\verbatim
+#include "main.h" /* for xmalloc(), xstrdup() etc. */
+#include "log.h" /* for logit() and debug() */
+#include "decoder.h" /* required: provides decoder structure definition */
+#include "io.h" /* if you use io_*() functions to access files. */
+#include "audio.h" /* for sound_params structure */
+\endverbatim
+
+\section decoder_plugin_requirements Requirements
+
+First thing you must remember is that your plugin is running in multi-thread
+program. When it will be asked to open a file it must return a pointer to the
+structure containing you private data. This pointer will be passed to each
+function associated with the stream. You must not use any global or static (in
+function) variables, because more than one file handled by you plugin will be
+opened at a time (for example when precacheing).
+
+When you operate on a file it is preferred (but not required) to use io_*()
+functions from io.h instead of standard open(), read(), write() etc. MOC's IO
+functions provide sophisticated features: buffering in a separate thread and
+reading from internet streams. They were made to be used like standard UNIX
+input/output functions: they take similar parameters and return similar values.
+
+\section decoder_plugin_useful_api The API
+
+Now it's time to read the documentation and find out what all that functions must
+do and what functions you may use to achieve that.
+
+\li \ref decoder
+\li \ref decoder_error_funcs
+
+For debugging purposes you may use 2 macros: debug() and logit() from log.h The
+first one does nothing if you don't add #define DEBUG before including log.h,
+and if you do it, works like logit(). logit() works like printf(), but it prints
+to the log file when --debug command line option is used and does noting
+without this option. Also, logit() includes time and source file name with the
+function name where it was invoked. You don't need to add the end of line
+character to make lines, each invocation of logit() makes a new line.
+
+It is also proffered to use xmalloc(), xrealloc(), xstrdup() functions from main.h
+instead of those without x. They check if allocation of memory succeed, so you
+don't need to do that.
+
+*/
