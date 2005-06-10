@@ -2466,8 +2466,12 @@ static void add_file_plist ()
 		return;
 	}
 
+	if (menu_item_get_type(curr_menu, selected) == F_DIR) {
+		error ("This is a directory.");
+		return;
+	}
 	if (menu_item_get_type(curr_menu, selected) != F_SOUND) {
-		error ("To add a directory, use the 'A' command.");
+		error ("You can only add a file using this command.");
 		return;
 	}
 
@@ -2515,7 +2519,7 @@ static void add_dir_plist ()
 	}
 
 	if (menu_item_get_type(curr_menu, selected) != F_DIR) {
-		error ("To add a file, use the 'a' command.");
+		error ("This is not a directory.");
 		return;
 	}
 
