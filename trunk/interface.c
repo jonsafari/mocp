@@ -2463,6 +2463,7 @@ static int go_to_playlist (const char *file)
 		interface_message ("Playlist loaded.");
 	}
 	else {
+		interface_message ("The playlist is empty");
 		set_iface_status_ref (NULL);
 		return 0;
 	}
@@ -2492,10 +2493,8 @@ static void go_file ()
 		
 		/* the only item on the playlist of type F_DIR is '..' */
 		toggle_plist ();
-	else if (type == F_PLAYLIST) {
-		if (!go_to_playlist(menu_item_get_file(curr_menu, selected)))
-			interface_message ("The playlist is empty");
-	}
+	else if (type == F_PLAYLIST)
+		go_to_playlist(menu_item_get_file(curr_menu, selected));
 }
 
 /* pause/unpause */
