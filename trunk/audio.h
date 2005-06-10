@@ -189,6 +189,20 @@ struct hw_funcs
 	 * \return Sample rate in Hz.
 	 */
 	int (*get_rate) ();
+
+	/** Toggle the mixer channel.
+	 *
+	 * Toggle between the first and the second mixer channel.
+	 */
+	void (*toggle_mixer_channel) ();
+
+	/** Get the mixer channel's name.
+	 *
+	 * Get the currently used mixer channel's name.
+	 *
+	 * \return malloc()ed channel's name.
+	 */
+	char * (*get_mixer_channel_name) ();
 };
 
 /* Does the parameters p1 and p2 are equal? */
@@ -233,5 +247,7 @@ void audio_state_started_playing ();
 int audio_plist_get_serial ();
 void audio_plist_set_serial (const int serial);
 struct file_tags *audio_get_curr_tags ();
+char *audio_get_mixer_channel_name ();
+void audio_toggle_mixer_channel ();
 
 #endif

@@ -572,6 +572,14 @@ static struct command commands[] = {
  		CON_MENU,
  		{ ')', -1 },
  		1
+  	},
+ 	{
+ 		KEY_CMD_TOGGLE_MIXER,
+ 		"toggle_mixer",
+ 		"Toggles the mixer channel",
+ 		CON_MENU,
+ 		{ 'x', -1 },
+ 		1
   	}
 };
 

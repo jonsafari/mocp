@@ -179,6 +179,8 @@ static int waiting_for_plist_load = 0; /* Are we waiting for the playlist we
 					  have loaded and sent to the clients?
 					  */
 
+static char mixer_name[15] = ""; /* mixer channel's name */
+
 static void xterm_clear_title ()
 {
 	if (has_xterm)
@@ -426,9 +428,9 @@ static void draw_mixer ()
 		return;
 
 	if (vol == 100)
-		sprintf (bar, " Vol %d%%           ", vol);
+		sprintf (bar, "%14s %d%% ", mixer_name, vol);
 	else
-		sprintf (bar, " Vol  %02d%%           ", vol);
+		sprintf (bar, "%14s %02d%%  ", mixer_name, vol);
 
 	wattrset (info_win, get_color(CLR_FRAME));
 	mvwaddch (info_win, 0, COLS - 38, lines.rtee);
@@ -1944,6 +1946,19 @@ static void init_lines ()
 	}
 }
 
+void get_mixer_name ()
+{
+	char *name;
+	
+	send_int_to_srv (CMD_GET_MIXER_CHANNEL_NAME);
+	name = get_data_str ();
+
+	assert (strlen(name) <= 14);
+
+	strcpy (mixer_name, name);
+	free (name);
+}
+
 /* Initialize the interface. args are command line file names. arg_num is the
  * number of arguments. */
 void init_interface (const int sock, const int logging, char **args,
@@ -2000,6 +2015,7 @@ void init_interface (const int sock, const int logging, char **args,
 	
 	main_border ();
 	get_server_options ();
+	get_mixer_name ();
 	
 	if (arg_num) {
 		process_args (args, arg_num);
@@ -2260,6 +2276,14 @@ static void update_curr_tags ()
 	}
 }
 
+/* Handle EV_MIXER_CHANGE. */
+static void ev_mixer_change ()
+{
+	get_mixer_name ();
+	update_info_win ();
+	wrefresh (info_win);
+}
+
 /* Handle server event. */
 static void server_event (const int event, void *data)
 {
@@ -2327,6 +2351,9 @@ static void server_event (const int event, void *data)
 		case EV_STATUS_MSG:
 			set_iface_status_ref (data);
 			free (data);
+			break;
+		case EV_MIXER_CHANGE:
+			ev_mixer_change ();
 			break;
 		default:
 			interface_message ("Unknown event: 0x%02x", event);
@@ -3615,6 +3642,9 @@ static void menu_key (const int ch)
 				else
 					error ("FastDir10 not "
 							"defined");
+				break;
+			case KEY_CMD_TOGGLE_MIXER:
+				send_int_to_srv (CMD_TOGGLE_MIXER_CHANNEL);
 				break;
 			default:
 				debug ("Unhandled command: %d", cmd);
