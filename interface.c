@@ -57,6 +57,7 @@
 
 #define STATUS_LINE_LEN	25
 #define INTERFACE_LOG	"mocp_client_log"
+#define HISTORY_MAX	50
 
 /* Socket connection to the server. */
 static int srv_sock = -1;
@@ -180,6 +181,12 @@ static int waiting_for_plist_load = 0; /* Are we waiting for the playlist we
 					  */
 
 static char mixer_name[15] = ""; /* mixer channel's name */
+
+/* History of values in "Go" and "URL" entries. */
+static char *files_history[HISTORY_MAX];
+static int files_history_len = 0;
+static char *urls_history[HISTORY_MAX];
+static int urls_history_len = 0;
 
 static void xterm_clear_title ()
 {
@@ -3073,8 +3080,28 @@ static int entry_common_key (const int ch)
 	return 0;
 }
 
+static int history_add (char *history[HISTORY_MAX], int history_len,
+		const char *text)
+{
+	if (history_len < HISTORY_MAX) {
+		history[history_len++] = xstrdup (text);
+	}
+	else {
+		memmove (history, history + 1,
+				(HISTORY_MAX - 1) * sizeof(char *));
+		history[history_len] = xstrdup (text);
+	}
+
+	return history_len;
+}
+
 static int entry_go_dir_key (const int ch)
 {
+	static int history_pos = 0;
+	enum key_cmd cmd;
+
+	cmd = get_key_cmd (CON_ENTRY, ch);
+	
 	if (ch == '\t') {
 		char *dir;
 		char *complete_dir;
@@ -3102,6 +3129,10 @@ static int entry_go_dir_key (const int ch)
 		if (entry.text[0]) {
 			char *dir = make_dir (entry.text);
 
+			files_history_len = history_add (files_history,
+					files_history_len, entry.text);
+			history_pos = files_history_len;
+			
 			/* strip trailing slash */
 			if (dir[strlen(dir)-1] == '/' && strcmp(dir, "/"))
 				dir[strlen(dir)-1] = 0;
@@ -3120,6 +3151,25 @@ static int entry_go_dir_key (const int ch)
 		
 		update_info_win ();
 		
+		return 1;
+	}
+	else if (cmd == KEY_CMD_HISTORY_UP) {
+		if (history_pos > 0) {
+			history_pos--;
+			strcpy (entry.text, files_history[history_pos]); 
+			entry.cur_pos = 0;
+			update_info_win ();
+		}
+		
+		return 1;
+	}
+	else if (cmd == KEY_CMD_HISTORY_DOWN) {
+		if (history_pos < files_history_len - 1) {
+			history_pos++;
+			strcpy (entry.text, files_history[history_pos]); 
+			entry.cur_pos = 0;
+			update_info_win ();
+		}
 		return 1;
 	}
 
@@ -3144,8 +3194,17 @@ static void play_from_url (const char *url)
 
 static int entry_go_url (const int ch)
 {
+	static int history_pos = 0;
+	enum key_cmd cmd;
+
+	cmd = get_key_cmd (CON_ENTRY, ch);
+
 	if (ch == '\n') {
 		if (entry.text[0]) {
+			urls_history_len = history_add (urls_history,
+					urls_history_len, entry.text);
+			history_pos = urls_history_len;
+
 			if (file_type(entry.text) == F_URL)
 				play_from_url (entry.text);
 			else
@@ -3156,6 +3215,26 @@ static int entry_go_url (const int ch)
 
 		return 1;
 	}
+	else if (cmd == KEY_CMD_HISTORY_UP) {
+		if (history_pos > 0) {
+			history_pos--;
+			strcpy (entry.text, urls_history[history_pos]); 
+			entry.cur_pos = 0;
+			update_info_win ();
+		}
+		
+		return 1;
+	}
+	else if (cmd == KEY_CMD_HISTORY_DOWN) {
+		if (history_pos < urls_history_len - 1) {
+			history_pos++;
+			strcpy (entry.text, urls_history[history_pos]); 
+			entry.cur_pos = 0;
+			update_info_win ();
+		}
+		return 1;
+	}
+
 	return 0;
 }
 

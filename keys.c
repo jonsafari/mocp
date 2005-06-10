@@ -574,6 +574,22 @@ static struct command commands[] = {
  		1
   	},
  	{
+ 		KEY_CMD_HISTORY_UP,
+ 		"history_up",
+ 		"Go to the previous entry in the history (entry)",
+ 		CON_ENTRY,
+ 		{ KEY_UP, -1 },
+ 		1
+ 	},
+ 	{
+ 		KEY_CMD_HISTORY_DOWN,
+ 		"history_down",
+ 		"Go to the next entry in the history (entry)",
+ 		CON_ENTRY,
+ 		{ KEY_DOWN, -1 },
+ 		1
+  	},
+ 	{
  		KEY_CMD_TOGGLE_MIXER,
  		"toggle_mixer",
  		"Toggles the mixer channel",
