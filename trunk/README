@@ -140,6 +140,12 @@ plugins (file format support) and sound output drivers. You must have Doxygen
 (http://www.doxygen.org) to generate HTML pages from the comments in the source
 code. Just run doxygen command from the MOC source directory.
 
+Before you change anything it is a good idea to check for the latest develoment
+version (check out from the Subversion repository if the best). Your changes
+might conflict with changes already made to the source or your feature might be
+already implemented. See also the TODO file as it is updated regularly and
+contains quite detailed information on future plans.
+
 If you need help, just mail or contact me using Jabber.
 
 --------------------------------------------------------------------------------
