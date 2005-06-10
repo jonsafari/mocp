@@ -555,3 +555,14 @@ void menu_item_set_title (struct menu *menu, const int num, const char *title)
 		free (menu->items[num].title);
 	menu->items[num].title = xstrdup (title);
 }
+
+/* Change the selected item to the item for the given playlist item. */
+void menu_setcurritem_by_plistnum (struct menu *menu, const int plist_num)
+{
+	int i;
+	
+	assert (menu != NULL);
+	
+	if ((i = find_item_plist(menu, plist_num)) != -1)
+		menu_setcurritem (menu, i);
+}

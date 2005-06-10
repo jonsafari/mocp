@@ -3304,16 +3304,29 @@ static void toggle_show_format ()
 static void go_to_file_dir ()
 {
 	if (file_info.curr_file && file_type(file_info.curr_file) == F_SOUND) {
-		char *slash;
-		char *file = xstrdup (file_info.curr_file);
+		int i;
+		
+		if ((i = plist_find_fname(playlist, file_info.curr_file))
+				!= -1) {
+			if (visible_plist != playlist)
+				toggle_plist ();
+		}
+		else {
+			char *slash;
+			char *file = xstrdup (file_info.curr_file);
 
-		slash = strrchr (file, '/');
-		assert (slash != NULL);
-		*slash = 0;
+			slash = strrchr (file, '/');
+			assert (slash != NULL);
+			*slash = 0;
 
-		if (strcmp(file, cwd) || visible_plist == playlist)
-			go_to_dir (file);
-		free (file);
+			if (strcmp(file, cwd) || visible_plist == playlist)
+				go_to_dir (file);
+			free (file);
+		}
+
+		if ((i = plist_find_fname(visible_plist, file_info.curr_file))
+				!= -1)
+			menu_setcurritem_by_plistnum (curr_menu, i);
 	}
 }
 
