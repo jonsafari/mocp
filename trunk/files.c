@@ -360,7 +360,7 @@ char *iconv_str (char *str)
 	
 	return converted;
 #else
-	return str;
+	return xstrdup (str);
 #endif
 }
 
