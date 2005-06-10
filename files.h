@@ -34,6 +34,7 @@ char *read_line (FILE *file);
 void iconv_init ();
 void iconv_cleanup ();
 char *iconv_str (char *str, const int for_file_name);
+void do_iconv (struct file_tags *tags);
 char *find_match_dir (char *dir);
 int file_exists (const char *file);
 time_t get_mtime (const char *file);
