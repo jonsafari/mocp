@@ -2054,7 +2054,7 @@ void init_interface (const int sock, const int logging, char **args,
 
 			/* Now enter_first_dir() should not go to the music
 			 * directory. */
-			option_set_int ("GoToMusicDir", 0);
+			option_set_int ("StartInMusicDir", 0);
 		}
 	}
 	else {
