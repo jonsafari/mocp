@@ -4,29 +4,20 @@ Known bugs:
 * Speex headers location is not detected properly. Speex problem?
 * Freez when switching songs quickly.
 * ./mocp -p FILE doesn't do what it should
+* ./mocp -p can crash
 
 Before 2.3.0:
-* Separated iconv() conversion for file names and tags.
-* A command to change the mixer device.
+* Fix behaviour when the jack server dies.
 * prebuffer again if buffer fill drops to 0 - not so easy - input buffer is
   almost always 0 because we have a big output buffer.
-* iconv() for internet tags.
 * Complete to the matching part of a directory with the i command if a name is
   ambigous.
-* History in the i command.
 * Reread ALSA mixer to see changes made by other programs.
 *$ Show the bitrate in the right time (the playback time, not while decoding).
-*$ Support for Audio-CD.
-*$ Support for CDDB.
 *$ www.musepack.net - libmpcdec-1.2
 *$ Seeking with speex.
 * Add --recursive command line option: if a command line argument is a
   directory, add files from it to the playlist recursively.
-* interface.c uses packet items when sending
-* G points to the currently played file, not only the right "view"
-* Add border color.
-* Fix behaviour when the jack server dies.
-* Optimize plist_find_fname().
 
 In future:
 
@@ -34,6 +25,8 @@ In future:
 * JACK: intelligent bahaviour when we get disconnected from the server
   - detect it, try connect and exit if it fails.
 *$ WMA.
+*$ Support for Audio-CD.
+*$ Support for CDDB.
 *$ Move interface primitives (windows, entry, etc.) to a separate file.
 * FastGo instead of FastDir: go to a directory, URL or a playlist.
 * Read tags for sndfile formats.
@@ -66,6 +59,7 @@ In future:
 *$ VQF (like http://www.csn.ul.ie/~mel/projects/linux/vqfplugin/)
 *$ ESD
 * Full paths for items on the playlist (not only file names).
+* Command line option to delete the currently played item from the playlist.
 
 Maybe never:
 
