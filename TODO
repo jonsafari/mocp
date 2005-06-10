@@ -1,24 +1,21 @@
 Items marked with $ are bigger changes requiring more time.
 
-Current bugs:
-* Noises with jack
+Known bugs:
+* Speex headers location is not detected properly. Speex problem?
+* Freez when switching songs quickly.
+* ./mocp -p FILE doesn't do what it should
 
 Before 2.3.0:
-* Change number of channels from 1 to n if necessary.
+* Separated iconv() conversion for file names and tags.
+* A command to change the mixer device.
 * prebuffer again if buffer fill drops to 0 - not so easy - input buffer is
   almost always 0 because we have a big output buffer.
-* Show the output buffer state (fill, prebuffering) for internet streams and
-  optionally for files.
-*$ Handling stream *.pls files (PLSv2 http://www.scvi.net/pls.htm) and m3u
 * iconv() for internet tags.
 * Complete to the matching part of a directory with the i command if a name is
   ambigous.
 * History in the i command.
-*$ Move interface primitives (windows, entry, etc.) to a separate file.
-* A command to change the mixer device.
 * Reread ALSA mixer to see changes made by other programs.
 *$ Show the bitrate in the right time (the playback time, not while decoding).
-*$ Cache for tags in each directory. (.cache.m3u?)
 *$ Support for Audio-CD.
 *$ Support for CDDB.
 *$ www.musepack.net - libmpcdec-1.2
@@ -26,13 +23,10 @@ Before 2.3.0:
 * Add --recursive command line option: if a command line argument is a
   directory, add files from it to the playlist recursively.
 * interface.c uses packet items when sending
-* After start load the defined playlist and switch to it.
-* After saving the playlist, we have times. Update the playlist menu.
 * G points to the currently played file, not only the right "view"
-* Describe how plugins work.
-* Reset resample when not closing the audio device in audio_open().
 * Add border color.
 * Fix behaviour when the jack server dies.
+* Optimize plist_find_fname().
 
 In future:
 
@@ -40,6 +34,7 @@ In future:
 * JACK: intelligent bahaviour when we get disconnected from the server
   - detect it, try connect and exit if it fails.
 *$ WMA.
+*$ Move interface primitives (windows, entry, etc.) to a separate file.
 * FastGo instead of FastDir: go to a directory, URL or a playlist.
 * Read tags for sndfile formats.
 *$ Read tags in the server in a separate part, interface should not wait
@@ -47,6 +42,7 @@ In future:
   at the server part?). 
 *$ Progrssive tags reading: read them only if the menu items requiring them
   are visible (as an option).
+*$ Cache for tags in each directory. (.cache.m3u?)
 *$ http://www.peercast.org/
 * Number items on the playlist.
 * Command to see all information about a file with all tags, also all informaton
@@ -69,6 +65,7 @@ In future:
 * Seek to arbitrary position (by typing a number).
 *$ VQF (like http://www.csn.ul.ie/~mel/projects/linux/vqfplugin/)
 *$ ESD
+* Full paths for items on the playlist (not only file names).
 
 Maybe never:
 
