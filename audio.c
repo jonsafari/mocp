@@ -929,4 +929,12 @@ struct file_tags *audio_get_curr_tags ()
 	return player_get_curr_tags ();
 }
 
+char *audio_get_mixer_channel_name ()
+{
+	return hw.get_mixer_channel_name ();
+}
 
+void audio_toggle_mixer_channel ()
+{
+	hw.toggle_mixer_channel ();
+}

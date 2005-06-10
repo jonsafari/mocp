@@ -76,8 +76,14 @@ OSSMixerDevice		= /dev/mixer
 # OSS Mixer channel: pcm or master
 OSSMixerChannel		= pcm
 
+# Second OSS Mixer channel: pcm or master
+OSSMixerChannel2	= master
+
 # ALSA mixer device
 AlsaMixer 		= PCM
+
+# Second ALSA mixer device
+AlsaMixer2		= Master
 
 # ALSA output device
 AlsaDevice		= default

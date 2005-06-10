@@ -292,6 +292,15 @@ static int moc_jack_get_rate ()
 	return rate;
 }
 
+static char *moc_jack_get_mixer_channel_name ()
+{
+	return xstrdup ("soft mixer");
+}
+
+static void moc_jack_toggle_mixer_channel ()
+{
+}
+
 void moc_jack_funcs (struct hw_funcs *funcs)
 {
 	funcs->init = moc_jack_init;
@@ -304,4 +313,6 @@ void moc_jack_funcs (struct hw_funcs *funcs)
 	funcs->reset = moc_jack_reset;
 	funcs->shutdown = moc_jack_shutdown;
 	funcs->get_rate = moc_jack_get_rate;
+	funcs->get_mixer_channel_name = moc_jack_get_mixer_channel_name;
+	funcs->toggle_mixer_channel = moc_jack_toggle_mixer_channel;
 }

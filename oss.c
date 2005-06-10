@@ -33,7 +33,9 @@
 
 static int mixer_fd = -1;
 static int volatile dsp_fd = -1;
-static int mixer_channel;
+static int mixer_channel1;
+static int mixer_channel2;
+static int mixer_channel_current;
 
 static struct sound_params params = { 0, 0, 0 };
 
@@ -136,14 +138,27 @@ static int oss_init (struct output_driver_caps *caps)
 				options_get_str("OSSMixerDevice"),
 				strerror(errno));
 	else {
-		char *channel = options_get_str ("OSSMixerChannel");
-
+		char *channel;
+		
+		/* first channel */
+		channel = options_get_str ("OSSMixerChannel");
 		if (!strcasecmp(channel, "pcm"))
-			mixer_channel = SOUND_MIXER_PCM;
+			mixer_channel1 = SOUND_MIXER_PCM;
 		else if (!strcasecmp(channel, "master"))
-			mixer_channel = SOUND_MIXER_VOLUME;
+			mixer_channel1 = SOUND_MIXER_VOLUME;
 		else
-			fatal ("Bad OSS mixer channel!");
+			fatal ("Bad first OSS mixer channel!");
+		
+		/* second channel */
+		channel = options_get_str ("OSSMixerChannel2");
+		if (!strcasecmp(channel, "pcm"))
+			mixer_channel2 = SOUND_MIXER_PCM;
+		else if (!strcasecmp(channel, "master"))
+			mixer_channel2 = SOUND_MIXER_VOLUME;
+		else
+			fatal ("Bad second OSS mixer channel!");
+
+		mixer_channel_current = mixer_channel1;
 	}
 
 	return set_capabilities (caps);
@@ -279,7 +294,8 @@ static int oss_read_mixer ()
 	int vol;
 	
 	if (mixer_fd != -1) {
-		if (ioctl(mixer_fd, MIXER_READ(mixer_channel), &vol) == -1)
+		if (ioctl(mixer_fd, MIXER_READ(mixer_channel_current), &vol)
+				== -1)
 			error ("Can't read from mixer");
 		else {
 			/* Average between left and right */
@@ -300,7 +316,8 @@ static void oss_set_mixer (int vol)
 			vol = 0;
 		
 		vol = vol | (vol << 8);
-		if (ioctl(mixer_fd, MIXER_WRITE(mixer_channel), &vol) == -1)
+		if (ioctl(mixer_fd, MIXER_WRITE(mixer_channel_current), &vol)
+				== -1)
 			error ("Can't set mixer, ioctl failed");
 	}
 }
@@ -344,6 +361,21 @@ static int oss_reset ()
 	return 1;
 }
 
+static void oss_toggle_mixer_channel ()
+{
+	if (mixer_channel_current == mixer_channel1)
+		mixer_channel_current = mixer_channel2;
+	else
+		mixer_channel_current = mixer_channel1;
+}
+
+static char *oss_get_mixer_channel_name ()
+{
+	if (mixer_channel_current == mixer_channel1)
+		return xstrdup (options_get_str("OSSMixerChannel"));
+	return xstrdup (options_get_str("OSSMixerChannel2"));
+}
+
 static int oss_get_rate ()
 {
 	return params.rate;
@@ -361,4 +393,6 @@ void oss_funcs (struct hw_funcs *funcs)
 	funcs->get_buff_fill = oss_get_buff_fill;
 	funcs->reset = oss_reset;
 	funcs->get_rate = oss_get_rate;
+	funcs->toggle_mixer_channel = oss_toggle_mixer_channel;
+	funcs->get_mixer_channel_name = oss_get_mixer_channel_name;
 }

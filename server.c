@@ -867,6 +867,26 @@ static int req_get_tags (struct client *cli)
 	return res;
 }
 
+/* Handle CMD_GET_MIXER_CHANNEL_NAME. Return 0 on error. */
+int req_get_mixer_channel_name (struct client *cli)
+{
+	int status = 1;
+	char *name = audio_get_mixer_channel_name ();
+	
+	if (!send_data_str(cli, name ? name : ""))
+		status = 0;
+	free (name);
+
+	return status;
+}
+
+/* Handle CMD_TOGGLE_MIXER_CHANNEL. Return 0 on error. */
+void req_toggle_mixer_channel ()
+{
+	audio_toggle_mixer_channel ();
+	add_event_all (EV_MIXER_CHANGE, NULL);
+}
+
 /* Reveive a command from the client and execute it. */
 static void handle_command (struct client *cli)
 {
@@ -1020,6 +1040,13 @@ static void handle_command (struct client *cli)
 			break;
 		case CMD_GET_TAGS:
 			if (!req_get_tags(cli))
+				err = 1;
+			break;
+		case CMD_TOGGLE_MIXER_CHANNEL:
+			req_toggle_mixer_channel ();
+			break;
+		case CMD_GET_MIXER_CHANNEL_NAME:
+			if (!req_get_mixer_channel_name(cli))
 				err = 1;
 			break;
 		default:

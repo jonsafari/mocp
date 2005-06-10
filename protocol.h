@@ -39,6 +39,7 @@ enum noblock_io_status
 #define EV_SEND_PLIST	0x0d /* Request for sending the playlist. */
 #define EV_TAGS		0x0e /* tags for the current file has changed. */
 #define EV_STATUS_MSG	0x0f /* Followed by a status message */
+#define EV_MIXER_CHANGE	0x10 /* the mixer channel was changed */
 
 /* Events caused by a client that wants to modify the playlist (see
  * CMD_CLI_PLIST* commands. */
@@ -94,6 +95,8 @@ enum noblock_io_status
 #define CMD_PLIST_GET_SERIAL	0x2b /* get the serial number of the server's
 					playlist */
 #define CMD_GET_TAGS	0x2c /* get tags for the currently played file. */
+#define CMD_TOGGLE_MIXER_CHANNEL	0x2d /* toggle the mixer channel */
+#define CMD_GET_MIXER_CHANNEL_NAME	0x2e /* get the mixer channel's name */
 
 char *socket_name ();
 int get_int (int sock, int *i);
