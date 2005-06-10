@@ -95,6 +95,7 @@ int send_int (int sock, int i)
 	return res == sizeof(int) ? 1 : 0;
 }
 
+#if 0
 /* Get a long value from the socket, return == 0 on error. */
 static int get_long (int sock, long *i)
 {
@@ -107,7 +108,6 @@ static int get_long (int sock, long *i)
 	return res == sizeof(long) ? 1 : 0;
 }
 
-#if 0
 /* Send a long value to the socket, return == 0 on error */
 static int send_long (int sock, long i)
 {
@@ -233,6 +233,7 @@ static char *add_buf_int (char *buf, size_t *len, size_t *allocated,
 	return buf;
 }
 
+#if 0
 /* Add a long to the dynamicaly allocated buffer which has aready len bytes
  * data and is allocated big. Returns the pointer to the buffer which may be not
  * the same as buf. */
@@ -249,6 +250,7 @@ static char *add_buf_long (char *buf, size_t *len, size_t *allocated,
 
 	return buf;
 }
+#endif
 
 /* Add a time_t to the dynamicaly allocated buffer which has aready len bytes
  * data and is allocated big. Returns the pointer to the buffer which may be not
@@ -334,7 +336,6 @@ static char *make_item_packet (const struct plist_item *item, size_t *len)
 	*len = 0;
 
 	buf = add_buf_str (buf, len, &allocated, item->file);
-	buf = add_buf_long (buf, len, &allocated, item->file_hash);
 	buf = add_buf_str (buf, len, &allocated,
 			item->title_tags ? item->title_tags : "");
 
@@ -479,12 +480,6 @@ struct plist_item *recv_item (int sock)
 	}
 
 	if (item->file[0]) {
-		if (!(get_long(sock, &item->file_hash))) {
-			logit ("Error while receiving file hash");
-			free (item->file);
-			free (item);
-		}
-
 		if (!(item->title_tags = get_str(sock))) {
 			logit ("Error while receiving tags title");
 			free (item->file);

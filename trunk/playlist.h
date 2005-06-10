@@ -23,7 +23,6 @@ struct file_tags
 struct plist_item
 {
 	char *file;
-	long file_hash;		/* hashed file or -1 */
 	char *title;		/* points to title_file or title_tags */
 	char *title_file;	/* title based on the file name */
 	char *title_tags;	/* title based on the tags */
@@ -39,6 +38,8 @@ struct plist
 	int not_deleted;	/* Number of not deleted items */
 	struct plist_item *items;
 	int serial;		/* Optional serial number of this playlist */
+
+	struct rb_node *search_tree;
 };
 
 void plist_init (struct plist *plist);
