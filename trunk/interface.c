@@ -1643,25 +1643,42 @@ static void make_path (char *path)
 	resolve_path (cwd, sizeof(cwd), path);
 }
 
+static void toggle_plist ();
+
 /* Enter to the initial directory. */
 static void enter_first_dir ()
 {
+	static int first_run = 1;
+	
 	if (options_get_int("StartInMusicDir")) {
 		char *music_dir;
-		
+
 		if ((music_dir = options_get_str("MusicDir"))) {
 			make_path (music_dir);
-			if (go_to_dir(NULL))
+			if (file_type(cwd) == F_PLAYLIST
+					&& plist_count(playlist) == 0
+					&& plist_load(playlist, cwd, NULL)
+					&& first_run) {
+				toggle_plist ();
+				cwd[0] = 0;
+				first_run = 0;
 				return;
+			}
+			else if (file_type(cwd) == F_DIR && go_to_dir(NULL)) {
+				first_run = 0;
+				return;
+			}
 		}
 		else
 			error ("MusicDir is not set");
 	}
-	if (read_last_dir() && go_to_dir(NULL))
-		return;
-	set_start_dir ();
-	if (!go_to_dir(NULL))
-		interface_fatal ("Can't enter any directory.");
+	if (!(read_last_dir() && go_to_dir(NULL))) {
+		set_start_dir ();
+		if (!go_to_dir(NULL))
+			interface_fatal ("Can't enter any directory.");
+	}
+
+	first_run = 0;
 }
 
 /* Set the has_xterm variable. */
@@ -1833,6 +1850,9 @@ static int get_server_playlist (struct plist *plist)
 		}
 		else
 			switch_titles_file (plist);
+
+		set_iface_status_ref (NULL);
+		return 1;
 	}
 
 	set_iface_status_ref (NULL);
@@ -1981,38 +2001,51 @@ void init_interface (const int sock, const int logging, char **args,
 	main_border ();
 	get_server_options ();
 	
-	if (arg_num)
+	if (arg_num) {
 		process_args (args, arg_num);
-	else
-		enter_first_dir ();
+	
+		if (plist_count(playlist) == 0) {
+			if (!options_get_int("SyncPlaylist")
+					|| !get_server_playlist(playlist))
+				load_playlist ();
 
-	if (plist_count(playlist) == 0) {
+			enter_first_dir ();
+		}
+		else if (options_get_int("SyncPlaylist")) {
+			struct plist tmp_plist;
+			
+			/* We have made the playlist from command line. */
+			
+			/* the playlist should be now clear, but this will give
+			 * us the serial number of the playlist used by other
+			 * clients. */
+			plist_init (&tmp_plist);
+			get_server_playlist (&tmp_plist);
+
+			send_int_to_srv (CMD_LOCK);
+			send_int_to_srv (CMD_CLI_PLIST_CLEAR);
+
+			plist_set_serial (playlist,
+					plist_get_serial(&tmp_plist));
+			plist_free (&tmp_plist);
+
+			change_srv_plist_serial ();
+		
+			set_iface_status_ref ("Notifying clients...");
+			send_all_items (playlist);
+			set_iface_status_ref (NULL);
+			send_int_to_srv (CMD_UNLOCK);
+
+			/* Now enter_first_dir() should not go to the music
+			 * directory. */
+			option_set_int ("GoToMusicDir", 0);
+		}
+	}
+	else {
 		if (!options_get_int("SyncPlaylist")
 				|| !get_server_playlist(playlist))
 			load_playlist ();
-	}
-	else if (options_get_int("SyncPlaylist")) {
-		struct plist tmp_plist;
-		
-		/* We have made the playlist from command line. */
-		
-		/* the playlist should be now clear, but this will give us
-		 * the serial number of the playlist used by other clients. */
-		plist_init (&tmp_plist);
-		get_server_playlist (&tmp_plist);
-
-		send_int_to_srv (CMD_LOCK);
-		send_int_to_srv (CMD_CLI_PLIST_CLEAR);
-
-		plist_set_serial (playlist, plist_get_serial(&tmp_plist));
-		plist_free (&tmp_plist);
-
-		change_srv_plist_serial ();
-	
-		set_iface_status_ref ("Notifying clients...");
-		send_all_items (playlist);
-		set_iface_status_ref (NULL);
-		send_int_to_srv (CMD_UNLOCK);
+		enter_first_dir ();
 	}
 	
 	send_int_to_srv (CMD_SEND_EVENTS);
@@ -2368,6 +2401,48 @@ static void go_dir_up ()
 	go_to_dir (dir);
 }
 
+/* Load the playlist file and switch the menu to it. Return 1 on success. */
+static int go_to_playlist (const char *file)
+{
+	if (plist_count(playlist)) {
+		error ("Please clear the playlist, because "
+				"I'm not sure you want to do this.");
+		return 0;
+	}
+
+	plist_clear (playlist);
+
+	set_iface_status_ref ("Loading playlist...");
+	if (plist_load(playlist, file, cwd)) {
+	
+		if (options_get_int("SyncPlaylist")) {
+			send_int_to_srv (CMD_LOCK);
+			change_srv_plist_serial ();
+			send_int_to_srv (CMD_CLI_PLIST_CLEAR);
+			set_iface_status_ref ("Notifying clients...");
+			send_all_items (playlist);
+			set_iface_status_ref (NULL);
+			waiting_for_plist_load = 1;
+			send_int_to_srv (CMD_UNLOCK);
+
+			/* We'll use the playlist received from the
+			 * server to be synchronized with other clients
+			 */
+			plist_clear (playlist);
+		}
+		else
+			toggle_plist ();
+
+		interface_message ("Playlist loaded.");
+	}
+	else {
+		set_iface_status_ref (NULL);
+		return 0;
+	}
+
+	return 1;
+}
+
 /* Action when the user selected a file. */
 static void go_file ()
 {
@@ -2391,41 +2466,8 @@ static void go_file ()
 		/* the only item on the playlist of type F_DIR is '..' */
 		toggle_plist ();
 	else if (type == F_PLAYLIST) {
-		if (plist_count(playlist)) {
-			error ("Please clear the playlist, because "
-					"I'm not sure you want to do this.");
-			return;
-		}
-
-		plist_clear (playlist);
-
-		set_iface_status_ref ("Loading playlist...");
-		if (plist_load(playlist, menu_item_get_file(curr_menu,
-						selected), cwd)) {
-			interface_message ("Playlist loaded.");
-		
-			if (options_get_int("SyncPlaylist")) {
-				send_int_to_srv (CMD_LOCK);
-				change_srv_plist_serial ();
-				send_int_to_srv (CMD_CLI_PLIST_CLEAR);
-				set_iface_status_ref ("Notifying clients...");
-				send_all_items (playlist);
-				set_iface_status_ref (NULL);
-				waiting_for_plist_load = 1;
-				send_int_to_srv (CMD_UNLOCK);
-
-				/* We'll use the playlist received from the
-				 * server to be synchronized with other clients
-				 */
-				plist_clear (playlist);
-			}
-			else
-				toggle_plist ();
-		}
-		else
+		if (!go_to_playlist(menu_item_get_file(curr_menu, selected)))
 			interface_message ("The playlist is empty");
-
-		set_iface_status_ref (NULL);
 	}
 }
 
@@ -3219,6 +3261,21 @@ static void do_silent_seek ()
 	}
 }
 
+static void go_to_music_dir ()
+{
+	if (options_get_str("MusicDir")) {
+		if (file_type(options_get_str("MusicDir")) == F_DIR)
+			go_to_dir (options_get_str("MusicDir"));
+		else if (file_type(options_get_str("MusicDir")) == F_PLAYLIST)
+			go_to_playlist (options_get_str("MusicDir"));
+		else
+			error ("MusicDir is neither a directory nor a "
+					"playlist.");
+	}
+	else
+		error ("MusicDir not defined");
+}
+
 /* Handle key */
 static void menu_key (const int ch)
 {
@@ -3383,14 +3440,8 @@ static void menu_key (const int ch)
 				}
 				break;
 			case KEY_CMD_GO_MUSIC_DIR:
-				if (options_get_str("MusicDir")) {
-					go_to_dir (options_get_str(
-								"MusicDir"));
-					do_update_menu = 1;
-				}
-				else
-					error ("MusicDir not "
-							"defined");
+				go_to_music_dir ();
+				do_update_menu = 1;
 				break;
 			case KEY_CMD_PLIST_DEL:
 				delete_item ();
@@ -3644,25 +3695,29 @@ static void handle_interrupt ()
 }
 
 /* Get event from the server and handle it. */
-static void get_and_handle_event ()
+static void get_and_handle_event (const int no_block)
 {
 	int type;
 	void *data;
 
-	if (get_int_from_srv_noblock(&type)) {
-		
-		/* some events contail data */
-		if (type == EV_PLIST_ADD)
-			data = recv_item_from_srv ();
-		else if (type == EV_PLIST_DEL || type == EV_STATUS_MSG)
-			data = get_str_from_srv ();
-		else
-			data = NULL;
-
-		server_event (type, data);
+	if (no_block) {
+		if (!get_int_from_srv_noblock(&type)) {
+			debug ("Getting event would block.");
+			return;
+		}
 	}
 	else
-		debug ("Getting event would block.");
+		type = get_int_from_srv ();
+
+	/* some events contail data */
+	if (type == EV_PLIST_ADD)
+		data = recv_item_from_srv ();
+	else if (type == EV_PLIST_DEL || type == EV_STATUS_MSG)
+		data = get_str_from_srv ();
+	else
+		data = NULL;
+
+	server_event (type, data);
 }
 
 void interface_loop ()
@@ -3715,7 +3770,7 @@ void interface_loop ()
 
 			if (!want_quit) {
 				if (FD_ISSET(srv_sock, &fds))
-					get_and_handle_event ();
+					get_and_handle_event (1);
 				do_silent_seek ();
 				dequeue_events ();
 			}
