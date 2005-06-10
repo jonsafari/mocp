@@ -381,14 +381,14 @@ char *iconv_str (char *str, const int for_file_name)
 #endif
 }
 
-#ifdef HAVE_ICONV
-static void do_iconv (struct file_tags *tags)
+void do_iconv (struct file_tags *tags)
 {
+#ifdef HAVE_ICONV
 	tags->title = iconv_str (tags->title, 0);
 	tags->artist = iconv_str (tags->artist, 0);
 	tags->album = iconv_str (tags->album, 0);
-}
 #endif
+}
 
 void iconv_cleanup ()
 {

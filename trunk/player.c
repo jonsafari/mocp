@@ -237,6 +237,8 @@ static void update_tags (const struct decoder *f, void *decoder_data,
 		tags_changed = 1;
 	}
 
+	do_iconv (curr_tags);
+
 	if (tags_changed)
 		tags_change ();
 
