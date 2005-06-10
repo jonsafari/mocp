@@ -164,6 +164,7 @@ void options_init ()
 	option_add_int ("UseMmap", 1);
 	option_add_int ("Precache", 1);
 	option_add_str ("TagsIconv", NULL);
+	option_add_str ("FileNamesIconv", NULL);
 	option_add_int ("SavePlaylist", 1);
 	option_add_str ("Keymap", NULL);
 	option_add_int ("SyncPlaylist", 1);

@@ -142,7 +142,7 @@ static int plist_load_m3u (struct plist *plist, const char *fname,
 
 			/* We must xstrdup() here, because iconv_str()
 			 * expects malloc()ed memory */
-			title = iconv_str (xstrdup(comma + 1));
+			title = iconv_str (xstrdup(comma + 1), 1);
 			plist_set_title_tags (plist, last_added, title);
 			free (title);
 

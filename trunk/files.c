@@ -50,7 +50,8 @@
 #define READ_LINE_INIT_SIZE	256
 
 #ifdef HAVE_ICONV
-static iconv_t iconv_desc = (iconv_t)(-1);
+static iconv_t tags_iconv_desc = (iconv_t)(-1);
+static iconv_t files_iconv_desc = (iconv_t)(-1);
 #endif
 
 /* Is the string an URL? */
@@ -114,7 +115,7 @@ void make_file_title (struct plist *plist, const int num,
 		char *fname;
 		
 		fname = get_file (plist->items[num].file, hide_extension);
-		fname = iconv_str (fname);
+		fname = iconv_str (fname, 1);
 		plist_set_title_file (plist, num, fname);
 		free (fname);
 	}
@@ -281,20 +282,20 @@ void resolve_path (char *buf, const int size, const char *file)
 		buf[--len] = 0;
 }
 
-void iconv_init ()
-{
 #ifdef HAVE_ICONV
+/* Parse iconv description in format FROM:TO. Returns the descriptopn. Does
+ * fatal() on error. */
+static iconv_t parse_iconv_desc (const char *desc)
+{
 	char conv_str[100];
 	char *from, *to;
-
-	if (!options_get_str("TagsIconv"))
-		return;
+	iconv_t iconv_desc;
 
 	conv_str[sizeof(conv_str)-1] = 0;
-	strncpy (conv_str, options_get_str("TagsIconv"), sizeof(conv_str));
+	strncpy (conv_str, desc, sizeof(conv_str));
 
 	if (conv_str[sizeof(conv_str)-1])
-		fatal ("TagsIconv value too long!");
+		fatal ("iconv string too long!");
 
 	from = conv_str;
 	to = strchr (conv_str, ':');
@@ -303,20 +304,36 @@ void iconv_init ()
 	to++;
 
 	if ((iconv_desc = iconv_open(to, from)) == (iconv_t)(-1))
-		fatal ("Can't use specified TagsIconv value: %s",
+		fatal ("Can't use specified Iconv value ('%s'): %s", desc,
 				strerror(errno));
+	
+	return iconv_desc;
+}
+#endif
+
+void iconv_init ()
+{
+#ifdef HAVE_ICONV
+	if (options_get_str("TagsIconv"))
+		tags_iconv_desc = parse_iconv_desc (
+				options_get_str("TagsIconv"));
+	if (options_get_str("FileNamesIconv"))
+		files_iconv_desc = parse_iconv_desc (
+				options_get_str("FileNamesIconv"));
 #endif
 }
 
-/* Return a malloc()ed string converted using iconv(). Does free(str).
- * For NULL returns NULL. */
-char *iconv_str (char *str)
+/* Return a malloc()ed string converted using iconv().
+ * if for_file_name is not 0, uses the conversion defined for file names.
+ * Does free(str). For NULL returns NULL. */
+char *iconv_str (char *str, const int for_file_name)
 {
 #ifdef HAVE_ICONV
 	char buf[512];
 	char *inbuf, *outbuf;
 	size_t inbytesleft, outbytesleft;
 	char *converted;
+	iconv_t iconv_desc = for_file_name ? files_iconv_desc : tags_iconv_desc;
 
 	if (!str)
 		return NULL;
@@ -367,16 +384,20 @@ char *iconv_str (char *str)
 #ifdef HAVE_ICONV
 static void do_iconv (struct file_tags *tags)
 {
-	tags->title = iconv_str (tags->title);
-	tags->artist = iconv_str (tags->artist);
-	tags->album = iconv_str (tags->album);
+	tags->title = iconv_str (tags->title, 0);
+	tags->artist = iconv_str (tags->artist, 0);
+	tags->album = iconv_str (tags->album, 0);
 }
 #endif
 
 void iconv_cleanup ()
 {
 #ifdef HAVE_ICONV
-	if (iconv_desc != (iconv_t)(-1) && iconv_close(iconv_desc) == -1)
+	if (files_iconv_desc != (iconv_t)(-1)
+			&& iconv_close(files_iconv_desc) == -1)
+		logit ("iconv_close() failed: %s", strerror(errno));
+	if (tags_iconv_desc != (iconv_t)(-1)
+			&& iconv_close(tags_iconv_desc) == -1)
 		logit ("iconv_close() failed: %s", strerror(errno));
 #endif
 }
