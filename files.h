@@ -33,7 +33,7 @@ enum file_type file_type (const char *file);
 char *read_line (FILE *file);
 void iconv_init ();
 void iconv_cleanup ();
-char *iconv_str (char *str);
+char *iconv_str (char *str, const int for_file_name);
 char *find_match_dir (char *dir);
 int file_exists (const char *file);
 time_t get_mtime (const char *file);

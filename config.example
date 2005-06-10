@@ -114,7 +114,7 @@ ShowTime		= IfAvailable
 # slower on NFS.
 UseMmap			= yes
 
-# Perform character set conversion using iconv() to tags and file titles
+# Perform character set conversion using iconv() to tags and file names
 # read from playlist files. This option has format: FROM:TO.
 # To get list of supported sets use the iconv -l command.
 
@@ -123,6 +123,9 @@ UseMmap			= yes
 
 # Usefull for Poles: Convert from Windows encoding to ISO
 #TagsIconv		= WINDOWS-1250:ISO-8859-2
+
+# Strip non-ASCII chars from file names
+#FileNamesIconv		= ASCII:ASCII
 
 # Remember the playlist after exit?
 SavePlaylist		= yes
