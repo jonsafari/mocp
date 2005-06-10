@@ -74,6 +74,15 @@ static int null_get_rate ()
 	return params.rate;
 }
 
+static void null_toggle_mixer_channel ()
+{
+}
+
+static char *null_get_mixer_channel_name ()
+{
+	return xstrdup ("FakeMixer");
+}
+
 void null_funcs (struct hw_funcs *funcs)
 {
 	funcs->init = null_init;
@@ -85,4 +94,6 @@ void null_funcs (struct hw_funcs *funcs)
 	funcs->get_buff_fill = null_get_buff_fill;
 	funcs->reset = null_reset;
 	funcs->get_rate = null_get_rate;
+	funcs->toggle_mixer_channel = null_toggle_mixer_channel;
+	funcs->get_mixer_channel_name = null_get_mixer_channel_name;
 }
