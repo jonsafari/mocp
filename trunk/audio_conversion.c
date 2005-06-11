@@ -494,13 +494,14 @@ static float *resample_sound (struct audio_conversion *conv, const float *buf,
 		conv->resample_buf_nsamples = resample_data.input_frames
 			* nchannels;
 		if (conv->resample_buf != resample_data.data_in) {
-			conv->resample_buf = (float *)xrealloc (
-					conv->resample_buf,
-					sizeof(float)
-					* conv->resample_buf_nsamples);
-			memmove (conv->resample_buf, resample_data.data_in,
-					sizeof(float)
-					* conv->resample_buf_nsamples);
+			float *new;
+
+			new = (float *)xmalloc (sizeof(float) *
+					conv->resample_buf_nsamples);
+			memcpy (new, resample_data.data_in, sizeof(float) *
+					conv->resample_buf_nsamples);
+			free (conv->resample_buf);
+			conv->resample_buf = new;
 		}
 	}
 	else {
