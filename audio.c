@@ -650,7 +650,14 @@ int audio_get_buf_fill ()
 
 int audio_send_pcm (const char *buf, const size_t size)
 {
-	return hw.play (buf, size);
+	int played;
+	
+	played = hw.play (buf, size);
+
+	if (played == 0)
+		fatal ("Audio output error.");
+
+	return played;
 }
 
 /* Get current time of the song in seconds. */
