@@ -1038,7 +1038,9 @@ static void fill_times (struct plist *plist, struct menu *menu)
 				menu_item_set_time_plist (menu, i, time_str);
 			}
 		}
-	
+
+	plist_count_total_time (plist);
+
 	set_iface_status_ref (NULL);
 }
 
@@ -1425,6 +1427,7 @@ static void update_times (const char *file, const int time)
 		update_item_time (&curr_plist->items[i], time);
 		if (curr_plist_menu)
 			menu_item_set_time_plist (curr_plist_menu, i, time_str);
+		plist_count_total_time (curr_plist);
 	}
 	
 	if ((i = plist_find_fname(playlist, file)) != -1) {
@@ -1432,6 +1435,8 @@ static void update_times (const char *file, const int time)
 
 		if (playlist_menu)
 			menu_item_set_time_plist (playlist_menu, i, time_str);
+		
+		plist_count_total_time (playlist);
 	}
 }
 
@@ -2191,8 +2196,15 @@ static void event_plist_del (char *file)
 		int selected_item = 0;
 		int top_item = 0;
 		int num;
+		int need_recount_time = 0;
+		
+		if (get_item_time(playlist, item) != -1)
+			need_recount_time = 1;
 		
 		plist_delete (playlist, item);
+
+		if (need_recount_time)
+			plist_count_total_time (playlist);
 		
 		if (playlist_menu) {
 			selected_item = playlist_menu->selected;
@@ -2809,6 +2821,7 @@ static void delete_item ()
 			update_curr_file ();
 			sprintf (msg, "%d files on the list", num);
 			set_iface_status_ref (msg);
+			plist_count_total_time (playlist);
 			update_info_win ();
 			wrefresh (info_win);
 		}

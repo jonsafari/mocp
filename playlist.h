@@ -48,6 +48,9 @@ struct plist
 	int not_deleted;	/* Number of not deleted items */
 	struct plist_item *items;
 	int serial;		/* Optional serial number of this playlist */
+	int total_time;		/* total time for files on the playlist */
+	int time_for_all_files;	/* Nono-zero if the above field contains time
+				   for all files on the list. */
 
 	struct rb_node *search_tree;
 };
@@ -92,5 +95,6 @@ int plist_last (struct plist *plist);
 int plist_find_del_fname (struct plist *plist, const char *file);
 void plist_item_copy (struct plist_item *dst, const struct plist_item *src);
 enum file_type plist_file_type (struct plist *plist, const int num);
+void plist_count_total_time (struct plist *plist);
 
 #endif
