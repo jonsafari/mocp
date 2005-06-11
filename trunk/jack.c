@@ -42,6 +42,8 @@ static int rate;
 /* flag set if xrun occured that was our fault (the ringbuffer doesn't contain
  * enough data in the process callback) */
 static int our_xrun = 0;
+/* set to 1 if jack client thread exits */
+static int jack_shutdown;
 
 /* this is the function that jack calls to get audio samples from us */
 static int moc_jack_process(jack_nframes_t nframes, void *arg ATTR_UNUSED)
@@ -119,6 +121,11 @@ static void error_callback (const char *msg)
 	error ("JACK: %s", msg);
 }
 
+static void shutdown_callback (void *arg ATTR_UNUSED)
+{
+	jack_shutdown = 1;
+}
+
 static int moc_jack_init (struct output_driver_caps *caps)
 {
 	jack_set_error_function (error_callback);
@@ -128,6 +135,9 @@ static int moc_jack_init (struct output_driver_caps *caps)
 		error ("cannot create client jack server not running?");
 		return 0;
 	}
+	
+	jack_shutdown = 0;
+	jack_on_shutdown (client, shutdown_callback, NULL);
 	
 	/* allocate memory for an array of 2 output ports */
 	output_port = xmalloc(2 * sizeof(jack_port_t *));
@@ -199,6 +209,11 @@ static int moc_jack_play (const char *buff, const size_t size)
 	size_t remain = size;
 	size_t pos = 0;
 
+	if (jack_shutdown) {
+		logit ("Refusing to play, because there is no client thread.");
+		return 0;
+	}
+
 	debug ("Playing %luB", (unsigned long)size);
 
 	if (our_xrun) {
@@ -206,7 +221,7 @@ static int moc_jack_play (const char *buff, const size_t size)
 		our_xrun = 0;
 	}
 
-	while (remain) {
+	while (remain && !jack_shutdown) {
 		size_t space;
 
 		/* check if some space is available only in the second
@@ -249,7 +264,7 @@ static int moc_jack_play (const char *buff, const size_t size)
 		}
 	}
 
-	return size;
+	return size - remain;
 }
 
 static int moc_jack_read_mixer ()
