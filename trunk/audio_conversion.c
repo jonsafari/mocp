@@ -459,8 +459,8 @@ static float *resample_sound (struct audio_conversion *conv, const float *buf,
 		new_input_start = conv->resample_buf;
 	}
 
-	output = (float *)xmalloc (sizeof(float) * resample_data.input_frames
-				* nchannels * resample_data.src_ratio);
+	output = (float *)xmalloc (sizeof(float) * resample_data.output_frames
+				* nchannels);
 
 	/*debug ("Resampling %lu bytes of data by ratio %f", (unsigned long)size,
 			resample_data.src_ratio);*/
