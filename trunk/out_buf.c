@@ -139,7 +139,6 @@ static void *read_thread (void *arg)
 				played = audio_send_pcm (
 						play_buf + play_buf_pos,
 						play_buf_fill - play_buf_pos);
-				assert (played > 0);
 				play_buf_pos += played;
 			}
 
