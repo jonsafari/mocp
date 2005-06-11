@@ -802,7 +802,7 @@ static void update_info_win ()
 	waddstr (info_win, "[STEREO]");
 	
 	/* Network stream */
-	if (file_info.curr_file && file_type(file_info.curr_file) == F_URL)
+	if (file_info.curr_file && is_url(file_info.curr_file))
 		wattrset (info_win, get_color(CLR_INFO_ENABLED));
 	else
 		wattrset (info_win, get_color(CLR_INFO_DISABLED));
@@ -1048,7 +1048,7 @@ static void add_to_menu (struct menu *menu, struct plist *plist, const int num)
 	int added;
 	struct plist_item *item = &plist->items[num];
 	
-	added = menu_add (menu, item->title, num, file_type(item->file),
+	added = menu_add (menu, item->title, num, plist_file_type(plist, num),
 			item->file);
 
 	if (item->tags && item->tags->time != -1) {
@@ -1262,7 +1262,7 @@ static char *find_title (char *file)
 	int idx;
 	char *title = NULL;
 
-	if (file_type(file) == F_URL) {
+	if (is_url(file)) {
 		if (!file_info.tags) {
 			send_int_to_srv (CMD_GET_TAGS);
 			wait_for_data ();
@@ -1324,7 +1324,7 @@ static char *find_title (char *file)
 	}
 	
 	if (!title)
-		title = file_type(file) != F_URL && strrchr(file, '/')
+		title = !is_url(file) && strrchr(file, '/')
 			? xstrdup (strrchr(file, '/') + 1) : xstrdup (file);
 
 	if (cache_file) {
@@ -1447,7 +1447,7 @@ static int get_file_time (char *file)
 	int ftime = -1;
 	int file_mtime;
 
-	if (file_type(file) == F_URL)
+	if (is_url(file))
 		return -1;
 	
 	file_mtime = get_mtime(file);

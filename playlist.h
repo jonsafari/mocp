@@ -20,9 +20,19 @@ struct file_tags
 	int filled; /* Which tags are filled: TAGS_COMMENTS, TAGS_TIME. */
 };
 
+enum file_type
+{
+	F_DIR,
+	F_SOUND,
+	F_URL,
+	F_PLAYLIST,
+	F_OTHER
+};
+
 struct plist_item
 {
 	char *file;
+	enum file_type type;	/* type of the file (F_OTHER if not read yet) */
 	char *title;		/* points to title_file or title_tags */
 	char *title_file;	/* title based on the file name */
 	char *title_tags;	/* title based on the tags */
@@ -81,5 +91,6 @@ int plist_get_serial (const struct plist *plist);
 int plist_last (struct plist *plist);
 int plist_find_del_fname (struct plist *plist, const char *file);
 void plist_item_copy (struct plist_item *dst, const struct plist_item *src);
+enum file_type plist_file_type (struct plist *plist, const int num);
 
 #endif
