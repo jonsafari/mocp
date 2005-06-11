@@ -707,6 +707,7 @@ void plist_sort_fname (struct plist *plist)
 	plist->not_deleted = n;
 	
 	memcpy (plist->items, sorted, sizeof(struct plist_item) * n);
+	free (sorted);
 }
 
 /* Find an item on the list items. Return the index or -1 if not found. */
@@ -908,7 +909,7 @@ void plist_delete (struct plist *plist, const int num)
 
 		/* Free every field except the file, it is needed in deleted
 		 * items. */
-		char *file = plist_get_file (plist, num);
+		char *file = plist->items[num].file;
 
 		plist->items[num].file = NULL;
 		plist_free_item_fields (&plist->items[num]);
