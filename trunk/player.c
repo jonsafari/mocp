@@ -31,7 +31,8 @@
 #include "files.h"
 #include "playlist.h"
 
-#define PCM_BUF_SIZE	(32 * 1024)
+#define PCM_BUF_SIZE		(32 * 1024)
+#define PREBUFFER_THRESHOLD	(16 * 1024)
 
 enum request
 {
@@ -294,6 +295,17 @@ static void decode_loop (const struct decoder *f, void *decoder_data,
 			struct decoder_error err;
 			
 			UNLOCK (request_cond_mutex);
+
+			if (decoder_stream && out_buf_get_fill(out_buf)
+					< PREBUFFER_THRESHOLD) {
+				prebuffering = 1;
+				io_prebuffer (decoder_stream,
+						options_get_int("Prebuffering")
+						* 1024);
+				prebuffering = 0;
+				status_msg ("Playing...");
+			}
+			
 			decoded = f->decode (decoder_data, buf, sizeof(buf),
 					&new_sound_params);
 			
