@@ -3,15 +3,6 @@
 
 #include "playlist.h"
 
-enum file_type
-{
-	F_DIR,
-	F_SOUND,
-	F_URL,
-	F_PLAYLIST,
-	F_OTHER
-};
-
 struct file_list
 {
 	int num;		/* Number of elements on the list */
@@ -30,6 +21,7 @@ char *ext_pos (const char *file);
 void file_list_free (struct file_list *list);
 struct file_list *file_list_new ();
 enum file_type file_type (const char *file);
+int is_url (const char *str);
 char *read_line (FILE *file);
 void iconv_init ();
 void iconv_cleanup ();

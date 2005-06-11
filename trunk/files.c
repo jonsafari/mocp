@@ -55,7 +55,7 @@ static iconv_t files_iconv_desc = (iconv_t)(-1);
 #endif
 
 /* Is the string an URL? */
-static int is_url (const char *str)
+inline int is_url (const char *str)
 {
 	return !strncmp(str, "http://", sizeof("http://")-1)
 		|| !strncmp(str, "ftp://", sizeof("ftp://")-1);

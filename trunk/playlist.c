@@ -506,6 +506,7 @@ struct plist_item *plist_new_item ()
 
 	item = (struct plist_item *)xmalloc (sizeof(struct plist_item));
 	item->file = NULL;
+	item->type = F_OTHER;
 	item->deleted = 0;
 	item->title = NULL;
 	item->title_file = NULL;
@@ -529,6 +530,7 @@ int plist_add (struct plist *plist, const char *file_name)
 	}
 
 	plist->items[plist->num].file = xstrdup (file_name);
+	plist->items[plist->num].type = F_OTHER;
 	plist->items[plist->num].deleted = 0;
 	plist->items[plist->num].title = NULL;
 	plist->items[plist->num].title_file = NULL;
@@ -555,6 +557,7 @@ void plist_item_copy (struct plist_item *dst, const struct plist_item *src)
 	if (dst->file)
 		free (dst->file);
 	dst->file = xstrdup (src->file);
+	dst->type = src->type;
 	dst->title_file = xstrdup (src->title_file);
 	dst->title_tags = xstrdup (src->title_tags);
 	dst->mtime = src->mtime;
@@ -959,6 +962,7 @@ void plist_set_file (struct plist *plist, const int num, const char *file)
 	if (plist->items[num].file) {
 		rb_delete (&plist->search_tree, plist, file);
 		free (plist->items[num].file);
+		plist->items[num].type = F_OTHER;
 	}
 	
 	plist->items[num].file = xstrdup (file);
@@ -1150,4 +1154,15 @@ int plist_last (struct plist *plist)
 		i--;
 
 	return i;
+}
+
+enum file_type plist_file_type (struct plist *plist, const int num)
+{
+	assert (plist != NULL);
+	assert (num < plist->num);
+
+	if (plist->items[num].type != F_OTHER)
+		return plist->items[num].type;
+
+	return (plist->items[num].type = file_type(plist->items[num].file));
 }
