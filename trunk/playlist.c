@@ -497,6 +497,8 @@ void plist_init (struct plist *plist)
 			* INIT_SIZE);
 	plist->serial = -1;
 	plist->search_tree = &rb_null;
+	plist->total_time = 0;
+	plist->time_for_all_files = 0;
 }
 
 /* Create a new playlit item with empty fields. */
@@ -668,6 +670,8 @@ void plist_clear (struct plist *plist)
 	plist->not_deleted = 0;
 	rb_destroy (plist->search_tree);
 	plist->search_tree = &rb_null;
+	plist->total_time = 0;
+	plist->time_for_all_files = 0;
 }
 
 /* Destroy the list freeing memory, the list can't be used after that. */
@@ -1068,15 +1072,15 @@ int get_item_time (const struct plist *plist, const int i)
 	return -1;
 }
 
-/* Return the total time of all files on the playlist that has the time tag.
- * If the time information is missing for any file, all_files is set to 0,
- * otherwise 1. */
-int plist_total_time (const struct plist *plist, int *all_files)
+/* Count total time of items on the playlist. */
+void plist_count_total_time (struct plist *plist)
 {
 	int i;
-	int total_time = 0;
 
-	*all_files = 1;
+	assert (plist != NULL);
+
+	plist->time_for_all_files = 1;
+	plist->total_time = 0;
 
 	for (i = 0; i < plist->num; i++)
 		if (!plist_deleted(plist, i)) {
@@ -1084,12 +1088,23 @@ int plist_total_time (const struct plist *plist, int *all_files)
 					|| !(plist->items[i].tags->filled
 						& TAGS_TIME)
 					|| plist->items[i].tags->time == -1)
-				*all_files = 0;
+				plist->time_for_all_files = 0;
 			else
-				total_time += plist->items[i].tags->time;
+				plist->total_time +=
+					plist->items[i].tags->time;
 		}
+}
 
-	return total_time;
+/* Return the total time of all files on the playlist that has the time tag.
+ * If the time information is missing for any file, all_files is set to 0,
+ * otherwise 1.
+ * Returned value is that counted by plist_count_time(), so may be not
+ * up-to-date. */
+int plist_total_time (const struct plist *plist, int *all_files)
+{
+	*all_files = plist->time_for_all_files;
+	
+	return plist->total_time;
 }
 
 /* Swap two items on the playlist. */
