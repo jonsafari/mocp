@@ -56,6 +56,7 @@ struct parameters
 	int previous;
 	int get_file_info;
 	int toggle_pause;
+	int recursively;
 };
 
 static int im_server = 0; /* I em the server? */
@@ -257,7 +258,8 @@ static void start_moc (const struct parameters *params, char **args,
 		if (ping_server(server_sock)) {
 			if (!params->dont_run_iface) {
 				init_interface (server_sock, params->debug,
-						args, arg_num);
+						args, arg_num,
+						params->recursively);
 				interface_loop ();
 				interface_end ();
 			}
@@ -358,6 +360,8 @@ static void show_usage (const char *prg_name) {
 "-n --nosync            Don't synchronize the playlist with other clients.\n"
 "-A --ascii             Use ASCII characters to draw lines.\n"
 "-i --info              Print the information about the currently played file.\n"
+"-e --recursively       Make a playlist from the content of the directory given\n"
+"                       at the command line.\n"
 , prg_name);
 }
 
@@ -457,6 +461,7 @@ int main (int argc, char *argv[])
 		{ "nosync",		0, NULL, 'n' },
 		{ "ascii",		0, NULL, 'A' },
 		{ "info",		0, NULL, 'i' },
+		{ "recursively",	0, NULL, 'e' },
 		{ 0, 0, 0, 0 }
 	};
 	int ret, opt_index = 0;
@@ -466,7 +471,7 @@ int main (int argc, char *argv[])
 	memset (&params, 0, sizeof(params));
 	options_init ();
 
-	while ((ret = getopt_long(argc, argv, "VhDSFR:macpsxT:C:M:PUynArfiG",
+	while ((ret = getopt_long(argc, argv, "VhDSFR:macpsxT:C:M:PUynArfiGe",
 					long_options, &opt_index)) != -1) {
 		switch (ret) {
 			case 'V':
@@ -561,6 +566,9 @@ int main (int argc, char *argv[])
 			case 'G':
 				params.toggle_pause = 1;
 				params.dont_run_server = 1;
+				break;
+			case 'e':
+				params.recursively = 1;
 				break;
 			default:
 				show_usage (argv[0]);

@@ -1732,9 +1732,9 @@ static void check_term_size ()
 }
 
 /* Process file names passwd as arguments. */
-static void process_args (char **args, const int num)
+static void process_args (char **args, const int num, const int recursively)
 {
-	if (num == 1 && isdir(args[0]) == 1) {
+	if (num == 1 && !recursively && isdir(args[0]) == 1) {
 		make_path (args[0]);
 		if (!go_to_dir(NULL))
 			enter_first_dir ();
@@ -1972,9 +1972,10 @@ void get_mixer_name ()
 }
 
 /* Initialize the interface. args are command line file names. arg_num is the
- * number of arguments. */
+ * number of arguments. recursively should be set to non-zero if --recursively
+ * was used. */
 void init_interface (const int sock, const int logging, char **args,
-		const int arg_num)
+		const int arg_num, const int recursively)
 {
 	srv_sock = sock;
 	if (logging) {
@@ -2030,7 +2031,7 @@ void init_interface (const int sock, const int logging, char **args,
 	get_mixer_name ();
 	
 	if (arg_num) {
-		process_args (args, arg_num);
+		process_args (args, arg_num, recursively);
 	
 		if (plist_count(playlist) == 0) {
 			if (!options_get_int("SyncPlaylist")
