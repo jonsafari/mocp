@@ -655,7 +655,9 @@ static char *add_dir_file (const char *base, const char *name)
 }
 
 /* Find a directory that the beginning part of the path matches dir.
- * Returned path has slash at the end if the name was unabigius.
+ * Returned path has slash at the end if the name was unambiguous.
+ * Complete the name of the directory if possible to the place where it it
+ * ambiguous.
  * Return NULL if nothing was found.
  * Returned memory is malloc()ed.
  * patterm is modified! */
@@ -668,6 +670,7 @@ char *find_match_dir (char *pattern)
 	char *name;
 	char *matching_dir = NULL;
 	char *search_dir;
+	int unambiguous = 1;
 
 	if (!pattern[0])
 		return NULL;
@@ -701,14 +704,20 @@ char *find_match_dir (char *pattern)
 			if (isdir(path) == 1) {
 				if (matching_dir) {
 
-					/* More matching directories */
-					free (matching_dir);
-					free (path);
-					free (search_dir);
-					return NULL;
-				}
+					/* More matching directories - strip
+					 * matching_dir to the part that is
+					 * common to both paths */
+					int i = 0;
 
-				matching_dir = path;
+					while (matching_dir[i] == path[i]
+							&& path[i])
+						i++;
+					matching_dir[i] = 0;
+					free (path);
+					unambiguous = 0;
+				}
+				else
+					matching_dir = path;
 			}
 			else
 				free (path);
@@ -718,7 +727,7 @@ char *find_match_dir (char *pattern)
 	closedir (dir);
 	free (search_dir);
 
-	if (matching_dir) {
+	if (matching_dir && unambiguous) {
 		matching_dir = (char *)xrealloc (matching_dir,
 				sizeof(char) * (strlen(matching_dir) + 2));
 		strcat (matching_dir, "/");
