@@ -7,23 +7,21 @@ Known bugs:
 * ./mocp -p can crash
 
 Before 2.3.0:
-* Fix behaviour when the jack server dies.
-* prebuffer again if buffer fill drops to 0 - not so easy - input buffer is
-  almost always 0 because we have a big output buffer.
-* Complete to the matching part of a directory with the i command if a name is
-  ambigous.
-* Reread ALSA mixer to see changes made by other programs.
+* Add --recursive command line option: if a command line argument is a
+  directory, add files from it to the playlist recursively.
 *$ Show the bitrate in the right time (the playback time, not while decoding).
 *$ www.musepack.net - libmpcdec-1.2
 *$ Seeking with speex.
-* Add --recursive command line option: if a command line argument is a
-  directory, add files from it to the playlist recursively.
 
 In future:
 
 * Ability to play from a playlist made of items found after searching.
 * JACK: intelligent bahaviour when we get disconnected from the server
   - detect it, try connect and exit if it fails.
+* Better plist_count() optimizations: decrease and increase time for
+  deleted/added files instead of recounting total time.
+* Optimize menu: store it on a list, not in a table: this should improve
+  performance when deleting items.
 *$ WMA.
 *$ Support for Audio-CD.
 *$ Support for CDDB.
@@ -47,12 +45,12 @@ In future:
 * Use pathconf() instead of PATH_MAX.
 * Options in a hash table.
 * Moving items on the playlist up and down.
-* Add a key for switching sort modes.
 *$ libsidplay2
 * Seek forward using the content of the output buffer.
 *$ Locales.
 *$ Song ratings or something like Q in XMMS.
 * Configurable sorting.
+* Add a key for switching sort modes.
 *$ Equalizel like in Beep Media Player
 *$ Make equal volume level for every song like in http://volnorm.sourceforge.net
 * Seek to arbitrary position (by typing a number).
