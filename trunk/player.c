@@ -18,7 +18,7 @@
 #include <errno.h>
 #include <assert.h>
 
-/*#define DEBUG*/
+#define DEBUG
 
 #include "main.h"
 #include "log.h"
@@ -41,6 +41,23 @@ enum request
 	REQ_STOP
 };
 
+struct bitrate_list_node
+{
+	struct bitrate_list_node *next;
+	int time;
+	int bitrate;
+};
+
+/* List of points where bitrate has changed. We use it to show bitrate at the
+ * right time when playing, because the output buffer may be big and decoding
+ * may be many seconds ahead of what the user can hear. */
+struct bitrate_list
+{
+	struct bitrate_list_node *head;
+	struct bitrate_list_node *tail;
+	pthread_mutex_t mutex;
+};
+
 struct precache
 {
 	char *file; /* the file to precache */
@@ -52,6 +69,8 @@ struct precache
 	void *decoder_data;
 	int running; /* if the precache thread is running */
 	pthread_t tid; /* tid of the precache thread */
+	struct bitrate_list bitrate_list;
+	int decoded_time; /* how much sound we decoded in seconds */
 };
 
 struct precache precache;
@@ -72,6 +91,115 @@ static struct io_stream *decoder_stream = NULL;
 static pthread_mutex_t decoder_stream_mut = PTHREAD_MUTEX_INITIALIZER;
 
 static int prebuffering = 0; /* are we prebuffering now? */
+
+static struct bitrate_list bitrate_list;
+
+static void bitrate_list_init (struct bitrate_list *b)
+{
+	assert (b != NULL);
+	
+	b->head = NULL;
+	b->tail = NULL;
+	pthread_mutex_init (&b->mutex, NULL);
+}
+
+static void bitrate_list_empty (struct bitrate_list *b)
+{
+	assert (b != NULL);
+
+	LOCK (b->mutex);
+	if (b->head) {
+		while (b->head) {
+			struct bitrate_list_node *t = b->head->next;
+			
+			free (b->head);
+			b->head = t;
+		}
+
+		b->tail = NULL;
+	}
+
+	debug ("Bitrate list elements removed.");
+	
+	UNLOCK (b->mutex);
+}
+
+static void bitrate_list_destroy (struct bitrate_list *b)
+{
+	assert (b != NULL);
+
+	bitrate_list_empty (b);
+
+	if (pthread_mutex_destroy(&b->mutex))
+		logit ("Can't destroy bitrate list mutex: %s", strerror(errno));
+}
+
+static void bitrate_list_add (struct bitrate_list *b, const int time,
+		const int bitrate)
+{
+	assert (b != NULL);
+	
+	LOCK (b->mutex);
+	if (!b->tail) {
+		b->head = b->tail = (struct bitrate_list_node *)xmalloc (
+				sizeof(struct bitrate_list_node));
+		b->tail->next = NULL;
+		b->tail->time = time;
+		b->tail->bitrate = bitrate;
+
+		debug ("Adding bitrate %d at time %d", bitrate, time);
+	}
+	else if (b->tail->bitrate != bitrate && b->tail->time != time) {
+		assert (b->tail->time < time);
+		
+		b->tail->next = (struct bitrate_list_node *)xmalloc (
+				sizeof(struct bitrate_list_node));
+		b->tail = b->tail->next;
+		b->tail->next = NULL;
+		b->tail->time = time;
+		b->tail->bitrate = bitrate;
+
+		debug ("Appending bitrate %d at time %d", bitrate, time);
+	}
+	else if (b->tail->bitrate == bitrate)
+		debug ("Not adding bitrate %d at time %d because the bitrate"
+				" hasn't changed", bitrate, time);
+	else
+		debug ("Not adding bitrate %d at time %d because it is for"
+				" the same time as the last bitrate", bitrate,
+				time);
+	UNLOCK (b->mutex);
+}
+
+static int bitrate_list_get (struct bitrate_list *b, const int time)
+{
+	int bitrate = -1;
+	
+	assert (b != NULL);
+
+	LOCK (b->mutex);
+	if (b->head) {
+		while (b->head->next && b->head->next->time <= time) {
+			struct bitrate_list_node *o = b->head;
+		
+			b->head = o->next;
+			debug ("Removing old bitrate %d for time %d",
+					o->bitrate, o->time);
+			free (o);
+		}
+
+		bitrate = b->head->bitrate /*b->head->time + 1000*/;
+		debug ("Getting bitrate for time %d (%d)", time, bitrate);
+	}
+	else {
+		debug ("Getting bitrate for time %d (no bitrate information)",
+				time);
+		bitrate = -1;
+	}
+	UNLOCK (b->mutex);
+
+	return bitrate;
+}
 
 static void update_time ()
 {
@@ -94,6 +222,7 @@ static void *precache_thread (void *data)
 	precache->buf_fill = 0;
 	precache->sound_params.channels = 0; /* mark that sound_params were not
 						yet filled. */
+	precache->decoded_time = 0.0;
 	precache->f = get_decoder (precache->file);
 	assert (precache->f != NULL);
 
@@ -112,7 +241,6 @@ static void *precache_thread (void *data)
 	/* Stop at PCM_BUF_SIZE, because when we decode too much, there is no
 	 * place when we can put the data that don't fit into the buffer. */
 	while (precache->buf_fill < PCM_BUF_SIZE) {
-		
 		decoded = precache->f->decode (precache->decoder_data,
 				precache->buf + precache->buf_fill,
 				PCM_BUF_SIZE, &new_sound_params);
@@ -146,7 +274,16 @@ static void *precache_thread (void *data)
 			return NULL;
 		}
 
+		bitrate_list_add (&precache->bitrate_list,
+				precache->decoded_time,
+				precache->f->get_bitrate(
+					precache->decoder_data));
+
 		precache->buf_fill += decoded;
+		precache->decoded_time += decoded / (float)(sfmt_Bps(
+					new_sound_params.fmt) *
+				new_sound_params.rate *
+				new_sound_params.channels);
 
 		if (err.type != ERROR_OK)
 			break; /* Don't lose the error message */
@@ -163,6 +300,7 @@ static void start_precache (struct precache *precache, const char *file)
 	assert (file != NULL);
 
 	precache->file = xstrdup (file);
+	bitrate_list_init (&precache->bitrate_list);
 	logit ("Precaching file %s", file);
 	precache->ok = 0;
 	if (pthread_create(&precache->tid, NULL, precache_thread, precache))
@@ -192,6 +330,7 @@ static void precache_reset (struct precache *precache)
 		free (precache->file);
 		precache->file = NULL;
 	}
+	bitrate_list_destroy (&precache->bitrate_list);
 }
 
 void player_init ()
@@ -255,6 +394,7 @@ static void buf_free_callback ()
 	pthread_cond_broadcast (&request_cond);
 	UNLOCK (request_cond_mutex);
 
+	set_info_bitrate (bitrate_list_get(&bitrate_list, audio_get_time()));
 	update_time ();
 }
 
@@ -262,14 +402,16 @@ static void buf_free_callback ()
  * next_file will be precached at eof. */
 static void decode_loop (const struct decoder *f, void *decoder_data,
 		const char *next_file, struct out_buf *out_buf,
-		struct sound_params sound_params)
+		struct sound_params sound_params,
+		const float already_decoded_sec)
 {
 	int eof = 0;
 	char buf[PCM_BUF_SIZE];
 	int decoded = 0;
 	struct sound_params new_sound_params;
-	int bitrate = -1;
 	int sound_params_change = 0;
+	float decode_time = already_decoded_sec; /* the position of the decoder
+						    (in seconds) */
 
 	out_buf_set_free_callback (out_buf, buf_free_callback);
 	
@@ -308,6 +450,11 @@ static void decode_loop (const struct decoder *f, void *decoder_data,
 			
 			decoded = f->decode (decoder_data, buf, sizeof(buf),
 					&new_sound_params);
+
+			decode_time += decoded / (float)(sfmt_Bps(
+						new_sound_params.fmt) *
+					new_sound_params.rate *
+					new_sound_params.channels);
 			
 			f->get_error (decoder_data, &err);
 			if (err.type != ERROR_OK) {
@@ -323,19 +470,13 @@ static void decode_loop (const struct decoder *f, void *decoder_data,
 				logit ("EOF from decoder");
 			}
 			else {
-				int new_bitrate;
-				
 				debug ("decoded %d bytes", decoded);
 				if (!sound_params_eq(new_sound_params,
 							sound_params))
 					sound_params_change = 1;
 
-				new_bitrate = f->get_bitrate (decoder_data);
-				if (bitrate != new_bitrate) {
-					bitrate = new_bitrate;
-					set_info_bitrate (bitrate);
-				}
-
+				bitrate_list_add (&bitrate_list, decode_time,
+						f->get_bitrate(decoder_data));
 				update_tags (f, decoder_data, decoder_stream);
 			}
 		}
@@ -380,6 +521,8 @@ static void decode_loop (const struct decoder *f, void *decoder_data,
 				out_buf_stop (out_buf);
 				out_buf_reset (out_buf);
 				out_buf_time_set (out_buf, decoder_seek);
+				bitrate_list_empty (&bitrate_list);
+				decode_time = decoder_seek;
 				eof = 0;
 				decoded = 0;
 			}
@@ -420,6 +563,8 @@ static void decode_loop (const struct decoder *f, void *decoder_data,
 	f->close (decoder_data);
 	UNLOCK (decoder_stream_mut);
 
+	bitrate_list_destroy (&bitrate_list);
+
 	LOCK (curr_tags_mut);
 	if (curr_tags) {
 		tags_free (curr_tags);
@@ -436,6 +581,7 @@ static void play_file (const char *file, const struct decoder *f,
 {
 	void *decoder_data;
 	struct sound_params sound_params = { 0, 0, 0 };
+	float already_decoded_time;
 	
 	out_buf_reset (out_buf);
 	
@@ -469,6 +615,13 @@ static void play_file (const char *file, const struct decoder *f,
 				error ("%s", err.err);
 			decoder_error_clear (&err);
 		}
+
+		already_decoded_time = precache.decoded_time;
+		bitrate_list = precache.bitrate_list;
+
+		/* don't free list elements when reseting precache */
+		precache.bitrate_list.head = NULL;
+		precache.bitrate_list.tail = NULL;
 	}
 	else {
 		struct decoder_error err;
@@ -483,13 +636,17 @@ static void play_file (const char *file, const struct decoder *f,
 			logit ("Can't open file, exiting");
 			return;
 		}
+
+		already_decoded_time = 0.0;
+		bitrate_list_init (&bitrate_list);
 	}
 
 	audio_plist_set_time (file, f->get_duration(decoder_data));
 	audio_state_started_playing ();
 	precache_reset (&precache);
 
-	decode_loop (f, decoder_data, next_file, out_buf, sound_params);
+	decode_loop (f, decoder_data, next_file, out_buf, sound_params,
+			already_decoded_time);
 }
 
 /* Play the stream (global decoder_stream) using the given decoder. */
@@ -517,7 +674,9 @@ static void play_stream (const struct decoder *f, struct out_buf *out_buf)
 	}
 	else {
 		audio_state_started_playing ();
-		decode_loop (f, decoder_data, NULL, out_buf, sound_params);
+		bitrate_list_init (&bitrate_list);
+		decode_loop (f, decoder_data, NULL, out_buf, sound_params,
+				0.0);
 	}
 }
 
