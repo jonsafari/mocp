@@ -2037,8 +2037,6 @@ void init_interface (const int sock, const int logging, char **args,
 			if (!options_get_int("SyncPlaylist")
 					|| !get_server_playlist(playlist))
 				load_playlist ();
-
-			enter_first_dir ();
 		}
 		else if (options_get_int("SyncPlaylist")) {
 			struct plist tmp_plist;
