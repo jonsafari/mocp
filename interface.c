@@ -2676,6 +2676,24 @@ static void set_mixer (int val)
 	wrefresh (info_win);
 }
 
+static void adjust_mixer (const int diff)
+{
+	int vol = get_mixer ();
+
+	vol += diff;
+
+	if (vol < 0)
+		vol = 0;
+	else if (vol > 100)
+		vol = 100;
+
+	send_int_to_srv (CMD_SET_MIXER);
+	send_int_to_srv (vol);
+
+	draw_mixer ();
+	wrefresh (info_win);
+}
+
 static void seek (const int sec)
 {
 	send_int_to_srv (CMD_SEEK);
@@ -3523,16 +3541,16 @@ static void menu_key (const int ch)
 				add_dir_plist ();
 				break;
 			case KEY_CMD_MIXED_DEC_1:
-				set_mixer (get_mixer() - 1);
+				adjust_mixer (-1);
 				break;
 			case KEY_CMD_MIXER_DEC_5:
-				set_mixer (get_mixer() - 5);
+				adjust_mixer (-5);
 				break;
 			case KEY_CMD_MIXER_INC_5:
-				set_mixer (get_mixer() + 5);
+				adjust_mixer (+5);
 				break;
 			case KEY_CMD_MIXER_INC_1:
-				set_mixer (get_mixer() + 1);
+				adjust_mixer (+1);
 				break;
 			case KEY_CMD_SEEK_BACKWARD:
 				seek (-options_get_int("SeekTime"));
