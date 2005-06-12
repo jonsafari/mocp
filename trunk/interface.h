@@ -2,7 +2,7 @@
 #define INTERFACE_H
 
 void init_interface (const int sock, const int logging, char **args,
-		const int arg_num);
+		const int arg_num, const int recursively);
 void interface_loop ();
 int server_connect ();
 void interface_end ();
