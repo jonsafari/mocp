@@ -1194,27 +1194,10 @@ void server_loop (int list_sock)
 	server_shutdown ();
 }
 
-/* Don't allow events to be send to quickly. Return 1 if the event can be
- * send. */
-static int event_throttle ()
-{
-	static int last_time = 0;
-
-	if (last_time != time(NULL)) {
-		last_time = time(NULL);
-		return 1;
-	}
-	
-	return 0;
-}
-
 void set_info_bitrate (const int bitrate)
 {
-	int old_bitrate = sound_info.bitrate;
-
 	sound_info.bitrate = bitrate;
-	if (old_bitrate <= 0 || bitrate <= 0 || event_throttle())
-		add_event_all (EV_BITRATE, NULL);
+	add_event_all (EV_BITRATE, NULL);
 }
 
 void set_info_channels (const int channels)
