@@ -19,10 +19,10 @@
 #include <string.h>
 #include <stdint.h>
 #include <assert.h>
-#include <speex.h>
-#include <speex_header.h>
-#include <speex_stereo.h>
-#include <speex_callbacks.h>
+#include <speex/speex.h>
+#include <speex/speex_header.h>
+#include <speex/speex_stereo.h>
+#include <speex/speex_callbacks.h>
 #include <ogg/ogg.h>
 
 #include "decoder.h"
@@ -64,7 +64,7 @@ struct spx_data
 static void *process_header (struct spx_data *data)
 {
 	void *st;
-	SpeexMode *mode;
+	const SpeexMode *mode;
 	int modeID;
 	SpeexCallback callback;
 	int enhance = ENHANCE_AUDIO;
