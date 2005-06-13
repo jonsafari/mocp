@@ -25,6 +25,8 @@
 #include <speex/speex_callbacks.h>
 #include <ogg/ogg.h>
 
+/*#define DEBUG*/
+
 #include "decoder.h"
 #include "main.h"
 #include "audio.h"
@@ -384,6 +386,7 @@ static int count_time (struct spx_data *data)
 {
 	unsigned long packets = 0;
 	
+	/* FIXME: can we just read granulepos from the last page? */
 	while (!io_eof(data->stream)) {
 		char *buf;
 		int nb_read;
@@ -424,11 +427,92 @@ static void spx_info (const char *file_name, struct file_tags *tags,
 	}
 }
 
-static int spx_seek (void *prv_data ATTR_UNUSED, int sec ATTR_UNUSED)
+static int spx_seek (void *prv_data ATTR_UNUSED, int sec)
 {
-	/*struct spx_data *data = (struct spx_data *)prv_data;*/
+	struct spx_data *data = (struct spx_data *)prv_data;
+	ssize_t begin = 0, end;
+	size_t old_pos;
 
-	return -1;
+	end = io_file_size (data->stream);
+	if (end == -1)
+		return -1;
+	old_pos = io_tell (data->stream);
+
+	debug ("Seek request to %ds", sec);
+
+	while (1) {
+		ssize_t middle = (end + begin) / 2;
+		size_t granule_pos;
+		int position_seconds;
+
+		debug ("Seek to %ld", (long)middle);
+
+		if (io_seek(data->stream, middle, SEEK_SET) == -1) {
+			io_seek (data->stream, old_pos, SEEK_SET);
+			ogg_stream_reset (&data->os);
+			ogg_sync_reset (&data->oy);
+			return -1;
+		}
+
+		debug ("Syncing...");
+
+		/* Sync to page and read it */
+		ogg_sync_reset (&data->oy);
+		while (!io_eof(data->stream)) {
+			char *buf;
+			int nb_read;
+
+			if (ogg_sync_pageout(&data->oy, &data->og) == 1) {
+				debug ("Sync");
+				break;
+			}
+			else if (!io_eof(data->stream)) {
+				debug ("Need more data");
+				buf = ogg_sync_buffer (&data->oy, 200);
+				nb_read = io_read (data->stream, buf, 200);
+				ogg_sync_wrote (&data->oy, nb_read);
+			}
+		}
+
+		if (io_eof(data->stream)) {
+			debug ("EOF when syncing");
+			return -1;
+		}
+
+		granule_pos = ogg_page_granulepos(&data->og);
+		position_seconds = granule_pos / data->rate;
+
+		debug ("We are at %ds", position_seconds);
+
+		if (position_seconds == sec) {
+			ogg_stream_pagein (&data->os, &data->og);
+			debug ("We have it at granulepos %ld",
+					(long)granule_pos);
+			break;
+		}
+		else if (sec < position_seconds) {
+			end = middle;
+			debug ("going back");
+		}
+		else {
+			begin = middle;
+			debug ("going forward");
+		}
+
+		debug ("begin - end %ld - %ld", (long)begin, (long)end);
+
+		if (end - begin <= 200) {
+
+			/* Can't find the exact position. */
+			sec = position_seconds;
+			break;
+		}
+	}
+
+	ogg_sync_reset (&data->oy);
+	ogg_stream_reset (&data->os);
+
+	return sec;
 }
 
 static int spx_decode (void *prv_data, char *sound_buf, int nbytes,
@@ -489,6 +573,10 @@ static int spx_decode (void *prv_data, char *sound_buf, int nbytes,
 					data->nchannels;
 			}
 
+			/*logit ("Read %d bytes from page", data->frame_size *
+					data->nchannels *
+					data->frames_per_packet);*/
+
 			data->output_start = 0;
 			data->output_left = data->frame_size *
 				data->nchannels * data->frames_per_packet;
@@ -497,6 +585,7 @@ static int spx_decode (void *prv_data, char *sound_buf, int nbytes,
 
 			/* Read in another ogg page */
 			ogg_stream_pagein (&data->os, &data->og);
+			logit ("Granulepos: %d", (int)ogg_page_granulepos(&data->og));
 
 		}
 		else if (!io_eof(data->stream)) {
