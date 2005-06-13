@@ -585,7 +585,7 @@ static int spx_decode (void *prv_data, char *sound_buf, int nbytes,
 
 			/* Read in another ogg page */
 			ogg_stream_pagein (&data->os, &data->og);
-			logit ("Granulepos: %d", (int)ogg_page_granulepos(&data->og));
+			debug ("Granulepos: %d", (int)ogg_page_granulepos(&data->og));
 
 		}
 		else if (!io_eof(data->stream)) {
