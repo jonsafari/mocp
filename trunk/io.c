@@ -730,7 +730,8 @@ int io_eof (struct io_stream *s)
 	assert (s != NULL);
 	
 	LOCK (s->buf_mutex);
-	eof = s->eof && (!s->buffered || !fifo_buf_get_fill(&s->buf));
+	eof = (s->eof && (!s->buffered || !fifo_buf_get_fill(&s->buf))) ||
+		s->stop_read_thread;
 	UNLOCK (s->buf_mutex);
 
 	return eof;
