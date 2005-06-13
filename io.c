@@ -10,7 +10,6 @@
  */
 
 /* TODO:
- * - prebuffering (for network streams)
  * - handle SIGBUS (mmap() read error)
  */
 
