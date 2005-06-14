@@ -645,6 +645,8 @@ ssize_t io_read (struct io_stream *s, void *buf, size_t count)
 
 	if (s->buffered)
 		received = io_read_buffered (s, buf, count);
+	else if (s->eof)
+		received = 0;
 	else
 		received = io_read_unbuffered (s, 0, buf, count);
 
