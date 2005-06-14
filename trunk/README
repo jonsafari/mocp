@@ -30,7 +30,7 @@ MOC plays smoothly, regardless of system or I/O load because it uses the output
 buffer in a separate thread. It doesn't cause gaps between files, because the
 next file to be played is precached while playing the current file.
 
-Supported file formats are: MP3, OGG Vorbis, FLAC, WAVE, AIFF, AU, SVX,
+Supported file formats are: MP3, OGG Vorbis, FLAC, Speex, WAVE, AIFF, AU, SVX,
 Sphere Nist WAV, IRCAM SF, Creative VOC.
 
 Other features:
@@ -56,6 +56,7 @@ To support audio formats you need:
  - FLAC - (http://flac.sourceforge.net/)
  - WAVE, AU, AIFF, SVX, SPH, IRC, VOC - libsndfile
      (http://www.mega-nerd.com/libsndfile/)
+ - Speex - libspeex (http://www.speex.org/)
 
 For network streams:
  - libcurl 7.12.0 or newer (http://curl.haxx.se)
