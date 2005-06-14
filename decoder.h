@@ -78,6 +78,7 @@ struct decoder
 	 * stream when searching by the MIME type failed. The decoder must not
 	 * read from this stream (io_read()), but can peek data (io_peek()).
 	 * The decoder is expected to peek a few bytes to recognize it's format.
+	 * Optional.
 	 * 
 	 * \param stream Opened stream.
 	 *
