@@ -183,7 +183,7 @@ struct decoder
 	int (*our_format_ext)(const char *ext);
 
 	/** Check if a stream with the given MIME type is supported by this
-	 * decoder.
+	 * decoder. Optional.
 	 *
 	 * \param mime_type MIME type.
 	 *
