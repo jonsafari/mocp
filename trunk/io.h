@@ -123,5 +123,6 @@ void io_set_metadata_url (struct io_stream *s, const char *url);
 void io_prebuffer (struct io_stream *s, const size_t to_fill);
 void io_set_buf_fill_callback (struct io_stream *s,
 		buf_fill_callback_t callback, void *data_ptr);
+int io_seekable (const struct io_stream *s);
 
 #endif
