@@ -90,7 +90,7 @@ then
 			  [COMPILE_JACK="yes"
 			   EXTRA_OBJS="$EXTRA_OBJS jack.o"
 			   AC_DEFINE([HAVE_JACK], 1, [Define if you have JACK.])
-			   LIBS="$LIBS $JACK_LIBS"
+			   EXTRA_LIBS="$EXTRA_LIBS $JACK_LIBS"
 			   CFLAGS="$CFLAGS $JACK_CFLAGS"],
 			   [COMPILE_JACK="no"])
 else
