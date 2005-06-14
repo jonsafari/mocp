@@ -821,3 +821,10 @@ void io_set_buf_fill_callback (struct io_stream *s,
 	s->buf_fill_callback_data = data_ptr;
 	UNLOCK (s->buf_mutex);
 }
+
+/* Return a non-zero value if the stream is seekable. */
+int io_seekable (const struct io_stream *s)
+{
+	return s->source == IO_SOURCE_FD || s->source == IO_SOURCE_MMAP;
+}
+
