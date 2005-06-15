@@ -30,7 +30,7 @@ MOC plays smoothly, regardless of system or I/O load because it uses the output
 buffer in a separate thread. It doesn't cause gaps between files, because the
 next file to be played is precached while playing the current file.
 
-Supported file formats are: MP3, OGG Vorbis, FLAC, Musepack (mpc), Speex, WAVE,
+Supported file formats are: mp3, Ogg Vorbis, FLAC, Musepack (mpc), Speex, WAVE,
 AIFF, AU, SVX, Sphere Nist WAV, IRCAM SF, Creative VOC.
 
 Other features:
@@ -51,8 +51,8 @@ What software is required to compile it?
  - ncurses (probably already installed in your system)
 
 To support audio formats you need:
- - OGG - libvorbis (http://www.xiph.org/ogg/vorbis/download/)
- - MP3 - libmad with libid3tag (ftp://ftp.mars.org/pub/mpeg/)
+ - Ogg Vorbis - libvorbis (http://www.xiph.org/ogg/vorbis/download/)
+ - mp3 - libmad with libid3tag (ftp://ftp.mars.org/pub/mpeg/)
  - FLAC - (http://flac.sourceforge.net/)
  - WAVE, AU, AIFF, SVX, SPH, IRC, VOC - libsndfile
      (http://www.mega-nerd.com/libsndfile/)
