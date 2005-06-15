@@ -329,8 +329,8 @@ static void precache_reset (struct precache *precache)
 	if (precache->file) {
 		free (precache->file);
 		precache->file = NULL;
+		bitrate_list_destroy (&precache->bitrate_list);
 	}
-	bitrate_list_destroy (&precache->bitrate_list);
 }
 
 void player_init ()
