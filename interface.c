@@ -4048,6 +4048,7 @@ void interface_cmdline_append (int server_sock, char **args,
 				serial = get_data_int ();
 				if (serial == plist_get_serial(&clients_plist))
 					send_playlist (&plist, 0);
+				send_int_to_srv (CMD_UNLOCK);
 			}
 			else {
 				send_int_to_srv (CMD_LOCK);
