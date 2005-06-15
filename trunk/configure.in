@@ -217,12 +217,24 @@ then
 				-a "$taglib_ver_extra" -ge 1 \)
 			then
 				AC_MSG_RESULT([$taglib_ver, OK])
+
 				TAGLIB_CFLAGS="`taglib-config --cflags`"
 				dnl TAGLIB_LIBS="`taglib-config --libs`"
 				TAGLIB_LIBS="-ltag_c"
 				AC_SUBST([TAGLIB_CFLAGS])
 				AC_SUBST([TAGLIB_LIBS])
-				DECODER_PLUGINS="$DECODER_PLUGINS musepack"
+				
+				dnl check for tag_c.h
+				old_cflags="$CFLAGS"
+				old_cppflags="$CPPFLAGS"
+				CFLAGS="$CFLAGS $TAGLIB_CFLAGS"
+				CPPFLAGS="$CPPFLAGS $TAGLIB_CFLAGS"
+				AC_CHECK_HEADER([tag_c.h], [
+						 DECODER_PLUGINS="$DECODER_PLUGINS musepack"
+						 ])
+				CFLAGS="$old_cflags"
+				CPPFLAGS="$old_cppflags"
+				
 			else
 				AC_MSG_RESULT([$taglib_ver, but minimum is 1.3.1 - required for musepack])
 			fi
