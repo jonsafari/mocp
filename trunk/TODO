@@ -1,50 +1,44 @@
 Items marked with $ are bigger changes requiring more time.
 
 Known bugs:
-* Speex headers location is not detected properly. Speex problem?
 * Freez when switching songs quickly.
-* ./mocp -p FILE doesn't do what it should
 * ./mocp -p can crash
 
-Before 2.3.0:
-* Add --recursive command line option: if a command line argument is a
-  directory, add files from it to the playlist recursively.
-*$ Show the bitrate in the right time (the playback time, not while decoding).
-*$ www.musepack.net - libmpcdec-1.2
-*$ Seeking with speex.
+Before 2.4:
+* Better plist_count() optimizations: decrease and increase time for
+  deleted/added files instead of recounting total time.
+* Optimize menu: store it on a list, not in a table: this should improve
+  performance when deleting items.
+* Count speex time by reading granule position from the last page.
+* Moving items on the playlist up and down.
+* Options in a hash table.
+*$ Progrssive tags reading: read them only if the menu items requiring them
+  are visible (as an option).
+*$ Support for Audio-CD.
+*$ Support for CDDB.
+* Move the playlist to see the song that is currently played.
 
 In future:
 
 * Ability to play from a playlist made of items found after searching.
 * JACK: intelligent bahaviour when we get disconnected from the server
   - detect it, try connect and exit if it fails.
-* Better plist_count() optimizations: decrease and increase time for
-  deleted/added files instead of recounting total time.
-* Optimize menu: store it on a list, not in a table: this should improve
-  performance when deleting items.
 *$ WMA.
-*$ Support for Audio-CD.
-*$ Support for CDDB.
 *$ Move interface primitives (windows, entry, etc.) to a separate file.
 * FastGo instead of FastDir: go to a directory, URL or a playlist.
 * Read tags for sndfile formats.
 *$ Read tags in the server in a separate part, interface should not wait
   for the tags, the will be send if available (to all clients? cache for tags
   at the server part?). 
-*$ Progrssive tags reading: read them only if the menu items requiring them
-  are visible (as an option).
 *$ Cache for tags in each directory. (.cache.m3u?)
 *$ http://www.peercast.org/
 * Number items on the playlist.
 * Command to see all information about a file with all tags, also all informaton
   about an internet stream (from IceCast headers like icy-url, icy-pub).
-* Move the playlist to see the song that is currently played.
 *$ Lyrics downloaded from the Internet.
 *$ Better international characters handling - tags in UTF.
 * handle SIGBUS - when mmap()ed file is truncated.
 * Use pathconf() instead of PATH_MAX.
-* Options in a hash table.
-* Moving items on the playlist up and down.
 *$ libsidplay2
 * Seek forward using the content of the output buffer.
 *$ Locales.
@@ -55,6 +49,9 @@ In future:
 *$ Make equal volume level for every song like in http://volnorm.sourceforge.net
 * Seek to arbitrary position (by typing a number).
 *$ VQF (like http://www.csn.ul.ie/~mel/projects/linux/vqfplugin/)
+*$ AAC
+*$ MP4
+*$ mod
 *$ ESD
 * Full paths for items on the playlist (not only file names).
 * Command line option to delete the currently played item from the playlist.
