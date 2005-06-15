@@ -62,7 +62,9 @@ man_MANS = mocp.8
 mocp_LDADD = @EXTRA_OBJS@
 mocp_DEPENDENCIES = @EXTRA_OBJS@
 mocp_LDFLAGS = @EXTRA_LIBS@
-EXTRA_DIST = config.example mocp.8 THANKS keymap.example Doxyfile
+EXTRA_DIST = config.example mocp.8 THANKS keymap.example Doxyfile \
+	     doxy_pages/decoder_api.doxy doxy_pages/main_page.doxy \
+	     doxy_pages/sound_output_driver_api.doxy
 
 docdir = $(datadir)/doc/$(PACKAGE)
 doc_DATA = config.example THANKS README keymap.example
