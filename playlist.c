@@ -368,7 +368,7 @@ static void rb_delete (struct rb_node **root, const struct plist *plist,
 
 /* Update playlist position for item with the given file name. Return 0 if
  * there is no such item. */
-int rb_update_position (struct rb_node *root, const struct plist *plist,
+static int rb_update_position (struct rb_node *root, const struct plist *plist,
 		const char *file, const int new_pos)
 {
 	struct rb_node *x = rb_search_internal (root, plist, file);
