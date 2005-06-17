@@ -375,7 +375,9 @@ char *iconv_str (char *str, const int for_file_name)
 	
 	return converted;
 #else
-	return xstrdup (str);
+	char *t = xstrdup (str);
+	free (str);
+	return t;
 #endif
 }
 
