@@ -429,6 +429,7 @@ void audio_play (const char *fname)
 	LOCK (curr_playing_mut);
 	LOCK (plist_mut);
 	if (options_get_int("Shuffle")) {
+		plist_clear (&shuffled_plist);
 		plist_cat (&shuffled_plist, &playlist);
 		plist_shuffle (&shuffled_plist);
 		plist_swap_first_fname (&shuffled_plist, fname);
