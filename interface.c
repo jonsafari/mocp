@@ -1308,7 +1308,7 @@ static char *find_title (char *file)
 				= build_title (curr_plist->items[idx].tags);
 
 		title = xstrdup (curr_plist->items[idx].title_tags);
-		iconv_str (title, 0);
+		title = iconv_str (title, 0);
 	}
 	else if ((idx = plist_find_fname(playlist, file)) != -1) {
 		debug ("Found title on the playlist");
@@ -1324,7 +1324,6 @@ static char *find_title (char *file)
 
 		title = xstrdup (playlist->items[idx].title_tags);
 		title = iconv_str (title, 0);
-
 	}
 	else {
 		struct file_tags *tags;
