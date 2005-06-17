@@ -54,7 +54,8 @@ static void rb_left_rotate (struct rb_node **root, struct rb_node *x)
 	struct rb_node *y = x->right;
 
 	x->right = y->left;
-	y->left->parent = x;
+	if (y->left != &rb_null)
+		y->left->parent = x;
 	y->parent = x->parent;
 
 	if (x->parent == &rb_null)
@@ -75,7 +76,8 @@ static void rb_right_rotate (struct rb_node **root, struct rb_node *x)
 	struct rb_node *y = x->left;
 
 	x->left = y->right;
-	y->right->parent = x;
+	if (y->right != &rb_null)
+		y->right->parent = x;
 	y->parent = x->parent;
 
 	if (x->parent == &rb_null)
@@ -103,11 +105,12 @@ static void rb_insert_fixup (struct rb_node **root, struct rb_node *z)
 				z->parent->parent->color = RED;
 				z = z->parent->parent;
 			}
-			else if (z == z->parent->right) {
-				z = z->parent;
-				rb_left_rotate (root, z);
-			}
 			else {
+				if (z == z->parent->right) {
+					z = z->parent;
+					rb_left_rotate (root, z);
+				}
+
 				z->parent->color = BLACK;
 				z->parent->parent->color = RED;
 				rb_right_rotate (root, z->parent->parent);
@@ -122,11 +125,12 @@ static void rb_insert_fixup (struct rb_node **root, struct rb_node *z)
 				z->parent->parent->color = RED;
 				z = z->parent->parent;
 			}
-			else if (z == z->parent->left) {
-				z = z->parent;
-				rb_right_rotate (root, z);
-			}
 			else {
+				if (z == z->parent->left) {
+					z = z->parent;
+					rb_right_rotate (root, z);
+				}
+				
 				z->parent->color = BLACK;
 				z->parent->parent->color = RED;
 				rb_left_rotate (root, z->parent->parent);
@@ -156,13 +160,14 @@ static void rb_delete_fixup (struct rb_node **root, struct rb_node *x)
 				w->color = RED;
 				x = x->parent;
 			}
-			else if (w->right->color == BLACK) {
-				w->left->color = BLACK;
-				w->color = RED;
-				rb_right_rotate (root, w);
-				w = x->parent->right;
-			}
 			else {
+				if (w->right->color == BLACK) {
+					w->left->color = BLACK;
+					w->color = RED;
+					rb_right_rotate (root, w);
+					w = x->parent->right;
+				}
+				
 				w->color = x->parent->color;
 				x->parent->color = BLACK;
 				w->right->color = BLACK;
@@ -185,13 +190,14 @@ static void rb_delete_fixup (struct rb_node **root, struct rb_node *x)
 				w->color = RED;
 				x = x->parent;
 			}
-			else if (w->left->color == BLACK) {
-				w->right->color = BLACK;
-				w->color = RED;
-				rb_left_rotate (root, w);
-				w = x->parent->left;
-			}
 			else {
+				if (w->left->color == BLACK) {
+					w->right->color = BLACK;
+					w->color = RED;
+					rb_left_rotate (root, w);
+					w = x->parent->left;
+				}
+
 				w->color = x->parent->color;
 				x->parent->color = BLACK;
 				w->left->color = BLACK;
@@ -200,8 +206,9 @@ static void rb_delete_fixup (struct rb_node **root, struct rb_node *x)
 			}
 		}
 
-		x->color = BLACK;
 	}
+
+	x->color = BLACK;
 }
 
 /* Insert the playlist position into the reb-black tree. */
@@ -292,7 +299,7 @@ static struct rb_node *rb_min (struct rb_node *root)
 	struct rb_node *x = root;
 
 	if (root == &rb_null)
-		return NULL;
+		return &rb_null;
 
 	while (x->left != &rb_null)
 		x = x->left;
@@ -349,14 +356,17 @@ static void rb_delete (struct rb_node **root, const struct plist *plist,
 		else
 			x = y->right;
 
-		x->parent = y->parent;
+		if (x != &rb_null)
+			x->parent = y->parent;
 		
 		if (y->parent == &rb_null)
 			*root = x;
-		else if (y == y->parent->left)
-			y->parent->left = x;
-		else
-			y->parent->right = x;
+		else {
+			if (y == y->parent->left)
+				y->parent->left = x;
+			else
+				y->parent->right = x;
+		}
 
 		if (y != z)
 			*z = *y;
@@ -699,7 +709,7 @@ void plist_sort_fname (struct plist *plist)
 			sizeof(struct plist_item));
 
 	x = rb_min (plist->search_tree);
-	assert (x != NULL);
+	assert (x != &rb_null);
 	
 	sorted[0] = plist->items[x->item_num];
 	x->item_num = 0;
@@ -1131,6 +1141,12 @@ void plist_shuffle (struct plist *plist)
 	for (i = 0; i < plist->num; i++)
 		plist_swap (plist, i,
 				(rand()/(float)RAND_MAX) * (plist->num - 1));
+
+	rb_destroy (plist->search_tree);
+	plist->search_tree = &rb_null;
+	
+	for (i = 0; i < plist->num; i++)
+		rb_insert (&plist->search_tree, plist, i);
 }
 
 /* Swap the first item on the playlist with the item with file fname. */
@@ -1143,8 +1159,13 @@ void plist_swap_first_fname (struct plist *plist, const char *fname)
 	
 	i = plist_find_fname (plist, fname);
 
-	if (i != -1)
+	if (i != -1 && i != 0) {
+		rb_delete (&plist->search_tree, plist, fname);
+		rb_delete (&plist->search_tree, plist, plist->items[0].file);
 		plist_swap (plist, 0, i);
+		rb_insert (&plist->search_tree, plist, 0);
+		rb_insert (&plist->search_tree, plist, i);
+	}
 }
 
 void plist_set_serial (struct plist *plist, const int serial)

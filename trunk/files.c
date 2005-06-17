@@ -115,9 +115,7 @@ void make_file_title (struct plist *plist, const int num,
 		char *fname;
 		
 		fname = get_file (plist->items[num].file, hide_extension);
-		fname = iconv_str (fname, 1);
 		plist_set_title_file (plist, num, fname);
-		free (fname);
 	}
 	else
 		plist_set_title_file (plist, num, plist->items[num].file);
@@ -381,15 +379,6 @@ char *iconv_str (char *str, const int for_file_name)
 #endif
 }
 
-void do_iconv (struct file_tags *tags)
-{
-#ifdef HAVE_ICONV
-	tags->title = iconv_str (tags->title, 0);
-	tags->artist = iconv_str (tags->artist, 0);
-	tags->album = iconv_str (tags->album, 0);
-#endif
-}
-
 void iconv_cleanup ()
 {
 #ifdef HAVE_ICONV
@@ -435,10 +424,6 @@ struct file_tags *read_file_tags (const char *file,
 
 	if (needed_tags) {
 		df->info (file, tags, needed_tags);
-#ifdef HAVE_ICONV
-		if (needed_tags & TAGS_COMMENTS)
-			do_iconv (tags);
-#endif
 		tags->filled |= tags_sel;
 	}
 	else

@@ -1049,9 +1049,16 @@ static void add_to_menu (struct menu *menu, struct plist *plist, const int num)
 {
 	int added;
 	struct plist_item *item = &plist->items[num];
+	char *title = xstrdup (item->title);
+
+	if (item->title == item->title_tags)
+		title = iconv_str (title, 0);
+	else
+		title = iconv_str (title, 1);
 	
-	added = menu_add (menu, item->title, num, plist_file_type(plist, num),
+	added = menu_add (menu, title, num, plist_file_type(plist, num),
 			item->file);
+	free (title);
 
 	if (item->tags && item->tags->time != -1) {
 		char time_str[6];
@@ -1273,7 +1280,7 @@ static char *find_title (char *file)
 		
 		if (file_info.tags && file_info.curr_file
 				&& !strcmp(file_info.curr_file, file))
-			title = build_title (file_info.tags);
+			title = iconv_str (build_title(file_info.tags), 0);
 
 		return title;
 	}
@@ -1300,6 +1307,7 @@ static char *find_title (char *file)
 				= build_title (curr_plist->items[idx].tags);
 
 		title = xstrdup (curr_plist->items[idx].title_tags);
+		iconv_str (title, 0);
 	}
 	else if ((idx = plist_find_fname(playlist, file)) != -1) {
 		debug ("Found title on the playlist");
@@ -1314,6 +1322,7 @@ static char *find_title (char *file)
 				= build_title (curr_plist->items[idx].tags);
 
 		title = xstrdup (playlist->items[idx].title_tags);
+		title = iconv_str (title, 0);
 
 	}
 	else {
@@ -1323,11 +1332,14 @@ static char *find_title (char *file)
 		if (tags->title)
 			title = build_title (tags);
 		tags_free (tags);
+		title = iconv_str (title, 0);
 	}
 	
-	if (!title)
+	if (!title) {
 		title = !is_url(file) && strrchr(file, '/')
 			? xstrdup (strrchr(file, '/') + 1) : xstrdup (file);
+		title = iconv_str (title, 1);
+	}
 
 	if (cache_file) {
 		free (cache_file);
@@ -2749,9 +2761,18 @@ static void update_menu_titles (struct menu *menu, struct plist *plist)
 	assert (menu != NULL);
 
 	for (i = 0; i < menu->nitems; i++)
-		if ((plist_pos = menu_item_get_plist_pos(menu, i)) != -1)
-			menu_item_set_title (menu, i,
-					plist->items[plist_pos].title);
+		if ((plist_pos = menu_item_get_plist_pos(menu, i)) != -1) {
+			char *title = xstrdup (plist->items[plist_pos].title);
+
+			if (plist->items[plist_pos].title
+					== plist->items[plist_pos].title_tags)
+				title = iconv_str (title, 0);
+			else
+				title = iconv_str (title, 1);
+			
+			menu_item_set_title (menu, i, title);
+			free (title);
+		}
 }
 
 /* Switch ReadTags options and update the menu. */
@@ -4149,6 +4170,7 @@ void interface_cmdline_file_info (const int server_sock)
 			if (tags->title) {
 				char *title = build_title (tags);
 
+				title = iconv_str (title, 0);
 				strncpy (file_info.title, title,
 						sizeof(file_info.title) - 1);
 				file_info.title[sizeof (file_info.title) - 1] = 0;
