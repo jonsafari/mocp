@@ -39,6 +39,7 @@
 #include <errno.h>
 #include <assert.h>
 #include <ctype.h>
+#include <locale.h>
 
 #define DEBUG
 
@@ -1999,6 +2000,9 @@ void init_interface (const int sock, const int logging, char **args,
 	}
 	logit ("Starting MOC interface...");
 
+	if (!setlocale(LC_CTYPE, ""))
+		logit ("Could not net locate!");
+
 	init_playlists ();
 	event_queue_init (&events);
 	iconv_init ();
@@ -2930,15 +2934,15 @@ static int entry_search_key (const int ch)
 	static struct menu *old_curr_plist_menu = NULL;
 
 	enum key_cmd cmd;
-	
+
 	/* in this entry, we also operate on the menu */
 	if ((cmd = get_key_cmd(CON_ENTRY, ch)) == KEY_CMD_WRONG)
 		cmd = get_key_cmd(CON_MENU, ch);
 
 	/* isgraph() can return wrong values if ch is not in unsigned char
-	 * scope */
-	if ((ch >= 0 && ch <= 255 && isgraph(ch)) || ch == ' '
-			|| ch == KEY_BACKSPACE) {
+	 * scope. wealso use isalpha() because it works with locales. */
+	if ((ch >= 0 && ch <= 255) && (isalpha(ch) || isgraph(ch) || ch == ' '
+			|| ch == KEY_BACKSPACE)) {
 		if (ch == KEY_BACKSPACE)
 			entry_back_space ();
 		else
