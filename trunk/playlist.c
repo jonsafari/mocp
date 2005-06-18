@@ -719,16 +719,18 @@ void plist_sort_fname (struct plist *plist)
 			sizeof(struct plist_item));
 
 	x = rb_min (plist->search_tree);
-	assert (x != &rb_null);
+	while (plist_deleted(plist, x->item_num))
+		x = rb_next (x);
 	
 	sorted[0] = plist->items[x->item_num];
 	x->item_num = 0;
 	
 	n = 1;
-	while ((x = rb_next(x)) != &rb_null) {
-		sorted[n] = plist->items[x->item_num];
-		x->item_num = n++;
-	}
+	while ((x = rb_next(x)) != &rb_null)
+		if (!plist_deleted(plist, x->item_num)) {
+			sorted[n] = plist->items[x->item_num];
+			x->item_num = n++;
+		}
 
 	plist->num = n;
 	plist->not_deleted = n;
@@ -1211,4 +1213,17 @@ enum file_type plist_file_type (struct plist *plist, const int num)
 		return plist->items[num].type;
 
 	return (plist->items[num].type = file_type(plist->items[num].file));
+}
+
+/* Remove items from playlist a that are also presend on playlist b. */
+void plist_remove_common_items (struct plist *a, struct plist *b)
+{
+	int i;
+
+	assert (a != NULL);
+	assert (b != NULL);
+	
+	for (i = 0; i < a->num; i++)
+		if (plist_find_fname(b, a->items[i].file) != -1)
+			plist_delete (a, i);
 }
