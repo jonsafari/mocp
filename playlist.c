@@ -1007,7 +1007,8 @@ void plist_cat (struct plist *a, struct plist *b)
 	for (i = 0; i < b->num; i++) {
 		assert (b->items[i].file != NULL);
 		
-		if (plist_find_fname(a, b->items[i].file) == -1)
+		if (!plist_deleted(b, i)
+				&& plist_find_fname(a, b->items[i].file) == -1)
 			plist_add_from_item (a, &b->items[i]);
 	}
 }
