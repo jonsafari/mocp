@@ -31,6 +31,7 @@
 #include "log.h"
 #include "fifo_buf.h"
 #include "out_buf.h"
+#include "options.h"
 
 /* Don't play more than that value (in seconds) in one audio_play().
  * This prevent locking. */
@@ -39,6 +40,23 @@
 
 /*static int fd;*/
 
+static void set_realtime_prio ()
+{
+#ifdef HAVE_SCHED_GET_PRIORITY_MAX
+	if (options_get_int("UseRealtimePriority")) {
+		struct sched_param param;
+
+		param.sched_priority = sched_get_priority_max(SCHED_RR);
+		if (pthread_setschedparam(pthread_self(), SCHED_RR, &param))
+			logit ("Can't set realtime priority: %s",
+					strerror(errno));
+	}
+#else
+	logit ("No sched_get_priority_max() function: realtime priority not "
+			"used.");
+#endif	
+}
+
 /* Reading thread of the buffer. */
 static void *read_thread (void *arg)
 {
@@ -46,6 +64,8 @@ static void *read_thread (void *arg)
 	int audio_dev_closed = 0;
 
 	logit ("entering output buffer thread");
+
+	set_realtime_prio ();
 
 	LOCK (buf->mutex);
 
