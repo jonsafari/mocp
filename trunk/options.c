@@ -190,6 +190,7 @@ void options_init ()
 	option_add_str ("ResampleMethod", "Linear");
 	option_add_int ("ForceSampleRate", 0);
 	option_add_str ("HTTPProxy", NULL);
+	option_add_int ("UseRealtimePriority", 0);
 }
 
 /* Return 1 if a parameter to an integer option is valid. */

@@ -186,3 +186,9 @@ ASCIILines		= no
 # Always use this sample rate when opening the audio device (and resample the
 # sound is necessary). When set to 0 the device is opened with the file's rate.
 #ForceSampleRate	= 48000
+
+# Use realtime priority for output buffer thread. This will prevent gaps while
+# playing even with heavy load. The user which runs MOC must have permissions
+# to set such a priority. This could be dangerous, because it is possible that
+# a bug in MOC will freeze your computer.
+#UseRealtimePriority	= no
