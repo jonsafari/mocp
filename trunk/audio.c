@@ -58,6 +58,7 @@ static int play_thread_running = 0;
 
 /* currentlu played file */
 static int curr_playing = -1;
+static char *curr_playing_fname = NULL;
 static pthread_mutex_t curr_playing_mut = PTHREAD_MUTEX_INITIALIZER;
 
 static struct out_buf out_buf;
@@ -356,6 +357,10 @@ static void *play_thread (void *unused ATTR_UNUSED)
 			LOCK (curr_playing_mut);
 			LOCK (plist_mut);
 			logit ("Playing item %d: %s", curr_playing, file);
+
+			if (curr_playing_fname)
+				free (curr_playing_fname);
+			curr_playing_fname = xstrdup (file);
 				
 			out_buf_time_set (&out_buf, 0.0);
 				
@@ -376,6 +381,13 @@ static void *play_thread (void *unused ATTR_UNUSED)
 			out_buf_time_set (&out_buf, 0.0);
 			free (file);
 		}
+
+		LOCK (curr_playing_mut);
+		if (curr_playing_fname) {
+			free (curr_playing_fname);
+			curr_playing_fname = NULL;
+		}
+		UNLOCK (curr_playing_mut);
 
 		if (stop_playing) {
 			LOCK (curr_playing_mut);
@@ -828,12 +840,7 @@ char *audio_get_sname ()
 	char *sname;
 
 	LOCK (curr_playing_mut);
-	LOCK (plist_mut);
-	if (curr_playing != -1)
-		sname = plist_get_file (curr_plist, curr_playing);
-	else
-		sname = NULL;
-	UNLOCK (plist_mut);
+	sname = xstrdup (curr_playing_fname);
 	UNLOCK (curr_playing_mut);
 
 	return sname;
