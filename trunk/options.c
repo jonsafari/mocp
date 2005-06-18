@@ -155,7 +155,7 @@ void options_init ()
 	option_add_int ("ShowHiddenFiles", 1);
 	option_add_str ("AlsaDevice", "default");
 	option_add_str ("AlsaMixer", "PCM");
-	option_add_str ("AlsaMixer2", "MASTER");
+	option_add_str ("AlsaMixer2", "Master");
 	option_add_int ("HideFileExtension", 0);
 	option_add_int ("ShowFormat", 1);
 	option_add_str ("ShowTime", "IfAvailable");
