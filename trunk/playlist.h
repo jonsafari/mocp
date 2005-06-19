@@ -3,6 +3,8 @@
 
 #include <sys/types.h>
 
+#include "rbtree.h"
+
 /* Flags for the info decoder function. */
 enum tags_select
 {
@@ -52,7 +54,7 @@ struct plist
 	int time_for_all_files;	/* Nono-zero if the above field contains time
 				   for all files on the list. */
 
-	struct rb_node *search_tree;
+	struct rb_tree search_tree;
 };
 
 void plist_init (struct plist *plist);

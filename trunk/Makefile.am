@@ -44,7 +44,9 @@ mocp_SOURCES = log.c \
 	       compat.c \
 	       compat.h \
 	       audio_conversion.c \
-	       audio_conversion.h
+	       audio_conversion.h \
+	       rbtree.c \
+	       rbtree.h
 EXTRA_mocp_SOURCES = gnugetopt.h \
 		     getopt.c \
 		     getopt1.c \
