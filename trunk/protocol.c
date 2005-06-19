@@ -32,6 +32,15 @@
 #define UNIX_PATH_MAX	108
 #define SOCKET_NAME	"socket2"
 
+/* Buffer used to send data in one bigger chunk instead of sending sigle
+ * integer, string etc. values. */
+struct packet_buf
+{
+	char *buf;
+	size_t allocated;
+	size_t len;
+};
+
 /* Create a socket name, return NULL if the name could not be created */
 char *socket_name ()
 {
@@ -194,158 +203,104 @@ int send_time (int sock, time_t i)
 	return res == sizeof(time_t) ? 1 : 0;
 }
 
-/* Add a string to the dynamicaly allocated buffer which has aready len bytes
- * data and is allocated big. Returns the pointer to the buffer which may be not
- * the same as buf. */
-static char *add_buf_str (char *buf, size_t *len, size_t *allocated,
-		const char *str)
+static struct packet_buf *packet_buf_new ()
 {
-	int str_len = strlen(str);
-	size_t needed_space = str_len * sizeof(char) + sizeof(int);
+	struct packet_buf *b;
+
+	b = (struct packet_buf *)xmalloc (sizeof(struct packet_buf));
+	b->buf = (char *)xmalloc (1024);
+	b->allocated = 1024;
+	b->len = 0;
+
+	return b;
+}
+
+static void packet_buf_free (struct packet_buf *b)
+{
+	assert (b != NULL);
+
+	free (b->buf);
+	free (b);
+}
+
+/* Make sure that there is at least len bytes free. */
+static void packet_buf_add_space (struct packet_buf *b, const size_t len)
+{
+	assert (b != NULL);
+
+	if (b->allocated < b->len + len) {
+		b->allocated += len + 256; /* put some more space */
+		b->buf = (char *)xrealloc (b, b->allocated);
+	}
+}
+
+/* Add an integer value to the buffer */
+static void packet_buf_add_int (struct packet_buf *b, const int n)
+{
+	assert (b != NULL);
+
+	packet_buf_add_space (b, sizeof(n));
+	memcpy (b->buf + b->len, &n, sizeof(n));
+	b->len += sizeof(n);
+}
+
+/* Add a string value to the buffer. */
+static void packet_buf_add_str (struct packet_buf *b, const char *str)
+{
+	int str_len;
 	
-	if (*allocated - *len < needed_space) {
-		*allocated += needed_space + 256; /* put some more space */
-		buf = xrealloc (buf, *allocated);
-	}
+	assert (b != NULL);
+	assert (str != NULL);
 
-	memcpy (buf + *len, &str_len, sizeof(int));
-	*len += sizeof(int);
-	memcpy (buf + *len, str, str_len);
-	*len += str_len;
+	str_len = strlen (str);
 
-	return buf;
+	packet_buf_add_int (b, str_len);
+	packet_buf_add_space (b, str_len * sizeof(char));
+	memcpy (b->buf + b->len, str, str_len * sizeof(char));
+	b->len += str_len * sizeof(char);
 }
 
-/* Add an integerg to the dynamicaly allocated buffer which has aready len bytes
- * data and is allocated big. Returns the pointer to the buffer which may be not
- * the same as buf. */
-static char *add_buf_int (char *buf, size_t *len, size_t *allocated,
-		const int n)
+/* Add a time_t value to the buffer. */
+static void packet_buf_add_time (struct packet_buf *b, const time_t n)
 {
-	if (*allocated - *len < (int)sizeof(n)) {
-		*allocated *= 2;
-		buf = xrealloc (buf, *allocated);
-	}
+	assert (b != NULL);
 
-	memcpy (buf + *len, &n, sizeof(n));
-	*len += sizeof(n);
-
-	return buf;
+	packet_buf_add_space (b, sizeof(n));
+	memcpy (b->buf + b->len, &n, sizeof(n));
+	b->len += sizeof(n);
 }
 
-#if 0
-/* Add a long to the dynamicaly allocated buffer which has aready len bytes
- * data and is allocated big. Returns the pointer to the buffer which may be not
- * the same as buf. */
-static char *add_buf_long (char *buf, size_t *len, size_t *allocated,
-		const int n)
+/* Add tags to the buffer. If tags == NULL, add empty tags. */
+void packet_buf_add_tags (struct packet_buf *b, const struct file_tags *tags)
 {
-	if (*allocated - *len < (int)sizeof(n)) {
-		*allocated *= 2;
-		buf = xrealloc (buf, *allocated);
-	}
-
-	memcpy (buf + *len, &n, sizeof(n));
-	*len += sizeof(n);
-
-	return buf;
-}
-#endif
-
-/* Add a time_t to the dynamicaly allocated buffer which has aready len bytes
- * data and is allocated big. Returns the pointer to the buffer which may be not
- * the same as buf. */
-static char *add_buf_time (char *buf, size_t *len, size_t *allocated,
-		const time_t t)
-{
-	if (*allocated - *len < (int)sizeof(t)) {
-		*allocated *= 2;
-		buf = xrealloc (buf, *allocated);
-	}
-
-	memcpy (buf + *len, &t, sizeof(t));
-	*len += sizeof(t);
-
-	return buf;
-}
-
-/* Add data to the dynamicaly allocated buffer which has aready len bytes
- * data and is allocated big. Returns the pointer to the buffer which may be not
- * the same as buf. */
-static char *add_buf_data (char *buf, size_t *len, size_t *allocated,
-		const char *data, const size_t data_len)
-{
-	if (*allocated - *len < data_len) {
-		*allocated *= 2;
-		buf = xrealloc (buf, *allocated);
-	}
-
-	memcpy (buf + *len, data, data_len);
-	*len += data_len;
-
-	return buf;
-}
-
-/* Make a packet from the tags fields suitable to send() as. The returned
- * memory is malloc()ed and the size of the packet is put into len.
- * If tags == NULL, make a packet with empty tags. */
-static char *make_tags_packet (const struct file_tags *tags, size_t *len)
-{
-	char *buf;
-	size_t allocated = 2048;
+	assert (b != NULL);
 	
-	buf = (char *)xmalloc (allocated);
-	*len = 0;
-
 	if (tags) {
-		buf = add_buf_str (buf, len, &allocated,
-				tags->title ? tags->title : "");
-		buf = add_buf_str (buf, len, &allocated,
-				tags->artist ? tags->artist : "");
-		buf = add_buf_str (buf, len, &allocated,
-				tags->album ? tags->album : "");
-		buf = add_buf_int (buf, len, &allocated, tags->track);
-		
-		buf = add_buf_int (buf, len, &allocated,
-				tags->filled & TAGS_TIME ? tags->time : -1);
+		packet_buf_add_str (b, tags->title ? tags->title : "");
+		packet_buf_add_str (b, tags->artist ? tags->artist : "");
+		packet_buf_add_str (b, tags->album ? tags->album : "");
+		packet_buf_add_int (b, tags->track);
+		packet_buf_add_int (b, tags->filled & TAGS_TIME ?
+				tags->time : -1);
 	}
 	else {
 		
 		/* empty tags: */
-		buf = add_buf_str (buf, len, &allocated, ""); /* title */
-		buf = add_buf_str (buf, len, &allocated, ""); /* artist */
-		buf = add_buf_str (buf, len, &allocated, ""); /* album */
-		buf = add_buf_int (buf, len, &allocated, -1); /* track */
-		buf = add_buf_int (buf, len, &allocated, -1); /* time */
+		packet_buf_add_str (b, ""); /* title */
+		packet_buf_add_str (b, ""); /* artist */
+		packet_buf_add_str (b, ""); /* album */
+		packet_buf_add_int (b, -1); /* track */
+		packet_buf_add_int (b, -1); /* time */
 	}
-
-	return buf;
 }
 
-/* Make a packet from the item fields suitable to send() as. The returned
- * memory is malloc()ed and the size of the packet is put into len. */
-static char *make_item_packet (const struct plist_item *item, size_t *len)
+/* Add an item to the buffer. */
+void packet_buf_add_item (struct packet_buf *b, const struct plist_item *item)
 {
-	char *buf;
-	size_t allocated;
-	char *tags_packet;
-	size_t tags_packet_len;
-
-	allocated = 2048;
-	buf = (char *)xmalloc (allocated);
-	*len = 0;
-
-	buf = add_buf_str (buf, len, &allocated, item->file);
-	buf = add_buf_str (buf, len, &allocated,
-			item->title_tags ? item->title_tags : "");
-
-	tags_packet = make_tags_packet (item->tags, &tags_packet_len);
-	buf = add_buf_data (buf, len, &allocated, tags_packet, tags_packet_len);
-	free (tags_packet);
-	
-	buf = add_buf_time (buf, len, &allocated, item->mtime);
-
-	return buf;
+	packet_buf_add_str (b, item->file);
+	packet_buf_add_str (b, item->title_tags ? item->title_tags : "");
+	packet_buf_add_tags (b, item->tags);
+	packet_buf_add_time (b, item->mtime);
 }
 
 /* Send data to the socket. Return 0 on error. */
@@ -370,9 +325,8 @@ static int send_all (int sock, const char *buf, const size_t size)
  * (end of playlist). Return 0 on error. */
 int send_item (int sock, const struct plist_item *item)
 {
-	char *buf;
-	size_t pkt_size;
 	int res = 1;
+	struct packet_buf *b;
 	
 	if (!item) {
 		if (!send_str(sock, "")) {
@@ -382,13 +336,14 @@ int send_item (int sock, const struct plist_item *item)
 		return 1;
 	}
 
-	buf = make_item_packet (item, &pkt_size);
-	if (!send_all(sock, buf, pkt_size)) {
+	b = packet_buf_new ();
+	packet_buf_add_item (b, item);
+	if (!send_all(sock, b->buf, b->len)) {
 		logit ("Error when sending item");
 		res = 0;
 	}
 		
-	free (buf);
+	packet_buf_free (b);
 	return res;
 }
 
@@ -452,16 +407,16 @@ struct file_tags *recv_tags (int sock)
 /* Send tags. If tags == NULL, send empty tags. REturn 0 on error. */
 int send_tags (int sock, const struct file_tags *tags)
 {
-	char *packet;
-	size_t packet_size;
 	int res = 1;
+	struct packet_buf *b;
 
-	packet = make_tags_packet (tags, &packet_size);
+	b = packet_buf_new ();
+	packet_buf_add_tags (b, tags);
 	
-	if (!send_all(sock, packet, packet_size))
+	if (!send_all(sock, b->buf, b->len))
 		res = 0;
 	
-	free (packet);
+	packet_buf_free (b);
 	return res;
 }
 
@@ -618,52 +573,29 @@ int event_queue_empty (const struct event_queue *q)
 	return q->head == NULL ? 1 : 0;
 }
 
-/* Fill the buffer with all event data. Insert the size on the buffer in
- * len. Returned memory is malloc()ed. */
-static char *make_event_packet (struct event *e, size_t *len)
+/* Make a packet buffer filled with the event (with data). */
+static struct packet_buf *make_event_packet (const struct event *e)
 {
-	char *buf;
+	struct packet_buf *b;
 	
 	assert (e != NULL);
 
-	*len = sizeof(e->type);
+	b = packet_buf_new ();
+
+	packet_buf_add_int (b, e->type);
 
 	if (e->type == EV_PLIST_DEL || e->type == EV_STATUS_MSG) {
-		int str_len;
-
 		assert (e->data != NULL);
-
-		/* Add the size of the length of the string and the size of
-		 * the string. */
-		str_len = strlen(e->data);
-		*len += sizeof(int) + str_len * sizeof(char);
-
-		buf = xmalloc (*len);
-		memcpy (buf, &e->type, sizeof(e->type));
-		memcpy (buf + sizeof(e->type), &str_len, sizeof(str_len));
-		memcpy (buf + sizeof(e->type) + sizeof(str_len), e->data,
-				str_len * sizeof(char));
+		packet_buf_add_str (b, e->data);
 	}
 	else if (e->type == EV_PLIST_ADD) {
-		size_t item_packet_len;
-		char *item_packet;
-		
-		item_packet = make_item_packet (e->data, &item_packet_len);
-		*len += item_packet_len;
-		
-		buf = (char *)xmalloc(*len);
-		memcpy (buf, &e->type, sizeof(e->type));
-		memcpy (buf + sizeof(e->type), item_packet, item_packet_len);
-		free (item_packet);
+		assert (e->data != NULL);
+		packet_buf_add_item (b, e->data);
 	}
-	else {
-		if (e->data)
-			logit ("Unhandled event data!");
-		buf = xmalloc(*len);
-		memcpy (buf, &e->type, sizeof(e->type));
-	}
+	else if (e->data)
+		abort ();
 
-	return buf;
+	return b;
 }
 
 /* Send the first event from the queue an remove it on success. If the
@@ -671,17 +603,16 @@ static char *make_event_packet (struct event *e, size_t *len)
  * or NB_IO_OK on success. */
 enum noblock_io_status event_send_noblock (int sock, struct event_queue *q)
 {
-	char *buf;
-	size_t buf_len;
 	ssize_t res;
+	struct packet_buf *b;
 	
 	assert (q != NULL);
 	assert (!event_queue_empty(q));
 
 	/* We must do it in one send() call to be able to handle blocking. */
-	buf = make_event_packet (event_get_first(q), &buf_len);
-	res = send (sock, buf, buf_len, MSG_DONTWAIT);
-	free (buf);
+	b = make_event_packet (event_get_first(q));
+	res = send (sock, b->buf, b->len, MSG_DONTWAIT);
+	packet_buf_free (b);
 
 	if (res > 0) {
 		struct event *e;
