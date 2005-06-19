@@ -1,6 +1,7 @@
 #ifndef FILES_H
 #define FILES_H
 
+#include <stdio.h>
 #include "playlist.h"
 
 struct file_list
