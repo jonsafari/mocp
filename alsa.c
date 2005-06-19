@@ -11,11 +11,6 @@
 
 /* Based on aplay copyright (c) by Jaroslav Kysela <perex@suse.cz> */
 
-/* TODO:
- * - When another application changes the mixer settings, they are not visible
- *   here.
- */
-
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
