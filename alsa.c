@@ -209,20 +209,18 @@ static snd_mixer_elem_t *alsa_init_mixer_channel (const char *name,
 	if (!(elem = snd_mixer_find_selem(mixer_handle, sid))) {
 		snd_mixer_close (mixer_handle);
 		mixer_handle = NULL;
-		error ("Can't find mixer %s", name);
+		fatal ("Can't find mixer %s", name);
 	}
-	else if (!snd_mixer_selem_has_playback_volume(elem)) {
+	
+	if (!snd_mixer_selem_has_playback_volume(elem)) {
 		snd_mixer_close (mixer_handle);
 		mixer_handle = NULL;
-		error ("Mixer device has no playback volume (%s).", name);
-		elem = NULL;
+		fatal ("Mixer device has no playback volume (%s).", name);
 	}
-	else {
-		snd_mixer_selem_get_playback_volume_range (elem,
-				vol_min, vol_max);
-		logit ("Opened mixer (%s), volume range: %ld-%ld", name,
-				*vol_min, *vol_max);
-	}
+	
+	snd_mixer_selem_get_playback_volume_range (elem, vol_min, vol_max);
+	logit ("Opened mixer (%s), volume range: %ld-%ld", name,
+			*vol_min, *vol_max);
 
 	snd_mixer_selem_id_free (sid);
 
