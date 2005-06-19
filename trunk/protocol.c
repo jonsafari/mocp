@@ -573,9 +573,12 @@ void event_queue_free (struct event_queue *q)
 	assert (q != NULL);
 
 	while ((e = event_get_first(q))) {
-		if (e->data)
-			logit ("Event with data that I can't free() found in the"
-					" queue while free()ing it!");
+		if (e->type == EV_PLIST_ADD) {
+			plist_free_item_fields (e->data);
+			free (e->data);
+		}
+		else if (e->type == EV_PLIST_DEL || e->type == EV_STATUS_MSG)
+			free (e->data);
 		event_pop (q);
 	}
 }

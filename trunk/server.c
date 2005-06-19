@@ -153,7 +153,10 @@ static int add_client (int sock)
 	for (i = 0; i < CLIENTS_MAX; i++)
 		if (clients[i].socket == -1) {
 			clients[i].wants_events = 0;
+			LOCK (clients[i].events_mutex);
+			event_queue_free (&clients[i].events);
 			event_queue_init (&clients[i].events);
+			UNLOCK (clients[i].events_mutex);
 			clients[i].socket = sock;
 			clients[i].requests_plist = 0;
 			clients[i].can_send_plist = 0;
@@ -213,23 +216,9 @@ static int client_unlock (struct client *cli)
 static void del_client (struct client *cli)
 {
 	cli->socket = -1;
-	struct event *e;
-
-	/* Free the event queue - we can't just use event_queue_free(), because
-	 * it can't free() the event's data. */
-
-	while ((e = event_get_first(&cli->events))) {
-		if (e->type == EV_PLIST_ADD) {
-			plist_free_item_fields (e->data);
-			free (e->data);
-		}
-		else if (e->type == EV_PLIST_DEL || e->type == EV_STATUS_MSG)
-			free (e->data);
-		event_pop (&cli->events);
-	}
-	
-	/* To be sure :) */
+	LOCK (cli->events_mutex);
 	event_queue_free (&cli->events);
+	UNLOCK (cli->events_mutex);
 }
 
 /* CHeck if the process with ginen PID exists. Return != 0 if so. */
