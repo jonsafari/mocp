@@ -1,6 +1,6 @@
 /*
  * MOC - music on console
- * Copyright (C) 2004 Damian Pietras <daper@daper.net>
+ * Copyright (C) 2004,2005 Damian Pietras <daper@daper.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,376 +30,10 @@
 #include "log.h"
 #include "options.h"
 #include "files.h"
+#include "rbtree.h"
 
 /* Initial size of the table */
 #define	INIT_SIZE	64
-
-enum rb_color { RED, BLACK };
-
-/* structure for Red-Black trees */
-struct rb_node
-{
-	struct rb_node *left;
-	struct rb_node *right;
-	struct rb_node *parent;
-	enum rb_color color;
-	int item_num;
-};
-
-/* item used as a null value */
-static struct rb_node rb_null = { NULL, NULL, NULL, BLACK, -1 };
-
-static void rb_left_rotate (struct rb_node **root, struct rb_node *x)
-{
-	struct rb_node *y = x->right;
-
-	assert (y != &rb_null);
-
-	x->right = y->left;
-	if (y->left != &rb_null)
-		y->left->parent = x;
-	y->parent = x->parent;
-
-	if (x->parent == &rb_null)
-		*root = y;
-	else {
-		if (x == x->parent->left)
-			x->parent->left = y;
-		else
-			x->parent->right = y;
-	}
-
-	y->left = x;
-	x->parent = y;
-}
-
-static void rb_right_rotate (struct rb_node **root, struct rb_node *x)
-{
-	struct rb_node *y = x->left;
-
-	assert (y != &rb_null);
-
-	x->left = y->right;
-	if (y->right != &rb_null)
-		y->right->parent = x;
-	y->parent = x->parent;
-
-	if (x->parent == &rb_null)
-		*root = y;
-	else {
-		if (x == x->parent->right)
-			x->parent->right = y;
-		else
-			x->parent->left = y;
-	}
-
-	y->right = x;
-	x->parent = y;
-}
-
-static void rb_insert_fixup (struct rb_node **root, struct rb_node *z)
-{
-	while (z->parent->color == RED)
-		if (z->parent == z->parent->parent->left) {
-			struct rb_node *y = z->parent->parent->right;
-			
-			if (y->color == RED) {
-				z->parent->color = BLACK;
-				y->color = BLACK;
-				z->parent->parent->color = RED;
-				z = z->parent->parent;
-			}
-			else {
-				if (z == z->parent->right) {
-					z = z->parent;
-					rb_left_rotate (root, z);
-				}
-
-				z->parent->color = BLACK;
-				z->parent->parent->color = RED;
-				rb_right_rotate (root, z->parent->parent);
-			}
-		}
-		else {
-			struct rb_node *y = z->parent->parent->left;
-			
-			if (y->color == RED) {
-				z->parent->color = BLACK;
-				y->color = BLACK;
-				z->parent->parent->color = RED;
-				z = z->parent->parent;
-			}
-			else {
-				if (z == z->parent->left) {
-					z = z->parent;
-					rb_right_rotate (root, z);
-				}
-				
-				z->parent->color = BLACK;
-				z->parent->parent->color = RED;
-				rb_left_rotate (root, z->parent->parent);
-			}
-		}
-	
-	(*root)->color = BLACK;
-}
-
-static void rb_delete_fixup (struct rb_node **root, struct rb_node *x,
-		struct rb_node *parent)
-{
-	struct rb_node *w;
-	
-	while (x != *root && x->color == BLACK) {
-		if (x == parent->left) {
-			w = parent->right;
-
-			if (w->color == RED) {
-				w->color = BLACK;
-				parent->color = RED;
-				rb_left_rotate (root, parent);
-				w = parent->right;
-			}
-
-			if (w->left->color == BLACK
-					&& w->right->color == BLACK) {
-				w->color = RED;
-				x = parent;
-				parent = x->parent;
-			}
-			else {
-				if (w->right->color == BLACK) {
-					w->left->color = BLACK;
-					w->color = RED;
-					rb_right_rotate (root, w);
-					w = parent->right;
-				}
-				
-				w->color = parent->color;
-				parent->color = BLACK;
-				w->right->color = BLACK;
-				rb_left_rotate (root, parent);
-				x = *root;
-			}
-		}
-		else {
-			w = parent->left;
-
-			if (w->color == RED) {
-				w->color = BLACK;
-				parent->color = RED;
-				rb_right_rotate (root, parent);
-				w = parent->left;
-			}
-
-			if (w->right->color == BLACK
-					&& w->left->color == BLACK) {
-				w->color = RED;
-				x = parent;
-				parent = x->parent;
-			}
-			else {
-				if (w->left->color == BLACK) {
-					w->right->color = BLACK;
-					w->color = RED;
-					rb_left_rotate (root, w);
-					w = parent->left;
-				}
-
-				w->color = parent->color;
-				parent->color = BLACK;
-				w->left->color = BLACK;
-				rb_right_rotate (root, parent);
-				x = *root;
-			}
-		}
-
-	}
-
-	x->color = BLACK;
-}
-
-/* Insert the playlist position into the reb-black tree. */
-static void rb_insert (struct rb_node **root, const struct plist *plist,
-		const int num)
-{
-	struct rb_node *z;
-	struct rb_node *y = &rb_null;
-	struct rb_node *x = *root;
-
-	assert (root != NULL);
-	assert (num >= 0);
-	assert (plist->items[num].file != NULL);
-
-	z = (struct rb_node *)xmalloc (sizeof(struct rb_node));
-
-	z->item_num = num;
-	
-	while (x != &rb_null) {
-		y = x;
-		if (strcmp(plist->items[z->item_num].file,
-					plist->items[x->item_num].file) < 0)
-			x = x->left;
-		else
-			x = x->right;
-	}
-
-	z->parent = y;
-	if (y == &rb_null)
-		*root = z;
-	else {
-		if (strcmp(plist->items[z->item_num].file,
-					plist->items[y->item_num].file)	< 0)
-			y->left = z;
-		else
-			y->right = z;
-	}
-	
-	z->left = &rb_null;
-	z->right = &rb_null;
-	z->color = RED;
-
-	rb_insert_fixup (root, z);
-}
-
-static void rb_destroy (struct rb_node *root)
-{
-	assert (root != NULL);
-
-	if (root != &rb_null) {	
-		rb_destroy (root->left);
-		rb_destroy (root->right);
-		free (root);
-	}
-}
-
-static struct rb_node *rb_search_internal (struct rb_node *root,
-		const struct plist *plist, const char *file)
-{
-	struct rb_node *x = root;
-
-	while (x != &rb_null) {
-		int cmp = strcmp (file, plist->items[x->item_num].file);
-		
-		if (cmp < 0)
-			x = x->left;
-		else if (cmp > 0)
-			x = x->right;
-		else
-			return x;
-	}
-
-	return NULL;
-}
-
-/* Search in the red-black tree for the item with file name file.
- * Return the item position on the playlist or -1 if not found. */
-static int rb_search (struct rb_node *root, const struct plist *plist,
-		const char *file)
-{
-	const struct rb_node *x = rb_search_internal (root, plist, file);
-	
-	return x ? x->item_num : -1;
-}
-
-static struct rb_node *rb_min (struct rb_node *root)
-{
-	struct rb_node *x = root;
-
-	if (root == &rb_null)
-		return &rb_null;
-
-	while (x->left != &rb_null)
-		x = x->left;
-
-	return x;
-}
-
-#if 0
-static struct rb_node *rb_max (struct rb_node *root)
-{
-	struct rb_node *x = root;
-
-	if (root == &rb_null)
-		return NULL;
-
-	while (x->right != &rb_null)
-		x = x->right;
-
-	return x;
-}
-#endif
-
-static struct rb_node *rb_next (struct rb_node *x)
-{
-	struct rb_node *y;
-	
-	if (x->right != &rb_null)
-		return rb_min (x->right);
-	
-	y = x->parent;
-	while (y != &rb_null && x == y->right) {
-		x = y;
-		y = y->parent;
-	}
-
-	return y;
-}
-
-static void rb_delete (struct rb_node **root, const struct plist *plist,
-		const char *file)
-{
-	struct rb_node *z = rb_search_internal (*root, plist, file);
-
-	if (z) {
-		struct rb_node *x, *y, *parent;
-		
-		if (z->left == &rb_null || z->right == &rb_null) 
-			y = z;
-		else
-			y = rb_next (z);
-
-		if (y->left != &rb_null)
-			x = y->left;
-		else
-			x = y->right;
-
-		parent = y->parent;
-		if (x != &rb_null)
-			x->parent = parent;
-		
-		if (y->parent == &rb_null)
-			*root = x;
-		else {
-			if (y == y->parent->left)
-				y->parent->left = x;
-			else
-				y->parent->right = x;
-		}
-
-		if (y != z)
-			z->item_num = y->item_num;
-
-		if (y->color == BLACK)
-			rb_delete_fixup (root, x, parent);
-
-		free (y);
-	}
-}
-
-/* Update playlist position for item with the given file name. Return 0 if
- * there is no such item. */
-static int rb_update_position (struct rb_node *root, const struct plist *plist,
-		const char *file, const int new_pos)
-{
-	struct rb_node *x = rb_search_internal (root, plist, file);
-
-	if (x) {
-		x->item_num = new_pos;
-		return 1;
-	}
-
-	return 0;
-}
 
 void tags_free (struct file_tags *tags)
 {
@@ -480,6 +114,24 @@ struct file_tags *tags_dup (const struct file_tags *tags)
 	return dtags;
 }
 
+static int rb_compare (const void *a, const void *b, void *adata)
+{
+	struct plist *plist = (struct plist *)adata;
+	int pos_a = (int)a;
+	int pos_b = (int)b;
+
+	return strcmp (plist->items[pos_a].file, plist->items[pos_b].file);
+}
+
+static int rb_fname_compare (const void *key, const void *data, void *adata)
+{
+	struct plist *plist = (struct plist *)adata;
+	const char *fname = (const char *)key;
+	const int pos = (int)data;
+
+	return strcmp (fname, plist->items[pos].file);
+}
+
 /* Return 1 if an item has 'deleted' flag. */
 inline int plist_deleted (const struct plist *plist, const int num)
 {
@@ -516,7 +168,8 @@ void plist_init (struct plist *plist)
 	plist->items = (struct plist_item *)xmalloc (sizeof(struct plist_item)
 			* INIT_SIZE);
 	plist->serial = -1;
-	plist->search_tree = &rb_null;
+	rb_init_tree (&plist->search_tree, rb_compare, rb_fname_compare,
+			plist);
 	plist->total_time = 0;
 	plist->time_for_all_files = 0;
 }
@@ -562,9 +215,8 @@ int plist_add (struct plist *plist, const char *file_name)
 			: (time_t)-1);
 
 	if (file_name) {
-		if (!rb_update_position(plist->search_tree, plist, file_name,
-					plist->num))
-			rb_insert (&plist->search_tree, plist, plist->num);
+		rb_delete (&plist->search_tree, file_name);
+		rb_insert (&plist->search_tree, (void *)plist->num);
 	}
 	
 	plist->num++;
@@ -688,8 +340,7 @@ void plist_clear (struct plist *plist)
 	plist->allocated = INIT_SIZE;
 	plist->num = 0;
 	plist->not_deleted = 0;
-	rb_destroy (plist->search_tree);
-	plist->search_tree = &rb_null;
+	rb_clear (&plist->search_tree);
 	plist->total_time = 0;
 	plist->time_for_all_files = 0;
 }
@@ -718,18 +369,20 @@ void plist_sort_fname (struct plist *plist)
 	sorted = (struct plist_item *)xmalloc (plist_count(plist) *
 			sizeof(struct plist_item));
 
-	x = rb_min (plist->search_tree);
-	while (plist_deleted(plist, x->item_num))
+	x = rb_min (&plist->search_tree);
+	assert (!rb_is_null(x));
+
+	while (plist_deleted(plist, (int)x->data))
 		x = rb_next (x);
 	
-	sorted[0] = plist->items[x->item_num];
-	x->item_num = 0;
+	sorted[0] = plist->items[(int)x->data];
+	x->data = (void *)0;
 	
 	n = 1;
-	while ((x = rb_next(x)) != &rb_null)
-		if (!plist_deleted(plist, x->item_num)) {
-			sorted[n] = plist->items[x->item_num];
-			x->item_num = n++;
+	while (!rb_is_null(x = rb_next(x)))
+		if (!plist_deleted(plist, (int)x->data)) {
+			sorted[n] = plist->items[(int)x->data];
+			x->data = (void *)n++;
 		}
 
 	plist->num = n;
@@ -742,13 +395,16 @@ void plist_sort_fname (struct plist *plist)
 /* Find an item on the list items. Return the index or -1 if not found. */
 int plist_find_fname (struct plist *plist, const char *file)
 {
-	int i;
+	struct rb_node *x;
 	
 	assert (plist != NULL);
 
-	i = rb_search (plist->search_tree, plist, file);
+	x = rb_search (&plist->search_tree, file);
 
-	return i != -1 && !plist_deleted(plist, i) ? i : -1;
+	if (rb_is_null(x))
+		return -1;
+
+	return !plist_deleted(plist, (int)x->data) ? (int)x->data : -1;
 }
 
 /* Find an item on the list, also find deleted items. If there are more than one
@@ -986,14 +642,14 @@ void plist_set_file (struct plist *plist, const int num, const char *file)
 	assert (file != NULL);
 
 	if (plist->items[num].file) {
-		rb_delete (&plist->search_tree, plist, file);
+		rb_delete (&plist->search_tree, file);
 		free (plist->items[num].file);
 		plist->items[num].type = F_OTHER;
 	}
 	
 	plist->items[num].file = xstrdup (file);
 	plist->items[num].mtime = get_mtime (file);
-	rb_insert (&plist->search_tree, plist, num);
+	rb_insert (&plist->search_tree, (void *)num);
 }
 
 /* Add the content of playlist b to a by copying items. */
@@ -1155,11 +811,10 @@ void plist_shuffle (struct plist *plist)
 		plist_swap (plist, i,
 				(rand()/(float)RAND_MAX) * (plist->num - 1));
 
-	rb_destroy (plist->search_tree);
-	plist->search_tree = &rb_null;
+	rb_clear (&plist->search_tree);
 	
 	for (i = 0; i < plist->num; i++)
-		rb_insert (&plist->search_tree, plist, i);
+		rb_insert (&plist->search_tree, (void *)i);
 }
 
 /* Swap the first item on the playlist with the item with file fname. */
@@ -1173,11 +828,11 @@ void plist_swap_first_fname (struct plist *plist, const char *fname)
 	i = plist_find_fname (plist, fname);
 
 	if (i != -1 && i != 0) {
-		rb_delete (&plist->search_tree, plist, fname);
-		rb_delete (&plist->search_tree, plist, plist->items[0].file);
+		rb_delete (&plist->search_tree, fname);
+		rb_delete (&plist->search_tree, plist->items[0].file);
 		plist_swap (plist, 0, i);
-		rb_insert (&plist->search_tree, plist, 0);
-		rb_insert (&plist->search_tree, plist, i);
+		rb_insert (&plist->search_tree, (void *)0);
+		rb_insert (&plist->search_tree, (void *)i);
 	}
 }
 
