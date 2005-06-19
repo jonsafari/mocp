@@ -1746,7 +1746,8 @@ static void check_term_size ()
 /* Process file names passwd as arguments. */
 static void process_args (char **args, const int num, const int recursively)
 {
-	if (num == 1 && !recursively && isdir(args[0]) == 1) {
+	if (num == 1 && !recursively && !is_url(args[0])
+			&& isdir(args[0]) == 1) {
 		make_path (args[0]);
 		if (!go_to_dir(NULL))
 			enter_first_dir ();
@@ -1778,17 +1779,24 @@ static void process_args (char **args, const int num, const int recursively)
 
 		for (i = 0; i < num; i++) {
 			char path[2*PATH_MAX];
-			int dir = isdir(args[i]);
+			int dir = !is_url(args[i]) && isdir(args[i]);
 
-			if (args[i][0] == '/')
-				strcpy (path, "/");
-			else
-				strcpy (path, this_cwd);
-			resolve_path (path, sizeof(path), args[i]);
+			if (is_url(args[i])) {
+				strncpy(path, args[i], sizeof(path));
+				path[sizeof(path) - 1] = 0;
+			}
+			else {
+				if (args[i][0] == '/')
+					strcpy (path, "/");
+				else
+					strcpy (path, this_cwd);
+				resolve_path (path, sizeof(path), args[i]);
+			}
 
 			if (dir == 1)
 				read_directory_recurr (path, playlist, 1);
-			else if (dir == 0 && is_sound_file(path))
+			else if (!dir && (is_sound_file(path)
+						|| is_url(path)))
 				plist_add (playlist, path);
 		}
 	}
@@ -4051,11 +4059,11 @@ void interface_cmdline_append (int server_sock, char **args,
 	plist_init (&plist);
 
 	for (i = 0; i < arg_num; i++) {
-		int dir = isdir(args[i]);
+		int dir = !is_url(args[i]) && isdir(args[i]);
 
 		if (dir == 1)
 			read_directory_recurr (args[i], &plist, 1);
-		else if (dir == 0 && is_sound_file(args[i]))
+		else if (is_url(args[i]) || is_sound_file(args[i]))
 			plist_add (&plist, args[i]);
 	}
 
@@ -4268,7 +4276,7 @@ void interface_cmdline_playit (int server_sock, char **args, const int arg_num)
 	plist_init (&plist);
 
 	for (i = 0; i < arg_num; i++)
-		if (is_sound_file(args[i]))
+		if (is_url(args[i]) || is_sound_file(args[i]))
 			plist_add (&plist, args[i]);
 
 	if (plist_count(&plist)) {
