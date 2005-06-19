@@ -4254,3 +4254,42 @@ void interface_cmdline_file_info (const int server_sock)
 	plist_free (curr_plist);
 	plist_free (playlist);
 }
+
+/* Add the files to the server's playlist and start playing them. Don't touch
+ * client's playlist. */
+void interface_cmdline_playit (int server_sock, char **args, const int arg_num)
+{
+	struct plist plist;
+	int i;
+
+	srv_sock = server_sock; /* the interface is not initialized, so set it
+				   here */
+
+	plist_init (&plist);
+
+	for (i = 0; i < arg_num; i++)
+		if (is_sound_file(args[i]))
+			plist_add (&plist, args[i]);
+
+	if (plist_count(&plist)) {
+		int serial;
+		
+		send_int_to_srv (CMD_LOCK);
+		
+		send_playlist (&plist, 1);
+		
+		send_int_to_srv (CMD_GET_SERIAL);
+		serial = get_data_int ();
+		send_int_to_srv (CMD_PLIST_SET_SERIAL);
+		send_int_to_srv (serial);
+		
+		send_int_to_srv (CMD_UNLOCK);
+		
+		send_int_to_srv (CMD_PLAY);
+		send_str_to_srv ("");
+	}
+	else
+		fatal ("No files added - no sound files on command line.");
+
+	plist_free (&plist);
+}

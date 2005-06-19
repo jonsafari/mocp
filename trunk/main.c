@@ -57,6 +57,7 @@ struct parameters
 	int get_file_info;
 	int toggle_pause;
 	int recursively;
+	int playit;
 };
 
 static int im_server = 0; /* I em the server? */
@@ -269,6 +270,8 @@ static void start_moc (const struct parameters *params, char **args,
 	}
 
 	if (params->dont_run_iface) {
+		if (params->playit)
+			interface_cmdline_playit (server_sock, args, arg_num);
 		if (params->clear)
 			interface_cmdline_clear_plist (server_sock);
 		if (params->append)
@@ -345,6 +348,8 @@ static void show_usage (const char *prg_name) {
 "                       and exit.\n"
 "-c --clear             Clear the playlist and exit.\n"
 "-p --play              Play first item on the playlist and exit.\n"
+"-l --playit            Play files given on command line without modifing the"
+"                       playlist.\n"
 "-s --stop              Stop playing.\n"
 "-f --next              Play next song.\n"
 "-r --previous          Play previous song.\n"
@@ -447,6 +452,7 @@ int main (int argc, char *argv[])
 		{ "append",		0, NULL, 'a' },
 		{ "clear", 		0, NULL, 'c' },
 		{ "play", 		0, NULL, 'p' },
+		{ "playit",		0, NULL, 'l' },
 		{ "stop",		0, NULL, 's' },
 		{ "next",		0, NULL, 'f' },
 		{ "previous",		0, NULL, 'r' },
@@ -471,7 +477,7 @@ int main (int argc, char *argv[])
 	memset (&params, 0, sizeof(params));
 	options_init ();
 
-	while ((ret = getopt_long(argc, argv, "VhDSFR:macpsxT:C:M:PUynArfiGe",
+	while ((ret = getopt_long(argc, argv, "VhDSFR:macpsxT:C:M:PUynArfiGel",
 					long_options, &opt_index)) != -1) {
 		switch (ret) {
 			case 'V':
@@ -515,6 +521,10 @@ int main (int argc, char *argv[])
 				break;
 			case 'p':
 				params.play = 1;
+				params.dont_run_iface = 1;
+				break;
+			case 'l':
+				params.playit = 1;
 				params.dont_run_iface = 1;
 				break;
 			case 's':
