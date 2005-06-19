@@ -566,3 +566,10 @@ void menu_setcurritem_by_plistnum (struct menu *menu, const int plist_num)
 	if ((i = find_item_plist(menu, plist_num)) != -1)
 		menu_setcurritem (menu, i);
 }
+
+int menu_nitems (const struct menu *menu)
+{
+	assert (menu != NULL);
+
+	return menu->nitems;
+}

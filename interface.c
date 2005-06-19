@@ -2984,7 +2984,7 @@ static int entry_search_key (const int ch)
 		update_info_win ();
 		wrefresh (info_win);
 		
-		if (ch == '\n' && entry.text[0])
+		if (ch == '\n' && entry.text[0] && menu_nitems(curr_menu))
 			go_file ();
 
 		if (old_curr_menu) {

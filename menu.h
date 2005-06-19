@@ -97,5 +97,6 @@ char *menu_item_get_file (struct menu *menu, const int num);
 int menu_item_get_plist_pos (struct menu *menu, const int num);
 void menu_item_set_title (struct menu *menu, const int num, const char *title);
 void menu_setcurritem_by_plistnum (struct menu *menu, const int plist_num);
+int menu_nitems (const struct menu *menu);
 
 #endif
