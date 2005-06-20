@@ -16,6 +16,7 @@
 # include "config.h"
 #endif
 
+#include <stdlib.h>
 #include <assert.h>
 
 #include "main.h"
@@ -207,11 +208,15 @@ void rb_insert (struct rb_tree *t, void *data)
 	z->data = data;
 	
 	while (x != &rb_null) {
+		int cmp = t->cmp_func(z->data, x->data, t->adata);
+	
 		y = x;
-		if (t->cmp_func(z->data, x->data, t->adata) < 0)
+		if (cmp < 0)
 			x = x->left;
-		else
+		else if (cmp > 0)
 			x = x->right;
+		else
+			abort ();
 	}
 
 	z->parent = y;
