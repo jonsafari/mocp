@@ -520,6 +520,27 @@ struct event *event_get_first (struct event_queue *q)
 	return q->head;
 }
 
+/* Free data associated with the event if any. */
+static void free_event_data (struct event *e)
+{
+	if (e->type == EV_PLIST_ADD) {
+		plist_free_item_fields (e->data);
+		free (e->data);
+	}
+	else if (e->type == EV_FILE_TAGS) {
+		struct tag_ev_response *r
+			= (struct tag_ev_response *)e->data;
+		
+		free (r->file);
+		tags_free (r->tags);
+		free (r);
+	}
+	else if (e->type == EV_PLIST_DEL || e->type == EV_STATUS_MSG)
+		free (e->data);
+	else if (e->data)
+		abort (); /* BUG */
+}
+
 /* Free event queue content without the queue structure. */
 void event_queue_free (struct event_queue *q)
 {
@@ -528,12 +549,7 @@ void event_queue_free (struct event_queue *q)
 	assert (q != NULL);
 
 	while ((e = event_get_first(q))) {
-		if (e->type == EV_PLIST_ADD) {
-			plist_free_item_fields (e->data);
-			free (e->data);
-		}
-		else if (e->type == EV_PLIST_DEL || e->type == EV_STATUS_MSG)
-			free (e->data);
+		free_event_data (e);
 		event_pop (q);
 	}
 }
@@ -592,8 +608,17 @@ static struct packet_buf *make_event_packet (const struct event *e)
 		assert (e->data != NULL);
 		packet_buf_add_item (b, e->data);
 	}
+	else if (e->type == EV_FILE_TAGS) {
+		struct tag_ev_response *r;
+		
+		assert (e->data != NULL);
+		r = e->data;
+		
+		packet_buf_add_str (b, r->file);
+		packet_buf_add_tags (b, r->tags);
+	}
 	else if (e->data)
-		abort ();
+		abort (); /* BUG */
 
 	return b;
 }
@@ -618,17 +643,9 @@ enum noblock_io_status event_send_noblock (int sock, struct event_queue *q)
 		struct event *e;
 
 		e = event_get_first (q);
-
-		if (e->type == EV_PLIST_ADD) {
-			plist_free_item_fields (e->data);
-			free (e->data);
-		}
-		else if (e->type == EV_PLIST_DEL || e->type == EV_STATUS_MSG)
-			free (e->data);
-		else if (e->data)
-			logit ("Unhandled event data!");
-
+		free_event_data (e);
 		event_pop (q);
+
 		return NB_IO_OK;
 	}
 	else if (errno == EAGAIN) {

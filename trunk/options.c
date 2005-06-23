@@ -191,6 +191,7 @@ void options_init ()
 	option_add_int ("ForceSampleRate", 0);
 	option_add_str ("HTTPProxy", NULL);
 	option_add_int ("UseRealtimePriority", 0);
+	option_add_int ("TagsCacheSize", 256);
 }
 
 /* Return 1 if a parameter to an integer option is valid. */
@@ -231,6 +232,10 @@ int check_int_option (const char *name, const int val)
 	}
 	else if (strcasecmp(name, "ForceSampleRate")) {
 		if (val < 0 || val > 500000)
+			return 0;
+	}
+	else if (strcasecmp(name, "TagsCacheSize")) {
+		if (val < 0)
 			return 0;
 	}
 	return 1;

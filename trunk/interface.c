@@ -974,9 +974,10 @@ static int get_file_time_server (const char *file)
 {
 	int t;
 	
-	send_int_to_srv (CMD_GET_FTIME);
+	/*send_int_to_srv (CMD_GET_FTIME);
 	send_str_to_srv (file);
-	t = get_data_int ();
+	t = get_data_int ();*/
+	t = -1;
 
 	debug ("Server time for %s: %d", file, t);
 	return t;

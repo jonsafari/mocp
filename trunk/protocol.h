@@ -16,6 +16,13 @@ struct event_queue
 	struct event *tail;
 };
 
+/* Used as data field in the event queue for EV_FILE_TAGS. */
+struct tag_ev_response
+{
+	char *file;
+	struct file_tags *tags;
+};
+
 /* Status of nonblock sending/receiving function. */
 enum noblock_io_status
 {
@@ -40,6 +47,7 @@ enum noblock_io_status
 #define EV_TAGS		0x0e /* tags for the current file has changed. */
 #define EV_STATUS_MSG	0x0f /* Followed by a status message */
 #define EV_MIXER_CHANGE	0x10 /* the mixer channel was changed */
+#define EV_FILE_TAGS	0x11 /* tags in a response for tags request */
 
 /* Events caused by a client that wants to modify the playlist (see
  * CMD_CLI_PLIST* commands. */
@@ -77,7 +85,6 @@ enum noblock_io_status
 #define CMD_DELETE	0x1c /* delete an item from the playlist */
 #define CMD_SEND_EVENTS 0x1d /* request for events */
 #define CMD_GET_ERROR	0x1e /* get the error message */
-#define CMD_GET_FTIME	0x1f /* get time of a file from the server */
 #define CMD_PREV	0x20 /* start playing previous song if available */
 #define CMD_SEND_PLIST	0x21 /* send the playlist to the requesting client */
 #define CMD_GET_PLIST	0x22 /* get the playlist from one of the clients */
@@ -97,6 +104,9 @@ enum noblock_io_status
 #define CMD_GET_TAGS	0x2c /* get tags for the currently played file. */
 #define CMD_TOGGLE_MIXER_CHANNEL	0x2d /* toggle the mixer channel */
 #define CMD_GET_MIXER_CHANNEL_NAME	0x2e /* get the mixer channel's name */
+#define CMD_GET_FILE_TAGS	0x2f	/* get tags for the specified file */
+#define CMD_ABORT_TAGS_REQUESTS	0x30	/* abort previous CMD_GET_FILE_TAGS
+					   requests up to some file */
 
 char *socket_name ();
 int get_int (int sock, int *i);

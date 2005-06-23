@@ -192,3 +192,6 @@ ASCIILines		= no
 # to set such a priority. This could be dangerous, because it is possible that
 # a bug in MOC will freeze your computer.
 #UseRealtimePriority	= no
+
+# Size of the in-memory cache for file tags in KB.
+TagsCacheSize		= 128

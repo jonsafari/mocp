@@ -41,11 +41,10 @@
 #include "options.h"
 #include "server.h"
 #include "playlist.h"
+#include "tags_cache.h"
 
 #define SERVER_LOG	"mocp_server_log"
 #define PID_FILE	"pid"
-
-#define CLIENTS_MAX	10
 
 struct client
 {
@@ -82,6 +81,8 @@ static struct {
 	-1,
 	-1
 };
+
+static struct tags_cache tags_cache;
 
 static void write_pid_file ()
 {
@@ -161,6 +162,7 @@ static int add_client (int sock)
 			clients[i].requests_plist = 0;
 			clients[i].can_send_plist = 0;
 			clients[i].lock = 0;
+			tags_cache_clear_queue (&tags_cache, i);
 			return 1;
 		}
 
@@ -213,11 +215,23 @@ static int client_unlock (struct client *cli)
 	return 1;
 }
 
+/* Return the client index from tht clients table. */
+static int client_index (const struct client *cli)
+{
+	int i;
+
+	for (i = 0; i < CLIENTS_MAX; i++)
+		if (clients[i].socket == cli->socket)
+			return i;
+	return -1;
+}
+
 static void del_client (struct client *cli)
 {
 	cli->socket = -1;
 	LOCK (cli->events_mutex);
 	event_queue_free (&cli->events);
+	tags_cache_clear_queue (&tags_cache, client_index(cli));
 	UNLOCK (cli->events_mutex);
 }
 
@@ -296,6 +310,7 @@ int server_init (int debug, int foreground)
 		fatal ("listen() failed: %s", strerror(errno));
 
 	audio_init ();
+	tags_cache_init (&tags_cache, options_get_int("TagsCacheSize") * 1024);
 	clients_init ();
 
 	server_tid = pthread_self ();
@@ -409,6 +424,7 @@ static void server_shutdown ()
 	
 	logit ("Server exiting...");
 	audio_exit ();
+	tags_cache_destroy (&tags_cache);
 	unlink (socket_name());
 	unlink (create_file_name(PID_FILE));
 	close (wake_up_pipe[0]);
@@ -575,19 +591,6 @@ static int delete_item (struct client *cli)
 	debug ("Request for deleting %s", file);
 
 	audio_plist_delete (file);
-	free (file);
-	return 1;
-}
-
-/* Handle CMD_GET_FTIME. */
-static int req_get_ftime (struct client *cli)
-{
-	char *file;
-
-	if (!(file = get_str(cli->socket)))
-		return 0;
-	if (!send_data_int(cli, audio_get_ftime(file)))
-		return 0;
 	free (file);
 	return 1;
 }
@@ -786,17 +789,6 @@ static int req_plist_set_serial (struct client *cli)
 	return 1;
 }
 
-/* Return the client index from tht clients table. */
-static int client_index (const struct client *cli)
-{
-	int i;
-
-	for (i = 0; i < CLIENTS_MAX; i++)
-		if (clients[i].socket == cli->socket)
-			return i;
-	return -1;
-}
-
 /* Generate a unique playlist serial number. */
 static int gen_serial (const struct client *cli)
 {
@@ -876,11 +868,44 @@ void req_toggle_mixer_channel ()
 	add_event_all (EV_MIXER_CHANGE, NULL);
 }
 
+/* Handle CMD_GET_FILE_TAGS. Return 0 on error. */
+static int get_file_tags (const int cli_id)
+{
+	char *file;
+	int tags_sel;
+	
+	if (!(file = get_str(clients[cli_id].socket)))
+		return 0;
+	if (!get_int(clients[cli_id].socket, &tags_sel)) {
+		free (file);
+		return 0;
+	}
+
+	tags_cache_add_request (&tags_cache, file, tags_sel, cli_id);
+	free (file);
+
+	return 1;
+}
+
+static int abort_tags_requests (const int cli_id)
+{
+	char *file;
+
+	if (!(file = get_str(clients[cli_id].socket)))
+		return 0;
+
+	tags_cache_clear_up_to (&tags_cache, file, cli_id);
+	free (file);
+	
+	return 1;
+}
+
 /* Reveive a command from the client and execute it. */
-static void handle_command (struct client *cli)
+static void handle_command (const int client_id)
 {
 	int cmd;
 	int err = 0;
+	struct client *cli = &clients[client_id];
 
 	if (!get_int(cli->socket, &cmd)) {
 		logit ("Failed to get command from the client");
@@ -986,10 +1011,6 @@ static void handle_command (struct client *cli)
 			if (!send_data_str(cli, err_msg))
 				err = 1;
 			break;
-		case CMD_GET_FTIME:
-			if (!req_get_ftime(cli))
-				err = 1;
-			break;
 		case CMD_GET_PLIST:
 			if (!get_client_plist(cli))
 				err = 1;
@@ -1036,6 +1057,14 @@ static void handle_command (struct client *cli)
 			break;
 		case CMD_GET_MIXER_CHANNEL_NAME:
 			if (!req_get_mixer_channel_name(cli))
+				err = 1;
+			break;
+		case CMD_GET_FILE_TAGS:
+			if (!get_file_tags(client_id))
+				err = 1;
+			break;
+		case CMD_ABORT_TAGS_REQUESTS:
+			if (!abort_tags_requests(client_id))
 				err = 1;
 			break;
 		default:
@@ -1091,7 +1120,7 @@ static void handle_clients (fd_set *fds)
 				&& FD_ISSET(clients[i].socket, fds)) {
 			if (locking_client() == -1
 					|| is_locking(&clients[i]))
-				handle_command (&clients[i]);
+				handle_command (i);
 			else
 				debug ("Not getting a command from client with"
 						" fd %d because of lock",
@@ -1220,4 +1249,24 @@ void tags_change ()
 void status_msg (const char *msg)
 {
 	add_event_all (EV_STATUS_MSG, msg);
+}
+
+void tags_response (const int client_id, const char *file,
+		const struct file_tags *tags)
+{
+	assert (file != NULL);
+	assert (tags != NULL);
+	assert (client_id >= 0 && client_id < CLIENTS_MAX);
+	
+	if (clients[client_id].socket != -1) {
+		struct tag_ev_response *data
+			= (struct tag_ev_response *)xmalloc (
+					sizeof(struct tag_ev_response));
+
+		data->file = xstrdup (file);
+		data->tags = tags_dup (tags);
+		
+		add_event (&clients[client_id], EV_FILE_TAGS, data);
+		wake_up_server ();
+	}
 }
