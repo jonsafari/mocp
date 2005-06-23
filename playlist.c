@@ -114,6 +114,21 @@ struct file_tags *tags_dup (const struct file_tags *tags)
 	return dtags;
 }
 
+/* Return the number of butes allocated for the tags structure. */
+size_t tags_mem (const struct file_tags *tags)
+{
+	size_t s = sizeof(tags);
+
+	if (tags->title)
+		s += strlen (tags->title) + 1;
+	if (tags->album)
+		s += strlen (tags->album) + 1;
+	if (tags->artist)
+		s += strlen (tags->artist) + 1;
+
+	return s;
+}
+
 static int rb_compare (const void *a, const void *b, void *adata)
 {
 	struct plist *plist = (struct plist *)adata;

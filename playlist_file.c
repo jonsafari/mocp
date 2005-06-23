@@ -509,13 +509,12 @@ int plist_save (struct plist *plist, const char *file, const char *cwd)
 		 * relative paths) */
 		find_common_path (common_path, sizeof(common_path), plist);
 
-	make_titles_tags (plist);
-
 	if (user_wants_interrupt()) {
 		error ("Saving the playlist aborted");
 		return 0;
 	}
 
+	/* TODO: this should be done before we save the playlist */
 	/* Get times */
 	for (i = 0; i < plist->num; i++)
 		if (!plist_deleted(plist, i)) {

@@ -3,6 +3,8 @@
 
 #include "playlist.h"
 
+#define CLIENTS_MAX	10
+
 int server_init (int debug, int foreground);
 void server_loop (int list_sock);
 void server_error (const char *msg);
@@ -13,5 +15,7 @@ void set_info_bitrate (const int bitrate);
 void tags_change ();
 void ctime_change ();
 void status_msg (const char *msg);
+void tags_response (const int client_id, const char *file,
+		const struct file_tags *tags);
 
 #endif
