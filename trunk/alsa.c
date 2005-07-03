@@ -54,8 +54,8 @@ static long mixer2_min = -1, mixer2_max = -1;
 
 /* Volume for first and second mixer in range 1-100 despite the actual device
  * resolution. */
-static int volume1;
-static int volume2;
+static int volume1 = -1;
+static int volume2 = -1;
 
 /* Real volume setting as we last read them. */
 static int real_volume1 = -1;
@@ -200,27 +200,22 @@ static snd_mixer_elem_t *alsa_init_mixer_channel (const char *name,
 		long *vol_min, long *vol_max)
 {
 	snd_mixer_selem_id_t *sid;
-	snd_mixer_elem_t *elem;
+	snd_mixer_elem_t *elem = NULL;
 	
 	snd_mixer_selem_id_malloc (&sid);
 	snd_mixer_selem_id_set_index (sid, 0);
 	snd_mixer_selem_id_set_name (sid, name);
 
-	if (!(elem = snd_mixer_find_selem(mixer_handle, sid))) {
-		snd_mixer_close (mixer_handle);
-		mixer_handle = NULL;
-		fatal ("Can't find mixer %s", name);
+	if (!(elem = snd_mixer_find_selem(mixer_handle, sid)))
+		error ("Can't find mixer %s", name);
+	else if (!snd_mixer_selem_has_playback_volume(elem))
+		error ("Mixer device has no playback volume (%s).", name);
+	else {
+		snd_mixer_selem_get_playback_volume_range (elem, vol_min,
+				vol_max);
+		logit ("Opened mixer (%s), volume range: %ld-%ld", name,
+				*vol_min, *vol_max);
 	}
-	
-	if (!snd_mixer_selem_has_playback_volume(elem)) {
-		snd_mixer_close (mixer_handle);
-		mixer_handle = NULL;
-		fatal ("Mixer device has no playback volume (%s).", name);
-	}
-	
-	snd_mixer_selem_get_playback_volume_range (elem, vol_min, vol_max);
-	logit ("Opened mixer (%s), volume range: %ld-%ld", name,
-			*vol_min, *vol_max);
 
 	snd_mixer_selem_id_free (sid);
 
@@ -253,20 +248,31 @@ static int alsa_init (struct output_driver_caps *caps)
 		error ("Can't load mixer: %s", snd_strerror(err));
 	}
 
-	mixer_elem1 = alsa_init_mixer_channel (options_get_str("AlsaMixer"),
-			&mixer1_min, &mixer1_max);
-
-	if (mixer_handle) /* mixer_handle could be set to NULL due to error */
+	if (mixer_handle) {
+		mixer_elem1 = alsa_init_mixer_channel (
+				options_get_str("AlsaMixer"),
+				&mixer1_min, &mixer1_max);
 		mixer_elem2 = alsa_init_mixer_channel (
-				options_get_str("AlsaMixer2"), &mixer2_min,
-				&mixer2_max);
+				options_get_str("AlsaMixer2"),
+				&mixer2_min, &mixer2_max);
+	}
 
-	mixer_elem_curr = mixer_elem1;
+	mixer_elem_curr = mixer_elem1 ? mixer_elem1 : mixer_elem2;
 
-	if ((real_volume1 = alsa_read_mixer_raw(mixer_elem1)) != -1)
-		volume1 = scale_volume1 (real_volume1);
-	if ((real_volume2 = alsa_read_mixer_raw(mixer_elem2)) != -1)
-		volume2 = scale_volume2 (real_volume2);
+	if (mixer_elem_curr) {
+		if (mixer_elem1 && (real_volume1
+					= alsa_read_mixer_raw(mixer_elem1))
+				!= -1)
+			volume1 = scale_volume1 (real_volume1);
+		if (mixer_elem2 && (real_volume2
+					= alsa_read_mixer_raw(mixer_elem2))
+				!= -1)
+			volume2 = scale_volume2 (real_volume2);
+	}
+	else {
+		snd_mixer_close (mixer_handle);
+		mixer_handle = NULL;
+	}
 
 	return fill_capabilities (caps);
 }
@@ -646,9 +652,9 @@ static int alsa_get_rate ()
 
 static void alsa_toggle_mixer_channel ()
 {
-	if (mixer_elem_curr == mixer_elem1)
+	if (mixer_elem_curr == mixer_elem1 && mixer_elem2)
 		mixer_elem_curr = mixer_elem2;
-	else
+	else if (mixer_elem1)
 		mixer_elem_curr = mixer_elem1;
 }
 
