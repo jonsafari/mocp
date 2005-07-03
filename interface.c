@@ -2951,8 +2951,9 @@ static int entry_search_key (const int ch)
 
 	/* isgraph() can return wrong values if ch is not in unsigned char
 	 * scope. wealso use isalpha() because it works with locales. */
-	if ((ch >= 0 && ch <= 255) && (isalpha(ch) || isgraph(ch) || ch == ' '
-			|| ch == KEY_BACKSPACE)) {
+	if (((ch >= 0 && ch <= 255) && (isalpha(ch) || isgraph(ch)
+					|| ch == ' '))
+			|| ch == KEY_BACKSPACE) {
 		if (ch == KEY_BACKSPACE)
 			entry_back_space ();
 		else
