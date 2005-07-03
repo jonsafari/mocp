@@ -1,10 +1,10 @@
 Items marked with $ are bigger changes requiring more time.
 
 Known bugs:
-* Freez when switching songs quickly.
-* ./mocp -p can crash
 
 Before 2.4:
+*$ Move interface primitives (windows, entry, etc.) to a separate file.
+*$ Tags cache saved to a file on exit and read at startup.
 * Better plist_count() optimizations: decrease and increase time for
   deleted/added files instead of recounting total time.
 * Optimize menu: store it on a list, not in a table: this should improve
@@ -17,20 +17,17 @@ Before 2.4:
 *$ Support for Audio-CD.
 *$ Support for CDDB.
 * Move the playlist to see the song that is currently played.
+*$ WMA.
+* Full paths for items on the playlist (not only file names).
+* Toggle theme at run time.
 
 In future:
 
 * Ability to play from a playlist made of items found after searching.
 * JACK: intelligent bahaviour when we get disconnected from the server
   - detect it, try connect and exit if it fails.
-*$ WMA.
-*$ Move interface primitives (windows, entry, etc.) to a separate file.
 * FastGo instead of FastDir: go to a directory, URL or a playlist.
 * Read tags for sndfile formats.
-*$ Read tags in the server in a separate part, interface should not wait
-  for the tags, the will be send if available (to all clients? cache for tags
-  at the server part?). 
-*$ Cache for tags in each directory. (.cache.m3u?)
 *$ http://www.peercast.org/
 * Number items on the playlist.
 * Command to see all information about a file with all tags, also all informaton
@@ -53,8 +50,9 @@ In future:
 *$ MP4
 *$ mod
 *$ ESD
-* Full paths for items on the playlist (not only file names).
 * Command line option to delete the currently played item from the playlist.
+* scripting
+* APE (http://sourceforge.net/projects/mac-port/)
 
 Maybe never:
 
