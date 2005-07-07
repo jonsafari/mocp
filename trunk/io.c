@@ -201,6 +201,7 @@ off_t io_seek (struct io_stream *s, off_t offset, int whence)
 	off_t new_pos = 0;
 	
 	assert (s != NULL);
+	assert (s->opened);
 
 	if (s->source == IO_SOURCE_CURL || !io_ok(s))
 		return -1;
@@ -523,7 +524,7 @@ struct io_stream *io_open (const char *file, const int buffered)
 /* Return != 0 if the there were no errors in the stream. */
 static int io_ok_nolock (struct io_stream *s)
 {
-	return !s->read_error;
+	return !s->read_error && s->errno_val == 0;
 }
 
 /* Return != 0 if the there were no errors in the stream. */
@@ -640,6 +641,7 @@ ssize_t io_read (struct io_stream *s, void *buf, size_t count)
 	
 	assert (s != NULL);
 	assert (buf != NULL);
+	assert (s->opened);
 
 	debug ("Reading...");
 
