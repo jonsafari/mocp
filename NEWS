@@ -1,3 +1,86 @@
+2.3.0
+	* Network streams (shoutcast, icecast, regular HTTP, FTP). You can load
+	  an m3u file with a URL or use the 'o' command.
+	* JACK output (by Alex Norman).
+	* Added support for musepack (mpc).
+	* The search command filters out not matching elements from the menu and
+	  allows to walk through the items like in the regular menu.
+	* Added support for speex format.
+	* Plugins: to drop dependencies from many exotic libraries, support for
+	  file formats was moved to shared libraries. This should help making
+	  MOC packages in future when more formats will be added.
+	* Sample rate conversion using libsamplerate and some sound conversions
+	  like 16bit -> 24bit etc. With 24bit sound cards 24bit output is used
+	  with mp3.
+	* Added support for PLS version 2 playlists.
+	* Added mono to stereo conversion.
+	* MOC now compiles using libtool.
+	* Error messages for precached files are not displayed while other file
+	  is being played.
+	* Input buffer in a separated thread is used for reading files (new
+	  options: InputBuffer and Prebuffering).
+	* New theme: Yellow/Red (by Morten Grunnet Buhl).
+	* Added -A command line option and ASCIILines config option that
+	  disables usage of graphic characters to draw lines.
+	* Added commands to set volume from 10% to 90% in 10% steps, default
+	  bindings are ALT-1 to ALT-9.
+	* Added commands to quickly go to a selected directories
+	  (by Alex Norman).
+	* Added --next and --previous command line options (by Alex Norman).
+	* Added --info command line option that prints all information about the
+	  currently played file. (Based on the code by Michael Banks)
+	* Two mixer channels can be set in the configuration file. They can be
+	  switched at run time by pressing x.
+	* Documentation of some parts of the code in Doxygen format.
+	* Colors can be redefined in themes using 'colordef COLOR = R G B'
+	  (works for terminal that can change the colors).
+	* Support for 24bit flac files (not tested).
+	* Added SeekTime option: how fast the seeking is. (Kamil Tarkowski)
+	* A list of sound drivers can be used instead of only one driver in the
+	  configuration file. The first working driver will be used.
+	* MusicDir can be set to a playlist.
+	* Alsa mixer has always 0-100 range despite the actual device range.
+	* Added --toggle-pause command line option.
+	* Don't block the audio device when paused. Based on a patch
+	  by hondza <miscreant@tiscali.cz>
+	* Treat an option that is set in the config file more than once as an
+	  error.
+	* Print descriptions for some errors in the config file.
+	* Better error messages in the Ogg plugin.
+	* Better detecting Ogg vorbis stream by content.
+	* Decreased the time to wait for the pcm to become ready to get samples
+	  in alsa. This helps with underruns.
+	* Fixed protect attribute in themes.
+	* Added black_theme (by Arn).
+	* History for "go to a directory" and "enter URL" commands (using
+	  arrows).
+	* CTRL-l like CTRL-r refreshes the screen.
+	* Separated iconv() conversion for file names and tags.
+	* Improved performance a bit when operating on big playlists.
+	* G command points to the currently played file - on the playlist if
+	  it's there, and selects it in the menu.
+	* When going to a directory using the i command, TAB completes to the
+	  matching part of ambiguous directories.
+	* Volume changes made by other programs are detected.
+	* Added --recursively command line option (make a playlist from the
+	  content of a directory given at command line).
+	* Show bitrate in the right time - the value corresponds to what you
+	  can hear, not the position that the decoder is at.
+	* Added description about creating a decoder plugin.
+	* Added introduction pages to Doxygen documentation.
+	* Documented decoder plugins API.
+	* Added --playit option (play files given on the command line without
+	  modifing the playlist).
+	* Added UseRealtimePriority (default no) option: set realtime priority
+	  for the output buffer thread.
+	* Titles in saved playlists are not converted by iconv().
+	* Fixed crash on some systems when a file is precached.
+	* Refuse to run if an ALSA mixer channel is wrong.
+	* Fixed adding items to the playlist when the server's playlist already
+	  has added files.
+	* Don't try to use colors on black/white terminals.
+	* Fixed a memory leak in iconv_str() when iconv() is not available.
+	(breg)
 2.2.2
 	* Added an option to ignore CRC errors in mp3 files (set to yes by
 	  default, like most players do). This fixes playing mp3 files that
