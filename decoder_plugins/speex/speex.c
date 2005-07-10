@@ -524,7 +524,7 @@ static int spx_decode (void *prv_data, char *sound_buf, int nbytes,
 
 	sound_params->channels = data->nchannels;
 	sound_params->rate = data->rate;
-	sound_params->fmt = SFMT_S16 | SFMT_LE;
+	sound_params->fmt = SFMT_S16 | SFMT_NE;
 
 	while (nbytes) {
 		char *buf;
