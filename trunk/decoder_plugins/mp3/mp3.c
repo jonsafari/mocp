@@ -627,13 +627,27 @@ static int mp3_our_mime (const char *mime)
 
 static int mp3_can_decode (struct io_stream *stream)
 {
-	char buf[2];
+	char buf[16 * 1024];
 
-	if (io_peek(stream, buf, 2) == 2) {
-		short magic = buf[0] | (buf[1] << 8);
+	/* We must use such a sophisticated test, besause there are Shoutcast
+	 * servers that can start broadcasting in the middle of a frame, so we
+	 * can't use any few bytes length magic values. */
+	if (io_peek(stream, buf, sizeof(buf)) == sizeof(buf)) {
+		struct mad_stream stream;
+		struct mad_header header;
+		int dec_res;
 
-		if ((magic & 0xfff0) == 0xfff0)
-			return 1;
+		mad_stream_init (&stream);
+		mad_header_init (&header);
+
+		mad_stream_buffer (&stream, buf, sizeof(buf));
+		stream.error = 0;
+
+		while ((dec_res = mad_header_decode(&header, &stream)) == -1
+				&& MAD_RECOVERABLE(stream.error))
+			;
+		
+		return dec_res != -1 ? 1 : 0;
 	}
 
 	return 0;
