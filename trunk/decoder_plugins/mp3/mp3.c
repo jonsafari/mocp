@@ -627,7 +627,7 @@ static int mp3_our_mime (const char *mime)
 
 static int mp3_can_decode (struct io_stream *stream)
 {
-	char buf[16 * 1024];
+	unsigned char buf[16 * 1024];
 
 	/* We must use such a sophisticated test, besause there are Shoutcast
 	 * servers that can start broadcasting in the middle of a frame, so we
