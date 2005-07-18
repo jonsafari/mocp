@@ -41,6 +41,7 @@
 #endif
 
 void *xmalloc (const size_t size);
+void *xcalloc (size_t nmemb, size_t size);
 void *xrealloc (void *ptr, const size_t size);
 char *xstrdup (const char *s);
 

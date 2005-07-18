@@ -103,6 +103,15 @@ void *xmalloc (const size_t size)
 	return p;
 }
 
+void *xcalloc (size_t nmemb, size_t size)
+{
+	void *p;
+
+	if ((p = calloc(nmemb, size)) == NULL)
+		fatal ("Can't allocate memory!");
+	return p;
+}
+
 void *xrealloc (void *ptr, const size_t size)
 {
 	void *p;

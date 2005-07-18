@@ -155,6 +155,42 @@ static int fill_capabilities (struct output_driver_caps *caps)
 	return 1;
 }
 
+static void handle_mixer_events (snd_mixer_t *mixer_handle)
+{
+	int count;
+
+	if ((count = snd_mixer_poll_descriptors_count(mixer_handle)) < 0)
+		logit ("snd_mixer_poll_descriptors_count() failed: %s",
+				snd_strerror(count));
+	else {
+		struct pollfd *fds;
+		int err;
+
+		fds = xcalloc (count, sizeof(struct pollfd));
+
+		if ((err = snd_mixer_poll_descriptors(mixer_handle, fds,
+						count)) < 0)
+			logit ("snd_mixer_poll_descriptors() failed: %s",
+					snd_strerror(count));
+		else {
+			err = poll (fds, count, 0);
+			if (err < 0)
+				error ("poll() failed: %s", strerror(errno));
+			else if (err > 0) {
+				debug ("Mixer event");
+				if ((err = snd_mixer_handle_events(mixer_handle)
+							) < 0)
+					logit ("snd_mixer_handle_events() "
+							"failed: %s",
+							snd_strerror(err));
+			}
+
+		}
+
+		free (fds);
+	}
+}
+
 static int alsa_read_mixer_raw (snd_mixer_elem_t *elem)
 {
 	if (mixer_handle) {
@@ -165,9 +201,7 @@ static int alsa_read_mixer_raw (snd_mixer_elem_t *elem)
 
 		assert (elem != NULL);
 
-		if ((err = snd_mixer_handle_events(mixer_handle)) < 0)
-			logit ("snd_mixer_handle_events() failed: %s",
-					snd_strerror(err));
+		handle_mixer_events (mixer_handle);
 
 		for (i = 0; i < SND_MIXER_SCHN_LAST; i++)
 			if (snd_mixer_selem_has_playback_channel(elem,
