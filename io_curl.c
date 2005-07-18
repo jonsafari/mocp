@@ -503,7 +503,8 @@ static int read_icy_metadata (struct io_stream *s)
 	/* read the packet size */
 	if (s->curl.buf_fill == 0 && !curl_read_internal(s))
 		return 0;
-	if (read_from_buffer(s, &size_packet, sizeof(size_packet)) == 0) {
+	if (read_from_buffer(s, (char *)&size_packet, sizeof(size_packet))
+			== 0) {
 		debug ("Got empty metadata packet");
 		return 1;
 	}
