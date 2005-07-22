@@ -326,7 +326,7 @@ static int alsa_init (struct output_driver_caps *caps)
 			mixer_handle = NULL;
 		}
 	}
-	else {
+	else (mixer_handle) {
 		snd_mixer_close (mixer_handle);
 		mixer_handle = NULL;
 	}
