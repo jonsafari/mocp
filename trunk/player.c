@@ -449,10 +449,11 @@ static void decode_loop (const struct decoder *f, void *decoder_data,
 			decoded = f->decode (decoder_data, buf, sizeof(buf),
 					&new_sound_params);
 
-			decode_time += decoded / (float)(sfmt_Bps(
-						new_sound_params.fmt) *
-					new_sound_params.rate *
-					new_sound_params.channels);
+			if (decoded)
+				decode_time += decoded / (float)(sfmt_Bps(
+							new_sound_params.fmt) *
+						new_sound_params.rate *
+						new_sound_params.channels);
 			
 			f->get_error (decoder_data, &err);
 			if (err.type != ERROR_OK) {
