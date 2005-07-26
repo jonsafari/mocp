@@ -616,7 +616,9 @@ static void play_file (const char *file, const struct decoder *f,
 		}
 
 		already_decoded_time = precache.decoded_time;
-		bitrate_list = precache.bitrate_list;
+		bitrate_list_init (&bitrate_list);
+		bitrate_list.head = precache.bitrate_list.head;
+		bitrate_list.tail = precache.bitrate_list.tail;
 
 		/* don't free list elements when reseting precache */
 		precache.bitrate_list.head = NULL;
