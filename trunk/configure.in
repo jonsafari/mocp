@@ -36,7 +36,7 @@ AC_CHECK_HEADERS([fcntl.h string.h sys/param.h unistd.h sys/un.h \
 		  sys/wait.h sys/ioctl.h \
 		  time.h errno.h sys/stat.h assert.h locale.h],,
 		 AC_MSG_ERROR([Can't find required header files.]))
-AC_CHECK_HEADERS([sys/select.h])
+AC_CHECK_HEADERS([sys/select.h inttypes.h limits.h stdint.h])
 
 AC_CHECK_FUNCS([sched_get_priority_max])
 
