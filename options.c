@@ -15,6 +15,7 @@
 
 #include <assert.h>
 #include <string.h>
+#include <strings.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <stdio.h>

@@ -14,6 +14,7 @@
 #endif
 
 #include <string.h>
+#include <strings.h>
 #include <assert.h>
 
 #ifdef HAVE_NCURSES_H

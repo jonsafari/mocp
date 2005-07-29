@@ -15,6 +15,7 @@
 
 #include <curl/curl.h>
 #include <string.h>
+#include <strings.h>
 #include <stdlib.h>
 #ifdef HAVE_SYS_SELECT_H
 # include <sys/select.h>

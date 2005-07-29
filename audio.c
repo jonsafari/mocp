@@ -20,6 +20,7 @@
 #include <pthread.h>
 #include <signal.h>
 #include <string.h>
+#include <strings.h>
 #include <errno.h>
 #include <assert.h>
 

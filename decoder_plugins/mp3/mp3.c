@@ -25,6 +25,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include <mad.h>
 #include <id3tag.h>
 #include <pthread.h>

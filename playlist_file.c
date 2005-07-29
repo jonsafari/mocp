@@ -18,6 +18,7 @@
 #include <sys/file.h>
 #include <stdio.h>
 #include <string.h>
+#include <strings.h>
 #include <errno.h>
 #include <assert.h>
 #include "playlist.h"
