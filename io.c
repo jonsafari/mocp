@@ -300,16 +300,6 @@ void io_close (struct io_stream *s)
 		if (s->source == IO_SOURCE_FD)
 			close (s->fd);
 
-		if (pthread_mutex_destroy(&s->buf_mutex))
-			logit ("Destroying buf_mutex failed: %s",
-					strerror(errno));
-		if (pthread_mutex_destroy(&s->io_mutex))
-			logit ("Destroying io_mutex failed: %s",
-					strerror(errno));
-		if (pthread_mutex_destroy(&s->metadata.mutex))
-			logit ("Destroying metadata mutex failed: %s",
-					strerror(errno));
-
 		if (s->buffered) {
 			fifo_buf_destroy (&s->buf);
 			if (pthread_cond_destroy(&s->buf_free_cond))
@@ -325,6 +315,13 @@ void io_close (struct io_stream *s)
 		if (s->metadata.url)
 			free (s->metadata.url);
 	}
+
+	if (pthread_mutex_destroy(&s->buf_mutex))
+		logit ("Destroying buf_mutex failed: %s", strerror(errno));
+	if (pthread_mutex_destroy(&s->io_mutex))
+		logit ("Destroying io_mutex failed: %s", strerror(errno));
+	if (pthread_mutex_destroy(&s->metadata.mutex))
+		logit ("Destroying metadata mutex failed: %s", strerror(errno));
 
 	if (s->strerror)
 		free (s->strerror);
@@ -493,6 +490,10 @@ struct io_stream *io_open (const char *file, const int buffered)
 #endif
 	io_open_file (s, file);
 
+	pthread_mutex_init (&s->buf_mutex, NULL);
+	pthread_mutex_init (&s->io_mutex, NULL);
+	pthread_mutex_init (&s->metadata.mutex, NULL);
+
 	if (!s->opened)
 		return s;
 				
@@ -502,10 +503,6 @@ struct io_stream *io_open (const char *file, const int buffered)
 	s->buffered = buffered;
 	s->pos = 0;
 	memset (&s->metadata, 0, sizeof(s->metadata));
-
-	pthread_mutex_init (&s->buf_mutex, NULL);
-	pthread_mutex_init (&s->io_mutex, NULL);
-	pthread_mutex_init (&s->metadata.mutex, NULL);
 
 	if (buffered) {
 		fifo_buf_init (&s->buf, options_get_int("InputBuffer") * 1024);
