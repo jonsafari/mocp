@@ -1,7 +1,6 @@
 # Yellow/Red theme - mostly Yellow. By Morten Grunnet Buhl
 # Doesn't work on terminals when underline is not supported (like Linux console)
 
-border			= red		default
 background		= red		default
 frame			= red		default
 window_title		= yellow	default underline,dim
