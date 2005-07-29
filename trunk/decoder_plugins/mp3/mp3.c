@@ -354,10 +354,13 @@ static int count_time (const char *file)
 	
 	debug ("Processing file %s", file);
 
-	if (!(data = mp3_open_internal(file, 0)))
+	data = mp3_open_internal (file, 0);
+	
+	if (!data->ok)
 		time = -1;
 	else
 		time = data->duration;
+	
 	mp3_close (data);
 
 	return time;
