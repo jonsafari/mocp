@@ -22,6 +22,7 @@
 #include <sys/soundcard.h>
 #include <errno.h>
 #include <string.h>
+#include <strings.h>
 #include <pthread.h>
 #include <unistd.h>
 

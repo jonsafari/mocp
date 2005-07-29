@@ -20,7 +20,7 @@
 #include <string.h>
 #include <FLAC/all.h>
 #include <stdlib.h>
-#include <string.h>
+#include <strings.h>
 #include "audio.h"
 #include "decoder.h"
 #include "server.h"

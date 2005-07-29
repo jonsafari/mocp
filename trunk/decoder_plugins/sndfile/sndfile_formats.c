@@ -16,6 +16,7 @@
 #define DEBUG
 
 #include <string.h>
+#include <strings.h>
 #include <sndfile.h>
 #include "decoder.h"
 #include "main.h"

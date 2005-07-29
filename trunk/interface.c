@@ -34,6 +34,7 @@
 #endif
 
 #include <string.h>
+#include <strings.h>
 #include <signal.h>
 #include <time.h>
 #include <errno.h>

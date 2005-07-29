@@ -14,6 +14,7 @@
 #endif
 
 #include <string.h>
+#include <strings.h>
 #include <stdio.h>
 #include <errno.h>
 #include <assert.h>

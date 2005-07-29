@@ -21,6 +21,7 @@
 
 #include <assert.h>
 #include <string.h>
+#include <strings.h>
 #include <errno.h>
 
 #include "interface.h"
