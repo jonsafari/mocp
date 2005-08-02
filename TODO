@@ -1,39 +1,51 @@
 Items marked with $ are bigger changes requiring more time.
 
 Known bugs:
+* on 1024x768 framebuffer the volume ar is not drawn properly
+* hight CPU usage on FreeBSD with the gui process when started to play a song.
 
 Before 2.4:
 *$ Move interface primitives (windows, entry, etc.) to a separate file.
+* Number items on the playlist.
+*$ Main window split into 2 parts, each of them can show a directory content,
+   the playlist, and tree like directories (including playlists) with
+   configurable depth (pressing a key increases/decreases the level).
+* Optimize menu: store it on a list, not in a table: this should improve
+  performance when deleting items.
+*$ Progrssive tags reading: read them only if the menu items requiring them
+   are visible (as an option).
 *$ Tags cache saved to a file on exit and read at startup.
 * Better plist_count() optimizations: decrease and increase time for
   deleted/added files instead of recounting total time.
-* Optimize menu: store it on a list, not in a table: this should improve
-  performance when deleting items.
 * Count speex time by reading granule position from the last page.
 * Moving items on the playlist up and down.
 * Options in a hash table.
-*$ Progrssive tags reading: read them only if the menu items requiring them
-  are visible (as an option).
 *$ Support for Audio-CD.
 *$ Support for CDDB.
 * Move the playlist to see the song that is currently played.
 *$ WMA.
 * Full paths for items on the playlist (not only file names).
 * Toggle theme at run time.
+* Add a command for adding an Internet stream address to the playlist.
+* Selecting files - can be then added to the playlist instead of adding them
+  one by one.
+* Configurable time for fast seeking.
 
 In future:
 
+* Seek by a % value
 * Ability to play from a playlist made of items found after searching.
+* http://www.audioscrobbler.com/
 * JACK: intelligent bahaviour when we get disconnected from the server
   - detect it, try connect and exit if it fails.
 * FastGo instead of FastDir: go to a directory, URL or a playlist.
 * Read tags for sndfile formats.
 *$ http://www.peercast.org/
-* Number items on the playlist.
 * Command to see all information about a file with all tags, also all informaton
   about an internet stream (from IceCast headers like icy-url, icy-pub).
 *$ Lyrics downloaded from the Internet.
 *$ Better international characters handling - tags in UTF.
+* lirc
 * handle SIGBUS - when mmap()ed file is truncated.
 * Use pathconf() instead of PATH_MAX.
 *$ libsidplay2
@@ -50,6 +62,7 @@ In future:
 *$ MP4
 *$ mod
 *$ ESD
+*$ CUE-sheet
 * Command line option to delete the currently played item from the playlist.
 * scripting
 * APE (http://sourceforge.net/projects/mac-port/)
