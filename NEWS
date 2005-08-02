@@ -1,3 +1,21 @@
+2.3.1
+	* Fixed detecting MPEG stream by the content (Shoutcast fix).
+	* Fixed handling ALSA mixer events (crash in some situations).
+	* Fixed handling a mixer channel that has no playback volume.
+	* Fixed crash when the alsa mixer couldn't be opened.
+	* Fixed crash when nothing was decoded (appears sometimes when holding
+	  the enter key on an mp3 file).
+	* Fixed a crash which shows up on FreeBSD 5.4 after playing a file.
+	  Thanks to Joseph Dunn for help.
+	* Fixed includes for maximum and minimum values of intiger types (fix
+	  compilation on some systems).
+	* Fixed the syntax (not a proper C code). Mostly taken from the FreeBSD
+	  port.
+	* Show stream URL instead of nothing if the title is not available.
+	* Fixed yellow_red_theme theme.
+	* Fixed a hang after file open error.
+	* Fixed counting time after file open error.
+	* Fixed some gcc4 warnings.
 2.3.0
 	* Network streams (shoutcast, icecast, regular HTTP, FTP). You can load
 	  an m3u file with a URL or use the 'o' command.
