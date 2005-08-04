@@ -62,11 +62,11 @@ EXTRA_mocp_SOURCES = gnugetopt.h \
 		     io_curl.h \
 		     jack.c \
 		     jack.h
-man_MANS = mocp.8
+man_MANS = mocp.1
 mocp_LDADD = @EXTRA_OBJS@
 mocp_DEPENDENCIES = @EXTRA_OBJS@
 mocp_LDFLAGS = @EXTRA_LIBS@
-EXTRA_DIST = config.example mocp.8 THANKS keymap.example Doxyfile \
+EXTRA_DIST = config.example mocp.1 THANKS keymap.example Doxyfile \
 	     doxy_pages/decoder_api.doxy doxy_pages/main_page.doxy \
 	     doxy_pages/sound_output_driver_api.doxy
 
