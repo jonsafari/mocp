@@ -216,7 +216,7 @@ void decoder_init (int debug_info)
 		fatal ("Can't load plugins: %s", lt_dlerror());
 
 	if (plugins_num == 0)
-		fatal ("No decoder plugins has been loaded!");
+		fatal ("No decoder plugins have been loaded!");
 }
 
 void decoder_cleanup ()
