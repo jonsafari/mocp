@@ -1322,7 +1322,7 @@ static char *find_title (char *file)
 		if (!playlist->items[idx].title_tags
 				&& playlist->items[idx].tags->title)
 			playlist->items[idx].title_tags
-				= build_title (curr_plist->items[idx].tags);
+				= build_title (playlist->items[idx].tags);
 
 		title = xstrdup (playlist->items[idx].title_tags);
 		title = iconv_str (title, 0);
