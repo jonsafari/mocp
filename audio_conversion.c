@@ -541,6 +541,32 @@ static char *mono_to_stereo (const char *mono, const size_t size,
 	
 }
 
+static int16_t *s32_to_s16 (int32_t *in, const size_t samples)
+{
+	size_t i;
+	int16_t *new;
+
+	new = (int16_t *)xmalloc (samples * 2);
+
+	for (i = 0; i < samples; i++)
+		new[i] = in[i] >> 16;
+
+	return new;
+}
+
+static uint16_t *u32_to_u16 (uint32_t *in, const size_t samples)
+{
+	size_t i;
+	uint16_t *new;
+
+	new = (uint16_t *)xmalloc (samples * 2);
+
+	for (i = 0; i < samples; i++)
+		new[i] = in[i] >> 16;
+
+	return new;
+}
+
 /* Do the sound conversion. buf of size sizse is the sample buffer to convert
  * and the size of the converted sound is put into *conv_len.
  * Return the converted sound in malloc()ed memory. */
@@ -560,10 +586,40 @@ char *audio_conv (struct audio_conversion *conv, const char *buf,
 		curr_sfmt = sfmt_set_endian (curr_sfmt, SFMT_NE);
 	}
 
+	/* Specil case (optimization): if we only need to convert 32bit samples
+	 * to 16bit, we can do it very simple ans fast. */
+	if (((curr_sfmt & SFMT_MASK_FORMAT) == SFMT_S32
+				|| (curr_sfmt & SFMT_MASK_FORMAT)
+				== SFMT_U32)
+			&& (((conv->to.fmt & SFMT_MASK_FORMAT) == SFMT_S16)
+				|| ((conv->to.fmt & SFMT_MASK_FORMAT)
+					== SFMT_U16))
+			&& conv->from.rate == conv->to.rate) {
+		char *new_sound;
+		
+		if ((curr_sfmt & SFMT_MASK_FORMAT) == SFMT_S32) {
+			new_sound = (char *)s32_to_s16 ((int32_t *)curr_sound,
+					*conv_len / 4);
+			curr_sfmt = sfmt_set_fmt (curr_sfmt, SFMT_S16);
+		}
+		else {
+			new_sound = (char *)u32_to_u16 ((uint32_t *)curr_sound,
+					*conv_len / 4);
+			curr_sfmt = sfmt_set_fmt (curr_sfmt, SFMT_U16);
+		}
+		
+		if (curr_sound != buf)
+			free (curr_sound);
+		curr_sound = new_sound;
+		*conv_len /= 2;
+
+		logit ("Fast conversion!");
+	}
+
 	/* convert to float if necessary */
 	if ((conv->from.rate != conv->to.rate
 				|| conv->to.fmt == SFMT_FLOAT
-				|| !sfmt_same_bps(conv->to.fmt, conv->from.fmt))
+				|| !sfmt_same_bps(conv->to.fmt, curr_sfmt))
 			&& conv->from.fmt != SFMT_FLOAT) {
 		char *new_sound;
 		
