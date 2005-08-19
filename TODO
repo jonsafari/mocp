@@ -33,7 +33,7 @@ Before 2.4:
 
 In future:
 
-* Seek by a % value
+* Seek by a % value (also using keys for 10%, 20% etc.)
 * Ability to play from a playlist made of items found after searching.
 * http://www.audioscrobbler.com/
 * JACK: intelligent bahaviour when we get disconnected from the server
