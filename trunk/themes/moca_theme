@@ -1,0 +1,36 @@
+#
+# Theme: moca
+# Author: Nicola Vitale <nivit@email.it>
+#
+background		= white		black
+frame			= white		black
+window_title		= yellow	black	bold
+directory		= white		black
+selected_directory	= white		black	bold
+playlist		= white		black
+selected_playlist	= cyan		black	bold
+file			= white		black
+selected_file		= yellow	red	bold
+marked_file		= cyan		black	blink,bold
+marked_selected_file	= cyan		red	blink,bold
+info			= magenta	black	bold
+status			= yellow	black	bold
+title			= cyan		black	bold
+state			= red		black	bold
+current_time		= green		black	bold
+time_left		= magenta	black	bold
+total_time		= red		black	bold
+time_total_frames	= red		black	bold
+sound_parameters	= white		black	bold
+legend			= white		black
+disabled		= white		black	bold
+enabled			= blue		black	bold
+empty_mixer_bar		= cyan		blue
+filled_mixer_bar	= blue		cyan
+empty_time_bar		= green		magenta
+filled_time_bar		= magenta	green
+entry			= white		black
+entry_title		= magenta	black	bold
+error			= red		black	bold
+message			= green		black	bold
+plist_time		= red		black	bold
