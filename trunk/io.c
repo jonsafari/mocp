@@ -480,6 +480,7 @@ struct io_stream *io_open (const char *file, const int buffered)
 	s->strerror = NULL;
 	s->opened = 0;
 	s->buf_fill_callback = NULL;
+	memset (&s->metadata, 0, sizeof(s->metadata));
 
 #ifdef HAVE_CURL
 	s->curl.mime_type = NULL;
@@ -502,7 +503,6 @@ struct io_stream *io_open (const char *file, const int buffered)
 	s->after_seek = 0;
 	s->buffered = buffered;
 	s->pos = 0;
-	memset (&s->metadata, 0, sizeof(s->metadata));
 
 	if (buffered) {
 		fifo_buf_init (&s->buf, options_get_int("InputBuffer") * 1024);
