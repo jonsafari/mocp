@@ -34,8 +34,8 @@
 
 static int mixer_fd = -1;
 static int volatile dsp_fd = -1;
-static int mixer_channel1;
-static int mixer_channel2;
+static int mixer_channel1 = -1;
+static int mixer_channel2 = -1;
 static int mixer_channel_current;
 
 static struct sound_params params = { 0, 0, 0 };
@@ -130,6 +130,24 @@ static int set_capabilities (struct output_driver_caps *caps)
 	return 1;
 }
 
+/* Get PCM volume, return -1 on error */
+static int oss_read_mixer ()
+{
+	int vol;
+	
+	if (mixer_fd != -1 && mixer_channel_current != -1) {
+		if (ioctl(mixer_fd, MIXER_READ(mixer_channel_current), &vol)
+				== -1)
+			error ("Can't read from mixer");
+		else {
+			/* Average between left and right */
+			return ((vol & 0xFF) + ((vol >> 8) & 0xFF)) / 2;
+		}
+	}
+
+	return -1;
+}
+
 static int oss_init (struct output_driver_caps *caps)
 {
 	/* Open the mixer device */
@@ -158,8 +176,18 @@ static int oss_init (struct output_driver_caps *caps)
 			mixer_channel2 = SOUND_MIXER_VOLUME;
 		else
 			fatal ("Bad second OSS mixer channel!");
-
+		
+		/* test mixer channels */
 		mixer_channel_current = mixer_channel1;
+		if (oss_read_mixer() == -1)
+			mixer_channel1 = -1;
+
+		mixer_channel_current = mixer_channel2;
+		if (oss_read_mixer() == -1)
+			mixer_channel2 = -1;
+
+		if (mixer_channel1 != -1)
+			mixer_channel_current = mixer_channel1;
 	}
 
 	return set_capabilities (caps);
@@ -260,7 +288,6 @@ static int oss_set_params ()
 /* Return 0 on fail */
 static int oss_open (struct sound_params *sound_params)
 {
-
 	params = *sound_params;
 	
 	if (!open_dev())
@@ -287,24 +314,6 @@ static int oss_play (const char *buff, const size_t size)
 		error ("Error writing pcm sound: %s", strerror(errno));
 
 	return res == -1 ? -errno : res;
-}
-
-/* Get PCM volume, return -1 on error */
-static int oss_read_mixer ()
-{
-	int vol;
-	
-	if (mixer_fd != -1) {
-		if (ioctl(mixer_fd, MIXER_READ(mixer_channel_current), &vol)
-				== -1)
-			error ("Can't read from mixer");
-		else {
-			/* Average between left and right */
-			return ((vol & 0xFF) + ((vol >> 8) & 0xFF)) / 2;
-		}
-	}
-
-	return -1;
 }
 
 /* Set PCM volume */
@@ -364,9 +373,9 @@ static int oss_reset ()
 
 static void oss_toggle_mixer_channel ()
 {
-	if (mixer_channel_current == mixer_channel1)
+	if (mixer_channel_current == mixer_channel1 && mixer_channel2 != -1)
 		mixer_channel_current = mixer_channel2;
-	else
+	else if (mixer_channel1 != -1)
 		mixer_channel_current = mixer_channel1;
 }
 
