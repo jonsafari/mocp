@@ -282,7 +282,7 @@ static void tags_cache_read_add (struct tags_cache *c, const int client_id,
 	 * cache size */
 	while (c->size > c->max_size && !cache_list_empty(&c->cache))
 		tags_cache_remove_oldest (c);
-	debug ("Cache is %.2fKB bug", c->size / 1024.0);
+	debug ("Cache is %.2fKB big", c->size / 1024.0);
 	UNLOCK (c->mutex);
 }
 
