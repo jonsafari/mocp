@@ -72,6 +72,7 @@ static struct main_win
 {
 	WINDOW *win;
 	struct side_menu menus[3];
+	int selected_menu; /* which menu is currently selected by the user */
 } main_win;
 
 /* Bar for displaying mixer state or progress. */
@@ -176,11 +177,14 @@ static void main_win_init (struct main_win *w)
 	nodelay (w->win, TRUE);
 	keypad (w->win, TRUE);
 
-	side_menu_init (&w->menus[0], MENU_DIR, w->win, LINES - 4, COLS - 2,
+	side_menu_init (&w->menus[0], MENU_DIR, w->win, LINES - 5, COLS - 2,
 			1, 1);
 	/*side_menu_init (&w->menus[0], MENU_DIR, w->win, 5, 40,
 			1, 1);*/
 	w->menus[1].visible = 0;
+	w->menus[2].visible = 0;
+
+	w->selected_menu = 0;
 }
 
 static void main_win_destroy (struct main_win *w)
@@ -312,10 +316,24 @@ static void side_menu_make_list_content (struct side_menu *m,
 	menu_set_info_attr (m->menu.list, get_color(CLR_MENU_ITEM_INFO));
 }
 
+static void clear_area (WINDOW *w, const int posx, const int posy,
+		const int width, const int height)
+{
+	int x, y;
+
+	for (y = posy; y < posy + height; y++) {
+		wmove (w, y, posx);
+		for (x = 0; x < width; x++)
+			waddch (w, ' ');
+	}
+}
+
 static void side_menu_draw (const struct side_menu *m)
 {
 	assert (m != NULL);
 	assert (m->visible);
+
+	clear_area (m->win, m->posx, m->posy, m->width, m->height);
 	
 	if (m->type == MENU_DIR || m->type == MENU_PLAYLIST)
 		menu_draw (m->menu.list);
@@ -358,6 +376,24 @@ static void side_menu_cmd (struct side_menu *m, const enum key_cmd cmd)
 	side_menu_draw (m);
 }
 
+static enum file_type side_menu_curritem_get_type (const struct side_menu *m)
+{
+	assert (m != NULL);
+	assert (m->visible);
+	assert (m->type == MENU_DIR || m->type == MENU_PLAYLIST);
+
+	return menu_item_get_type (m->menu.list, menu_curritem(m->menu.list));
+}
+
+static char *side_menu_get_curr_file (const struct side_menu *m)
+{
+	assert (m != NULL);
+	assert (m->visible);
+	assert (m->type == MENU_DIR || m->type == MENU_PLAYLIST);
+
+	return menu_item_get_file (m->menu.list, menu_curritem(m->menu.list));
+}
+
 static struct side_menu *find_side_menu (struct main_win *w,
 		const enum side_menu_type type)
 {
@@ -379,7 +415,7 @@ static void main_win_set_dir_content (struct main_win *w,
 		const struct plist *files,
 		const struct file_list *dirs, const struct file_list *playlists)
 {
-	struct side_menu *m = find_side_menu (w, MENU_DIR);
+	struct side_menu *m = &w->menus[w->selected_menu];
 
 	side_menu_make_list_content (m, files, dirs, playlists);
 	side_menu_draw (m);
@@ -387,15 +423,33 @@ static void main_win_set_dir_content (struct main_win *w,
 
 static void main_win_menu_cmd (struct main_win *w, const enum key_cmd cmd)
 {
-	struct side_menu *m;
-	
 	assert (w != NULL);
 	
-	m = find_side_menu (w, MENU_DIR);
-	side_menu_cmd (m, cmd);
+	side_menu_cmd (&w->menus[w->selected_menu], cmd);
 }
 
-static void main_win_draw (struct main_win *w)
+static enum file_type main_win_curritem_get_type (const struct main_win *w)
+{
+	assert (w != NULL);
+
+	return side_menu_curritem_get_type (&w->menus[w->selected_menu]);
+}
+
+static char *main_win_get_curr_file (const struct main_win *w)
+{
+	assert (w != NULL);
+
+	return side_menu_get_curr_file (&w->menus[w->selected_menu]);
+}
+
+static int main_win_in_dir_menu (const struct main_win *w)
+{
+	assert (w != NULL);
+
+	return w->menus[w->selected_menu].type == MENU_DIR;
+}
+
+static void main_win_draw (const struct main_win *w)
 {
 	int i;
 
@@ -565,7 +619,7 @@ static void info_win_set_status (struct info_win *w, const char *msg)
 	mvwaddstr (w->win, 0, 6, msg);
 }
 
-static void info_win_draw (struct info_win *w)
+static void info_win_draw (const struct info_win *w)
 {
 	wattrset (w->win, get_color(CLR_MESSAGE));
 	mvwaddstr (w->win, 1, 1, w->info_msg);
@@ -698,4 +752,22 @@ void iface_menu_key (const enum key_cmd cmd)
 {
 	main_win_menu_cmd (&main_win, cmd);
 	wrefresh (main_win.win);
+}
+
+/* Get the type of the currently selected item. */
+enum file_type iface_curritem_get_type ()
+{
+	return main_win_curritem_get_type (&main_win);
+}
+
+/* Return a non zero value if a directory menu is currently selected. */
+int iface_in_dir_menu ()
+{
+	return main_win_in_dir_menu (&main_win);
+}
+
+/* Return the currently selected file (malloc()ed).  */
+char *iface_get_curr_file ()
+{
+	return main_win_get_curr_file (&main_win);
 }
