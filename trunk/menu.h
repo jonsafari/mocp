@@ -47,8 +47,13 @@ struct menu
 	int nitems; /* number of present items */
 	int allocated; /* number of allocated items */
 	int top; /* first visible item */
-	int maxx; /* maximum x position */
-	int maxy; /* maximum y position */
+
+	/* position and size */
+	int posx;
+	int posy;
+	int width;
+	int height;
+	
 	int selected; /* selected item */
 	int marked; /* index of the marked item or -1 */
 
@@ -59,7 +64,8 @@ struct menu
 	int info_attr; /* Attributes for information about the file */
 };
 
-struct menu *menu_new (WINDOW *win);
+struct menu *menu_new (WINDOW *win, const int posx, const int posy,
+		const int width, const int height);
 int menu_add (struct menu *menu, char *title, const int plist_pos,
 		const enum file_type type, const char *file);
 
