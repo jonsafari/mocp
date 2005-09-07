@@ -21,5 +21,6 @@ void iface_menu_key (const enum key_cmd cmd);
 enum file_type iface_curritem_get_type ();
 int iface_in_dir_menu ();
 char *iface_get_curr_file ();
+void iface_update_item (const struct plist *plist, const int n);
 
 #endif
