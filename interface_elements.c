@@ -411,6 +411,17 @@ static struct side_menu *find_side_menu (struct main_win *w,
 	abort (); /* menu not found - BUG */
 }
 
+static void side_menu_set_curr_item_title (struct side_menu *m,
+		const char *title)
+{
+	assert (m != NULL);
+	assert (m->visible);
+	assert (title != NULL);
+
+	menu_setcurritem_title (m->menu.list, title);
+	side_menu_draw (m);
+}
+
 static void main_win_set_dir_content (struct main_win *w,
 		const struct plist *files,
 		const struct file_list *dirs, const struct file_list *playlists)
@@ -447,6 +458,14 @@ static int main_win_in_dir_menu (const struct main_win *w)
 	assert (w != NULL);
 
 	return w->menus[w->selected_menu].type == MENU_DIR;
+}
+
+static void main_win_set_curr_item_title (struct main_win *w, const char *title)
+{
+	assert (w != NULL);
+	assert (title != NULL);
+
+	side_menu_set_curr_item_title (&w->menus[w->selected_menu], title);
 }
 
 static void main_win_draw (const struct main_win *w)
@@ -711,8 +730,12 @@ void iface_set_dir_content (const struct plist *files,
 }
 
 /* Chenge the current item in the directory menu to this item. */
-void iface_set_curr_dir_item (const char *fname)
+void iface_set_curr_item_title (const char *title)
 {
+	assert (title != NULL);
+	
+	main_win_set_curr_item_title (&main_win, title);
+	wrefresh (main_win.win);
 }
 
 /* Set the title for the directory menu. */

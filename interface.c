@@ -344,7 +344,7 @@ static int go_to_dir (const char *dir)
 	file_list_free (dirs);
 	file_list_free (playlists);
 	if (going_up)
-		iface_set_curr_dir_item (last_dir);
+		iface_set_curr_item_title (last_dir);
 	
 	iface_set_dir_title (cwd);
 	//update_state ();
