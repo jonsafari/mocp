@@ -581,3 +581,19 @@ int menu_nitems (const struct menu *menu)
 
 	return menu->nitems;
 }
+
+int menu_find (const struct menu *menu, const char *fname)
+{
+	/* TODO: linear search is too slow */
+	
+	int i;
+	
+	assert (menu != NULL);
+	assert (fname != NULL);
+
+	for (i = 0; i < menu->nitems; i++)
+		if (!strcmp(menu->items[i].file, fname))
+			return i;
+
+	return -1;
+}
