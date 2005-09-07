@@ -225,9 +225,7 @@ static void init_playlists ()
 	playlist = (struct plist *)xmalloc (sizeof(struct plist));
 	plist_init (playlist);
 
-	/* set serial numbers for playlists */
-	send_int_to_srv (CMD_GET_SERIAL);
-	plist_set_serial (dir_plist, get_data_int());
+	/* set serial numbers for the playlist */
 	send_int_to_srv (CMD_GET_SERIAL);
 	plist_set_serial (playlist, get_data_int());
 }
@@ -733,22 +731,93 @@ static void go_dir_up ()
 	free (dir);
 }
 
+/* Get (generate) a playlist serial from the server and make sure it's not
+ * the same as our playlists' serial. */
+static int get_safe_serial ()
+{
+	int serial;
+
+	do {
+		send_int_to_srv (CMD_GET_SERIAL);
+		serial = get_data_int ();
+	} while (serial == plist_get_serial(playlist)); /* check only the
+							   playlist, because
+							   dir_plist has serial
+							   -1 */
+
+	return serial;
+}
+
+/* Send the playlist to the server. If clear != 0, clear the server's playlist
+ * before sending. */
+static void send_playlist (struct plist *plist, const int clear)
+{
+	int i;
+	
+	if (clear)
+		send_int_to_srv (CMD_LIST_CLEAR);
+	
+	for (i = 0; i < plist->num; i++) {
+		if (!plist_deleted(plist, i)) {
+			send_int_to_srv (CMD_LIST_ADD);
+			send_str_to_srv (plist->items[i].file);
+		}
+	}
+}
+
+/* Send the playlist to the server if necessary and request playing this
+ * item. */
+static void play_it (const char *file)
+{
+	int serial; /* serial number of the playlist */
+	struct plist *curr_plist;
+	
+	assert (file != NULL);
+
+	if (iface_in_dir_menu())
+		curr_plist = dir_plist;
+	else
+		curr_plist = playlist;
+	
+	send_int_to_srv (CMD_LOCK);
+
+	send_int_to_srv (CMD_PLIST_GET_SERIAL);
+	serial = get_data_int ();
+	
+	if (plist_get_serial(curr_plist) == -1
+			|| serial != plist_get_serial(curr_plist)) {
+
+		logit ("The server has different playlist");
+
+		serial = get_safe_serial();
+		plist_set_serial (curr_plist, serial);
+		send_int_to_srv (CMD_PLIST_SET_SERIAL);
+		send_int_to_srv (serial);
+	
+		send_playlist (curr_plist, 1);
+	}
+	else
+		logit ("The server already has my playlist");
+	
+	send_int_to_srv (CMD_PLAY);
+	send_str_to_srv (file);
+
+	send_int_to_srv (CMD_UNLOCK);
+}
+
 /* Action when the user selected a file. */
 static void go_file ()
 {
 	enum file_type type = iface_curritem_get_type ();
+	char *file = iface_get_curr_file ();
 
 	if (type == F_SOUND || type == F_URL)
-		/*play_it (menu_item_get_plist_pos(curr_menu, selected))*/;
+		play_it (file);
 	else if (type == F_DIR && iface_in_dir_menu()) {
-		char *file = iface_get_curr_file ();
-		
 		if (!strcmp(file, ".."))
 			go_dir_up ();
 		else 
 			go_to_dir (file);
-
-		free (file);
 	}
 #if 0
 	else if (type == F_DIR && visible_plist == playlist)
@@ -758,6 +827,8 @@ static void go_file ()
 	else if (type == F_PLAYLIST)
 		go_to_playlist(menu_item_get_file(curr_menu, selected));
 #endif
+
+	free (file);
 }
 
 /* Handle key */
