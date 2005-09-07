@@ -537,12 +537,12 @@ enum file_type menu_item_get_type (const struct menu *menu, const int num)
 	return menu->items[num].type;
 }
 
-char *menu_item_get_file (struct menu *menu, const int num)
+char *menu_item_get_file (const struct menu *menu, const int num)
 {
 	assert (menu != NULL);
 	assert (num >= 0 && num < menu->nitems);
 
-	return menu->items[num].file;
+	return xstrdup (menu->items[num].file);
 }
 
 int menu_item_get_plist_pos (struct menu *menu, const int num)
