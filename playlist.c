@@ -270,7 +270,7 @@ void plist_item_copy (struct plist_item *dst, const struct plist_item *src)
  * If the item number is not valid, return NULL.
  * Returned memory is malloced.
  */
-char *plist_get_file (struct plist *plist, int i)
+char *plist_get_file (const struct plist *plist, int i)
 {
 	char *file = NULL;
 
