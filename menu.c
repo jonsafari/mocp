@@ -326,7 +326,7 @@ void menu_setcurritem (struct menu *menu, int num)
 	if (menu->selected < menu->top)
 		menu->top = menu->selected;
 	else if (menu->selected >= menu->top + menu->height)
-		menu->top = menu->selected - menu->height;	
+		menu->top = menu->selected - menu->height + 1;
 }
 
 /* Make the item with this title selected. */
