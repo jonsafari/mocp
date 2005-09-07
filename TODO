@@ -3,6 +3,7 @@ Items marked with $ are bigger changes requiring more time.
 Known bugs:
 * on 1024x768 framebuffer the volume ar is not drawn properly
 * hight CPU usage on FreeBSD with the gui process when started to play a song.
+* -p description and the way it works is wrong.
 
 Before 2.4:
 *$ Move interface primitives (windows, entry, etc.) to a separate file.
