@@ -103,7 +103,7 @@ static char *get_file (const char *path, const int strip_ext)
 
 /* Make a title from the file name for the item. If hide extension != 0, strip
  * the file name from extension. */
-static void make_file_title (struct plist *plist, const int num,
+void make_file_title (struct plist *plist, const int num,
 		const int hide_extension)
 {
 	
@@ -122,7 +122,7 @@ static void make_file_title (struct plist *plist, const int num,
 }
 
 /* Make a title from the tags for the item. */
-static void make_tags_title (struct plist *plist, const int num)
+void make_tags_title (struct plist *plist, const int num)
 {
 	assert (plist != NULL);
 	assert (num >= 0 && num < plist->num);
