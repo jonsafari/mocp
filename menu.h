@@ -99,7 +99,7 @@ void menu_set_show_time (struct menu *menu, const int t);
 void menu_set_show_format (struct menu *menu, const int t);
 void menu_set_info_attr (struct menu *menu, const int attr);
 enum file_type menu_item_get_type (const struct menu *menu, const int num);
-char *menu_item_get_file (struct menu *menu, const int num);
+char *menu_item_get_file (const struct menu *menu, const int num);
 int menu_item_get_plist_pos (struct menu *menu, const int num);
 void menu_item_set_title (struct menu *menu, const int num, const char *title);
 void menu_setcurritem_by_plistnum (struct menu *menu, const int plist_num);
