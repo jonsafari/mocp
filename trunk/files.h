@@ -32,5 +32,8 @@ struct file_tags *read_file_tags (const char *file,
 		struct file_tags *present_tags, const int tags_sel);
 void switch_titles_file (struct plist *plist);
 void switch_titles_tags (struct plist *plist);
+void make_tags_title (struct plist *plist, const int num);
+void make_file_title (struct plist *plist, const int num,
+		const int hide_extension);
 
 #endif
