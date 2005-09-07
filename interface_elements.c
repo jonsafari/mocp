@@ -33,6 +33,7 @@
 #include "files.h"
 #include "decoder.h"
 #include "keys.h"
+#include "playlist.h"
 
 #define STARTUP_MESSAGE	"The interface code is being rewritten and is not " \
 	"currently usable."
@@ -422,6 +423,47 @@ static void side_menu_set_curr_item_title (struct side_menu *m,
 	side_menu_draw (m);
 }
 
+/* Update item title and time for this item if ti's present on this menu. */
+static void side_menu_update_item (struct side_menu *m,
+		const struct plist *plist, const int n)
+{
+	int menu_item;
+	const struct plist_item *item;
+	
+	assert (m != NULL);
+	assert (m->visible);
+	assert (m->type == MENU_DIR || m->type == MENU_PLAYLIST);
+	assert (plist != NULL);
+	assert (n >= 0 && n < plist->num);
+
+	item = &plist->items[n];
+	
+	if ((menu_item = menu_find(m->menu.list, item->file)) != -1) {
+		char *title;
+		
+		if (item->tags && item->tags->time != -1) {
+			char time_str[6];
+		
+			sec_to_min (time_str, item->tags->time);
+			menu_item_set_time (m->menu.list, menu_item, time_str);
+		}
+		else
+			menu_item_set_time (m->menu.list, menu_item, "");
+
+		title = xstrdup (item->title);
+		if (item->title == item->title_tags)
+			title = iconv_str (title, 0);
+		else
+			title = iconv_str (title, 1);
+
+		menu_item_set_title (m->menu.list, menu_item, title);
+
+		free (title);
+
+		side_menu_draw (m);
+	}
+}
+
 static void main_win_set_dir_content (struct main_win *w,
 		const struct plist *files,
 		const struct file_list *dirs, const struct file_list *playlists)
@@ -475,6 +517,25 @@ static void main_win_draw (const struct main_win *w)
 	for (i = 0; i < (int)(sizeof(w->menus)/sizeof(w->menus[0])); i++)
 		if (w->menus[i].visible)
 			side_menu_draw (&w->menus[i]);
+}
+
+/* Update item title and time on all menus where it's present. */
+static void main_win_update_item (struct main_win *w, const struct plist *plist,
+		const int n)
+{
+	int i;
+
+	assert (w != NULL);
+	assert (plist != NULL);
+	assert (n >= 0 && n < plist->num);
+
+	for (i = 0; i < (int)(sizeof(w->menus)/sizeof(w->menus[0])); i++) {
+		struct side_menu *m = &w->menus[i];
+		
+		if (m->visible && (m->type == MENU_DIR
+					|| m->type == MENU_PLAYLIST))
+			side_menu_update_item (m, plist, n);
+	}
 }
 
 /* Set the has_xterm variable. */
@@ -727,6 +788,15 @@ void iface_set_dir_content (const struct plist *files,
 	wrefresh (main_win.win);
 	
 	/* TODO: also display the number of items */
+}
+
+/* Update item title and time on all menus where it's present. */
+void iface_update_item (const struct plist *plist, const int n)
+{
+	assert (plist != NULL);
+
+	main_win_update_item (&main_win, plist, n);
+	wrefresh (main_win.win);
 }
 
 /* Chenge the current item in the directory menu to this item. */

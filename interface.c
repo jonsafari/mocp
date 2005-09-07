@@ -130,6 +130,17 @@ static char *get_str_from_srv ()
 	return str;
 }
 
+/* Noblocking version of get_int_from_srv(): return 0 if there are no data. */
+static int get_int_from_srv_noblock (int *num)
+{
+	enum noblock_io_status st;
+	
+	if ((st = get_int_noblock(srv_sock, num)) == NB_IO_ERR)
+		interface_fatal ("Can't receive value from the server.");
+
+	return st == NB_IO_OK ? 1 : 0;
+}
+
 static struct plist_item *recv_item_from_srv ()
 {
 	struct plist_item *item;
@@ -140,6 +151,36 @@ static struct plist_item *recv_item_from_srv ()
 	return item;
 }
 
+static struct tag_ev_response *recv_tags_data_from_srv ()
+{
+	struct tag_ev_response *r;
+	
+	r = (struct tag_ev_response *)xmalloc (sizeof(struct tag_ev_response));
+
+	r->file = get_str_from_srv ();
+	if (!(r->tags = recv_tags(srv_sock)))
+		fatal ("Can't receive tags event's data from the server.");
+
+	return r;
+}
+
+/* Receive data for the given type of event and return them. Return NULL if
+ * there is no data for the event. */
+static void *get_event_data (const int type)
+{
+	switch (type) {
+		case EV_PLIST_ADD:
+			return recv_item_from_srv ();
+		case EV_PLIST_DEL:
+		case EV_STATUS_MSG:
+			return get_str_from_srv ();
+		case EV_FILE_TAGS:
+			return recv_tags_data_from_srv ();
+	}
+
+	return NULL;
+}
+
 /* Wait for EV_DATA handling other events. */
 static void wait_for_data ()
 {
@@ -148,12 +189,8 @@ static void wait_for_data ()
 	do {
 		event = get_int_from_srv ();
 		
-		if (event == EV_PLIST_ADD)
-			event_push (&events, event, recv_item_from_srv());
-		else if (event == EV_PLIST_DEL || event == EV_STATUS_MSG)
-			event_push (&events, event, get_str_from_srv());
-		else if (event != EV_DATA)
-			event_push (&events, event, NULL);
+		if (event != EV_DATA)
+			event_push (&events, event, get_event_data(event));
 	 } while (event != EV_DATA);
 }
 
@@ -169,6 +206,16 @@ static char *get_data_str ()
 {
 	wait_for_data ();
 	return get_str_from_srv ();
+}
+
+static void send_tags_request (const char *file, const int tags_sel)
+{
+	assert (file != NULL);
+	assert (tags_sel != 0);
+
+	send_int_to_srv (CMD_GET_FILE_TAGS);
+	send_str_to_srv (file);
+	send_int_to_srv (tags_sel);
 }
 
 static void init_playlists ()
@@ -287,7 +334,150 @@ static int qsort_dirs_func (const void *a, const void *b)
 		return 1;
 	
 	return strcmp (sa, sb);
-}	
+}
+
+/* Send requests for the given tags for every file on the playlist. */
+static void ask_for_tags (const struct plist *plist, const int tags_sel)
+{
+	int i;
+
+	assert (plist != NULL);
+	assert (tags_sel != 0);
+	
+	for (i = 0; i < plist->num; i++)
+		if (!plist_deleted(plist, i)) {
+			char *file = plist_get_file (plist, i);
+			
+			send_tags_request (file, tags_sel);
+			free (file);
+		}
+}
+
+/* Update tags (and titles) for the given item on the playlist with new tags. */
+static void update_item_tags (struct plist *plist, const int num,
+		const struct file_tags *tags)
+{
+	if (plist->items[num].tags)
+		tags_free (plist->items[num].tags);
+	plist->items[num].tags = tags_dup (tags);
+
+	if (options_get_int("ReadTags")) {
+		make_tags_title (plist, num);
+		if (plist->items[num].title_tags)
+			plist->items[num].title = plist->items[num].title_tags;
+		else {
+			if (!plist->items[num].title_file)
+				make_file_title (plist, num, options_get_int(
+							"HideFileExtension"));
+			plist->items[num].title = plist->items[num].title_file;
+		}
+	}
+}
+
+/* Handle EV_FILE_TAGS. */
+static void ev_file_tags (const struct tag_ev_response *data)
+{
+	int n;
+	int found;
+
+	assert (data != NULL);
+	assert (data->file != NULL);
+	assert (data->tags != NULL);
+
+	if ((n = plist_find_fname(dir_plist, data->file)) != -1) {
+		update_item_tags (dir_plist, n, data->tags);
+		iface_update_item (dir_plist, n);
+		found = 1;
+	}
+	else
+		found = 0;
+	
+	if ((n = plist_find_fname(playlist, data->file)) != -1) {
+		update_item_tags (playlist, n, data->tags);
+		if (!found) /* don't do it twice */
+			iface_update_item (dir_plist, n);
+	}
+}
+
+/* Handle server event. */
+static void server_event (const int event, void *data)
+{
+	logit ("EVENT: 0x%02x", event);
+
+	switch (event) {
+		case EV_BUSY:
+			fatal ("The server is busy, another client is "
+					"connected.");
+			break;
+/*		case EV_CTIME:
+			update_ctime ();
+			break;
+		case EV_STATE:
+			update_state ();
+			break;*/
+		case EV_EXIT:
+			fatal ("The server exited.");
+			break;
+/*		case EV_BITRATE:
+			update_bitrate ();
+			break;
+		case EV_RATE:
+			update_rate ();
+			break;
+		case EV_CHANNELS:
+			update_channels ();
+			break;
+		case EV_SRV_ERROR:
+			update_error ();
+			break;
+		case EV_OPTIONS:
+			get_server_options ();
+			update_info_win ();
+			wrefresh (info_win);
+			break;
+		case EV_SEND_PLIST:
+			forward_playlist ();
+			break;
+		case EV_PLIST_ADD:
+			if (options_get_int("SyncPlaylist")) {
+				event_plist_add ((struct plist_item *)data);
+				if (curr_menu == playlist_menu)
+					update_menu ();
+			}
+			plist_free_item_fields (data);
+			free (data);
+			break;
+		case EV_PLIST_CLEAR:
+			if (options_get_int("SyncPlaylist")) {
+				clear_playlist ();
+				update_menu ();
+			}
+			break;
+		case EV_PLIST_DEL:
+			if (options_get_int("SyncPlaylist")) {
+				event_plist_del ((char *)data);
+				update_menu ();
+			}
+			free (data);
+			break;
+		case EV_TAGS:
+			update_curr_tags (data);
+			break;
+		case EV_STATUS_MSG:
+			set_iface_status_ref (data);
+			free (data);
+			break;
+		case EV_MIXER_CHANGE:
+			ev_mixer_change ();
+			break;*/
+		case EV_FILE_TAGS:
+			ev_file_tags ((struct tag_ev_response *)data);
+			free_tag_ev_data ((struct tag_ev_response *)data);
+			break;
+		default:
+			fatal ("Unknown event: 0x%02x", event);
+	}
+}
 
 /* Load the directory content into dir_plist and switch the menu to it.
  * If dir is NULL, go to the cwd.
@@ -332,8 +522,14 @@ static int go_to_dir (const char *dir)
 
 	switch_titles_file (dir_plist);
 
-	if (options_get_int("ReadTags"))
-		/*switch_titles_tags (dir_plist)*/;
+	if (options_get_int("ReadTags")) {
+		int tags = TAGS_COMMENTS;
+
+		if (!strcasecmp(options_get_str("ShowTime"), "yes"))
+			tags |= TAGS_TIME;
+
+		ask_for_tags (dir_plist, tags);
+	}
 	
 	plist_sort_fname (dir_plist);
 	qsort (dirs->items, dirs->num, sizeof(char *), qsort_dirs_func);
@@ -896,6 +1092,34 @@ static void menu_key (const int ch)
 	}
 }
 
+/* Get event from the server and handle it. */
+static void get_and_handle_event ()
+{
+	int type;
+
+	if (!get_int_from_srv_noblock(&type)) {
+		debug ("Getting event would block.");
+		return;
+	}
+
+	server_event (type, get_event_data(type));
+}
+
+/* Handle events from the queue. */
+static void dequeue_events ()
+{
+	struct event *e;
+	
+	debug ("Dequeuing events...");
+
+	while ((e = event_get_first(&events))) {
+		server_event (e->type, e->data);
+		event_pop (&events);
+	}
+
+	debug ("done");
+}
+
 void interface_loop ()
 {
 	while (!want_quit) {
@@ -934,14 +1158,14 @@ void interface_loop ()
 				clear_interrupt ();
 				
 				menu_key (ch);
-				//dequeue_events ();
+				dequeue_events ();
 			}
 
 			if (!want_quit) {
 				if (FD_ISSET(srv_sock, &fds))
-					/*get_and_handle_event (1)*/;
+					get_and_handle_event ();
 				//do_silent_seek ();
-				//dequeue_events ();
+				dequeue_events ();
 			}
 		}
 		else if (user_wants_interrupt())
