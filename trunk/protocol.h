@@ -128,5 +128,6 @@ void event_pop (struct event_queue *q);
 void event_push (struct event_queue *q, const int event, void *data);
 int event_queue_empty (const struct event_queue *q);
 enum noblock_io_status event_send_noblock (int sock, struct event_queue *q);
+void free_tag_ev_data (struct tag_ev_response *d);
 
 #endif

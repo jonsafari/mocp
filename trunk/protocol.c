@@ -520,6 +520,15 @@ struct event *event_get_first (struct event_queue *q)
 	return q->head;
 }
 
+void free_tag_ev_data (struct tag_ev_response *d)
+{
+	assert (d != NULL);
+
+	free (d->file);
+	tags_free (d->tags);
+	free (d);
+}
+
 /* Free data associated with the event if any. */
 static void free_event_data (struct event *e)
 {
@@ -527,14 +536,8 @@ static void free_event_data (struct event *e)
 		plist_free_item_fields (e->data);
 		free (e->data);
 	}
-	else if (e->type == EV_FILE_TAGS) {
-		struct tag_ev_response *r
-			= (struct tag_ev_response *)e->data;
-		
-		free (r->file);
-		tags_free (r->tags);
-		free (r);
-	}
+	else if (e->type == EV_FILE_TAGS)
+		free_tag_ev_data ((struct tag_ev_response *)e->data);
 	else if (e->type == EV_PLIST_DEL || e->type == EV_STATUS_MSG)
 		free (e->data);
 	else if (e->data)
