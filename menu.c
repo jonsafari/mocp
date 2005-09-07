@@ -70,7 +70,7 @@ static void draw_item (const struct menu *menu, const int num, const int pos,
 	const struct menu_item *item = &menu->items[num];
 	int j;
 
-	wmove (menu->win, pos, 1);
+	wmove (menu->win, pos, menu->posx);
 	
 	/* Set attributes */
 	if (num == menu->selected && num == menu->marked)
@@ -86,10 +86,8 @@ static void draw_item (const struct menu *menu, const int num, const int pos,
 	title_len = strlen (item->title);
 	
 	/* Make blank line to the right side of the screen */
-	if (num == menu->selected) {
-		for (j = title_len + 1; j <= title_space; j++)
-			waddch (menu->win, ' ');
-	}
+	for (j = title_len + 1; j <= title_space; j++)
+		waddch (menu->win, ' ');
 
 	/* Description */
 	wattrset (menu->win, menu->info_attr);
@@ -115,29 +113,38 @@ void menu_draw (struct menu *menu)
 	assert (menu != NULL);
 
 	if (menu->show_time || menu->show_format) {
-		title_width = menu->maxx - 2; /* for brackets */
+		title_width = menu->width - 2; /* -2 for brackets */
 		if (menu->show_time)
 			title_width -= 5; /* 00:00 */
 		if (menu->show_format)
 			title_width -= 3; /* MP3 */
 		if (menu->show_time && menu->show_format)
 			title_width--; /* for | */
-		info_pos = title_width + 1; /* +1 for the frame */
+		info_pos = title_width;
 	}
 	else {
-		title_width = menu->maxx;
+		title_width = menu->width;
 		info_pos = 0;
 	}
 
-	for (i = menu->top; i < menu->nitems && i - menu->top < menu->maxy;
+	for (i = menu->top; i < menu->nitems && i - menu->top < menu->height;
 			i++)
-		draw_item (menu, i, i - menu->top + 1, info_pos, title_width);
+		draw_item (menu, i, i - menu->top + menu->posy,
+				menu->posx + info_pos,
+				title_width);
 }
 
 /* menu_items must be malloc()ed memory! */
-struct menu *menu_new (WINDOW *win)
+struct menu *menu_new (WINDOW *win, const int posx, const int posy,
+		const int width, const int height)
 {
 	struct menu *menu;
+
+	assert (win != NULL);
+	assert (posx >= 0);
+	assert (posy >= 0);
+	assert (width > 0);
+	assert (height > 0);
 
 	menu = (struct menu *)xmalloc (sizeof(struct menu));
 
@@ -148,9 +155,10 @@ struct menu *menu_new (WINDOW *win)
 	menu->nitems = 0;
 	menu->top = 0;
 	menu->selected = 0;
-	getmaxyx (win, menu->maxy, menu->maxx);
-	menu->maxx -= 2; /* The window contains border */
-	menu->maxy--; /* Border without bottom line */
+	menu->posx = posx;
+	menu->posy = posy;
+	menu->width = width;
+	menu->height = height;
 	menu->marked = -1;
 	menu->show_time = 0;
 	menu->show_format = 0;
@@ -215,10 +223,8 @@ static int menu_add_from_item (struct menu *menu, const struct menu_item *item)
 void menu_update_size (struct menu *menu, WINDOW *win)
 {
 	assert (menu != NULL);
-	
-	getmaxyx (win, menu->maxy, menu->maxx);
-	menu->maxx -= 2; /* The window contains border */
-	menu->maxy--; /* Border without bottom line */
+
+	/* TODO: this is wrong */
 }
 
 void menu_free (struct menu *menu)
@@ -244,30 +250,30 @@ void menu_driver (struct menu *menu, enum menu_request req)
 	
 	if (req == REQ_DOWN && menu->selected < menu->nitems - 1) {
 		menu->selected++;
-		if (menu->selected > menu->top + menu->maxy - 1) {
-			menu->top = menu->selected - (menu->maxy - 1) / 2;
-			if (menu->top > menu->nitems - menu->maxy)
-				menu->top = menu->nitems - menu->maxy;
+		if (menu->selected >= menu->top + menu->height) {
+			menu->top = menu->selected - menu->height / 2;
+			if (menu->top > menu->nitems - menu->height)
+				menu->top = menu->nitems - menu->height;
 		}
 	}
 	else if (req == REQ_UP && menu->selected > 0) {
 		menu->selected--;
 		if (menu->top > menu->selected) {
-			menu->top = menu->selected - (menu->maxy - 1) / 2;
+			menu->top = menu->selected - menu->height / 2;
 			if (menu->top < 0)
 				menu->top = 0;
 		}
 	}
 	else if (req == REQ_PGDOWN && menu->selected < menu->nitems - 1) {
-		if (menu->selected + menu->maxy - 1 < menu->nitems - 1) {
-			menu->selected += menu->maxy - 1;
-			menu->top += menu->maxy - 1;
-			if (menu->top > menu->nitems - menu->maxy)
-				menu->top = menu->nitems - menu->maxy;
+		if (menu->selected + menu->height - 1 < menu->nitems - 1) {
+			menu->selected += menu->height - 1;
+			menu->top += menu->height - 1;
+			if (menu->top > menu->nitems - menu->height)
+				menu->top = menu->nitems - menu->height;
 		}
 		else {
 			menu->selected = menu->nitems - 1;
-			menu->top = menu->nitems - menu->maxy;
+			menu->top = menu->nitems - menu->height;
 		}
 
 		if (menu->top < 0)
@@ -275,9 +281,9 @@ void menu_driver (struct menu *menu, enum menu_request req)
 
 	}
 	else if (req == REQ_PGUP && menu->selected > 0) {
-		if (menu->selected - menu->maxy + 1 > 0) {
-			menu->selected -= menu->maxy - 1;
-			menu->top -= menu->maxy - 1;
+		if (menu->selected - menu->height + 1 > 0) {
+			menu->selected -= menu->height - 1;
+			menu->top -= menu->height - 1;
 			if (menu->top < 0)
 				menu->top = 0;
 		}
@@ -292,7 +298,7 @@ void menu_driver (struct menu *menu, enum menu_request req)
 	}
 	else if (req == REQ_BOTTOM) {
 		menu->selected = menu->nitems - 1;
-		menu->top = menu->selected - menu->maxy + 1;
+		menu->top = menu->selected - menu->height + 1;
 		if (menu->top < 0)
 			menu->top = 0;
 	}
@@ -318,8 +324,8 @@ void menu_setcurritem (struct menu *menu, int num)
 
 	if (menu->selected < menu->top)
 		menu->top = menu->selected;
-	else if (menu->selected > menu->top + menu->maxy - 1)
-		menu->top = menu->selected - menu->maxy + 1;	
+	else if (menu->selected >= menu->top + menu->height)
+		menu->top = menu->selected - menu->height;	
 }
 
 /* Make the item with this title selected. */
@@ -342,14 +348,14 @@ void menu_setcurritem_title (struct menu *menu, const char *title)
 void set_menu_state (struct menu *menu, int selected, int top)
 {
 	assert (menu != NULL);
-	
+
 	if (selected >= menu->nitems)
 		menu->selected = menu->nitems - 1;
 	else
 		menu->selected = selected;
 
-	if (top > menu->nitems - menu->maxy + 1)
-		menu->top = menu->nitems - menu->maxy;
+	if (top > menu->nitems - menu->height)
+		menu->top = menu->nitems - menu->height;
 	else
 		menu->top = top;
 
@@ -395,8 +401,8 @@ void menu_set_top_item (struct menu *menu, const int num)
 {
 	assert (menu != NULL);
 	
-	if (num > menu->nitems - menu->maxy) {
-		menu->top = menu->nitems - menu->maxy;
+	if (num > menu->nitems - menu->height) {
+		menu->top = menu->nitems - menu->height;
 		if (menu->top < 0)
 			menu->top = 0;
 	}
@@ -410,7 +416,8 @@ struct menu *menu_filter_pattern (struct menu *menu, const char *pattern)
 	int i;
 	struct menu *new;
 
-	new = menu_new (menu->win);
+	new = menu_new (menu->win, menu->posx, menu->posy, menu->width,
+			menu->height);
 	new->show_time = menu->show_time;
 	new->show_format = menu->show_format;
 	new->info_attr = menu->info_attr;

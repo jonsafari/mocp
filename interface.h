@@ -4,9 +4,8 @@
 void init_interface (const int sock, const int logging, char **args,
 		const int arg_num, const int recursively);
 void interface_loop ();
-int server_connect ();
 void interface_end ();
-int user_wants_interrupt ();
+int user_wants_interrupt () __attribute__((deprecated));
 void interface_error (const char *msg);
 
 #ifdef HAVE_ATTRIBUTE__

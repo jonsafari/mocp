@@ -15,8 +15,6 @@ int read_directory (const char *directory, struct file_list *dirs,
 		struct file_list *playlists, struct plist *plist);
 int read_directory_recurr (const char *directory, struct plist *plist,
 		const int check_duplicates);
-void make_titles_file (struct plist *plist);
-void make_titles_tags (struct plist *plist);
 void resolve_path (char *buf, const int size, const char *file);
 char *ext_pos (const char *file);
 void file_list_free (struct file_list *list);
@@ -34,8 +32,5 @@ struct file_tags *read_file_tags (const char *file,
 		struct file_tags *present_tags, const int tags_sel);
 void switch_titles_file (struct plist *plist);
 void switch_titles_tags (struct plist *plist);
-void make_tags_title (struct plist *plist, const int num);
-void make_file_title (struct plist *plist, const int num,
-		const int hide_extension);
 
 #endif

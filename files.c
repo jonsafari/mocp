@@ -103,7 +103,7 @@ static char *get_file (const char *path, const int strip_ext)
 
 /* Make a title from the file name for the item. If hide extension != 0, strip
  * the file name from extension. */
-void make_file_title (struct plist *plist, const int num,
+static void make_file_title (struct plist *plist, const int num,
 		const int hide_extension)
 {
 	
@@ -122,13 +122,11 @@ void make_file_title (struct plist *plist, const int num,
 }
 
 /* Make a title from the tags for the item. */
-void make_tags_title (struct plist *plist, const int num)
+static void make_tags_title (struct plist *plist, const int num)
 {
 	assert (plist != NULL);
 	assert (num >= 0 && num < plist->num);
 	assert (!plist_deleted(plist, num));
-
-	update_file (&plist->items[num]);
 
 	if (file_type(plist->items[num].file) == F_URL)
 		make_file_title (plist, num, 0);
@@ -136,11 +134,6 @@ void make_tags_title (struct plist *plist, const int num)
 		char *title;
 		assert (plist->items[num].file != NULL);
 
-		plist->items[num].tags = read_file_tags (
-				plist->items[num].file,
-				plist->items[num].tags,
-				TAGS_COMMENTS);
-		
 		if (plist->items[num].tags->title) {
 			title = build_title (plist->items[num].tags);
 			plist_set_title_tags (plist, num, title);
@@ -152,48 +145,16 @@ void make_tags_title (struct plist *plist, const int num)
 	}
 }
 
-/* Make titles for the playlist items from the file names. */
-void make_titles_file (struct plist *plist)
-{
-	int hide_extension = options_get_int ("HideFileExtension");
-	int i;
-
-	for (i = 0; i < plist->num; i++)
-		if (!plist_deleted(plist, i))
-			make_file_title (plist, i, hide_extension);
-}
-
-/* Make titles for the playlist items from the tags. */
-void make_titles_tags (struct plist *plist)
-{
-	int i;
-	int interrupt = 0;
-
-	for (i = 0; i < plist->num; i++) {
-
-		if (user_wants_interrupt()) {
-			interrupt = 1;
-			interface_error ("Reading tags interrupted");
-			break;
-		}
-		
-		if (!plist_deleted(plist, i) && !plist->items[i].title_tags)
-			make_tags_title (plist, i);
-	}
-
-	if (interrupt)
-		make_titles_file (plist);
-}
-
 /* Switch playlist titles to title_file */
 void switch_titles_file (struct plist *plist)
 {
 	int i;
-
-	make_titles_file (plist);
-
+	int hide_extension = options_get_int("HideFileExtension");
+		
 	for (i = 0; i < plist->num; i++)
 		if (!plist_deleted(plist, i)) {
+			if (!plist->items[i].title_tags)
+				make_file_title (plist, i, hide_extension);
 			assert (plist->items[i].title_file != NULL);
 			plist->items[i].title = plist->items[i].title_file;
 		}
@@ -204,17 +165,18 @@ void switch_titles_tags (struct plist *plist)
 {
 	int i;
 
-	make_titles_tags (plist);
-	
 	for (i = 0; i < plist->num; i++)
 		if (!plist_deleted(plist, i)) {
-
 			if (plist->items[i].title_tags)
 				plist->items[i].title
 					= plist->items[i].title_tags;
-			else
+			else {
+				if (!plist->items[i].title_file)
+					make_file_title (plist, i,
+							options_get_int("HideFileExtension"));
 				plist->items[i].title
 					= plist->items[i].title_file;
+			}
 		}
 }
 
@@ -740,52 +702,4 @@ time_t get_mtime (const char *file)
 		return stat_buf.st_mtime;
 	
 	return (time_t)-1;
-}
-
-/* Update the item data if the file was modified. */
-void update_file (struct plist_item *item)
-{
-	time_t mtime;
-
-	assert (item != NULL);
-
-	if ((mtime = get_mtime(item->file)) != item->mtime && mtime != -1) {
-		debug ("File %s was modified, updating", item->file);
-
-		if (item->tags) {
-			int needed_tags = item->tags->filled;
-
-			tags_free (item->tags);
-			item->tags = read_file_tags (item->file, NULL,
-					needed_tags);
-		}
-
-		if (item->title_tags) {
-			int update_title;
-			
-			update_title = item->title == item->title_tags;
-			free (item->title_tags);
-
-			item->tags = read_file_tags (item->file,
-					item->tags, TAGS_COMMENTS);
-			if (item->tags->title)
-				item->title_tags = build_title (item->tags);
-			else {
-				if (!item->title_file)
-					item->title_file = get_file (item->file,
-							options_get_int(
-								"HideFileExtension"));
-				item->title_tags = NULL;
-			}
-
-			if (update_title) {
-				if (item->title_tags)
-					item->title = item->title_tags;
-				else
-					item->title = item->title_file;
-			}
-		}
-
-		item->mtime = mtime;
-	}
 }

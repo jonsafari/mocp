@@ -20,6 +20,8 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <sys/time.h>
+#include <sys/socket.h>
+#include <sys/un.h>
 #include <unistd.h>
 #include <signal.h>
 #define _GNU_SOURCE
@@ -153,6 +155,28 @@ char *create_file_name (const char *file)
 		fatal ("Path too long.");
 
 	return fname;
+}
+
+/* Connect to the server, return fd os the socket or -1 on error */
+static int server_connect ()
+{
+	struct sockaddr_un sock_name;
+	int sock;
+	
+	/* Create a socket */
+	if ((sock = socket (PF_LOCAL, SOCK_STREAM, 0)) == -1)
+		 return -1;
+	
+	sock_name.sun_family = AF_LOCAL;
+	strcpy (sock_name.sun_path, socket_name());
+
+	if (connect(sock, (struct sockaddr *)&sock_name,
+				SUN_LEN(&sock_name)) == -1) {
+		close (sock);
+		return -1;
+	}
+
+	return sock;
 }
 
 /* Ping the server. return 1 if the server respond with EV_PONG, otherwise 1. */

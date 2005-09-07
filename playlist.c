@@ -220,7 +220,7 @@ int plist_add (struct plist *plist, const char *file_name)
 	}
 
 	plist->items[plist->num].file = xstrdup (file_name);
-	plist->items[plist->num].type = F_OTHER;
+	plist->items[plist->num].type = file_type (file_name);
 	plist->items[plist->num].deleted = 0;
 	plist->items[plist->num].title = NULL;
 	plist->items[plist->num].title_file = NULL;
@@ -659,7 +659,7 @@ void plist_set_file (struct plist *plist, const int num, const char *file)
 	if (plist->items[num].file) {
 		rb_delete (&plist->search_tree, file);
 		free (plist->items[num].file);
-		plist->items[num].type = F_OTHER;
+		plist->items[num].type = file_type (file);
 	}
 	
 	plist->items[num].file = xstrdup (file);
@@ -875,15 +875,12 @@ int plist_last (struct plist *plist)
 	return i;
 }
 
-enum file_type plist_file_type (struct plist *plist, const int num)
+enum file_type plist_file_type (const struct plist *plist, const int num)
 {
 	assert (plist != NULL);
 	assert (num < plist->num);
 
-	if (plist->items[num].type != F_OTHER)
-		return plist->items[num].type;
-
-	return (plist->items[num].type = file_type(plist->items[num].file));
+	return plist->items[num].type;
 }
 
 /* Remove items from playlist a that are also presend on playlist b. */

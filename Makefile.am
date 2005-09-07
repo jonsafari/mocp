@@ -23,6 +23,8 @@ mocp_SOURCES = log.c \
 	       decoder.h \
        	       interface.c \
 	       interface.h \
+	       interface_elements.c \
+	       interface_elements.h \
 	       menu.c \
 	       menu.h \
 	       files.c \
