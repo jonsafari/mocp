@@ -18,5 +18,8 @@ int iface_get_char ();
 int iface_in_help ();
 int iface_key_is_resize (const int ch);
 void iface_menu_key (const enum key_cmd cmd);
+enum file_type iface_curritem_get_type ();
+int iface_in_dir_menu ();
+char *iface_get_curr_file ();
 
 #endif

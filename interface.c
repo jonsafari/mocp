@@ -292,11 +292,11 @@ static int qsort_dirs_func (const void *a, const void *b)
 /* Load the directory content into dir_plist and switch the menu to it.
  * If dir is NULL, go to the cwd.
  * Return 1 on success, 0 on error. */
-static int go_to_dir (char *dir)
+static int go_to_dir (const char *dir)
 {
 	struct plist *old_dir_plist;
 	char last_dir[PATH_MAX];
-	char *new_dir = dir ? dir : cwd;
+	const char *new_dir = dir ? dir : cwd;
 	int going_up = 0;
 	struct file_list *dirs, *playlists;
 
@@ -516,25 +516,41 @@ static void do_resize ()
 }
 #endif
 
+static void go_dir_up ()
+{
+	char *dir;
+	char *slash;
+
+	dir = xstrdup (cwd);
+	slash = strrchr (dir, '/');
+	assert (slash != NULL);
+	if (slash == dir)
+		*(slash + 1) = 0;
+	else
+		*slash = 0;
+
+	go_to_dir (dir);
+	free (dir);
+}
+
 /* Action when the user selected a file. */
 static void go_file ()
 {
-#if 0
-	int selected = menu_curritem (curr_menu);
-	enum file_type type = menu_item_get_type(curr_menu, selected);
+	enum file_type type = iface_curritem_get_type ();
 
 	if (type == F_SOUND || type == F_URL)
-		play_it (menu_item_get_plist_pos(curr_menu, selected));
-	else if (type == F_DIR && visible_plist == curr_plist) {
-		if (!strcmp(menu_item_get_file(curr_menu, selected), ".."))
+		/*play_it (menu_item_get_plist_pos(curr_menu, selected))*/;
+	else if (type == F_DIR && iface_in_dir_menu()) {
+		char *file = iface_get_curr_file ();
+		
+		if (!strcmp(file, ".."))
 			go_dir_up ();
-		else {
-			char dir[PATH_MAX + 1];
+		else 
+			go_to_dir (file);
 
-			strcpy (dir, menu_item_get_file(curr_menu, selected));
-			go_to_dir (dir);
-		}
+		free (file);
 	}
+#if 0
 	else if (type == F_DIR && visible_plist == playlist)
 		
 		/* the only item on the playlist of type F_DIR is '..' */
@@ -875,7 +891,7 @@ static void menu_key (const int ch)
 				break;
 #endif
 			default:
-				abort ();
+				//abort ();
 		}
 	}
 }
