@@ -514,6 +514,9 @@ static int go_to_dir (const char *dir)
 		return 0;
 	}
 
+	/* TODO: use CMD_ABORT_TAGS_REQUESTS (what if we requested tags for the
+	 playlist?) */
+
 	plist_free (old_dir_plist);
 	free (old_dir_plist);
 
@@ -522,6 +525,12 @@ static int go_to_dir (const char *dir)
 
 	switch_titles_file (dir_plist);
 
+
+	plist_sort_fname (dir_plist);
+	qsort (dirs->items, dirs->num, sizeof(char *), qsort_dirs_func);
+	qsort (playlists->items, playlists->num, sizeof(char *),
+			qsort_strcmp_func);
+	
 	if (options_get_int("ReadTags")) {
 		int tags = TAGS_COMMENTS;
 
@@ -530,12 +539,7 @@ static int go_to_dir (const char *dir)
 
 		ask_for_tags (dir_plist, tags);
 	}
-	
-	plist_sort_fname (dir_plist);
-	qsort (dirs->items, dirs->num, sizeof(char *), qsort_dirs_func);
-	qsort (playlists->items, playlists->num, sizeof(char *),
-			qsort_strcmp_func);
-	
+
 	iface_set_dir_content (dir_plist, dirs, playlists);
 	file_list_free (dirs);
 	file_list_free (playlists);
