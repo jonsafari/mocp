@@ -86,8 +86,9 @@ static void draw_item (const struct menu *menu, const int num, const int pos,
 	title_len = strlen (item->title);
 	
 	/* Make blank line to the right side of the screen */
-	for (j = title_len + 1; j <= title_space; j++)
-		waddch (menu->win, ' ');
+	if (num == menu->selected)
+		for (j = title_len + 1; j <= title_space; j++)
+			waddch (menu->win, ' ');
 
 	/* Description */
 	wattrset (menu->win, menu->info_attr);
