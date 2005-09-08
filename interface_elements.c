@@ -93,8 +93,8 @@ static struct info_win
 {
 	WINDOW *win;
 
-	/* TODO: message (informative and error) */
-	char *info_msg; /* informative message */
+	char *msg; /* message displayed instead of the file's title */
+	int msg_is_error; /* is the above message an error? */
 	time_t msg_timeout; /* how many seconds remain before the message
 				disapperars */
 	
@@ -112,7 +112,7 @@ static struct info_win
 	int curr_time;
 	int total_time;
 
-	char *title;		/* title or file name of the song. */
+	char *title;		/* title of the played song. */
 	char status_msg[26];	/* status message */
 	int state_play;		/* STATE_(PLAY | STOP | PAUSE) */
 
@@ -541,6 +541,13 @@ static void main_win_update_item (struct main_win *w, const struct plist *plist,
 	}
 }
 
+static void main_win_set_played_file (struct main_win *w, const char *file)
+{
+	assert (w != NULL);
+
+	/* TODO (file can be NULL) */
+}
+
 /* Set the has_xterm variable. */
 static void detect_term ()
 {
@@ -688,7 +695,8 @@ static void info_win_init (struct info_win *w)
 	w->title = NULL;
 	w->status_msg[0] = 0;
 
-	w->info_msg = xstrdup (STARTUP_MESSAGE);
+	w->msg = xstrdup (STARTUP_MESSAGE);
+	w->msg_is_error = 0;
 	w->msg_timeout = time(NULL) + 3;
 
 	bar_init (&w->mixer_bar, 20, "", 1, get_color(CLR_MIXER_BAR_FILL),
@@ -703,8 +711,8 @@ static void info_win_destroy (struct info_win *w)
 
 	if (w->win)
 		delwin (w->win);
-	if (w->info_msg)
-		free (w->info_msg);
+	if (w->msg)
+		free (w->msg);
 }
 
 static void info_win_set_mixer_name (struct info_win *w, const char *name)
@@ -750,13 +758,21 @@ static void info_win_draw_state (const struct info_win *w)
 	mvwaddstr (w->win, 1, 1, state_symbol);
 }
 
-static void info_win_draw_message (const struct info_win *w)
+/* Draw the title or the message (informative or error). */
+static void info_win_draw_title (const struct info_win *w)
 {
 	assert (w != NULL);
 
-	if (w->info_msg) {
-		wattrset (w->win, get_color(CLR_MESSAGE));
-		mvwaddstr (w->win, 1, 3, w->info_msg);
+	clear_area (w->win, 4, 1, COLS - 5, 1);
+
+	if (w->msg && w->msg_timeout >= time(NULL)) {
+		wattrset (w->win, w->msg_is_error ? get_color(CLR_ERROR)
+				: get_color(CLR_MESSAGE));
+		mvwaddnstr (w->win, 1, 4, w->msg, COLS - 5);
+	}
+	else {
+		wattrset (w->win, get_color(CLR_TITLE));
+		mvwaddnstr (w->win, 1, 4, w->title, COLS - 5);
 	}
 }
 
@@ -810,13 +826,34 @@ static void info_win_set_total_time (struct info_win *w, const int time)
 	info_win_draw_time (w);
 }
 
+static void info_win_set_played_title (struct info_win *w, const char *title)
+{
+	assert (w != NULL);
+
+	if (w->title)
+		free (w->title);
+	w->title = xstrdup (title);
+	info_win_draw_title (w);
+}
+
+/* Update the message timeout, redraw the window if needed. */
+static void info_win_tick (struct info_win *w)
+{
+	if (w->msg && time(NULL) > w->msg_timeout) {
+		free (w->msg);
+		w->msg = NULL;
+
+		info_win_draw_title (w);
+	}
+}
+
 static void info_win_draw (const struct info_win *w)
 {
 	assert (w != NULL);
 	
 	info_win_draw_state (w);
 	info_win_draw_time (w);
-	info_win_draw_message (w);
+	info_win_draw_title (w);
 	bar_draw (&w->mixer_bar, w->win, COLS - 37, 0);
 	bar_draw (&w->time_bar, w->win, 2, 3);
 }
@@ -982,12 +1019,14 @@ char *iface_get_curr_file ()
 	return main_win_get_curr_file (&main_win);
 }
 
+/* Set the current time of playing. */
 void iface_set_curr_time (const int time)
 {
 	info_win_set_curr_time (&info_win, time);
 	wrefresh (info_win.win);
 }
 
+/* Set the total time for the currently played file. */
 void iface_set_total_time (const int time)
 {
 	info_win_set_total_time (&info_win, time);
@@ -1009,4 +1048,33 @@ void iface_set_bitrate (const int bitrate)
 void iface_set_rate (const int rate)
 {
 	/* TODO */
+}
+
+/* Set the currently played file. If file is NULL, nothing is played. */
+void iface_set_played_file (const char *file)
+{
+	main_win_set_played_file (&main_win, file);
+
+	if (!file) {
+		info_win_set_played_title (&info_win, NULL);
+		wrefresh (info_win.win);
+	}
+	wrefresh (main_win.win);
+}
+
+/* Set the title for the currently played file. */
+void iface_set_played_file_title (const char *title)
+{
+	assert (title != NULL);
+
+	info_win_set_played_title (&info_win, title);
+	wrefresh (info_win.win);
+}
+
+/* Update timeouts, refresh the screen if needed. This should be called at
+ * least once a second. */
+void iface_tick ()
+{
+	info_win_tick (&info_win);
+	wrefresh (info_win.win);
 }
