@@ -82,7 +82,8 @@ struct bar
 {
 	int width;	/* width in chars */
 	int filled;	/* how much is it filled in percent */
-	char title[40];	/* optional title */
+	char orig_title[40];	/* optional title */
+	char title[256];	/* title with the percent value */
 	int show_val;	/* show the title and the value? */
 	int fill_color;	/* color (ncurses attributes) of the filled part */
 	int empty_color;	/* color of the empty part */
@@ -116,6 +117,7 @@ static struct info_win
 	int state_play;		/* STATE_(PLAY | STOP | PAUSE) */
 
 	struct bar mixer_bar;
+	struct bar time_bar;
 } info_win;
 
 /* Are we running on xterm? */
@@ -584,18 +586,28 @@ static void check_term_size ()
 		fatal ("The terminal is too small after resizeing.");
 }
 
+/* Update the title with the current fill. */
+static void bar_update_title (struct bar *b)
+{
+	assert (b != NULL);
+	assert (b->show_val);
+	
+	if (b->filled < 100)
+		sprintf (b->title, "%*s  %02d%%", b->width - 5, b->orig_title,
+				b->filled);
+	else
+		sprintf (b->title, "%*s 100%%", b->width - 5, b->orig_title);
+}
+
 static void bar_set_title (struct bar *b, const char *title)
 {
 	assert (b != NULL);
 	assert (b->show_val);
 	assert (title != NULL);
 	assert (strlen(title) < sizeof(b->title) - 5);
-	
-	if (b->filled < 100)
-		sprintf (b->title, "%*s  %02d%%", b->width - 5, title,
-				b->filled);
-	else
-		sprintf (b->title, "%*s 100%%", b->width - 5, title);
+
+	strcpy (b->orig_title, title);
+	bar_update_title (b);
 }
 
 static void bar_init (struct bar *b, const int width, const char *title,
@@ -603,7 +615,7 @@ static void bar_init (struct bar *b, const int width, const char *title,
 		const int empty_color)
 {
 	assert (b != NULL);
-	assert (width > 5);
+	assert (width > 5 && width < (int)sizeof(b->title));
 	assert (title != NULL || !show_val);
 	
 	b->width = width;
@@ -642,6 +654,17 @@ static void bar_draw (const struct bar *b, WINDOW *win, const int pos_x,
 	waddstr (win, b->title + fill_chars);
 }
 
+static void bar_set_fill (struct bar *b, const int fill)
+{
+	assert (b != NULL);
+	assert (fill >= 0);
+	
+	b->filled = fill <= 100 ? fill : 100;
+
+	if (b->show_val)
+		bar_update_title (b);
+}
+
 static void info_win_init (struct info_win *w)
 {
 	assert (w != NULL);
@@ -670,6 +693,8 @@ static void info_win_init (struct info_win *w)
 
 	bar_init (&w->mixer_bar, 20, "", 1, get_color(CLR_MIXER_BAR_FILL),
 			get_color(CLR_MIXER_BAR_EMPTY));
+	bar_init (&w->time_bar, COLS - 4, NULL, 0, get_color(CLR_TIME_BAR_FILL),
+			get_color(CLR_TIME_BAR_EMPTY));
 }
 
 static void info_win_destroy (struct info_win *w)
@@ -754,8 +779,10 @@ static void info_win_draw_time (const struct info_win *w)
 	sec_to_min (time_str, w->curr_time != -1 ? w->curr_time : 0);
 	wattrset (w->win, get_color(CLR_TIME_CURRENT));
 	mvwaddstr (w->win, 2, 1, time_str);
+
+	bar_draw (&w->time_bar, w->win, 2, 3);
 	
-	/* TODO: total time, time left, bar */
+	/* TODO: total time, time left */
 }
 
 static void info_win_set_curr_time (struct info_win *w, const int time)
@@ -764,6 +791,22 @@ static void info_win_set_curr_time (struct info_win *w, const int time)
 	assert (time >= -1);
 
 	w->curr_time = time;
+	if (w->total_time > 0 && w->curr_time >= 0)
+		bar_set_fill (&w->time_bar, w->curr_time * 100 / w->total_time);
+	
+	info_win_draw_time (w);
+}
+
+static void info_win_set_total_time (struct info_win *w, const int time)
+{
+	assert (w != NULL);
+	assert (time >= -1);
+
+	w->total_time = time;
+	
+	if (w->total_time > 0 && w->curr_time >= 0)
+		bar_set_fill (&w->time_bar, w->curr_time * 100 / w->total_time);
+
 	info_win_draw_time (w);
 }
 
@@ -771,11 +814,11 @@ static void info_win_draw (const struct info_win *w)
 {
 	assert (w != NULL);
 	
-
 	info_win_draw_state (w);
 	info_win_draw_time (w);
 	info_win_draw_message (w);
 	bar_draw (&w->mixer_bar, w->win, COLS - 37, 0);
+	bar_draw (&w->time_bar, w->win, 2, 3);
 }
 
 void windows_init ()
@@ -947,7 +990,8 @@ void iface_set_curr_time (const int time)
 
 void iface_set_total_time (const int time)
 {
-	
+	info_win_set_total_time (&info_win, time);
+	wrefresh (info_win.win);
 }
 
 /* Set the state (STATE_(PLAY|STOP|PAUSE)). */
@@ -955,4 +999,14 @@ void iface_set_state (const int state)
 {
 	info_win_set_state (&info_win, state);
 	wrefresh (info_win.win);
+}
+
+void iface_set_bitrate (const int bitrate)
+{
+	/* TODO */
+}
+
+void iface_set_rate (const int rate)
+{
+	/* TODO */
 }
