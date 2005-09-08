@@ -397,6 +397,42 @@ static void ev_file_tags (const struct tag_ev_response *data)
 	}
 }
 
+/* Update the current time. TODO: If silent_seek_pos >= 0, use this time instead
+ * of the real time. */
+static void update_ctime ()
+{
+	int curr_time;
+
+	send_int_to_srv (CMD_GET_CTIME);
+	curr_time = get_data_int ();
+	
+	iface_set_curr_time (curr_time);
+}
+
+/* Get and show the server state. */
+static void update_state ()
+{
+	int new_state;
+	
+	/* play | stop | pause */
+	send_int_to_srv (CMD_GET_STATE);
+	new_state = get_data_int ();
+	iface_set_state (new_state);
+
+	/* Silent seeking makes no sense if the state has changed. */
+/*	if (new_state != file_info.state_code) {
+		file_info.state_code = new_state;
+		silent_seek_pos = -1;
+	}*/
+
+	//update_curr_file ();
+	
+/*	update_channels ();
+	update_bitrate ();
+	update_rate ();*/
+	update_ctime ();
+}
+
 /* Handle server event. */
 static void server_event (const int event, void *data)
 {
@@ -407,12 +443,12 @@ static void server_event (const int event, void *data)
 			fatal ("The server is busy, another client is "
 					"connected.");
 			break;
-/*		case EV_CTIME:
+		case EV_CTIME:
 			update_ctime ();
 			break;
 		case EV_STATE:
 			update_state ();
-			break;*/
+			break;
 		case EV_EXIT:
 			fatal ("The server exited.");
 			break;
@@ -473,7 +509,7 @@ static void server_event (const int event, void *data)
 			free_tag_ev_data ((struct tag_ev_response *)data);
 			break;
 		default:
-			fatal ("Unknown event: 0x%02x", event);
+			//fatal ("Unknown event: 0x%02x", event);
 	}
 }
 
