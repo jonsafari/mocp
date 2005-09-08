@@ -409,7 +409,7 @@ static void send_events (fd_set *fds)
 	int i;
 
 	for (i = 0; i < CLIENTS_MAX; i++)
-		if (clients[i].socket != -1 && clients[i].wants_events
+		if (clients[i].socket != -1
 				&& FD_ISSET(clients[i].socket, fds)) {
 			debug ("Flushing events for client %d", i);
 			if (!flush_events(&clients[i])) {
@@ -1160,7 +1160,7 @@ void server_loop (int list_sock)
 		FD_SET (list_sock, &fds_read);
 		FD_SET (wake_up_pipe[0], &fds_read);
 		add_clients_fds (&fds_read, &fds_write);
-		
+
 		if (!server_quit)
 			res = select (max_fd(list_sock)+1, &fds_read,
 					&fds_write, NULL, NULL);
