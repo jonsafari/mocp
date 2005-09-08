@@ -25,5 +25,7 @@ void iface_update_item (const struct plist *plist, const int n);
 void iface_set_curr_time (const int time);
 void iface_set_total_time (const int time);
 void iface_set_state (const int state);
+void iface_set_bitrate (const int bitrate);
+void iface_set_rate (const int rate);
 
 #endif
