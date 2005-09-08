@@ -792,13 +792,31 @@ static void info_win_draw_time (const struct info_win *w)
 
 	assert (w != NULL);
 	
+	/* current time */
 	sec_to_min (time_str, w->curr_time != -1 ? w->curr_time : 0);
 	wattrset (w->win, get_color(CLR_TIME_CURRENT));
 	mvwaddstr (w->win, 2, 1, time_str);
 
+	/* time left */
+	if (w->total_time > 0 && w->curr_time >= 0
+			&& w->total_time >= w->curr_time) {
+		sec_to_min (time_str, w->total_time - w->curr_time);
+		wmove (w->win, 2, 7);
+		wattrset (w->win, get_color(CLR_TIME_LEFT));
+		waddstr (w->win, time_str);
+	}
+
+	/* total time */
+	sec_to_min (time_str, w->total_time != -1 ? w->total_time : 0);
+	wmove (w->win, 2, 13);
+	wattrset (w->win, get_color(CLR_TIME_TOTAL_FRAMES));
+	waddch (w->win, '[');
+	wattrset (w->win, get_color(CLR_TIME_TOTAL));
+	waddstr (w->win, time_str);
+	wattrset (w->win, get_color(CLR_TIME_TOTAL_FRAMES));
+	waddch (w->win, ']');
+
 	bar_draw (&w->time_bar, w->win, 2, 3);
-	
-	/* TODO: total time, time left */
 }
 
 static void info_win_set_curr_time (struct info_win *w, const int time)
