@@ -209,6 +209,8 @@ static void update_time ()
 	if (ctime != last_time) {
 		last_time = ctime;
 		ctime_change ();
+		set_info_bitrate (bitrate_list_get(&bitrate_list,
+					audio_get_time()));
 	}
 }
 
@@ -392,7 +394,6 @@ static void buf_free_callback ()
 	pthread_cond_broadcast (&request_cond);
 	UNLOCK (request_cond_mutex);
 
-	set_info_bitrate (bitrate_list_get(&bitrate_list, audio_get_time()));
 	update_time ();
 }
 
