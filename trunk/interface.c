@@ -69,6 +69,19 @@ static volatile int wants_interrupt = 0;
 static volatile int want_resize = 0;
 #endif
 
+/* Information about the currently played file. */
+static struct file_info {
+	char *file;
+	struct file_tags *tags;
+	char *title;
+	int bitrate;
+	int rate;
+	int curr_time;
+	int total_time;
+	int channels;
+	int state; /* STATE_* */
+} curr_file;
+
 static void sig_quit (int sig ATTR_UNUSED)
 {
 	want_quit = 1;
@@ -228,6 +241,33 @@ static void init_playlists ()
 	/* set serial numbers for the playlist */
 	send_int_to_srv (CMD_GET_SERIAL);
 	plist_set_serial (playlist, get_data_int());
+}
+
+static void file_info_reset (struct file_info *f)
+{
+	f->file = NULL;
+	f->tags = NULL;
+	f->title = NULL;
+	f->bitrate = -1;
+	f->rate = -1;
+	f->curr_time = -1;
+	f->total_time = -1;
+	f->channels = 1;
+	f->state = STATE_STOP;
+}
+
+static void file_info_cleanup (struct file_info *f)
+{
+	if (f->tags)
+		tags_free (f->tags);
+	if (f->file)
+		free (f->file);
+	if (f->title)
+		free (f->title);
+
+	f->file = NULL;
+	f->tags = NULL;
+	f->title = NULL;
 }
 
 /* Get an integer option from the server (like shuffle) and set it. */
@@ -395,29 +435,74 @@ static void ev_file_tags (const struct tag_ev_response *data)
 		if (!found) /* don't do it twice */
 			iface_update_item (dir_plist, n);
 	}
+
+	if (curr_file.file && !strcmp(data->file, curr_file.file)) {
+		if (data->tags->time != -1) {
+			curr_file.total_time = data->tags->time;
+			iface_set_total_time (curr_file.total_time);
+		}
+
+		if (data->tags->title) {
+			if (curr_file.title)
+				free (curr_file.title);
+			curr_file.title = build_title (data->tags);
+			iface_set_played_file_title (curr_file.title);
+		}
+	}
 }
 
 /* Update the current time. TODO: If silent_seek_pos >= 0, use this time instead
  * of the real time. */
 static void update_ctime ()
 {
-	int curr_time;
-
 	send_int_to_srv (CMD_GET_CTIME);
-	curr_time = get_data_int ();
+	curr_file.curr_time = get_data_int ();
 	
-	iface_set_curr_time (curr_time);
+	iface_set_curr_time (curr_file.curr_time);
+}
+
+static void update_curr_file ()
+{
+	char *file;
+
+	send_int_to_srv (CMD_GET_SNAME);
+	file = get_data_str ();
+
+	if (file[0]) {
+		if (!curr_file.file || strcmp(file, curr_file.file)) {
+			file_info_cleanup (&curr_file);
+			iface_set_played_file (file);
+			send_tags_request (file, TAGS_COMMENTS | TAGS_TIME);
+			curr_file.file = file;
+
+			/* make a title that will be used until we get tags */
+			if (file_type(file) == F_URL || !strchr(file, '/'))
+				curr_file.title = xstrdup (file);
+			else
+				curr_file.title =
+					xstrdup (strrchr(file, '/') + 1);
+
+			iface_set_played_file (file);
+			iface_set_played_file_title (curr_file.title);
+		}
+		else
+			free (file);
+	}
+	else {
+		file_info_cleanup (&curr_file);
+		file_info_reset (&curr_file);
+		iface_set_played_file (NULL);
+		free (file);
+	}
 }
 
 /* Get and show the server state. */
 static void update_state ()
 {
-	int new_state;
-	
 	/* play | stop | pause */
 	send_int_to_srv (CMD_GET_STATE);
-	new_state = get_data_int ();
-	iface_set_state (new_state);
+	curr_file.state = get_data_int ();
+	iface_set_state (curr_file.state);
 
 	/* Silent seeking makes no sense if the state has changed. */
 /*	if (new_state != file_info.state_code) {
@@ -425,7 +510,7 @@ static void update_state ()
 		silent_seek_pos = -1;
 	}*/
 
-	//update_curr_file ();
+	update_curr_file ();
 	
 /*	update_channels ();
 	update_bitrate ();
@@ -643,6 +728,7 @@ void init_interface (const int sock, const int logging, char **args,
 	if (!setlocale(LC_CTYPE, ""))
 		logit ("Could not net locate!");
 
+	file_info_reset (&curr_file);
 	init_playlists ();
 	event_queue_init (&events);
 	windows_init ();
@@ -707,6 +793,7 @@ void init_interface (const int sock, const int logging, char **args,
 	enter_first_dir ();
 #endif
 	
+	update_curr_file ();
 	send_int_to_srv (CMD_SEND_EVENTS);
 }
 
@@ -1243,6 +1330,8 @@ void interface_loop ()
 		FD_SET (STDIN_FILENO, &fds);
 
 		ret = select (srv_sock + 1, &fds, NULL, NULL, &timeout);
+
+		iface_tick ();
 		
 		if (ret == 0) {
 			/*if (msg_timeout && msg_timeout < time(NULL)

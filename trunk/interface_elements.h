@@ -27,5 +27,8 @@ void iface_set_total_time (const int time);
 void iface_set_state (const int state);
 void iface_set_bitrate (const int bitrate);
 void iface_set_rate (const int rate);
+void iface_set_played_file (const char *file);
+void iface_set_played_file_title (const char *title);
+void iface_tick ();
 
 #endif
