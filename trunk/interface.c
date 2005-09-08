@@ -33,6 +33,8 @@
 # include <sys/select.h>
 #endif
 
+#define DEBUG
+
 #include "log.h"
 #include "interface_elements.h"
 #include "interface.h"
@@ -229,6 +231,8 @@ static void send_tags_request (const char *file, const int tags_sel)
 	send_int_to_srv (CMD_GET_FILE_TAGS);
 	send_str_to_srv (file);
 	send_int_to_srv (tags_sel);
+
+	debug ("Asking for tags for %s", file);
 }
 
 static void init_playlists ()
@@ -422,6 +426,8 @@ static void ev_file_tags (const struct tag_ev_response *data)
 	assert (data->file != NULL);
 	assert (data->tags != NULL);
 
+	debug ("Received tags for %s", data->file);
+
 	if ((n = plist_find_fname(dir_plist, data->file)) != -1) {
 		update_item_tags (dir_plist, n, data->tags);
 		iface_update_item (dir_plist, n);
@@ -437,10 +443,15 @@ static void ev_file_tags (const struct tag_ev_response *data)
 	}
 
 	if (curr_file.file && !strcmp(data->file, curr_file.file)) {
+
+		debug ("Tags apply to the currently played file.");
+		
 		if (data->tags->time != -1) {
 			curr_file.total_time = data->tags->time;
 			iface_set_total_time (curr_file.total_time);
 		}
+		else
+			debug ("Not time information");
 
 		if (data->tags->title) {
 			if (curr_file.title)
@@ -793,8 +804,8 @@ void init_interface (const int sock, const int logging, char **args,
 	enter_first_dir ();
 #endif
 	
-	update_curr_file ();
 	send_int_to_srv (CMD_SEND_EVENTS);
+	update_state ();
 }
 
 #ifdef SIGWINCH
