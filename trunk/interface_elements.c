@@ -34,6 +34,7 @@
 #include "decoder.h"
 #include "keys.h"
 #include "playlist.h"
+#include "protocol.h"
 
 #define STARTUP_MESSAGE	"The interface code is being rewritten and is not " \
 	"currently usable."
@@ -622,7 +623,7 @@ static void bar_init (struct bar *b, const int width, const char *title,
 	}	
 }
 
-static void bar_draw (struct bar *b, WINDOW *win, const int pos_x,
+static void bar_draw (const struct bar *b, WINDOW *win, const int pos_x,
 		const int pos_y)
 {
 	int fill_chars; /* how many chars are "filled" */
@@ -653,6 +654,7 @@ static void info_win_init (struct info_win *w)
 	w->state_shuffle = 0;
 	w->state_repeat = 0;
 	w->state_next = 0;
+	w->state_play = STATE_STOP;
 
 	w->bitrate = -1;
 	w->rate = -1;
@@ -699,10 +701,81 @@ static void info_win_set_status (struct info_win *w, const char *msg)
 	mvwaddstr (w->win, 0, 6, msg);
 }
 
+static void info_win_draw_state (const struct info_win *w)
+{
+	const char *state_symbol;
+
+	assert (w != NULL);
+
+	switch (w->state_play) {
+		case STATE_PLAY:
+			state_symbol = " >";
+			break;
+		case STATE_STOP:
+			state_symbol = "[]";
+			break;
+		case STATE_PAUSE:
+			state_symbol = "||";
+			break;
+		default:
+			abort (); /* BUG */
+	}
+
+	wattrset (w->win, get_color(CLR_STATE));
+	mvwaddstr (w->win, 1, 1, state_symbol);
+}
+
+static void info_win_draw_message (const struct info_win *w)
+{
+	assert (w != NULL);
+
+	if (w->info_msg) {
+		wattrset (w->win, get_color(CLR_MESSAGE));
+		mvwaddstr (w->win, 1, 3, w->info_msg);
+	}
+}
+
+static void info_win_set_state (struct info_win *w, const int state)
+{
+	assert (w != NULL);
+	assert (state == STATE_PLAY || state == STATE_STOP
+			|| state == STATE_PAUSE);
+
+	w->state_play = state;
+	info_win_draw_state (w);
+}
+
+static void info_win_draw_time (const struct info_win *w)
+{
+	char time_str[6];
+
+	assert (w != NULL);
+	
+	sec_to_min (time_str, w->curr_time != -1 ? w->curr_time : 0);
+	wattrset (w->win, get_color(CLR_TIME_CURRENT));
+	mvwaddstr (w->win, 2, 1, time_str);
+	
+	/* TODO: total time, time left, bar */
+}
+
+static void info_win_set_curr_time (struct info_win *w, const int time)
+{
+	assert (w != NULL);
+	assert (time >= -1);
+
+	w->curr_time = time;
+	info_win_draw_time (w);
+}
+
 static void info_win_draw (const struct info_win *w)
 {
-	wattrset (w->win, get_color(CLR_MESSAGE));
-	mvwaddstr (w->win, 1, 1, w->info_msg);
+	assert (w != NULL);
+	
+
+	info_win_draw_state (w);
+	info_win_draw_time (w);
+	info_win_draw_message (w);
+	bar_draw (&w->mixer_bar, w->win, COLS - 37, 0);
 }
 
 void windows_init ()
@@ -769,6 +842,7 @@ void iface_set_mixer_name (const char *name)
 	assert (name != NULL);
 	
 	info_win_set_mixer_name (&info_win, name);
+	wrefresh (info_win.win);
 }
 
 /* Set the status message in the info window. */
@@ -863,4 +937,22 @@ int iface_in_dir_menu ()
 char *iface_get_curr_file ()
 {
 	return main_win_get_curr_file (&main_win);
+}
+
+void iface_set_curr_time (const int time)
+{
+	info_win_set_curr_time (&info_win, time);
+	wrefresh (info_win.win);
+}
+
+void iface_set_total_time (const int time)
+{
+	
+}
+
+/* Set the state (STATE_(PLAY|STOP|PAUSE)). */
+void iface_set_state (const int state)
+{
+	info_win_set_state (&info_win, state);
+	wrefresh (info_win.win);
 }
