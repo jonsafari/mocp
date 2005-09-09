@@ -100,7 +100,6 @@ static struct info_win
 	
 	/* true/false options values */
 	int state_stereo;
-	int state_net;
 	int state_shuffle;
 	int state_repeat;
 	int state_next;
@@ -680,7 +679,6 @@ static void info_win_init (struct info_win *w)
 	wbkgd (w->win, get_color(CLR_BACKGROUND));
 
 	w->state_stereo = 0;
-	w->state_net = 0;
 	w->state_shuffle = 0;
 	w->state_repeat = 0;
 	w->state_next = 0;
@@ -890,13 +888,54 @@ static void info_win_set_rate (struct info_win *w, const int rate)
 	info_win_draw_rate (w);
 }
 
+/* Draw a switch that is turned on or off in form of [TITLE]. */
+static void info_win_draw_switch (const struct info_win *w, const int posx,
+		const int posy, const char *title, const int value)
+{
+	assert (w != NULL);
+	assert (title != NULL);
+
+	wattrset (w->win, get_color(
+				value ? CLR_INFO_ENABLED : CLR_INFO_DISABLED));
+	mvwprintw (w->win, posy, posx, "[%s]", title);
+}
+
+static void info_win_draw_options_state (const struct info_win *w)
+{
+	assert (w != NULL);
+
+	info_win_draw_switch (w, 38, 2, "STEREO", w->state_stereo);
+	//TODO: net
+	info_win_draw_switch (w, 47, 2, "SHUFFLE", w->state_shuffle);
+	info_win_draw_switch (w, 57, 2, "REPEAT", w->state_repeat);
+	info_win_draw_switch (w, 66, 2, "NEXT", w->state_next);
+}
+
 static void info_win_set_channels (struct info_win *w, const int channels)
 {
 	assert (w != NULL);
 	assert (channels == 1 || channels == 2);
 
 	w->state_stereo = (channels == 2) ? 1 : 0;
-	//TODO: info_win_draw_switch (w, POSX, POSY, w->state_stereo);
+	info_win_draw_options_state (w);
+}
+
+static void info_win_set_option_state (struct info_win *w, const char *name,
+		const int value)
+{
+	assert (w != NULL);
+	assert (name != NULL);
+	
+	if (!strcasecmp(name, "Shuffle"))
+		w->state_shuffle = value;
+	else if (!strcasecmp(name, "Repeat"))
+		w->state_repeat = value;
+	else if (!strcasecmp(name, "AutoNext"))
+		w->state_next = value;
+	else
+		abort ();
+
+	info_win_draw_options_state (w);
 }
 
 /* Update the message timeout, redraw the window if needed. */
@@ -955,6 +994,7 @@ static void info_win_draw (const struct info_win *w)
 	info_win_draw_state (w);
 	info_win_draw_time (w);
 	info_win_draw_title (w);
+	info_win_draw_options_state (w);
 	bar_draw (&w->mixer_bar, w->win, COLS - 37, 0);
 	bar_draw (&w->time_bar, w->win, 2, 3);
 }
@@ -1003,18 +1043,7 @@ void iface_set_option_state (const char *name, const int value)
 {
 	assert (name != NULL);
 
-	if (!strcasecmp(name, "stereo"))
-		info_win.state_stereo = value;
-	else if (!strcasecmp(name, "net"))
-		info_win.state_net = value;
-	else if (!strcasecmp(name, "Shuffle"))
-		info_win.state_shuffle = value;
-	else if (!strcasecmp(name, "Repeat"))
-		info_win.state_repeat = value;
-	else if (!strcasecmp(name, "AutoNext"))
-		info_win.state_next = value;
-	else
-		abort ();
+	info_win_set_option_state (&info_win, name, value);
 }
 
 /* Set the mixer name. */
