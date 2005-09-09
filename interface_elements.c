@@ -724,6 +724,14 @@ static void info_win_set_mixer_name (struct info_win *w, const char *name)
 	bar_draw (&w->mixer_bar, w->win, COLS - 37, 0);
 }
 
+static void info_win_draw_status (const struct info_win *w)
+{
+	assert (w != NULL);
+
+	mvwprintw (w->win, 0, 6, "%-*s", sizeof(w->status_msg) - 1,
+			w->status_msg);
+}
+
 static void info_win_set_status (struct info_win *w, const char *msg)
 {
 	assert (w != NULL);
@@ -731,7 +739,7 @@ static void info_win_set_status (struct info_win *w, const char *msg)
 	assert (strlen(msg) < sizeof(w->status_msg));
 
 	strcpy (w->status_msg, msg);
-	mvwaddstr (w->win, 0, 6, msg);
+	info_win_draw_status (w);
 }
 
 static void info_win_draw_state (const struct info_win *w)
@@ -1001,6 +1009,7 @@ static void info_win_draw (const struct info_win *w)
 	info_win_draw_time (w);
 	info_win_draw_title (w);
 	info_win_draw_options_state (w);
+	info_win_draw_status (w);
 	bar_draw (&w->mixer_bar, w->win, COLS - 37, 0);
 	bar_draw (&w->time_bar, w->win, 2, 3);
 }
