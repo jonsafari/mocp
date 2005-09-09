@@ -1013,6 +1013,22 @@ static void switch_pause ()
 	}
 }
 
+static void set_mixer (int val)
+{
+	if (val < 0)
+		val = 0;
+	else if (val > 100)
+		val = 100;
+
+	send_int_to_srv (CMD_SET_MIXER);
+	send_int_to_srv (val);
+}
+
+static void adjust_mixer (const int diff)
+{
+	set_mixer (get_mixer_value() + diff);
+}
+
 /* Handle key */
 static void menu_key (const int ch)
 {
@@ -1114,6 +1130,7 @@ static void menu_key (const int ch)
 			case KEY_CMD_PLIST_ADD_DIR:
 				add_dir_plist ();
 				break;
+#endif
 			case KEY_CMD_MIXED_DEC_1:
 				adjust_mixer (-1);
 				break;
@@ -1126,6 +1143,7 @@ static void menu_key (const int ch)
 			case KEY_CMD_MIXER_INC_1:
 				adjust_mixer (+1);
 				break;
+#if 0
 			case KEY_CMD_SEEK_BACKWARD:
 				seek (-options_get_int("SeekTime"));
 				break;
@@ -1213,6 +1231,7 @@ static void menu_key (const int ch)
 			case KEY_CMD_SEEK_BACKWARD_5:
 				seek_silent (-5);
 				break;
+#endif
 			case KEY_CMD_VOLUME_10:
 				set_mixer (10);
 				break;
@@ -1240,7 +1259,6 @@ static void menu_key (const int ch)
 			case KEY_CMD_VOLUME_90:
 				set_mixer (90);
 				break;
-#endif
 			case KEY_CMD_FAST_DIR_1:
 				if (options_get_str("FastDir1"))
 					go_to_dir (options_get_str(
@@ -1374,7 +1392,6 @@ void interface_loop ()
 
 		ret = select (srv_sock + 1, &fds, NULL, NULL, &timeout);
 
-		update_mixer_value ();
 		iface_tick ();
 		
 		if (ret == 0) {
@@ -1414,6 +1431,8 @@ void interface_loop ()
 		}
 		else if (user_wants_interrupt())
 			/*handle_interrupt ()*/;
+
+		update_mixer_value ();
 	}
 }
 
