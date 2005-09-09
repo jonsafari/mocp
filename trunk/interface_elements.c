@@ -855,7 +855,10 @@ static void info_win_draw_rate (const struct info_win *w)
 	assert (w != NULL);
 
 	wattrset (w->win, get_color(CLR_SOUND_PARAMS));
-	mvwprintw (w->win, 2, 22, "%3d", w->rate);
+	if (w->rate != -1)
+		mvwprintw (w->win, 2, 22, "%3d", w->rate);
+	else
+		mvwaddstr (w->win, 2, 22, "   ");
 }
 
 static void info_win_draw_bitrate (const struct info_win *w)
@@ -863,7 +866,10 @@ static void info_win_draw_bitrate (const struct info_win *w)
 	assert (w != NULL);
 
 	wattrset (w->win, get_color(CLR_SOUND_PARAMS));
-	mvwprintw (w->win, 2, 30, "%3d", w->bitrate);
+	if (w->bitrate != -1)
+		mvwprintw (w->win, 2, 30, "%3d", w->bitrate);
+	else
+		mvwaddstr (w->win, 2, 30, "   ");
 }
 
 static void info_win_set_bitrate (struct info_win *w, const int bitrate)
