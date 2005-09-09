@@ -507,6 +507,27 @@ static void update_curr_file ()
 	}
 }
 
+static void update_rate ()
+{
+	send_int_to_srv (CMD_GET_RATE);
+	curr_file.rate = get_data_int ();
+	iface_set_rate (curr_file.rate);
+}
+
+static void update_channels ()
+{
+	send_int_to_srv (CMD_GET_CHANNELS);
+	curr_file.channels = get_data_int ();
+	iface_set_channels (curr_file.channels);
+}
+
+static void update_bitrate ()
+{
+	send_int_to_srv (CMD_GET_BITRATE);
+	curr_file.bitrate = get_data_int ();
+	iface_set_bitrate (curr_file.bitrate);
+}
+
 /* Get and show the server state. */
 static void update_state ()
 {
@@ -523,9 +544,9 @@ static void update_state ()
 
 	update_curr_file ();
 	
-/*	update_channels ();
+	update_channels ();
 	update_bitrate ();
-	update_rate ();*/
+	update_rate ();
 	update_ctime ();
 }
 

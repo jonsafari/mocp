@@ -600,10 +600,10 @@ static void bar_update_title (struct bar *b)
 	assert (b->show_val);
 	
 	if (b->filled < 100)
-		sprintf (b->title, "%*s  %02d%%", b->width - 5, b->orig_title,
+		sprintf (b->title, "%*s  %02d%%  ", b->width - 7, b->orig_title,
 				b->filled);
 	else
-		sprintf (b->title, "%*s 100%%", b->width - 5, b->orig_title);
+		sprintf (b->title, "%*s 100%%  ", b->width - 7, b->orig_title);
 }
 
 static void bar_set_title (struct bar *b, const char *title)
@@ -808,13 +808,9 @@ static void info_win_draw_time (const struct info_win *w)
 
 	/* total time */
 	sec_to_min (time_str, w->total_time != -1 ? w->total_time : 0);
-	wmove (w->win, 2, 13);
-	wattrset (w->win, get_color(CLR_TIME_TOTAL_FRAMES));
-	waddch (w->win, '[');
+	wmove (w->win, 2, 14);
 	wattrset (w->win, get_color(CLR_TIME_TOTAL));
 	waddstr (w->win, time_str);
-	wattrset (w->win, get_color(CLR_TIME_TOTAL_FRAMES));
-	waddch (w->win, ']');
 
 	bar_draw (&w->time_bar, w->win, 2, 3);
 }
@@ -854,6 +850,49 @@ static void info_win_set_played_title (struct info_win *w, const char *title)
 	info_win_draw_title (w);
 }
 
+static void info_win_draw_rate (const struct info_win *w)
+{
+	assert (w != NULL);
+
+	wattrset (w->win, get_color(CLR_SOUND_PARAMS));
+	mvwprintw (w->win, 2, 22, "%3d", w->rate);
+}
+
+static void info_win_draw_bitrate (const struct info_win *w)
+{
+	assert (w != NULL);
+
+	wattrset (w->win, get_color(CLR_SOUND_PARAMS));
+	mvwprintw (w->win, 2, 30, "%3d", w->bitrate);
+}
+
+static void info_win_set_bitrate (struct info_win *w, const int bitrate)
+{
+	assert (w != NULL);
+	assert (bitrate >= -1);
+
+	w->bitrate = bitrate > 0 ? bitrate : -1;
+	info_win_draw_bitrate (w);
+}
+
+static void info_win_set_rate (struct info_win *w, const int rate)
+{
+	assert (w != NULL);
+	assert (rate >= -1);
+
+	w->rate = rate > 0 ? rate : -1;
+	info_win_draw_rate (w);
+}
+
+static void info_win_set_channels (struct info_win *w, const int channels)
+{
+	assert (w != NULL);
+	assert (channels == 1 || channels == 2);
+
+	w->state_stereo = (channels == 2) ? 1 : 0;
+	//TODO: info_win_draw_switch (w, POSX, POSY, w->state_stereo);
+}
+
 /* Update the message timeout, redraw the window if needed. */
 static void info_win_tick (struct info_win *w)
 {
@@ -865,10 +904,48 @@ static void info_win_tick (struct info_win *w)
 	}
 }
 
+/* Draw static elements of info_win: frames, legend etc. */
+static void info_win_draw_static_elements (const struct info_win *w)
+{
+	assert (w != NULL);
+	
+	/* window frame */
+	wattrset (w->win, get_color(CLR_FRAME));
+	wborder (w->win, lines.vert, lines.vert, lines.horiz, lines.horiz,
+			lines.ltee, lines.rtee, lines.llcorn, lines.lrcorn);
+
+	/* mixer frame */
+	mvwaddch (w->win, 0, COLS - 38, lines.rtee);
+	mvwaddch (w->win, 0, COLS - 17, lines.ltee);
+	
+	/* playlist time frame */
+	mvwaddch (w->win, 0, COLS - 13, lines.rtee);
+	mvwaddch (w->win, 0, COLS - 2, lines.ltee);
+
+	/* total time frames */
+	wattrset (w->win, get_color(CLR_TIME_TOTAL_FRAMES));
+	mvwaddch (w->win, 2, 13, '[');
+	mvwaddch (w->win, 2, 19, ']');
+
+	/* time bar frame */
+	mvwaddch (w->win, 3, COLS - 2, lines.ltee);
+	mvwaddch (w->win, 3, 1, lines.rtee);
+	
+	/* status line frame */
+	mvwaddch (w->win, 0, 5, lines.rtee);
+	mvwaddch (w->win, 0, 5 + sizeof(w->status_msg), lines.ltee);
+	
+	/* rate and bitrate units */
+	wmove (w->win, 2, 25);
+	wattrset (w->win, get_color(CLR_LEGEND));
+	waddstr (w->win, "KHz     Kbps");
+}
+
 static void info_win_draw (const struct info_win *w)
 {
 	assert (w != NULL);
 	
+	info_win_draw_static_elements (w);
 	info_win_draw_state (w);
 	info_win_draw_time (w);
 	info_win_draw_title (w);
@@ -1058,14 +1135,31 @@ void iface_set_state (const int state)
 	wrefresh (info_win.win);
 }
 
+/* Set the bitrate (in Kbps). 0 or -1 means no bitrate information. */
 void iface_set_bitrate (const int bitrate)
 {
-	/* TODO */
+	assert (bitrate >= -1);
+	
+	info_win_set_bitrate (&info_win, bitrate);
+	wrefresh (info_win.win);
 }
 
+/* Set the rate (in KHz). 0 or -1 means no rate information. */
 void iface_set_rate (const int rate)
 {
-	/* TODO */
+	assert (rate >= -1);
+	
+	info_win_set_rate (&info_win, rate);
+	wrefresh (info_win.win);
+}
+
+/* Set the number of channels. */
+void iface_set_channels (const int channels)
+{
+	assert (channels == 1 || channels == 2);
+	
+	info_win_set_channels (&info_win, channels);
+	wrefresh (info_win.win);
 }
 
 /* Set the currently played file. If file is NULL, nothing is played. */
