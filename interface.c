@@ -294,6 +294,17 @@ static void get_server_options ()
 	sync_int_option ("AutoNext");
 }
 
+static int get_mixer_value ()
+{
+	send_int_to_srv (CMD_GET_MIXER);
+	return get_data_int ();
+}
+
+static void update_mixer_value ()
+{
+	iface_set_mixer_value (get_mixer_value());
+}
+
 static void update_mixer_name ()
 {
 	char *name;
@@ -305,6 +316,7 @@ static void update_mixer_name ()
 
 	iface_set_mixer_name (name);
 	free (name);
+	update_mixer_value ();
 }
 
 /* Make new cwd path from CWD and this path */
@@ -617,10 +629,10 @@ static void server_event (const int event, void *data)
 		case EV_STATUS_MSG:
 			set_iface_status_ref (data);
 			free (data);
-			break;
-		case EV_MIXER_CHANGE:
-			ev_mixer_change ();
 			break;*/
+		case EV_MIXER_CHANGE:
+			update_mixer_name ();
+			break;
 		case EV_FILE_TAGS:
 			ev_file_tags ((struct tag_ev_response *)data);
 			free_tag_ev_data ((struct tag_ev_response *)data);
@@ -1362,6 +1374,7 @@ void interface_loop ()
 
 		ret = select (srv_sock + 1, &fds, NULL, NULL, &timeout);
 
+		update_mixer_value ();
 		iface_tick ();
 		
 		if (ret == 0) {
