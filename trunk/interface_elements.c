@@ -103,6 +103,7 @@ static struct info_win
 	int state_shuffle;
 	int state_repeat;
 	int state_next;
+	int state_net;
 
 	int bitrate;		/* in Kbps */
 	int rate;		/* in KHz */
@@ -683,6 +684,7 @@ static void info_win_init (struct info_win *w)
 	w->state_repeat = 0;
 	w->state_next = 0;
 	w->state_play = STATE_STOP;
+	w->state_net = 0;
 
 	w->bitrate = -1;
 	w->rate = -1;
@@ -907,10 +909,10 @@ static void info_win_draw_options_state (const struct info_win *w)
 	assert (w != NULL);
 
 	info_win_draw_switch (w, 38, 2, "STEREO", w->state_stereo);
-	//TODO: net
-	info_win_draw_switch (w, 47, 2, "SHUFFLE", w->state_shuffle);
-	info_win_draw_switch (w, 57, 2, "REPEAT", w->state_repeat);
-	info_win_draw_switch (w, 66, 2, "NEXT", w->state_next);
+	info_win_draw_switch (w, 47, 2, "NET", w->state_net);
+	info_win_draw_switch (w, 53, 2, "SHUFFLE", w->state_shuffle);
+	info_win_draw_switch (w, 63, 2, "REPEAT", w->state_repeat);
+	info_win_draw_switch (w, 72, 2, "NEXT", w->state_next);
 }
 
 static void info_win_set_channels (struct info_win *w, const int channels)
@@ -934,6 +936,8 @@ static void info_win_set_option_state (struct info_win *w, const char *name,
 		w->state_repeat = value;
 	else if (!strcasecmp(name, "AutoNext"))
 		w->state_next = value;
+	else if (!strcasecmp(name, "Net"))
+		w->state_net = value;
 	else
 		abort ();
 
@@ -1211,8 +1215,14 @@ void iface_set_played_file (const char *file)
 		info_win_set_rate (&info_win, -1);
 		info_win_set_curr_time (&info_win, -1);
 		info_win_set_total_time (&info_win, -1);
+		info_win_set_option_state (&info_win, "Net", 0);
 		wrefresh (info_win.win);
 	}
+	else if (is_url(file)) {
+		info_win_set_option_state (&info_win, "Net", 1);
+		wrefresh (info_win.win);
+	}
+
 	wrefresh (main_win.win);
 }
 
