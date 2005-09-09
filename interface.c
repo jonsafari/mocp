@@ -569,7 +569,7 @@ static void server_event (const int event, void *data)
 		case EV_EXIT:
 			fatal ("The server exited.");
 			break;
-/*		case EV_BITRATE:
+		case EV_BITRATE:
 			update_bitrate ();
 			break;
 		case EV_RATE:
@@ -578,7 +578,7 @@ static void server_event (const int event, void *data)
 		case EV_CHANNELS:
 			update_channels ();
 			break;
-		case EV_SRV_ERROR:
+/*		case EV_SRV_ERROR:
 			update_error ();
 			break;
 		case EV_OPTIONS:
