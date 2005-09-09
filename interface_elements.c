@@ -636,9 +636,9 @@ static void bar_init (struct bar *b, const int width, const char *title,
 	else {
 		int i;
 
-		for (i = 0; i < (int)sizeof(b->title) - 1; i++)
+		for (i = 0; i < b->width; i++)
 			b->title[i] = ' ';
-		b->title[sizeof(b->title)-1] = 0;
+		b->title[b->width] = 0;
 	}	
 }
 
@@ -646,7 +646,7 @@ static void bar_draw (const struct bar *b, WINDOW *win, const int pos_x,
 		const int pos_y)
 {
 	int fill_chars; /* how many chars are "filled" */
-	
+
 	assert (b != NULL);
 	assert (win != NULL);
 	assert (pos_x >= 0 && pos_x < COLS - b->width);
