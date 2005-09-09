@@ -1352,6 +1352,9 @@ static void dequeue_events ()
 
 void interface_loop ()
 {
+	/* dequeue events remaining from init_interface() */
+	dequeue_events ();
+
 	while (!want_quit) {
 		fd_set fds;
 		int ret;

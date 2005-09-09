@@ -1026,6 +1026,7 @@ void iface_set_status (const char *msg)
 	assert (msg != NULL);
 
 	info_win_set_status (&info_win, msg);
+	wrefresh (info_win.win);
 }
 
 /* Change the content of the directory menu to these files, directories, and
