@@ -36,7 +36,7 @@ In future:
 
 * Seek by a % value (also using keys for 10%, 20% etc.)
 * Ability to play from a playlist made of items found after searching.
-* http://www.audioscrobbler.com/
+* http://www.audioscrobbler.com/ (last.fm)
 * JACK: intelligent bahaviour when we get disconnected from the server
   - detect it, try connect and exit if it fails.
 * FastGo instead of FastDir: go to a directory, URL or a playlist.
