@@ -803,6 +803,8 @@ static void info_win_draw_time (const struct info_win *w)
 		wattrset (w->win, get_color(CLR_TIME_LEFT));
 		waddstr (w->win, time_str);
 	}
+	else
+		mvwaddstr (w->win, 2, 7, "     ");
 
 	/* total time */
 	sec_to_min (time_str, w->total_time != -1 ? w->total_time : 0);
@@ -1205,6 +1207,10 @@ void iface_set_played_file (const char *file)
 
 	if (!file) {
 		info_win_set_played_title (&info_win, NULL);
+		info_win_set_bitrate (&info_win, -1);
+		info_win_set_rate (&info_win, -1);
+		info_win_set_curr_time (&info_win, -1);
+		info_win_set_total_time (&info_win, -1);
 		wrefresh (info_win.win);
 	}
 	wrefresh (main_win.win);
