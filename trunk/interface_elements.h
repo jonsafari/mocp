@@ -30,6 +30,7 @@ void iface_set_rate (const int rate);
 void iface_set_channels (const int channels);
 void iface_set_played_file (const char *file);
 void iface_set_played_file_title (const char *title);
+void iface_set_mixer_value (const int value);
 void iface_tick ();
 
 #endif

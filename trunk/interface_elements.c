@@ -900,6 +900,15 @@ static void info_win_set_rate (struct info_win *w, const int rate)
 	info_win_draw_rate (w);
 }
 
+static void info_win_set_mixer_value (struct info_win *w, const int value)
+{
+	assert (w != NULL);
+	assert (value >= 0 && value <= 100);
+
+	bar_set_fill (&w->mixer_bar, value);
+	bar_draw (&w->mixer_bar, w->win, COLS - 37, 0);
+}
+
 /* Draw a switch that is turned on or off in form of [TITLE]. */
 static void info_win_draw_switch (const struct info_win *w, const int posx,
 		const int posy, const char *title, const int value)
@@ -1249,5 +1258,13 @@ void iface_set_played_file_title (const char *title)
 void iface_tick ()
 {
 	info_win_tick (&info_win);
+	wrefresh (info_win.win);
+}
+
+void iface_set_mixer_value (const int value)
+{
+	assert (value >= 0 && value <= 100);
+
+	info_win_set_mixer_value (&info_win, value);
 	wrefresh (info_win.win);
 }
