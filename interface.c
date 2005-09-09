@@ -986,6 +986,21 @@ static void go_file ()
 	free (file);
 }
 
+/* pause/unpause */
+static void switch_pause ()
+{
+	switch (curr_file.state) {
+		case STATE_PLAY:
+			send_int_to_srv (CMD_PAUSE);
+			break;
+		case STATE_PAUSE:
+			send_int_to_srv (CMD_UNPAUSE);
+			break;
+		default:
+			logit ("User pressed pause when not playing.");
+	}
+}
+
 /* Handle key */
 static void menu_key (const int ch)
 {
@@ -1043,7 +1058,6 @@ static void menu_key (const int ch)
 			case KEY_CMD_MENU_LAST:
 				iface_menu_key (cmd);
 				break;
-#if 0
 			case KEY_CMD_QUIT:
 				send_int_to_srv (CMD_QUIT);
 				want_quit = 1;
@@ -1060,6 +1074,7 @@ static void menu_key (const int ch)
 			case KEY_CMD_PAUSE:
 				switch_pause ();
 				break;
+#if 0
 			case KEY_CMD_TOGGLE_READ_TAGS:
 				switch_read_tags ();
 				do_update_menu = 1;
@@ -1172,13 +1187,14 @@ static void menu_key (const int ch)
 			case KEY_CMD_GO_URL:
 				make_entry (ENTRY_GO_URL, "URL");
 				break;
+#endif
 			case KEY_CMD_GO_DIR_UP:
 				go_dir_up ();
-				do_update_menu = 1;
 				break;
 			case KEY_CMD_WRONG:
 				error ("Bad command");
 				break;
+#if 0
 			case KEY_CMD_SEEK_FORWARD_5:
 				seek_silent (5);
 				break;
@@ -1212,102 +1228,83 @@ static void menu_key (const int ch)
 			case KEY_CMD_VOLUME_90:
 				set_mixer (90);
 				break;
+#endif
 			case KEY_CMD_FAST_DIR_1:
-				if (options_get_str("FastDir1")) {
+				if (options_get_str("FastDir1"))
 					go_to_dir (options_get_str(
 								"FastDir1"));
-					do_update_menu = 1;
-				}
 				else
 					error ("FastDir1 not "
 							"defined");
 				break;
 			case KEY_CMD_FAST_DIR_2:
-				if (options_get_str("FastDir2")) {
+				if (options_get_str("FastDir2"))
 					go_to_dir (options_get_str(
 								"FastDir2"));
-					do_update_menu = 1;
-				}
 				else
 					error ("FastDir2 not "
 							"defined");
 				break;
 			case KEY_CMD_FAST_DIR_3:
-				if (options_get_str("FastDir3")) {
+				if (options_get_str("FastDir3"))
 					go_to_dir (options_get_str(
 								"FastDir3"));
-					do_update_menu = 1;
-				}
 				else
 					error ("FastDir3 not "
 							"defined");
 				break;
 			case KEY_CMD_FAST_DIR_4:
-				if (options_get_str("FastDir4")) {
+				if (options_get_str("FastDir4"))
 					go_to_dir (options_get_str(
 								"FastDir4"));
-					do_update_menu = 1;
-				}
 				else
 					error ("FastDir4 not "
 							"defined");
 				break;
 			case KEY_CMD_FAST_DIR_5:
-				if (options_get_str("FastDir5")) {
+				if (options_get_str("FastDir5"))
 					go_to_dir (options_get_str(
 								"FastDir5"));
-					do_update_menu = 1;
-				}
 				else
 					error ("FastDir5 not "
 							"defined");
 				break;
 			case KEY_CMD_FAST_DIR_6:
-				if (options_get_str("FastDir6")) {
+				if (options_get_str("FastDir6"))
 					go_to_dir (options_get_str(
 								"FastDir6"));
-					do_update_menu = 1;
-				}
 				else
 					error ("FastDir6 not "
 							"defined");
 				break;
 			case KEY_CMD_FAST_DIR_7:
-				if (options_get_str("FastDir7")) {
+				if (options_get_str("FastDir7"))
 					go_to_dir (options_get_str(
 								"FastDir7"));
-					do_update_menu = 1;
-				}
 				else
 					error ("FastDir7 not "
 							"defined");
 				break;
 			case KEY_CMD_FAST_DIR_8:
-				if (options_get_str("FastDir8")) {
+				if (options_get_str("FastDir8"))
 					go_to_dir (options_get_str(
 								"FastDir8"));
-					do_update_menu = 1;
-				}
 				else
 					error ("FastDir8 not "
 							"defined");
 				break;
 			case KEY_CMD_FAST_DIR_9:
-				if (options_get_str("FastDir9")) {
+				if (options_get_str("FastDir9"))
 					go_to_dir (options_get_str(
 								"FastDir9"));
-					do_update_menu = 1;
-				}
 				else
 					error ("FastDir9 not "
 							"defined");
 				break;
 			case KEY_CMD_FAST_DIR_10:
-				if (options_get_str("FastDir10")) {
+				if (options_get_str("FastDir10"))
 					go_to_dir (options_get_str(
 								"FastDir10"));
-					do_update_menu = 1;
-				}
 				else
 					error ("FastDir10 not "
 							"defined");
@@ -1315,7 +1312,6 @@ static void menu_key (const int ch)
 			case KEY_CMD_TOGGLE_MIXER:
 				send_int_to_srv (CMD_TOGGLE_MIXER_CHANNEL);
 				break;
-#endif
 			default:
 				//abort ();
 		}
