@@ -312,7 +312,7 @@ static void update_mixer_name ()
 	send_int_to_srv (CMD_GET_MIXER_CHANNEL_NAME);
 	name = get_data_str ();
 
-	assert (strlen(name) <= 14);
+	debug ("Mixer name: %s", name);
 
 	iface_set_mixer_name (name);
 	free (name);
@@ -1340,6 +1340,7 @@ static void menu_key (const int ch)
 							"defined");
 				break;
 			case KEY_CMD_TOGGLE_MIXER:
+				debug ("Toggle mixer.");
 				send_int_to_srv (CMD_TOGGLE_MIXER_CHANNEL);
 				break;
 			default:
@@ -1378,9 +1379,6 @@ static void dequeue_events ()
 
 void interface_loop ()
 {
-	/* dequeue events remaining from init_interface() */
-	dequeue_events ();
-
 	while (!want_quit) {
 		fd_set fds;
 		int ret;
@@ -1390,6 +1388,7 @@ void interface_loop ()
 		FD_SET (srv_sock, &fds);
 		FD_SET (STDIN_FILENO, &fds);
 
+		dequeue_events ();
 		ret = select (srv_sock + 1, &fds, NULL, NULL, &timeout);
 
 		iface_tick ();
