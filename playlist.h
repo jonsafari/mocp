@@ -83,7 +83,6 @@ void plist_set_title_file (struct plist *plist, const int num,
 void plist_set_file (struct plist *plist, const int num, const char *file);
 int plist_deleted (const struct plist *plist, const int num);
 void plist_cat (struct plist *a, struct plist *b);
-void sync_plists_data (struct plist *dst, struct plist *src);
 void update_item_time (struct plist_item *item, const int time);
 void update_file (struct plist_item *item);
 int get_item_time (const struct plist *plist, const int i);
