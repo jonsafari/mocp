@@ -405,7 +405,7 @@ int plist_find_fname (struct plist *plist, const char *file)
 /* Find an item on the list, also find deleted items. If there are more than one
  * items for this file, return the not deleted one, or if all are deleted,
  * return the last of them. Return the index or -1 if not found. */
-int plist_find_del_fname (struct plist *plist, const char *file)
+int plist_find_del_fname (const struct plist *plist, const char *file)
 {
 	int i;
 	int item = -1;
@@ -452,10 +452,10 @@ static char *title_expn_subs(char fmt, const struct file_tags *tags)
 #define check_zero(x) if((x) == '\0') \
 		fatal ("Unexpected end of title expression")
 
-static void do_title_expn (char *dest, int size, char *fmt,
+static void do_title_expn (char *dest, int size, const char *fmt,
 		const struct file_tags *tags)
 {
-	char *h;
+	const char *h;
 	int free = --size;
 	short escape = 0;
 
@@ -781,7 +781,7 @@ int plist_get_serial (const struct plist *plist)
 
 /* Return the index of the last not deleted item from the playlist.
  * Return -1 if there are no items. */
-int plist_last (struct plist *plist)
+int plist_last (const struct plist *plist)
 {
 	int i;
 
