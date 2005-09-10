@@ -168,8 +168,8 @@ struct menu *menu_new (WINDOW *win, const int posx, const int posy,
 	return menu;
 }
 
-int menu_add (struct menu *menu, char *title, const int plist_pos,
-		const enum file_type type, const char *file)
+int menu_add (struct menu *menu, char *title, const enum file_type type,
+		const char *file)
 {
 	assert (menu != NULL);
 	assert (title != NULL);
@@ -181,7 +181,6 @@ int menu_add (struct menu *menu, char *title, const int plist_pos,
 	}
 
 	menu->items[menu->nitems].title = xstrdup (title);
-	menu->items[menu->nitems].plist_pos = plist_pos;
 	menu->items[menu->nitems].type = type;
 	menu->items[menu->nitems].file = xstrdup (file);
 
@@ -207,7 +206,6 @@ static int menu_add_from_item (struct menu *menu, const struct menu_item *item)
 	}
 
 	menu->items[menu->nitems].title = xstrdup (item->title);
-	menu->items[menu->nitems].plist_pos = item->plist_pos;
 	menu->items[menu->nitems].type = item->type;
 	menu->items[menu->nitems].file = xstrdup (item->file);
 
@@ -370,33 +368,6 @@ void menu_unmark_item (struct menu *menu)
 	menu->marked = -1;
 }
 
-/* Find the item for the given plist_num */
-static int find_item_plist (const struct menu *menu, const int plist_num)
-{
-	int i;
-
-	assert (menu != NULL);
-
-	for (i = 0; i < menu->nitems; i++)
-		if (menu->items[i].plist_pos == plist_num)
-			return i;
-	return -1;
-}
-
-/* Mark the item that is plist_item on the playlist. */
-void menu_mark_plist_item (struct menu *menu, const int plist_item)
-{
-	int i;
-
-	assert (menu != NULL);
-
-	if (menu->marked != -1)
-		menu_unmark_item (menu);
-
-	if ((i = find_item_plist(menu, plist_item)) != -1)
-		menu->marked = i;
-}
-
 /* Set the top item to num. */
 void menu_set_top_item (struct menu *menu, const int num)
 {
@@ -486,19 +457,6 @@ void menu_item_set_time (struct menu *menu, const int num, const char *time)
 	assert (menu->items[num].time[sizeof(menu->items[num].time)-1] == 0);
 }
 
-void menu_item_set_time_plist (struct menu *menu, const int plist_num,
-		const char *time)
-{
-	int i;
-	
-	assert (menu != NULL);
-	
-	i = find_item_plist (menu, plist_num);
-	assert (i != -1);
-	
-	menu_item_set_time (menu, i, time);
-}
-
 void menu_item_set_format (struct menu *menu, const int num,
 		const char *format)
 {
@@ -546,14 +504,6 @@ char *menu_item_get_file (const struct menu *menu, const int num)
 	return xstrdup (menu->items[num].file);
 }
 
-int menu_item_get_plist_pos (struct menu *menu, const int num)
-{
-	assert (menu != NULL);
-	assert (num >= 0 && num < menu->nitems);
-
-	return menu->items[num].plist_pos;
-}
-
 void menu_item_set_title (struct menu *menu, const int num, const char *title)
 {
 	assert (menu != NULL);
@@ -562,17 +512,6 @@ void menu_item_set_title (struct menu *menu, const int num, const char *title)
 	if (menu->items[num].title)
 		free (menu->items[num].title);
 	menu->items[num].title = xstrdup (title);
-}
-
-/* Change the selected item to the item for the given playlist item. */
-void menu_setcurritem_by_plistnum (struct menu *menu, const int plist_num)
-{
-	int i;
-	
-	assert (menu != NULL);
-	
-	if ((i = find_item_plist(menu, plist_num)) != -1)
-		menu_setcurritem (menu, i);
 }
 
 int menu_nitems (const struct menu *menu)

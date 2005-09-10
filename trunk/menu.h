@@ -29,8 +29,6 @@ struct menu_item
 	int attr_marked;
 	int attr_sel_marked;
 	
-	int plist_pos;		/* Position of the item on the playlist */
-
 	/* Associated file: */
 	char *file;
 	enum file_type type;
@@ -66,8 +64,8 @@ struct menu
 
 struct menu *menu_new (WINDOW *win, const int posx, const int posy,
 		const int width, const int height);
-int menu_add (struct menu *menu, char *title, const int plist_pos,
-		const enum file_type type, const char *file);
+int menu_add (struct menu *menu, char *title, const enum file_type type,
+		const char *file);
 
 void menu_item_set_attr_normal (struct menu *menu, const int num,
 		const int attr);
@@ -77,8 +75,6 @@ void menu_item_set_attr_sel_marked (struct menu *menu, const int num,
 void menu_item_set_attr_marked (struct menu *menu, const int num,
 		const int attr);
 
-void menu_item_set_time_plist (struct menu *menu, const int plist_num,
-		const char *time);
 void menu_item_set_time (struct menu *menu, const int num, const char *time);
 void menu_item_set_format (struct menu *menu, const int num,
 		const char *format);
@@ -89,8 +85,6 @@ int menu_curritem (struct menu *menu);
 void menu_setcurritem (struct menu *menu, int num);
 void menu_setcurritem_title (struct menu *menu, const char *title);
 void menu_draw (struct menu *menu);
-void menu_mark_plist_item (struct menu *menu, const int plist_item)
-	__attribute__((deprecated));
 void menu_mark_item (struct menu *menu, const char *file);
 void set_menu_state (struct menu *menu, int selected, int top);
 void menu_update_size (struct menu *menu, WINDOW *win);
@@ -102,9 +96,7 @@ void menu_set_show_format (struct menu *menu, const int t);
 void menu_set_info_attr (struct menu *menu, const int attr);
 enum file_type menu_item_get_type (const struct menu *menu, const int num);
 char *menu_item_get_file (const struct menu *menu, const int num);
-int menu_item_get_plist_pos (struct menu *menu, const int num);
 void menu_item_set_title (struct menu *menu, const int num, const char *title);
-void menu_setcurritem_by_plistnum (struct menu *menu, const int plist_num);
 int menu_nitems (const struct menu *menu);
 int menu_find (const struct menu *menu, const char *fname);
 
