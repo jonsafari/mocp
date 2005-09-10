@@ -467,6 +467,26 @@ static void side_menu_update_item (struct side_menu *m,
 	}
 }
 
+static void side_menu_unmark_file (struct side_menu *m)
+{
+	assert (m != NULL);
+	assert (m->visible);
+	assert (m->type == MENU_DIR || m->type == MENU_PLAYLIST);
+
+	menu_unmark_item (m->menu.list);
+	side_menu_draw (m);
+}
+
+static void side_menu_mark_file (struct side_menu *m, const char *file)
+{
+	assert (m != NULL);
+	assert (m->visible);
+	assert (m->type == MENU_DIR || m->type == MENU_PLAYLIST);
+
+	menu_mark_item (m->menu.list, file);
+	side_menu_draw (m);
+}
+
 static void main_win_set_dir_content (struct main_win *w,
 		const struct plist *files,
 		const struct file_list *dirs, const struct file_list *playlists)
@@ -541,9 +561,23 @@ static void main_win_update_item (struct main_win *w, const struct plist *plist,
 	}
 }
 
+/* Mark the played file on all lists of files or unmark it when file is NULL. */
 static void main_win_set_played_file (struct main_win *w, const char *file)
 {
+	int i;
+	
 	assert (w != NULL);
+
+	for (i = 0; i < (int)(sizeof(w->menus)/sizeof(w->menus[0])); i++) {
+		struct side_menu *m = &w->menus[i];
+
+		if (m->visible && (m->type == MENU_DIR
+					|| m->type == MENU_PLAYLIST)) {
+			side_menu_unmark_file (m);
+			if (file)
+				side_menu_mark_file (m, file);
+		}
+	}
 
 	/* TODO (file can be NULL) */
 }
