@@ -154,26 +154,6 @@ inline int plist_deleted (const struct plist *plist, const int num)
 	return plist->items[num].deleted;
 }
 
-/* Copy missing tags from src to dst. */
-static void sync_tags (struct file_tags *src, struct file_tags *dst)
-{
-	if (src->filled & TAGS_TIME && !(dst->filled & TAGS_TIME)) {
-		debug ("Sync time");
-		dst->time = src->time;
-		dst->filled |= TAGS_TIME;
-	}
-
-	if ((src->filled & TAGS_COMMENTS)
-			&& !(dst->filled & TAGS_COMMENTS)) {
-		debug ("Sync comments");
-		dst->title = xstrdup (src->title);
-		dst->artist = xstrdup (src->artist);
-		dst->album = xstrdup (src->album);
-		dst->track = src->track;
-		dst->filled |= TAGS_COMMENTS;
-	}
-}
-
 /* Initialize the playlist. */
 void plist_init (struct plist *plist)
 {
@@ -682,68 +662,6 @@ void plist_cat (struct plist *a, struct plist *b)
 				&& plist_find_fname(a, b->items[i].file) == -1)
 			plist_add_from_item (a, &b->items[i]);
 	}
-}
-
-/* Copy titles_tags and times from src to dst if the data are available and
- * up-to-date. */
-void sync_plists_data (struct plist *dst, struct plist *src)
-{
-	int i;
-	int idx;
-
-	assert (src != NULL);
-	assert (dst != NULL);
-
-	debug ("Synchronizing playlists...");
-
-	for (i = 0; i < src->num; i++)
-		if (!plist_deleted(src, i)
-				&& (idx = plist_find_fname(dst,
-						src->items[i].file)) != -1) {
-			debug ("Found item for the file %s",
-					src->items[i].file);
-
-			if (src->items[i].mtime == dst->items[idx].mtime) {
-				
-				/* The file was not modified - copy the missing
-				 * data */
-				if (!dst->items[idx].title_tags) {
-					debug ("Filling title_tags");
-					dst->items[idx].title_tags = xstrdup (
-							src->items[i].title_tags
-							);
-				}
-				
-				if (src->items[i].tags) {
-					if (dst->items[idx].tags)
-						sync_tags (src->items[i].tags,
-								dst->items[idx].tags);
-					else {
-						debug ("copying tags");
-						dst->items[idx].tags =
-							tags_dup (src->items[i].tags);
-					}
-				}
-			}
-			else if (src->items[i].mtime > dst->items[idx].mtime) {
-				debug ("Replacing title_tags and tags.");
-				
-				/* The file was modified - update the data */
-				if (dst->items[idx].title_tags)
-					free (dst->items[idx].title_tags);
-
-				dst->items[idx].title_tags = xstrdup (
-						src->items[i].title_tags);
-
-				dst->items[idx].mtime = src->items[i].mtime;
-				
-				if (dst->items[idx].tags)
-					tags_free (dst->items[idx].tags);
-
-				dst->items[idx].tags = tags_dup (
-						src->items[i].tags);
-			}
-		}
 }
 
 /* Set the time tags field for the item. */
