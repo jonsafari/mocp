@@ -547,7 +547,7 @@ static void update_rate ()
 static void update_channels ()
 {
 	send_int_to_srv (CMD_GET_CHANNELS);
-	curr_file.channels = get_data_int ();
+	curr_file.channels = get_data_int () == 2 ? 2 : 1;
 	iface_set_channels (curr_file.channels);
 }
 
