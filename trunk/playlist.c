@@ -883,7 +883,7 @@ enum file_type plist_file_type (const struct plist *plist, const int num)
 	return plist->items[num].type;
 }
 
-/* Remove items from playlist a that are also presend on playlist b. */
+/* Remove items from the playlist a that are also presend on the playlist b. */
 void plist_remove_common_items (struct plist *a, struct plist *b)
 {
 	int i;
