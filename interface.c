@@ -711,6 +711,7 @@ static int go_to_dir (const char *dir)
 	
 	iface_set_dir_title (cwd);
 	//update_state ();
+	iface_set_status ("");
 
 	return 1;
 }
