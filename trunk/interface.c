@@ -1680,6 +1680,7 @@ void interface_fatal (const char *format, ...)
 
 void interface_error (const char *msg)
 {
+	iface_error (msg);
 }
 
 void interface_cmdline_clear_plist (int server_sock)
