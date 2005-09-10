@@ -1237,6 +1237,14 @@ static void add_dir_plist ()
 	free (file);
 }
 
+static void toggle_option (const char *name)
+{
+	send_int_to_srv (CMD_SET_OPTION);
+	send_str_to_srv (name);
+	send_int_to_srv (!options_get_int(name));
+	sync_int_option (name);
+}
+
 /* Handle key */
 static void menu_key (const int ch)
 {
@@ -1315,6 +1323,7 @@ static void menu_key (const int ch)
 				switch_read_tags ();
 				do_update_menu = 1;
 				break;
+#endif
 			case KEY_CMD_TOGGLE_SHUFFLE:
 				toggle_option ("Shuffle");
 				break;
@@ -1324,7 +1333,6 @@ static void menu_key (const int ch)
 			case KEY_CMD_TOGGLE_AUTO_NEXT:
 				toggle_option ("AutoNext");
 				break;
-#endif
 			case KEY_CMD_TOGGLE_PLAYLIST:
 				toggle_plist ();
 				break;
@@ -1603,13 +1611,6 @@ void interface_loop ()
 		iface_tick ();
 		
 		if (ret == 0) {
-			/*if (msg_timeout && msg_timeout < time(NULL)
-					&& !msg_is_error) {
-				update_info_win ();
-				wrefresh (info_win);
-				msg_timeout = 0;
-			}*/
-
 			//do_silent_seek ();
 		}
 		else if (ret == -1 && !want_quit && errno != EINTR)
