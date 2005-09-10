@@ -7,6 +7,8 @@
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
  *
+ * Other authors:
+ *  - Kamil Tarkowski <kamilt@interia.pl> - sec_to_min_plist()
  */
 
 #ifdef HAVE_CONFIG_H
@@ -62,6 +64,9 @@ struct side_menu
 	int posy;
 	int width;
 	int height;
+
+	int total_time; /* total time of the files on the plalist */
+	int total_time_for_all; /* is the total file counted for all files? */
 	
 	union
 	{
@@ -113,6 +118,9 @@ static struct info_win
 	int curr_time;
 	int total_time;
 
+	int plist_time;		/* total time of files displayed in the menu */
+	int plist_time_for_all;	/* is the above time for all files? */
+
 	char *title;		/* title of the played song. */
 	char status_msg[26];	/* status message */
 	int state_play;		/* STATE_(PLAY | STOP | PAUSE) */
@@ -150,6 +158,9 @@ static void side_menu_init (struct side_menu *m, const enum side_menu_type type,
 	m->posy = posy;
 	m->height = height;
 	m->width = width;
+
+	m->total_time = 0;
+	m->total_time_for_all = 0;
 
 	if (type == MENU_DIR || type == MENU_PLAYLIST) {
 		m->menu.list = menu_new (m->win, posx, posy, width, height);
@@ -325,6 +336,8 @@ static void side_menu_make_list_content (struct side_menu *m,
 		if (!plist_deleted(files, i))
 			add_to_menu (m->menu.list, files, i);
 	}
+
+	m->total_time = plist_total_time (files, &m->total_time_for_all);
 	
 	menu_set_show_format (m->menu.list, options_get_int("ShowFormat"));
 	menu_set_show_time (m->menu.list,
@@ -470,6 +483,9 @@ static void side_menu_update_item (struct side_menu *m,
 
 		menu_item_set_title (m->menu.list, menu_item, title);
 
+		m->total_time = plist_total_time (plist,
+				&m->total_time_for_all);
+
 		free (title);
 	}
 }
@@ -501,7 +517,25 @@ static void side_menu_add_plist_item (struct side_menu *m,
 	assert (m->type == MENU_DIR || m->type == MENU_PLAYLIST);
 
 	add_to_menu (m->menu.list, plist, num);
+	m->total_time = plist_total_time (plist, &m->total_time_for_all);
 }
+
+static int side_menu_is_time_for_all (const struct side_menu *m)
+{
+	assert (m != NULL);
+	assert (m->visible);
+
+	return m->total_time_for_all;
+}
+
+static int side_menu_get_files_time (const struct side_menu *m)
+{
+	assert (m != NULL);
+	assert (m->visible);
+
+	return m->total_time;
+}
+
 
 static void main_win_draw (const struct main_win *w)
 {
@@ -543,7 +577,6 @@ static void main_win_switch_to (struct main_win *w,
 	assert (i < (int)(sizeof(w->menus)/sizeof(w->menus[0])));
 
 	main_win_draw (w);
-	/* TODO: also show the number of items */
 }
 
 static void main_win_menu_cmd (struct main_win *w, const enum key_cmd cmd)
@@ -649,6 +682,20 @@ static void main_win_add_to_plist (struct main_win *w, const struct plist *plist
 	if (w->curr_file)
 		side_menu_mark_file (m, w->curr_file);
 	main_win_draw (w);
+}
+
+static int main_win_get_files_time (const struct main_win *w)
+{
+	assert (w != NULL);
+
+	return side_menu_get_files_time (&w->menus[w->selected_menu]);
+}
+
+static int main_win_is_time_for_all (const struct main_win *w)
+{
+	assert (w != NULL);
+
+	return side_menu_is_time_for_all (&w->menus[w->selected_menu]);
 }
 
 /* Set the has_xterm variable. */
@@ -1064,6 +1111,51 @@ static void info_win_set_option_state (struct info_win *w, const char *name,
 	info_win_draw_options_state (w);
 }
 
+/* Convert time in second to min:sec text format(for total time in playlist).
+ * buff must be 10 chars long. */
+static void sec_to_min_plist (char *buff, const int seconds)
+{
+	assert (seconds >= 0);
+	if (seconds < 999 * 60 * 60 - 1) {
+		
+		/* the time is less than 999 * 60 minutes */
+		int hour, min, sec;
+		hour = seconds / 3600;
+		min  = (seconds / 60) % 60;
+		sec  = seconds % 60;
+		
+		snprintf (buff, 10, "%03d:%02d:%02d", hour, min, sec);
+	}
+	else
+		strcpy (buff, "!!!!!!!!!");
+}
+
+static void info_win_draw_files_time (const struct info_win *w)
+{
+	char buf[10];
+	
+	assert (w != NULL);
+
+	sec_to_min_plist (buf, w->plist_time);
+	wmove (w->win, 0, COLS - 12);
+	wattrset (w->win, get_color(CLR_PLIST_TIME));
+	waddch (w->win, w->plist_time_for_all ? ' ' : '>');
+	waddstr (w->win, buf);
+}
+
+/* Set the total time for files in the displayed menu. If time_for_all
+ * has a non zero value, the time is for all files. */
+static void info_win_set_files_time (struct info_win *w, const int time,
+		const int time_for_all)
+{
+	assert (w != NULL);
+
+	w->plist_time = time;
+	w->plist_time_for_all = time_for_all;
+
+	info_win_draw_files_time (w);
+}
+
 /* Update the message timeout, redraw the window if needed. */
 static void info_win_tick (struct info_win *w)
 {
@@ -1122,6 +1214,7 @@ static void info_win_draw (const struct info_win *w)
 	info_win_draw_title (w);
 	info_win_draw_options_state (w);
 	info_win_draw_status (w);
+	info_win_draw_files_time (w);
 	bar_draw (&w->mixer_bar, w->win, COLS - 37, 0);
 	bar_draw (&w->time_bar, w->win, 2, 3);
 }
@@ -1197,6 +1290,9 @@ void iface_set_dir_content (const struct plist *files,
 		const struct file_list *dirs, const struct file_list *playlists)
 {
 	main_win_set_dir_content (&main_win, files, dirs, playlists);
+	info_win_set_files_time (&info_win, main_win_get_files_time(&main_win),
+			main_win_is_time_for_all(&main_win));
+	wrefresh (info_win.win);
 	wrefresh (main_win.win);
 	
 	/* TODO: also display the number of items */
@@ -1208,6 +1304,9 @@ void iface_update_item (const struct plist *plist, const int n)
 	assert (plist != NULL);
 
 	main_win_update_item (&main_win, plist, n);
+	info_win_set_files_time (&info_win, main_win_get_files_time(&main_win),
+			main_win_is_time_for_all(&main_win));
+	wrefresh (info_win.win);
 	wrefresh (main_win.win);
 }
 
@@ -1382,6 +1481,9 @@ void iface_set_mixer_value (const int value)
 void iface_switch_to_plist ()
 {
 	main_win_switch_to (&main_win, MENU_PLAYLIST);
+	info_win_set_files_time (&info_win, main_win_get_files_time(&main_win),
+			main_win_is_time_for_all(&main_win));
+	wrefresh (info_win.win);
 	wrefresh (main_win.win);
 }
 
@@ -1389,6 +1491,9 @@ void iface_switch_to_plist ()
 void iface_switch_to_dir ()
 {
 	main_win_switch_to (&main_win, MENU_DIR);
+	info_win_set_files_time (&info_win, main_win_get_files_time(&main_win),
+			main_win_is_time_for_all(&main_win));
+	wrefresh (info_win.win);
 	wrefresh (main_win.win);
 }
 
@@ -1398,5 +1503,8 @@ void iface_add_to_plist (const struct plist *plist, const int num)
 	assert (plist != NULL);
 	
 	main_win_add_to_plist (&main_win, plist, num);
+	info_win_set_files_time (&info_win, main_win_get_files_time(&main_win),
+			main_win_is_time_for_all(&main_win));
+	wrefresh (info_win.win);
 	wrefresh (main_win.win);
 }
