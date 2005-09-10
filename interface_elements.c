@@ -637,7 +637,7 @@ static void main_win_set_played_file (struct main_win *w, const char *file)
 	main_win_draw (w);
 }
 
-void main_win_add_to_plist (struct main_win *w, const struct plist *plist,
+static void main_win_add_to_plist (struct main_win *w, const struct plist *plist,
 		const int num)
 {
 	struct side_menu *m;
