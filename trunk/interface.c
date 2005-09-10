@@ -396,6 +396,18 @@ static int qsort_dirs_func (const void *a, const void *b)
 	return strcmp (sa, sb);
 }
 
+static int get_tags_setting ()
+{
+	int needed_tags = 0;
+
+	if (options_get_int("ReadTags"))
+		needed_tags |= TAGS_COMMENTS;
+	if (!strcasecmp(options_get_str("ShowTime"), "yes"))
+		needed_tags |= TAGS_TIME;
+
+	return needed_tags;
+}
+
 /* Send requests for the given tags for every file on the playlist. */
 static void ask_for_tags (const struct plist *plist, const int tags_sel)
 {
@@ -457,7 +469,7 @@ static void ev_file_tags (const struct tag_ev_response *data)
 	if ((n = plist_find_fname(playlist, data->file)) != -1) {
 		update_item_tags (playlist, n, data->tags);
 		if (!found) /* don't do it twice */
-			iface_update_item (dir_plist, n);
+			iface_update_item (playlist, n);
 	}
 
 	if (curr_file.file && !strcmp(data->file, curr_file.file)) {
@@ -743,16 +755,10 @@ static int go_to_dir (const char *dir)
 	qsort (dirs->items, dirs->num, sizeof(char *), qsort_dirs_func);
 	qsort (playlists->items, playlists->num, sizeof(char *),
 			qsort_strcmp_func);
+
+	if (get_tags_setting())
+		ask_for_tags (dir_plist, get_tags_setting());
 	
-	if (options_get_int("ReadTags")) {
-		int tags = TAGS_COMMENTS;
-
-		if (!strcasecmp(options_get_str("ShowTime"), "yes"))
-			tags |= TAGS_TIME;
-
-		ask_for_tags (dir_plist, tags);
-	}
-
 	iface_set_dir_content (dir_plist, dirs, playlists);
 	file_list_free (dirs);
 	file_list_free (playlists);
@@ -1153,6 +1159,82 @@ static void add_file_plist ()
 	free (file);
 }
 
+/* Send all items from this playlist to other clients */
+static void send_items_to_clients (const struct plist *plist)
+{
+	int i;
+	
+	for (i = 0; i < plist->num; i++)
+		if (!plist_deleted(plist, i)) {
+			send_int_to_srv (CMD_CLI_PLIST_ADD);
+			send_item_to_srv (&plist->items[i]);
+		}
+}
+
+/* Recursively add the content of a directory to the playlist. */
+static void add_dir_plist ()
+{
+	struct plist plist;
+	char *file;
+
+	if (iface_in_plist_menu()) {
+		error ("Can't add to the playlist a file from the "
+				"playlist.");
+		return;
+	}
+
+	if (iface_curritem_get_type() != F_DIR) {
+		error ("This is not a directory.");
+		return;
+	}
+
+	file = iface_get_curr_file ();
+
+	if (!strcmp(file, "../")) {
+		error ("Can't add '..'.");
+		free (file);
+		return;
+	}
+
+	iface_set_status ("reading directories...");
+	plist_init (&plist);
+	read_directory_recurr (file, &plist, 0);
+
+	plist_sort_fname (&plist);
+	
+	if (get_tags_setting())
+		ask_for_tags (&plist, get_tags_setting());
+
+	send_int_to_srv (CMD_LOCK);
+
+	plist_remove_common_items (&plist, playlist);
+
+	/* Add the new files to the server's playlist if the server has our
+	 * playlist */
+	send_int_to_srv (CMD_PLIST_GET_SERIAL);
+	if (get_data_int() == plist_get_serial(playlist))
+		send_playlist (&plist, 0);
+
+	if (options_get_int("SyncPlaylist")) {
+		iface_set_status ("Notifying clients...");
+		send_items_to_clients (&plist);
+		iface_set_status ("");
+	}
+	else {
+		int i;
+		
+		for (i = 0; i < plist.num; i++)
+			if (!plist_deleted(&plist, i))
+				iface_add_to_plist (&plist, i);
+		plist_cat (playlist, &plist);
+	}
+
+	send_int_to_srv (CMD_UNLOCK);
+
+	plist_free (&plist);
+	free (file);
+}
+
 /* Handle key */
 static void menu_key (const int ch)
 {
@@ -1252,10 +1334,10 @@ static void menu_key (const int ch)
 				cmd_clear_playlist ();
 				do_update_menu = 1;
 				break;
+#endif
 			case KEY_CMD_PLIST_ADD_DIR:
 				add_dir_plist ();
 				break;
-#endif
 			case KEY_CMD_MIXED_DEC_1:
 				adjust_mixer (-1);
 				break;
