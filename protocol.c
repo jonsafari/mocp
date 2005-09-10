@@ -441,6 +441,8 @@ struct plist_item *recv_item (int sock)
 			free (item);
 		}
 
+		item->type = file_type (item->file);
+
 		if (!item->title_tags[0]) {
 			free (item->title_tags);
 			item->title_tags = NULL;
