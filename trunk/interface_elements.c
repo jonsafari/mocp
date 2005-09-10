@@ -536,6 +536,21 @@ static int side_menu_get_files_time (const struct side_menu *m)
 	return m->total_time;
 }
 
+static void side_menu_resize (struct side_menu *m, const int height,
+		const int width, const int posy, const int posx)
+{
+	assert (m != NULL);
+
+	m->posx = posx;
+	m->posy = posy;
+	m->height = height;
+	m->width = width;
+
+	if (m->type == MENU_DIR || m->type == MENU_PLAYLIST)
+		menu_update_size (m->menu.list, posx, posy, width, height);
+	else
+		abort ();
+}
 
 static void main_win_draw (const struct main_win *w)
 {
@@ -698,6 +713,21 @@ static int main_win_is_time_for_all (const struct main_win *w)
 	return side_menu_is_time_for_all (&w->menus[w->selected_menu]);
 }
 
+/* Handle terminal size change. */
+static void main_win_resize (struct main_win *w)
+{
+	assert (w != NULL);
+
+	keypad (w->win, TRUE);
+	wresize (w->win, LINES - 4, COLS);
+	werase (w->win);
+
+	side_menu_resize (&w->menus[0], LINES - 5, COLS - 2, 1, 1);
+	side_menu_resize (&w->menus[1], LINES - 5, COLS - 2, 1, 1);
+
+	main_win_draw (w);
+}
+
 /* Set the has_xterm variable. */
 static void detect_term ()
 {
@@ -739,8 +769,8 @@ static void init_lines ()
 /* End the program if the terminal is too small. */
 static void check_term_size ()
 {
-	if (COLS < 72 || LINES < 7)
-		fatal ("The terminal is too small after resizeing.");
+	if (COLS < 79 || LINES < 7)
+		interface_fatal ("The terminal is too small after resizeing.");
 }
 
 /* Update the title with the current fill. */
@@ -789,7 +819,7 @@ static void bar_init (struct bar *b, const int width, const char *title,
 		for (i = 0; i < b->width; i++)
 			b->title[i] = ' ';
 		b->title[b->width] = 0;
-	}	
+	}
 }
 
 static void bar_draw (const struct bar *b, WINDOW *win, const int pos_x,
@@ -820,6 +850,23 @@ static void bar_set_fill (struct bar *b, const int fill)
 
 	if (b->show_val)
 		bar_update_title (b);
+}
+
+static void bar_resize (struct bar *b, const int width)
+{
+	assert (b != NULL);
+	assert (width > 5 && width < (int)sizeof(b->title));
+	b->width = width;
+
+	if (b->show_val)
+		bar_update_title (b);
+	else {
+		int i;
+
+		for (i = 0; i < b->width; i++)
+			b->title[i] = ' ';
+		b->title[b->width] = 0;
+	}	
 }
 
 static void info_win_init (struct info_win *w)
@@ -1225,8 +1272,25 @@ static void info_win_draw (const struct info_win *w)
 	info_win_draw_options_state (w);
 	info_win_draw_status (w);
 	info_win_draw_files_time (w);
+	info_win_draw_bitrate (w);
+	info_win_draw_rate (w);
 	bar_draw (&w->mixer_bar, w->win, COLS - 37, 0);
 	bar_draw (&w->time_bar, w->win, 2, 3);
+}
+
+/* Handle terminal size change. */
+static void info_win_resize (struct info_win *w)
+{
+	assert (w != NULL);
+	keypad (w->win, TRUE);
+	wresize (w->win, 4, COLS);
+	mvwin (w->win, LINES - 4, 0);
+	werase (w->win);
+
+	bar_resize (&w->mixer_bar, 20);
+	bar_resize (&w->time_bar, COLS - 4);
+
+	info_win_draw (w);
 }
 
 void windows_init ()
@@ -1519,8 +1583,21 @@ void iface_add_to_plist (const struct plist *plist, const int num)
 	wrefresh (main_win.win);
 }
 
+/* Display an error message. */
 void iface_error (const char *msg)
 {
 	info_win_error_msg (&info_win, msg);
+	wrefresh (info_win.win);
+}
+
+/* Handle screen resizing. */
+void iface_resize ()
+{
+	check_term_size ();
+	endwin ();
+	refresh ();
+	main_win_resize (&main_win);
+	info_win_resize (&info_win);
+	wrefresh (main_win.win);
 	wrefresh (info_win.win);
 }

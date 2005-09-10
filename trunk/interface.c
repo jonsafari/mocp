@@ -900,40 +900,10 @@ void init_interface (const int sock, const int logging, char **args,
 }
 
 #ifdef SIGWINCH
-/* Initialize the screen again after resizeing xterm */
+/* Handle resizeing xterm */
 static void do_resize ()
 {
-	/* TODO */
-
-#if 0
-	endwin ();
-	refresh ();
-	keypad (main_win, TRUE);
-	wresize (main_win, LINES - 4, COLS);
-	wresize (info_win, 4, COLS);
-	mvwin (info_win, LINES - 4, 0);
-	werase (main_win);
-	
-	entry.width = COLS - strlen(entry.title) - 4;
-	entry_end ();
-
-	if (curr_plist_menu)
-		menu_update_size (curr_plist_menu, main_win);
-	if (playlist_menu)
-		menu_update_size (playlist_menu, main_win);
-
-	if (main_win_mode == WIN_MENU) {
-		main_border ();
-		
-		menu_draw (curr_menu);
-		update_info_win ();	
-		wrefresh (main_win);
-	}
-	else
-		print_help_screen ();
-
-	wrefresh (info_win);
-#endif
+	iface_resize ();
 	logit ("resize");
 	want_resize = 0;
 }
