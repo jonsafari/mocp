@@ -243,8 +243,7 @@ static void add_to_menu (struct menu *menu, const struct plist *plist,
 	else
 		title = iconv_str (title, 1);
 	
-	added = menu_add (menu, title, num, plist_file_type(plist, num),
-			item->file);
+	added = menu_add (menu, title, plist_file_type(plist, num), item->file);
 	free (title);
 
 	if (item->tags && item->tags->time != -1) {
@@ -280,7 +279,7 @@ static void side_menu_make_list_content (struct side_menu *m,
 	menu_free (m->menu.list);
 	m->menu.list = menu_new (m->win, m->posx, m->posy, m->width, m->height);
 
-	added = menu_add (m->menu.list, "../", -1, F_DIR, "..");
+	added = menu_add (m->menu.list, "../", F_DIR, "..");
 	menu_item_set_attr_normal (m->menu.list, added,
 			get_color(CLR_MENU_ITEM_DIR));
 	menu_item_set_attr_sel (m->menu.list, added,
@@ -293,7 +292,7 @@ static void side_menu_make_list_content (struct side_menu *m,
 			strcpy (title, strrchr(dirs->items[i], '/') + 1);
 			strcat (title, "/");
 			
-			added = menu_add (m->menu.list, title, -1, F_DIR,
+			added = menu_add (m->menu.list, title, F_DIR,
 					dirs->items[i]);
 			menu_item_set_attr_normal (m->menu.list, added,
 					get_color(CLR_MENU_ITEM_DIR));
@@ -305,7 +304,7 @@ static void side_menu_make_list_content (struct side_menu *m,
 		for (i = 0; i < playlists->num; i++){
 			added = menu_add (m->menu.list,
 					strrchr(playlists->items[i], '/') + 1,
-					-1, F_PLAYLIST,	playlists->items[i]);
+					F_PLAYLIST, playlists->items[i]);
 			menu_item_set_attr_normal (m->menu.list, added,
 					get_color(CLR_MENU_ITEM_PLAYLIST));
 			menu_item_set_attr_sel (m->menu.list, added,
