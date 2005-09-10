@@ -532,6 +532,13 @@ static int main_win_in_dir_menu (const struct main_win *w)
 	return w->menus[w->selected_menu].type == MENU_DIR;
 }
 
+static int main_win_in_plist_menu (const struct main_win *w)
+{
+	assert (w != NULL);
+
+	return w->menus[w->selected_menu].type == MENU_PLAYLIST;
+}
+
 static void main_win_set_curr_item_title (struct main_win *w, const char *title)
 {
 	assert (w != NULL);
@@ -1213,6 +1220,12 @@ int iface_in_dir_menu ()
 	return main_win_in_dir_menu (&main_win);
 }
 
+/* Return a non zero value if the playlist menu is currently selected. */
+int iface_in_plist_menu ()
+{
+	return main_win_in_plist_menu (&main_win);
+}
+
 /* Return the currently selected file (malloc()ed).  */
 char *iface_get_curr_file ()
 {
@@ -1312,4 +1325,16 @@ void iface_set_mixer_value (const int value)
 
 	info_win_set_mixer_value (&info_win, value);
 	wrefresh (info_win.win);
+}
+
+/* Switch to the playlist menu. */
+void iface_switch_to_plist ()
+{
+	/* TODO: also show the number of items */
+}
+
+/* Switch to the directory menu. */
+void iface_switch_to_dir ()
+{
+	/* TODO: also show the number of items */
 }

@@ -20,6 +20,7 @@ int iface_key_is_resize (const int ch);
 void iface_menu_key (const enum key_cmd cmd);
 enum file_type iface_curritem_get_type ();
 int iface_in_dir_menu ();
+int iface_in_plist_menu ();
 char *iface_get_curr_file ();
 void iface_update_item (const struct plist *plist, const int n);
 void iface_set_curr_time (const int time);
@@ -32,5 +33,7 @@ void iface_set_played_file (const char *file);
 void iface_set_played_file_title (const char *title);
 void iface_set_mixer_value (const int value);
 void iface_tick ();
+void iface_switch_to_plist ();
+void iface_switch_to_dir ();
 
 #endif
