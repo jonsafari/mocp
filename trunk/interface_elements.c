@@ -770,7 +770,7 @@ static void init_lines ()
 static void check_term_size ()
 {
 	if (COLS < 79 || LINES < 7)
-		interface_fatal ("The terminal is too small after resizeing.");
+		fatal ("The terminal is too small after resizeing.");
 }
 
 /* Update the title with the current fill. */
@@ -1598,6 +1598,18 @@ void iface_resize ()
 	refresh ();
 	main_win_resize (&main_win);
 	info_win_resize (&info_win);
+	wrefresh (main_win.win);
+	wrefresh (info_win.win);
+}
+
+void iface_refresh ()
+{
+	wclear (main_win.win);
+	wclear (info_win.win);
+
+	main_win_draw (&main_win);
+	info_win_draw (&info_win);
+	
 	wrefresh (main_win.win);
 	wrefresh (info_win.win);
 }

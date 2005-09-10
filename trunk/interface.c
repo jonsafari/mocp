@@ -1345,13 +1345,11 @@ static void menu_key (const int ch)
 				update_info_win ();
 				wrefresh (info_win);
 				break;
+#endif
 			case KEY_CMD_REFRESH:
-				wclear (info_win);
-				update_info_win ();
-				wrefresh (info_win);
-				wclear (main_win);
-				do_update_menu = 1;
+				iface_refresh ();
 				break;
+#if 0
 			case KEY_CMD_RELOAD:
 				if (visible_plist == curr_plist) {
 					reread_dir (1);
