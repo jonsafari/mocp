@@ -597,3 +597,15 @@ int menu_find (const struct menu *menu, const char *fname)
 
 	return -1;
 }
+
+void menu_mark_item (struct menu *menu, const char *file)
+{
+	int item;
+
+	assert (menu != NULL);
+	assert (file != NULL);
+
+	item = menu_find (menu, file);
+	if (item != -1)
+		menu->marked = item;
+}
