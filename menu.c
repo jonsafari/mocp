@@ -219,11 +219,19 @@ static int menu_add_from_item (struct menu *menu, const struct menu_item *item)
 	return menu->nitems++;
 }
 
-void menu_update_size (struct menu *menu, WINDOW *win)
+void menu_update_size (struct menu *menu, const int posx, const int posy,
+		const int width, const int height)
 {
 	assert (menu != NULL);
+	assert (posx >= 0);
+	assert (posy >= 0);
+	assert (width > 0);
+	assert (height > 0);
 
-	/* TODO: this is wrong */
+	menu->posx = posx;
+	menu->posy = posy;
+	menu->width = width;
+	menu->height = height;
 }
 
 void menu_free (struct menu *menu)

@@ -37,5 +37,6 @@ void iface_switch_to_plist ();
 void iface_switch_to_dir ();
 void iface_add_to_plist (const struct plist *plist, const int num);
 void iface_error (const char *msg);
+void iface_resize ();
 
 #endif
