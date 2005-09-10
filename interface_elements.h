@@ -35,5 +35,6 @@ void iface_set_mixer_value (const int value);
 void iface_tick ();
 void iface_switch_to_plist ();
 void iface_switch_to_dir ();
+void iface_add_to_plist (const struct plist *plist, const int num);
 
 #endif
