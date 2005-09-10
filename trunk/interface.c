@@ -433,6 +433,8 @@ static void update_item_tags (struct plist *plist, const int num,
 		tags_free (plist->items[num].tags);
 	plist->items[num].tags = tags_dup (tags);
 
+	plist_count_total_time (plist);
+
 	if (options_get_int("ReadTags")) {
 		make_tags_title (plist, num);
 		if (plist->items[num].title_tags)
