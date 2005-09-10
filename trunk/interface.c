@@ -124,6 +124,12 @@ static void send_str_to_srv (const char *str)
 		fatal ("Can't send() string to the server.");
 }
 
+static void send_item_to_srv (const struct plist_item *item)
+{
+	if (!send_item(srv_sock, item))
+		interface_fatal ("Can't send() item to the server.");
+}
+
 static int get_int_from_srv ()
 {
 	int num;
@@ -562,6 +568,53 @@ static void update_state ()
 	update_ctime ();
 }
 
+/* Handle EV_PLIST_ADD. */
+static void event_plist_add (const struct plist_item *item)
+{
+	if (plist_find_fname(playlist, item->file) == -1) {
+		int item_num = plist_add_from_item (playlist, item);
+		int needed_tags = 0;
+
+		if (options_get_int("ReadTags")
+				&& (!item->tags || !item->tags->title))
+			needed_tags |= TAGS_COMMENTS;
+		if (!strcasecmp(options_get_str("ShowTime"), "yes")
+				&& (!item->tags || item->tags->time == -1))
+			needed_tags |= TAGS_TIME;
+
+		if (needed_tags)
+			send_tags_request (item->file, needed_tags);
+		
+		if (options_get_int("ReadTags")) {
+			make_tags_title (playlist, item_num);
+
+			if (playlist->items[item_num].title_tags)
+				playlist->items[item_num].title =
+					playlist->items[item_num].title_tags;
+			else
+				playlist->items[item_num].title =
+					playlist->items[item_num].title_file;
+		}
+		else {
+			make_file_title (playlist, item_num,
+					options_get_int("HideFileExtension"));
+			playlist->items[item_num].title =
+				playlist->items[item_num].title_file;
+		}
+
+		iface_add_to_plist (playlist, item_num);
+		
+		/* TODO: */
+#if 0
+		if (waiting_for_plist_load) {
+			if (visible_plist == curr_plist)
+				toggle_plist ();
+			waiting_for_plist_load = 0;
+		}
+#endif
+	}
+}
+
 /* Handle server event. */
 static void server_event (const int event, void *data)
 {
@@ -600,17 +653,14 @@ static void server_event (const int event, void *data)
 			break;
 		case EV_SEND_PLIST:
 			forward_playlist ();
-			break;
+			break;*/
 		case EV_PLIST_ADD:
-			if (options_get_int("SyncPlaylist")) {
+			if (options_get_int("SyncPlaylist"))
 				event_plist_add ((struct plist_item *)data);
-				if (curr_menu == playlist_menu)
-					update_menu ();
-			}
 			plist_free_item_fields (data);
 			free (data);
 			break;
-		case EV_PLIST_CLEAR:
+/*		case EV_PLIST_CLEAR:
 			if (options_get_int("SyncPlaylist")) {
 				clear_playlist ();
 				update_menu ();
@@ -1029,6 +1079,80 @@ static void adjust_mixer (const int diff)
 	set_mixer (get_mixer_value() + diff);
 }
 
+/* Switch between the directory view and the playlist. */
+static void toggle_plist ()
+{
+	int num;
+	
+	if (iface_in_plist_menu()) {
+		if (!cwd[0])
+			
+			/* we were at the playlist from the startup */
+			enter_first_dir ();
+		else
+			iface_switch_to_dir ();
+	}
+	else if ((num = plist_count(playlist)))
+		iface_switch_to_plist ();
+	else
+		error ("The playlist is empty.");
+}
+
+/* Add the currently selected file to the playlist. */
+static void add_file_plist ()
+{
+	char *file;
+
+	if (iface_in_plist_menu()) {
+		error ("Can't add to the playlist a file from the "
+				"playlist.");
+		return;
+	}
+
+	if (iface_curritem_get_type() == F_DIR) {
+		error ("This is a directory.");
+		return;
+	}
+	
+	if (iface_curritem_get_type() != F_SOUND) {
+		error ("You can only add a file using this command.");
+		return;
+	}
+
+	file = iface_get_curr_file ();
+
+	if (plist_find_fname(playlist, file)) {
+		struct plist_item *item = &dir_plist->items[
+			plist_find_fname(dir_plist, file)];
+
+		send_int_to_srv (CMD_LOCK);
+
+		if (options_get_int("SyncPlaylist")) {
+			send_int_to_srv (CMD_CLI_PLIST_ADD);
+			send_item_to_srv (item);
+		}
+		else {
+			int added;
+			
+			added = plist_add_from_item (playlist, item);
+			iface_add_to_plist (playlist, added);
+		}
+				
+		/* Add to the server's playlist if the server has our
+		 * playlist */
+		send_int_to_srv (CMD_PLIST_GET_SERIAL);
+		if (get_data_int() == plist_get_serial(playlist)) {
+			send_int_to_srv (CMD_LIST_ADD);
+			send_str_to_srv (file);
+		}
+		send_int_to_srv (CMD_UNLOCK);
+	}
+	else
+		error ("The file is already on the playlist.");
+
+	free (file);
+}
+
 /* Handle key */
 static void menu_key (const int ch)
 {
@@ -1116,13 +1240,14 @@ static void menu_key (const int ch)
 			case KEY_CMD_TOGGLE_AUTO_NEXT:
 				toggle_option ("AutoNext");
 				break;
+#endif
 			case KEY_CMD_TOGGLE_PLAYLIST:
 				toggle_plist ();
-				do_update_menu = 1;
 				break;
 			case KEY_CMD_PLIST_ADD_FILE:
 				add_file_plist ();
 				break;
+#if 0
 			case KEY_CMD_PLIST_CLEAR:
 				cmd_clear_playlist ();
 				do_update_menu = 1;
