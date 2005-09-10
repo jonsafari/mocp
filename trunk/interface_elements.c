@@ -73,6 +73,7 @@ struct side_menu
 static struct main_win
 {
 	WINDOW *win;
+	char *curr_file; /* currently played file. */
 	struct side_menu menus[3];
 	int selected_menu; /* which menu is currently selected by the user */
 } main_win;
@@ -181,6 +182,8 @@ static void main_win_init (struct main_win *w)
 	nodelay (w->win, TRUE);
 	keypad (w->win, TRUE);
 
+	w->curr_file = NULL;
+
 	side_menu_init (&w->menus[0], MENU_DIR, w->win, LINES - 5, COLS - 2,
 			1, 1);
 	/*side_menu_init (&w->menus[0], MENU_DIR, w->win, 5, 40,
@@ -200,6 +203,8 @@ static void main_win_destroy (struct main_win *w)
 
 	if (w->win)
 		delwin (w->win);
+	if (w->curr_file)
+		free (w->curr_file);
 }
 
 /* Convert time in second to min:sec text format. buff must be 6 chars long. */
@@ -494,6 +499,8 @@ static void main_win_set_dir_content (struct main_win *w,
 	struct side_menu *m = &w->menus[w->selected_menu];
 
 	side_menu_make_list_content (m, files, dirs, playlists);
+	if (w->curr_file)
+		side_menu_mark_file (m, w->curr_file);
 	side_menu_draw (m);
 }
 
@@ -567,6 +574,10 @@ static void main_win_set_played_file (struct main_win *w, const char *file)
 	int i;
 	
 	assert (w != NULL);
+
+	if (w->curr_file)
+		free (w->curr_file);
+	w->curr_file = xstrdup (file);
 
 	for (i = 0; i < (int)(sizeof(w->menus)/sizeof(w->menus[0])); i++) {
 		struct side_menu *m = &w->menus[i];
