@@ -752,7 +752,6 @@ static int go_to_dir (const char *dir)
 
 	switch_titles_file (dir_plist);
 
-
 	plist_sort_fname (dir_plist);
 	qsort (dirs->items, dirs->num, sizeof(char *), qsort_dirs_func);
 	qsort (playlists->items, playlists->num, sizeof(char *),
@@ -1215,6 +1214,40 @@ static void toggle_option (const char *name)
 	sync_int_option (name);
 }
 
+static void toggle_show_time ()
+{
+	if (!strcasecmp(options_get_str("ShowTime"), "yes")) {
+		option_set_str("ShowTime", "IfAvailable");
+		iface_set_status ("ShowTime: IfAvailable");
+	}
+	else if (!strcasecmp(options_get_str("ShowTime"), "no")) {
+		option_set_str("ShowTime", "yes");
+		iface_update_show_time ();
+		ask_for_tags (dir_plist, TAGS_TIME);
+		ask_for_tags (playlist, TAGS_TIME);
+		iface_set_status ("ShowTime: yes");
+		
+	}
+	else { /* IfAvailable */
+		option_set_str("ShowTime", "no");
+		iface_update_show_time ();
+		iface_set_status ("ShowTime: no");
+	}	
+}
+
+static void toggle_show_format ()
+{
+	int show_format = !options_get_int("ShowFormat");
+	
+	option_set_int ("ShowFormat", show_format);
+	if (show_format)
+		iface_set_status ("ShowFormat: yes");
+	else
+		iface_set_status ("ShowFormat: no");
+
+	iface_update_show_format ();
+}
+
 /* Handle key */
 static void menu_key (const int ch)
 {
@@ -1384,14 +1417,14 @@ static void menu_key (const int ch)
 					error ("The playlist is "
 							"empty.");
 				break;
+#endif
 			case KEY_CMD_TOGGLE_SHOW_TIME:
 				toggle_show_time ();
-				do_update_menu = 1;
 				break;
 			case KEY_CMD_TOGGLE_SHOW_FORMAT:
 				toggle_show_format ();
-				do_update_menu = 1;
 				break;
+#if 0
 			case KEY_CMD_GO_TO_PLAYING_FILE:
 				go_to_file_dir ();
 				do_update_menu = 1;

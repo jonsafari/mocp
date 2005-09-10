@@ -39,5 +39,7 @@ void iface_add_to_plist (const struct plist *plist, const int num);
 void iface_error (const char *msg);
 void iface_resize ();
 void iface_refresh ();
+void iface_update_show_time ();
+void iface_update_show_format ();
 
 #endif

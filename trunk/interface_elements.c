@@ -536,6 +536,25 @@ static int side_menu_get_files_time (const struct side_menu *m)
 	return m->total_time;
 }
 
+static void side_menu_update_show_time (struct side_menu *m)
+{
+	assert (m != NULL);
+	assert (m->visible);
+	assert (m->type == MENU_DIR || m->type == MENU_PLAYLIST);
+
+	menu_set_show_time (m->menu.list,
+				strcasecmp(options_get_str("ShowTime"), "no"));
+}
+
+static void side_menu_update_show_format (struct side_menu *m)
+{
+	assert (m != NULL);
+	assert (m->visible);
+	assert (m->type == MENU_DIR || m->type == MENU_PLAYLIST);
+
+	menu_set_show_format (m->menu.list, options_get_int("ShowFormat"));
+}
+
 static void side_menu_resize (struct side_menu *m, const int height,
 		const int width, const int posy, const int posx)
 {
@@ -724,6 +743,40 @@ static void main_win_resize (struct main_win *w)
 
 	side_menu_resize (&w->menus[0], LINES - 5, COLS - 2, 1, 1);
 	side_menu_resize (&w->menus[1], LINES - 5, COLS - 2, 1, 1);
+
+	main_win_draw (w);
+}
+
+static void main_win_update_show_time (struct main_win *w)
+{
+	int i;
+	
+	assert (w != NULL);
+
+	for (i = 0; i < (int)(sizeof(w->menus)/sizeof(w->menus[0])); i++) {
+		struct side_menu *m = &w->menus[i];
+
+		if (m->visible && (m->type == MENU_DIR
+					|| m->type == MENU_PLAYLIST))
+			side_menu_update_show_time (&w->menus[i]);
+	}
+
+	main_win_draw (w);
+}
+
+static void main_win_update_show_format (struct main_win *w)
+{
+	int i;
+	
+	assert (w != NULL);
+
+	for (i = 0; i < (int)(sizeof(w->menus)/sizeof(w->menus[0])); i++) {
+		struct side_menu *m = &w->menus[i];
+
+		if (m->visible && (m->type == MENU_DIR
+					|| m->type == MENU_PLAYLIST))
+			side_menu_update_show_format (&w->menus[i]);
+	}
 
 	main_win_draw (w);
 }
@@ -1612,4 +1665,16 @@ void iface_refresh ()
 	
 	wrefresh (main_win.win);
 	wrefresh (info_win.win);
+}
+
+void iface_update_show_time ()
+{
+	main_win_update_show_time (&main_win);
+	wrefresh (main_win.win);
+}
+
+void iface_update_show_format ()
+{
+	main_win_update_show_format (&main_win);
+	wrefresh (main_win.win);
 }
