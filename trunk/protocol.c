@@ -27,6 +27,7 @@
 #include "log.h"
 #include "protocol.h"
 #include "playlist.h"
+#include "files.h"
 
 /* Maximal socket name. */
 #define UNIX_PATH_MAX	108
