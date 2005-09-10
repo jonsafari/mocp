@@ -1082,6 +1082,16 @@ static void info_win_draw_options_state (const struct info_win *w)
 	info_win_draw_switch (w, 72, 2, "NEXT", w->state_next);
 }
 
+static void info_win_error_msg (struct info_win *w, const char *msg)
+{
+	if (w->msg)
+		free (w->msg);
+	w->msg = xstrdup (msg);
+	w->msg_is_error = 1;
+	w->msg_timeout = time(NULL) + 3;
+	info_win_draw_title (w);
+}
+
 static void info_win_set_channels (struct info_win *w, const int channels)
 {
 	assert (w != NULL);
@@ -1507,4 +1517,10 @@ void iface_add_to_plist (const struct plist *plist, const int num)
 			main_win_is_time_for_all(&main_win));
 	wrefresh (info_win.win);
 	wrefresh (main_win.win);
+}
+
+void iface_error (const char *msg)
+{
+	info_win_error_msg (&info_win, msg);
+	wrefresh (info_win.win);
 }
