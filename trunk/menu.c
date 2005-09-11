@@ -390,6 +390,13 @@ void menu_set_top_item (struct menu *menu, const int num)
 		menu->top = num;
 }
 
+int menu_get_top_item (const struct menu *menu)
+{
+	assert (menu != NULL);
+
+	return menu->top;
+}
+
 /* Make a new menu from elements matching pattern. */
 struct menu *menu_filter_pattern (struct menu *menu, const char *pattern)
 {
