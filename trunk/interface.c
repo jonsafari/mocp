@@ -36,6 +36,7 @@
 #include "interface.h"
 #include "main.h"
 #include "playlist.h"
+#include "playlist_file.h"
 #include "protocol.h"
 #include "keys.h"
 #include "options.h"
@@ -67,6 +68,9 @@ static volatile int wants_interrupt = 0;
 static volatile int want_resize = 0;
 #endif
 
+/* Are we waiting for the playlist we have loaded and sent to the clients? */
+static int waiting_for_plist_load = 0;
+					  
 /* Information about the currently played file. */
 static struct file_info {
 	char *file;
@@ -235,6 +239,18 @@ static void send_tags_request (const char *file, const int tags_sel)
 	send_int_to_srv (tags_sel);
 
 	debug ("Asking for tags for %s", file);
+}
+
+/* Send all items from this playlist to other clients */
+static void send_items_to_clients (const struct plist *plist)
+{
+	int i;
+	
+	for (i = 0; i < plist->num; i++)
+		if (!plist_deleted(plist, i)) {
+			send_int_to_srv (CMD_CLI_PLIST_ADD);
+			send_item_to_srv (&plist->items[i]);
+		}
 }
 
 static void init_playlists ()
@@ -421,13 +437,34 @@ static void ask_for_tags (const struct plist *plist, const int tags_sel)
 		}
 }
 
+static void interface_message (const char *format, ...)
+{
+	va_list va;
+	char message[128];
+
+	va_start (va, format);
+	vsnprintf (message, sizeof(message), format, va);
+	message[sizeof(message)-1] = 0;
+	va_end (va);
+
+	//TODO: iface_message (message);
+}
+
 /* Update tags (and titles) for the given item on the playlist with new tags. */
 static void update_item_tags (struct plist *plist, const int num,
 		const struct file_tags *tags)
 {
-	if (plist->items[num].tags)
-		tags_free (plist->items[num].tags);
+	struct file_tags *old_tags = plist->items[num].tags;
+	
 	plist->items[num].tags = tags_dup (tags);
+
+	/* Get the time from the old tags if it's not presend in the new tags.
+	 * FIXME: There is risk, that the file was modified and the time
+	 * from the old tags is not valid. */
+	if (!(tags->filled & TAGS_TIME)) {
+		plist->items[num].tags->filled |= TAGS_TIME;
+		plist->items[num].tags->time = old_tags->time;
+	}	
 
 	plist_count_total_time (plist);
 
@@ -442,6 +479,9 @@ static void update_item_tags (struct plist *plist, const int num,
 			plist->items[num].title = plist->items[num].title_file;
 		}
 	}
+
+	if (old_tags)
+		tags_free (old_tags);
 }
 
 /* Handle EV_FILE_TAGS. */
@@ -614,14 +654,11 @@ static void event_plist_add (const struct plist_item *item)
 
 		iface_add_to_plist (playlist, item_num);
 		
-		/* TODO: */
-#if 0
 		if (waiting_for_plist_load) {
-			if (visible_plist == curr_plist)
-				toggle_plist ();
+			if (iface_in_dir_menu())
+				iface_switch_to_plist ();
 			waiting_for_plist_load = 0;
 		}
-#endif
 	}
 }
 
@@ -661,9 +698,8 @@ static void clear_playlist ()
 	plist_clear (playlist);
 	iface_clear_plist ();
 	
-	/* TODO:
 	if (!waiting_for_plist_load)
-		interface_message ("The playlist was cleared.");*/
+		interface_message ("The playlist was cleared.");
 	iface_set_status ("");
 }
 
@@ -1037,6 +1073,83 @@ static void play_it (const char *file)
 	send_int_to_srv (CMD_UNLOCK);
 }
 
+/* Switch between the directory view and the playlist. */
+static void toggle_plist ()
+{
+	int num;
+	
+	if (iface_in_plist_menu()) {
+		if (!cwd[0])
+			
+			/* we were at the playlist from the startup */
+			enter_first_dir ();
+		else
+			iface_switch_to_dir ();
+	}
+	else if ((num = plist_count(playlist)))
+		iface_switch_to_plist ();
+	else
+		error ("The playlist is empty.");
+}
+
+/* Make sure that the server's playlist has different serial from ours. */
+static void change_srv_plist_serial ()
+{
+	int serial;
+	
+	do {	
+		send_int_to_srv (CMD_GET_SERIAL);
+		serial = get_data_int ();
+	 } while (serial == plist_get_serial(playlist)
+			|| serial == plist_get_serial(dir_plist));
+
+	send_int_to_srv (CMD_PLIST_SET_SERIAL);
+	send_int_to_srv (serial);
+}
+
+/* Load the playlist file and switch the menu to it. Return 1 on success. */
+static int go_to_playlist (const char *file)
+{
+	if (plist_count(playlist)) {
+		error ("Please clear the playlist, because "
+				"I'm not sure you want to do this.");
+		return 0;
+	}
+
+	plist_clear (playlist);
+
+	iface_set_status ("Loading playlist...");
+	if (plist_load(playlist, file, cwd)) {
+	
+		if (options_get_int("SyncPlaylist")) {
+			send_int_to_srv (CMD_LOCK);
+			change_srv_plist_serial ();
+			send_int_to_srv (CMD_CLI_PLIST_CLEAR);
+			iface_set_status ("Notifying clients...");
+			send_items_to_clients (playlist);
+			iface_set_status ("");
+			waiting_for_plist_load = 1;
+			send_int_to_srv (CMD_UNLOCK);
+
+			/* We'll use the playlist received from the
+			 * server to be synchronized with other clients
+			 */
+			plist_clear (playlist);
+		}
+		else
+			toggle_plist ();
+
+		interface_message ("Playlist loaded.");
+	}
+	else {
+		interface_message ("The playlist is empty");
+		iface_set_status ("");
+		return 0;
+	}
+
+	return 1;
+}
+
 /* Action when the user selected a file. */
 static void go_file ()
 {
@@ -1051,14 +1164,8 @@ static void go_file ()
 		else 
 			go_to_dir (file, 0);
 	}
-#if 0
-	else if (type == F_DIR && visible_plist == playlist)
-		
-		/* the only item on the playlist of type F_DIR is '..' */
-		toggle_plist ();
 	else if (type == F_PLAYLIST)
-		go_to_playlist(menu_item_get_file(curr_menu, selected));
-#endif
+		go_to_playlist (file);
 
 	free (file);
 }
@@ -1092,25 +1199,6 @@ static void set_mixer (int val)
 static void adjust_mixer (const int diff)
 {
 	set_mixer (get_mixer_value() + diff);
-}
-
-/* Switch between the directory view and the playlist. */
-static void toggle_plist ()
-{
-	int num;
-	
-	if (iface_in_plist_menu()) {
-		if (!cwd[0])
-			
-			/* we were at the playlist from the startup */
-			enter_first_dir ();
-		else
-			iface_switch_to_dir ();
-	}
-	else if ((num = plist_count(playlist)))
-		iface_switch_to_plist ();
-	else
-		error ("The playlist is empty.");
 }
 
 /* Add the currently selected file to the playlist. */
@@ -1166,18 +1254,6 @@ static void add_file_plist ()
 		error ("The file is already on the playlist.");
 
 	free (file);
-}
-
-/* Send all items from this playlist to other clients */
-static void send_items_to_clients (const struct plist *plist)
-{
-	int i;
-	
-	for (i = 0; i < plist->num; i++)
-		if (!plist_deleted(plist, i)) {
-			send_int_to_srv (CMD_CLI_PLIST_ADD);
-			send_item_to_srv (&plist->items[i]);
-		}
 }
 
 /* Recursively add the content of a directory to the playlist. */
@@ -1290,21 +1366,6 @@ static void toggle_show_format ()
 static void reread_dir ()
 {
 	go_to_dir (NULL, 1);
-}
-
-/* Make sure that the server's playlist has different serial from ours. */
-static void change_srv_plist_serial ()
-{
-	int serial;
-	
-	do {	
-		send_int_to_srv (CMD_GET_SERIAL);
-		serial = get_data_int ();
-	 } while (serial == plist_get_serial(playlist)
-			|| serial == plist_get_serial(dir_plist));
-
-	send_int_to_srv (CMD_PLIST_SET_SERIAL);
-	send_int_to_srv (serial);
 }
 
 /* Clear the playlist on user request. */
