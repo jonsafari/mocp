@@ -155,7 +155,7 @@ struct menu *menu_new (WINDOW *win, const int posx, const int posy,
 	menu->allocated = INIT_NUM_ITEMS;
 	menu->nitems = 0;
 	menu->top = 0;
-	menu->selected = 0;
+	menu->selected = -1;
 	menu->posx = posx;
 	menu->posy = posy;
 	menu->width = width;
