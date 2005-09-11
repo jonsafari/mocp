@@ -1066,6 +1066,7 @@ static void info_win_draw_status (const struct info_win *w)
 {
 	assert (w != NULL);
 
+	wattrset (w->win, get_color(CLR_STATUS));
 	mvwprintw (w->win, 0, 6, "%-*s", sizeof(w->status_msg) - 1,
 			w->status_msg);
 }
