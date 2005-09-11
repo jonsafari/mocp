@@ -200,7 +200,8 @@ int plist_add (struct plist *plist, const char *file_name)
 	}
 
 	plist->items[plist->num].file = xstrdup (file_name);
-	plist->items[plist->num].type = file_type (file_name);
+	plist->items[plist->num].type = file_name ? file_type (file_name)
+		: F_OTHER;
 	plist->items[plist->num].deleted = 0;
 	plist->items[plist->num].title = NULL;
 	plist->items[plist->num].title_file = NULL;
@@ -643,6 +644,7 @@ void plist_set_file (struct plist *plist, const int num, const char *file)
 	}
 	
 	plist->items[num].file = xstrdup (file);
+	plist->items[num].type = file_type (file);
 	plist->items[num].mtime = get_mtime (file);
 	rb_insert (&plist->search_tree, (void *)num);
 }
