@@ -1617,6 +1617,21 @@ static void cmd_clear_playlist ()
 		clear_playlist ();
 }
 
+static void go_to_music_dir ()
+{
+	if (options_get_str("MusicDir")) {
+		if (file_type(options_get_str("MusicDir")) == F_DIR)
+			go_to_dir (options_get_str("MusicDir"), 0);
+		else if (file_type(options_get_str("MusicDir")) == F_PLAYLIST)
+			go_to_playlist (options_get_str("MusicDir"));
+		else
+			error ("MusicDir is neither a directory nor a "
+					"playlist.");
+	}
+	else
+		error ("MusicDir not defined");
+}
+
 /* Handle key */
 static void menu_key (const int ch)
 {
@@ -1759,11 +1774,10 @@ static void menu_key (const int ch)
 				if (iface_in_dir_menu())
 					reread_dir (1);
 				break;
-#if 0
 			case KEY_CMD_GO_MUSIC_DIR:
 				go_to_music_dir ();
-				do_update_menu = 1;
 				break;
+#if 0
 			case KEY_CMD_PLIST_DEL:
 				delete_item ();
 				do_update_menu = 1;
