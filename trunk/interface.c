@@ -703,6 +703,87 @@ static void clear_playlist ()
 	iface_set_status ("");
 }
 
+/* Handle EV_PLIST_DEL. */
+static void event_plist_del (char *file)
+{
+	int item = plist_find_fname (playlist, file);
+
+	if (item != -1) {
+		int need_recount_time;
+		char *file;
+
+		if (get_item_time(playlist, item) != -1)
+			need_recount_time = 1;
+		else
+			need_recount_time = 0;
+
+		file = plist_get_file (playlist, item);
+		plist_delete (playlist, item);
+
+		if (need_recount_time)
+			plist_count_total_time (playlist);
+
+		iface_del_plist_item (file);
+		free (file);
+
+		if (plist_count(playlist) == 0) {
+			plist_clear (playlist);
+
+			if (iface_in_plist_menu())
+				iface_switch_to_dir ();
+		}
+#if 0
+		int selected_item = 0;
+		int top_item = 0;
+		int num;
+		int need_recount_time = 0;
+		
+		if (get_item_time(playlist, item) != -1)
+			need_recount_time = 1;
+		
+		plist_delete (playlist, item);
+
+		if (need_recount_time)
+			plist_count_total_time (playlist);
+		
+		if (playlist_menu) {
+			selected_item = playlist_menu->selected;
+			top_item = playlist_menu->top;
+			menu_free (playlist_menu);
+		}
+
+		if ((num = plist_count(playlist)) > 0) {
+			if (curr_menu == playlist_menu) {
+				char msg[50];
+				
+				playlist_menu = make_menu (playlist, NULL, 0);
+				menu_set_top_item (playlist_menu, top_item);
+				menu_setcurritem (playlist_menu, selected_item);
+				curr_menu = playlist_menu;
+				update_curr_file ();
+				update_info_win ();
+				wrefresh (info_win);
+				
+				sprintf (msg, "%d files on the list", num);
+				set_iface_status_ref (msg);
+			}
+			else 
+				playlist_menu = NULL;
+		}
+		else {
+			if (curr_menu == playlist_menu)
+				toggle_plist ();
+			plist_clear (playlist);
+			playlist_menu = NULL;
+			set_iface_status_ref (NULL);
+		}
+#endif
+	}
+	else
+		logit ("Server requested deleting an item not present on the"
+				" playlist.");
+}
+
 /* Handle server event. */
 static void server_event (const int event, void *data)
 {
@@ -750,14 +831,12 @@ static void server_event (const int event, void *data)
 			if (options_get_int("SyncPlaylist"))
 				clear_playlist ();
 			break;
-/*		case EV_PLIST_DEL:
-			if (options_get_int("SyncPlaylist")) {
+		case EV_PLIST_DEL:
+			if (options_get_int("SyncPlaylist"))
 				event_plist_del ((char *)data);
-				update_menu ();
-			}
 			free (data);
 			break;
-		case EV_TAGS:
+/*		case EV_TAGS:
 			update_curr_tags (data);
 			break;*/
 		case EV_STATUS_MSG:

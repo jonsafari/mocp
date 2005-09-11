@@ -45,5 +45,6 @@ void iface_refresh ();
 void iface_update_show_time ();
 void iface_update_show_format ();
 void iface_clear_plist ();
+void iface_del_plist_item (const char *file);
 
 #endif

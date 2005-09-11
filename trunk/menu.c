@@ -563,3 +563,9 @@ void menu_mark_item (struct menu *menu, const char *file)
 	if (item != -1)
 		menu->marked = item;
 }
+
+void menu_del_item (struct menu *menu, const char *fname)
+{
+	//TODO
+}
+

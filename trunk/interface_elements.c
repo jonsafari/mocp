@@ -596,6 +596,15 @@ static void side_menu_set_state (struct side_menu *m,
 	set_menu_state (m->menu.list, st->selected_item, st->top_item);
 }
 
+static void side_menu_del_item (struct side_menu *m, const char *file)
+{
+	assert (m != NULL);
+	assert (m->visible);
+	assert (m->type == MENU_DIR || m->type == MENU_PLAYLIST);
+
+	menu_del_item (m->menu.list, file);
+}
+
 static void side_menu_resize (struct side_menu *m, const int height,
 		const int width, const int posy, const int posx)
 {
@@ -834,6 +843,18 @@ static void main_win_update_show_format (struct main_win *w)
 			side_menu_update_show_format (&w->menus[i]);
 	}
 
+	main_win_draw (w);
+}
+
+static void main_win_del_plist_item (struct main_win *w, const char *file)
+{
+	struct side_menu *m;
+	
+	assert (w != NULL);
+	assert (file != NULL);
+
+	m = find_side_menu (w, MENU_PLAYLIST);
+	side_menu_del_item (m, file);
 	main_win_draw (w);
 }
 
@@ -1766,4 +1787,14 @@ void iface_clear_plist ()
 {
 	main_win_clear_plist (&main_win);
 	wrefresh (main_win.win);
+}
+
+void iface_del_plist_item (const char *file)
+{
+	assert (file != NULL);
+
+	main_win_del_plist_item (&main_win, file);
+	wrefresh (main_win.win);
+
+	/* TODO: display the number of items */
 }

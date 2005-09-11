@@ -101,5 +101,6 @@ char *menu_item_get_file (const struct menu *menu, const int num);
 void menu_item_set_title (struct menu *menu, const int num, const char *title);
 int menu_nitems (const struct menu *menu);
 int menu_find (const struct menu *menu, const char *fname);
+void menu_del_item (struct menu *menu, const char *fname);
 
 #endif
