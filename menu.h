@@ -90,6 +90,7 @@ void set_menu_state (struct menu *menu, int selected, int top);
 void menu_update_size (struct menu *menu, const int posx, const int posy,
 		const int width, const int height);
 void menu_unmark_item (struct menu *menu);
+int menu_get_top_item (const struct menu *menu);
 void menu_set_top_item (struct menu *menu, const int num);
 struct menu *menu_filter_pattern (struct menu *menu, const char *pattern);
 void menu_set_show_time (struct menu *menu, const int t);
