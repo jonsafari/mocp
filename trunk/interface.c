@@ -1455,16 +1455,14 @@ static void menu_key (const int ch)
 				if (iface_in_dir_menu())
 					reread_dir ();
 				break;
-#if 0
 			case KEY_CMD_TOGGLE_SHOW_HIDDEN_FILES:
 				option_set_int ("ShowHiddenFiles",
 						!options_get_int(
 							"ShowHiddenFiles"));
-				if (visible_plist == curr_plist) {
+				if (iface_in_dir_menu())
 					reread_dir (1);
-					do_update_menu = 1;
-				}
 				break;
+#if 0
 			case KEY_CMD_GO_MUSIC_DIR:
 				go_to_music_dir ();
 				do_update_menu = 1;
