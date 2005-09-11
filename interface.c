@@ -707,9 +707,10 @@ static void server_event (const int event, void *data)
 }
 
 /* Load the directory content into dir_plist and switch the menu to it.
- * If dir is NULL, go to the cwd.
+ * If dir is NULL, go to the cwd. if reload is not zero, we are reloading
+ * the current directory, so use iface_update_dir_content().
  * Return 1 on success, 0 on error. */
-static int go_to_dir (const char *dir)
+static int go_to_dir (const char *dir, const int reload)
 {
 	struct plist *old_dir_plist;
 	char last_dir[PATH_MAX];
@@ -760,7 +761,10 @@ static int go_to_dir (const char *dir)
 	if (get_tags_setting())
 		ask_for_tags (dir_plist, get_tags_setting());
 	
-	iface_set_dir_content (dir_plist, dirs, playlists);
+	if (reload)
+		iface_update_dir_content (dir_plist, dirs, playlists);
+	else
+		iface_set_dir_content (dir_plist, dirs, playlists);
 	file_list_free (dirs);
 	file_list_free (playlists);
 	if (going_up)
@@ -801,9 +805,9 @@ static void enter_first_dir ()
 			error ("MusicDir is not set");
 	}
 #endif
-	if (!(read_last_dir() && go_to_dir(NULL))) {
+	if (!(read_last_dir() && go_to_dir(NULL, 0))) {
 		set_start_dir ();
-		if (!go_to_dir(NULL))
+		if (!go_to_dir(NULL, 0))
 			fatal ("Can't enter any directory.");
 	}
 
@@ -921,7 +925,7 @@ static void go_dir_up ()
 	else
 		*slash = 0;
 
-	go_to_dir (dir);
+	go_to_dir (dir, 0);
 	free (dir);
 }
 
@@ -1011,7 +1015,7 @@ static void go_file ()
 		if (!strcmp(file, ".."))
 			go_dir_up ();
 		else 
-			go_to_dir (file);
+			go_to_dir (file, 0);
 	}
 #if 0
 	else if (type == F_DIR && visible_plist == playlist)
@@ -1248,6 +1252,12 @@ static void toggle_show_format ()
 	iface_update_show_format ();
 }
 
+/* Reread the directory. */
+static void reread_dir ()
+{
+	go_to_dir (NULL, 1);
+}
+
 /* Handle key */
 static void menu_key (const int ch)
 {
@@ -1382,13 +1392,11 @@ static void menu_key (const int ch)
 			case KEY_CMD_REFRESH:
 				iface_refresh ();
 				break;
-#if 0
 			case KEY_CMD_RELOAD:
-				if (visible_plist == curr_plist) {
-					reread_dir (1);
-					do_update_menu = 1;
-				}
+				if (iface_in_dir_menu())
+					reread_dir ();
 				break;
+#if 0
 			case KEY_CMD_TOGGLE_SHOW_HIDDEN_FILES:
 				option_set_int ("ShowHiddenFiles",
 						!options_get_int(
@@ -1480,7 +1488,7 @@ static void menu_key (const int ch)
 			case KEY_CMD_FAST_DIR_1:
 				if (options_get_str("FastDir1"))
 					go_to_dir (options_get_str(
-								"FastDir1"));
+								"FastDir1"), 0);
 				else
 					error ("FastDir1 not "
 							"defined");
@@ -1488,7 +1496,7 @@ static void menu_key (const int ch)
 			case KEY_CMD_FAST_DIR_2:
 				if (options_get_str("FastDir2"))
 					go_to_dir (options_get_str(
-								"FastDir2"));
+								"FastDir2"), 0);
 				else
 					error ("FastDir2 not "
 							"defined");
@@ -1496,7 +1504,7 @@ static void menu_key (const int ch)
 			case KEY_CMD_FAST_DIR_3:
 				if (options_get_str("FastDir3"))
 					go_to_dir (options_get_str(
-								"FastDir3"));
+								"FastDir3"), 0);
 				else
 					error ("FastDir3 not "
 							"defined");
@@ -1504,7 +1512,7 @@ static void menu_key (const int ch)
 			case KEY_CMD_FAST_DIR_4:
 				if (options_get_str("FastDir4"))
 					go_to_dir (options_get_str(
-								"FastDir4"));
+								"FastDir4"), 0);
 				else
 					error ("FastDir4 not "
 							"defined");
@@ -1512,7 +1520,7 @@ static void menu_key (const int ch)
 			case KEY_CMD_FAST_DIR_5:
 				if (options_get_str("FastDir5"))
 					go_to_dir (options_get_str(
-								"FastDir5"));
+								"FastDir5"), 0);
 				else
 					error ("FastDir5 not "
 							"defined");
@@ -1520,7 +1528,7 @@ static void menu_key (const int ch)
 			case KEY_CMD_FAST_DIR_6:
 				if (options_get_str("FastDir6"))
 					go_to_dir (options_get_str(
-								"FastDir6"));
+								"FastDir6"), 0);
 				else
 					error ("FastDir6 not "
 							"defined");
@@ -1528,7 +1536,7 @@ static void menu_key (const int ch)
 			case KEY_CMD_FAST_DIR_7:
 				if (options_get_str("FastDir7"))
 					go_to_dir (options_get_str(
-								"FastDir7"));
+								"FastDir7"), 0);
 				else
 					error ("FastDir7 not "
 							"defined");
@@ -1536,7 +1544,7 @@ static void menu_key (const int ch)
 			case KEY_CMD_FAST_DIR_8:
 				if (options_get_str("FastDir8"))
 					go_to_dir (options_get_str(
-								"FastDir8"));
+								"FastDir8"), 0);
 				else
 					error ("FastDir8 not "
 							"defined");
@@ -1544,7 +1552,7 @@ static void menu_key (const int ch)
 			case KEY_CMD_FAST_DIR_9:
 				if (options_get_str("FastDir9"))
 					go_to_dir (options_get_str(
-								"FastDir9"));
+								"FastDir9"), 0);
 				else
 					error ("FastDir9 not "
 							"defined");
@@ -1552,7 +1560,7 @@ static void menu_key (const int ch)
 			case KEY_CMD_FAST_DIR_10:
 				if (options_get_str("FastDir10"))
 					go_to_dir (options_get_str(
-								"FastDir10"));
+								"FastDir10"), 0);
 				else
 					error ("FastDir10 not "
 							"defined");

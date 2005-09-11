@@ -12,6 +12,9 @@ void iface_set_status (const char *msg);
 void iface_set_dir_content (const struct plist *files,
 		const struct file_list *dirs,
 		const struct file_list *playlists);
+void iface_update_dir_content (const struct plist *files,
+		const struct file_list *dirs,
+		const struct file_list *playlists);
 void iface_set_curr_item_title (const char *title);
 void iface_set_dir_title (const char *title);
 int iface_get_char ();
