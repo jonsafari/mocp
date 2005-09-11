@@ -16,8 +16,6 @@ Before 2.4:
 *$ Progrssive tags reading: read them only if the menu items requiring them
    are visible (as an option).
 *$ Tags cache saved to a file on exit and read at startup.
-* Better plist_count() optimizations: decrease and increase time for
-  deleted/added files instead of recounting total time.
 * Count speex time by reading granule position from the last page.
 * Moving items on the playlist up and down.
 * Options in a hash table.

@@ -694,11 +694,11 @@ static void server_event (const int event, void *data)
 			break;
 		case EV_TAGS:
 			update_curr_tags (data);
-			break;
-		case EV_STATUS_MSG:
-			set_iface_status_ref (data);
-			free (data);
 			break;*/
+		case EV_STATUS_MSG:
+			iface_set_status ((char *)data);
+			free (data);
+			break;
 		case EV_MIXER_CHANGE:
 			update_mixer_name ();
 			break;
