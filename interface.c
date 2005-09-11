@@ -151,6 +151,16 @@ static char *get_str_from_srv ()
 	return str;
 }
 
+static struct file_tags *recv_tags_from_srv ()
+{
+	struct file_tags *tags = recv_tags (srv_sock);
+
+	if (!tags)
+		fatal ("Can't receive tags from the server.");
+
+	return tags;
+}
+
 /* Noblocking version of get_int_from_srv(): return 0 if there are no data. */
 static int get_int_from_srv_noblock (int *num)
 {
@@ -227,6 +237,12 @@ static char *get_data_str ()
 {
 	wait_for_data ();
 	return get_str_from_srv ();
+}
+
+static struct file_tags *get_data_tags ()
+{
+	wait_for_data ();
+	return recv_tags_from_srv ();
 }
 
 static void send_tags_request (const char *file, const int tags_sel)
@@ -555,8 +571,10 @@ static void update_curr_file ()
 			curr_file.file = file;
 
 			/* make a title that will be used until we get tags */
-			if (file_type(file) == F_URL || !strchr(file, '/'))
+			if (file_type(file) == F_URL || !strchr(file, '/')) {
 				curr_file.title = xstrdup (file);
+				update_curr_tags ();
+			}
 			else
 				curr_file.title =
 					xstrdup (strrchr(file, '/') + 1);
@@ -732,56 +750,26 @@ static void event_plist_del (char *file)
 			if (iface_in_plist_menu())
 				iface_switch_to_dir ();
 		}
-#if 0
-		int selected_item = 0;
-		int top_item = 0;
-		int num;
-		int need_recount_time = 0;
-		
-		if (get_item_time(playlist, item) != -1)
-			need_recount_time = 1;
-		
-		plist_delete (playlist, item);
-
-		if (need_recount_time)
-			plist_count_total_time (playlist);
-		
-		if (playlist_menu) {
-			selected_item = playlist_menu->selected;
-			top_item = playlist_menu->top;
-			menu_free (playlist_menu);
-		}
-
-		if ((num = plist_count(playlist)) > 0) {
-			if (curr_menu == playlist_menu) {
-				char msg[50];
-				
-				playlist_menu = make_menu (playlist, NULL, 0);
-				menu_set_top_item (playlist_menu, top_item);
-				menu_setcurritem (playlist_menu, selected_item);
-				curr_menu = playlist_menu;
-				update_curr_file ();
-				update_info_win ();
-				wrefresh (info_win);
-				
-				sprintf (msg, "%d files on the list", num);
-				set_iface_status_ref (msg);
-			}
-			else 
-				playlist_menu = NULL;
-		}
-		else {
-			if (curr_menu == playlist_menu)
-				toggle_plist ();
-			plist_clear (playlist);
-			playlist_menu = NULL;
-			set_iface_status_ref (NULL);
-		}
-#endif
 	}
 	else
 		logit ("Server requested deleting an item not present on the"
 				" playlist.");
+}
+
+/* Use new tags for current file title (for Internet streams). */
+static void update_curr_tags ()
+{
+	if (curr_file.file && is_url(curr_file.file)) {
+		if (curr_file.tags)
+			tags_free (curr_file.tags);
+		send_int_to_srv (CMD_GET_TAGS);
+		curr_file.tags = get_data_tags ();
+
+		if (curr_file.tags->title) {
+			curr_file.title = build_title (curr_file.tags);
+			iface_set_played_file_title (curr_file.title);
+		}
+	}
 }
 
 /* Handle server event. */
@@ -836,9 +824,9 @@ static void server_event (const int event, void *data)
 				event_plist_del ((char *)data);
 			free (data);
 			break;
-/*		case EV_TAGS:
-			update_curr_tags (data);
-			break;*/
+		case EV_TAGS:
+			update_curr_tags ();
+			break;
 		case EV_STATUS_MSG:
 			iface_set_status ((char *)data);
 			free (data);

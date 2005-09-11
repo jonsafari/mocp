@@ -1195,6 +1195,7 @@ static void info_win_set_played_title (struct info_win *w, const char *title)
 	if (w->title)
 		free (w->title);
 	w->title = xstrdup (title);
+	//TODO: iconv()
 	info_win_draw_title (w);
 }
 
