@@ -2011,8 +2011,41 @@ void interface_loop ()
 	}
 }
 
+/* Save the current directory path to a file. */
+static void save_curr_dir ()
+{
+	FILE *dir_file;
+
+	if (!(dir_file = fopen(create_file_name("last_directory"), "w"))) {
+		error ("Can't save current directory: %s",
+				strerror(errno));
+		return;
+	}
+
+	fprintf (dir_file, "%s", cwd);
+	fclose (dir_file);
+}
+
+/* Save the playlist in .moc directory or remove the old playist if the
+ * playlist is empty. */
+static void save_playlist ()
+{
+	char *plist_file = create_file_name("playlist.m3u");
+
+	if (plist_count(playlist) && options_get_int("SavePlaylist")) {
+		iface_set_status ("Saving the playlist...");
+		/* TODO: Make tags! */
+		plist_save (playlist, plist_file, NULL);
+		iface_set_status ("");
+	}
+	else
+		unlink (plist_file);
+}
+
 void interface_end ()
 {
+	save_curr_dir ();
+	save_playlist ();
 	send_int_to_srv (CMD_DISCONNECT);
 	close (srv_sock);
 	srv_sock = -1;
@@ -2020,8 +2053,6 @@ void interface_end ()
 	windows_end ();
 	keys_cleanup ();
 
-	/* TODO: save last dir, save playlist */
-	
 	plist_free (dir_plist);
 	plist_free (playlist);
 	free (dir_plist);
@@ -2054,21 +2085,26 @@ void interface_error (const char *msg)
 
 void interface_cmdline_clear_plist (int server_sock)
 {
+	// TODO
 }
 
 void interface_cmdline_append (int server_sock, char **args,
 		const int arg_num)
 {
+	// TODO
 }
 
 void interface_cmdline_play_first (int server_sock)
 {
+	// TODO
 }
 
 void interface_cmdline_file_info (const int server_sock)
 {
+	// TODO
 }
 
 void interface_cmdline_playit (int server_sock, char **args, const int arg_num)
 {
+	// TODO
 }
