@@ -127,7 +127,7 @@ static void send_str_to_srv (const char *str)
 static void send_item_to_srv (const struct plist_item *item)
 {
 	if (!send_item(srv_sock, item))
-		interface_fatal ("Can't send() item to the server.");
+		fatal ("Can't send() item to the server.");
 }
 
 static int get_int_from_srv ()
@@ -167,7 +167,7 @@ static int get_int_from_srv_noblock (int *num)
 	enum noblock_io_status st;
 	
 	if ((st = get_int_noblock(srv_sock, num)) == NB_IO_ERR)
-		interface_fatal ("Can't receive value from the server.");
+		fatal ("Can't receive value from the server.");
 
 	return st == NB_IO_OK ? 1 : 0;
 }
@@ -779,8 +779,8 @@ static void server_event (const int event, void *data)
 
 	switch (event) {
 		case EV_BUSY:
-			fatal ("The server is busy, another client is "
-					"connected.");
+			interface_fatal ("The server is busy, another client "
+					"is connected.");
 			break;
 		case EV_CTIME:
 			update_ctime ();
@@ -789,7 +789,7 @@ static void server_event (const int event, void *data)
 			update_state ();
 			break;
 		case EV_EXIT:
-			fatal ("The server exited.");
+			interface_fatal ("The server exited.");
 			break;
 		case EV_BITRATE:
 			update_bitrate ();
@@ -839,7 +839,7 @@ static void server_event (const int event, void *data)
 			free_tag_ev_data ((struct tag_ev_response *)data);
 			break;
 		default:
-			fatal ("Unknown event: 0x%02x", event);
+			interface_fatal ("Unknown event: 0x%02x", event);
 	}
 }
 
@@ -1022,7 +1022,7 @@ static void enter_first_dir ()
 	if (!(read_last_dir() && go_to_dir(NULL, 0))) {
 		set_start_dir ();
 		if (!go_to_dir(NULL, 0))
-			fatal ("Can't enter any directory.");
+			interface_fatal ("Can't enter any directory.");
 	}
 
 	first_run = 0;
@@ -1810,7 +1810,8 @@ void interface_loop ()
 			//do_silent_seek ();
 		}
 		else if (ret == -1 && !want_quit && errno != EINTR)
-			fatal ("select() failed: %s", strerror(errno));
+			interface_fatal ("select() failed: %s",
+					strerror(errno));
 
 #ifdef SIGWINCH
 		if (want_resize)
