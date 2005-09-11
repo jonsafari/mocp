@@ -180,6 +180,9 @@ int menu_add (struct menu *menu, char *title, const enum file_type type,
 				sizeof(struct menu_item) * menu->allocated);
 	}
 
+	if (menu->selected == -1)
+		menu->selected = 0;
+
 	menu->items[menu->nitems].title = xstrdup (title);
 	menu->items[menu->nitems].type = type;
 	menu->items[menu->nitems].file = xstrdup (file);
