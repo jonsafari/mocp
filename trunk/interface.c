@@ -1379,6 +1379,9 @@ static void go_file ()
 	enum file_type type = iface_curritem_get_type ();
 	char *file = iface_get_curr_file ();
 
+	if (!file)
+		return;
+
 	if (type == F_SOUND || type == F_URL)
 		play_it (file);
 	else if (type == F_DIR && iface_in_dir_menu()) {
@@ -1440,12 +1443,17 @@ static void add_file_plist ()
 		return;
 	}
 	
+	file = iface_get_curr_file ();
+
+	if (!file)
+		return;
+	
 	if (iface_curritem_get_type() != F_SOUND) {
 		error ("You can only add a file using this command.");
+		free (file);
 		return;
 	}
 
-	file = iface_get_curr_file ();
 
 	if (plist_find_fname(playlist, file)) {
 		struct plist_item *item = &dir_plist->items[
@@ -1491,12 +1499,17 @@ static void add_dir_plist ()
 		return;
 	}
 
+	file = iface_get_curr_file ();
+
+	if (!file)
+		return;
+	
 	if (iface_curritem_get_type() != F_DIR) {
 		error ("This is not a directory.");
+		free (file);
 		return;
 	}
 
-	file = iface_get_curr_file ();
 
 	if (!strcmp(file, "../")) {
 		error ("Can't add '..'.");

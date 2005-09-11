@@ -423,20 +423,34 @@ static void side_menu_cmd (struct side_menu *m, const enum key_cmd cmd)
 
 static enum file_type side_menu_curritem_get_type (const struct side_menu *m)
 {
+	int i;
+	
 	assert (m != NULL);
 	assert (m->visible);
 	assert (m->type == MENU_DIR || m->type == MENU_PLAYLIST);
 
-	return menu_item_get_type (m->menu.list, menu_curritem(m->menu.list));
+	i = menu_curritem(m->menu.list);
+
+	if (i != -1)
+		return menu_item_get_type (m->menu.list, i);
+
+	return F_OTHER;
 }
 
 static char *side_menu_get_curr_file (const struct side_menu *m)
 {
+	int i;
+	
 	assert (m != NULL);
 	assert (m->visible);
 	assert (m->type == MENU_DIR || m->type == MENU_PLAYLIST);
 
-	return menu_item_get_file (m->menu.list, menu_curritem(m->menu.list));
+	i = menu_curritem (m->menu.list);
+
+	if (i != -1)
+		return menu_item_get_file (m->menu.list, i);
+
+	return NULL;
 }
 
 static struct side_menu *find_side_menu (struct main_win *w,
@@ -1622,7 +1636,8 @@ int iface_in_plist_menu ()
 	return main_win_in_plist_menu (&main_win);
 }
 
-/* Return the currently selected file (malloc()ed).  */
+/* Return the currently selected file (malloc()ed) or NULL if the menu is
+ * empty. */
 char *iface_get_curr_file ()
 {
 	return main_win_get_curr_file (&main_win);
