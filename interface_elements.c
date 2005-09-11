@@ -1241,9 +1241,9 @@ static void info_win_draw_bitrate (const struct info_win *w)
 
 	wattrset (w->win, get_color(CLR_SOUND_PARAMS));
 	if (w->bitrate != -1)
-		mvwprintw (w->win, 2, 30, "%3d", w->bitrate);
+		mvwprintw (w->win, 2, 29, "%4d", w->bitrate);
 	else
-		mvwaddstr (w->win, 2, 30, "   ");
+		mvwaddstr (w->win, 2, 29, "    ");
 }
 
 static void info_win_set_bitrate (struct info_win *w, const int bitrate)
