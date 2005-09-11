@@ -4,15 +4,24 @@
 #include "files.h"
 #include "keys.h"
 
+/* Interface's menus */
+enum iface_menu
+{
+	IFACE_MENU_PLIST,
+	IFACE_MENU_DIR
+};
+
 void windows_init ();
 void windows_end ();
 void iface_set_option_state (const char *name, const int value);
 void iface_set_mixer_name (const char *name);
 void iface_set_status (const char *msg);
-void iface_set_dir_content (const struct plist *files,
+void iface_set_dir_content (const enum iface_menu iface_menu,
+		const struct plist *files,
 		const struct file_list *dirs,
 		const struct file_list *playlists);
-void iface_update_dir_content (const struct plist *files,
+void iface_update_dir_content (const enum iface_menu iface_menu,
+		const struct plist *files,
 		const struct file_list *dirs,
 		const struct file_list *playlists);
 void iface_set_curr_item_title (const char *title);

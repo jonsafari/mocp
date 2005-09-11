@@ -41,6 +41,7 @@
 #include "keys.h"
 #include "options.h"
 #include "files.h"
+#include "decoder.h"
 
 #define INTERFACE_LOG	"mocp_client_log"
 
@@ -724,6 +725,42 @@ static void forward_playlist ()
 	send_item_to_srv (NULL);
 }
 
+static int recv_server_plist (struct plist *plist)
+{
+	int end_of_list = 0;
+	struct plist_item *item;
+	
+	send_int_to_srv (CMD_GET_PLIST);
+	if (get_int_from_srv() != EV_DATA)
+		fatal ("Server didn't send data while requesting for the"
+				" playlist.");
+
+	if (!get_int_from_srv()) {
+		debug ("There is no playlist");
+		return 0; /* there are no other clients with a playlist */
+	}
+
+	debug ("There is a playlist, getting...");
+
+	if (get_int_from_srv() != EV_DATA)
+		fatal ("Server didnt send EV_DATA when it was supposed to send"
+				" the playlist.");
+
+	plist_set_serial (plist, get_int_from_srv());
+
+	do {
+		item = recv_item_from_srv ();
+		if (item->file[0])
+			plist_add_from_item (plist, item);
+		else
+			end_of_list = 1;
+		plist_free_item_fields (item);
+		free (item);
+	} while (!end_of_list);
+
+	return 1;
+}
+
 /* Clear the playlist locally */
 static void clear_playlist ()
 {
@@ -899,9 +936,11 @@ static int go_to_dir (const char *dir, const int reload)
 		ask_for_tags (dir_plist, get_tags_setting());
 	
 	if (reload)
-		iface_update_dir_content (dir_plist, dirs, playlists);
+		iface_update_dir_content (IFACE_MENU_DIR, dir_plist, dirs,
+				playlists);
 	else
-		iface_set_dir_content (dir_plist, dirs, playlists);
+		iface_set_dir_content (IFACE_MENU_DIR, dir_plist, dirs,
+				playlists);
 	file_list_free (dirs);
 	file_list_free (playlists);
 	if (going_up)
@@ -1028,6 +1067,117 @@ static void enter_first_dir ()
 	first_run = 0;
 }
 
+/* Request the playlist from the server (given by another client). Make the
+ * titles. Return 0 if such a list doesn't exists. */
+static int get_server_playlist (struct plist *plist)
+{
+	iface_set_status ("Getting the playlist...");
+	debug ("Getting the playlist...");
+	if (recv_server_plist(plist)) {
+		ask_for_tags (plist, get_tags_setting());
+		switch_titles_tags (plist);
+		iface_set_status ("");
+		return 1;
+	}
+
+	iface_set_status ("");
+	
+	return 0;
+}
+
+/* Get the playlist from another client and use it as our playlist.
+ * Return 0 if there is no client with a playlist. */
+static int use_server_playlist ()
+{
+	if (get_server_playlist(playlist)) {
+		iface_set_dir_content (IFACE_MENU_PLIST, playlist, NULL, NULL);
+		return 1;
+	}
+
+	return 0;
+}
+
+/* Process file names passwd as arguments. */
+static void process_args (char **args, const int num, const int recursively)
+{
+	if (num == 1 && !recursively && !is_url(args[0])
+			&& isdir(args[0]) == 1) {
+		set_cwd (args[0]);
+		if (!go_to_dir(NULL, 0))
+			enter_first_dir ();
+		return;
+	}
+	
+	if (num == 1 && is_plist_file(args[0])) {
+		char path[PATH_MAX+1]; /* the directory where the playlist is */
+		char *slash;
+
+		if (args[0][0] == '/')
+			strcpy (path, "/");
+		else if (!getcwd(path, sizeof(path)))
+			interface_fatal ("Can't get CWD: %s", strerror(errno));
+
+		resolve_path (path, sizeof(path), args[0]);
+		slash = strrchr (path, '/');
+		assert (slash != NULL);
+		*slash = 0;
+		
+		iface_set_status ("Loading playlist...");
+		plist_load (playlist, args[0], path);
+		iface_set_status ("");
+	}
+	else {
+		int i;
+		char this_cwd[PATH_MAX];
+		
+		if (!getcwd(this_cwd, sizeof(cwd)))
+			interface_fatal ("Can't get CWD: %s.", strerror(errno));
+
+		for (i = 0; i < num; i++) {
+			char path[2*PATH_MAX];
+			int dir = !is_url(args[i]) && isdir(args[i]);
+
+			if (is_url(args[i])) {
+				strncpy(path, args[i], sizeof(path));
+				path[sizeof(path) - 1] = 0;
+			}
+			else {
+				if (args[i][0] == '/')
+					strcpy (path, "/");
+				else
+					strcpy (path, this_cwd);
+				resolve_path (path, sizeof(path), args[i]);
+			}
+
+			if (dir == 1)
+				read_directory_recurr (path, playlist, 1);
+			else if (!dir && (is_sound_file(path)
+						|| is_url(path)))
+				plist_add (playlist, path);
+		}
+	}
+
+	if (plist_count(playlist) && !options_get_int("SyncPlaylist")) {
+		switch_titles_file (playlist);
+		ask_for_tags (playlist, get_tags_setting());
+		iface_set_dir_content (IFACE_MENU_PLIST, playlist, NULL, NULL);
+		iface_switch_to_plist ();
+	}
+	else
+		enter_first_dir ();
+}
+
+/* Load the playlist from .moc directory. */
+static void load_playlist ()
+{
+	char *plist_file = create_file_name ("playlist.m3u");
+
+	iface_set_status ("Loading playlist...");
+	if (file_type(plist_file) == F_PLAYLIST)
+		plist_load (playlist, plist_file, cwd);
+	iface_set_status ("");
+}
+
 void init_interface (const int sock, const int logging, char **args,
 		const int arg_num, const int recursively)
 {
@@ -1063,13 +1213,13 @@ void init_interface (const int sock, const int logging, char **args,
 	signal (SIGWINCH, sig_winch);
 #endif
 	
-#if 0
+
 	if (arg_num) {
 		process_args (args, arg_num, recursively);
 	
 		if (plist_count(playlist) == 0) {
 			if (!options_get_int("SyncPlaylist")
-					|| !get_server_playlist(playlist))
+					|| !use_server_playlist())
 				load_playlist ();
 		}
 		else if (options_get_int("SyncPlaylist")) {
@@ -1083,6 +1233,8 @@ void init_interface (const int sock, const int logging, char **args,
 			plist_init (&tmp_plist);
 			get_server_playlist (&tmp_plist);
 
+			send_int_to_srv (CMD_SEND_EVENTS);
+
 			send_int_to_srv (CMD_LOCK);
 			send_int_to_srv (CMD_CLI_PLIST_CLEAR);
 
@@ -1092,28 +1244,30 @@ void init_interface (const int sock, const int logging, char **args,
 
 			change_srv_plist_serial ();
 		
-			set_iface_status_ref ("Notifying clients...");
-			send_all_items (playlist);
-			set_iface_status_ref (NULL);
+			iface_set_status ("Notifying clients...");
+			send_items_to_clients (playlist);
+			iface_set_status ("");
+			plist_clear (playlist);
+			waiting_for_plist_load = 1;
 			send_int_to_srv (CMD_UNLOCK);
 
 			/* Now enter_first_dir() should not go to the music
 			 * directory. */
 			option_set_int ("StartInMusicDir", 0);
+
 		}
+
 	}
 	else {
 		if (!options_get_int("SyncPlaylist")
-				|| !get_server_playlist(playlist))
+				|| !use_server_playlist())
 			load_playlist ();
+		send_int_to_srv (CMD_SEND_EVENTS);
 		enter_first_dir ();
 	}
-#else
-	send_int_to_srv (CMD_SEND_EVENTS);
-	enter_first_dir ();
+	
 	if (options_get_int("SyncPlaylist"))
 		send_int_to_srv (CMD_CAN_SEND_PLIST);
-#endif
 	
 	update_state ();
 }
