@@ -556,6 +556,22 @@ static void update_ctime ()
 	iface_set_curr_time (curr_file.curr_time);
 }
 
+/* Use new tags for current file title (for Internet streams). */
+static void update_curr_tags ()
+{
+	if (curr_file.file && is_url(curr_file.file)) {
+		if (curr_file.tags)
+			tags_free (curr_file.tags);
+		send_int_to_srv (CMD_GET_TAGS);
+		curr_file.tags = get_data_tags ();
+
+		if (curr_file.tags->title) {
+			curr_file.title = build_title (curr_file.tags);
+			iface_set_played_file_title (curr_file.title);
+		}
+	}
+}
+
 static void update_curr_file ()
 {
 	char *file;
@@ -756,22 +772,6 @@ static void event_plist_del (char *file)
 				" playlist.");
 }
 
-/* Use new tags for current file title (for Internet streams). */
-static void update_curr_tags ()
-{
-	if (curr_file.file && is_url(curr_file.file)) {
-		if (curr_file.tags)
-			tags_free (curr_file.tags);
-		send_int_to_srv (CMD_GET_TAGS);
-		curr_file.tags = get_data_tags ();
-
-		if (curr_file.tags->title) {
-			curr_file.title = build_title (curr_file.tags);
-			iface_set_played_file_title (curr_file.title);
-		}
-	}
-}
-
 /* Handle server event. */
 static void server_event (const int event, void *data)
 {
@@ -913,27 +913,104 @@ static int go_to_dir (const char *dir, const int reload)
 	return 1;
 }
 
+/* Make sure that the server's playlist has different serial from ours. */
+static void change_srv_plist_serial ()
+{
+	int serial;
+	
+	do {	
+		send_int_to_srv (CMD_GET_SERIAL);
+		serial = get_data_int ();
+	 } while (serial == plist_get_serial(playlist)
+			|| serial == plist_get_serial(dir_plist));
+
+	send_int_to_srv (CMD_PLIST_SET_SERIAL);
+	send_int_to_srv (serial);
+}
+
+static void enter_first_dir ();
+
+/* Switch between the directory view and the playlist. */
+static void toggle_plist ()
+{
+	int num;
+	
+	if (iface_in_plist_menu()) {
+		if (!cwd[0])
+			
+			/* we were at the playlist from the startup */
+			enter_first_dir ();
+		else
+			iface_switch_to_dir ();
+	}
+	else if ((num = plist_count(playlist)))
+		iface_switch_to_plist ();
+	else
+		error ("The playlist is empty.");
+}
+
+/* Load the playlist file and switch the menu to it. Return 1 on success. */
+static int go_to_playlist (const char *file)
+{
+	if (plist_count(playlist)) {
+		error ("Please clear the playlist, because "
+				"I'm not sure you want to do this.");
+		return 0;
+	}
+
+	plist_clear (playlist);
+
+	iface_set_status ("Loading playlist...");
+	if (plist_load(playlist, file, cwd)) {
+	
+		if (options_get_int("SyncPlaylist")) {
+			send_int_to_srv (CMD_LOCK);
+			change_srv_plist_serial ();
+			send_int_to_srv (CMD_CLI_PLIST_CLEAR);
+			iface_set_status ("Notifying clients...");
+			send_items_to_clients (playlist);
+			iface_set_status ("");
+			waiting_for_plist_load = 1;
+			send_int_to_srv (CMD_UNLOCK);
+
+			/* We'll use the playlist received from the
+			 * server to be synchronized with other clients
+			 */
+			plist_clear (playlist);
+		}
+		else
+			toggle_plist ();
+
+		interface_message ("Playlist loaded.");
+	}
+	else {
+		interface_message ("The playlist is empty");
+		iface_set_status ("");
+		return 0;
+	}
+
+	return 1;
+}
+
 /* Enter to the initial directory or toggle to the initial playlist (only
  * if the function has not been called yet). */
 static void enter_first_dir ()
 {
 	static int first_run = 1;
 	
-#if 0
 	if (options_get_int("StartInMusicDir")) {
 		char *music_dir;
 
 		if ((music_dir = options_get_str("MusicDir"))) {
 			set_cwd (music_dir);
-			if (first_run && file_type(cwd) == F_PLAYLIST
+			if (first_run && file_type(music_dir) == F_PLAYLIST
 					&& plist_count(playlist) == 0
-					&& plist_load(playlist, cwd, NULL)) {
-				toggle_plist ();
+					&& go_to_playlist(music_dir)) {
 				cwd[0] = 0;
 				first_run = 0;
-				return;
 			}
-			else if (file_type(cwd) == F_DIR && go_to_dir(NULL)) {
+			else if (file_type(cwd) == F_DIR
+					&& go_to_dir(NULL, 0)) {
 				first_run = 0;
 				return;
 			}
@@ -941,7 +1018,7 @@ static void enter_first_dir ()
 		else
 			error ("MusicDir is not set");
 	}
-#endif
+	
 	if (!(read_last_dir() && go_to_dir(NULL, 0))) {
 		set_start_dir ();
 		if (!go_to_dir(NULL, 0))
@@ -1032,10 +1109,12 @@ void init_interface (const int sock, const int logging, char **args,
 		enter_first_dir ();
 	}
 #else
+	send_int_to_srv (CMD_SEND_EVENTS);
 	enter_first_dir ();
+	if (options_get_int("SyncPlaylist"))
+		send_int_to_srv (CMD_CAN_SEND_PLIST);
 #endif
 	
-	send_int_to_srv (CMD_SEND_EVENTS);
 	update_state ();
 }
 
@@ -1138,83 +1217,6 @@ static void play_it (const char *file)
 	send_str_to_srv (file);
 
 	send_int_to_srv (CMD_UNLOCK);
-}
-
-/* Switch between the directory view and the playlist. */
-static void toggle_plist ()
-{
-	int num;
-	
-	if (iface_in_plist_menu()) {
-		if (!cwd[0])
-			
-			/* we were at the playlist from the startup */
-			enter_first_dir ();
-		else
-			iface_switch_to_dir ();
-	}
-	else if ((num = plist_count(playlist)))
-		iface_switch_to_plist ();
-	else
-		error ("The playlist is empty.");
-}
-
-/* Make sure that the server's playlist has different serial from ours. */
-static void change_srv_plist_serial ()
-{
-	int serial;
-	
-	do {	
-		send_int_to_srv (CMD_GET_SERIAL);
-		serial = get_data_int ();
-	 } while (serial == plist_get_serial(playlist)
-			|| serial == plist_get_serial(dir_plist));
-
-	send_int_to_srv (CMD_PLIST_SET_SERIAL);
-	send_int_to_srv (serial);
-}
-
-/* Load the playlist file and switch the menu to it. Return 1 on success. */
-static int go_to_playlist (const char *file)
-{
-	if (plist_count(playlist)) {
-		error ("Please clear the playlist, because "
-				"I'm not sure you want to do this.");
-		return 0;
-	}
-
-	plist_clear (playlist);
-
-	iface_set_status ("Loading playlist...");
-	if (plist_load(playlist, file, cwd)) {
-	
-		if (options_get_int("SyncPlaylist")) {
-			send_int_to_srv (CMD_LOCK);
-			change_srv_plist_serial ();
-			send_int_to_srv (CMD_CLI_PLIST_CLEAR);
-			iface_set_status ("Notifying clients...");
-			send_items_to_clients (playlist);
-			iface_set_status ("");
-			waiting_for_plist_load = 1;
-			send_int_to_srv (CMD_UNLOCK);
-
-			/* We'll use the playlist received from the
-			 * server to be synchronized with other clients
-			 */
-			plist_clear (playlist);
-		}
-		else
-			toggle_plist ();
-
-		interface_message ("Playlist loaded.");
-	}
-	else {
-		interface_message ("The playlist is empty");
-		iface_set_status ("");
-		return 0;
-	}
-
-	return 1;
 }
 
 /* Action when the user selected a file. */
@@ -1849,6 +1851,8 @@ void interface_end ()
 	
 	windows_end ();
 	keys_cleanup ();
+
+	/* TODO: save last dir, save playlist */
 	
 	plist_free (dir_plist);
 	plist_free (playlist);
