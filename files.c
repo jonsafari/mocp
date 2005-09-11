@@ -153,7 +153,7 @@ void switch_titles_file (struct plist *plist)
 		
 	for (i = 0; i < plist->num; i++)
 		if (!plist_deleted(plist, i)) {
-			if (!plist->items[i].title_tags)
+			if (!plist->items[i].title_file)
 				make_file_title (plist, i, hide_extension);
 			assert (plist->items[i].title_file != NULL);
 			plist->items[i].title = plist->items[i].title_file;

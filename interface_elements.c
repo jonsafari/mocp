@@ -634,10 +634,15 @@ static void main_win_draw (const struct main_win *w)
 }
 
 static void main_win_set_dir_content (struct main_win *w,
-		const struct plist *files,
+		const enum iface_menu iface_menu, const struct plist *files,
 		const struct file_list *dirs, const struct file_list *playlists)
 {
-	struct side_menu *m = &w->menus[w->selected_menu];
+	struct side_menu *m;
+	
+	assert (w != NULL);
+	
+	m = find_side_menu (w, iface_menu == IFACE_MENU_DIR ? MENU_DIR
+			: MENU_PLAYLIST);
 
 	side_menu_make_list_content (m, files, dirs, playlists);
 	if (w->curr_file)
@@ -646,11 +651,16 @@ static void main_win_set_dir_content (struct main_win *w,
 }
 
 static void main_win_update_dir_content (struct main_win *w,
-		const struct plist *files,
+		const enum iface_menu iface_menu, const struct plist *files,
 		const struct file_list *dirs, const struct file_list *playlists)
 {
-	struct side_menu *m = &w->menus[w->selected_menu];
+	struct side_menu *m;
 	struct side_menu_state ms;
+
+	assert (w != NULL);
+
+	m = find_side_menu (w, iface_menu == IFACE_MENU_DIR ? MENU_DIR
+			: MENU_PLAYLIST);
 
 	side_menu_get_state (m, &ms);
 	side_menu_make_list_content (m, files, dirs, playlists);
@@ -1503,10 +1513,12 @@ void iface_set_status (const char *msg)
 
 /* Change the content of the directory menu to these files, directories, and
  * playlists. */
-void iface_set_dir_content (const struct plist *files,
-		const struct file_list *dirs, const struct file_list *playlists)
+void iface_set_dir_content (const enum iface_menu iface_menu,
+		const struct plist *files, const struct file_list *dirs,
+		const struct file_list *playlists)
 {
-	main_win_set_dir_content (&main_win, files, dirs, playlists);
+	main_win_set_dir_content (&main_win, iface_menu, files, dirs,
+			playlists);
 	info_win_set_files_time (&info_win, main_win_get_files_time(&main_win),
 			main_win_is_time_for_all(&main_win));
 	wrefresh (info_win.win);
@@ -1518,11 +1530,12 @@ void iface_set_dir_content (const struct plist *files,
 /* Like iface_set_dir_content(), but before replacing the menu content, save
  * the menu state (selected file, view position) and restore it after making
  * a new menu. */
-void iface_update_dir_content (const struct plist *files,
-		const struct file_list *dirs,
+void iface_update_dir_content (const enum iface_menu iface_menu,
+		const struct plist *files, const struct file_list *dirs,
 		const struct file_list *playlists)
 {
-	main_win_update_dir_content (&main_win, files, dirs, playlists);
+	main_win_update_dir_content (&main_win, iface_menu, files, dirs,
+			playlists);
 	info_win_set_files_time (&info_win, main_win_get_files_time(&main_win),
 			main_win_is_time_for_all(&main_win));
 	wrefresh (info_win.win);
