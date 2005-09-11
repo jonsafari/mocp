@@ -44,5 +44,6 @@ void iface_resize ();
 void iface_refresh ();
 void iface_update_show_time ();
 void iface_update_show_format ();
+void iface_clear_plist ();
 
 #endif

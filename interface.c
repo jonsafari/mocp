@@ -636,6 +636,37 @@ static void update_error ()
 	free (err);
 }
 
+/* Send the playlist to the server to be forwarded to another client. */
+static void forward_playlist ()
+{
+	int i;
+
+	debug ("Forwarding the playlist...");
+	
+	send_int_to_srv (CMD_SEND_PLIST);
+	send_int_to_srv (plist_get_serial(playlist));
+
+	for (i = 0; i < playlist->num; i++)
+		if (!plist_deleted(playlist, i))
+			send_item_to_srv (&playlist->items[i]);
+
+	send_item_to_srv (NULL);
+}
+
+/* Clear the playlist locally */
+static void clear_playlist ()
+{
+	if (iface_in_plist_menu())
+		iface_switch_to_dir ();
+	plist_clear (playlist);
+	iface_clear_plist ();
+	
+	/* TODO:
+	if (!waiting_for_plist_load)
+		interface_message ("The playlist was cleared.");*/
+	iface_set_status ("");
+}
+
 /* Handle server event. */
 static void server_event (const int event, void *data)
 {
@@ -670,22 +701,20 @@ static void server_event (const int event, void *data)
 		case EV_OPTIONS:
 			get_server_options ();
 			break;
-/*		case EV_SEND_PLIST:
+		case EV_SEND_PLIST:
 			forward_playlist ();
-			break;*/
+			break;
 		case EV_PLIST_ADD:
 			if (options_get_int("SyncPlaylist"))
 				event_plist_add ((struct plist_item *)data);
 			plist_free_item_fields (data);
 			free (data);
 			break;
-/*		case EV_PLIST_CLEAR:
-			if (options_get_int("SyncPlaylist")) {
+		case EV_PLIST_CLEAR:
+			if (options_get_int("SyncPlaylist"))
 				clear_playlist ();
-				update_menu ();
-			}
 			break;
-		case EV_PLIST_DEL:
+/*		case EV_PLIST_DEL:
 			if (options_get_int("SyncPlaylist")) {
 				event_plist_del ((char *)data);
 				update_menu ();
@@ -707,7 +736,7 @@ static void server_event (const int event, void *data)
 			free_tag_ev_data ((struct tag_ev_response *)data);
 			break;
 		default:
-			//fatal ("Unknown event: 0x%02x", event);
+			fatal ("Unknown event: 0x%02x", event);
 	}
 }
 
@@ -1263,6 +1292,34 @@ static void reread_dir ()
 	go_to_dir (NULL, 1);
 }
 
+/* Make sure that the server's playlist has different serial from ours. */
+static void change_srv_plist_serial ()
+{
+	int serial;
+	
+	do {	
+		send_int_to_srv (CMD_GET_SERIAL);
+		serial = get_data_int ();
+	 } while (serial == plist_get_serial(playlist)
+			|| serial == plist_get_serial(dir_plist));
+
+	send_int_to_srv (CMD_PLIST_SET_SERIAL);
+	send_int_to_srv (serial);
+}
+
+/* Clear the playlist on user request. */
+static void cmd_clear_playlist ()
+{
+	if (options_get_int("SyncPlaylist")) {
+		send_int_to_srv (CMD_LOCK);
+		send_int_to_srv (CMD_CLI_PLIST_CLEAR);
+		change_srv_plist_serial ();
+		send_int_to_srv (CMD_UNLOCK);
+	}
+	else
+		clear_playlist ();
+}
+
 /* Handle key */
 static void menu_key (const int ch)
 {
@@ -1357,12 +1414,9 @@ static void menu_key (const int ch)
 			case KEY_CMD_PLIST_ADD_FILE:
 				add_file_plist ();
 				break;
-#if 0
 			case KEY_CMD_PLIST_CLEAR:
 				cmd_clear_playlist ();
-				do_update_menu = 1;
 				break;
-#endif
 			case KEY_CMD_PLIST_ADD_DIR:
 				add_dir_plist ();
 				break;
@@ -1575,7 +1629,7 @@ static void menu_key (const int ch)
 				send_int_to_srv (CMD_TOGGLE_MIXER_CHANNEL);
 				break;
 			default:
-				//abort ();
+				abort ();
 		}
 	}
 }
@@ -1642,7 +1696,8 @@ void interface_loop ()
 				clear_interrupt ();
 				
 				menu_key (ch);
-				dequeue_events ();
+				if (!want_quit)
+					dequeue_events ();
 			}
 
 			if (!want_quit) {
@@ -1655,7 +1710,8 @@ void interface_loop ()
 		else if (user_wants_interrupt())
 			/*handle_interrupt ()*/;
 
-		update_mixer_value ();
+		if (!want_quit)
+			update_mixer_value ();
 	}
 }
 
