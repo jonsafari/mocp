@@ -140,12 +140,10 @@ static int plist_load_m3u (struct plist *plist, const char *fname,
 			after_extinf = 1;
 			last_added = plist_add (plist, NULL);
 			plist_set_title_tags (plist, last_added, comma + 1);
-			plist->items[last_added].tags = tags_new ();
-			if (*time_text) {
-				plist->items[last_added].tags->time = time_sec;
-				plist->items[last_added].tags->filled
-					|= TAGS_TIME;
-			}
+			
+			if (*time_text)
+				update_item_time (&plist->items[last_added],
+						time_sec);
 		}
 		else if (line[0] != '#') {
 			char path[2*PATH_MAX];
