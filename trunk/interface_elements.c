@@ -291,6 +291,22 @@ static void add_to_menu (struct menu *menu, const struct plist *plist,
 	menu_item_set_format (menu, added, file_type_name(item->file));
 }
 
+static void side_menu_clear (struct side_menu *m)
+{
+	assert (m != NULL);
+	assert (m->visible);
+	assert (m->type == MENU_DIR || m->type == MENU_PLAYLIST);
+	assert (m->menu.list != NULL);
+
+	menu_free (m->menu.list);
+	m->menu.list = menu_new (m->win, m->posx, m->posy, m->width, m->height);
+	
+	menu_set_show_format (m->menu.list, options_get_int("ShowFormat"));
+	menu_set_show_time (m->menu.list,
+			strcasecmp(options_get_str("ShowTime"), "no"));
+	menu_set_info_attr (m->menu.list, get_color(CLR_MENU_ITEM_INFO));
+}
+
 /* Fill the directory or playlist side menu with this content. */
 static void side_menu_make_list_content (struct side_menu *m,
 		const struct plist *files, const struct file_list *dirs,
@@ -303,8 +319,7 @@ static void side_menu_make_list_content (struct side_menu *m,
 	assert (m->type == MENU_DIR || m->type == MENU_PLAYLIST);
 	assert (m->menu.list != NULL);
 
-	menu_free (m->menu.list);
-	m->menu.list = menu_new (m->win, m->posx, m->posy, m->width, m->height);
+	side_menu_clear (m);
 
 	added = menu_add (m->menu.list, "../", F_DIR, "..");
 	menu_item_set_attr_normal (m->menu.list, added,
@@ -346,11 +361,6 @@ static void side_menu_make_list_content (struct side_menu *m,
 	}
 
 	m->total_time = plist_total_time (files, &m->total_time_for_all);
-	
-	menu_set_show_format (m->menu.list, options_get_int("ShowFormat"));
-	menu_set_show_time (m->menu.list,
-			strcasecmp(options_get_str("ShowTime"), "no"));
-	menu_set_info_attr (m->menu.list, get_color(CLR_MENU_ITEM_INFO));
 }
 
 static void clear_area (WINDOW *w, const int posx, const int posy,
@@ -824,6 +834,17 @@ static void main_win_update_show_format (struct main_win *w)
 			side_menu_update_show_format (&w->menus[i]);
 	}
 
+	main_win_draw (w);
+}
+
+static void main_win_clear_plist (struct main_win *w)
+{
+	struct side_menu *m;
+
+	assert (w != NULL);
+
+	m = find_side_menu (w, MENU_PLAYLIST);
+	side_menu_clear (m);
 	main_win_draw (w);
 }
 
@@ -1738,5 +1759,11 @@ void iface_update_show_time ()
 void iface_update_show_format ()
 {
 	main_win_update_show_format (&main_win);
+	wrefresh (main_win.win);
+}
+
+void iface_clear_plist ()
+{
+	main_win_clear_plist (&main_win);
 	wrefresh (main_win.win);
 }
