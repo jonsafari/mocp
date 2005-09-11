@@ -625,6 +625,17 @@ static void event_plist_add (const struct plist_item *item)
 	}
 }
 
+/* Get error message from the server and show it. */
+static void update_error ()
+{
+	char *err;
+	
+	send_int_to_srv (CMD_GET_ERROR);
+	err = get_data_str ();
+	error (err);
+	free (err);
+}
+
 /* Handle server event. */
 static void server_event (const int event, void *data)
 {
@@ -653,15 +664,13 @@ static void server_event (const int event, void *data)
 		case EV_CHANNELS:
 			update_channels ();
 			break;
-/*		case EV_SRV_ERROR:
+		case EV_SRV_ERROR:
 			update_error ();
 			break;
 		case EV_OPTIONS:
 			get_server_options ();
-			update_info_win ();
-			wrefresh (info_win);
 			break;
-		case EV_SEND_PLIST:
+/*		case EV_SEND_PLIST:
 			forward_playlist ();
 			break;*/
 		case EV_PLIST_ADD:
