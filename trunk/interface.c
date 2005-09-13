@@ -478,7 +478,7 @@ static void update_item_tags (struct plist *plist, const int num,
 	/* Get the time from the old tags if it's not presend in the new tags.
 	 * FIXME: There is risk, that the file was modified and the time
 	 * from the old tags is not valid. */
-	if (!(tags->filled & TAGS_TIME)) {
+	if (!(tags->filled & TAGS_TIME) && old_tags && old_tags->time != -1) {
 		plist->items[num].tags->filled |= TAGS_TIME;
 		plist->items[num].tags->time = old_tags->time;
 	}	
