@@ -150,7 +150,7 @@ do and what functions you may use to achieve that.
 \li \ref decoder_error_funcs
 
 For debugging purposes you may use 2 macros: debug() and logit() from log.h The
-first one does nothing if you don't add #define DEBUG before including log.h,
+first one does nothing if you don't define DEBUG before including log.h,
 and if you do it, works like logit(). logit() works like printf(), but it prints
 to the log file when --debug command line option is used and does noting
 without this option. Also, logit() includes time and source file name with the
