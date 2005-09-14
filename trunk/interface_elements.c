@@ -1196,6 +1196,8 @@ static void info_win_set_curr_time (struct info_win *w, const int time)
 	w->curr_time = time;
 	if (w->total_time > 0 && w->curr_time >= 0)
 		bar_set_fill (&w->time_bar, w->curr_time * 100 / w->total_time);
+	else
+		bar_set_fill (&w->time_bar, 0);
 	
 	info_win_draw_time (w);
 }
@@ -1209,6 +1211,8 @@ static void info_win_set_total_time (struct info_win *w, const int time)
 	
 	if (w->total_time > 0 && w->curr_time >= 0)
 		bar_set_fill (&w->time_bar, w->curr_time * 100 / w->total_time);
+	else
+		bar_set_fill (&w->time_bar, 0);
 
 	info_win_draw_time (w);
 }
