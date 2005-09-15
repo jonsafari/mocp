@@ -232,12 +232,11 @@ static void tags_cache_read_add (struct tags_cache *c, const int client_id,
 	 * we must read different tags (TAGS_*) or the tags are outdated */
 	if (!rb_is_null(x = rb_search(&c->search_tree, file))) {
 		node = (struct cache_list_node *)x->data;
-		
+			
 		if (node->mod_time != get_mtime(file)) {
 
 			/* outdated tags - remove them and reread */
 			rb_delete (&c->search_tree, file);
-			node = NULL;
 			tags_free (node->tags);
 			tags = tags_new ();
 
