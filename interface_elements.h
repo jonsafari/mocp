@@ -11,6 +11,15 @@ enum iface_menu
 	IFACE_MENU_DIR
 };
 
+enum entry_type
+{
+	ENTRY_SEARCH,
+	ENTRY_PLIST_SAVE,
+	ENTRY_GO_DIR,
+	ENTRY_GO_URL,
+	ENTRY_PLIST_OVERWRITE
+};
+
 void windows_init ();
 void windows_end ();
 void iface_set_option_state (const char *name, const int value);
@@ -55,5 +64,13 @@ void iface_update_show_time ();
 void iface_update_show_format ();
 void iface_clear_plist ();
 void iface_del_plist_item (const char *file);
+enum entry_type iface_get_entry_type ();
+int iface_in_entry ();
+void iface_make_entry (const enum entry_type type);
+void iface_entry_handle_key (const int ch);
+void iface_entry_set_text (const char *text);
+char *iface_entry_get_text ();
+void iface_entry_history_add ();
+void iface_entry_disable ();
 
 #endif

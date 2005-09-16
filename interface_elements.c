@@ -38,8 +38,9 @@
 #include "playlist.h"
 #include "protocol.h"
 
-#define STARTUP_MESSAGE	"The interface code is being rewritten and is not " \
-	"currently usable."
+#define STARTUP_MESSAGE	"The interface is being rewritten and thus is " \
+	"not fully functional."
+#define HISTORY_SIZE	50
 
 /* TODO:
  * - xterm title (state, title of the song)
@@ -103,6 +104,29 @@ struct bar
 	int empty_color;	/* color of the empty part */
 };
 
+/* History for entries' values. */
+struct entry_history
+{
+	char *items[HISTORY_SIZE];
+	int num;	/* number of items */
+};
+
+/* An input area where a user can type text to enter a file name etc. */
+struct entry
+{
+	enum entry_type type;
+	int width;		/* width of the entry part for typing */
+	char text[512];		/* the text the user types */
+	char title[32];		/* displayed title */
+	char *file;		/* optional: file associated with the entry */
+				/* TODO: is it needed? */
+	int cur_pos;		/* cursor position */
+	int display_from;	/* displaying from this char */
+	struct entry_history *history;	/* history to use with this entry or
+					   NULL is history is not used */
+	int history_pos;	/* current position in the history */
+};
+
 static struct info_win
 {
 	WINDOW *win;
@@ -111,6 +135,12 @@ static struct info_win
 	int msg_is_error; /* is the above message an error? */
 	time_t msg_timeout; /* how many seconds remain before the message
 				disapperars */
+
+	struct entry entry;
+	int in_entry;		/* are we using the entry (is the above
+				   structure initialized)?  */
+	struct entry_history urls_history;
+	struct entry_history dirs_history;
 	
 	/* true/false options values */
 	int state_stereo;
@@ -152,6 +182,333 @@ static struct
 	chtype rtee;	/* right tee */
 	chtype ltee;	/* left tee */
 } lines;
+
+static void entry_history_init (struct entry_history *h)
+{
+	assert (h != NULL);
+
+	h->num = 0;
+}
+
+static void entry_history_add (struct entry_history *h,	const char *text)
+{
+	assert (h != NULL);
+	assert (text != NULL);
+
+	if (h->num < HISTORY_SIZE)
+		h->items[h->num++] = xstrdup (text);
+	else {
+		free (h->items[0]);
+		memmove (h->items, h->items + 1,
+				(HISTORY_SIZE - 1) * sizeof(char *));
+		h->items[h->num] = xstrdup (text);
+	}
+}
+
+static void entry_history_clear (struct entry_history *h)
+{
+	int i;
+	
+	assert (h != NULL);
+
+	for (i = 0; i < h->num; i++)
+		free (h->items[i]);
+
+	h->num = 0;
+}
+
+static int entry_history_nitems (const struct entry_history *h)
+{
+	assert (h != NULL);
+
+	return h->num;
+}
+
+static char *entry_history_get (const struct entry_history *h, const int num)
+{
+	assert (h != NULL);
+	assert (num >= 0 && num < h->num);
+
+	return xstrdup (h->items[num]);
+}
+
+/* Draw the entry. Use this function at the end of screen drawing, because
+ * Set the cursor position in the right place. */
+static void entry_draw (const struct entry *e, WINDOW *w, const int posx,
+		const int posy)
+{
+	char text[sizeof(e->text)];
+	
+	assert (e != NULL);
+	assert (w != NULL);
+	assert (posx >= 0);
+	assert (posy >= 0);
+	
+	wmove (w, posy, posx);
+	wattrset (w, get_color(CLR_ENTRY_TITLE));
+	wprintw (w, "%s:", e->title);
+	
+	wattrset (w, get_color(CLR_ENTRY));
+
+	strncpy (text, e->text + e->display_from, e->width);
+	text[e->width] = 0;
+	
+	wprintw (w, " %-*s", e->width, text);
+	wmove (w, posy, e->cur_pos - e->display_from + strlen(e->title) + posx
+			+ 2);
+}
+
+static void entry_init (struct entry *e, const enum entry_type type,
+		const int width, struct entry_history *history)
+{
+	const char *title;
+	
+	assert (e != NULL);
+
+	switch (type) {
+		case ENTRY_SEARCH:
+			title = "SEARCH";
+			break;
+		case ENTRY_PLIST_SAVE:
+			title = "SAVE PLAYLIST";
+			break;
+		case ENTRY_GO_DIR:
+			title = "GO";
+			break;
+		case ENTRY_GO_URL:
+			title = "URL";
+			break;
+		case ENTRY_PLIST_OVERWRITE:
+			title = "File exists, overwrite?";
+			break;
+		default:
+			abort ();
+	}
+	
+	e->type = type;
+	e->text[0] = 0;
+	e->file = NULL;
+	strcpy (e->title, title);
+	e->width = width - strlen(title);
+	e->cur_pos = 0;
+	e->display_from = 0;
+	e->history = history;
+
+	if (history)
+		e->history_pos = history->num;
+}
+
+static enum entry_type entry_get_type (const struct entry *e)
+{
+	assert (e != NULL);
+
+	return e->type;
+}
+
+/* Set the entry text. Move the cursor to the end. */
+static void entry_set_text (struct entry *e, const char *text)
+{
+	int len;
+	
+	assert (e != NULL);
+
+	strncpy (e->text, text, sizeof(e->text));
+	e->text[sizeof(e->text)-1] = 0;
+	len = strlen (e->text);
+	e->cur_pos = len;
+	
+	if (e->cur_pos - e->display_from > e->width)
+		e->display_from = len - e->width;
+}
+
+/* Add a char to the entry where the cursor is placed. */
+static void entry_add_char (struct entry *e, const char c)
+{
+	unsigned int len = strlen(e->text);
+
+	assert (e != NULL);
+
+	if (len < sizeof(e->text) - 1) {
+		memmove (e->text + e->cur_pos + 1,
+				e->text + e->cur_pos,
+				len - e->cur_pos + 1);
+		
+		e->text[e->cur_pos] = c;
+		e->cur_pos++;
+
+		if (e->cur_pos - e->display_from > e->width)
+			e->display_from++;
+	}
+}
+
+/* Delete the char before the cursor. */
+static void entry_back_space (struct entry *e)
+{
+	assert (e != NULL);
+
+	if (e->cur_pos > 0) {
+		int len = strlen (e->text);
+		
+		memmove (e->text + e->cur_pos - 1,
+				e->text + e->cur_pos,
+				len - e->cur_pos);
+		e->text[--len] = 0;
+		e->cur_pos--;
+
+		if (e->cur_pos < e->display_from)
+			e->display_from--;
+
+		/* Can we show more after deleting the char? */
+		if (e->display_from > 0
+				&& len - e->display_from < e->width)
+			e->display_from--;
+	}
+}
+
+/* Delete the char under the cursor. */
+static void entry_del_char (struct entry *e)
+{
+	int len;
+
+	assert (e != NULL);
+
+	len = strlen (e->text);
+
+	if (e->cur_pos < len) {
+		len--;
+		memmove (e->text + e->cur_pos,
+				e->text + e->cur_pos + 1,
+				len - e->cur_pos);
+		e->text[len] = 0;
+		
+		/* Can we show more after deleting the char? */
+		if (e->display_from > 0
+				&& len - e->display_from < e->width)
+			e->display_from--;
+	
+	}
+}
+
+/* Move the cursor one char left. */
+static void entry_curs_left (struct entry *e)
+{
+	assert (e != NULL);
+
+	if (e->cur_pos > 0) {
+		e->cur_pos--;
+
+		if (e->cur_pos < e->display_from)
+			e->display_from--;
+	}
+}
+
+/* Move the cursor one char right. */
+static void entry_curs_right (struct entry *e)
+{
+	int len;
+	
+	assert (e != NULL);
+
+	len = strlen (e->text);
+
+	if (e->cur_pos < len) {
+		e->cur_pos++;
+
+		if (e->cur_pos > e->width + e->display_from)
+			e->display_from++;
+	}
+}
+
+/* Move the cursor to the end of the entry text. */
+static void entry_end (struct entry *e)
+{
+	int len;
+	
+	assert (e != NULL);
+
+	len = strlen (e->text);
+
+	e->cur_pos = len;
+	
+	if (len > e->width)
+		e->display_from = len - e->width;
+	else
+		e->display_from = 0;
+}
+
+/* Move the cursor to the beginning of the entry field. */
+static void entry_home (struct entry *e)
+{
+	assert (e != NULL);
+
+	e->display_from = 0;
+	e->cur_pos = 0;
+}
+
+static void entry_resize (struct entry *e)
+{
+	assert (e != NULL);
+
+	// TODO
+}
+
+/* Copy the previous history item to the entry if available, move the entry
+ * history position down. */
+static void entry_set_history_up (struct entry *e)
+{
+	assert (e != NULL);
+	assert (e->history != NULL);
+
+	if (e->history_pos > 0) {
+		char *t;
+		
+		e->history_pos--;
+		t = entry_history_get (e->history, e->history_pos);
+		entry_set_text (e, t);
+		free (t);
+		e->cur_pos = 0;
+	}
+}
+
+/* Copy the next history item to the entry if available, move the entry history
+ * position down. */
+static void entry_set_history_down (struct entry *e)
+{
+	assert (e != NULL);
+	assert (e->history != NULL);
+
+	if (e->history_pos < entry_history_nitems(e->history) - 1) {
+		char *t;
+		
+		e->history_pos++;
+		t = entry_history_get (e->history, e->history_pos);
+		entry_set_text (e, t);
+		free (t);
+		e->cur_pos = 0;
+	}
+}
+static void entry_destroy (struct entry *e)
+{
+	assert (e != NULL);
+
+	if (e->file)
+		free (e->file);
+}
+
+static char *entry_get_text (const struct entry *e)
+{
+	assert (e != NULL);
+
+	return xstrdup (e->text);
+}
+
+static void entry_add_text_to_history (struct entry *e)
+{
+	assert (e != NULL);
+	assert (e->history);
+
+	entry_history_add (e->history, e->text);
+}
 
 static void side_menu_init (struct side_menu *m, const enum side_menu_type type,
 		WINDOW *parent_win, const int height, const int width,
@@ -1056,6 +1413,10 @@ static void info_win_init (struct info_win *w)
 
 	w->title = NULL;
 	w->status_msg[0] = 0;
+	
+	w->in_entry = 0;
+	entry_history_init (&w->urls_history);
+	entry_history_init (&w->dirs_history);
 
 	w->msg = xstrdup (STARTUP_MESSAGE);
 	w->msg_is_error = 0;
@@ -1075,6 +1436,11 @@ static void info_win_destroy (struct info_win *w)
 		delwin (w->win);
 	if (w->msg)
 		free (w->msg);
+	if (w->in_entry)
+		entry_destroy (&w->entry);
+
+	entry_history_clear (&w->urls_history);
+	entry_history_clear (&w->dirs_history);
 }
 
 static void info_win_set_mixer_name (struct info_win *w, const char *name)
@@ -1083,16 +1449,19 @@ static void info_win_set_mixer_name (struct info_win *w, const char *name)
 	assert (name != NULL);
 	
 	bar_set_title (&w->mixer_bar, name);
-	bar_draw (&w->mixer_bar, w->win, COLS - 37, 0);
+	if (!w->in_entry)
+		bar_draw (&w->mixer_bar, w->win, COLS - 37, 0);
 }
 
 static void info_win_draw_status (const struct info_win *w)
 {
 	assert (w != NULL);
 
-	wattrset (w->win, get_color(CLR_STATUS));
-	mvwprintw (w->win, 0, 6, "%-*s", sizeof(w->status_msg) - 1,
-			w->status_msg);
+	if (!w->in_entry) {
+		wattrset (w->win, get_color(CLR_STATUS));
+		mvwprintw (w->win, 0, 6, "%-*s", sizeof(w->status_msg) - 1,
+				w->status_msg);
+	}
 }
 
 static void info_win_set_status (struct info_win *w, const char *msg)
@@ -1274,7 +1643,8 @@ static void info_win_set_mixer_value (struct info_win *w, const int value)
 	assert (value >= 0 && value <= 100);
 
 	bar_set_fill (&w->mixer_bar, value);
-	bar_draw (&w->mixer_bar, w->win, COLS - 37, 0);
+	if (!w->in_entry)
+		bar_draw (&w->mixer_bar, w->win, COLS - 37, 0);
 }
 
 /* Draw a switch that is turned on or off in form of [TITLE]. */
@@ -1319,6 +1689,21 @@ static void info_win_set_channels (struct info_win *w, const int channels)
 	info_win_draw_options_state (w);
 }
 
+static int info_win_in_entry (const struct info_win *w)
+{
+	assert (w != NULL);
+
+	return w->in_entry;
+}
+
+static enum entry_type info_win_get_entry_type (const struct info_win *w)
+{
+	assert (w != NULL);
+	assert (w->in_entry);
+
+	return entry_get_type (&w->entry);
+}
+
 static void info_win_set_option_state (struct info_win *w, const char *name,
 		const int value)
 {
@@ -1360,15 +1745,17 @@ static void sec_to_min_plist (char *buff, const int seconds)
 
 static void info_win_draw_files_time (const struct info_win *w)
 {
-	char buf[10];
-	
 	assert (w != NULL);
 
-	sec_to_min_plist (buf, w->plist_time);
-	wmove (w->win, 0, COLS - 12);
-	wattrset (w->win, get_color(CLR_PLIST_TIME));
-	waddch (w->win, w->plist_time_for_all ? ' ' : '>');
-	waddstr (w->win, buf);
+	if (!w->in_entry) {
+		char buf[10];
+
+		sec_to_min_plist (buf, w->plist_time);
+		wmove (w->win, 0, COLS - 12);
+		wattrset (w->win, get_color(CLR_PLIST_TIME));
+		waddch (w->win, w->plist_time_for_all ? ' ' : '>');
+		waddstr (w->win, buf);
+	}
 }
 
 /* Set the total time for files in the displayed menu. If time_for_all
@@ -1432,6 +1819,91 @@ static void info_win_draw_static_elements (const struct info_win *w)
 	waddstr (w->win, "KHz     Kbps");
 }
 
+static void info_win_make_entry (struct info_win *w, const enum entry_type type)
+{
+	struct entry_history *history;
+	
+	assert (w != NULL);
+	assert (!w->in_entry);
+
+	switch (type) {
+		case ENTRY_GO_DIR:
+			history = &w->dirs_history;
+			break;
+		case ENTRY_GO_URL:
+			history = &w->urls_history;
+			break;
+		default:
+			history = NULL;
+	}
+
+	entry_init (&w->entry, type, COLS - 4, history);
+	w->in_entry = 1;
+	curs_set (1);
+	entry_draw (&w->entry, w->win, 1, 0);
+}
+
+static void info_win_entry_handle_key (struct info_win *w, const int ch)
+{
+	enum key_cmd cmd;
+	enum entry_type type;
+
+	assert (w != NULL);
+	assert (w->in_entry);
+
+	cmd = get_key_cmd (CON_ENTRY, ch);
+	type = entry_get_type (&w->entry);
+	
+	if (isgraph(ch) || ch == ' ')
+		entry_add_char (&w->entry, ch);
+	else if (ch == KEY_LEFT)
+		entry_curs_left (&w->entry);
+	else if (ch == KEY_RIGHT)
+		entry_curs_right (&w->entry);
+	else if (ch == KEY_BACKSPACE)
+		entry_back_space (&w->entry);
+	else if (ch == KEY_DC)
+		entry_del_char (&w->entry);
+	else if (ch == KEY_HOME)
+		entry_home (&w->entry);
+	else if (ch == KEY_END)
+		entry_end (&w->entry);
+	else if (type == ENTRY_GO_DIR || type == ENTRY_GO_URL) {
+		if (cmd == KEY_CMD_HISTORY_UP)
+			entry_set_history_up (&w->entry);
+		else if (cmd == KEY_CMD_HISTORY_DOWN)
+			entry_set_history_down (&w->entry);
+	}
+
+	entry_draw (&w->entry, w->win, 1, 0);
+}
+
+static void info_win_entry_set_text (struct info_win *w, const char *text)
+{
+	assert (w != NULL);
+	assert (text != NULL);
+	assert (w->in_entry);
+
+	entry_set_text (&w->entry, text);
+	entry_draw (&w->entry, w->win, 1, 0);
+}
+
+static char *info_win_entry_get_text (const struct info_win *w)
+{
+	assert (w != NULL);
+	assert (w->in_entry);
+
+	return entry_get_text (&w->entry);
+}
+
+static void info_win_entry_history_add (struct info_win *w)
+{
+	assert (w != NULL);
+	assert (w->in_entry);
+	
+	entry_add_text_to_history (&w->entry);
+}
+
 static void info_win_draw (const struct info_win *w)
 {
 	assert (w != NULL);
@@ -1445,8 +1917,24 @@ static void info_win_draw (const struct info_win *w)
 	info_win_draw_files_time (w);
 	info_win_draw_bitrate (w);
 	info_win_draw_rate (w);
-	bar_draw (&w->mixer_bar, w->win, COLS - 37, 0);
+	
+	if (w->in_entry)
+		entry_draw (&w->entry, w->win, 1, 0);
+	else
+		bar_draw (&w->mixer_bar, w->win, COLS - 37, 0);
+
 	bar_draw (&w->time_bar, w->win, 2, 3);
+}
+
+static void info_win_entry_disable (struct info_win *w)
+{
+	assert (w != NULL);
+	assert (w->in_entry);
+	
+	entry_destroy (&w->entry);
+	w->in_entry = 0;
+	curs_set (0);
+	info_win_draw (w);
 }
 
 /* Handle terminal size change. */
@@ -1586,6 +2074,7 @@ void iface_set_curr_item_title (const char *title)
 /* Set the title for the directory menu. */
 void iface_set_dir_title (const char *title)
 {
+	// TODO
 }
 
 /* Get the char code from the user with meta flag set if necessary. */
@@ -1831,4 +2320,50 @@ void iface_del_plist_item (const char *file)
 	wrefresh (main_win.win);
 
 	/* TODO: display the number of items */
+}
+
+void iface_make_entry (const enum entry_type type)
+{
+	info_win_make_entry (&info_win, type);
+	wrefresh (info_win.win);
+}
+
+enum entry_type iface_get_entry_type ()
+{
+	return info_win_get_entry_type (&info_win);
+}
+
+int iface_in_entry ()
+{
+	return info_win_in_entry (&info_win);
+}
+
+void iface_entry_handle_key (const int ch)
+{
+	info_win_entry_handle_key (&info_win, ch);
+}
+
+void iface_entry_set_text (const char *text)
+{
+	assert (text != NULL);
+
+	info_win_entry_set_text (&info_win, text);
+	wrefresh (info_win.win);
+}
+
+/* Get text from the entry. Returned memory is amlloc()ed. */
+char *iface_entry_get_text ()
+{
+	return info_win_entry_get_text (&info_win);
+}
+
+void iface_entry_history_add ()
+{
+	info_win_entry_history_add (&info_win);
+}
+
+void iface_entry_disable ()
+{
+	info_win_entry_disable (&info_win);
+	wrefresh (info_win.win);
 }

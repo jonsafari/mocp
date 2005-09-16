@@ -1632,6 +1632,110 @@ static void go_to_music_dir ()
 		error ("MusicDir not defined");
 }
 
+/* Make a directory from the string resolving ~, './' and '..'.
+ * Return the directory, the memory is malloc()ed.
+ * Return NULL on error. */
+static char *make_dir (const char *str)
+{
+	char *dir;
+	int add_slash = 0;
+
+	dir = (char *)xmalloc (sizeof(char) * (PATH_MAX + 1));
+
+	dir[PATH_MAX] = 0;
+
+	/* If the string ends with a slash and is not just '/', add this
+	 * slash. */
+	if (strlen(str) > 1 && str[strlen(str)-1] == '/')
+		add_slash = 1;
+	
+	if (str[0] == '~') {
+		strncpy (dir, getenv("HOME"), PATH_MAX);
+		
+		if (dir[PATH_MAX]) {
+			logit ("Path too long!");
+			return NULL;
+		}
+
+		if (!strcmp(str, "~"))
+			add_slash = 1;
+		
+		str++;
+	}
+	else if (str[0] != '/')
+		strcpy (dir, cwd);
+	else
+		strcpy (dir, "/");
+
+	resolve_path (dir, PATH_MAX, str);
+
+	if (add_slash && strlen(dir) < PATH_MAX)
+		strcat (dir, "/");
+
+	return dir;
+}
+
+static void entry_key_go_dir (const int ch)
+{
+	if (ch == '\t') {
+		char *dir;
+		char *complete_dir;
+		char buf[PATH_MAX+1];
+		char *entry_text;
+
+		entry_text = iface_entry_get_text ();		
+		if (!(dir = make_dir(entry_text))) {
+			free (entry_text);
+			return;
+		}
+		free (entry_text);
+		
+		complete_dir = find_match_dir (dir);
+		
+		strncpy (buf, complete_dir ? complete_dir : dir, sizeof(buf));
+		if (complete_dir)
+			free (complete_dir);
+
+		iface_entry_set_text (buf);
+		free (dir);
+	}
+	else if (ch == '\n') {
+		char *entry_text = iface_entry_get_text ();
+		
+		if (entry_text[0]) {
+			char *dir = make_dir (entry_text);
+
+			iface_entry_history_add ();
+			
+			if (dir) {
+				/* strip trailing slash */
+				if (dir[strlen(dir)-1] == '/'
+						&& strcmp(dir, "/"))
+					dir[strlen(dir)-1] = 0;
+				go_to_dir (dir, 0);
+				free (dir);
+			}
+		}
+		
+		iface_entry_disable ();
+		free (entry_text);
+	}
+	else
+		iface_entry_handle_key (ch);
+}
+
+/* Handle keys while in an entry. */
+static void entry_key (const int ch)
+{
+	switch (iface_get_entry_type()) {
+		case ENTRY_GO_DIR:
+			entry_key_go_dir (ch);
+			break;
+		default:
+			abort (); /* BUG */
+	}
+}
+
 /* Handle key */
 static void menu_key (const int ch)
 {
@@ -1667,10 +1771,8 @@ static void menu_key (const int ch)
 		}
 #endif
 	}
-#if 0
-	else if (entry.type != ENTRY_DISABLED)
+	else if (iface_in_entry())
 		entry_key (ch);
-#endif
 	else if (!iface_key_is_resize(ch)) {
 		enum key_cmd cmd = get_key_cmd (CON_MENU, ch);
 		
@@ -1805,9 +1907,11 @@ static void menu_key (const int ch)
 				go_to_file_dir ();
 				do_update_menu = 1;
 				break;
+#endif
 			case KEY_CMD_GO_DIR:
-				make_entry (ENTRY_GO_DIR, "GO");
+				iface_make_entry (ENTRY_GO_DIR);
 				break;
+#if 0
 			case KEY_CMD_GO_URL:
 				make_entry (ENTRY_GO_URL, "URL");
 				break;
@@ -1971,6 +2075,13 @@ static void dequeue_events ()
 	debug ("done");
 }
 
+/* Actrion after CTRL-C was pressed. */
+static void handle_interrupt ()
+{
+	if (iface_in_entry())
+		iface_entry_disable ();
+}
+
 void interface_loop ()
 {
 	while (!want_quit) {
@@ -2018,7 +2129,7 @@ void interface_loop ()
 			}
 		}
 		else if (user_wants_interrupt())
-			/*handle_interrupt ()*/;
+			handle_interrupt ();
 
 		if (!want_quit)
 			update_mixer_value ();
