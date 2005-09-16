@@ -1856,6 +1856,12 @@ static void switch_read_tags ()
 	update_iface_menu (playlist);
 }
 
+static void seek (const int sec)
+{
+	send_int_to_srv (CMD_SEEK);
+	send_int_to_srv (sec);
+}
+
 /* Handle key */
 static void menu_key (const int ch)
 {
@@ -1963,13 +1969,13 @@ static void menu_key (const int ch)
 			case KEY_CMD_MIXER_INC_1:
 				adjust_mixer (+1);
 				break;
-#if 0
 			case KEY_CMD_SEEK_BACKWARD:
 				seek (-options_get_int("SeekTime"));
 				break;
 			case KEY_CMD_SEEK_FORWARD:
 				seek (options_get_int("SeekTime"));
 				break;
+#if 0
 			case KEY_CMD_HELP:
 				help_screen ();
 				break;
