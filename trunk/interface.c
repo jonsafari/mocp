@@ -464,7 +464,7 @@ static void interface_message (const char *format, ...)
 	message[sizeof(message)-1] = 0;
 	va_end (va);
 
-	//TODO: iface_message (message);
+	iface_message (message);
 }
 
 /* Update tags (and titles) for the given item on the playlist with new tags. */
@@ -1896,12 +1896,10 @@ static void menu_key (const int ch)
 			case KEY_CMD_HELP:
 				help_screen ();
 				break;
-			case KEY_CMD_HIDE_MESSAGE:
-				interface_message (NULL);
-				update_info_win ();
-				wrefresh (info_win);
-				break;
 #endif
+			case KEY_CMD_HIDE_MESSAGE:
+				iface_disable_message ();
+				break;
 			case KEY_CMD_REFRESH:
 				iface_refresh ();
 				break;

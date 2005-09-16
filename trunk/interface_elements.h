@@ -72,5 +72,7 @@ void iface_entry_set_text (const char *text);
 char *iface_entry_get_text ();
 void iface_entry_history_add ();
 void iface_entry_disable ();
+void iface_message (const char *msg);
+void iface_disable_message ();
 
 #endif

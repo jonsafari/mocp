@@ -1688,13 +1688,26 @@ static void info_win_draw_options_state (const struct info_win *w)
 	info_win_draw_switch (w, 72, 2, "NEXT", w->state_next);
 }
 
-static void info_win_error_msg (struct info_win *w, const char *msg)
+static void info_win_msg (struct info_win *w, const char *msg,
+		const int is_error)
 {
 	if (w->msg)
 		free (w->msg);
 	w->msg = xstrdup (msg);
-	w->msg_is_error = 1;
+	w->msg_is_error = is_error;
 	w->msg_timeout = time(NULL) + 3;
+	info_win_draw_title (w);
+}
+
+static void info_win_disable_msg (struct info_win *w)
+{
+	assert (w != NULL);
+
+	if (w->msg) {
+		free (w->msg);
+		w->msg = NULL;
+	}
+
 	info_win_draw_title (w);
 }
 
@@ -2288,7 +2301,7 @@ void iface_add_to_plist (const struct plist *plist, const int num)
 /* Display an error message. */
 void iface_error (const char *msg)
 {
-	info_win_error_msg (&info_win, msg);
+	info_win_msg (&info_win, msg, 1);
 	wrefresh (info_win.win);
 }
 
@@ -2387,5 +2400,19 @@ void iface_entry_history_add ()
 void iface_entry_disable ()
 {
 	info_win_entry_disable (&info_win);
+	wrefresh (info_win.win);
+}
+
+void iface_message (const char *msg)
+{
+	assert (msg != NULL);
+	
+	info_win_msg (&info_win, msg, 0);
+	wrefresh (info_win.win);
+}
+
+void iface_disable_message ()
+{
+	info_win_disable_msg (&info_win);
 	wrefresh (info_win.win);
 }
