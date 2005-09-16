@@ -1724,12 +1724,52 @@ static void entry_key_go_dir (const int ch)
 		iface_entry_handle_key (ch);
 }
 
+/* Request playing from the specified URL. */
+static void play_from_url (const char *url)
+{
+	send_int_to_srv (CMD_LOCK);
+
+	change_srv_plist_serial ();
+	send_int_to_srv (CMD_LIST_CLEAR);
+	send_int_to_srv (CMD_LIST_ADD);
+	send_str_to_srv (url);
+	
+	send_int_to_srv (CMD_PLAY);
+	send_str_to_srv ("");
+
+	send_int_to_srv (CMD_UNLOCK);
+}
+
+static void entry_key_go_url (const int ch)
+{
+	if (ch == '\n') {
+		char *entry_text = iface_entry_get_text ();
+		
+		if (entry_text[0]) {
+			iface_entry_history_add ();
+
+			if (is_url(entry_text))
+				play_from_url (entry_text);
+			else
+				error ("Not a valid URL.");
+		}
+
+		free (entry_text);
+		iface_entry_disable ();
+	}
+	else
+		iface_entry_handle_key (ch);
+}
+
 /* Handle keys while in an entry. */
 static void entry_key (const int ch)
 {
 	switch (iface_get_entry_type()) {
 		case ENTRY_GO_DIR:
 			entry_key_go_dir (ch);
+			break;
+		case ENTRY_GO_URL:
+			entry_key_go_url (ch);
 			break;
 		default:
 			abort (); /* BUG */
@@ -1911,11 +1951,9 @@ static void menu_key (const int ch)
 			case KEY_CMD_GO_DIR:
 				iface_make_entry (ENTRY_GO_DIR);
 				break;
-#if 0
 			case KEY_CMD_GO_URL:
-				make_entry (ENTRY_GO_URL, "URL");
+				iface_make_entry (ENTRY_GO_URL);
 				break;
-#endif
 			case KEY_CMD_GO_DIR_UP:
 				go_dir_up ();
 				break;
