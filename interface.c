@@ -1822,6 +1822,40 @@ static void entry_key (const int ch)
 	}
 }
 
+/* Update items in the menu for all items on the playlist. */
+static void update_iface_menu (const struct plist *plist)
+{
+	int i;
+	
+	assert (plist != NULL);
+	
+	for (i = 0; i < plist->num; i++)
+		if (!plist_deleted(plist, i))
+			iface_update_item (plist, i);
+}
+
+/* Switch ReadTags options and update the menu. */
+static void switch_read_tags ()
+{
+	if (options_get_int("ReadTags")) {
+		option_set_int("ReadTags", 0);
+		switch_titles_file (dir_plist);
+		switch_titles_file (playlist);
+		iface_set_status ("ReadTags: no");
+	}
+	else {
+		option_set_int("ReadTags", 1);
+		ask_for_tags (dir_plist, get_tags_setting());
+		ask_for_tags (playlist, get_tags_setting());
+		switch_titles_tags (dir_plist);
+		switch_titles_tags (playlist);
+		iface_set_status ("ReadTags: yes");
+	}
+
+	update_iface_menu (dir_plist);
+	update_iface_menu (playlist);
+}
+
 /* Handle key */
 static void menu_key (const int ch)
 {
@@ -1893,12 +1927,9 @@ static void menu_key (const int ch)
 			case KEY_CMD_PAUSE:
 				switch_pause ();
 				break;
-#if 0
 			case KEY_CMD_TOGGLE_READ_TAGS:
 				switch_read_tags ();
-				do_update_menu = 1;
 				break;
-#endif
 			case KEY_CMD_TOGGLE_SHUFFLE:
 				toggle_option ("Shuffle");
 				break;
