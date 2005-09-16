@@ -1443,14 +1443,25 @@ static void info_win_destroy (struct info_win *w)
 	entry_history_clear (&w->dirs_history);
 }
 
+/* Set the cursor position in the right place if needed. */
+static void info_win_update_curs (const struct info_win *w)
+{
+	assert (w != NULL);
+	
+	if (w->in_entry)
+		entry_draw (&w->entry, w->win, 1, 0);
+}
+
 static void info_win_set_mixer_name (struct info_win *w, const char *name)
 {
 	assert (w != NULL);
 	assert (name != NULL);
 	
 	bar_set_title (&w->mixer_bar, name);
-	if (!w->in_entry)
+	if (!w->in_entry) {
 		bar_draw (&w->mixer_bar, w->win, COLS - 37, 0);
+		info_win_update_curs (w);
+	}
 }
 
 static void info_win_draw_status (const struct info_win *w)
@@ -1461,6 +1472,7 @@ static void info_win_draw_status (const struct info_win *w)
 		wattrset (w->win, get_color(CLR_STATUS));
 		mvwprintw (w->win, 0, 6, "%-*s", sizeof(w->status_msg) - 1,
 				w->status_msg);
+		info_win_update_curs (w);
 	}
 }
 
@@ -1496,6 +1508,7 @@ static void info_win_draw_state (const struct info_win *w)
 
 	wattrset (w->win, get_color(CLR_STATE));
 	mvwaddstr (w->win, 1, 1, state_symbol);
+	info_win_update_curs (w);
 }
 
 /* Draw the title or the message (informative or error). */
@@ -1514,6 +1527,8 @@ static void info_win_draw_title (const struct info_win *w)
 		wattrset (w->win, get_color(CLR_TITLE));
 		mvwaddnstr (w->win, 1, 4, w->title, COLS - 5);
 	}
+
+	info_win_update_curs (w);
 }
 
 static void info_win_set_state (struct info_win *w, const int state)
@@ -1555,6 +1570,7 @@ static void info_win_draw_time (const struct info_win *w)
 	waddstr (w->win, time_str);
 
 	bar_draw (&w->time_bar, w->win, 2, 3);
+	info_win_update_curs (w);
 }
 
 static void info_win_set_curr_time (struct info_win *w, const int time)
@@ -1617,6 +1633,7 @@ static void info_win_draw_bitrate (const struct info_win *w)
 		mvwprintw (w->win, 2, 29, "%4d", w->bitrate);
 	else
 		mvwaddstr (w->win, 2, 29, "    ");
+	info_win_update_curs (w);
 }
 
 static void info_win_set_bitrate (struct info_win *w, const int bitrate)
@@ -1657,6 +1674,7 @@ static void info_win_draw_switch (const struct info_win *w, const int posx,
 	wattrset (w->win, get_color(
 				value ? CLR_INFO_ENABLED : CLR_INFO_DISABLED));
 	mvwprintw (w->win, posy, posx, "[%s]", title);
+	info_win_update_curs (w);
 }
 
 static void info_win_draw_options_state (const struct info_win *w)
@@ -1755,6 +1773,7 @@ static void info_win_draw_files_time (const struct info_win *w)
 		wattrset (w->win, get_color(CLR_PLIST_TIME));
 		waddch (w->win, w->plist_time_for_all ? ' ' : '>');
 		waddstr (w->win, buf);
+		info_win_update_curs (w);
 	}
 }
 
@@ -1817,6 +1836,8 @@ static void info_win_draw_static_elements (const struct info_win *w)
 	wmove (w->win, 2, 25);
 	wattrset (w->win, get_color(CLR_LEGEND));
 	waddstr (w->win, "KHz     Kbps");
+
+	info_win_update_curs (w);
 }
 
 static void info_win_make_entry (struct info_win *w, const enum entry_type type)
@@ -1924,6 +1945,7 @@ static void info_win_draw (const struct info_win *w)
 		bar_draw (&w->mixer_bar, w->win, COLS - 37, 0);
 
 	bar_draw (&w->time_bar, w->win, 2, 3);
+	info_win_update_curs (w);
 }
 
 static void info_win_entry_disable (struct info_win *w)
