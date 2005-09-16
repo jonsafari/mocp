@@ -815,3 +815,16 @@ void plist_remove_common_items (struct plist *a, struct plist *b)
 		if (plist_find_fname(b, a->items[i].file) != -1)
 			plist_delete (a, i);
 }
+
+void plist_discard_tags (struct plist *plist)
+{
+	int i;
+	
+	assert (plist != NULL);
+	
+	for (i = 0; i < plist->num; i++)
+		if (!plist_deleted(plist, i) && plist->items[i].tags) {
+			tags_free (plist->items[i].tags);
+			plist->items[i].tags = NULL;
+		}
+}

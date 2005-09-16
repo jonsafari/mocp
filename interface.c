@@ -486,6 +486,10 @@ static void update_item_tags (struct plist *plist, const int num,
 	plist_count_total_time (plist);
 
 	if (options_get_int("ReadTags")) {
+		if (plist->items[num].title_tags) {
+			free (plist->items[num].title_tags);
+			plist->items[num].title_tags = NULL;
+		}
 		make_tags_title (plist, num);
 		if (plist->items[num].title_tags)
 			plist->items[num].title = plist->items[num].title_tags;
@@ -878,6 +882,48 @@ static void server_event (const int event, void *data)
 		default:
 			interface_fatal ("Unknown event: 0x%02x", event);
 	}
+}
+
+/* Send requests for the given tags for every file on the playlist and wait
+ * for all responses. */
+static void fill_tags (struct plist *plist, const int tags_sel)
+{
+	int files;
+	
+	assert (plist != NULL);
+	assert (tags_sel != 0);
+
+	iface_set_status ("Reading tags...");
+	ask_for_tags (plist, tags_sel);
+	files = plist_count (plist);
+
+	/* To properly count which files were filled, we discard all tags
+	 * first. */
+	plist_discard_tags (plist);
+	
+	/* Process events until we have all tags. */
+	while (files) {
+		int type = get_int_from_srv ();
+		void *data = get_event_data (type);
+		
+		if (type == EV_FILE_TAGS) {
+			struct tag_ev_response *ev
+				= (struct tag_ev_response *)data;
+			int n;
+
+			if ((n = plist_find_fname(plist, ev->file)) != -1) {
+				if ((ev->tags->filled & (TAGS_COMMENTS
+								| TAGS_TIME))
+						&& !plist->items[n].tags)
+					files--;
+				update_item_tags (plist, n, ev->tags);
+			}
+		}
+					
+		server_event (type, data);
+	}
+	
+	iface_set_status ("");
 }
 
 /* Load the directory content into dir_plist and switch the menu to it.
@@ -2195,7 +2241,7 @@ static void save_playlist ()
 
 	if (plist_count(playlist) && options_get_int("SavePlaylist")) {
 		iface_set_status ("Saving the playlist...");
-		/* TODO: Make tags! */
+		fill_tags (playlist, TAGS_COMMENTS | TAGS_TIME);
 		plist_save (playlist, plist_file, NULL);
 		iface_set_status ("");
 	}

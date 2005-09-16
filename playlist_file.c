@@ -508,25 +508,6 @@ int plist_save (struct plist *plist, const char *file, const char *cwd)
 		 * relative paths) */
 		find_common_path (common_path, sizeof(common_path), plist);
 
-	if (user_wants_interrupt()) {
-		error ("Saving the playlist aborted");
-		return 0;
-	}
-
-	/* TODO: this should be done before we save the playlist */
-	/* Get times */
-	for (i = 0; i < plist->num; i++)
-		if (!plist_deleted(plist, i)) {
-			if (user_wants_interrupt()) {
-				error ("Saving the playlist aborted");
-				return 0;
-			}
-			plist->items[i].tags = read_file_tags (
-					plist->items[i].file,
-					plist->items[i].tags,
-					TAGS_TIME);
-		}
-
 	/* FIXME: checkif it possible to just add some directories to make
 	 * relative path working. */
 	return plist_save_m3u (plist, file, cwd && !strcmp(common_path, cwd) ?
