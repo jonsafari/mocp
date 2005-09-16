@@ -99,5 +99,6 @@ void plist_item_copy (struct plist_item *dst, const struct plist_item *src);
 enum file_type plist_file_type (const struct plist *plist, const int num);
 void plist_count_total_time (struct plist *plist);
 void plist_remove_common_items (struct plist *a, struct plist *b);
+void plist_discard_tags (struct plist *plist);
 
 #endif
