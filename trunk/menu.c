@@ -63,34 +63,33 @@ static char *strcasestr (const char *haystack, const char *needle)
 #endif
 
 /* Draw menu item on a given position from the top of the menu. */
-static void draw_item (const struct menu *menu, const int num, const int pos,
-		const int item_info_pos, const int title_space)
+static void draw_item (const struct menu *menu, const struct menu_item *mi,
+		const int pos, const int item_info_pos, const int title_space)
 {
 	int title_len;
-	const struct menu_item *item = &menu->items[num];
 	int j;
 
 	wmove (menu->win, pos, menu->posx);
 	
 	/* Set attributes */
-	if (num == menu->selected && num == menu->marked)
-		wattrset (menu->win, item->attr_sel_marked);
-	else if (num == menu->selected)
-		wattrset (menu->win, item->attr_sel);
-	else if (num == menu->marked)
-		wattrset (menu->win, item->attr_marked);
+	if (mi == menu->selected && mi == menu->marked)
+		wattrset (menu->win, mi->attr_sel_marked);
+	else if (mi == menu->selected)
+		wattrset (menu->win, mi->attr_sel);
+	else if (mi == menu->marked)
+		wattrset (menu->win, mi->attr_marked);
 	else
-		wattrset (menu->win, item->attr_normal);
+		wattrset (menu->win, mi->attr_normal);
 	
-	title_len = strlen (item->title);
+	title_len = strlen (mi->title);
 
-	if (title_len <= title_space || item->align == MENU_ALIGN_LEFT)
-		waddnstr (menu->win, item->title, title_space);
+	if (title_len <= title_space || mi->align == MENU_ALIGN_LEFT)
+		waddnstr (menu->win, mi->title, title_space);
 	else
-		waddstr (menu->win, item->title + title_len - title_space);
+		waddstr (menu->win, mi->title + title_len - title_space);
 	
 	/* Make blank line to the right side of the screen */
-	if (num == menu->selected)
+	if (mi == menu->selected)
 		for (j = title_len + 1; j <= title_space; j++)
 			waddch (menu->win, ' ');
 
@@ -99,19 +98,19 @@ static void draw_item (const struct menu *menu, const int num, const int pos,
 	wmove (menu->win, pos, item_info_pos);
 
 	if (menu->show_time && menu->show_format
-			&& (*item->time || *item->format))
+			&& (*mi->time || *mi->format))
 		wprintw (menu->win, "[%5s|%3s]",
-				item->time ? item->time : "     ",
-				item->format);
-	else if (menu->show_time && item->time[0])
-		wprintw (menu->win, "[%5s]", item->time);
-	else if (menu->show_format && item->format[0])
-		wprintw (menu->win, "[%3s]", item->format);
+				mi->time ? mi->time : "     ",
+				mi->format);
+	else if (menu->show_time && mi->time[0])
+		wprintw (menu->win, "[%5s]", mi->time);
+	else if (menu->show_format && mi->format[0])
+		wprintw (menu->win, "[%3s]", mi->format);
 }
 
-void menu_draw (struct menu *menu)
+void menu_draw (const struct menu *menu)
 {
-	int i;
+	struct menu_item *mi;
 	int title_width;
 	int info_pos;
 
@@ -132,11 +131,10 @@ void menu_draw (struct menu *menu)
 		info_pos = 0;
 	}
 
-	for (i = menu->top; i < menu->nitems && i - menu->top < menu->height;
-			i++)
-		draw_item (menu, i, i - menu->top + menu->posy,
-				menu->posx + info_pos,
-				title_width);
+	for (mi = menu->top; mi && mi->num - menu->top->num < menu->height;
+			mi = mi->next)
+		draw_item (menu, mi, mi->num - menu->top->num + menu->posy,
+				menu->posx + info_pos, title_width);
 }
 
 /* menu_items must be malloc()ed memory! */
@@ -154,17 +152,16 @@ struct menu *menu_new (WINDOW *win, const int posx, const int posy,
 	menu = (struct menu *)xmalloc (sizeof(struct menu));
 
 	menu->win = win;
-	menu->items = (struct menu_item *)xmalloc(
-			sizeof(struct menu_item) * INIT_NUM_ITEMS);
-	menu->allocated = INIT_NUM_ITEMS;
+	menu->items = NULL;
 	menu->nitems = 0;
-	menu->top = 0;
-	menu->selected = -1;
+	menu->top = NULL;
+	menu->last = NULL;
+	menu->selected = NULL;
 	menu->posx = posx;
 	menu->posy = posy;
 	menu->width = width;
 	menu->height = height;
-	menu->marked = -1;
+	menu->marked = NULL;
 	menu->show_time = 0;
 	menu->show_format = 0;
 	menu->info_attr = A_NORMAL;
@@ -172,59 +169,66 @@ struct menu *menu_new (WINDOW *win, const int posx, const int posy,
 	return menu;
 }
 
-int menu_add (struct menu *menu, char *title, const enum file_type type,
-		const char *file)
+struct menu_item *menu_add (struct menu *menu, const char *title,
+		const enum file_type type, const char *file)
 {
+	struct menu_item *mi;
+		
 	assert (menu != NULL);
 	assert (title != NULL);
 
-	if (menu->allocated == menu->nitems) {
-		menu->allocated *= 2;
-		menu->items = (struct menu_item *)xrealloc (menu->items,
-				sizeof(struct menu_item) * menu->allocated);
-	}
+	mi = (struct menu_item *)xmalloc (sizeof(struct menu_item));
 
-	if (menu->selected == -1)
-		menu->selected = 0;
+	mi->title = xstrdup (title);
+	mi->type = type;
+	mi->file = xstrdup (file);
+	mi->num = menu->nitems;
 
-	menu->items[menu->nitems].title = xstrdup (title);
-	menu->items[menu->nitems].type = type;
-	menu->items[menu->nitems].file = xstrdup (file);
+	mi->attr_normal = A_NORMAL;
+	mi->attr_sel = A_NORMAL;
+	mi->attr_marked = A_NORMAL;
+	mi->attr_sel_marked = A_NORMAL;
+	mi->align = MENU_ALIGN_LEFT;
+	
+	mi->time[0] = 0;
+	mi->format[0] = 0;
+	
+	mi->next = NULL;
+	mi->prev = menu->last;
+	if (menu->last)
+		menu->last->next = mi;
 
-	menu->items[menu->nitems].attr_normal = A_NORMAL;
-	menu->items[menu->nitems].attr_sel = A_NORMAL;
-	menu->items[menu->nitems].attr_marked = A_NORMAL;
-	menu->items[menu->nitems].attr_sel_marked = A_NORMAL;
-	menu->items[menu->nitems].time[0] = 0;
-	menu->items[menu->nitems].format[0] = 0;
-	menu->items[menu->nitems].align = MENU_ALIGN_LEFT;
+	if (!menu->items)
+		menu->items = mi;
+	if (!menu->top)
+		menu->top = menu->items;
+	if (!menu->selected)
+		menu->selected = menu->items;
 
-	return menu->nitems++;
+	menu->last = mi;
+	menu->nitems++;
+
+	return mi;
 }
 
-static int menu_add_from_item (struct menu *menu, const struct menu_item *item)
+static struct menu_item *menu_add_from_item (struct menu *menu,
+		const struct menu_item *mi)
 {
+	struct menu_item *new;
+
 	assert (menu != NULL);
-	assert (item != NULL);
+	assert (mi != NULL);
 
-	if (menu->allocated == menu->nitems) {
-		menu->allocated *= 2;
-		menu->items = (struct menu_item *)xrealloc (menu->items,
-				sizeof(struct menu_item) * menu->allocated);
-	}
+	new = menu_add (menu, mi->title, mi->type, mi->file);
 
-	menu->items[menu->nitems].title = xstrdup (item->title);
-	menu->items[menu->nitems].type = item->type;
-	menu->items[menu->nitems].file = xstrdup (item->file);
+	new->attr_normal = mi->attr_normal;
+	new->attr_sel = mi->attr_sel;
+	new->attr_marked = mi->attr_marked;
+	new->attr_sel_marked = mi->attr_sel_marked;
+	strcpy (new->time, mi->time);
+	strcpy (new->format, mi->format);
 
-	menu->items[menu->nitems].attr_normal = item->attr_normal;
-	menu->items[menu->nitems].attr_sel = item->attr_sel;
-	menu->items[menu->nitems].attr_marked = item->attr_marked;
-	menu->items[menu->nitems].attr_sel_marked = item->attr_sel_marked;
-	strcpy (menu->items[menu->nitems].time, item->time);
-	strcpy (menu->items[menu->nitems].format, item->format);
-
-	return menu->nitems++;
+	return new;
 }
 
 void menu_update_size (struct menu *menu, const int posx, const int posy,
@@ -242,85 +246,122 @@ void menu_update_size (struct menu *menu, const int posx, const int posy,
 	menu->height = height;
 }
 
+static void menu_item_free (struct menu_item *mi)
+{
+	assert (mi != NULL);
+	assert (mi->title != NULL);
+
+	free (mi->title);
+	if (mi->file)
+		free (mi->file);
+	
+	free (mi);
+}
+
 void menu_free (struct menu *menu)
 {
-	int i;
+	struct menu_item *mi;
 
 	assert (menu != NULL);
 
-	/* Free items */
-	for (i = 0; i < menu->nitems; i++) {
-		free (menu->items[i].title);
-		if (menu->items[i].file)
-			free (menu->items[i].file);
+	mi = menu->top;
+	while (mi) {
+		struct menu_item *next = mi->next;
+
+		menu_item_free (mi);
+		mi = next;
 	}
 
-	free (menu->items);
 	free (menu);
 }
 
-void menu_driver (struct menu *menu, enum menu_request req)
+static struct menu_item *get_item_relative (struct menu_item *mi,
+		int to_move)
+{
+	assert (mi != NULL);
+	
+	while (to_move) {
+		struct menu_item *prev = mi;
+		
+		if (to_move > 0) {
+			mi = mi->next;
+			to_move--;
+		}
+		else {
+			mi = mi->prev;
+			to_move++;
+		}
+
+		if (!mi) {
+			mi = prev;
+			break;
+		}
+	}
+
+	return mi;
+}
+
+void menu_driver (struct menu *menu, const enum menu_request req)
 {
 	assert (menu != NULL);
 	
-	if (req == REQ_DOWN && menu->selected < menu->nitems - 1) {
-		menu->selected++;
-		if (menu->selected >= menu->top + menu->height) {
-			menu->top = menu->selected - menu->height / 2;
-			if (menu->top > menu->nitems - menu->height)
-				menu->top = menu->nitems - menu->height;
+	if (req == REQ_DOWN && menu->selected->next) {
+		menu->selected = menu->selected->next;
+		if (menu->selected->num >= menu->top->num + menu->height) {
+			menu->top = get_item_relative (menu->selected,
+					-menu->height / 2);
+			if (menu->top->num > menu->nitems - menu->height)
+				menu->top = get_item_relative (menu->last,
+						-menu->height + 1);
 		}
 	}
-	else if (req == REQ_UP && menu->selected > 0) {
-		menu->selected--;
-		if (menu->top > menu->selected) {
-			menu->top = menu->selected - menu->height / 2;
-			if (menu->top < 0)
-				menu->top = 0;
-		}
+	else if (req == REQ_UP && menu->selected->prev) {
+		menu->selected = menu->selected->prev;
+		if (menu->top->num > menu->selected->num)
+			menu->top = get_item_relative (menu->selected,
+					-menu->height / 2);
 	}
-	else if (req == REQ_PGDOWN && menu->selected < menu->nitems - 1) {
-		if (menu->selected + menu->height - 1 < menu->nitems - 1) {
-			menu->selected += menu->height - 1;
-			menu->top += menu->height - 1;
-			if (menu->top > menu->nitems - menu->height)
-				menu->top = menu->nitems - menu->height;
+	else if (req == REQ_PGDOWN && menu->selected->num < menu->nitems - 1) {
+		if (menu->selected->num + menu->height - 1 < menu->nitems - 1) {
+			menu->selected = get_item_relative (menu->selected,
+					menu->height - 1);
+			menu->top = get_item_relative (menu->top,
+					menu->height - 1);
+			if (menu->top->num > menu->nitems - menu->height)
+				menu->top = get_item_relative (menu->last,
+						-menu->height + 1);
 		}
 		else {
-			menu->selected = menu->nitems - 1;
-			menu->top = menu->nitems - menu->height;
+			menu->selected = menu->last;
+			menu->top = get_item_relative (menu->last,
+					-menu->height + 1);
 		}
-
-		if (menu->top < 0)
-			menu->top = 0;
-
 	}
-	else if (req == REQ_PGUP && menu->selected > 0) {
-		if (menu->selected - menu->height + 1 > 0) {
-			menu->selected -= menu->height - 1;
-			menu->top -= menu->height - 1;
-			if (menu->top < 0)
-				menu->top = 0;
+	else if (req == REQ_PGUP && menu->selected->prev) {
+		if (menu->selected->num - menu->height + 1 > 0) {
+			menu->selected = get_item_relative (menu->selected,
+					-menu->height + 1);
+			menu->top = get_item_relative (menu->top,
+					-menu->height + 1);
 		}
 		else {
-			menu->selected = 0;
-			menu->top = 0;
+			menu->selected = menu->items;
+			menu->top = menu->items;
 		}
 	}
 	else if (req == REQ_TOP) {
-		menu->selected = 0;
-		menu->top = 0;
+		menu->selected = menu->items;
+		menu->top = menu->items;
 	}
 	else if (req == REQ_BOTTOM) {
-		menu->selected = menu->nitems - 1;
-		menu->top = menu->selected - menu->height + 1;
-		if (menu->top < 0)
-			menu->top = 0;
+		menu->selected = menu->last;
+		menu->top = get_item_relative (menu->selected,
+				-menu->height + 1);
 	}
 }
 
 /* Return the index of the currently selected item. */
-int menu_curritem (struct menu *menu)
+struct menu_item *menu_curritem (struct menu *menu)
 {
 	assert (menu != NULL);
 	
@@ -328,213 +369,188 @@ int menu_curritem (struct menu *menu)
 }
 
 /* Make this item selected */
-void menu_setcurritem (struct menu *menu, int num)
+static void menu_setcurritem (struct menu *menu, struct menu_item *mi)
 {
 	assert (menu != NULL);
+	assert (mi != NULL);
 	
-	if (num < menu->nitems)
-		menu->selected = num;
-	else
-		menu->selected = menu->nitems - 1;
+	menu->selected = mi;
 
-	if (menu->selected < menu->top)
-		menu->top = menu->selected;
-	else if (menu->selected >= menu->top + menu->height)
-		menu->top = menu->selected - menu->height + 1;
+	if (mi->num < menu->top->num)
+		menu->top = mi;
+	else if (mi->num >= menu->top->num + menu->height)
+		menu->top = get_item_relative (menu->selected,
+				-menu->height + 1);
 }
 
 /* Make the item with this title selected. */
 void menu_setcurritem_title (struct menu *menu, const char *title)
 {
-	int i;
+	struct menu_item *mi;
 
 	/* Find it */
-	for (i = 0; i < menu->nitems; i++)
-		if (!strcmp(menu->items[i].title, title))
+	for (mi = menu->top; mi; mi = mi->next)
+		if (!strcmp(mi->title, title))
 			break;
 
-	/* Not found? */
-	if (i == menu->nitems)
-		return;
-
-	menu_setcurritem (menu, i);
+	if (mi)
+		menu_setcurritem (menu, mi);
 }
 
-void set_menu_state (struct menu *menu, int selected, int top)
+static struct menu_item *menu_find_by_position (struct menu *menu,
+		const int num)
+{
+	struct menu_item *mi;
+
+	assert (menu != NULL);
+
+	mi = menu->top;
+	while (mi && mi->num != num)
+		mi = mi->next;
+
+	return mi;
+}
+
+void menu_set_state (struct menu *menu, const struct menu_state *st)
 {
 	assert (menu != NULL);
 
-	if (selected >= menu->nitems)
-		menu->selected = menu->nitems - 1;
-	else
-		menu->selected = selected;
+	if (!(menu->selected = menu_find_by_position(menu, st->selected_item)))
+		menu->selected = menu->last;
 
-	if (top > menu->nitems - menu->height)
-		menu->top = menu->nitems - menu->height;
-	else
-		menu->top = top;
+	if (!(menu->top = menu_find_by_position(menu, st->top_item)))
+		menu->top = get_item_relative (menu->last, menu->height + 1);
+}
 
-	if (menu->top < 0)
-		menu->top = 0;
+void menu_get_state (const struct menu *menu, struct menu_state *st)
+{
+	assert (menu != NULL);
+	
+	st->top_item = menu->top ? menu->top->num : -1;
+	st->selected_item = menu->selected ? menu->selected->num : -1;
 }
 
 void menu_unmark_item (struct menu *menu)
 {
 	assert (menu != NULL);
-	menu->marked = -1;
-}
-
-/* Set the top item to num. */
-void menu_set_top_item (struct menu *menu, const int num)
-{
-	assert (menu != NULL);
-	
-	if (num > menu->nitems - menu->height) {
-		menu->top = menu->nitems - menu->height;
-		if (menu->top < 0)
-			menu->top = 0;
-	}
-	else
-		menu->top = num;
-}
-
-int menu_get_top_item (const struct menu *menu)
-{
-	assert (menu != NULL);
-
-	return menu->top;
+	menu->marked = NULL;
 }
 
 /* Make a new menu from elements matching pattern. */
-struct menu *menu_filter_pattern (struct menu *menu, const char *pattern)
+struct menu *menu_filter_pattern (const struct menu *menu, const char *pattern)
 {
-	int i;
 	struct menu *new;
-
-	new = menu_new (menu->win, menu->posx, menu->posy, menu->width,
-			menu->height);
-	new->show_time = menu->show_time;
-	new->show_format = menu->show_format;
-	new->info_attr = menu->info_attr;
+	const struct menu_item *mi;
 	
 	assert (menu != NULL);
 	assert (pattern != NULL);
 
-	for (i = 0; i < menu->nitems; i++) {
-		struct menu_item *item = &menu->items[i];
-		
-		if ((item->type == F_SOUND || item->type == F_URL)
-				&& strcasestr(menu->items[i].title, pattern)) {
-			int added = menu_add_from_item (new, item);
-			
-			if (menu->marked == i)
-				new->marked = added;
-		}
-	}
+	new = menu_new (menu->win, menu->posx, menu->posy, menu->width,
+			menu->height);
+	menu_set_show_time (new, menu->show_time);
+	menu_set_show_format (new, menu->show_format);
+	menu_set_info_attr (new, menu->info_attr);
+	
+	for (mi = menu->top; mi; mi = mi->next)
+		if (strcasestr(mi->title, pattern))
+			menu_add_from_item (new, mi);
+
+	if (menu->marked)
+		menu_mark_item (new, menu->marked->file);
 
 	return new;
 }
 
-void menu_item_set_attr_normal (struct menu *menu, const int num,
-		const int attr)
+void menu_item_set_attr_normal (struct menu_item *mi, const int attr)
 {
-	assert (menu != NULL);
-	assert (num >= 0 && num < menu->nitems);
+	assert (mi != NULL);
 	
-	menu->items[num].attr_normal = attr;
+	mi->attr_normal = attr;
 }
 
-void menu_item_set_attr_sel (struct menu *menu, const int num, const int attr)
+void menu_item_set_attr_sel (struct menu_item *mi, const int attr)
 {
-	assert (menu != NULL);
-	assert (num >= 0 && num < menu->nitems);
+	assert (mi != NULL);
 	
-	menu->items[num].attr_sel = attr;
+	mi->attr_sel = attr;
 }
 
-void menu_item_set_attr_sel_marked (struct menu *menu, const int num,
-		const int attr)
+void menu_item_set_attr_sel_marked (struct menu_item *mi, const int attr)
 {
-	assert (menu != NULL);
-	assert (num >= 0 && num < menu->nitems);
+	assert (mi != NULL);
 	
-	menu->items[num].attr_sel_marked = attr;
+	mi->attr_sel_marked = attr;
 }
 
-void menu_item_set_attr_marked (struct menu *menu, const int num,
-		const int attr)
+void menu_item_set_attr_marked (struct menu_item *mi, const int attr)
 {
-	assert (menu != NULL);
-	assert (num >= 0 && num < menu->nitems);
+	assert (mi != NULL);
 	
-	menu->items[num].attr_marked = attr;
+	mi->attr_marked = attr;
 }
 
-void menu_item_set_time (struct menu *menu, const int num, const char *time)
+void menu_item_set_time (struct menu_item *mi, const char *time)
 {
-	assert (menu != NULL);
-	assert (num >= 0 && num < menu->nitems);
+	assert (mi != NULL);
 	
-	menu->items[num].time[sizeof(menu->items[num].time)-1] = 0;
-	strncpy (menu->items[num].time, time, sizeof(menu->items[num].time));
-	assert (menu->items[num].time[sizeof(menu->items[num].time)-1] == 0);
+	mi->time[sizeof(mi->time)-1] = 0;
+	strncpy (mi->time, time, sizeof(mi->time));
+	assert (mi->time[sizeof(mi->time)-1] == 0);
 }
 
-void menu_item_set_format (struct menu *menu, const int num,
-		const char *format)
+void menu_item_set_format (struct menu_item *mi, const char *format)
 {
-	assert (menu != NULL);
-	assert (num >= 0 && num < menu->nitems);
+	assert (mi != NULL);
 
-	menu->items[num].format[sizeof(menu->items[num].format)-1] = 0;
-	strncpy (menu->items[num].format, format,
-			sizeof(menu->items[num].format));
-	assert (menu->items[num].format[sizeof(menu->items[num].format)-1]
+	mi->format[sizeof(mi->format)-1] = 0;
+	strncpy (mi->format, format,
+			sizeof(mi->format));
+	assert (mi->format[sizeof(mi->format)-1]
 			== 0);
 }
 
 void menu_set_show_time (struct menu *menu, const int t)
 {
 	assert (menu != NULL);
+	
 	menu->show_time = t;
 }
 
 void menu_set_show_format (struct menu *menu, const int t)
 {
 	assert (menu != NULL);
+	
 	menu->show_format = t;
 }
 
 void menu_set_info_attr (struct menu *menu, const int attr)
 {
 	assert (menu != NULL);
+	
 	menu->info_attr = attr;
 }
 
-enum file_type menu_item_get_type (const struct menu *menu, const int num)
+enum file_type menu_item_get_type (const struct menu_item *mi)
 {
-	assert (menu != NULL);
-	assert (num >= 0 && num < menu->nitems);
+	assert (mi != NULL);
 
-	return menu->items[num].type;
+	return mi->type;
 }
 
-char *menu_item_get_file (const struct menu *menu, const int num)
+char *menu_item_get_file (const struct menu_item *mi)
 {
-	assert (menu != NULL);
-	assert (num >= 0 && num < menu->nitems);
+	assert (mi != NULL);
 
-	return xstrdup (menu->items[num].file);
+	return xstrdup (mi->file);
 }
 
-void menu_item_set_title (struct menu *menu, const int num, const char *title)
+void menu_item_set_title (struct menu_item *mi, const char *title)
 {
-	assert (menu != NULL);
-	assert (num >= 0 && num < menu->nitems);
+	assert (mi != NULL);
 
-	if (menu->items[num].title)
-		free (menu->items[num].title);
-	menu->items[num].title = xstrdup (title);
+	if (mi->title)
+		free (mi->title);
+	mi->title = xstrdup (title);
 }
 
 int menu_nitems (const struct menu *menu)
@@ -544,31 +560,31 @@ int menu_nitems (const struct menu *menu)
 	return menu->nitems;
 }
 
-int menu_find (const struct menu *menu, const char *fname)
+struct menu_item *menu_find (struct menu *menu, const char *fname)
 {
 	/* TODO: linear search is too slow */
 	
-	int i;
+	struct menu_item *mi;
 	
 	assert (menu != NULL);
 	assert (fname != NULL);
 
-	for (i = 0; i < menu->nitems; i++)
-		if (!strcmp(menu->items[i].file, fname))
-			return i;
+	for (mi = menu->top; mi; mi = mi->next)
+		if (!strcmp(mi->file, fname))
+			return mi;
 
-	return -1;
+	return NULL;
 }
 
 void menu_mark_item (struct menu *menu, const char *file)
 {
-	int item;
+	struct menu_item *item;
 
 	assert (menu != NULL);
 	assert (file != NULL);
 
 	item = menu_find (menu, file);
-	if (item != -1)
+	if (item)
 		menu->marked = item;
 }
 
@@ -577,11 +593,9 @@ void menu_del_item (struct menu *menu, const char *fname)
 	//TODO
 }
 
-void menu_item_set_align (struct menu *menu, const int num,
-		const enum menu_align align)
+void menu_item_set_align (struct menu_item *mi, const enum menu_align align)
 {
-	assert (menu != NULL);
-	assert (num >= 0 && num < menu->nitems);
+	assert (mi != NULL);
 
-	menu->items[num].align = align;
+	mi->align = align;
 }

@@ -80,8 +80,7 @@ struct side_menu
  * (position of the view, which file is selected etc.) of the menu. */
 struct side_menu_state
 {
-	int top_item;
-	int selected_item;
+	struct menu_state menu_state;
 };
 
 static struct main_win
@@ -652,7 +651,7 @@ static char *make_menu_title (const char *plist_title,
 static void add_to_menu (struct menu *menu, const struct plist *plist,
 		const int num, const int for_playlist)
 {
-	int added;
+	struct menu_item *added;
 	const struct plist_item *item = &plist->items[num];
 	char *title;
 
@@ -665,21 +664,19 @@ static void add_to_menu (struct menu *menu, const struct plist *plist,
 		char time_str[6];
 		
 		sec_to_min (time_str, item->tags->time);
-		menu_item_set_time (menu, added, time_str);
+		menu_item_set_time (added, time_str);
 	}
 
-	menu_item_set_attr_normal (menu, added, get_color(CLR_MENU_ITEM_FILE));
-	menu_item_set_attr_sel (menu, added,
-			get_color(CLR_MENU_ITEM_FILE_SELECTED));
-	menu_item_set_attr_marked (menu, added,
-			get_color(CLR_MENU_ITEM_FILE_MARKED));
-	menu_item_set_attr_sel_marked (menu, added,
+	menu_item_set_attr_normal (added, get_color(CLR_MENU_ITEM_FILE));
+	menu_item_set_attr_sel (added, get_color(CLR_MENU_ITEM_FILE_SELECTED));
+	menu_item_set_attr_marked (added, get_color(CLR_MENU_ITEM_FILE_MARKED));
+	menu_item_set_attr_sel_marked (added,
 			get_color(CLR_MENU_ITEM_FILE_MARKED_SELECTED));
 	
-	menu_item_set_format (menu, added, file_type_name(item->file));
+	menu_item_set_format (added, file_type_name(item->file));
 
 	if (for_playlist && item->title == item->title_file)
-		menu_item_set_align (menu, added, MENU_ALIGN_RIGHT);
+		menu_item_set_align (added, MENU_ALIGN_RIGHT);
 }
 
 static void side_menu_clear (struct side_menu *m)
@@ -703,7 +700,7 @@ static void side_menu_make_list_content (struct side_menu *m,
 		const struct plist *files, const struct file_list *dirs,
 		const struct file_list *playlists)
 {
-	int added;
+	struct menu_item *added;
 	int i;
 
 	assert (m != NULL);
@@ -713,10 +710,8 @@ static void side_menu_make_list_content (struct side_menu *m,
 	side_menu_clear (m);
 
 	added = menu_add (m->menu.list, "../", F_DIR, "..");
-	menu_item_set_attr_normal (m->menu.list, added,
-			get_color(CLR_MENU_ITEM_DIR));
-	menu_item_set_attr_sel (m->menu.list, added,
-			get_color(CLR_MENU_ITEM_DIR_SELECTED));
+	menu_item_set_attr_normal (added, get_color(CLR_MENU_ITEM_DIR));
+	menu_item_set_attr_sel (added, get_color(CLR_MENU_ITEM_DIR_SELECTED));
 	
 	if (dirs)
 		for (i = 0; i < dirs->num; i++) {
@@ -727,9 +722,9 @@ static void side_menu_make_list_content (struct side_menu *m,
 			
 			added = menu_add (m->menu.list, title, F_DIR,
 					dirs->items[i]);
-			menu_item_set_attr_normal (m->menu.list, added,
+			menu_item_set_attr_normal (added,
 					get_color(CLR_MENU_ITEM_DIR));
-			menu_item_set_attr_sel (m->menu.list, added,
+			menu_item_set_attr_sel (added,
 					get_color(CLR_MENU_ITEM_DIR_SELECTED));
 		}
 
@@ -738,9 +733,9 @@ static void side_menu_make_list_content (struct side_menu *m,
 			added = menu_add (m->menu.list,
 					strrchr(playlists->items[i], '/') + 1,
 					F_PLAYLIST, playlists->items[i]);
-			menu_item_set_attr_normal (m->menu.list, added,
+			menu_item_set_attr_normal (added,
 					get_color(CLR_MENU_ITEM_PLAYLIST));
-			menu_item_set_attr_sel (m->menu.list, added,
+			menu_item_set_attr_sel (added,
 					get_color(
 					CLR_MENU_ITEM_PLAYLIST_SELECTED));
 		}
@@ -815,32 +810,32 @@ static void side_menu_cmd (struct side_menu *m, const enum key_cmd cmd)
 
 static enum file_type side_menu_curritem_get_type (const struct side_menu *m)
 {
-	int i;
+	struct menu_item *mi;
 	
 	assert (m != NULL);
 	assert (m->visible);
 	assert (m->type == MENU_DIR || m->type == MENU_PLAYLIST);
 
-	i = menu_curritem(m->menu.list);
+	mi = menu_curritem(m->menu.list);
 
-	if (i != -1)
-		return menu_item_get_type (m->menu.list, i);
+	if (mi)
+		return menu_item_get_type (mi);
 
 	return F_OTHER;
 }
 
 static char *side_menu_get_curr_file (const struct side_menu *m)
 {
-	int i;
+	struct menu_item *mi;
 	
 	assert (m != NULL);
 	assert (m->visible);
 	assert (m->type == MENU_DIR || m->type == MENU_PLAYLIST);
 
-	i = menu_curritem (m->menu.list);
+	mi = menu_curritem (m->menu.list);
 
-	if (i != -1)
-		return menu_item_get_file (m->menu.list, i);
+	if (mi)
+		return menu_item_get_file (mi);
 
 	return NULL;
 }
@@ -876,7 +871,7 @@ static void side_menu_set_curr_item_title (struct side_menu *m,
 static void side_menu_update_item (struct side_menu *m,
 		const struct plist *plist, const int n)
 {
-	int menu_item;
+	struct menu_item *mi;
 	const struct plist_item *item;
 	
 	assert (m != NULL);
@@ -887,27 +882,26 @@ static void side_menu_update_item (struct side_menu *m,
 
 	item = &plist->items[n];
 	
-	if ((menu_item = menu_find(m->menu.list, item->file)) != -1) {
+	if ((mi = menu_find(m->menu.list, item->file))) {
 		char *title;
 		
 		if (item->tags && item->tags->time != -1) {
 			char time_str[6];
 		
 			sec_to_min (time_str, item->tags->time);
-			menu_item_set_time (m->menu.list, menu_item, time_str);
+			menu_item_set_time (mi, time_str);
 		}
 		else
-			menu_item_set_time (m->menu.list, menu_item, "");
+			menu_item_set_time (mi, "");
 
 		title = make_menu_title (item->title,
 				item->title == item->title_tags,
 				m->type == MENU_PLAYLIST);
 
-		menu_item_set_title (m->menu.list, menu_item, title);
+		menu_item_set_title (mi, title);
 		
 		if (m->type == MENU_PLAYLIST && item->title == item->title_tags)
-			menu_item_set_align (m->menu.list, menu_item,
-					MENU_ALIGN_RIGHT);
+			menu_item_set_align (mi, MENU_ALIGN_RIGHT);
 
 		m->total_time = plist_total_time (plist,
 				&m->total_time_for_all);
@@ -989,8 +983,7 @@ static void side_menu_get_state (const struct side_menu *m,
 	assert (m->visible);
 	assert (m->type == MENU_DIR || m->type == MENU_PLAYLIST);
 
-	st->top_item = menu_get_top_item (m->menu.list);
-	st->selected_item = menu_curritem (m->menu.list);
+	menu_get_state (m->menu.list, &st->menu_state);
 }
 
 static void side_menu_set_state (struct side_menu *m,
@@ -1001,7 +994,7 @@ static void side_menu_set_state (struct side_menu *m,
 	assert (m->visible);
 	assert (m->type == MENU_DIR || m->type == MENU_PLAYLIST);
 
-	set_menu_state (m->menu.list, st->selected_item, st->top_item);
+	menu_set_state (m->menu.list, &st->menu_state);
 }
 
 static void side_menu_del_item (struct side_menu *m, const char *file)
