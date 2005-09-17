@@ -614,19 +614,50 @@ static void sec_to_min (char *buff, const int seconds)
 		strcpy (buff, "!!!!!");
 }
 
-/* Add an item from the playlist to the menu. */
+/* Make a title sutible to display in a menu from the title of a playlist item.
+ * Returned memory is malloc()ed.
+ * made_from tags - was the playlist title made from tags? 
+ * for_plist - is this title to be displayed in the playlist?
+ */
+static char *make_menu_title (const char *plist_title,
+		const int made_from_tags, const int for_plist)
+{
+	char *title = xstrdup (plist_title);
+	
+	if (made_from_tags)
+		title = iconv_str (title, 0);
+	else {
+		if (!for_plist) {
+
+			/* Use only the file name instead of the full path. */
+			char *slash = strrchr (title, '/');
+			
+			if (slash && slash != title) {
+				char *old_title = title;
+				
+				title = xstrdup (slash + 1);
+				free (old_title);
+			}
+		}
+		
+		title = iconv_str (title, 1);
+	}
+
+	return title;
+}
+
+/* Add an item from the playlist to the menu.
+ * If for_playlist has non-zero value, full paths will be displayed instead of
+ * just file names. */
 static void add_to_menu (struct menu *menu, const struct plist *plist,
-		const int num)
+		const int num, const int for_playlist)
 {
 	int added;
 	const struct plist_item *item = &plist->items[num];
-	char *title = xstrdup (item->title);
+	char *title;
 
-	if (item->title == item->title_tags)
-		title = iconv_str (title, 0);
-	else
-		title = iconv_str (title, 1);
-	
+	title = make_menu_title (item->title, item->title == item->title_tags,
+			for_playlist);
 	added = menu_add (menu, title, plist_file_type(plist, num), item->file);
 	free (title);
 
@@ -646,6 +677,9 @@ static void add_to_menu (struct menu *menu, const struct plist *plist,
 			get_color(CLR_MENU_ITEM_FILE_MARKED_SELECTED));
 	
 	menu_item_set_format (menu, added, file_type_name(item->file));
+
+	if (for_playlist && item->title == item->title_file)
+		menu_item_set_align (menu, added, MENU_ALIGN_RIGHT);
 }
 
 static void side_menu_clear (struct side_menu *m)
@@ -714,7 +748,8 @@ static void side_menu_make_list_content (struct side_menu *m,
 	/* playlist items */
 	for (i = 0; i < files->num; i++) {
 		if (!plist_deleted(files, i))
-			add_to_menu (m->menu.list, files, i);
+			add_to_menu (m->menu.list, files, i,
+					m->type == MENU_PLAYLIST);
 	}
 
 	m->total_time = plist_total_time (files, &m->total_time_for_all);
@@ -864,13 +899,15 @@ static void side_menu_update_item (struct side_menu *m,
 		else
 			menu_item_set_time (m->menu.list, menu_item, "");
 
-		title = xstrdup (item->title);
-		if (item->title == item->title_tags)
-			title = iconv_str (title, 0);
-		else
-			title = iconv_str (title, 1);
+		title = make_menu_title (item->title,
+				item->title == item->title_tags,
+				m->type == MENU_PLAYLIST);
 
 		menu_item_set_title (m->menu.list, menu_item, title);
+		
+		if (m->type == MENU_PLAYLIST && item->title == item->title_tags)
+			menu_item_set_align (m->menu.list, menu_item,
+					MENU_ALIGN_RIGHT);
 
 		m->total_time = plist_total_time (plist,
 				&m->total_time_for_all);
@@ -905,7 +942,7 @@ static void side_menu_add_plist_item (struct side_menu *m,
 	assert (m->visible);
 	assert (m->type == MENU_DIR || m->type == MENU_PLAYLIST);
 
-	add_to_menu (m->menu.list, plist, num);
+	add_to_menu (m->menu.list, plist, num, m->type == MENU_PLAYLIST);
 	m->total_time = plist_total_time (plist, &m->total_time_for_all);
 }
 

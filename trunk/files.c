@@ -80,27 +80,6 @@ enum file_type file_type (const char *file)
 	return F_OTHER;
 }
 
-/* Get file name from a path. Returned memory is malloc()ed. */
-static char *get_file (const char *path, const int strip_ext)
-{
-	char *fname;
-	char *ext;
-	
-	assert (path != NULL);
-
-	fname = strrchr (path, '/');
-
-	if (fname)
-		fname = xstrdup (fname + 1);
-	else
-		fname = xstrdup (path);
-
-	if (strip_ext && (ext = ext_pos(fname)))
-		*(ext-1) = 0;
-
-	return fname;
-}
-
 /* Make a title from the file name for the item. If hide extension != 0, strip
  * the file name from extension. */
 void make_file_title (struct plist *plist, const int num,
@@ -112,10 +91,17 @@ void make_file_title (struct plist *plist, const int num,
 	assert (!plist_deleted(plist, num));
 
 	if (file_type(plist->items[num].file) != F_URL) {
-		char *fname;
+		char *file = xstrdup (plist->items[num].file);
 		
-		fname = get_file (plist->items[num].file, hide_extension);
-		plist_set_title_file (plist, num, fname);
+		if (hide_extension) {
+			char *dot = strrchr (file, '.');
+
+			if (dot)
+				*dot = 0;
+		}
+
+		plist_set_title_file (plist, num, file);
+		free (file);
 	}
 	else
 		plist_set_title_file (plist, num, plist->items[num].file);

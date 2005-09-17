@@ -82,8 +82,12 @@ static void draw_item (const struct menu *menu, const int num, const int pos,
 	else
 		wattrset (menu->win, item->attr_normal);
 	
-	waddnstr (menu->win, item->title, title_space);
 	title_len = strlen (item->title);
+
+	if (title_len <= title_space || item->align == MENU_ALIGN_LEFT)
+		waddnstr (menu->win, item->title, title_space);
+	else
+		waddstr (menu->win, item->title + title_len - title_space);
 	
 	/* Make blank line to the right side of the screen */
 	if (num == menu->selected)
@@ -193,6 +197,7 @@ int menu_add (struct menu *menu, char *title, const enum file_type type,
 	menu->items[menu->nitems].attr_sel_marked = A_NORMAL;
 	menu->items[menu->nitems].time[0] = 0;
 	menu->items[menu->nitems].format[0] = 0;
+	menu->items[menu->nitems].align = MENU_ALIGN_LEFT;
 
 	return menu->nitems++;
 }
@@ -572,3 +577,11 @@ void menu_del_item (struct menu *menu, const char *fname)
 	//TODO
 }
 
+void menu_item_set_align (struct menu *menu, const int num,
+		const enum menu_align align)
+{
+	assert (menu != NULL);
+	assert (num >= 0 && num < menu->nitems);
+
+	menu->items[num].align = align;
+}
