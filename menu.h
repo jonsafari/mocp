@@ -19,9 +19,16 @@ enum menu_request
 	REQ_BOTTOM
 };
 
+enum menu_align
+{
+	MENU_ALIGN_RIGHT,
+	MENU_ALIGN_LEFT
+};
+
 struct menu_item
 {
 	char *title;		/* Titile of the item */
+	enum menu_align align;	/* Align of the title */
 
 	/* Curses attributes in different states: */
 	int attr_normal;
@@ -102,5 +109,7 @@ void menu_item_set_title (struct menu *menu, const int num, const char *title);
 int menu_nitems (const struct menu *menu);
 int menu_find (const struct menu *menu, const char *fname);
 void menu_del_item (struct menu *menu, const char *fname);
+void menu_item_set_align (struct menu *menu, const int num,
+		const enum menu_align align);
 
 #endif
