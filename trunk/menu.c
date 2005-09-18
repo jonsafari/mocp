@@ -633,7 +633,7 @@ static void menu_renumber_items (struct menu *menu)
 	
 	assert (menu != NULL);
 
-	for (mi = menu->top; mi; mi = mi->next)
+	for (mi = menu->items; mi; mi = mi->next)
 		mi->num = i++;
 
 	assert (i == menu->nitems);
