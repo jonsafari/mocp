@@ -1489,7 +1489,7 @@ static void add_file_plist ()
 	}
 
 
-	if (plist_find_fname(playlist, file)) {
+	if (plist_find_fname(playlist, file) == -1) {
 		struct plist_item *item = &dir_plist->items[
 			plist_find_fname(dir_plist, file)];
 
