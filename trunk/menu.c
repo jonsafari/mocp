@@ -298,7 +298,8 @@ void menu_update_size (struct menu *menu, const int posx, const int posy,
 	menu->width = width;
 	menu->height = height;
 
-	if (menu->selected->num >= menu->top->num + menu->height)
+	if (menu->selected && menu->top
+			&& menu->selected->num >= menu->top->num + menu->height)
 		menu->selected = get_item_relative (menu->top,
 				menu->height - 1);
 }
