@@ -1519,6 +1519,12 @@ static void xterm_set_title (const int state, const char *title)
 	}
 }
 
+static void xterm_clear_title ()
+{
+	if (has_xterm)
+		write (1, "\033]2;\007", sizeof("\033]2;\007")-1);
+}
+
 /* Based on ASCIILines option initialize line characters with curses lines or
  * ASCII characters. */
 static void init_lines ()
@@ -2314,6 +2320,8 @@ void windows_end ()
 {
 	main_win_destroy (&main_win);
 	info_win_destroy (&info_win);
+
+	xterm_clear_title ();
 	
 	/* endwin() sometimes fails on x terminals when we get SIGCHLD
 	 * at this moment. Double invokation seems to solve this. */
