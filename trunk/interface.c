@@ -471,19 +471,15 @@ static void interface_message (const char *format, ...)
 static void update_item_tags (struct plist *plist, const int num,
 		const struct file_tags *tags)
 {
-	struct file_tags *old_tags = plist->items[num].tags;
+	struct file_tags *old_tags = plist_get_tags (plist, num);
 	
-	plist->items[num].tags = tags_dup (tags);
+	plist_set_tags (plist, num, tags);
 
 	/* Get the time from the old tags if it's not presend in the new tags.
 	 * FIXME: There is risk, that the file was modified and the time
 	 * from the old tags is not valid. */
-	if (!(tags->filled & TAGS_TIME) && old_tags && old_tags->time != -1) {
-		plist->items[num].tags->filled |= TAGS_TIME;
-		plist->items[num].tags->time = old_tags->time;
-	}	
-
-	plist_count_total_time (plist);
+	if (!(tags->filled & TAGS_TIME) && old_tags && old_tags->time != -1)
+		plist_set_item_time (plist, num, old_tags->time);
 
 	if (options_get_int("ReadTags")) {
 		if (plist->items[num].title_tags) {
@@ -784,21 +780,18 @@ static void event_plist_del (char *file)
 	int item = plist_find_fname (playlist, file);
 
 	if (item != -1) {
-		int need_recount_time;
 		char *file;
-
-		if (get_item_time(playlist, item) != -1)
-			need_recount_time = 1;
-		else
-			need_recount_time = 0;
+		int have_all_times;
+		int playlist_total_time;
 
 		file = plist_get_file (playlist, item);
 		plist_delete (playlist, item);
 
-		if (need_recount_time)
-			plist_count_total_time (playlist);
-
 		iface_del_plist_item (file);
+		playlist_total_time = plist_total_time (playlist,
+				&have_all_times);
+		iface_plist_set_total_time (playlist_total_time,
+				have_all_times);
 		free (file);
 
 		if (plist_count(playlist) == 0)
@@ -1879,21 +1872,11 @@ static void delete_item ()
 		send_str_to_srv (file);
 	}
 	else {
-		int need_recount_time;
 		int n = plist_find_fname (playlist, file);
 
 		assert (n != -1);
 
-		if (get_item_time(playlist, n) != -1)
-			need_recount_time = 1;
-		else
-			need_recount_time = 0;
-
 		plist_delete (playlist, n);
-
-		if (need_recount_time)
-			plist_count_total_time (playlist);
-
 		iface_del_plist_item (file);
 
 		if (plist_count(playlist) == 0)

@@ -51,8 +51,7 @@ struct plist
 	struct plist_item *items;
 	int serial;		/* Optional serial number of this playlist */
 	int total_time;		/* total time for files on the playlist */
-	int time_for_all_files;	/* Nono-zero if the above field contains time
-				   for all files on the list. */
+	int items_with_time;	/* Number of items for which the time is set. */
 
 	struct rb_tree search_tree;
 };
@@ -83,8 +82,8 @@ void plist_set_title_file (struct plist *plist, const int num,
 void plist_set_file (struct plist *plist, const int num, const char *file);
 int plist_deleted (const struct plist *plist, const int num);
 void plist_cat (struct plist *a, struct plist *b);
-void update_item_time (struct plist_item *item, const int time);
 void update_file (struct plist_item *item);
+void plist_set_item_time (struct plist *plist, const int num, const int time);
 int get_item_time (const struct plist *plist, const int i);
 int plist_total_time (const struct plist *plisti, int *all_files);
 void plist_shuffle (struct plist *plist);
@@ -97,8 +96,10 @@ int plist_last (const struct plist *plist);
 int plist_find_del_fname (const struct plist *plist, const char *file);
 void plist_item_copy (struct plist_item *dst, const struct plist_item *src);
 enum file_type plist_file_type (const struct plist *plist, const int num);
-void plist_count_total_time (struct plist *plist);
 void plist_remove_common_items (struct plist *a, struct plist *b);
 void plist_discard_tags (struct plist *plist);
+void plist_set_tags (struct plist *plist, const int num,
+		const struct file_tags *tags);
+struct file_tags *plist_get_tags (const struct plist *plist, const int num);
 
 #endif

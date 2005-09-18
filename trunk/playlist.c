@@ -166,7 +166,7 @@ void plist_init (struct plist *plist)
 	rb_init_tree (&plist->search_tree, rb_compare, rb_fname_compare,
 			plist);
 	plist->total_time = 0;
-	plist->time_for_all_files = 0;
+	plist->items_with_time = 0;
 }
 
 /* Create a new playlit item with empty fields. */
@@ -338,7 +338,7 @@ void plist_clear (struct plist *plist)
 	plist->not_deleted = 0;
 	rb_clear (&plist->search_tree);
 	plist->total_time = 0;
-	plist->time_for_all_files = 0;
+	plist->items_with_time = 0;
 }
 
 /* Destroy the list freeing memory, the list can't be used after that. */
@@ -577,6 +577,11 @@ int plist_add_from_item (struct plist *plist, const struct plist_item *item)
 
 	plist_item_copy (&plist->items[pos], item);
 
+	if (item->tags && item->tags->time != -1) {
+		plist->total_time += item->tags->time;
+		plist->items_with_time++;
+	}
+
 	return pos;
 }
 
@@ -593,12 +598,20 @@ void plist_delete (struct plist *plist, const int num)
 		char *file = plist->items[num].file;
 
 		plist->items[num].file = NULL;
+
+		if (plist->items[num].tags
+				&& plist->items[num].tags->time != -1) {
+			plist->total_time -= plist->items[num].tags->time;
+			plist->items_with_time--;
+		}
+		
 		plist_free_item_fields (&plist->items[num]);
 		plist->items[num].file = file;
 
 		plist->items[num].deleted = 1;
+
+		plist->not_deleted--;
 	}
-	plist->not_deleted--;
 }
 
 /* Count not deleted items. */
@@ -667,13 +680,34 @@ void plist_cat (struct plist *a, struct plist *b)
 }
 
 /* Set the time tags field for the item. */
-void update_item_time (struct plist_item *item, const int time)
+void plist_set_item_time (struct plist *plist, const int num, const int time)
 {
-	if (!item->tags)
-		item->tags = tags_new ();
+	int old_time;
+	
+	assert (plist != NULL);
+	assert (num >= 0 && num < plist->num);
+	
+	if (!plist->items[num].tags) {
+		plist->items[num].tags = tags_new ();
+		old_time = -1;
+	}
+	else if (plist->items[num].tags->time != -1)
+		old_time = plist->items[num].tags->time;
+	else
+		old_time = -1;
 
-	item->tags->time = time;
-	item->tags->filled |= TAGS_TIME;
+	if (old_time != -1) {
+		plist->total_time -= old_time;
+		plist->items_with_time--;
+	}
+	
+	if (time != -1) {
+		plist->total_time += time;
+		plist->items_with_time++;
+	}
+
+	plist->items[num].tags->time = time;
+	plist->items[num].tags->filled |= TAGS_TIME;
 }
 
 int get_item_time (const struct plist *plist, const int i)
@@ -686,29 +720,6 @@ int get_item_time (const struct plist *plist, const int i)
 	return -1;
 }
 
-/* Count total time of items on the playlist. */
-void plist_count_total_time (struct plist *plist)
-{
-	int i;
-
-	assert (plist != NULL);
-
-	plist->time_for_all_files = 1;
-	plist->total_time = 0;
-
-	for (i = 0; i < plist->num; i++)
-		if (!plist_deleted(plist, i)) {
-			if (!plist->items[i].tags
-					|| !(plist->items[i].tags->filled
-						& TAGS_TIME)
-					|| plist->items[i].tags->time == -1)
-				plist->time_for_all_files = 0;
-			else
-				plist->total_time +=
-					plist->items[i].tags->time;
-		}
-}
-
 /* Return the total time of all files on the playlist that has the time tag.
  * If the time information is missing for any file, all_files is set to 0,
  * otherwise 1.
@@ -716,7 +727,7 @@ void plist_count_total_time (struct plist *plist)
  * up-to-date. */
 int plist_total_time (const struct plist *plist, int *all_files)
 {
-	*all_files = plist->time_for_all_files;
+	*all_files = plist->not_deleted == plist->items_with_time;
 	
 	return plist->total_time;
 }
@@ -827,4 +838,47 @@ void plist_discard_tags (struct plist *plist)
 			tags_free (plist->items[i].tags);
 			plist->items[i].tags = NULL;
 		}
+
+	plist->items_with_time = 0;
+	plist->total_time = 0;
+}
+
+void plist_set_tags (struct plist *plist, const int num,
+		const struct file_tags *tags)
+{
+	int old_time;
+
+	assert (plist != NULL);
+	assert (num >= 0 && num < plist->num);
+	assert (tags != NULL);
+
+	if (plist->items[num].tags && plist->items[num].tags->time != -1)
+		old_time = plist->items[num].tags->time;
+	else
+		old_time = -1;
+
+	if (plist->items[num].tags)
+		tags_free (plist->items[num].tags);
+	plist->items[num].tags = tags_dup (tags);
+
+	if (old_time != -1) {
+		plist->total_time -= old_time;
+		plist->items_with_time--;
+	}
+
+	if (tags->time != -1) {
+		plist->total_time += tags->time;
+		plist->items_with_time++;
+	}
+}
+
+struct file_tags *plist_get_tags (const struct plist *plist, const int num)
+{
+	assert (plist != NULL);
+	assert (num >= 0 && num < plist->num);
+	
+	if (plist->items[num].tags)
+		return tags_dup (plist->items[num].tags);
+
+	return NULL;
 }

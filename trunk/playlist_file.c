@@ -142,7 +142,7 @@ static int plist_load_m3u (struct plist *plist, const char *fname,
 			plist_set_title_tags (plist, last_added, comma + 1);
 			
 			if (*time_text)
-				update_item_time (&plist->items[last_added],
+				plist_set_item_time (plist, last_added,
 						time_sec);
 		}
 		else if (line[0] != '#') {
@@ -500,7 +500,6 @@ static void find_common_path (char *buf, const int buf_size,
 int plist_save (struct plist *plist, const char *file, const char *cwd)
 {
 	char common_path[PATH_MAX+1];
-	int i;
 
 	if (cwd)
 		
