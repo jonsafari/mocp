@@ -100,7 +100,7 @@ struct bar
 	int width;	/* width in chars */
 	int filled;	/* how much is it filled in percent */
 	char orig_title[40];	/* optional title */
-	char title[256];	/* title with the percent value */
+	char title[512];	/* title with the percent value */
 	int show_val;	/* show the title and the value? */
 	int fill_color;	/* color (ncurses attributes) of the filled part */
 	int empty_color;	/* color of the empty part */
