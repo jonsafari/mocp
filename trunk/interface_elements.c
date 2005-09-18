@@ -596,12 +596,12 @@ static void main_win_init (struct main_win *w)
 
 	w->curr_file = NULL;
 
-	side_menu_init (&w->menus[0], MENU_DIR, w->win, LINES - 4, COLS,
+	side_menu_init (&w->menus[0], MENU_DIR, w->win, LINES - 4, COLS/2,
 			0, 0);
 	/*side_menu_init (&w->menus[0], MENU_DIR, w->win, 5, 40,
 			1, 1);*/
 	side_menu_init (&w->menus[1], MENU_PLAYLIST, w->win, LINES - 4,
-			COLS, 0, 0);
+			COLS/2, 0, COLS/2);
 	side_menu_set_title (&w->menus[1], "Playlist");
 	w->menus[2].visible = 0;
 
@@ -819,8 +819,17 @@ static void side_menu_draw_frame (const struct side_menu *m)
 	
 	/* Border */
 	wattrset (m->win, get_color(CLR_FRAME));
-	wborder (m->win, lines.vert, lines.vert, lines.horiz, ' ',
-			lines.ulcorn, lines.urcorn, lines.vert, lines.vert);
+	wmove (m->win, m->posy, m->posx);
+	waddch (m->win, lines.ulcorn);
+	whline (m->win, lines.horiz, m->width - 2);
+	wmove (m->win, m->posy, m->posx + m->width - 1);
+	waddch (m->win, lines.urcorn);
+	wmove (m->win, m->posy + 1, m->posx);
+	wvline (m->win, lines.vert, m->height + 1);
+	wmove (m->win, m->posy + 1, m->posx + m->width - 1);
+	wvline (m->win, lines.vert, m->height + 1);
+	/*wborder (m->win, lines.vert, lines.vert, lines.horiz, ' ',
+			lines.ulcorn, lines.urcorn, lines.vert, lines.vert);*/
 
 	/* The title */
 	if (title) {
@@ -840,7 +849,7 @@ static void side_menu_draw_frame (const struct side_menu *m)
 	}
 }
 
-static void side_menu_draw (const struct side_menu *m)
+static void side_menu_draw (const struct side_menu *m, const int active)
 {
 	assert (m != NULL);
 	assert (m->visible);
@@ -849,7 +858,7 @@ static void side_menu_draw (const struct side_menu *m)
 	side_menu_draw_frame (m);
 	
 	if (m->type == MENU_DIR || m->type == MENU_PLAYLIST)
-		menu_draw (m->menu.list.main);
+		menu_draw (m->menu.list.main, active);
 	else
 		abort ();
 }
@@ -1170,9 +1179,9 @@ static void main_win_draw (const struct main_win *w)
 	/* Draw all visible menus, draw the selected menu as the last menu. */
 	for (i = 0; i < (int)(sizeof(w->menus)/sizeof(w->menus[0])); i++)
 		if (w->menus[i].visible && i != w->selected_menu)
-			side_menu_draw (&w->menus[i]);
+			side_menu_draw (&w->menus[i], 0);
 
-	side_menu_draw (&w->menus[w->selected_menu]);
+	side_menu_draw (&w->menus[w->selected_menu], 1);
 }
 
 static void main_win_set_dir_content (struct main_win *w,

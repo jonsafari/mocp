@@ -62,7 +62,7 @@ static char *strcasestr (const char *haystack, const char *needle)
 /* Draw menu item on a given position from the top of the menu. */
 static void draw_item (const struct menu *menu, const struct menu_item *mi,
 		const int pos, const int item_info_pos, const int title_space,
-		const int number_space)
+		const int number_space, const int draw_selected)
 {
 	int title_len;
 	int j;
@@ -82,9 +82,9 @@ static void draw_item (const struct menu *menu, const struct menu_item *mi,
 	}
 
 	/* Set attributes */
-	if (mi == menu->selected && mi == menu->marked)
+	if (draw_selected && mi == menu->selected && mi == menu->marked)
 		wattrset (menu->win, mi->attr_sel_marked);
-	else if (mi == menu->selected)
+	else if (draw_selected && mi == menu->selected)
 		wattrset (menu->win, mi->attr_sel);
 	else if (mi == menu->marked)
 		wattrset (menu->win, mi->attr_marked);
@@ -118,7 +118,7 @@ static void draw_item (const struct menu *menu, const struct menu_item *mi,
 		wprintw (menu->win, "[%3s]", mi->format);
 }
 
-void menu_draw (const struct menu *menu)
+void menu_draw (const struct menu *menu, const int active)
 {
 	struct menu_item *mi;
 	int title_width;
@@ -160,7 +160,7 @@ void menu_draw (const struct menu *menu)
 			mi = mi->next)
 		draw_item (menu, mi, mi->num - menu->top->num + menu->posy,
 				menu->posx + info_pos, title_width,
-				number_space);
+				number_space, active);
 }
 
 /* menu_items must be malloc()ed memory! */
