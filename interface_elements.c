@@ -43,10 +43,6 @@
 	"not fully functional."
 #define HISTORY_SIZE	50
 
-/* TODO:
- * - xterm title (state, title of the song)
- */
-
 /* Type of the side menu. */
 enum side_menu_type
 {
@@ -73,7 +69,12 @@ struct side_menu
 	
 	union
 	{
-		struct menu *list;
+		struct {
+			struct menu *main;	/* visible menu */
+			struct menu *copy;	/* copy of the menu when we
+						   display matching items
+						   when searching */
+		} list;
 		/* struct menu_tree *tree;*/
 	} menu;
 };
@@ -535,16 +536,18 @@ static void side_menu_init (struct side_menu *m, const enum side_menu_type type,
 	m->total_time_for_all = 0;
 
 	if (type == MENU_DIR || type == MENU_PLAYLIST) {
-		m->menu.list = menu_new (m->win, posx + 1, posy + 1, width - 2,
-				height - 1);
-		menu_set_items_numbering (m->menu.list,
+		m->menu.list.main = menu_new (m->win, posx + 1, posy + 1,
+				width - 2, height - 1);
+		m->menu.list.copy = NULL;
+		
+		menu_set_items_numbering (m->menu.list.main,
 				type == MENU_PLAYLIST
 				&& options_get_int("PlaylistNumbering"));
-		menu_set_show_format (m->menu.list,
+		menu_set_show_format (m->menu.list.main,
 				options_get_int("ShowFormat"));
-		menu_set_show_time (m->menu.list,
+		menu_set_show_time (m->menu.list.main,
 				strcasecmp(options_get_str("ShowTime"), "no"));
-		menu_set_info_attr (m->menu.list,
+		menu_set_info_attr (m->menu.list.main,
 				get_color(CLR_MENU_ITEM_INFO));
 	}
 	else
@@ -558,8 +561,11 @@ static void side_menu_destroy (struct side_menu *m)
 	assert (m != NULL);
 
 	if (m->visible) {
-		if (m->type == MENU_DIR || m->type == MENU_PLAYLIST)
-			menu_free (m->menu.list);
+		if (m->type == MENU_DIR || m->type == MENU_PLAYLIST) {
+			menu_free (m->menu.list.main);
+			if (m->menu.list.copy)
+				menu_free (m->menu.list.copy);
+		}
 		else
 			abort ();
 		
@@ -709,18 +715,19 @@ static void side_menu_clear (struct side_menu *m)
 	assert (m != NULL);
 	assert (m->visible);
 	assert (m->type == MENU_DIR || m->type == MENU_PLAYLIST);
-	assert (m->menu.list != NULL);
+	assert (m->menu.list.main != NULL);
+	assert (m->menu.list.copy == NULL);
 
-	menu_free (m->menu.list);
-	m->menu.list = menu_new (m->win, m->posx + 1, m->posy + 1, m->width - 2,
-			m->height - 1);
-	menu_set_items_numbering (m->menu.list,	m->type == MENU_PLAYLIST
+	menu_free (m->menu.list.main);
+	m->menu.list.main = menu_new (m->win, m->posx + 1, m->posy + 1,
+			m->width - 2, m->height - 1);
+	menu_set_items_numbering (m->menu.list.main, m->type == MENU_PLAYLIST
 			&& options_get_int("PlaylistNumbering"));
 	
-	menu_set_show_format (m->menu.list, options_get_int("ShowFormat"));
-	menu_set_show_time (m->menu.list,
+	menu_set_show_format (m->menu.list.main, options_get_int("ShowFormat"));
+	menu_set_show_time (m->menu.list.main,
 			strcasecmp(options_get_str("ShowTime"), "no"));
-	menu_set_info_attr (m->menu.list, get_color(CLR_MENU_ITEM_INFO));
+	menu_set_info_attr (m->menu.list.main, get_color(CLR_MENU_ITEM_INFO));
 }
 
 /* Fill the directory or playlist side menu with this content. */
@@ -733,11 +740,12 @@ static void side_menu_make_list_content (struct side_menu *m,
 
 	assert (m != NULL);
 	assert (m->type == MENU_DIR || m->type == MENU_PLAYLIST);
-	assert (m->menu.list != NULL);
+	assert (m->menu.list.main != NULL);
+	assert (m->menu.list.copy == NULL);
 
 	side_menu_clear (m);
 
-	added = menu_add (m->menu.list, "../", F_DIR, "..");
+	added = menu_add (m->menu.list.main, "../", F_DIR, "..");
 	menu_item_set_attr_normal (added, get_color(CLR_MENU_ITEM_DIR));
 	menu_item_set_attr_sel (added, get_color(CLR_MENU_ITEM_DIR_SELECTED));
 	
@@ -748,7 +756,7 @@ static void side_menu_make_list_content (struct side_menu *m,
 			strcpy (title, strrchr(dirs->items[i], '/') + 1);
 			strcat (title, "/");
 			
-			added = menu_add (m->menu.list, title, F_DIR,
+			added = menu_add (m->menu.list.main, title, F_DIR,
 					dirs->items[i]);
 			menu_item_set_attr_normal (added,
 					get_color(CLR_MENU_ITEM_DIR));
@@ -758,7 +766,7 @@ static void side_menu_make_list_content (struct side_menu *m,
 
 	if (playlists)
 		for (i = 0; i < playlists->num; i++){
-			added = menu_add (m->menu.list,
+			added = menu_add (m->menu.list.main,
 					strrchr(playlists->items[i], '/') + 1,
 					F_PLAYLIST, playlists->items[i]);
 			menu_item_set_attr_normal (added,
@@ -771,7 +779,7 @@ static void side_menu_make_list_content (struct side_menu *m,
 	/* playlist items */
 	for (i = 0; i < files->num; i++) {
 		if (!plist_deleted(files, i))
-			add_to_menu (m->menu.list, files, i,
+			add_to_menu (m->menu.list.main, files, i,
 					m->type == MENU_PLAYLIST);
 	}
 
@@ -841,7 +849,7 @@ static void side_menu_draw (const struct side_menu *m)
 	side_menu_draw_frame (m);
 	
 	if (m->type == MENU_DIR || m->type == MENU_PLAYLIST)
-		menu_draw (m->menu.list);
+		menu_draw (m->menu.list.main);
 	else
 		abort ();
 }
@@ -854,22 +862,22 @@ static void side_menu_cmd (struct side_menu *m, const enum key_cmd cmd)
 	if (m->type == MENU_DIR || m->type == MENU_PLAYLIST) {
 		switch (cmd) {
 			case KEY_CMD_MENU_DOWN:
-				menu_driver (m->menu.list, REQ_DOWN);
+				menu_driver (m->menu.list.main, REQ_DOWN);
 				break;
 			case KEY_CMD_MENU_UP:
-				menu_driver (m->menu.list, REQ_UP);
+				menu_driver (m->menu.list.main, REQ_UP);
 				break;
 			case KEY_CMD_MENU_NPAGE:
-				menu_driver (m->menu.list, REQ_PGDOWN);
+				menu_driver (m->menu.list.main, REQ_PGDOWN);
 				break;
 			case KEY_CMD_MENU_PPAGE:
-				menu_driver (m->menu.list, REQ_PGUP);
+				menu_driver (m->menu.list.main, REQ_PGUP);
 				break;
 			case KEY_CMD_MENU_FIRST:
-				menu_driver (m->menu.list, REQ_TOP);
+				menu_driver (m->menu.list.main, REQ_TOP);
 				break;
 			case KEY_CMD_MENU_LAST:
-				menu_driver (m->menu.list, REQ_BOTTOM);
+				menu_driver (m->menu.list.main, REQ_BOTTOM);
 				break;
 			default:
 				abort ();
@@ -887,7 +895,7 @@ static enum file_type side_menu_curritem_get_type (const struct side_menu *m)
 	assert (m->visible);
 	assert (m->type == MENU_DIR || m->type == MENU_PLAYLIST);
 
-	mi = menu_curritem(m->menu.list);
+	mi = menu_curritem (m->menu.list.main);
 
 	if (mi)
 		return menu_item_get_type (mi);
@@ -903,7 +911,7 @@ static char *side_menu_get_curr_file (const struct side_menu *m)
 	assert (m->visible);
 	assert (m->type == MENU_DIR || m->type == MENU_PLAYLIST);
 
-	mi = menu_curritem (m->menu.list);
+	mi = menu_curritem (m->menu.list.main);
 
 	if (mi)
 		return menu_item_get_file (mi);
@@ -935,7 +943,7 @@ static void side_menu_set_curr_item_title (struct side_menu *m,
 	assert (m->visible);
 	assert (title != NULL);
 
-	menu_setcurritem_title (m->menu.list, title);
+	menu_setcurritem_title (m->menu.list.main, title);
 }
 
 /* Update item title and time for this item if ti's present on this menu. */
@@ -953,7 +961,7 @@ static void side_menu_update_item (struct side_menu *m,
 
 	item = &plist->items[n];
 	
-	if ((mi = menu_find(m->menu.list, item->file))) {
+	if ((mi = menu_find(m->menu.list.main, item->file))) {
 		char *title;
 		
 		if (item->tags && item->tags->time != -1) {
@@ -987,7 +995,9 @@ static void side_menu_unmark_file (struct side_menu *m)
 	assert (m->visible);
 	assert (m->type == MENU_DIR || m->type == MENU_PLAYLIST);
 
-	menu_unmark_item (m->menu.list);
+	menu_unmark_item (m->menu.list.main);
+	if (m->menu.list.copy)
+		menu_unmark_item (m->menu.list.copy);
 }
 
 static void side_menu_mark_file (struct side_menu *m, const char *file)
@@ -996,7 +1006,9 @@ static void side_menu_mark_file (struct side_menu *m, const char *file)
 	assert (m->visible);
 	assert (m->type == MENU_DIR || m->type == MENU_PLAYLIST);
 
-	menu_mark_item (m->menu.list, file);
+	menu_mark_item (m->menu.list.main, file);
+	if (m->menu.list.copy)
+		menu_mark_item (m->menu.list.copy, file);
 }
 
 static void side_menu_add_plist_item (struct side_menu *m,
@@ -1007,7 +1019,8 @@ static void side_menu_add_plist_item (struct side_menu *m,
 	assert (m->visible);
 	assert (m->type == MENU_DIR || m->type == MENU_PLAYLIST);
 
-	add_to_menu (m->menu.list, plist, num, m->type == MENU_PLAYLIST);
+	add_to_menu (m->menu.list.copy ? m->menu.list.copy : m->menu.list.main,
+			plist, num, m->type == MENU_PLAYLIST);
 	m->total_time = plist_total_time (plist, &m->total_time_for_all);
 }
 
@@ -1033,7 +1046,7 @@ static void side_menu_update_show_time (struct side_menu *m)
 	assert (m->visible);
 	assert (m->type == MENU_DIR || m->type == MENU_PLAYLIST);
 
-	menu_set_show_time (m->menu.list,
+	menu_set_show_time (m->menu.list.main,
 				strcasecmp(options_get_str("ShowTime"), "no"));
 }
 
@@ -1043,7 +1056,7 @@ static void side_menu_update_show_format (struct side_menu *m)
 	assert (m->visible);
 	assert (m->type == MENU_DIR || m->type == MENU_PLAYLIST);
 
-	menu_set_show_format (m->menu.list, options_get_int("ShowFormat"));
+	menu_set_show_format (m->menu.list.main, options_get_int("ShowFormat"));
 }
 
 static void side_menu_get_state (const struct side_menu *m,
@@ -1054,7 +1067,7 @@ static void side_menu_get_state (const struct side_menu *m,
 	assert (m->visible);
 	assert (m->type == MENU_DIR || m->type == MENU_PLAYLIST);
 
-	menu_get_state (m->menu.list, &st->menu_state);
+	menu_get_state (m->menu.list.main, &st->menu_state);
 }
 
 static void side_menu_set_state (struct side_menu *m,
@@ -1065,7 +1078,7 @@ static void side_menu_set_state (struct side_menu *m,
 	assert (m->visible);
 	assert (m->type == MENU_DIR || m->type == MENU_PLAYLIST);
 
-	menu_set_state (m->menu.list, &st->menu_state);
+	menu_set_state (m->menu.list.main, &st->menu_state);
 }
 
 static void side_menu_del_item (struct side_menu *m, const char *file)
@@ -1074,7 +1087,8 @@ static void side_menu_del_item (struct side_menu *m, const char *file)
 	assert (m->visible);
 	assert (m->type == MENU_DIR || m->type == MENU_PLAYLIST);
 
-	menu_del_item (m->menu.list, file);
+	menu_del_item (m->menu.list.copy ? m->menu.list.copy : m->menu.list.main,
+			file);
 }
 
 static void side_menu_set_plist_time (struct side_menu *m, const int time,
@@ -1087,6 +1101,47 @@ static void side_menu_set_plist_time (struct side_menu *m, const int time,
 	m->total_time_for_all = time_for_all;
 }
 
+/* Replace the menu with a menu cantaining only items that contain the pattern.
+ * If no items matched, don't do anything.
+ * Return the number of items matching. */
+static int side_menu_filter (struct side_menu *m, const char *pattern)
+{
+	struct menu *filtered_menu;
+	
+	assert (m != NULL);
+	assert (pattern != NULL);
+	assert (m->menu.list.main != NULL);
+
+	filtered_menu = menu_filter_pattern (m->menu.list.copy
+			? m->menu.list.copy : m->menu.list.main, pattern);
+
+	if (menu_nitems(filtered_menu) == 0) {
+		menu_free (filtered_menu);
+		return 0;
+	}
+	
+	if (m->menu.list.copy)
+		menu_free (m->menu.list.main);
+	else
+		m->menu.list.copy = m->menu.list.main;
+
+	m->menu.list.main = filtered_menu;
+		
+	return menu_nitems (filtered_menu);
+}
+
+static void side_menu_use_main (struct side_menu *m)
+{
+	assert (m != NULL);
+	assert (m->menu.list.main != NULL);
+
+	if (m->menu.list.copy) {
+		menu_free (m->menu.list.main);
+		m->menu.list.main = m->menu.list.copy;
+		m->menu.list.copy = NULL;
+	}
+}
+
 static void side_menu_resize (struct side_menu *m, const int height,
 		const int width, const int posy, const int posx)
 {
@@ -1097,9 +1152,13 @@ static void side_menu_resize (struct side_menu *m, const int height,
 	m->height = height;
 	m->width = width;
 
-	if (m->type == MENU_DIR || m->type == MENU_PLAYLIST)
-		menu_update_size (m->menu.list, posx + 1, posy + 1, width - 2,
-				height - 1);
+	if (m->type == MENU_DIR || m->type == MENU_PLAYLIST) {
+		menu_update_size (m->menu.list.main, posx + 1, posy + 1,
+				width - 2, height - 1);
+		if (m->menu.list.copy)
+			menu_update_size (m->menu.list.copy, posx + 1, posy + 1,
+				width - 2, height - 1);
+	}
 	else
 		abort ();
 }
@@ -1273,6 +1332,29 @@ static void main_win_set_played_file (struct main_win *w, const char *file)
 		}
 	}
 
+	main_win_draw (w);
+}
+
+static int main_win_menu_filter (struct main_win *w, const char *pattern)
+{
+	int num;
+	
+	assert (w != NULL);
+	assert (pattern != NULL);
+
+	num = side_menu_filter (&w->menus[w->selected_menu], pattern);
+
+	if (num)
+		main_win_draw (w);
+
+	return num;
+}
+
+static void main_win_clear_filter_menu (struct main_win *w)
+{
+	assert (w != NULL);
+
+	side_menu_use_main (&w->menus[w->selected_menu]);
 	main_win_draw (w);
 }
 
@@ -2043,39 +2125,75 @@ static void info_win_make_entry (struct info_win *w, const enum entry_type type)
 	entry_draw (&w->entry, w->win, 1, 0);
 }
 
-static void info_win_entry_handle_key (struct info_win *w, const int ch)
+/* Handle a key while in entry. main_win is used to update the menu (filter
+ * only matching items) when ENTRY_SEARCH is used. */
+static void info_win_entry_handle_key (struct info_win *iw, struct main_win *mw,
+		const int ch)
 {
 	enum key_cmd cmd;
 	enum entry_type type;
 
-	assert (w != NULL);
-	assert (w->in_entry);
+	assert (iw != NULL);
+	assert (mw != NULL);
+	assert (iw->in_entry);
 
 	cmd = get_key_cmd (CON_ENTRY, ch);
-	type = entry_get_type (&w->entry);
-	
-	if (isgraph(ch) || ch == ' ')
-		entry_add_char (&w->entry, ch);
-	else if (ch == KEY_LEFT)
-		entry_curs_left (&w->entry);
-	else if (ch == KEY_RIGHT)
-		entry_curs_right (&w->entry);
-	else if (ch == KEY_BACKSPACE)
-		entry_back_space (&w->entry);
-	else if (ch == KEY_DC)
-		entry_del_char (&w->entry);
-	else if (ch == KEY_HOME)
-		entry_home (&w->entry);
-	else if (ch == KEY_END)
-		entry_end (&w->entry);
-	else if (type == ENTRY_GO_DIR || type == ENTRY_GO_URL) {
-		if (cmd == KEY_CMD_HISTORY_UP)
-			entry_set_history_up (&w->entry);
-		else if (cmd == KEY_CMD_HISTORY_DOWN)
-			entry_set_history_down (&w->entry);
+	type = entry_get_type (&iw->entry);
+
+	if (type == ENTRY_SEARCH) {
+		char *text;
+
+		
+		if (isgraph(ch) || ch == ' ') {
+			entry_add_char (&iw->entry, ch);
+			text = entry_get_text (&iw->entry);
+			if (!main_win_menu_filter(mw, text))
+				entry_back_space (&iw->entry);
+			free (text);
+		}
+		else if (ch == KEY_BACKSPACE) {
+			entry_back_space (&iw->entry);
+			text = entry_get_text (&iw->entry);
+			main_win_menu_filter (mw, text);
+			free (text);
+		}
+		else {
+			enum key_cmd cmd = get_key_cmd (CON_MENU, ch);
+
+			if (cmd == KEY_CMD_MENU_UP
+					|| cmd == KEY_CMD_MENU_DOWN
+					|| cmd== KEY_CMD_MENU_NPAGE
+					|| cmd == KEY_CMD_MENU_PPAGE
+					|| cmd == KEY_CMD_MENU_FIRST
+					|| cmd == KEY_CMD_MENU_LAST)
+				main_win_menu_cmd (mw, cmd);
+		}
+	}
+	else {
+		
+		if (isgraph(ch) || ch == ' ')
+			entry_add_char (&iw->entry, ch);
+		else if (ch == KEY_LEFT)
+			entry_curs_left (&iw->entry);
+		else if (ch == KEY_RIGHT)
+			entry_curs_right (&iw->entry);
+		else if (ch == KEY_BACKSPACE)
+			entry_back_space (&iw->entry);
+		else if (ch == KEY_DC)
+			entry_del_char (&iw->entry);
+		else if (ch == KEY_HOME)
+			entry_home (&iw->entry);
+		else if (ch == KEY_END)
+			entry_end (&iw->entry);
+		else if (type == ENTRY_GO_DIR || type == ENTRY_GO_URL) {
+			if (cmd == KEY_CMD_HISTORY_UP)
+				entry_set_history_up (&iw->entry);
+			else if (cmd == KEY_CMD_HISTORY_DOWN)
+				entry_set_history_down (&iw->entry);
+		}
 	}
 
-	entry_draw (&w->entry, w->win, 1, 0);
+	entry_draw (&iw->entry, iw->win, 1, 0);
 }
 
 static void info_win_entry_set_text (struct info_win *w, const char *text)
@@ -2552,7 +2670,9 @@ int iface_in_entry ()
 
 void iface_entry_handle_key (const int ch)
 {
-	info_win_entry_handle_key (&info_win, ch);
+	info_win_entry_handle_key (&info_win, &main_win, ch);
+	wrefresh (info_win.win);
+	wrefresh (main_win.win);
 }
 
 void iface_entry_set_text (const char *text)
@@ -2576,6 +2696,10 @@ void iface_entry_history_add ()
 
 void iface_entry_disable ()
 {
+	if (iface_get_entry_type() == ENTRY_SEARCH) {
+		main_win_clear_filter_menu (&main_win);
+		wrefresh (main_win.win);
+	}
 	info_win_entry_disable (&info_win);
 	wrefresh (info_win.win);
 }

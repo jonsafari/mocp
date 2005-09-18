@@ -1795,6 +1795,32 @@ static void entry_key_go_url (const int ch)
 		iface_entry_handle_key (ch);
 }
 
+static void entry_key_search (const int ch)
+{
+	if (ch == '\n') {
+		char *file = iface_get_curr_file ();
+		char *text = iface_entry_get_text ();
+		
+		iface_entry_disable ();
+		
+		if (text[0]) {
+			if (is_url(file))
+				play_from_url (file);
+			else if (file_type(file) == F_DIR)
+				go_to_dir (file, 0);
+			else if (file_type(file) == F_PLAYLIST)
+				go_to_playlist (file);
+			else
+				play_it (file);
+		}
+
+		free (text);
+		free (file);
+	}
+	else
+		iface_entry_handle_key (ch);
+}
+
 /* Handle keys while in an entry. */
 static void entry_key (const int ch)
 {
@@ -1804,6 +1830,9 @@ static void entry_key (const int ch)
 			break;
 		case ENTRY_GO_URL:
 			entry_key_go_url (ch);
+			break;
+		case ENTRY_SEARCH:
+			entry_key_search (ch);
 			break;
 		default:
 			abort (); /* BUG */
@@ -2036,10 +2065,10 @@ static void menu_key (const int ch)
 			case KEY_CMD_PLIST_DEL:
 				delete_item ();
 				break;
-#if 0
 			case KEY_CMD_MENU_SEARCH:
-				make_entry (ENTRY_SEARCH, "SEARCH");
+				iface_make_entry (ENTRY_SEARCH);
 				break;
+#if 0
 			case KEY_CMD_PLIST_SAVE:
 				if (plist_count(playlist))
 					make_entry (ENTRY_PLIST_SAVE,
