@@ -4,15 +4,15 @@ Known bugs:
 * on 1024x768 framebuffer the volume ar is not drawn properly
 * hight CPU usage on FreeBSD with the gui process when started to play a song.
 * -p description and the way it works is wrong.
+* loading a playlist on startup gives an empty list.
+* sometimes after Q the interface exits with a fatal error. 
 
 Before 2.4:
-*$ Move interface primitives (windows, entry, etc.) to a separate file.
-* Number items on the playlist.
+* Optimize menu: use rb_tree for searching.
 *$ Main window split into 2 parts, each of them can show a directory content,
    the playlist, and tree like directories (including playlists) with
    configurable depth (pressing a key increases/decreases the level).
-* Optimize menu: store it on a list, not in a table: this should improve
-  performance when deleting items.
+*$ Better international characters handling - tags in UTF.
 *$ Progrssive tags reading: read them only if the menu items requiring them
    are visible (as an option).
 *$ Tags cache saved to a file on exit and read at startup.
@@ -23,11 +23,8 @@ Before 2.4:
 *$ Support for CDDB.
 * Move the playlist to see the song that is currently played.
 *$ WMA.
-* Full paths for items on the playlist (not only file names).
 * Toggle theme at run time.
 * Add a command for adding an Internet stream address to the playlist.
-* Selecting files - can be then added to the playlist instead of adding them
-  one by one.
 * Configurable time for fast seeking.
 
 In future:
@@ -43,7 +40,6 @@ In future:
 * Command to see all information about a file with all tags, also all informaton
   about an internet stream (from IceCast headers like icy-url, icy-pub).
 *$ Lyrics downloaded from the Internet.
-*$ Better international characters handling - tags in UTF.
 * lirc
 * handle SIGBUS - when mmap()ed file is truncated.
 * Use pathconf() instead of PATH_MAX.
