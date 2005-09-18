@@ -801,12 +801,8 @@ static void event_plist_del (char *file)
 		iface_del_plist_item (file);
 		free (file);
 
-		if (plist_count(playlist) == 0) {
-			plist_clear (playlist);
-
-			if (iface_in_plist_menu())
-				iface_switch_to_dir ();
-		}
+		if (plist_count(playlist) == 0)
+			clear_playlist ();
 	}
 	else
 		logit ("Server requested deleting an item not present on the"
@@ -1862,6 +1858,61 @@ static void seek (const int sec)
 	send_int_to_srv (sec);
 }
 
+static void delete_item ()
+{
+	char *file;
+
+	if (!iface_in_plist_menu()) {
+		error ("You can only delete an item from the "
+				"playlist.");
+		return;
+	}
+
+	assert (plist_count(playlist) > 0);
+	
+	file = iface_get_curr_file ();
+	
+	send_int_to_srv (CMD_LOCK);
+	
+	if (options_get_int("SyncPlaylist")) {
+		send_int_to_srv (CMD_CLI_PLIST_DEL);
+		send_str_to_srv (file);
+	}
+	else {
+		int need_recount_time;
+		int n = plist_find_fname (playlist, file);
+
+		assert (n != -1);
+
+		if (get_item_time(playlist, n) != -1)
+			need_recount_time = 1;
+		else
+			need_recount_time = 0;
+
+		plist_delete (playlist, n);
+
+		if (need_recount_time)
+			plist_count_total_time (playlist);
+
+		iface_del_plist_item (file);
+
+		if (plist_count(playlist) == 0)
+			clear_playlist ();
+	}
+
+	/* Delete this item from the server's playlist if it has our
+	 * playlist */
+	send_int_to_srv (CMD_PLIST_GET_SERIAL);
+	if (get_data_int() == plist_get_serial(playlist)) {
+		send_int_to_srv (CMD_DELETE);
+		send_str_to_srv (file);
+	}
+	
+	send_int_to_srv (CMD_UNLOCK);
+
+	free (file);
+}
+
 /* Handle key */
 static void menu_key (const int ch)
 {
@@ -2000,11 +2051,10 @@ static void menu_key (const int ch)
 			case KEY_CMD_GO_MUSIC_DIR:
 				go_to_music_dir ();
 				break;
-#if 0
 			case KEY_CMD_PLIST_DEL:
 				delete_item ();
-				do_update_menu = 1;
 				break;
+#if 0
 			case KEY_CMD_MENU_SEARCH:
 				make_entry (ENTRY_SEARCH, "SEARCH");
 				break;

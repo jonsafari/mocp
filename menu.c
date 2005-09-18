@@ -588,9 +588,58 @@ void menu_mark_item (struct menu *menu, const char *file)
 		menu->marked = item;
 }
 
+static void menu_renumber_items (struct menu *menu)
+{
+	int i = 0;
+	struct menu_item *mi;
+	
+	assert (menu != NULL);
+
+	for (mi = menu->top; mi; mi = mi->next)
+		mi->num = i++;
+
+	assert (i == menu->nitems);
+}
+
+static void menu_delete (struct menu *menu, struct menu_item *mi)
+{
+	assert (menu != NULL);
+	assert (mi != NULL);
+
+	if (mi->prev)
+		mi->prev->next = mi->next;
+	if (mi->next)
+		mi->next->prev = mi->prev;
+	
+	if (menu->items == mi)
+		menu->items = mi->next;
+	if (menu->last == mi)
+		menu->last = mi->prev;
+
+	if (menu->marked == mi)
+		menu->marked = NULL;
+	if (menu->selected == mi)
+		menu->selected = mi->next ? mi->next : mi->prev;
+	if (menu->top == mi)
+		menu->top = mi->next ? mi->next : mi->prev;
+
+	menu->nitems--;
+	menu_renumber_items (menu);
+	
+	menu_item_free (mi);
+}
+
 void menu_del_item (struct menu *menu, const char *fname)
 {
-	//TODO
+	struct menu_item *mi;
+	
+	assert (menu != NULL);
+	assert (fname != NULL);
+
+	mi = menu_find (menu, fname);
+	assert (mi != NULL);
+
+	menu_delete (menu, mi);
 }
 
 void menu_item_set_align (struct menu_item *mi, const enum menu_align align)
