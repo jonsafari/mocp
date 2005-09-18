@@ -898,7 +898,7 @@ static void fill_tags (struct plist *plist, const int tags_sel)
 	plist_discard_tags (plist);
 	
 	/* Process events until we have all tags. */
-	while (files) {
+	while (files && !user_wants_interrupt()) {
 		int type = get_int_from_srv ();
 		void *data = get_event_data (type);
 		
@@ -2329,7 +2329,10 @@ static void save_playlist ()
 	if (plist_count(playlist) && options_get_int("SavePlaylist")) {
 		iface_set_status ("Saving the playlist...");
 		fill_tags (playlist, TAGS_COMMENTS | TAGS_TIME);
-		plist_save (playlist, plist_file, NULL);
+		if (!user_wants_interrupt())
+			plist_save (playlist, plist_file, NULL);
+		else
+			iface_set_status ("Aborted");
 		iface_set_status ("");
 	}
 	else
