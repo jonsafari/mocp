@@ -905,7 +905,7 @@ void audio_plist_set_time (const char *file, const int time)
 
 	LOCK (plist_mut);
 	if ((i = plist_find_fname(&playlist, file)) != -1) {
-		update_item_time (&playlist.items[i], time);
+		plist_set_item_time (&playlist, i, time);
 		playlist.items[i].mtime = get_mtime (file);
 		debug ("Setting time for %s", file);
 	}
