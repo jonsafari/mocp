@@ -988,8 +988,10 @@ static void side_menu_update_item (struct side_menu *m,
 
 		menu_item_set_title (mi, title);
 		
-		if (m->type == MENU_PLAYLIST && item->title == item->title_tags)
+		if (m->type == MENU_PLAYLIST && item->title == item->title_file)
 			menu_item_set_align (mi, MENU_ALIGN_RIGHT);
+		else
+			menu_item_set_align (mi, MENU_ALIGN_LEFT);
 
 		m->total_time = plist_total_time (plist,
 				&m->total_time_for_all);
