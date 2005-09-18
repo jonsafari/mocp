@@ -528,6 +528,9 @@ static void side_menu_init (struct side_menu *m, const enum side_menu_type type,
 
 	if (type == MENU_DIR || type == MENU_PLAYLIST) {
 		m->menu.list = menu_new (m->win, posx, posy, width, height);
+		menu_set_items_numbering (m->menu.list,
+				type == MENU_PLAYLIST
+				&& options_get_int("PlaylistNumbering"));
 		menu_set_show_format (m->menu.list,
 				options_get_int("ShowFormat"));
 		menu_set_show_time (m->menu.list,
@@ -688,6 +691,8 @@ static void side_menu_clear (struct side_menu *m)
 
 	menu_free (m->menu.list);
 	m->menu.list = menu_new (m->win, m->posx, m->posy, m->width, m->height);
+	menu_set_items_numbering (m->menu.list,	m->type == MENU_PLAYLIST
+			&& options_get_int("PlaylistNumbering"));
 	
 	menu_set_show_format (m->menu.list, options_get_int("ShowFormat"));
 	menu_set_show_time (m->menu.list,

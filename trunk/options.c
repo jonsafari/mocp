@@ -193,6 +193,7 @@ void options_init ()
 	option_add_str ("HTTPProxy", NULL);
 	option_add_int ("UseRealtimePriority", 0);
 	option_add_int ("TagsCacheSize", 256);
+	option_add_int ("PlaylistNumbering", 1);
 }
 
 /* Return 1 if a parameter to an integer option is valid. */
@@ -211,6 +212,7 @@ int check_int_option (const char *name, const int val)
 			|| !strcasecmp(name, "SavePlaylist")
 			|| !strcasecmp(name, "SyncPlaylist")
 			|| !strcasecmp(name, "Mp3IgnoreCRCErrors")
+			|| !strcasecmp(name, "PlaylistNumbering")
 			) {
 		if (!(val == 1 || val == 0))
 			return 0;

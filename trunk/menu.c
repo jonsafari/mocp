@@ -64,13 +64,26 @@ static char *strcasestr (const char *haystack, const char *needle)
 
 /* Draw menu item on a given position from the top of the menu. */
 static void draw_item (const struct menu *menu, const struct menu_item *mi,
-		const int pos, const int item_info_pos, const int title_space)
+		const int pos, const int item_info_pos, const int title_space,
+		const int number_space)
 {
 	int title_len;
 	int j;
 
+	assert (menu != NULL);
+	assert (mi != NULL);
+	assert (pos >= 0);
+	assert (item_info_pos > menu->posx);
+	assert (title_space > 0);
+	assert (number_space == 0 || number_space >= 2);
+
 	wmove (menu->win, pos, menu->posx);
 	
+	if (number_space) {
+		wattrset (menu->win, menu->info_attr);
+		wprintw (menu->win, "%*d ", number_space - 1, mi->num + 1);
+	}
+
 	/* Set attributes */
 	if (mi == menu->selected && mi == menu->marked)
 		wattrset (menu->win, mi->attr_sel_marked);
@@ -113,8 +126,21 @@ void menu_draw (const struct menu *menu)
 	struct menu_item *mi;
 	int title_width;
 	int info_pos;
+	int number_space = 0;
 
 	assert (menu != NULL);
+
+	if (menu->number_items) {
+		int count = menu->nitems / 10;
+
+		number_space = 2; /* begin from 1 digit and a space char */
+		while (count) {
+			count /= 10;
+			number_space++;
+		}
+	}
+	else
+		number_space = 0;
 
 	if (menu->show_time || menu->show_format) {
 		title_width = menu->width - 2; /* -2 for brackets */
@@ -131,10 +157,13 @@ void menu_draw (const struct menu *menu)
 		info_pos = 0;
 	}
 
+	title_width -= number_space;
+
 	for (mi = menu->top; mi && mi->num - menu->top->num < menu->height;
 			mi = mi->next)
 		draw_item (menu, mi, mi->num - menu->top->num + menu->posy,
-				menu->posx + info_pos, title_width);
+				menu->posx + info_pos, title_width,
+				number_space);
 }
 
 /* menu_items must be malloc()ed memory! */
@@ -165,6 +194,7 @@ struct menu *menu_new (WINDOW *win, const int posx, const int posy,
 	menu->show_time = 0;
 	menu->show_format = 0;
 	menu->info_attr = A_NORMAL;
+	menu->number_items = 0;
 
 	return menu;
 }
@@ -420,6 +450,13 @@ void menu_set_state (struct menu *menu, const struct menu_state *st)
 
 	if (!(menu->top = menu_find_by_position(menu, st->top_item)))
 		menu->top = get_item_relative (menu->last, menu->height + 1);
+}
+
+void menu_set_items_numbering (struct menu *menu, const int number)
+{
+	assert (menu != NULL);
+
+	menu->number_items = number;
 }
 
 void menu_get_state (const struct menu *menu, struct menu_state *st)

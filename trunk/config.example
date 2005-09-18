@@ -195,3 +195,6 @@ ASCIILines		= no
 
 # Size of the in-memory cache for file tags in KB.
 TagsCacheSize		= 128
+
+# Number items in the playlist.
+#PlaylistNumbering	= yes
