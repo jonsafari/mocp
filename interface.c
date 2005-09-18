@@ -1518,6 +1518,8 @@ static void add_file_plist ()
 	else
 		error ("The file is already on the playlist.");
 
+	iface_menu_key (KEY_CMD_MENU_DOWN);
+
 	free (file);
 }
 
