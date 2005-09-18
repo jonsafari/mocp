@@ -29,9 +29,6 @@
 #include "menu.h"
 #include "files.h"
 
-/* Initial number of items to allocate in a new menu. */
-#define INIT_NUM_ITEMS	64
-
 #ifndef HAVE_STRCASESTR
 /* Case insensitive version od strstr(). */
 static char *strcasestr (const char *haystack, const char *needle)
@@ -261,6 +258,32 @@ static struct menu_item *menu_add_from_item (struct menu *menu,
 	return new;
 }
 
+static struct menu_item *get_item_relative (struct menu_item *mi,
+		int to_move)
+{
+	assert (mi != NULL);
+	
+	while (to_move) {
+		struct menu_item *prev = mi;
+		
+		if (to_move > 0) {
+			mi = mi->next;
+			to_move--;
+		}
+		else {
+			mi = mi->prev;
+			to_move++;
+		}
+
+		if (!mi) {
+			mi = prev;
+			break;
+		}
+	}
+
+	return mi;
+}
+
 void menu_update_size (struct menu *menu, const int posx, const int posy,
 		const int width, const int height)
 {
@@ -274,6 +297,10 @@ void menu_update_size (struct menu *menu, const int posx, const int posy,
 	menu->posy = posy;
 	menu->width = width;
 	menu->height = height;
+
+	if (menu->selected->num >= menu->top->num + menu->height)
+		menu->selected = get_item_relative (menu->top,
+				menu->height - 1);
 }
 
 static void menu_item_free (struct menu_item *mi)
@@ -303,32 +330,6 @@ void menu_free (struct menu *menu)
 	}
 
 	free (menu);
-}
-
-static struct menu_item *get_item_relative (struct menu_item *mi,
-		int to_move)
-{
-	assert (mi != NULL);
-	
-	while (to_move) {
-		struct menu_item *prev = mi;
-		
-		if (to_move > 0) {
-			mi = mi->next;
-			to_move--;
-		}
-		else {
-			mi = mi->prev;
-			to_move++;
-		}
-
-		if (!mi) {
-			mi = prev;
-			break;
-		}
-	}
-
-	return mi;
 }
 
 void menu_driver (struct menu *menu, const enum menu_request req)
