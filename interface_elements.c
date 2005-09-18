@@ -1006,6 +1006,16 @@ static void side_menu_del_item (struct side_menu *m, const char *file)
 	menu_del_item (m->menu.list, file);
 }
 
+static void side_menu_set_plist_time (struct side_menu *m, const int time,
+		const int time_for_all)
+{
+	assert (m != NULL);
+	assert (time >= 0);
+	
+	m->total_time = time;
+	m->total_time_for_all = time_for_all;
+}
+
 static void side_menu_resize (struct side_menu *m, const int height,
 		const int width, const int posy, const int posx)
 {
@@ -1178,6 +1188,17 @@ static void main_win_set_played_file (struct main_win *w, const char *file)
 	}
 
 	main_win_draw (w);
+}
+
+static void main_win_set_plist_time (struct main_win *w, const int time, 
+		const int time_for_all)
+{
+	struct side_menu *m;
+	
+	assert (w != NULL);
+
+	m = find_side_menu (w, MENU_PLAYLIST);
+	side_menu_set_plist_time (m, time, time_for_all);
 }
 
 static void main_win_add_to_plist (struct main_win *w, const struct plist *plist,
@@ -2382,6 +2403,9 @@ void iface_del_plist_item (const char *file)
 	assert (file != NULL);
 
 	main_win_del_plist_item (&main_win, file);
+	info_win_set_files_time (&info_win, main_win_get_files_time(&main_win),
+			main_win_is_time_for_all(&main_win));
+	wrefresh (info_win.win);
 	wrefresh (main_win.win);
 
 	/* TODO: display the number of items */
@@ -2444,5 +2468,13 @@ void iface_message (const char *msg)
 void iface_disable_message ()
 {
 	info_win_disable_msg (&info_win);
+	wrefresh (info_win.win);
+}
+
+void iface_plist_set_total_time (const int time, const int for_all_files)
+{
+	if (iface_in_plist_menu())
+		info_win_set_files_time (&info_win, time, for_all_files);
+	main_win_set_plist_time (&main_win, time, for_all_files);
 	wrefresh (info_win.win);
 }
