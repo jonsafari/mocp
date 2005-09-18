@@ -807,7 +807,7 @@ static void side_menu_draw_frame (const struct side_menu *m)
 
 		if (len > m->width - 4) {
 			title = (char *)xmalloc (sizeof(char) *
-					(m->width - 6));
+					(m->width - 3));
 			sprintf (title, "...%s", m->title + len - m->width + 7);
 		}
 		else
