@@ -980,7 +980,7 @@ static int go_to_dir (const char *dir, const int reload)
 	if (going_up)
 		iface_set_curr_item_title (last_dir);
 	
-	iface_set_dir_title (cwd);
+	iface_set_title (IFACE_MENU_DIR, cwd);
 	iface_set_status ("");
 
 	return 1;

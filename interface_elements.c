@@ -59,6 +59,7 @@ struct side_menu
 	enum side_menu_type type;
 	int visible;	/* is it visible (are the other fields initialized) ? */
 	WINDOW *win; 	/* window for the menu */
+	char *title;	/* title of the window */
 
 	/* Position and size of tme menu in the window */
 	int posx;
@@ -517,6 +518,8 @@ static void side_menu_init (struct side_menu *m, const enum side_menu_type type,
 {
 	assert (m != NULL);
 	assert (parent_win != NULL);
+	assert (width >= 8);
+	assert (height >= 3);
 	
 	m->type = type;
 	m->win = parent_win;
@@ -524,12 +527,15 @@ static void side_menu_init (struct side_menu *m, const enum side_menu_type type,
 	m->posy = posy;
 	m->height = height;
 	m->width = width;
-
+	
+	m->title = NULL;
+	
 	m->total_time = 0;
 	m->total_time_for_all = 0;
 
 	if (type == MENU_DIR || type == MENU_PLAYLIST) {
-		m->menu.list = menu_new (m->win, posx, posy, width, height);
+		m->menu.list = menu_new (m->win, posx + 1, posy + 1, width - 2,
+				height - 1);
 		menu_set_items_numbering (m->menu.list,
 				type == MENU_PLAYLIST
 				&& options_get_int("PlaylistNumbering"));
@@ -556,8 +562,20 @@ static void side_menu_destroy (struct side_menu *m)
 		else
 			abort ();
 		
+		if (m->title)
+			free (m->title);
 		m->visible = 0;
 	}
+}
+
+static void side_menu_set_title (struct side_menu *m, const char *title)
+{
+	assert (m != NULL);
+	assert (title != NULL);
+
+	if (m->title)
+		free (m->title);
+	m->title = xstrdup (title);
 }
 
 static void main_win_init (struct main_win *w)
@@ -571,12 +589,13 @@ static void main_win_init (struct main_win *w)
 
 	w->curr_file = NULL;
 
-	side_menu_init (&w->menus[0], MENU_DIR, w->win, LINES - 5, COLS - 2,
-			1, 1);
+	side_menu_init (&w->menus[0], MENU_DIR, w->win, LINES - 4, COLS,
+			0, 0);
 	/*side_menu_init (&w->menus[0], MENU_DIR, w->win, 5, 40,
 			1, 1);*/
-	side_menu_init (&w->menus[1], MENU_PLAYLIST, w->win, LINES - 5,
-			COLS - 2, 1, 1);
+	side_menu_init (&w->menus[1], MENU_PLAYLIST, w->win, LINES - 4,
+			COLS, 0, 0);
+	side_menu_set_title (&w->menus[1], "Playlist");
 	w->menus[2].visible = 0;
 
 	w->selected_menu = 0;
@@ -692,7 +711,8 @@ static void side_menu_clear (struct side_menu *m)
 	assert (m->menu.list != NULL);
 
 	menu_free (m->menu.list);
-	m->menu.list = menu_new (m->win, m->posx, m->posy, m->width, m->height);
+	m->menu.list = menu_new (m->win, m->posx + 1, m->posy + 1, m->width - 2,
+			m->height - 1);
 	menu_set_items_numbering (m->menu.list,	m->type == MENU_PLAYLIST
 			&& options_get_int("PlaylistNumbering"));
 	
@@ -769,12 +789,55 @@ static void clear_area (WINDOW *w, const int posx, const int posy,
 	}
 }
 
+static void side_menu_draw_frame (const struct side_menu *m)
+{
+	char *title;
+
+	if (m->title) {
+		int len = strlen (m->title);
+
+		if (len > m->width - 4) {
+			title = (char *)xmalloc (sizeof(char) *
+					(m->width - 6));
+			sprintf (title, "...%s", m->title + len - m->width + 7);
+		}
+		else
+			title = xstrdup (m->title);
+			
+	}
+	else
+		title = NULL;
+	
+	/* Border */
+	wattrset (m->win, get_color(CLR_FRAME));
+	wborder (m->win, lines.vert, lines.vert, lines.horiz, ' ',
+			lines.ulcorn, lines.urcorn, lines.vert, lines.vert);
+
+	/* The title */
+	if (title) {
+		wmove (m->win, m->posy, m->posx + m->width / 2
+				- strlen(title) / 2 - 1);
+		
+		wattrset (m->win, get_color(CLR_FRAME));
+		waddch (m->win, lines.rtee);
+		
+		wattrset (m->win, get_color(CLR_WIN_TITLE));
+		waddstr (m->win, title);
+		
+		wattrset (m->win, get_color(CLR_FRAME));
+		waddch (m->win, lines.ltee);
+
+		free (title);
+	}
+}
+
 static void side_menu_draw (const struct side_menu *m)
 {
 	assert (m != NULL);
 	assert (m->visible);
 
 	clear_area (m->win, m->posx, m->posy, m->width, m->height);
+	side_menu_draw_frame (m);
 	
 	if (m->type == MENU_DIR || m->type == MENU_PLAYLIST)
 		menu_draw (m->menu.list);
@@ -1034,7 +1097,8 @@ static void side_menu_resize (struct side_menu *m, const int height,
 	m->width = width;
 
 	if (m->type == MENU_DIR || m->type == MENU_PLAYLIST)
-		menu_update_size (m->menu.list, posx, posy, width, height);
+		menu_update_size (m->menu.list, posx + 1, posy + 1, width - 2,
+				height - 1);
 	else
 		abort ();
 }
@@ -1065,6 +1129,20 @@ static void main_win_set_dir_content (struct main_win *w,
 	side_menu_make_list_content (m, files, dirs, playlists);
 	if (w->curr_file)
 		side_menu_mark_file (m, w->curr_file);
+	main_win_draw (w);
+}
+
+static void main_win_set_title (struct main_win *w,
+		const enum side_menu_type type,
+		const char *title)
+{
+	struct side_menu *m;
+	
+	assert (w != NULL);
+	assert (title != NULL);
+	
+	m = find_side_menu (w, type);
+	side_menu_set_title (m, title);
 	main_win_draw (w);
 }
 
@@ -1245,8 +1323,8 @@ static void main_win_resize (struct main_win *w)
 	wresize (w->win, LINES - 4, COLS);
 	werase (w->win);
 
-	side_menu_resize (&w->menus[0], LINES - 5, COLS - 2, 1, 1);
-	side_menu_resize (&w->menus[1], LINES - 5, COLS - 2, 1, 1);
+	side_menu_resize (&w->menus[0], LINES - 4, COLS, 0, 0);
+	side_menu_resize (&w->menus[1], LINES - 4, COLS, 0, 0);
 
 	main_win_draw (w);
 }
@@ -2168,9 +2246,14 @@ void iface_set_curr_item_title (const char *title)
 }
 
 /* Set the title for the directory menu. */
-void iface_set_dir_title (const char *title)
+void iface_set_title (const enum iface_menu menu, const char *title)
 {
-	// TODO
+	assert (title != NULL);
+
+	main_win_set_title (&main_win,
+			menu == IFACE_MENU_DIR ? MENU_DIR : MENU_PLAYLIST,
+			title);
+	wrefresh (main_win.win);
 }
 
 /* Get the char code from the user with meta flag set if necessary. */

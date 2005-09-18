@@ -34,7 +34,6 @@ void iface_update_dir_content (const enum iface_menu iface_menu,
 		const struct file_list *dirs,
 		const struct file_list *playlists);
 void iface_set_curr_item_title (const char *title);
-void iface_set_dir_title (const char *title);
 int iface_get_char ();
 int iface_in_help ();
 int iface_key_is_resize (const int ch);
@@ -75,5 +74,6 @@ void iface_entry_disable ();
 void iface_message (const char *msg);
 void iface_disable_message ();
 void iface_plist_set_total_time (const int time, const int for_all_files);
+void iface_set_title (const enum iface_menu menu, const char *title);
 
 #endif
