@@ -729,22 +729,21 @@ static int recv_server_plist (struct plist *plist)
 {
 	int end_of_list = 0;
 	struct plist_item *item;
-	
+
+	logit ("Asking server for the playlist from other client.");
 	send_int_to_srv (CMD_GET_PLIST);
-	if (get_int_from_srv() != EV_DATA)
-		fatal ("Server didn't send data while requesting for the"
-				" playlist.");
+	logit ("Waiting for response");
+	wait_for_data ();
 
 	if (!get_int_from_srv()) {
 		debug ("There is no playlist");
 		return 0; /* there are no other clients with a playlist */
 	}
 
-	debug ("There is a playlist, getting...");
+	logit ("There is a playlist, getting...");
+	wait_for_data ();
 
-	if (get_int_from_srv() != EV_DATA)
-		fatal ("Server didnt send EV_DATA when it was supposed to send"
-				" the playlist.");
+	logit ("Transfer...");
 
 	plist_set_serial (plist, get_int_from_srv());
 
