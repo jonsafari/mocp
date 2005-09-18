@@ -444,11 +444,13 @@ static void entry_home (struct entry *e)
 	e->cur_pos = 0;
 }
 
-static void entry_resize (struct entry *e)
+static void entry_resize (struct entry *e, const int width)
 {
 	assert (e != NULL);
+	assert (width > 0);
 
-	// TODO
+	e->width = width - strlen (e->title);
+	entry_end (e);
 }
 
 /* Copy the previous history item to the entry if available, move the entry
@@ -2039,6 +2041,9 @@ static void info_win_resize (struct info_win *w)
 
 	bar_resize (&w->mixer_bar, 20);
 	bar_resize (&w->time_bar, COLS - 4);
+
+	if (w->in_entry)
+		entry_resize (&w->entry, COLS - 4);
 
 	info_win_draw (w);
 }
