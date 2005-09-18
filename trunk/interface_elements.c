@@ -19,6 +19,7 @@
 #include <string.h>
 #include <assert.h>
 #include <time.h>
+#include <unistd.h>
 
 #ifdef HAVE_NCURSES_H
 # include <ncurses.h>
@@ -1398,6 +1399,33 @@ static void detect_term ()
 		has_xterm = 1;
 }
 
+static void xterm_set_title (const int state, const char *title)
+{
+	if (has_xterm) {
+		write (1, "\033]0;", sizeof("\033]0;")-1);
+		write (1, "MOC ", sizeof("MOC ")-1);
+		
+		switch (state) {
+			case STATE_PLAY:
+				write (1, "[play]", sizeof("[play]")-1);
+				break;
+			case STATE_STOP:
+				write (1, "[stop]", sizeof("[stop]")-1);
+				break;
+			case STATE_PAUSE:
+				write (1, "[pause]", sizeof("[pause]")-1);
+				break;
+		}
+		
+		if (title) {
+			write (1, " - ", sizeof(" - ")-1);
+			write (1, title, strlen(title));
+		}
+
+		write (1, "\007", 1);
+	}
+}
+
 /* Based on ASCIILines option initialize line characters with curses lines or
  * ASCII characters. */
 static void init_lines ()
@@ -1674,6 +1702,7 @@ static void info_win_set_state (struct info_win *w, const int state)
 			|| state == STATE_PAUSE);
 
 	w->state_play = state;
+	xterm_set_title (state, w->title);
 	info_win_draw_state (w);
 }
 
@@ -1746,6 +1775,7 @@ static void info_win_set_played_title (struct info_win *w, const char *title)
 		free (w->title);
 	w->title = xstrdup (title);
 	//TODO: iconv()
+	xterm_set_title (w->state_play, title);
 	info_win_draw_title (w);
 }
 
