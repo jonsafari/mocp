@@ -71,6 +71,7 @@ struct menu
 	int show_format;
 
 	int info_attr;	/* attributes for information about the file */
+	int number_items; /* display item number (position) */
 };
 
 /* Menu state: relative (to the first item) positions of the top and selected
@@ -108,6 +109,7 @@ struct menu *menu_filter_pattern (const struct menu *menu, const char *pattern);
 void menu_set_show_time (struct menu *menu, const int t);
 void menu_set_show_format (struct menu *menu, const int t);
 void menu_set_info_attr (struct menu *menu, const int attr);
+void menu_set_items_numbering (struct menu *menu, const int number);
 enum file_type menu_item_get_type (const struct menu_item *mi);
 char *menu_item_get_file (const struct menu_item *mi);
 struct menu_item *menu_curritem (struct menu *menu);
