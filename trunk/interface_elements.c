@@ -1417,8 +1417,8 @@ static void main_win_resize (struct main_win *w)
 	wresize (w->win, LINES - 4, COLS);
 	werase (w->win);
 
-	side_menu_resize (&w->menus[0], LINES - 4, COLS, 0, 0);
-	side_menu_resize (&w->menus[1], LINES - 4, COLS, 0, 0);
+	side_menu_resize (&w->menus[0], LINES - 4, COLS/2, 0, 0);
+	side_menu_resize (&w->menus[1], LINES - 4, COLS/2, 0, COLS/2);
 
 	main_win_draw (w);
 }
