@@ -733,7 +733,7 @@ static void side_menu_clear (struct side_menu *m)
 /* Fill the directory or playlist side menu with this content. */
 static void side_menu_make_list_content (struct side_menu *m,
 		const struct plist *files, const struct file_list *dirs,
-		const struct file_list *playlists)
+		const struct file_list *playlists, const int add_up_dir)
 {
 	struct menu_item *added;
 	int i;
@@ -745,9 +745,12 @@ static void side_menu_make_list_content (struct side_menu *m,
 
 	side_menu_clear (m);
 
-	added = menu_add (m->menu.list.main, "../", F_DIR, "..");
-	menu_item_set_attr_normal (added, get_color(CLR_MENU_ITEM_DIR));
-	menu_item_set_attr_sel (added, get_color(CLR_MENU_ITEM_DIR_SELECTED));
+	if (add_up_dir) {
+		added = menu_add (m->menu.list.main, "../", F_DIR, "..");
+		menu_item_set_attr_normal (added, get_color(CLR_MENU_ITEM_DIR));
+		menu_item_set_attr_sel (added,
+				get_color(CLR_MENU_ITEM_DIR_SELECTED));
+	}
 	
 	if (dirs)
 		for (i = 0; i < dirs->num; i++) {
@@ -1197,7 +1200,8 @@ static void main_win_set_dir_content (struct main_win *w,
 	m = find_side_menu (w, iface_menu == IFACE_MENU_DIR ? MENU_DIR
 			: MENU_PLAYLIST);
 
-	side_menu_make_list_content (m, files, dirs, playlists);
+	side_menu_make_list_content (m, files, dirs, playlists,
+			iface_menu == MENU_PLAYLIST);
 	if (w->curr_file)
 		side_menu_mark_file (m, w->curr_file);
 	main_win_draw (w);
@@ -1230,7 +1234,7 @@ static void main_win_update_dir_content (struct main_win *w,
 			: MENU_PLAYLIST);
 
 	side_menu_get_state (m, &ms);
-	side_menu_make_list_content (m, files, dirs, playlists);
+	side_menu_make_list_content (m, files, dirs, playlists, 1);
 	side_menu_set_state (m, &ms);
 	if (w->curr_file)
 		side_menu_mark_file (m, w->curr_file);
