@@ -408,7 +408,7 @@ static int is_subdir (const char *dir1, const char *dir2)
 
 static int qsort_strcmp_func (const void *a, const void *b)
 {
-	return strcmp (*(char **)a, *(char **)b);
+	return strcoll (*(char **)a, *(char **)b);
 }
 
 static int qsort_dirs_func (const void *a, const void *b)
@@ -422,7 +422,7 @@ static int qsort_dirs_func (const void *a, const void *b)
 	if (!strcmp(sb, "../"))
 		return 1;
 	
-	return strcmp (sa, sb);
+	return strcoll (sa, sb);
 }
 
 static int get_tags_setting ()
@@ -1206,10 +1206,8 @@ static void load_playlist ()
 {
 	char *plist_file = create_file_name ("playlist.m3u");
 
-	iface_set_status ("Loading playlist...");
 	if (file_type(plist_file) == F_PLAYLIST)
-		plist_load (playlist, plist_file, cwd);
-	iface_set_status ("");
+		go_to_playlist (plist_file);
 }
 
 void init_interface (const int sock, const int logging, char **args,
@@ -1293,10 +1291,10 @@ void init_interface (const int sock, const int logging, char **args,
 
 	}
 	else {
+		send_int_to_srv (CMD_SEND_EVENTS);
 		if (!options_get_int("SyncPlaylist")
 				|| !use_server_playlist())
 			load_playlist ();
-		send_int_to_srv (CMD_SEND_EVENTS);
 		enter_first_dir ();
 	}
 	
