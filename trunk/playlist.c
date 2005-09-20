@@ -135,7 +135,7 @@ static int rb_compare (const void *a, const void *b, void *adata)
 	int pos_a = (int)a;
 	int pos_b = (int)b;
 
-	return strcmp (plist->items[pos_a].file, plist->items[pos_b].file);
+	return strcoll (plist->items[pos_a].file, plist->items[pos_b].file);
 }
 
 static int rb_fname_compare (const void *key, const void *data, void *adata)
