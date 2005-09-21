@@ -1924,6 +1924,35 @@ static void delete_item ()
 	free (file);
 }
 
+/* Select the file that is currently played. */
+static void go_to_playing_file ()
+{
+	if (curr_file.file && file_type(curr_file.file) == F_SOUND) {
+		if (plist_find_fname(playlist, curr_file.file) != -1)
+			iface_switch_to_plist ();
+		else if (plist_find_fname(dir_plist,  curr_file.file) != -1)
+			iface_switch_to_dir ();
+		else {
+			char *slash;
+			char *file = xstrdup (curr_file.file);
+
+			slash = strrchr (file, '/');
+			assert (slash != NULL);
+			*slash = 0;
+
+			if (file[0])
+				go_to_dir (file, 0);
+			else
+				go_to_dir ("/", 0);
+
+			iface_switch_to_dir ();
+			free (file);
+		}
+			
+		iface_select_file (curr_file.file);
+	}
+}
+
 /* Handle key */
 static void menu_key (const int ch)
 {
@@ -2084,12 +2113,9 @@ static void menu_key (const int ch)
 			case KEY_CMD_TOGGLE_SHOW_FORMAT:
 				toggle_show_format ();
 				break;
-#if 0
 			case KEY_CMD_GO_TO_PLAYING_FILE:
-				go_to_file_dir ();
-				do_update_menu = 1;
+				go_to_playing_file ();
 				break;
-#endif
 			case KEY_CMD_GO_DIR:
 				iface_make_entry (ENTRY_GO_DIR);
 				break;

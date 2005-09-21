@@ -687,3 +687,15 @@ void menu_item_set_align (struct menu_item *mi, const enum menu_align align)
 
 	mi->align = align;
 }
+
+void menu_setcurritem_file (struct menu *menu, const char *file)
+{
+	struct menu_item *mi;
+	
+	assert (menu != NULL);
+	assert (file != NULL);
+
+	mi = menu_find (menu, file);
+	if (mi)
+		menu_setcurritem (menu, mi);
+}

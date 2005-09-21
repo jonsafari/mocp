@@ -1156,6 +1156,17 @@ static void side_menu_use_main (struct side_menu *m)
 	}
 }
 
+static void side_menu_select_file (struct side_menu *m, const char *file)
+{
+	assert (m != NULL);
+	assert (file != NULL);
+
+	if (m->type == MENU_DIR || m->type == MENU_PLAYLIST)
+		menu_setcurritem_file (m->menu.list.main, file);
+	else
+		abort ();
+}
+
 static void side_menu_resize (struct side_menu *m, const int height,
 		const int width, const int posy, const int posx)
 {
@@ -1441,6 +1452,15 @@ static void main_win_update_show_time (struct main_win *w)
 			side_menu_update_show_time (&w->menus[i]);
 	}
 
+	main_win_draw (w);
+}
+
+static void main_win_select_file (struct main_win *w, const char *file)
+{
+	assert (w != NULL);
+	assert (file != NULL);
+
+	side_menu_select_file (&w->menus[w->selected_menu], file);
 	main_win_draw (w);
 }
 
@@ -2747,4 +2767,12 @@ void iface_plist_set_total_time (const int time, const int for_all_files)
 		info_win_set_files_time (&info_win, time, for_all_files);
 	main_win_set_plist_time (&main_win, time, for_all_files);
 	wrefresh (info_win.win);
+}
+
+void iface_select_file (const char *file)
+{
+	assert (file != NULL);
+
+	main_win_select_file (&main_win, file);
+	wrefresh (main_win.win);
 }
