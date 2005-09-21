@@ -75,5 +75,6 @@ void iface_message (const char *msg);
 void iface_disable_message ();
 void iface_plist_set_total_time (const int time, const int for_all_files);
 void iface_set_title (const enum iface_menu menu, const char *title);
+void iface_select_file (const char *file);
 
 #endif

@@ -98,6 +98,7 @@ void menu_item_set_format (struct menu_item *mi, const char *format);
 void menu_free (struct menu *menu);
 void menu_driver (struct menu *menu, const enum menu_request req);
 void menu_setcurritem_title (struct menu *menu, const char *title);
+void menu_setcurritem_file (struct menu *menu, const char *file);
 void menu_draw (const struct menu *menu, const int active);
 void menu_mark_item (struct menu *menu, const char *file);
 void menu_set_state (struct menu *menu, const struct menu_state *st);
