@@ -615,7 +615,7 @@ void plist_delete (struct plist *plist, const int num)
 }
 
 /* Count not deleted items. */
-int plist_count (struct plist *plist)
+int plist_count (const struct plist *plist)
 {
 	assert (plist != NULL);
 	
