@@ -74,7 +74,7 @@ size_t tags_mem (const struct file_tags *tags);
 struct file_tags *tags_dup (const struct file_tags *tags);
 void tags_free (struct file_tags *tags);
 char *build_title (const struct file_tags *tags);
-int plist_count (struct plist *plist);
+int plist_count (const struct plist *plist);
 void plist_set_title_tags (struct plist *plist, const int num,
 		const char *title);
 void plist_set_title_file (struct plist *plist, const int num,
