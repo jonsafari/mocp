@@ -622,7 +622,7 @@ static void main_win_destroy (struct main_win *w)
 }
 
 /* Convert time in second to min:sec text format. buff must be 6 chars long. */
-static void sec_to_min (char *buff, const int seconds)
+void sec_to_min (char *buff, const int seconds)
 {
 	assert (seconds >= 0);
 

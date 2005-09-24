@@ -20,6 +20,8 @@ enum entry_type
 	ENTRY_PLIST_OVERWRITE
 };
 
+void sec_to_min (char *buff, const int seconds);
+
 void windows_init ();
 void windows_end ();
 void iface_set_option_state (const char *name, const int value);
