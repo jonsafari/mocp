@@ -2401,7 +2401,8 @@ void iface_set_dir_content (const enum iface_menu iface_menu,
 	info_win_set_files_time (&info_win, main_win_get_files_time(&main_win),
 			main_win_is_time_for_all(&main_win));
 
-	iface_show_num_files (plist_count(files) + dirs->num + playlists->num);
+	iface_show_num_files (plist_count(files) + (dirs ? dirs->num : 0)
+			+ (playlists ? playlists->num : 0));
 	
 	wrefresh (info_win.win);
 	wrefresh (main_win.win);
@@ -2419,7 +2420,8 @@ void iface_update_dir_content (const enum iface_menu iface_menu,
 	info_win_set_files_time (&info_win, main_win_get_files_time(&main_win),
 			main_win_is_time_for_all(&main_win));
 	
-	iface_show_num_files (plist_count(files) + dirs->num + playlists->num);
+	iface_show_num_files (plist_count(files) + (dirs ? dirs->num : 0)
+			+ (playlists ? playlists->num : 0));
 	
 	wrefresh (info_win.win);
 	wrefresh (main_win.win);
