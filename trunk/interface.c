@@ -335,6 +335,42 @@ static int get_mixer_value ()
 	return get_data_int ();
 }
 
+static int get_state ()
+{
+	send_int_to_srv (CMD_GET_STATE);
+	return get_data_int ();
+}
+
+static int get_channels ()
+{
+	send_int_to_srv (CMD_GET_CHANNELS);
+	return get_data_int ();
+}
+
+static int get_rate ()
+{
+	send_int_to_srv (CMD_GET_RATE);
+	return get_data_int ();
+}
+
+static int get_bitrate ()
+{
+	send_int_to_srv (CMD_GET_BITRATE);
+	return get_data_int ();
+}
+
+static int get_curr_time ()
+{
+	send_int_to_srv (CMD_GET_CTIME);
+	return get_data_int ();
+}
+
+static char *get_curr_file ()
+{
+	send_int_to_srv (CMD_GET_SNAME);
+	return get_data_str ();
+}
+
 static void update_mixer_value ()
 {
 	iface_set_mixer_value (get_mixer_value());
@@ -551,9 +587,7 @@ static void ev_file_tags (const struct tag_ev_response *data)
  * of the real time. */
 static void update_ctime ()
 {
-	send_int_to_srv (CMD_GET_CTIME);
-	curr_file.curr_time = get_data_int ();
-	
+	curr_file.curr_time = get_curr_time ();
 	iface_set_curr_time (curr_file.curr_time);
 }
 
@@ -577,8 +611,7 @@ static void update_curr_file ()
 {
 	char *file;
 
-	send_int_to_srv (CMD_GET_SNAME);
-	file = get_data_str ();
+	file = get_curr_file ();
 
 	if (file[0]) {
 		if (!curr_file.file || strcmp(file, curr_file.file)) {
@@ -612,22 +645,19 @@ static void update_curr_file ()
 
 static void update_rate ()
 {
-	send_int_to_srv (CMD_GET_RATE);
-	curr_file.rate = get_data_int ();
+	curr_file.rate = get_rate ();
 	iface_set_rate (curr_file.rate);
 }
 
 static void update_channels ()
 {
-	send_int_to_srv (CMD_GET_CHANNELS);
-	curr_file.channels = get_data_int () == 2 ? 2 : 1;
+	curr_file.channels = get_channels () == 2 ? 2 : 1;
 	iface_set_channels (curr_file.channels);
 }
 
 static void update_bitrate ()
 {
-	send_int_to_srv (CMD_GET_BITRATE);
-	curr_file.bitrate = get_data_int ();
+	curr_file.bitrate = get_bitrate ();
 	iface_set_bitrate (curr_file.bitrate);
 }
 
@@ -635,8 +665,7 @@ static void update_bitrate ()
 static void update_state ()
 {
 	/* play | stop | pause */
-	send_int_to_srv (CMD_GET_STATE);
-	curr_file.state = get_data_int ();
+	curr_file.state = get_state ();
 	iface_set_state (curr_file.state);
 
 	/* Silent seeking makes no sense if the state has changed. */
@@ -2433,9 +2462,138 @@ void interface_cmdline_play_first (int server_sock)
 	// TODO
 }
 
+/* Request tags from the server, wait until they arrive and return them
+ * (malloc()ed). */
+static struct file_tags *get_tags (const char *file, const int tags_sel)
+{
+	struct file_tags *tags = NULL;
+	
+	send_tags_request (file, tags_sel);
+
+	while (!tags) {
+		int type = get_int_from_srv ();
+		void *data = get_event_data (type);
+		
+		if (type == EV_FILE_TAGS) {
+			struct tag_ev_response *ev
+				= (struct tag_ev_response *)data;
+
+			if (!strcmp(ev->file, file))
+				tags = tags_dup (ev->tags);
+
+			free_tag_ev_data (ev);
+		}
+		else {
+			/* We can't handle other events, since this function
+			 * is to be invoked without the interface. */
+			logit ("Server send an event that I didn't extect!");
+			abort ();
+		}
+	}
+
+	return tags;
+}
+
 void interface_cmdline_file_info (const int server_sock)
 {
-	// TODO
+	srv_sock = server_sock;	/* the interface is not initialized, so set it
+				   here */
+	init_playlists ();
+	file_info_reset (&curr_file);
+	
+	curr_file.state = get_state ();
+	
+	if (curr_file.state == STATE_STOP)
+		puts ("State: STOP");
+	else {
+		int left;
+		char curr_time_str[6];
+		char time_left_str[6];
+		char time_str[6];
+		char *title;
+		
+		if (curr_file.state == STATE_PLAY)
+			puts ("State: PLAY");
+		else if (curr_file.state == STATE_PAUSE)
+			puts ("State: PAUSE");
+
+		curr_file.file = get_curr_file ();
+
+		if (curr_file.file[0]) {
+
+			/* get tags */
+			if (file_type(curr_file.file) == F_URL) {
+				send_int_to_srv (CMD_GET_TAGS);
+				wait_for_data ();
+				curr_file.tags = get_data_tags ();
+			}
+			else
+				curr_file.tags = get_tags (curr_file.file,
+						TAGS_COMMENTS | TAGS_TIME);
+			
+			/* get the title */
+			if (curr_file.tags->title) {
+				title = build_title (curr_file.tags);
+				title = iconv_str (title, 0);
+			}
+			else
+				title = xstrdup ("");
+		}
+		else
+			title = xstrdup ("");
+
+		curr_file.channels = get_channels ();
+		curr_file.rate = get_rate ();
+		curr_file.bitrate = get_bitrate ();
+		curr_file.curr_time = get_curr_time ();
+
+		if (curr_file.tags->time != -1)
+			sec_to_min (time_str, curr_file.tags->time);
+		else
+			time_str[0] = 0;
+
+		if (curr_file.curr_time != -1 && curr_file.tags->time != -1) {
+			sec_to_min (curr_time_str, curr_file.curr_time);
+			left = curr_file.tags->time - curr_file.curr_time;
+			sec_to_min (time_left_str, left > 0 ? left : 0);
+		}
+		else {
+			strcpy (curr_time_str, "00:00");
+			time_left_str[0] = 0;
+		}
+
+		printf ("File: %s\n", curr_file.file);
+		printf ("Title: %s\n", title);
+
+		if (curr_file.tags) {
+			printf ("Artist: %s\n",
+					curr_file.tags->artist
+					? curr_file.tags->artist : "");
+			printf ("SongTitle: %s\n",
+					curr_file.tags->title
+					? curr_file.tags->title : "");
+			printf ("Album: %s\n",
+					curr_file.tags->album
+					? curr_file.tags->album : "");
+		}
+
+		if (curr_file.tags->time != -1) {
+			printf ("TotalTime: %s\n", time_str);
+			printf ("CurrentTime: %s\n", curr_time_str);
+			printf ("TimeLeft: %s\n", time_left_str);
+			printf ("TotalSec: %d\n", curr_file.tags->time);
+			printf ("CurrentSec: %d\n", curr_file.curr_time);
+		}
+
+		printf ("Bitrate: %dKbps\n", curr_file.bitrate);
+		printf ("Rate: %dKHz\n", curr_file.rate);
+		
+		file_info_cleanup (&curr_file);
+		free (title);
+	}
+
+	plist_free (dir_plist);
+	plist_free (playlist);
 }
 
 void interface_cmdline_playit (int server_sock, char **args, const int arg_num)
