@@ -2382,6 +2382,14 @@ void iface_set_status (const char *msg)
 	wrefresh (info_win.win);
 }
 
+static void iface_show_num_files (const int num)
+{
+	char str[20];
+
+	snprintf (str, sizeof(str), "Files: %d", num);
+	iface_set_status (str);
+}
+
 /* Change the content of the directory menu to these files, directories, and
  * playlists. */
 void iface_set_dir_content (const enum iface_menu iface_menu,
@@ -2392,10 +2400,11 @@ void iface_set_dir_content (const enum iface_menu iface_menu,
 			playlists);
 	info_win_set_files_time (&info_win, main_win_get_files_time(&main_win),
 			main_win_is_time_for_all(&main_win));
+
+	iface_show_num_files (plist_count(files) + dirs->num + playlists->num);
+	
 	wrefresh (info_win.win);
 	wrefresh (main_win.win);
-	
-	/* TODO: also display the number of items */
 }
 
 /* Like iface_set_dir_content(), but before replacing the menu content, save
@@ -2409,10 +2418,11 @@ void iface_update_dir_content (const enum iface_menu iface_menu,
 			playlists);
 	info_win_set_files_time (&info_win, main_win_get_files_time(&main_win),
 			main_win_is_time_for_all(&main_win));
+	
+	iface_show_num_files (plist_count(files) + dirs->num + playlists->num);
+	
 	wrefresh (info_win.win);
 	wrefresh (main_win.win);
-
-	/* TODO: also display the number of items */
 }
 
 /* Update item title and time on all menus where it's present. */
@@ -2629,6 +2639,9 @@ void iface_add_to_plist (const struct plist *plist, const int num)
 	main_win_add_to_plist (&main_win, plist, num);
 	info_win_set_files_time (&info_win, main_win_get_files_time(&main_win),
 			main_win_is_time_for_all(&main_win));
+	
+	iface_show_num_files (plist_count(plist));
+		
 	wrefresh (info_win.win);
 	wrefresh (main_win.win);
 }
@@ -2691,8 +2704,6 @@ void iface_del_plist_item (const char *file)
 			main_win_is_time_for_all(&main_win));
 	wrefresh (info_win.win);
 	wrefresh (main_win.win);
-
-	/* TODO: display the number of items */
 }
 
 void iface_make_entry (const enum entry_type type)
