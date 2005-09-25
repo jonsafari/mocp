@@ -1,3 +1,18 @@
+2.3.2
+	* Optimized 24bit->16bit conversion. Helps playing mp3 on handheld
+	  devices without FPU.
+	* Fixed a crash when using the playlist with ReadTags turnedoff.
+	* Fixed detecting taglib 1.4.
+	* Fixed mutex initialization in io objects (crash on some systems -
+	  FreeBSD).
+	* Moved the man page to section 1.
+	* Fixed bahaviour when one or both OSS mixer channels are not available.
+	* Sort file names using the current locale settings. (breg)
+	* Fixed -p description.
+	* Fixed a memory leak when adding an item to a full entry's history.
+	* Slightly less CPU usage in the client due to elimination of useless
+	  bitrate updates.
+	* Fixed a typo: owerwrite -> overwrite.
 2.3.1
 	* Fixed detecting MPEG stream by the content (Shoutcast fix).
 	* Fixed handling ALSA mixer events (crash in some situations).
