@@ -62,8 +62,9 @@ set, clear their playlist or clear the server playlist if not.
 
 .TP
 .I -p --play
-Play the first item on the playlist (clients' playlist if there are any and
-SyncPlaylist is set or the server playlist if not).
+Start playing from the first item on the playlist (clients' playlist if there
+are any and SyncPlaylist is set or the server playlist if not). If there are no
+clients running, it only works in conjunction with -a.
 
 .TP
 .I -f --next
