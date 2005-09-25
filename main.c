@@ -380,7 +380,7 @@ static void show_usage (const char *prg_name) {
 "-a --append            Append the files passed in command line to playlist\n"
 "                       and exit.\n"
 "-c --clear             Clear the playlist and exit.\n"
-"-p --play              Play first item on the playlist and exit.\n"
+"-p --play              Start playing from the first item on the playlist.\n"
 "-l --playit            Play files given on command line without modifing the"
 "                       playlist.\n"
 "-s --stop              Stop playing.\n"
