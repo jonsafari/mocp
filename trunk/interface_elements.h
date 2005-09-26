@@ -73,6 +73,8 @@ void iface_entry_set_text (const char *text);
 char *iface_entry_get_text ();
 void iface_entry_history_add ();
 void iface_entry_disable ();
+void iface_entry_set_file (const char *file);
+char *iface_entry_get_file ();
 void iface_message (const char *msg);
 void iface_disable_message ();
 void iface_plist_set_total_time (const int time, const int for_all_files);

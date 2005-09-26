@@ -23,6 +23,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <signal.h>
+#include <ctype.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #ifdef HAVE_SYS_SELECT_H
@@ -1849,6 +1850,84 @@ static void entry_key_search (const int ch)
 		iface_entry_handle_key (ch);
 }
 
+static void save_playlist (const char *file, const char *cwd)
+{
+	iface_set_status ("Saving the playlist...");
+	fill_tags (playlist, TAGS_COMMENTS | TAGS_TIME);
+	if (!user_wants_interrupt()) {
+		if (plist_save(playlist, file, cwd))
+			interface_message ("Playlist saved");
+	}
+	else
+		iface_set_status ("Aborted");
+	iface_set_status ("");
+}
+
+static void entry_key_plist_save (const int ch)
+{
+	if (ch == '\n') {
+		char *text = iface_entry_get_text ();
+
+		iface_entry_disable ();
+		
+		if (text[0]) {
+			char *ext = ext_pos (text);
+			char *file;
+
+			/* add extension if necessary */
+			if (!ext || strcmp(ext, "m3u")) {
+				char *tmp = (char *)xmalloc((strlen(text) + 5) *
+						sizeof(char));
+
+				sprintf (tmp, "%s.m3u", text);
+				free (text);
+				text = tmp;
+			}
+
+			file = make_dir (text);
+
+			if (file_exists(file)) {
+				iface_make_entry (ENTRY_PLIST_OVERWRITE);
+				iface_entry_set_file (file);
+			}
+			else {
+				save_playlist (file, strchr(text, '/')
+						? NULL : cwd);
+
+				if (iface_in_dir_menu())
+					reread_dir ();
+			}
+
+			free (file);
+		}
+			
+		free (text);
+	}
+	else
+		iface_entry_handle_key (ch);
+}
+
+static void entry_key_plist_overwrite (const int ch)
+{
+	if (toupper(ch) == 'Y') {
+		char *file = iface_entry_get_file ();
+
+		assert (file != NULL);
+
+		iface_entry_disable ();
+		
+		save_playlist (file, NULL); /* FIXME: not always NULL! */
+		if (iface_in_dir_menu())
+			reread_dir ();
+		
+		free (file);
+	}
+	else if (toupper(ch) == 'N') {
+		iface_entry_disable ();
+		iface_message ("Not overwriting.");
+	}
+}
+
 /* Handle keys while in an entry. */
 static void entry_key (const int ch)
 {
@@ -1861,6 +1940,12 @@ static void entry_key (const int ch)
 			break;
 		case ENTRY_SEARCH:
 			entry_key_search (ch);
+			break;
+		case ENTRY_PLIST_SAVE:
+			entry_key_plist_save (ch);
+			break;
+		case ENTRY_PLIST_OVERWRITE:
+			entry_key_plist_overwrite (ch);
 			break;
 		default:
 			abort (); /* BUG */
@@ -2114,7 +2199,7 @@ static void menu_key (const int ch)
 						!options_get_int(
 							"ShowHiddenFiles"));
 				if (iface_in_dir_menu())
-					reread_dir (1);
+					reread_dir ();
 				break;
 			case KEY_CMD_GO_MUSIC_DIR:
 				go_to_music_dir ();
@@ -2125,16 +2210,13 @@ static void menu_key (const int ch)
 			case KEY_CMD_MENU_SEARCH:
 				iface_make_entry (ENTRY_SEARCH);
 				break;
-#if 0
 			case KEY_CMD_PLIST_SAVE:
 				if (plist_count(playlist))
-					make_entry (ENTRY_PLIST_SAVE,
-							"SAVE PLAYLIST");
+					iface_make_entry (ENTRY_PLIST_SAVE);
 				else
 					error ("The playlist is "
 							"empty.");
 				break;
-#endif
 			case KEY_CMD_TOGGLE_SHOW_TIME:
 				toggle_show_time ();
 				break;
@@ -2387,19 +2469,12 @@ static void save_curr_dir ()
 
 /* Save the playlist in .moc directory or remove the old playist if the
  * playlist is empty. */
-static void save_playlist ()
+static void save_playlist_in_moc ()
 {
 	char *plist_file = create_file_name("playlist.m3u");
 
-	if (plist_count(playlist) && options_get_int("SavePlaylist")) {
-		iface_set_status ("Saving the playlist...");
-		fill_tags (playlist, TAGS_COMMENTS | TAGS_TIME);
-		if (!user_wants_interrupt())
-			plist_save (playlist, plist_file, NULL);
-		else
-			iface_set_status ("Aborted");
-		iface_set_status ("");
-	}
+	if (plist_count(playlist) && options_get_int("SavePlaylist"))
+		save_playlist (plist_file, NULL);
 	else
 		unlink (plist_file);
 }
@@ -2407,7 +2482,7 @@ static void save_playlist ()
 void interface_end ()
 {
 	save_curr_dir ();
-	save_playlist ();
+	save_playlist_in_moc ();
 	send_int_to_srv (CMD_DISCONNECT);
 	close (srv_sock);
 	srv_sock = -1;

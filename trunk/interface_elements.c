@@ -491,6 +491,22 @@ static void entry_set_history_down (struct entry *e)
 		e->cur_pos = 0;
 	}
 }
+
+static void entry_set_file (struct entry *e, const char *file)
+{
+	assert (e != NULL);
+	assert (file != NULL);
+
+	if (e->file)
+		free (e->file);
+	e->file = xstrdup (file);
+}
+
+static char *entry_get_file (const struct entry *e)
+{
+	return xstrdup (e->file);
+}
+
 static void entry_destroy (struct entry *e)
 {
 	assert (e != NULL);
@@ -2297,6 +2313,23 @@ static void info_win_entry_disable (struct info_win *w)
 	info_win_draw (w);
 }
 
+static void info_win_entry_set_file (struct info_win *w, const char *file)
+{
+	assert (w != NULL);
+	assert (w->in_entry);
+	assert (file != NULL);
+
+	entry_set_file (&w->entry, file);
+}
+
+static char *info_win_entry_get_file (const struct info_win *w)
+{
+	assert (w != NULL);
+	assert (w->in_entry);
+	
+	return entry_get_file (&w->entry);
+}
+
 /* Handle terminal size change. */
 static void info_win_resize (struct info_win *w)
 {
@@ -2758,6 +2791,19 @@ void iface_entry_disable ()
 	}
 	info_win_entry_disable (&info_win);
 	wrefresh (info_win.win);
+}
+
+void iface_entry_set_file (const char *file)
+{
+	assert (file != NULL);
+	
+	info_win_entry_set_file (&info_win, file);
+}
+
+/* Returned memory is malloc()ed. */
+char *iface_entry_get_file ()
+{
+	return info_win_entry_get_file (&info_win);
 }
 
 void iface_message (const char *msg)
