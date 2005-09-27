@@ -1282,6 +1282,7 @@ void init_interface (const int sock, const int logging, char **args,
 			if (!options_get_int("SyncPlaylist")
 					|| !use_server_playlist())
 				load_playlist ();
+			send_int_to_srv (CMD_SEND_EVENTS);
 		}
 		else if (options_get_int("SyncPlaylist")) {
 			struct plist tmp_plist;
