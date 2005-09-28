@@ -144,7 +144,7 @@ static int rb_fname_compare (const void *key, const void *data, void *adata)
 	const char *fname = (const char *)key;
 	const int pos = (int)data;
 
-	return strcmp (fname, plist->items[pos].file);
+	return strcoll (fname, plist->items[pos].file);
 }
 
 /* Return 1 if an item has 'deleted' flag. */
