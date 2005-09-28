@@ -978,12 +978,14 @@ static void side_menu_set_curr_item_title (struct side_menu *m,
 	menu_setcurritem_title (m->menu.list.main, title);
 }
 
-/* Update item title and time for this item if ti's present on this menu. */
-static void side_menu_update_item (struct side_menu *m,
+/* Update item title and time for this item if it's present on this menu.
+ * Return a non-zero value if the item is visible. */
+static int side_menu_update_item (struct side_menu *m,
 		const struct plist *plist, const int n)
 {
 	struct menu_item *mi;
 	const struct plist_item *item;
+	int visible;
 	
 	assert (m != NULL);
 	assert (m->visible);
@@ -1020,7 +1022,13 @@ static void side_menu_update_item (struct side_menu *m,
 				&m->total_time_for_all);
 
 		free (title);
+
+		visible = menu_is_visible (m->menu.list.main, mi);
 	}
+	else
+		visible = 0;
+
+	return visible;
 }
 
 static void side_menu_unmark_file (struct side_menu *m)
@@ -1401,6 +1409,7 @@ static void main_win_update_item (struct main_win *w, const struct plist *plist,
 		const int n)
 {
 	int i;
+	int must_redraw = 0;
 
 	assert (w != NULL);
 	assert (plist != NULL);
@@ -1411,10 +1420,12 @@ static void main_win_update_item (struct main_win *w, const struct plist *plist,
 		
 		if (m->visible && (m->type == MENU_DIR
 					|| m->type == MENU_PLAYLIST))
-			side_menu_update_item (m, plist, n);
+			must_redraw = side_menu_update_item (m, plist, n)
+				|| must_redraw;
 	}
 
-	main_win_draw (w);
+	if (must_redraw)
+		main_win_draw (w);
 }
 
 /* Mark the played file on all lists of files or unmark it when file is NULL. */

@@ -725,3 +725,15 @@ void menu_setcurritem_file (struct menu *menu, const char *file)
 	if (mi)
 		menu_setcurritem (menu, mi);
 }
+/* Return non-zero value if the item in in the visible part of the menu. */
+int menu_is_visible (const struct menu *menu, const struct menu_item *mi)
+{
+	assert (menu != NULL);
+	assert (mi != NULL);
+
+	if (mi->num >= menu->top->num
+			&& mi->num < menu->top->num + menu->height)
+		return 1;
+
+	return 0;
+}
