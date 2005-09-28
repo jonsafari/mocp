@@ -483,7 +483,9 @@ static void ask_for_tags (const struct plist *plist, const int tags_sel)
 	assert (tags_sel != 0);
 	
 	for (i = 0; i < plist->num; i++)
-		if (!plist_deleted(plist, i)) {
+		if (!plist_deleted(plist, i) && (!plist->items[i].tags
+					|| ~plist->items[i].tags->filled
+					& tags_sel)) {
 			char *file = plist_get_file (plist, i);
 			
 			send_tags_request (file, tags_sel);
@@ -1976,8 +1978,8 @@ static void switch_read_tags ()
 	}
 	else {
 		option_set_int("ReadTags", 1);
-		ask_for_tags (dir_plist, get_tags_setting());
-		ask_for_tags (playlist, get_tags_setting());
+		ask_for_tags (dir_plist, TAGS_COMMENTS);
+		ask_for_tags (playlist, TAGS_COMMENTS);
 		switch_titles_tags (dir_plist);
 		switch_titles_tags (playlist);
 		iface_set_status ("ReadTags: yes");
