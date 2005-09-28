@@ -2402,17 +2402,13 @@ void interface_loop ()
 				int ch = iface_get_char ();
 
 				clear_interrupt ();
-				
 				menu_key (ch);
-				if (!want_quit)
-					dequeue_events ();
 			}
 
 			if (!want_quit) {
 				if (FD_ISSET(srv_sock, &fds))
 					get_and_handle_event ();
 				//do_silent_seek ();
-				dequeue_events ();
 			}
 		}
 		else if (user_wants_interrupt())
