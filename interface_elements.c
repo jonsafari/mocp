@@ -878,7 +878,6 @@ static void side_menu_draw (const struct side_menu *m, const int active)
 	assert (m != NULL);
 	assert (m->visible);
 
-	clear_area (m->win, m->posx, m->posy, m->width, m->height);
 	side_menu_draw_frame (m);
 	
 	if (m->type == MENU_DIR || m->type == MENU_PLAYLIST)
@@ -1253,6 +1252,8 @@ static void main_win_draw (const struct main_win *w)
 	if (w->in_help)
 		main_win_draw_help_screen (w);
 	else {
+		werase (w->win);
+		
 		/* Draw all visible menus, draw the selected menu as the last
 		 * menu. */
 		for (i = 0; i < (int)(sizeof(w->menus)/sizeof(w->menus[0]));
