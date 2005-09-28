@@ -59,7 +59,11 @@ static struct event_queue events;
 static char cwd[PATH_MAX] = "";
 
 /* If the user presses quit, or we receive a termination signal. */
-static volatile int want_quit = 0;
+static volatile enum want_quit {
+	NO_QUIT,	/* don't want to quit */
+	QUIT_CLIENT,	/* only quit the client */
+	QUIT_SERVER	/* quit the client and the srever */
+} want_quit = NO_QUIT;
 
 /* If user presses CTRL-C, set this to 1. This should interrupt long operations
  * that blocks the interface. */
@@ -88,7 +92,7 @@ static struct file_info {
 
 static void sig_quit (int sig ATTR_UNUSED)
 {
-	want_quit = 1;
+	want_quit = QUIT_CLIENT;
 }
 
 static void sig_interrupt (int sig)
@@ -2081,7 +2085,7 @@ static void menu_key (const int ch)
 		
 		switch (cmd) {
 			case KEY_CMD_QUIT_CLIENT:
-				want_quit = 1;
+				want_quit = QUIT_CLIENT;
 				break;
 			case KEY_CMD_GO:
 				go_file ();
@@ -2095,8 +2099,7 @@ static void menu_key (const int ch)
 				iface_menu_key (cmd);
 				break;
 			case KEY_CMD_QUIT:
-				send_int_to_srv (CMD_QUIT);
-				want_quit = 1;
+				want_quit = QUIT_SERVER;
 				break;
 			case KEY_CMD_STOP:
 				send_int_to_srv (CMD_STOP);
@@ -2371,7 +2374,7 @@ static void handle_interrupt ()
 
 void interface_loop ()
 {
-	while (!want_quit) {
+	while (want_quit == NO_QUIT) {
 		fd_set fds;
 		int ret;
 		struct timeval timeout = { 1, 0 };
@@ -2450,7 +2453,10 @@ void interface_end ()
 {
 	save_curr_dir ();
 	save_playlist_in_moc ();
-	send_int_to_srv (CMD_DISCONNECT);
+	if (want_quit == QUIT_SERVER)
+		send_int_to_srv (CMD_QUIT);
+	else
+		send_int_to_srv (CMD_DISCONNECT);
 	close (srv_sock);
 	srv_sock = -1;
 	
