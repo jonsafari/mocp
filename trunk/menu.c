@@ -28,6 +28,7 @@
 #include "main.h"
 #include "menu.h"
 #include "files.h"
+#include "rbtree.h"
 
 #ifndef HAVE_STRCASESTR
 /* Case insensitive version od strstr(). */
@@ -163,6 +164,23 @@ void menu_draw (const struct menu *menu, const int active)
 				number_space, active);
 }
 
+static int rb_compare (const void *a, const void *b, void *adata ATTR_UNUSED)
+{
+	struct menu_item *mia = (struct menu_item *)a;
+	struct menu_item *mib = (struct menu_item *)b;
+
+	return strcmp (mia->file, mib->file);
+}
+
+static int rb_fname_compare (const void *key, const void *data,
+		void *adata ATTR_UNUSED)
+{
+	const char *fname = (const char *)key;
+	const struct menu_item *mi = (const struct menu_item *)data;
+
+	return strcmp (fname, mi->file);
+}
+
 /* menu_items must be malloc()ed memory! */
 struct menu *menu_new (WINDOW *win, const int posx, const int posy,
 		const int width, const int height)
@@ -192,6 +210,8 @@ struct menu *menu_new (WINDOW *win, const int posx, const int posy,
 	menu->show_format = 0;
 	menu->info_attr = A_NORMAL;
 	menu->number_items = 0;
+
+	rb_init_tree (&menu->search_tree, rb_compare, rb_fname_compare, NULL);
 
 	return menu;
 }
@@ -232,6 +252,9 @@ struct menu_item *menu_add (struct menu *menu, const char *title,
 	if (!menu->selected)
 		menu->selected = menu->items;
 
+	if (file)
+		rb_insert (&menu->search_tree, (void *)mi);
+		
 	menu->last = mi;
 	menu->nitems++;
 
@@ -329,6 +352,8 @@ void menu_free (struct menu *menu)
 		menu_item_free (mi);
 		mi = next;
 	}
+
+	rb_clear (&menu->search_tree);
 
 	free (menu);
 }
@@ -601,18 +626,16 @@ int menu_nitems (const struct menu *menu)
 
 struct menu_item *menu_find (struct menu *menu, const char *fname)
 {
-	/* TODO: linear search is too slow */
-	
-	struct menu_item *mi;
+	struct rb_node *x;
 	
 	assert (menu != NULL);
 	assert (fname != NULL);
 
-	for (mi = menu->top; mi; mi = mi->next)
-		if (!strcmp(mi->file, fname))
-			return mi;
+	x = rb_search (&menu->search_tree, fname);
+	if (rb_is_null(x))
+		return NULL;
 
-	return NULL;
+	return (struct menu_item *)x->data;
 }
 
 void menu_mark_item (struct menu *menu, const char *file)
@@ -661,6 +684,9 @@ static void menu_delete (struct menu *menu, struct menu_item *mi)
 		menu->selected = mi->next ? mi->next : mi->prev;
 	if (menu->top == mi)
 		menu->top = mi->next ? mi->next : mi->prev;
+
+	if (mi->file)
+		rb_delete (&menu->search_tree, mi->file);
 
 	menu->nitems--;
 	menu_renumber_items (menu);
