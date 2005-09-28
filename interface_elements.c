@@ -90,6 +90,10 @@ static struct main_win
 {
 	WINDOW *win;
 	char *curr_file; /* currently played file. */
+
+	int in_help; /* are we displaying help screen? */
+	int help_screen_top; /* first visible line of the help screen. */
+	
 	struct side_menu menus[3];
 	int selected_menu; /* which menu is currently selected by the user */
 } main_win;
@@ -611,6 +615,7 @@ static void main_win_init (struct main_win *w)
 	keypad (w->win, TRUE);
 
 	w->curr_file = NULL;
+	w->in_help = 0;
 
 	side_menu_init (&w->menus[0], MENU_DIR, w->win, LINES - 4, COLS/2,
 			0, 0);
@@ -1204,16 +1209,59 @@ static void side_menu_resize (struct side_menu *m, const int height,
 		abort ();
 }
 
+static void main_win_draw_help_screen (const struct main_win *w)
+{
+	int i;
+	int max_lines;
+	int help_lines;
+	char **help;
+
+	assert (w != NULL);
+	assert (w->in_help);
+
+	max_lines = w->help_screen_top + LINES - 6;
+
+	help = get_keys_help (&help_lines);
+	
+	werase (w->win);
+	wbkgd (w->win, get_color(CLR_BACKGROUND));
+
+	wmove (w->win, 0, 0);
+	if (w->help_screen_top != 0) {
+		wattrset (w->win, get_color(CLR_MESSAGE));
+		mvwaddstr (w->win, 0, COLS/2 - (sizeof("...MORE...")-1)/2,
+				"...MORE...");
+	}
+	wmove (w->win, 1, 0);
+	wattrset (w->win, get_color(CLR_LEGEND));
+	for (i = w->help_screen_top; i < max_lines && i < help_lines; i++) {
+		waddstr (w->win, help[i]);
+		waddch (w->win, '\n');
+	}
+	if (i != help_lines) {
+		wattrset (w->win, get_color(CLR_MESSAGE));
+		mvwaddstr (w->win, LINES-5,
+				COLS/2 - (sizeof("...MORE...")-1)/2,
+				"...MORE...");
+	}
+}
+
 static void main_win_draw (const struct main_win *w)
 {
 	int i;
 
-	/* Draw all visible menus, draw the selected menu as the last menu. */
-	for (i = 0; i < (int)(sizeof(w->menus)/sizeof(w->menus[0])); i++)
-		if (w->menus[i].visible && i != w->selected_menu)
-			side_menu_draw (&w->menus[i], 0);
+	if (w->in_help)
+		main_win_draw_help_screen (w);
+	else {
+		/* Draw all visible menus, draw the selected menu as the last
+		 * menu. */
+		for (i = 0; i < (int)(sizeof(w->menus)/sizeof(w->menus[0]));
+				i++)
+			if (w->menus[i].visible && i != w->selected_menu)
+				side_menu_draw (&w->menus[i], 0);
 
-	side_menu_draw (&w->menus[w->selected_menu], 1);
+		side_menu_draw (&w->menus[w->selected_menu], 1);
+	}
 }
 
 static void main_win_set_dir_content (struct main_win *w,
@@ -1286,6 +1334,15 @@ static void main_win_switch_to (struct main_win *w,
 	main_win_draw (w);
 }
 
+static void main_win_switch_to_help (struct main_win *w)
+{
+	assert (w != NULL);
+
+	w->in_help = 1;
+	w->help_screen_top = 0;
+	main_win_draw (w);
+}
+
 static void main_win_menu_cmd (struct main_win *w, const enum key_cmd cmd)
 {
 	assert (w != NULL);
@@ -1313,6 +1370,13 @@ static int main_win_in_dir_menu (const struct main_win *w)
 	assert (w != NULL);
 
 	return w->menus[w->selected_menu].type == MENU_DIR;
+}
+
+static int main_win_in_help (const struct main_win *w)
+{
+	assert (w != NULL);
+
+	return w->in_help;
 }
 
 static int main_win_in_plist_menu (const struct main_win *w)
@@ -1437,6 +1501,29 @@ static int main_win_is_time_for_all (const struct main_win *w)
 	assert (w != NULL);
 
 	return side_menu_is_time_for_all (&w->menus[w->selected_menu]);
+}
+
+static void main_win_handle_help_key (struct main_win *w, const int ch)
+{
+	int help_lines;
+
+	assert (w != NULL);
+	assert (w->in_help);
+
+	get_keys_help (&help_lines);
+
+	if (ch == KEY_DOWN || ch == KEY_NPAGE || ch == '\n') {
+		if (w->help_screen_top + LINES - 5 <= help_lines)
+			w->help_screen_top++;
+	}
+	else if (ch == KEY_UP || ch == KEY_PPAGE) {
+		if (w->help_screen_top > 0)
+			w->help_screen_top--;
+	}
+	else if (ch != KEY_RESIZE)
+		w->in_help = 0;
+
+	main_win_draw (w);
 }
 
 /* Handle terminal size change. */
@@ -2507,12 +2594,6 @@ int iface_get_char ()
 	return ch;
 }
 
-/* Return a non zero value if the help screen is displayed. */
-int iface_in_help ()
-{
-	return 0;
-}
-
 /* Return a non zero value if the key is not a real key - KEY_RESIZE. */
 int iface_key_is_resize (const int ch)
 {
@@ -2833,5 +2914,22 @@ void iface_select_file (const char *file)
 	assert (file != NULL);
 
 	main_win_select_file (&main_win, file);
+	wrefresh (main_win.win);
+}
+
+int iface_in_help ()
+{
+	return main_win_in_help (&main_win);
+}
+
+void iface_switch_to_help ()
+{
+	main_win_switch_to_help (&main_win);
+	wrefresh (main_win.win);
+}
+
+void iface_handle_help_key (const int ch)
+{
+	main_win_handle_help_key (&main_win, ch);
 	wrefresh (main_win.win);
 }
