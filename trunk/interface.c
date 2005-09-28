@@ -478,10 +478,12 @@ static int get_tags_setting ()
 	return needed_tags;
 }
 
-/* Send requests for the given tags for every file on the playlist. */
-static void ask_for_tags (const struct plist *plist, const int tags_sel)
+/* Send requests for the given tags for every file on the playlist that
+ * hasn't this tags. Return the number of requests. */
+static int ask_for_tags (const struct plist *plist, const int tags_sel)
 {
 	int i;
+	int req = 0;
 
 	assert (plist != NULL);
 	assert (tags_sel != 0);
@@ -493,8 +495,11 @@ static void ask_for_tags (const struct plist *plist, const int tags_sel)
 			char *file = plist_get_file (plist, i);
 			
 			send_tags_request (file, tags_sel);
+			req++;
 			free (file);
 		}
+
+	return req;
 }
 
 static void interface_message (const char *format, ...)
@@ -918,13 +923,8 @@ static void fill_tags (struct plist *plist, const int tags_sel)
 	assert (tags_sel != 0);
 
 	iface_set_status ("Reading tags...");
-	ask_for_tags (plist, tags_sel);
-	files = plist_count (plist);
+	files = ask_for_tags (plist, tags_sel);
 
-	/* To properly count which files were filled, we discard all tags
-	 * first. */
-	plist_discard_tags (plist);
-	
 	/* Process events until we have all tags. */
 	while (files && !user_wants_interrupt()) {
 		int type = get_int_from_srv ();
@@ -936,9 +936,7 @@ static void fill_tags (struct plist *plist, const int tags_sel)
 			int n;
 
 			if ((n = plist_find_fname(plist, ev->file)) != -1) {
-				if ((ev->tags->filled & (TAGS_COMMENTS
-								| TAGS_TIME))
-						&& !plist->items[n].tags)
+				if ((ev->tags->filled & tags_sel))
 					files--;
 				update_item_tags (plist, n, ev->tags);
 			}
