@@ -1589,9 +1589,6 @@ static void add_dir_plist ()
 
 	plist_sort_fname (&plist);
 	
-	if (get_tags_setting())
-		ask_for_tags (&plist, get_tags_setting());
-
 	send_int_to_srv (CMD_LOCK);
 
 	plist_remove_common_items (&plist, playlist);
@@ -1610,6 +1607,9 @@ static void add_dir_plist ()
 	else {
 		int i;
 		
+		if (get_tags_setting())
+			ask_for_tags (&plist, get_tags_setting());
+
 		for (i = 0; i < plist.num; i++)
 			if (!plist_deleted(&plist, i))
 				iface_add_to_plist (&plist, i);
