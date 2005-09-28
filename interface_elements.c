@@ -616,6 +616,7 @@ static void main_win_init (struct main_win *w)
 
 	w->curr_file = NULL;
 	w->in_help = 0;
+	w->help_screen_top = 0;
 
 	side_menu_init (&w->menus[0], MENU_DIR, w->win, LINES - 4, COLS/2,
 			0, 0);
@@ -1356,7 +1357,6 @@ static void main_win_switch_to_help (struct main_win *w)
 	assert (w != NULL);
 
 	w->in_help = 1;
-	w->help_screen_top = 0;
 	main_win_draw (w);
 }
 
