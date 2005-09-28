@@ -699,8 +699,9 @@ static char *make_menu_title (const char *plist_title,
 
 /* Add an item from the playlist to the menu.
  * If for_playlist has non-zero value, full paths will be displayed instead of
- * just file names. */
-static void add_to_menu (struct menu *menu, const struct plist *plist,
+ * just file names.
+ * Return a non-zero value if the added item is visible on the screen. */
+static int add_to_menu (struct menu *menu, const struct plist *plist,
 		const int num, const int for_playlist)
 {
 	struct menu_item *added;
@@ -729,6 +730,8 @@ static void add_to_menu (struct menu *menu, const struct plist *plist,
 
 	if (for_playlist && item->title == item->title_file)
 		menu_item_set_align (added, MENU_ALIGN_RIGHT);
+
+	return menu_is_visible (menu, added);
 }
 
 static void side_menu_clear (struct side_menu *m)
@@ -1053,17 +1056,22 @@ static void side_menu_mark_file (struct side_menu *m, const char *file)
 		menu_mark_item (m->menu.list.copy, file);
 }
 
-static void side_menu_add_plist_item (struct side_menu *m,
+static int side_menu_add_plist_item (struct side_menu *m,
 		const struct plist *plist, const int num)
 {
+	int visible;
+	
 	assert (m != NULL);
 	assert (plist != NULL);
 	assert (m->visible);
 	assert (m->type == MENU_DIR || m->type == MENU_PLAYLIST);
 
-	add_to_menu (m->menu.list.copy ? m->menu.list.copy : m->menu.list.main,
+	visible = add_to_menu (m->menu.list.copy ? m->menu.list.copy
+			: m->menu.list.main,
 			plist, num, m->type == MENU_PLAYLIST);
 	m->total_time = plist_total_time (plist, &m->total_time_for_all);
+
+	return visible;
 }
 
 static int side_menu_is_time_for_all (const struct side_menu *m)
@@ -1491,14 +1499,16 @@ static void main_win_add_to_plist (struct main_win *w, const struct plist *plist
 		const int num)
 {
 	struct side_menu *m;
+	int need_redraw;
 	
 	assert (plist != NULL);
 
 	m = find_side_menu (w, MENU_PLAYLIST);
-	side_menu_add_plist_item (m, plist, num);
+	need_redraw = side_menu_add_plist_item (m, plist, num);
 	if (w->curr_file)
 		side_menu_mark_file (m, w->curr_file);
-	main_win_draw (w);
+	if (need_redraw)
+		main_win_draw (w);
 }
 
 static int main_win_get_files_time (const struct main_win *w)
