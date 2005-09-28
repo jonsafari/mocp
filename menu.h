@@ -122,5 +122,6 @@ int menu_nitems (const struct menu *menu);
 struct menu_item *menu_find (struct menu *menu, const char *fname);
 void menu_del_item (struct menu *menu, const char *fname);
 void menu_item_set_align (struct menu_item *mi, const enum menu_align align);
+int menu_is_visible (const struct menu *menu, const struct menu_item *mi);
 
 #endif
