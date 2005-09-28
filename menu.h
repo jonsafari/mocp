@@ -8,6 +8,7 @@
 #endif
 
 #include "files.h"
+#include "rbtree.h"
 
 enum menu_request
 {
@@ -72,6 +73,8 @@ struct menu
 
 	int info_attr;	/* attributes for information about the file */
 	int number_items; /* display item number (position) */
+
+	struct rb_tree search_tree; /* RB tree for searching by file name */
 };
 
 /* Menu state: relative (to the first item) positions of the top and selected
