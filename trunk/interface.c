@@ -2070,38 +2070,8 @@ static void go_to_playing_file ()
 /* Handle key */
 static void menu_key (const int ch)
 {
-	if (iface_in_help()) {
-#if 0
-		int help_lines;
-
-		get_keys_help (&help_lines);
-
-		if (ch == KEY_DOWN || ch == KEY_NPAGE || ch == '\n') {
-			if (help_screen_top + LINES - 5 <= help_lines) {
-				help_screen_top++;
-				print_help_screen ();
-			}
-		}
-		else if (ch == KEY_UP || ch == KEY_PPAGE) {
-			if (help_screen_top > 0) {
-				help_screen_top--;
-				print_help_screen ();
-			}
-		}
-		else if (ch != KEY_RESIZE) {
-			
-			/* Switch to menu */
-			werase (main_win);
-			main_border ();
-			menu_draw (curr_menu);
-			update_info_win ();
-			wrefresh (main_win);
-			wrefresh (info_win);
-		
-			main_win_mode = WIN_MENU;
-		}
-#endif
-	}
+	if (iface_in_help())
+		iface_handle_help_key (ch);
 	else if (iface_in_entry())
 		entry_key (ch);
 	else if (!iface_key_is_resize(ch)) {
@@ -2180,11 +2150,9 @@ static void menu_key (const int ch)
 			case KEY_CMD_SEEK_FORWARD:
 				seek (options_get_int("SeekTime"));
 				break;
-#if 0
 			case KEY_CMD_HELP:
-				help_screen ();
+				iface_switch_to_help ();
 				break;
-#endif
 			case KEY_CMD_HIDE_MESSAGE:
 				iface_disable_message ();
 				break;
