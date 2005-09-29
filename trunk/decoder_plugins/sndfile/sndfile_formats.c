@@ -19,7 +19,7 @@
 #include <strings.h>
 #include <sndfile.h>
 #include "decoder.h"
-#include "main.h"
+#include "common.h"
 #include "server.h"
 #include "log.h"
 #include "files.h"

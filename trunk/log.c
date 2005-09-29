@@ -17,7 +17,7 @@
 #include <stdarg.h>
 #include <sys/time.h>
 #include <time.h>
-#include "main.h"
+#include "common.h"
 
 static FILE *logfp = NULL; /* logging file stream */
 

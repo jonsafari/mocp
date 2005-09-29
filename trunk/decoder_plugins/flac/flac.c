@@ -24,7 +24,7 @@
 #include "audio.h"
 #include "decoder.h"
 #include "server.h"
-#include "main.h"
+#include "common.h"
 #include "log.h"
 #include "io.h"
 

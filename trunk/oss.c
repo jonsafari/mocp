@@ -30,7 +30,7 @@
 #include "audio.h"
 #include "log.h"
 #include "options.h"
-#include "main.h"
+#include "common.h"
 
 static int mixer_fd = -1;
 static int volatile dsp_fd = -1;

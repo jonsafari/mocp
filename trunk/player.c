@@ -20,7 +20,7 @@
 
 #define DEBUG
 
-#include "main.h"
+#include "common.h"
 #include "log.h"
 #include "decoder.h"
 #include "audio.h"

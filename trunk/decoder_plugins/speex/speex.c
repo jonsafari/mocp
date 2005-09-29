@@ -34,7 +34,7 @@
 /*#define DEBUG*/
 
 #include "decoder.h"
-#include "main.h"
+#include "common.h"
 #include "audio.h"
 #include "log.h"
 

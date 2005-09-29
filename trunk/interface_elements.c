@@ -29,7 +29,7 @@
 
 #include "menu.h"
 #include "themes.h"
-#include "main.h"
+#include "common.h"
 #include "options.h"
 #include "interface_elements.h"
 #include "log.h"

@@ -12,7 +12,7 @@
 #include <assert.h>
 #include <string.h>
 
-#include "main.h"
+#include "common.h"
 #include "fifo_buf.h"
 
 /* Initialize the fifo_buf structure with empty buffer of the given size. */

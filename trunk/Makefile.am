@@ -10,7 +10,8 @@ mocp_SOURCES = log.c \
 	       server.c \
 	       server.h \
 	       main.c \
-	       main.h \
+	       common.c \
+	       common.h \
 	       playlist.c \
 	       playlist.h \
 	       fifo_buf.c \

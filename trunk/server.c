@@ -36,7 +36,7 @@
 
 #include "log.h"
 #include "protocol.h"
-#include "main.h"
+#include "common.h"
 #include "audio.h"
 #include "oss.h"
 #include "options.h"

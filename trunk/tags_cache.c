@@ -23,7 +23,7 @@
 #include "server.h"
 #include "playlist.h"
 #include "rbtree.h"
-#include "main.h"
+#include "common.h"
 #include "files.h"
 #include "tags_cache.h"
 #include "log.h"

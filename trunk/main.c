@@ -29,16 +29,16 @@
 #include <errno.h>
 #include <unistd.h>
 #include <time.h>
+
 #include "server.h"
-#include "main.h"
+#include "common.h"
 #include "interface.h"
 #include "options.h"
 #include "protocol.h"
-#include "decoder.h"
 #include "log.h"
-#include "files.h"
-#include "playlist.h"
 #include "compat.h"
+#include "common.h"
+#include "decoder.h"
 
 struct parameters
 {
@@ -62,100 +62,6 @@ struct parameters
 	int playit;
 };
 
-static int im_server = 0; /* I em the server? */
-
-void error (const char *format, ...)
-{
-	va_list va;
-	char msg[256];
-	
-	va_start (va, format);
-	vsnprintf (msg, sizeof(msg), format, va);
-	msg[sizeof(msg) - 1] = 0;
-	va_end (va);
-	
-	if (im_server)
-		server_error (msg);
-	else
-		interface_error (msg);
-}
-
-/* End program with a message. Use when an error occurs and we can't recover. */
-void fatal (const char *format, ...)
-{
-	va_list va;
-	char msg[256];
-	
-	va_start (va, format);
-	vsnprintf (msg, sizeof(msg), format, va);
-	msg[sizeof(msg) - 1] = 0;
-	fprintf (stderr, "\nFATAL_ERROR: %s\n\n", msg);
-	logit ("FATAL ERROR: %s", msg);
-	va_end (va);
-
-	exit (EXIT_FATAL);
-}
-
-void *xmalloc (const size_t size)
-{
-	void *p;
-
-	if ((p = malloc(size)) == NULL)
-		fatal ("Can't allocate memory!");
-	return p;
-}
-
-void *xcalloc (size_t nmemb, size_t size)
-{
-	void *p;
-
-	if ((p = calloc(nmemb, size)) == NULL)
-		fatal ("Can't allocate memory!");
-	return p;
-}
-
-void *xrealloc (void *ptr, const size_t size)
-{
-	void *p;
-
-	if ((p = realloc(ptr, size)) == NULL && size != 0)
-		fatal ("Can't allocate memory!");
-	return p;
-
-}
-
-char *xstrdup (const char *s)
-{
-	char *n;
-
-	if (s && (n = strdup(s)) == NULL)
-		fatal ("Can't allocate memory!");
-
-	return s ? n : NULL;
-}
-
-/* Return path to a file in MOC config directory. NOT THREAD SAFE */
-char *create_file_name (const char *file)
-{
-	char *home_dir;
-	static char fname[PATH_MAX];
-	char *moc_dir = options_get_str ("MOCDir");
-	
-	if (moc_dir[0] == '~') {
-		if (!(home_dir = getenv("HOME")))
-			fatal ("No HOME environmential variable.");
-		if (snprintf(fname, sizeof(fname), "%s/%s/%s", home_dir,
-				(moc_dir[1] == '/') ? moc_dir + 2 : moc_dir + 1,
-				file)
-				>= (int)sizeof(fname))
-			fatal ("Path too long.");
-	}
-	else if (snprintf(fname, sizeof(fname), "%s/%s", moc_dir, file)
-			>= (int)sizeof(fname))
-		fatal ("Path too long.");
-
-	return fname;
-}
 
 /* Connect to the server, return fd os the socket or -1 on error */
 static int server_connect ()
@@ -213,18 +119,6 @@ static void check_moc_dir ()
 	}
 }
 
-/* Return 1 if the file is a directory, 0 if not, -1 on error. */
-int isdir (const char *file)
-{
-	struct stat file_stat;
-
-	if (stat(file, &file_stat) == -1) {
-		error ("Can't stat %s: %s", file, strerror(errno));
-		return -1;
-	}
-	return S_ISDIR(file_stat.st_mode) ? 1 : 0;
-}
-
 static void sig_chld (int sig ATTR_UNUSED)
 {
 	logit ("Got SIGCHLD");
@@ -254,7 +148,7 @@ static void start_moc (const struct parameters *params, char **args,
 
 		switch (fork()) {
 			case 0: /* child - start server */
-				im_server = 1;
+				set_me_server ();
 				list_sock = server_init (params->debug,
 						params->foreground);
 				write (notify_pipe[1], &i, sizeof(i));
@@ -280,7 +174,7 @@ static void start_moc (const struct parameters *params, char **args,
 	else if (!params->foreground && params->only_server)
 		fatal ("Server is already running");
 	else if (params->foreground && params->only_server) {
-		im_server = 1;
+		set_me_server ();
 		list_sock = server_init (params->debug, params->foreground);
 		server_loop (list_sock);
 	}
