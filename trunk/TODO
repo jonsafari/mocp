@@ -3,31 +3,27 @@ Items marked with $ are bigger changes requiring more time.
 Known bugs:
 * on 1024x768 framebuffer the volume ar is not drawn properly
 * hight CPU usage on FreeBSD with the gui process when started to play a song.
-* sometimes after Q the interface exits with a fatal error. 
 
 Before 2.4:
-* fix interactivity: first handle a user command, then handle events.
 *$ Main window split into 2 parts, each of them can show a directory content,
    the playlist, and tree like directories (including playlists) with
    configurable depth (pressing a key increases/decreases the level).
-* If we detect that a file was removed, remove it from the tags cache.
 *$ Better international characters handling - tags in UTF.
 *$ Progrssive tags reading: read them only if the menu items requiring them
    are visible (as an option).
 *$ Tags cache saved to a file on exit and read at startup.
 * Count speex time by reading granule position from the last page.
 * Moving items on the playlist up and down.
-* Options in a hash table.
 *$ Support for Audio-CD.
 *$ Support for CDDB.
 * Move the playlist to see the song that is currently played.
 *$ WMA.
-* Toggle theme at run time.
+* Toggle themes at run time.
 * Add a command for adding an Internet stream address to the playlist.
-* Configurable time for fast seeking.
 *$ a short cut to execute a command:
    http://moc.daper.net/phpBB2/viewtopic.php?p=186#186
 * -a, -p etc. should work on the saved playlist if there are no clients.
+* seeking from command line.
 
 In future:
 
@@ -48,6 +44,7 @@ In future:
 *$ libsidplay2
 * Seek forward using the content of the output buffer.
 *$ Locales.
+* Options in a hash table.
 *$ Song ratings or something like Q in XMMS.
 * Configurable sorting.
 * Add a key for switching sort modes.
