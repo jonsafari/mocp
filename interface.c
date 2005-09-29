@@ -26,6 +26,7 @@
 #include <ctype.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/time.h>
 #ifdef HAVE_SYS_SELECT_H
 # include <sys/select.h>
 #endif
@@ -90,6 +91,10 @@ static struct file_info {
 	int state; /* STATE_* */
 } curr_file;
 
+/* Silent seeking - where we are in seconds. -1 - no seeking. */
+static int silent_seek_pos = -1;
+static time_t silent_seek_key_last = (time_t)0; /* when the silent seek key was
+						   last used */
 static void sig_quit (int sig ATTR_UNUSED)
 {
 	want_quit = QUIT_CLIENT;
@@ -595,12 +600,12 @@ static void ev_file_tags (const struct tag_ev_response *data)
 	}
 }
 
-/* Update the current time. TODO: If silent_seek_pos >= 0, use this time instead
- * of the real time. */
+/* Update the current time. */
 static void update_ctime ()
 {
 	curr_file.curr_time = get_curr_time ();
-	iface_set_curr_time (curr_file.curr_time);
+	if (silent_seek_pos == -1)
+		iface_set_curr_time (curr_file.curr_time);
 }
 
 /* Use new tags for current file title (for Internet streams). */
@@ -643,6 +648,11 @@ static void update_curr_file ()
 
 			iface_set_played_file (file);
 			iface_set_played_file_title (curr_file.title);
+			
+			/* Silent seeking makes no sense if the playing file has
+			 * changed */
+			silent_seek_pos = -1;
+			iface_set_curr_time (curr_file.curr_time);
 		}
 		else
 			free (file);
@@ -676,15 +686,15 @@ static void update_bitrate ()
 /* Get and show the server state. */
 static void update_state ()
 {
+	int old_state = curr_file.state;
+	
 	/* play | stop | pause */
 	curr_file.state = get_state ();
 	iface_set_state (curr_file.state);
 
 	/* Silent seeking makes no sense if the state has changed. */
-/*	if (new_state != file_info.state_code) {
-		file_info.state_code = new_state;
+	if (old_state != curr_file.state)
 		silent_seek_pos = -1;
-	}*/
 
 	update_curr_file ();
 	
@@ -2071,6 +2081,56 @@ static void go_to_playing_file ()
 	}
 }
 
+/* Return the time like the standard time() function, but rounded i.e. if we
+ * have 11.8 seconds, return 12 seconds. */
+static time_t rounded_time ()
+{
+	struct timeval exact_time;
+	time_t curr_time;
+
+	if (gettimeofday(&exact_time, NULL) == -1)
+		interface_fatal ("gettimeofday() failed: %s", strerror(errno));
+	
+	curr_time = exact_time.tv_sec;
+	if (exact_time.tv_usec > 500000)
+		curr_time++;
+
+	return curr_time;
+}
+
+/* Handle silent seek key. */
+static void seek_silent (const int sec)
+{
+	if (curr_file.state == STATE_PLAY && curr_file.file
+			&& !is_url(curr_file.file)) {
+		if (silent_seek_pos == -1) {
+			silent_seek_pos = curr_file.curr_time + sec;
+		}
+		else
+			silent_seek_pos += sec;
+
+		if (silent_seek_pos < 0)
+			silent_seek_pos = 0;
+		else if (silent_seek_pos > curr_file.total_time)
+			silent_seek_pos = curr_file.total_time;
+
+		silent_seek_key_last = rounded_time ();
+		iface_set_curr_time (silent_seek_pos);
+	}
+}
+
+/* Handle releasing silent seek key. */
+static void do_silent_seek ()
+{
+	time_t curr_time = time(NULL);
+	
+	if (silent_seek_pos != -1 && silent_seek_key_last < curr_time) {
+		seek (silent_seek_pos - curr_file.curr_time - 1);
+		silent_seek_pos = -1;
+		iface_set_curr_time (curr_file.curr_time);
+	}
+}
+
 /* Handle key */
 static void menu_key (const int ch)
 {
@@ -2210,14 +2270,12 @@ static void menu_key (const int ch)
 			case KEY_CMD_WRONG:
 				error ("Bad command");
 				break;
-#if 0
 			case KEY_CMD_SEEK_FORWARD_5:
 				seek_silent (5);
 				break;
 			case KEY_CMD_SEEK_BACKWARD_5:
 				seek_silent (-5);
 				break;
-#endif
 			case KEY_CMD_VOLUME_10:
 				set_mixer (10);
 				break;
@@ -2386,9 +2444,8 @@ void interface_loop ()
 
 		iface_tick ();
 		
-		if (ret == 0) {
-			//do_silent_seek ();
-		}
+		if (ret == 0)
+			do_silent_seek ();
 		else if (ret == -1 && !want_quit && errno != EINTR)
 			interface_fatal ("select() failed: %s",
 					strerror(errno));
@@ -2409,7 +2466,7 @@ void interface_loop ()
 			if (!want_quit) {
 				if (FD_ISSET(srv_sock, &fds))
 					get_and_handle_event ();
-				//do_silent_seek ();
+				do_silent_seek ();
 			}
 		}
 		else if (user_wants_interrupt())
