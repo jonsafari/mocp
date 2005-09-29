@@ -2504,6 +2504,7 @@ void iface_set_option_state (const char *name, const int value)
 	assert (name != NULL);
 
 	info_win_set_option_state (&info_win, name, value);
+	wrefresh (info_win.win);
 }
 
 /* Set the mixer name. */
