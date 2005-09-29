@@ -188,6 +188,7 @@ void options_init ()
 	option_add_str ("FastDir10", NULL);
 	option_add_int ("Mp3IgnoreCRCErrors", 1);
 	option_add_int ("SeekTime", 1);
+	option_add_int ("SilentSeekTime", 5);
 	option_add_str ("ResampleMethod", "Linear");
 	option_add_int ("ForceSampleRate", 0);
 	option_add_str ("HTTPProxy", NULL);
@@ -230,6 +231,10 @@ int check_int_option (const char *name, const int val)
 			return 0;
 	}
 	else if (!strcasecmp(name, "SeekTime")) {
+		if (val < 1)
+			return 0;
+	}
+	else if (!strcasecmp(name, "SilentSeekTime")) {
 		if (val < 1)
 			return 0;
 	}

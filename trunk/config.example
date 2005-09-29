@@ -164,6 +164,10 @@ ASCIILines		= no
 # How fast to seek? Number of seconds per key stroke.
 #SeekTime		= 1
 
+# How fast to seek (when using silent seeking)? Number of seconds per key
+# stroke.
+#SilentSeekTime		= 5
+
 # Resample method to use. There are few methods of resampling sound supported
 # by libresamplerate. The default is the fastest (linear). Better description
 # is here: http://www.mega-nerd.com/libsamplerate/api_misc.html#Converters

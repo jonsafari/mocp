@@ -2271,10 +2271,11 @@ static void menu_key (const int ch)
 				error ("Bad command");
 				break;
 			case KEY_CMD_SEEK_FORWARD_5:
-				seek_silent (5);
+				seek_silent (options_get_int("SilentSeekTime"));
 				break;
 			case KEY_CMD_SEEK_BACKWARD_5:
-				seek_silent (-5);
+				seek_silent (-options_get_int(
+							"SilentSeekTime"));
 				break;
 			case KEY_CMD_VOLUME_10:
 				set_mixer (10);
