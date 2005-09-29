@@ -19,7 +19,7 @@
 #include <stdlib.h>
 #include <assert.h>
 
-#include "main.h"
+#include "common.h"
 #include "rbtree.h"
 
 /* item used as a null value */

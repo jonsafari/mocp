@@ -26,7 +26,7 @@
 
 #include "interface.h"
 #include "themes.h"
-#include "main.h"
+#include "common.h"
 #include "files.h"
 #include "options.h"
 

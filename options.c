@@ -19,7 +19,7 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include "main.h"
+#include "common.h"
 #include "log.h"
 #include "options.h"
 

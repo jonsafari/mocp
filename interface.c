@@ -36,7 +36,7 @@
 #include "log.h"
 #include "interface_elements.h"
 #include "interface.h"
-#include "main.h"
+#include "common.h"
 #include "playlist.h"
 #include "playlist_file.h"
 #include "protocol.h"

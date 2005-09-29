@@ -22,7 +22,7 @@
 #include <assert.h>
 #include <ltdl.h>
 
-#include "main.h"
+#include "common.h"
 #include "decoder.h"
 #include "files.h"
 #include "log.h"

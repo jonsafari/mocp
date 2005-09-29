@@ -35,5 +35,6 @@ void switch_titles_tags (struct plist *plist);
 void make_tags_title (struct plist *plist, const int num);
 void make_file_title (struct plist *plist, const int num,
 		const int hide_extension);
+int isdir (const char *file);
 
 #endif

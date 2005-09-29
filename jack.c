@@ -12,16 +12,16 @@
 
 #define DEBUG
 
-#include "audio.h"
-#include "main.h"
-#include "log.h"
-#include "options.h"
 #include <stdio.h>
 #include <jack/jack.h>
 #include <jack/types.h>
 #include <jack/ringbuffer.h>
 #include <string.h>
 #include <assert.h>
+#include "audio.h"
+#include "common.h"
+#include "log.h"
+#include "options.h"
 
 #define RINGBUF_SZ 32768
 

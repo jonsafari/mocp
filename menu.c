@@ -25,7 +25,7 @@
 
 #include <assert.h>
 #include <ctype.h>
-#include "main.h"
+#include "common.h"
 #include "menu.h"
 #include "files.h"
 #include "rbtree.h"

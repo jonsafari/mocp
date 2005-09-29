@@ -32,7 +32,7 @@
 
 #define DEBUG
 
-#include "main.h"
+#include "common.h"
 #include "log.h"
 #include "xing.h"
 #include "audio.h"

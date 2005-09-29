@@ -26,7 +26,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-#include "main.h"
+#include "common.h"
 #include "audio.h"
 #include "log.h"
 #include "fifo_buf.h"

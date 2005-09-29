@@ -15,9 +15,10 @@
 
 #include <pthread.h>
 #include <log.h>
-#include <main.h>
 #include <string.h>
 #include <errno.h>
+
+#include "common.h"
 
 /* Various functions that some systems lack of. */
 

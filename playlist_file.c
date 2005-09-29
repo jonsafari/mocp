@@ -24,7 +24,7 @@
 #include "playlist.h"
 #include "playlist_file.h"
 #include "log.h"
-#include "main.h"
+#include "common.h"
 #include "files.h"
 #include "options.h"
 #include "interface.h"

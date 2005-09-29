@@ -38,7 +38,7 @@
 #define DEBUG
 
 #include "playlist.h"
-#include "main.h"
+#include "common.h"
 #include "interface.h"
 #include "decoder.h"
 #include "options.h"
@@ -59,6 +59,18 @@ inline int is_url (const char *str)
 {
 	return !strncmp(str, "http://", sizeof("http://")-1)
 		|| !strncmp(str, "ftp://", sizeof("ftp://")-1);
+}
+
+/* Return 1 if the file is a directory, 0 if not, -1 on error. */
+int isdir (const char *file)
+{
+	struct stat file_stat;
+
+	if (stat(file, &file_stat) == -1) {
+		error ("Can't stat %s: %s", file, strerror(errno));
+		return -1;
+	}
+	return S_ISDIR(file_stat.st_mode) ? 1 : 0;
 }
 
 enum file_type file_type (const char *file)

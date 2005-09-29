@@ -19,7 +19,7 @@
 #include <unistd.h>
 
 #include "audio.h"
-#include "main.h"
+#include "common.h"
 
 static struct sound_params params = { 0, 0, 0 };
 

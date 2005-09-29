@@ -25,7 +25,7 @@
 #include <unistd.h>
 #include "server.h"
 #include "audio.h"
-#include "main.h"
+#include "common.h"
 #include "options.h"
 #include "log.h"
 

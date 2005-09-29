@@ -34,7 +34,7 @@
 
 #define DEBUG
 
-#include "main.h"
+#include "common.h"
 #include "log.h"
 #include "io.h"
 #include "io_curl.h"

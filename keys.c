@@ -32,7 +32,7 @@
 #include "interface.h"
 #include "options.h"
 #include "log.h"
-#include "main.h"
+#include "common.h"
 #include "files.h"
 
 #define CTRL_KEY_CODE	0x1F
