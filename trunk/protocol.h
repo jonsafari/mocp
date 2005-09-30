@@ -123,6 +123,7 @@ int send_tags (int sock, const struct file_tags *tags);
 
 void event_queue_init (struct event_queue *q);
 void event_queue_free (struct event_queue *q);
+void free_event_data (const int type, void *data);
 struct event *event_get_first (struct event_queue *q);
 void event_pop (struct event_queue *q);
 void event_push (struct event_queue *q, const int event, void *data);

@@ -533,17 +533,17 @@ void free_tag_ev_data (struct tag_ev_response *d)
 }
 
 /* Free data associated with the event if any. */
-static void free_event_data (struct event *e)
+void free_event_data (const int type, void *data)
 {
-	if (e->type == EV_PLIST_ADD) {
-		plist_free_item_fields (e->data);
-		free (e->data);
+	if (type == EV_PLIST_ADD) {
+		plist_free_item_fields ((struct plist_item *)data);
+		free (data);
 	}
-	else if (e->type == EV_FILE_TAGS)
-		free_tag_ev_data ((struct tag_ev_response *)e->data);
-	else if (e->type == EV_PLIST_DEL || e->type == EV_STATUS_MSG)
-		free (e->data);
-	else if (e->data)
+	else if (type == EV_FILE_TAGS)
+		free_tag_ev_data ((struct tag_ev_response *)data);
+	else if (type == EV_PLIST_DEL || type == EV_STATUS_MSG)
+		free (data);
+	else if (data)
 		abort (); /* BUG */
 }
 
@@ -555,7 +555,7 @@ void event_queue_free (struct event_queue *q)
 	assert (q != NULL);
 
 	while ((e = event_get_first(q))) {
-		free_event_data (e);
+		free_event_data (e->type, e->data);
 		event_pop (q);
 	}
 }
@@ -649,7 +649,7 @@ enum noblock_io_status event_send_noblock (int sock, struct event_queue *q)
 		struct event *e;
 
 		e = event_get_first (q);
-		free_event_data (e);
+		free_event_data (e->type, e->data);
 		event_pop (q);
 
 		return NB_IO_OK;
