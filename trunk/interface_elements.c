@@ -2528,8 +2528,10 @@ void iface_set_status (const char *msg)
 {
 	assert (msg != NULL);
 
-	info_win_set_status (&info_win, msg);
-	wrefresh (info_win.win);
+	if (iface_initialized) {
+		info_win_set_status (&info_win, msg);
+		wrefresh (info_win.win);
+	}
 }
 
 static void iface_show_num_files (const int num)
