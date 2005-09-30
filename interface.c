@@ -339,6 +339,12 @@ static void get_server_options ()
 	sync_int_option ("AutoNext");
 }
 
+static int get_server_plist_serial ()
+{
+	send_int_to_srv (CMD_PLIST_GET_SERIAL);
+	return get_data_int ();
+}
+
 static int get_mixer_value ()
 {
 	send_int_to_srv (CMD_GET_MIXER);
@@ -1419,7 +1425,6 @@ static void send_playlist (struct plist *plist, const int clear)
  * item. */
 static void play_it (const char *file)
 {
-	int serial; /* serial number of the playlist */
 	struct plist *curr_plist;
 	
 	assert (file != NULL);
@@ -1431,11 +1436,9 @@ static void play_it (const char *file)
 	
 	send_int_to_srv (CMD_LOCK);
 
-	send_int_to_srv (CMD_PLIST_GET_SERIAL);
-	serial = get_data_int ();
-	
-	if (plist_get_serial(curr_plist) == -1
-			|| serial != plist_get_serial(curr_plist)) {
+	if (plist_get_serial(curr_plist) == -1 || get_server_plist_serial()
+			!= plist_get_serial(curr_plist)) {
+		int serial;
 
 		logit ("The server has different playlist");
 
@@ -1556,8 +1559,7 @@ static void add_file_plist ()
 				
 		/* Add to the server's playlist if the server has our
 		 * playlist */
-		send_int_to_srv (CMD_PLIST_GET_SERIAL);
-		if (get_data_int() == plist_get_serial(playlist)) {
+		if (get_server_plist_serial() == plist_get_serial(playlist)) {
 			send_int_to_srv (CMD_LIST_ADD);
 			send_str_to_srv (file);
 		}
@@ -1613,8 +1615,7 @@ static void add_dir_plist ()
 
 	/* Add the new files to the server's playlist if the server has our
 	 * playlist */
-	send_int_to_srv (CMD_PLIST_GET_SERIAL);
-	if (get_data_int() == plist_get_serial(playlist))
+	if (get_server_plist_serial() == plist_get_serial(playlist))
 		send_playlist (&plist, 0);
 
 	if (options_get_int("SyncPlaylist")) {
@@ -2047,8 +2048,7 @@ static void delete_item ()
 
 	/* Delete this item from the server's playlist if it has our
 	 * playlist */
-	send_int_to_srv (CMD_PLIST_GET_SERIAL);
-	if (get_data_int() == plist_get_serial(playlist)) {
+	if (get_server_plist_serial() == plist_get_serial(playlist)) {
 		send_int_to_srv (CMD_DELETE);
 		send_str_to_srv (file);
 	}
@@ -2557,21 +2557,30 @@ void interface_error (const char *msg)
 
 void interface_cmdline_clear_plist (int server_sock)
 {
+	struct plist plist;
 	int serial;
 	srv_sock = server_sock; /* the interface is not initialized, so set it
 				   here */
+
+	plist_init (&plist);
 	
-	send_int_to_srv (CMD_LOCK);
 	if (options_get_int("SyncPlaylist"))
 		send_int_to_srv (CMD_CLI_PLIST_CLEAR);
 
-	send_int_to_srv (CMD_GET_SERIAL);
-	serial = get_data_int ();
-	send_int_to_srv (CMD_PLIST_SET_SERIAL);
-	send_int_to_srv (serial);
-	send_int_to_srv (CMD_LIST_CLEAR);
+	if (recv_server_plist(&plist) && plist_get_serial(&plist)
+			== get_server_plist_serial()) {
+		send_int_to_srv (CMD_LOCK);
+		send_int_to_srv (CMD_GET_SERIAL);
+		serial = get_data_int ();
+		send_int_to_srv (CMD_PLIST_SET_SERIAL);
+		send_int_to_srv (serial);
+		send_int_to_srv (CMD_LIST_CLEAR);
+	}
 	send_int_to_srv (CMD_UNLOCK);
+	
 	unlink (create_file_name("playlist.m3u"));
+
+	plist_free (&plist);
 }
 
 void interface_cmdline_append (int server_sock, char **args,
@@ -2600,14 +2609,12 @@ void interface_cmdline_append (int server_sock, char **args,
 
 			plist_init (&clients_plist);
 			if (recv_server_plist(&clients_plist)) {
-				int serial;
-
 				send_int_to_srv (CMD_LOCK);
 				send_items_to_clients (&plist);
 
-				send_int_to_srv (CMD_PLIST_GET_SERIAL);
-				serial = get_data_int ();
-				if (serial == plist_get_serial(&clients_plist))
+				if (get_server_plist_serial()
+						== plist_get_serial(
+							&clients_plist))
 					send_playlist (&plist, 0);
 				send_int_to_srv (CMD_UNLOCK);
 			}
@@ -2661,7 +2668,6 @@ void interface_cmdline_append (int server_sock, char **args,
 void interface_cmdline_play_first (int server_sock)
 {
 	struct plist plist;
-	int serial;
 
 	srv_sock = server_sock; /* the interface is not initialized, so set it
 				   here */
@@ -2680,9 +2686,7 @@ void interface_cmdline_play_first (int server_sock)
 		plist_load (&plist, create_file_name("playlist.m3u"), cwd);
 	
 	send_int_to_srv (CMD_LOCK);
-	send_int_to_srv (CMD_PLIST_GET_SERIAL);
-	serial = get_data_int ();
-	if (serial != plist_get_serial(&plist)) {
+	if (get_server_plist_serial() != plist_get_serial(&plist)) {
 		send_playlist (&plist, 1);
 		send_int_to_srv (CMD_PLIST_SET_SERIAL);
 		send_int_to_srv (plist_get_serial(&plist));
