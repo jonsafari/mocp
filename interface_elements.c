@@ -176,6 +176,9 @@ static struct info_win
 /* Are we running on xterm? */
 static int has_xterm = 0;
 
+/* Was the interface initialized? */
+static int iface_initialized = 0;
+
 /* Chars used to make lines (for borders etc.). */
 static struct
 {
@@ -2480,10 +2483,14 @@ void windows_init ()
 	
 	wrefresh (main_win.win);
 	wrefresh (info_win.win);
+
+	iface_initialized = 1;
 }
 
 void windows_end ()
 {
+	iface_initialized = 0;
+
 	main_win_destroy (&main_win);
 	info_win_destroy (&info_win);
 
@@ -2788,8 +2795,12 @@ void iface_add_to_plist (const struct plist *plist, const int num)
 /* Display an error message. */
 void iface_error (const char *msg)
 {
-	info_win_msg (&info_win, msg, 1);
-	wrefresh (info_win.win);
+	if (iface_initialized) {
+		info_win_msg (&info_win, msg, 1);
+		wrefresh (info_win.win);
+	}
+	else
+		fprintf (stderr, "ERROR: %s", msg);
 }
 
 /* Handle screen resizing. */
