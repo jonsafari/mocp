@@ -922,8 +922,10 @@ static void server_event (const int event, void *data)
 }
 
 /* Send requests for the given tags for every file on the playlist and wait
- * for all responses. */
-static void fill_tags (struct plist *plist, const int tags_sel)
+ * for all responses. If no_iface has non-zero value, it will not access the
+ * interface. */
+static void fill_tags (struct plist *plist, const int tags_sel,
+		const int no_iface)
 {
 	int files;
 	
@@ -949,8 +951,14 @@ static void fill_tags (struct plist *plist, const int tags_sel)
 				update_item_tags (plist, n, ev->tags);
 			}
 		}
-					
-		server_event (type, data);
+		else if (no_iface)
+			abort (); /* can't handle other events without the
+				     interface */
+	
+		if (!no_iface)
+			server_event (type, data);
+		else
+			free_event_data (type, data);
 	}
 	
 	iface_set_status ("");
@@ -1866,7 +1874,7 @@ static void entry_key_search (const int ch)
 static void save_playlist (const char *file, const char *cwd)
 {
 	iface_set_status ("Saving the playlist...");
-	fill_tags (playlist, TAGS_COMMENTS | TAGS_TIME);
+	fill_tags (playlist, TAGS_COMMENTS | TAGS_TIME, 0);
 	if (!user_wants_interrupt()) {
 		if (plist_save(playlist, file, cwd))
 			interface_message ("Playlist saved");
@@ -2569,7 +2577,85 @@ void interface_cmdline_clear_plist (int server_sock)
 void interface_cmdline_append (int server_sock, char **args,
 		const int arg_num)
 {
-	// TODO
+	int i;
+	struct plist plist;
+
+	srv_sock = server_sock; /* the interface is not initialized, so set it
+				   here */
+
+	plist_init (&plist);
+
+	for (i = 0; i < arg_num; i++) {
+		int dir = !is_url(args[i]) && isdir(args[i]);
+
+		if (dir == 1)
+			read_directory_recurr (args[i], &plist, 1);
+		else if (is_url(args[i]) || is_sound_file(args[i]))
+			plist_add (&plist, args[i]);
+	}
+
+	if (plist_count(&plist)) {
+		if (options_get_int("SyncPlaylist")) {
+			struct plist clients_plist;
+
+			plist_init (&clients_plist);
+			if (recv_server_plist(&clients_plist)) {
+				int serial;
+
+				send_int_to_srv (CMD_LOCK);
+				send_items_to_clients (&plist);
+
+				send_int_to_srv (CMD_PLIST_GET_SERIAL);
+				serial = get_data_int ();
+				if (serial == plist_get_serial(&clients_plist))
+					send_playlist (&plist, 0);
+				send_int_to_srv (CMD_UNLOCK);
+			}
+			else {
+				struct plist saved_plist;
+
+				if (!getcwd(cwd, sizeof(cwd)))
+					fatal ("Can't get CWD: %s.",
+							strerror(errno));
+				plist_init (&saved_plist);
+
+				/* this checks if the file exists */
+				if (file_type(create_file_name("playlist.m3u"))
+							== F_PLAYLIST)
+						plist_load (&saved_plist,
+							create_file_name(
+								"playlist.m3u"),
+							cwd);
+				plist_cat (&saved_plist, &plist);
+				
+				send_int_to_srv (CMD_LOCK);
+				send_playlist (&saved_plist, 0);
+				send_int_to_srv (CMD_UNLOCK);
+				if (options_get_int("SavePlaylist")) {
+					fill_tags (&saved_plist, TAGS_COMMENTS
+							| TAGS_TIME, 1);
+					plist_save (&saved_plist,
+							create_file_name(
+								"playlist.m3u"),
+							NULL);
+				}
+
+				plist_free (&saved_plist);
+			}
+
+			plist_free (&clients_plist);
+		}
+		else {
+			send_int_to_srv (CMD_LOCK);
+			change_srv_plist_serial ();
+			send_playlist (&plist, 0);
+			send_int_to_srv (CMD_UNLOCK);
+		}
+	}
+	else
+		fatal ("No files could be added");
+
+	plist_free (&plist);
 }
 
 void interface_cmdline_play_first (int server_sock)
