@@ -830,7 +830,11 @@ void audio_plist_add (const char *file)
 {
 	LOCK (plist_mut);
 	plist_clear (&shuffled_plist);
-	plist_add (&playlist, file);
+	if (plist_find_fname(&playlist, file) == -1)
+		plist_add (&playlist, file);
+	else
+		logit ("Wanted to add a file that is already present on the "
+				"list: %s", file);
 	UNLOCK (plist_mut);
 }
 
