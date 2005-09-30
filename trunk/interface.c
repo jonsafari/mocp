@@ -2660,7 +2660,38 @@ void interface_cmdline_append (int server_sock, char **args,
 
 void interface_cmdline_play_first (int server_sock)
 {
-	// TODO
+	struct plist plist;
+	int serial;
+
+	srv_sock = server_sock; /* the interface is not initialized, so set it
+				   here */
+
+	if (!getcwd(cwd, sizeof(cwd)))
+		fatal ("Can't get CWD: %s.", strerror(errno));
+	plist_init (&plist);
+	
+	send_int_to_srv (CMD_GET_SERIAL);
+	plist_set_serial (&plist, get_data_int());
+
+	/* the second condition will checks if the file exists */
+	if (!recv_server_plist(&plist)
+			&& file_type(create_file_name("playlist.m3u"))
+			== F_PLAYLIST)
+		plist_load (&plist, create_file_name("playlist.m3u"), cwd);
+	
+	send_int_to_srv (CMD_LOCK);
+	send_int_to_srv (CMD_PLIST_GET_SERIAL);
+	serial = get_data_int ();
+	if (serial != plist_get_serial(&plist)) {
+		send_playlist (&plist, 1);
+		send_int_to_srv (CMD_PLIST_SET_SERIAL);
+		send_int_to_srv (plist_get_serial(&plist));
+	}
+	
+	send_int_to_srv (CMD_PLAY);
+	send_str_to_srv ("");
+
+	plist_free (&plist);
 }
 
 /* Request tags from the server, wait until they arrive and return them
