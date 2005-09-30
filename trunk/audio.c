@@ -286,22 +286,32 @@ static void go_to_another_file ()
 	 * by searching for the current item on the list where we are
 	 * switching. */
 	if (shuffle && curr_plist != &shuffled_plist) {
-		curr_playing = plist_find_del_fname (&shuffled_plist,
-				plist_get_file(&playlist, curr_playing));
-		assert (curr_playing != -1);
+		char *file = plist_get_file (&playlist, curr_playing);
+
+		if (file) {
+			curr_playing = plist_find_del_fname (&shuffled_plist,
+					file);
+			free (file);
+		}
 	}
 	else if (!shuffle && curr_plist != &playlist) {
-		curr_playing = plist_find_del_fname (&playlist,
-				plist_get_file(&shuffled_plist, curr_playing));
-		assert (curr_playing != -1);
+		char *file = plist_get_file (&shuffled_plist, curr_playing);
+
+		if (file) {
+			curr_playing = plist_find_del_fname (&playlist,
+					file);
+			free (file);
+		}
 	}
 	
 	if (shuffle)
 		curr_plist = &shuffled_plist;
 	else
 		curr_plist = &playlist;
+
+	/* if curr_playing == -1 now, the playlist is empty */
 	
-	if (play_prev == 1) { 
+	if (play_prev == 1 && curr_playing != -1) { 
 		logit ("Playing previous...");
 		curr_playing = plist_prev (curr_plist, curr_playing);
 		if (curr_playing == -1) {
@@ -312,7 +322,8 @@ static void go_to_another_file ()
 		else 
 			logit ("Previous item.");
 	}
-	else if (options_get_int("AutoNext") || play_next) {
+	else if (curr_playing != -1
+			&& (options_get_int("AutoNext") || play_next)) {
 		curr_playing = plist_next (curr_plist, curr_playing);
 		if (curr_playing == -1 && options_get_int("Repeat")) {
 			if (shuffle) {
@@ -825,10 +836,6 @@ void audio_plist_add (const char *file)
 
 void audio_plist_clear ()
 {
-	/* We must stop before clearing the playlist, because w playing thread
-	 * is accessing the playlist items. */
-	audio_stop ();
-	
 	LOCK (plist_mut);
 	plist_clear (&shuffled_plist);
 	plist_clear (&playlist);
