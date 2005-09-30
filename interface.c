@@ -893,7 +893,6 @@ static void server_event (const int event, void *data)
 			if (options_get_int("SyncPlaylist"))
 				event_plist_add ((struct plist_item *)data);
 			plist_free_item_fields (data);
-			free (data);
 			break;
 		case EV_PLIST_CLEAR:
 			if (options_get_int("SyncPlaylist"))
@@ -902,25 +901,24 @@ static void server_event (const int event, void *data)
 		case EV_PLIST_DEL:
 			if (options_get_int("SyncPlaylist"))
 				event_plist_del ((char *)data);
-			free (data);
 			break;
 		case EV_TAGS:
 			update_curr_tags ();
 			break;
 		case EV_STATUS_MSG:
 			iface_set_status ((char *)data);
-			free (data);
 			break;
 		case EV_MIXER_CHANGE:
 			update_mixer_name ();
 			break;
 		case EV_FILE_TAGS:
 			ev_file_tags ((struct tag_ev_response *)data);
-			free_tag_ev_data ((struct tag_ev_response *)data);
 			break;
 		default:
 			interface_fatal ("Unknown event: 0x%02x", event);
 	}
+
+	free_event_data (event, data);
 }
 
 /* Send requests for the given tags for every file on the playlist and wait
