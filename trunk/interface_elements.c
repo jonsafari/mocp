@@ -39,8 +39,8 @@
 #include "playlist.h"
 #include "protocol.h"
 
-#define STARTUP_MESSAGE	"The interface is being rewritten and thus is " \
-	"not fully functional."
+#define STARTUP_MESSAGE	"Welcome to " PACKAGE_STRING "! " \
+	"Press h for the list of commands."
 #define HISTORY_SIZE	50
 
 /* Type of the side menu. */
