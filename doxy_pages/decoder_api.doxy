@@ -157,8 +157,8 @@ without this option. Also, logit() includes time and source file name with the
 function name where it was invoked. You don't need to add the end of line
 character to make lines, each invocation of logit() makes a new line.
 
-It is also proffered to use xmalloc(), xrealloc(), xstrdup() functions from main.h
-instead of those without x. They check if allocation of memory succeed, so you
-don't need to do that.
+It is also proffered to use xmalloc(), xrealloc(), xstrdup() functions from
+common.h instead of those without x. They check if allocation of memory succeed,
+so you don't need to do that.
 
 */
