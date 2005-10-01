@@ -191,9 +191,17 @@ static struct command commands[] = {
 		1
 	},
 	{
-		KEY_CMD_TOGGLE_PLAYLIST,
-		"toggle_playlist",
+		KEY_CMD_TOGGLE_MENU,
+		"toggle_menu",
 		"Switch between playlist and file list",
+		CON_MENU,
+		{ '\t', -1 },
+		1
+	},
+	{
+		KEY_CMD_TOGGLE_LAYOUT,
+		"toggle_layout",
+		"Switch between layouts",
 		CON_MENU,
 		{ 'l', -1 },
 		1

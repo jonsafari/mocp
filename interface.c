@@ -1059,7 +1059,7 @@ static void change_srv_plist_serial ()
 static void enter_first_dir ();
 
 /* Switch between the directory view and the playlist. */
-static void toggle_plist ()
+static void toggle_menu ()
 {
 	int num;
 	
@@ -1107,7 +1107,7 @@ static int go_to_playlist (const char *file)
 			plist_clear (playlist);
 		}
 		else
-			toggle_plist ();
+			toggle_menu ();
 
 		interface_message ("Playlist loaded.");
 	}
@@ -2189,8 +2189,8 @@ static void menu_key (const int ch)
 			case KEY_CMD_TOGGLE_AUTO_NEXT:
 				toggle_option ("AutoNext");
 				break;
-			case KEY_CMD_TOGGLE_PLAYLIST:
-				toggle_plist ();
+			case KEY_CMD_TOGGLE_MENU:
+				toggle_menu ();
 				break;
 			case KEY_CMD_PLIST_ADD_FILE:
 				add_file_plist ();
@@ -2393,6 +2393,9 @@ static void menu_key (const int ch)
 			case KEY_CMD_TOGGLE_MIXER:
 				debug ("Toggle mixer.");
 				send_int_to_srv (CMD_TOGGLE_MIXER_CHANNEL);
+				break;
+			case KEY_CMD_TOGGLE_LAYOUT:
+				iface_toggle_layout ();
 				break;
 			default:
 				abort ();
