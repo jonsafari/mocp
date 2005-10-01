@@ -82,5 +82,6 @@ void iface_select_file (const char *file);
 int iface_in_help ();
 void iface_switch_to_help ();
 void iface_handle_help_key (const int ch);
+void iface_toggle_layout ();
 
 #endif

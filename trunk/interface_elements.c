@@ -38,6 +38,7 @@
 #include "keys.h"
 #include "playlist.h"
 #include "protocol.h"
+#include "interface.h"
 
 #define STARTUP_MESSAGE	"Welcome to " PACKAGE_STRING "! " \
 	"Press h for the list of commands."
@@ -86,6 +87,21 @@ struct side_menu_state
 	struct menu_state menu_state;
 };
 
+/* When used instead of the size parameter it means: fill to the end of the
+ * window. */
+#define LAYOUT_SIZE_FILL	(-1)
+
+struct window_params
+{
+	int x, y;
+	int width, height;
+};
+
+struct main_win_layout
+{
+	struct window_params menus[3];
+};
+
 static struct main_win
 {
 	WINDOW *win;
@@ -95,6 +111,7 @@ static struct main_win
 	int help_screen_top; /* first visible line of the help screen. */
 	
 	struct side_menu menus[3];
+	char *layout_fmt;
 	int selected_menu; /* which menu is currently selected by the user */
 } main_win;
 
@@ -125,7 +142,6 @@ struct entry
 	char text[512];		/* the text the user types */
 	char title[32];		/* displayed title */
 	char *file;		/* optional: file associated with the entry */
-				/* TODO: is it needed? */
 	int cur_pos;		/* cursor position */
 	int display_from;	/* displaying from this char */
 	struct entry_history *history;	/* history to use with this entry or
@@ -178,6 +194,9 @@ static int has_xterm = 0;
 
 /* Was the interface initialized? */
 static int iface_initialized = 0;
+
+/* Was initscr() called? */
+static int screen_initialized = 0;
 
 /* Chars used to make lines (for borders etc.). */
 static struct
@@ -538,20 +557,20 @@ static void entry_add_text_to_history (struct entry *e)
 }
 
 static void side_menu_init (struct side_menu *m, const enum side_menu_type type,
-		WINDOW *parent_win, const int height, const int width,
-		const int posy, const int posx)
+		WINDOW *parent_win, const struct window_params *wp)
 {
 	assert (m != NULL);
 	assert (parent_win != NULL);
-	assert (width >= 8);
-	assert (height >= 3);
+	assert (wp != NULL);
+	assert (wp->width >= 8);
+	assert (wp->height >= 3);
 	
 	m->type = type;
 	m->win = parent_win;
-	m->posx = posx;
-	m->posy = posy;
-	m->height = height;
-	m->width = width;
+	m->posx = wp->x;
+	m->posy = wp->y;
+	m->height = wp->height;
+	m->width = wp->width;
 	
 	m->title = NULL;
 	
@@ -559,8 +578,8 @@ static void side_menu_init (struct side_menu *m, const enum side_menu_type type,
 	m->total_time_for_all = 0;
 
 	if (type == MENU_DIR || type == MENU_PLAYLIST) {
-		m->menu.list.main = menu_new (m->win, posx + 1, posy + 1,
-				width - 2, height - 1);
+		m->menu.list.main = menu_new (m->win, m->posx + 1, m->posy + 1,
+				m->width - 2, m->height - 1);
 		m->menu.list.copy = NULL;
 		
 		menu_set_items_numbering (m->menu.list.main,
@@ -608,8 +627,124 @@ static void side_menu_set_title (struct side_menu *m, const char *title)
 	m->title = xstrdup (title);
 }
 
-static void main_win_init (struct main_win *w)
+/* Similar function is only available in C99, so do it here. */
+static int xround (const float f)
 {
+	return f - (int)f >= 0.5 ? (int)(f + 1.0) : (int)f;
+}
+
+/* Parse one layout coordinate from "0,2,54%,1" and put it in val.
+ * Max is the maximum value of the field. It's also used when processing
+ * percent values.
+ * Return position of the next coordinate or NULL on error. */
+static const char *parse_layout_coordinate (const char *fmt, int *val,
+		const int max)
+{
+	long v;
+	const char *e;
+
+	if (!strncasecmp(fmt, "FILL", sizeof("FILL") - 1)) {
+		*val = LAYOUT_SIZE_FILL;
+		e += sizeof("FILL") - 1;
+	}
+	else {
+		v = strtol (fmt, (char **)&e, 10);
+		if (e == fmt)
+			return NULL;
+	
+		if (*e == '%') {
+			*val = xround (max * v / 100.0);
+			e++;
+		}
+		else
+			*val = v;
+
+		if (*val < 0 || *val > max)
+			return NULL;
+	}
+
+	if (*e == ',')
+		e++;
+
+	return e;
+}
+
+/* Parse the layout string. Return 0 on error. */
+static int parse_layout (struct main_win_layout *l, const char *fmt)
+{
+	const char *c = fmt;
+	
+	assert (l != NULL);
+	assert (fmt != NULL);
+
+	/* default values */
+	l->menus[0].x = 0;
+	l->menus[0].y = 0;
+	l->menus[0].width = COLS;
+	l->menus[0].height = LINES - 4;
+	l->menus[1] = l->menus[0];
+	l->menus[2] = l->menus[0];
+
+	while (*c) {
+		char name[20];
+		struct window_params p;
+		const char *b;
+		
+		/* get the name */
+		b = c;
+		c = strchr (c, ':');
+		if (!c)
+			return 0;
+		if (c - b >= (int)sizeof(name))
+			return 0;
+		strncpy (name, b, c - b);
+		name[c - b] = 0;
+		
+		if (!*++c)
+			return 0;
+
+		if (!(c = parse_layout_coordinate(c, &p.x, COLS)))
+			return 0;
+		if (!(c = parse_layout_coordinate(c, &p.y, LINES - 4)))
+			return 0;
+		if (!(c = parse_layout_coordinate(c, &p.width, COLS)))
+			return 0;
+		if (!(c = parse_layout_coordinate(c, &p.height, LINES - 4)))
+			return 0;
+
+		if (p.width == LAYOUT_SIZE_FILL)
+			p.width = COLS - p.x;
+		if (p.height == LAYOUT_SIZE_FILL)
+			p.height = LINES - 4 - p.y;
+
+		if (p.width < 15)
+			return 0;
+		if (p.height < 2)
+			return 0;
+		if (p.x + p.width > COLS)
+			return 0;
+		if (p.y + p.height > LINES - 4)
+			return 0;
+
+		if (!strcmp(name, "directory"))
+			l->menus[MENU_DIR] = p;
+		else if (!strcmp(name, "playlist"))
+			l->menus[MENU_PLAYLIST] = p;
+		else
+			return 0;
+
+		while (isblank(*c))
+			c++;
+	}
+	
+	return 1;
+}
+
+static void main_win_init (struct main_win *w, const char *layout_fmt)
+{
+	struct main_win_layout l;
+	int res;
+	
 	assert (w != NULL);
 	
 	w->win = newwin (LINES - 4, COLS, 0, 0);
@@ -620,13 +755,13 @@ static void main_win_init (struct main_win *w)
 	w->curr_file = NULL;
 	w->in_help = 0;
 	w->help_screen_top = 0;
+	w->layout_fmt = xstrdup (layout_fmt);
 
-	side_menu_init (&w->menus[0], MENU_DIR, w->win, LINES - 4, COLS/2,
-			0, 0);
-	/*side_menu_init (&w->menus[0], MENU_DIR, w->win, 5, 40,
-			1, 1);*/
-	side_menu_init (&w->menus[1], MENU_PLAYLIST, w->win, LINES - 4,
-			COLS/2, 0, COLS/2);
+	res = parse_layout (&l, layout_fmt);
+	assert (res != 0);
+
+	side_menu_init (&w->menus[0], MENU_DIR, w->win, &l.menus[0]);
+	side_menu_init (&w->menus[1], MENU_PLAYLIST, w->win, &l.menus[1]);
 	side_menu_set_title (&w->menus[1], "Playlist");
 	w->menus[2].visible = 0;
 
@@ -644,6 +779,8 @@ static void main_win_destroy (struct main_win *w)
 		delwin (w->win);
 	if (w->curr_file)
 		free (w->curr_file);
+	if (w->layout_fmt)
+		free (w->layout_fmt);
 }
 
 /* Convert time in second to min:sec text format. buff must be 6 chars long. */
@@ -820,12 +957,17 @@ static void side_menu_make_list_content (struct side_menu *m,
 static void clear_area (WINDOW *w, const int posx, const int posy,
 		const int width, const int height)
 {
-	int x, y;
+	int y;
+	char line[512];
+
+	assert (width < (int)sizeof(line));
+
+	memset (line, ' ', width);
+	line[width] = 0;
 
 	for (y = posy; y < posy + height; y++) {
 		wmove (w, y, posx);
-		for (x = 0; x < width; x++)
-			waddch (w, ' ');
+		waddstr (w, line);
 	}
 }
 
@@ -856,9 +998,9 @@ static void side_menu_draw_frame (const struct side_menu *m)
 	wmove (m->win, m->posy, m->posx + m->width - 1);
 	waddch (m->win, lines.urcorn);
 	wmove (m->win, m->posy + 1, m->posx);
-	wvline (m->win, lines.vert, m->height + 1);
+	wvline (m->win, lines.vert, m->height - 1);
 	wmove (m->win, m->posy + 1, m->posx + m->width - 1);
-	wvline (m->win, lines.vert, m->height + 1);
+	wvline (m->win, lines.vert, m->height - 1);
 	/*wborder (m->win, lines.vert, lines.vert, lines.horiz, ' ',
 			lines.ulcorn, lines.urcorn, lines.vert, lines.vert);*/
 
@@ -885,6 +1027,7 @@ static void side_menu_draw (const struct side_menu *m, const int active)
 	assert (m != NULL);
 	assert (m->visible);
 
+	clear_area (m->win, m->posx, m->posy, m->width, m->height);
 	side_menu_draw_frame (m);
 	
 	if (m->type == MENU_DIR || m->type == MENU_PLAYLIST)
@@ -1207,22 +1350,23 @@ static void side_menu_select_file (struct side_menu *m, const char *file)
 		abort ();
 }
 
-static void side_menu_resize (struct side_menu *m, const int height,
-		const int width, const int posy, const int posx)
+static void side_menu_resize (struct side_menu *m,
+		const struct window_params *wp)
 {
 	assert (m != NULL);
 
-	m->posx = posx;
-	m->posy = posy;
-	m->height = height;
-	m->width = width;
+	m->posx = wp->x;
+	m->posy = wp->y;
+	m->height = wp->height;
+	m->width = wp->width;
 
 	if (m->type == MENU_DIR || m->type == MENU_PLAYLIST) {
-		menu_update_size (m->menu.list.main, posx + 1, posy + 1,
-				width - 2, height - 1);
+		menu_update_size (m->menu.list.main, m->posx + 1, m->posy + 1,
+				m->width - 2, m->height - 1);
 		if (m->menu.list.copy)
-			menu_update_size (m->menu.list.copy, posx + 1, posy + 1,
-				width - 2, height - 1);
+			menu_update_size (m->menu.list.copy, m->posx + 1,
+					m->posy + 1, m->width - 2,
+					m->height - 1);
 	}
 	else
 		abort ();
@@ -1551,17 +1695,62 @@ static void main_win_handle_help_key (struct main_win *w, const int ch)
 	main_win_draw (w);
 }
 
+static void main_win_use_layout (struct main_win *w, const char *layout_fmt)
+{
+	struct main_win_layout l;
+	int res;
+	
+	assert (w != NULL);
+	assert (layout_fmt != NULL);
+
+	if (w->layout_fmt)
+		free (w->layout_fmt);
+	w->layout_fmt = xstrdup (layout_fmt);
+
+	res = parse_layout (&l, layout_fmt);
+	assert (res != 0);
+	
+	side_menu_resize (&w->menus[0], &l.menus[0]);
+	side_menu_resize (&w->menus[1], &l.menus[1]);
+
+	main_win_draw (w);
+}
+
+static void validate_layouts ()
+{
+	struct main_win_layout l;
+	const char *layout_fmt;
+
+	if (!parse_layout(&l, options_get_str("Layout1")))
+		interface_fatal ("Layout1 is malformed");
+
+	layout_fmt = options_get_str("Layout2");
+	if (layout_fmt && layout_fmt[0] && !parse_layout(&l, layout_fmt))
+		interface_fatal ("Layout2 is malformed");
+	
+	layout_fmt = options_get_str("Layout3");
+	if (layout_fmt && layout_fmt[0] && !parse_layout(&l, layout_fmt))
+		interface_fatal ("Layout3 is malformed");
+}
+
 /* Handle terminal size change. */
 static void main_win_resize (struct main_win *w)
 {
+	struct main_win_layout l;
+	int res;
+	
 	assert (w != NULL);
 
 	keypad (w->win, TRUE);
 	wresize (w->win, LINES - 4, COLS);
 	werase (w->win);
 
-	side_menu_resize (&w->menus[0], LINES - 4, COLS/2, 0, 0);
-	side_menu_resize (&w->menus[1], LINES - 4, COLS/2, 0, COLS/2);
+
+	res = parse_layout (&l, w->layout_fmt);
+	assert (res != 0);
+	
+	side_menu_resize (&w->menus[0], &l.menus[0]);
+	side_menu_resize (&w->menus[1], &l.menus[1]);
 
 	main_win_draw (w);
 }
@@ -2463,6 +2652,8 @@ static void info_win_resize (struct info_win *w)
 void windows_init ()
 {
 	initscr ();
+	screen_initialized = 1;
+	validate_layouts ();
 	cbreak ();
 	noecho ();
 	curs_set (0);
@@ -2475,10 +2666,10 @@ void windows_init ()
 	theme_init (has_xterm);
 	init_lines ();
 
-	main_win_init (&main_win);
-	info_win_init (&info_win);
-
+	main_win_init (&main_win, options_get_str("Layout1"));
 	main_win_draw (&main_win);
+
+	info_win_init (&info_win);
 	info_win_draw (&info_win);
 	
 	wrefresh (main_win.win);
@@ -2489,20 +2680,25 @@ void windows_init ()
 
 void windows_end ()
 {
-	iface_initialized = 0;
+	if (iface_initialized) {
+		iface_initialized = 0;
 
-	main_win_destroy (&main_win);
-	info_win_destroy (&info_win);
+		main_win_destroy (&main_win);
+		info_win_destroy (&info_win);
 
-	xterm_clear_title ();
+		xterm_clear_title ();
+	}
+
+	if (screen_initialized) {
 	
-	/* endwin() sometimes fails on x terminals when we get SIGCHLD
-	 * at this moment. Double invokation seems to solve this. */
-	if (endwin() == ERR && endwin() == ERR)
-		logit ("endwin() failed!");
+		/* endwin() sometimes fails on x terminals when we get SIGCHLD
+		 * at this moment. Double invokation seems to solve this. */
+		if (endwin() == ERR && endwin() == ERR)
+			logit ("endwin() failed!");
 
-	/* Make sure that the next line after we exit will be "clear". */
-	putchar ('\n');
+		/* Make sure that the next line after we exit will be "clear". */
+		putchar ('\n');
+	}
 }
 
 /* Set state of the options displayed in the information window. */
@@ -2809,6 +3005,7 @@ void iface_error (const char *msg)
 void iface_resize ()
 {
 	check_term_size ();
+	validate_layouts ();
 	endwin ();
 	refresh ();
 	main_win_resize (&main_win);
@@ -2967,5 +3164,25 @@ void iface_switch_to_help ()
 void iface_handle_help_key (const int ch)
 {
 	main_win_handle_help_key (&main_win, ch);
+	wrefresh (main_win.win);
+}
+
+void iface_toggle_layout ()
+{
+	static int curr_layout = 1;
+	char layout_option[10];
+	const char *layout_fmt;
+
+	if (++curr_layout > 3)
+		curr_layout = 1;
+
+	sprintf (layout_option, "Layout%d", curr_layout);
+	layout_fmt = options_get_str (layout_option);
+	if (!layout_fmt || !layout_fmt[0]) {
+		curr_layout = 1;
+		layout_fmt = options_get_str ("Layout1");
+	}
+	
+	main_win_use_layout (&main_win, layout_fmt);
 	wrefresh (main_win.win);
 }
