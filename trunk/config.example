@@ -198,7 +198,7 @@ ASCIILines		= no
 #UseRealtimePriority	= no
 
 # Size of the in-memory cache for file tags in KB.
-TagsCacheSize		= 128
+TagsCacheSize		= 256
 
 # Number items in the playlist.
 #PlaylistNumbering	= yes
