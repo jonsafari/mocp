@@ -630,7 +630,7 @@ static void side_menu_set_title (struct side_menu *m, const char *title)
 /* Similar function is only available in C99, so do it here. */
 static int xround (const float f)
 {
-	return f - (int)f >= 0.5 ? (int)(f + 1.0) : (int)f;
+	return f - (int)f > 0.5 ? (int)(f + 1.0) : (int)f;
 }
 
 /* Parse one layout coordinate from "0,2,54%,1" and put it in val.
