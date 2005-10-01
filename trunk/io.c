@@ -690,7 +690,7 @@ char *io_strerror (struct io_stream *s)
 		s->strerror = xstrdup (err);
 	}
 	else
-		s->strerror = strdup ("OK");
+		s->strerror = xstrdup ("OK");
 
 	return s->strerror;
 }
