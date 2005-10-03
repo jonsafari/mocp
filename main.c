@@ -60,6 +60,7 @@ struct parameters
 	int toggle_pause;
 	int recursively;
 	int playit;
+	int seek_by;
 };
 
 
@@ -207,6 +208,9 @@ static void start_moc (const struct parameters *params, char **args,
 			interface_cmdline_play_first (server_sock);
 		if (params->get_file_info)
 			interface_cmdline_file_info (server_sock);
+		if (params->seek_by)
+			interface_cmdline_seek_by (server_sock,
+					params->seek_by);
 		send_int (server_sock, CMD_DISCONNECT);
 	}
 	else if (params->only_server)
@@ -294,6 +298,7 @@ static void show_usage (const char *prg_name) {
 "-i --info              Print the information about the currently played file.\n"
 "-e --recursively       Make a playlist from the content of the directory given\n"
 "                       at the command line.\n"
+"-k --seek N            Seek by N seconds (can be negative).\n"
 , prg_name);
 }
 
@@ -364,6 +369,18 @@ static void server_command (struct parameters *params)
 	close (sock);
 }
 
+static long get_num_param (const char *p)
+{
+	char *e;
+	long val;
+
+	val = strtol (p, &e, 10);
+	if (*e)
+		fatal ("The parameter should be a number.");
+
+	return val;
+}
+
 int main (int argc, char *argv[])
 {
 	struct option long_options[] = {
@@ -395,6 +412,7 @@ int main (int argc, char *argv[])
 		{ "ascii",		0, NULL, 'A' },
 		{ "info",		0, NULL, 'i' },
 		{ "recursively",	0, NULL, 'e' },
+		{ "seek",		1, NULL, 'k' },
 		{ 0, 0, 0, 0 }
 	};
 	int ret, opt_index = 0;
@@ -404,7 +422,8 @@ int main (int argc, char *argv[])
 	memset (&params, 0, sizeof(params));
 	options_init ();
 
-	while ((ret = getopt_long(argc, argv, "VhDSFR:macpsxT:C:M:PUynArfiGel",
+	while ((ret = getopt_long(argc, argv,
+					"VhDSFR:macpsxT:C:M:PUynArfiGelk:",
 					long_options, &opt_index)) != -1) {
 		switch (ret) {
 			case 'V':
@@ -506,6 +525,10 @@ int main (int argc, char *argv[])
 				break;
 			case 'e':
 				params.recursively = 1;
+				break;
+			case 'k':
+				params.seek_by = get_num_param (optarg);
+				params.dont_run_iface = 1;
 				break;
 			default:
 				show_usage (argv[0]);

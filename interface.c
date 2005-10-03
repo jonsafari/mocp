@@ -2871,3 +2871,10 @@ void interface_cmdline_playit (int server_sock, char **args, const int arg_num)
 
 	plist_free (&plist);
 }
+
+void interface_cmdline_seek_by (int server_sock, const int seek_by)
+{
+	srv_sock = server_sock; /* the interface is not initialized, so set it
+				   here */
+	seek (seek_by);
+}
