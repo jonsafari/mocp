@@ -21,4 +21,6 @@ void interface_cmdline_append (int server_sock, char **args,
 void interface_cmdline_play_first (int server_sock);
 void interface_cmdline_file_info (const int server_sock);
 void interface_cmdline_playit (int server_sock, char **args, const int arg_num);
+void interface_cmdline_seek_by (int server_sock, const int seek_by);
+
 #endif
