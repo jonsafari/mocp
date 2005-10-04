@@ -2680,7 +2680,8 @@ static void info_win_resize (struct info_win *w)
 
 void windows_init ()
 {
-	initscr ();
+	if (!initscr())
+		fatal ("Can't initialize terminal.");
 	screen_initialized = 1;
 	validate_layouts ();
 	cbreak ();
