@@ -1287,8 +1287,8 @@ void init_interface (const int sock, const int logging, char **args,
 	file_info_reset (&curr_file);
 	init_playlists ();
 	event_queue_init (&events);
-	windows_init ();
 	keys_init ();
+	windows_init ();
 	get_server_options ();
 	update_mixer_name ();
 
