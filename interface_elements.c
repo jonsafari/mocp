@@ -40,8 +40,7 @@
 #include "protocol.h"
 #include "interface.h"
 
-#define STARTUP_MESSAGE	"Welcome to " PACKAGE_STRING "! " \
-	"Press h for the list of commands."
+#define STARTUP_MESSAGE	"Welcome to " PACKAGE_STRING "!"
 #define HISTORY_SIZE	50
 
 /* Type of the side menu. */
@@ -2014,6 +2013,17 @@ static void bar_resize (struct bar *b, const int width)
 	}	
 }
 
+static char *get_startup_message ()
+{
+	char buf[256];
+
+	strcpy (buf, STARTUP_MESSAGE);
+	if (!key_was_redefined(KEY_CMD_HELP))
+		strcat (buf, " Press h for the list of commands");
+
+	return xstrdup (buf);
+}
+
 static void info_win_init (struct info_win *w)
 {
 	assert (w != NULL);
@@ -2041,7 +2051,7 @@ static void info_win_init (struct info_win *w)
 	entry_history_init (&w->urls_history);
 	entry_history_init (&w->dirs_history);
 
-	w->msg = xstrdup (STARTUP_MESSAGE);
+	w->msg = get_startup_message ();
 	w->msg_is_error = 0;
 	w->msg_timeout = time(NULL) + 3;
 
