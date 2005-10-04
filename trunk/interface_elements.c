@@ -1128,14 +1128,51 @@ static void side_menu_set_curr_item_title (struct side_menu *m,
 	menu_setcurritem_title (m->menu.list.main, title);
 }
 
+/* Update menu item using the playlist item. */
+static void update_menu_item (struct menu_item *mi,
+		const struct plist *plist,
+		const int n, const int for_plist)
+{
+	char *title;
+	const struct plist_item *item;
+		
+	assert (mi != NULL);
+	assert (plist != NULL);
+	assert (n >= 0);
+	
+	item = &plist->items[n];
+	
+	if (item->tags && item->tags->time != -1) {
+		char time_str[6];
+	
+		sec_to_min (time_str, item->tags->time);
+		menu_item_set_time (mi, time_str);
+	}
+	else
+		menu_item_set_time (mi, "");
+
+	title = make_menu_title (item->title,
+			item->title == item->title_tags, for_plist);
+
+	menu_item_set_title (mi, title);
+	
+	if (for_plist && item->title == item->title_file)
+		menu_item_set_align (mi, MENU_ALIGN_RIGHT);
+	else
+		menu_item_set_align (mi, MENU_ALIGN_LEFT);
+
+	free (title);
+
+}
+
 /* Update item title and time for this item if it's present on this menu.
  * Return a non-zero value if the item is visible. */
 static int side_menu_update_item (struct side_menu *m,
 		const struct plist *plist, const int n)
 {
 	struct menu_item *mi;
-	const struct plist_item *item;
-	int visible;
+	int visible = 0;
+	char *file;
 	
 	assert (m != NULL);
 	assert (m->visible);
@@ -1143,40 +1180,22 @@ static int side_menu_update_item (struct side_menu *m,
 	assert (plist != NULL);
 	assert (n >= 0 && n < plist->num);
 
-	item = &plist->items[n];
-	
-	if ((mi = menu_find(m->menu.list.main, item->file))) {
-		char *title;
-		
-		if (item->tags && item->tags->time != -1) {
-			char time_str[6];
-		
-			sec_to_min (time_str, item->tags->time);
-			menu_item_set_time (mi, time_str);
-		}
-		else
-			menu_item_set_time (mi, "");
+	file = plist_get_file (plist, n);
+	assert (file != NULL);
 
-		title = make_menu_title (item->title,
-				item->title == item->title_tags,
-				m->type == MENU_PLAYLIST);
-
-		menu_item_set_title (mi, title);
-		
-		if (m->type == MENU_PLAYLIST && item->title == item->title_file)
-			menu_item_set_align (mi, MENU_ALIGN_RIGHT);
-		else
-			menu_item_set_align (mi, MENU_ALIGN_LEFT);
-
-		m->total_time = plist_total_time (plist,
-				&m->total_time_for_all);
-
-		free (title);
-
+	if ((mi = menu_find(m->menu.list.main, file))) {
+		update_menu_item (mi, plist, n, m->type == MENU_PLAYLIST);
 		visible = menu_is_visible (m->menu.list.main, mi);
 	}
-	else
-		visible = 0;
+	if (m->menu.list.copy
+			&& (mi = menu_find(m->menu.list.copy, file))) {
+		update_menu_item (mi, plist, n, m->type == MENU_PLAYLIST);
+		visible = visible || menu_is_visible (m->menu.list.main, mi);
+	}
+
+	free (file);
+
+	m->total_time = plist_total_time (plist, &m->total_time_for_all);
 
 	return visible;
 }
