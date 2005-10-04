@@ -953,3 +953,25 @@ char **get_keys_help (int *num)
 	*num = COMMANDS_NUM;
 	return help;
 }
+
+static int find_command (const enum key_cmd cmd)
+{
+	unsigned int i;
+
+	for (i = 0; i < COMMANDS_NUM; i++)
+		if (commands[i].cmd == cmd)
+			return i;
+
+	return -1;
+}
+
+/* Return non-zero value if the key for the command was redefined (using
+ * custom keymap). */
+int key_was_redefined (const enum key_cmd cmd)
+{
+	int i = find_command (cmd);
+
+	assert (i != -1);
+
+	return !commands[i].default_keys_set;
+}
