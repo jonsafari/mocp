@@ -5,8 +5,6 @@ Known bugs:
 * hight CPU usage on FreeBSD with the gui process when started to play a song.
 
 Before 2.4:
-*$ Additional menu: tree of directories (including playlists) with
-   configurable depth (pressing a key increases/decreases the level).
 *$ Better international characters handling - tags in UTF.
 *$ Progrssive tags reading: read them only if the menu items requiring them
    are visible (as an option).
@@ -21,12 +19,13 @@ Before 2.4:
 * Add a command for adding an Internet stream address to the playlist.
 *$ a short cut to execute a command:
    http://moc.daper.net/phpBB2/viewtopic.php?p=186#186
-* seeking from command line.
 * Call clear_area only if windows are overlaping. (if this will improve the
   performance)
+* remove leading and trailing whitespaces from entered url's
 
 In future:
 
+*$ Media library: tree-like menu for artists and albums.
 * Seek by a % value (also using keys for 10%, 20% etc.)
 * Ability to play from a playlist made of items found after searching.
 * http://www.audioscrobbler.com/ (last.fm)
