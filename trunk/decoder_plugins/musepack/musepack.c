@@ -20,7 +20,6 @@
 #include <strings.h>
 #include <stdio.h>
 #include <errno.h>
-#include <assert.h>
 #include <mpcdec/mpcdec.h>
 #include <tag_c.h>
 
@@ -194,15 +193,16 @@ static void musepack_info (const char *file_name, struct file_tags *info,
 			TagLib_Tag *tt;
 
 			tt = taglib_file_tag (tf);
-			assert (tt != NULL);
 
-			info->title = tag_str (taglib_tag_title(tt));
-			info->artist = tag_str (taglib_tag_artist(tt));
-			info->album = tag_str (taglib_tag_album(tt));
-			info->track = taglib_tag_track(tt);
+			if (tt) {
+				info->title = tag_str (taglib_tag_title(tt));
+				info->artist = tag_str (taglib_tag_artist(tt));
+				info->album = tag_str (taglib_tag_album(tt));
+				info->track = taglib_tag_track(tt);
 
-			if (info->track == 0)
-				info->track = -1;
+				if (info->track == 0)
+					info->track = -1;
+			}
 
 			taglib_file_free (tf);
 			taglib_tag_free_strings ();
