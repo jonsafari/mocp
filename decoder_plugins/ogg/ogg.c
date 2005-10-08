@@ -127,6 +127,7 @@ static void ogg_info (const char *file_name, struct file_tags *info,
 			
 			logit ("Can't open %s: %s", file_name, ogg_err);
 			free (ogg_err);
+			fclose (file);
 			
 			return;
 		}
@@ -137,6 +138,7 @@ static void ogg_info (const char *file_name, struct file_tags *info,
 			
 			logit ("Can't open %s: %s", file_name, ogg_err);
 			free (ogg_err);
+			fclose (file);
 			
 			return;
 		}
