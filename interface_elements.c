@@ -21,6 +21,9 @@
 #include <time.h>
 #include <unistd.h>
 
+// TODO: do we use this?
+#define _XOPEN_SOURCE_EXTENDED /* for ncurses wide character support */
+
 #ifdef HAVE_NCURSES_H
 # include <ncurses.h>
 #elif HAVE_CURSES_H
@@ -39,9 +42,13 @@
 #include "playlist.h"
 #include "protocol.h"
 #include "interface.h"
+#include "utf8.h"
 
 #define STARTUP_MESSAGE	"Welcome to " PACKAGE_STRING "!"
 #define HISTORY_SIZE	50
+
+/* TODO: removing/adding a char to the entry may increase width of the text
+ * by more than one column. */
 
 /* Type of the side menu. */
 enum side_menu_type
@@ -273,16 +280,16 @@ static void entry_draw (const struct entry *e, WINDOW *w, const int posx,
 	
 	wmove (w, posy, posx);
 	wattrset (w, get_color(CLR_ENTRY_TITLE));
-	wprintw (w, "%s:", e->title);
+	xwprintw (w, "%s:", e->title);
 	
 	wattrset (w, get_color(CLR_ENTRY));
 
 	strncpy (text, e->text + e->display_from, e->width);
 	text[e->width] = 0;
 	
-	wprintw (w, " %-*s", e->width, text);
-	wmove (w, posy, e->cur_pos - e->display_from + strlen(e->title) + posx
-			+ 2);
+	xwprintw (w, " %-*s", e->width, text);
+	wmove (w, posy, e->cur_pos - e->display_from + strwidth(e->title)
+			+ posx + 2);
 }
 
 static void entry_init (struct entry *e, const enum entry_type type,
@@ -316,7 +323,7 @@ static void entry_init (struct entry *e, const enum entry_type type,
 	e->text[0] = 0;
 	e->file = NULL;
 	strcpy (e->title, title);
-	e->width = width - strlen(title);
+	e->width = width - strwidth(title);
 	e->cur_pos = 0;
 	e->display_from = 0;
 	e->history = history;
@@ -335,30 +342,32 @@ static enum entry_type entry_get_type (const struct entry *e)
 /* Set the entry text. Move the cursor to the end. */
 static void entry_set_text (struct entry *e, const char *text)
 {
-	int len;
+	int width;
 	
 	assert (e != NULL);
 
 	strncpy (e->text, text, sizeof(e->text));
 	e->text[sizeof(e->text)-1] = 0;
-	len = strlen (e->text);
-	e->cur_pos = len;
+	width = strwidth (e->text);
+	e->cur_pos = width;
 	
 	if (e->cur_pos - e->display_from > e->width)
-		e->display_from = len - e->width;
+		e->display_from = width - e->width;
 }
 
 /* Add a char to the entry where the cursor is placed. */
 static void entry_add_char (struct entry *e, const char c)
 {
-	unsigned int len = strlen(e->text);
+	unsigned int width = strwidth(e->text);
 
 	assert (e != NULL);
 
-	if (len < sizeof(e->text) - 1) {
+	// FIXME: not UTF-8 compatible
+
+	if (width < sizeof(e->text) - 1) {
 		memmove (e->text + e->cur_pos + 1,
 				e->text + e->cur_pos,
-				len - e->cur_pos + 1);
+				width - e->cur_pos + 1);
 		
 		e->text[e->cur_pos] = c;
 		e->cur_pos++;
@@ -373,13 +382,15 @@ static void entry_back_space (struct entry *e)
 {
 	assert (e != NULL);
 
+	// FIXME: not UTF-8 compatible
+
 	if (e->cur_pos > 0) {
-		int len = strlen (e->text);
+		int width = strwidth (e->text);
 		
 		memmove (e->text + e->cur_pos - 1,
 				e->text + e->cur_pos,
-				len - e->cur_pos);
-		e->text[--len] = 0;
+				width - e->cur_pos);
+		e->text[--width] = 0;
 		e->cur_pos--;
 
 		if (e->cur_pos < e->display_from)
@@ -387,7 +398,7 @@ static void entry_back_space (struct entry *e)
 
 		/* Can we show more after deleting the char? */
 		if (e->display_from > 0
-				&& len - e->display_from < e->width)
+				&& width - e->display_from < e->width)
 			e->display_from--;
 	}
 }
@@ -399,7 +410,9 @@ static void entry_del_char (struct entry *e)
 
 	assert (e != NULL);
 
-	len = strlen (e->text);
+	// FIXME: not UTF-8 compatible
+
+	len = strwidth (e->text);
 
 	if (e->cur_pos < len) {
 		len--;
@@ -432,13 +445,13 @@ static void entry_curs_left (struct entry *e)
 /* Move the cursor one char right. */
 static void entry_curs_right (struct entry *e)
 {
-	int len;
+	int width;
 	
 	assert (e != NULL);
 
-	len = strlen (e->text);
+	width = strwidth (e->text);
 
-	if (e->cur_pos < len) {
+	if (e->cur_pos < width) {
 		e->cur_pos++;
 
 		if (e->cur_pos > e->width + e->display_from)
@@ -449,16 +462,16 @@ static void entry_curs_right (struct entry *e)
 /* Move the cursor to the end of the entry text. */
 static void entry_end (struct entry *e)
 {
-	int len;
+	int width;
 	
 	assert (e != NULL);
 
-	len = strlen (e->text);
+	width = strwidth (e->text);
 
-	e->cur_pos = len;
+	e->cur_pos = width;
 	
-	if (len > e->width)
-		e->display_from = len - e->width;
+	if (width > e->width)
+		e->display_from = width - e->width;
 	else
 		e->display_from = 0;
 }
@@ -815,9 +828,7 @@ static char *make_menu_title (const char *plist_title,
 {
 	char *title = xstrdup (plist_title);
 	
-	if (made_from_tags)
-		title = iconv_str (title, 0);
-	else {
+	if (!made_from_tags) {
 		if (!for_plist) {
 
 			/* Use only the file name instead of the full path. */
@@ -830,8 +841,6 @@ static char *make_menu_title (const char *plist_title,
 				free (old_title);
 			}
 		}
-		
-		title = iconv_str (title, 1);
 	}
 
 	return title;
@@ -966,7 +975,7 @@ static void clear_area (WINDOW *w, const int posx, const int posy,
 
 	for (y = posy; y < posy + height; y++) {
 		wmove (w, y, posx);
-		waddstr (w, line);
+		xwaddstr (w, line);
 	}
 }
 
@@ -975,12 +984,13 @@ static void side_menu_draw_frame (const struct side_menu *m)
 	char *title;
 
 	if (m->title) {
-		int len = strlen (m->title);
+		int width = strwidth (m->title);
 
-		if (len > m->width - 4) {
+		if (width > m->width - 4) {
 			title = (char *)xmalloc (sizeof(char) *
 					(m->width - 3));
-			sprintf (title, "...%s", m->title + len - m->width + 7);
+			sprintf (title, "...%s",
+					m->title + width - m->width + 7);
 		}
 		else
 			title = xstrdup (m->title);
@@ -1006,13 +1016,13 @@ static void side_menu_draw_frame (const struct side_menu *m)
 	/* The title */
 	if (title) {
 		wmove (m->win, m->posy, m->posx + m->width / 2
-				- strlen(title) / 2 - 1);
+				- strwidth(title) / 2 - 1);
 		
 		wattrset (m->win, get_color(CLR_FRAME));
 		waddch (m->win, lines.rtee);
 		
 		wattrset (m->win, get_color(CLR_WIN_TITLE));
-		waddstr (m->win, title);
+		xwaddstr (m->win, title);
 		
 		wattrset (m->win, get_color(CLR_FRAME));
 		waddch (m->win, lines.ltee);
@@ -1410,18 +1420,18 @@ static void main_win_draw_help_screen (const struct main_win *w)
 	wmove (w->win, 0, 0);
 	if (w->help_screen_top != 0) {
 		wattrset (w->win, get_color(CLR_MESSAGE));
-		mvwaddstr (w->win, 0, COLS/2 - (sizeof("...MORE...")-1)/2,
+		xmvwaddstr (w->win, 0, COLS/2 - (sizeof("...MORE...")-1)/2,
 				"...MORE...");
 	}
 	wmove (w->win, 1, 0);
 	wattrset (w->win, get_color(CLR_LEGEND));
 	for (i = w->help_screen_top; i < max_lines && i < help_lines; i++) {
-		waddstr (w->win, help[i]);
+		xwaddstr (w->win, help[i]);
 		waddch (w->win, '\n');
 	}
 	if (i != help_lines) {
 		wattrset (w->win, get_color(CLR_MESSAGE));
-		mvwaddstr (w->win, LINES-5,
+		xmvwaddstr (w->win, LINES-5,
 				COLS/2 - (sizeof("...MORE...")-1)/2,
 				"...MORE...");
 	}
@@ -1979,10 +1989,10 @@ static void bar_draw (const struct bar *b, WINDOW *win, const int pos_x,
 	fill_chars = b->filled * b->width / 100;
 	
 	wattrset (win, b->fill_color);
-	mvwaddnstr (win, pos_y, pos_x, b->title, fill_chars);
+	xmvwaddnstr (win, pos_y, pos_x, b->title, fill_chars);
 
 	wattrset (win, b->empty_color);
-	waddstr (win, b->title + fill_chars);
+	xwaddstr (win, b->title + fill_chars);
 }
 
 static void bar_set_fill (struct bar *b, const int fill)
@@ -2103,7 +2113,8 @@ static void info_win_draw_status (const struct info_win *w)
 
 	if (!w->in_entry) {
 		wattrset (w->win, get_color(CLR_STATUS));
-		mvwprintw (w->win, 0, 6, "%-*s", sizeof(w->status_msg) - 1,
+		wmove (w->win, 0, 6);
+		xwprintw (w->win, "%-*s", sizeof(w->status_msg) - 1,
 				w->status_msg);
 		info_win_update_curs (w);
 	}
@@ -2140,7 +2151,7 @@ static void info_win_draw_state (const struct info_win *w)
 	}
 
 	wattrset (w->win, get_color(CLR_STATE));
-	mvwaddstr (w->win, 1, 1, state_symbol);
+	xmvwaddstr (w->win, 1, 1, state_symbol);
 	info_win_update_curs (w);
 }
 
@@ -2154,11 +2165,11 @@ static void info_win_draw_title (const struct info_win *w)
 	if (w->msg && w->msg_timeout >= time(NULL)) {
 		wattrset (w->win, w->msg_is_error ? get_color(CLR_ERROR)
 				: get_color(CLR_MESSAGE));
-		mvwaddnstr (w->win, 1, 4, w->msg, COLS - 5);
+		xmvwaddnstr (w->win, 1, 4, w->msg, COLS - 5);
 	}
 	else {
 		wattrset (w->win, get_color(CLR_TITLE));
-		mvwaddnstr (w->win, 1, 4, w->title, COLS - 5);
+		xmvwaddnstr (w->win, 1, 4, w->title, COLS - 5);
 	}
 
 	info_win_update_curs (w);
@@ -2184,7 +2195,7 @@ static void info_win_draw_time (const struct info_win *w)
 	/* current time */
 	sec_to_min (time_str, w->curr_time != -1 ? w->curr_time : 0);
 	wattrset (w->win, get_color(CLR_TIME_CURRENT));
-	mvwaddstr (w->win, 2, 1, time_str);
+	xmvwaddstr (w->win, 2, 1, time_str);
 
 	/* time left */
 	if (w->total_time > 0 && w->curr_time >= 0
@@ -2192,16 +2203,16 @@ static void info_win_draw_time (const struct info_win *w)
 		sec_to_min (time_str, w->total_time - w->curr_time);
 		wmove (w->win, 2, 7);
 		wattrset (w->win, get_color(CLR_TIME_LEFT));
-		waddstr (w->win, time_str);
+		xwaddstr (w->win, time_str);
 	}
 	else
-		mvwaddstr (w->win, 2, 7, "     ");
+		xmvwaddstr (w->win, 2, 7, "     ");
 
 	/* total time */
 	sec_to_min (time_str, w->total_time != -1 ? w->total_time : 0);
 	wmove (w->win, 2, 14);
 	wattrset (w->win, get_color(CLR_TIME_TOTAL));
-	waddstr (w->win, time_str);
+	xwaddstr (w->win, time_str);
 
 	bar_draw (&w->time_bar, w->win, 2, 3);
 	info_win_update_curs (w);
@@ -2243,7 +2254,6 @@ static void info_win_set_played_title (struct info_win *w, const char *title)
 	if (w->title)
 		free (w->title);
 	w->title = xstrdup (title);
-	//TODO: iconv()
 	xterm_set_title (w->state_play, title);
 	info_win_draw_title (w);
 }
@@ -2253,10 +2263,11 @@ static void info_win_draw_rate (const struct info_win *w)
 	assert (w != NULL);
 
 	wattrset (w->win, get_color(CLR_SOUND_PARAMS));
+	wmove (w->win, 2, 22);
 	if (w->rate != -1)
-		mvwprintw (w->win, 2, 22, "%3d", w->rate);
+		xwprintw (w->win, "%3d", w->rate);
 	else
-		mvwaddstr (w->win, 2, 22, "   ");
+		xwaddstr (w->win, "   ");
 }
 
 static void info_win_draw_bitrate (const struct info_win *w)
@@ -2264,10 +2275,11 @@ static void info_win_draw_bitrate (const struct info_win *w)
 	assert (w != NULL);
 
 	wattrset (w->win, get_color(CLR_SOUND_PARAMS));
+	wmove (w->win, 2, 29);
 	if (w->bitrate != -1)
-		mvwprintw (w->win, 2, 29, "%4d", w->bitrate);
+		xwprintw (w->win, "%4d", w->bitrate);
 	else
-		mvwaddstr (w->win, 2, 29, "    ");
+		xwaddstr (w->win, "    ");
 	info_win_update_curs (w);
 }
 
@@ -2308,7 +2320,8 @@ static void info_win_draw_switch (const struct info_win *w, const int posx,
 
 	wattrset (w->win, get_color(
 				value ? CLR_INFO_ENABLED : CLR_INFO_DISABLED));
-	mvwprintw (w->win, posy, posx, "[%s]", title);
+	wmove (w->win, posy, posx);
+	xwprintw (w->win, "[%s]", title);
 	info_win_update_curs (w);
 }
 
@@ -2420,7 +2433,7 @@ static void info_win_draw_files_time (const struct info_win *w)
 		wmove (w->win, 0, COLS - 12);
 		wattrset (w->win, get_color(CLR_PLIST_TIME));
 		waddch (w->win, w->plist_time_for_all ? ' ' : '>');
-		waddstr (w->win, buf);
+		xwaddstr (w->win, buf);
 		info_win_update_curs (w);
 	}
 }
@@ -2483,7 +2496,7 @@ static void info_win_draw_static_elements (const struct info_win *w)
 	/* rate and bitrate units */
 	wmove (w->win, 2, 25);
 	wattrset (w->win, get_color(CLR_LEGEND));
-	waddstr (w->win, "KHz     Kbps");
+	xwaddstr (w->win, "KHz     Kbps");
 
 	info_win_update_curs (w);
 }
@@ -2680,6 +2693,7 @@ static void info_win_resize (struct info_win *w)
 
 void windows_init ()
 {
+	utf8_init ();
 	if (!initscr())
 		fatal ("Can't initialize terminal.");
 	screen_initialized = 1;
@@ -2717,6 +2731,7 @@ void windows_end ()
 		info_win_destroy (&info_win);
 
 		xterm_clear_title ();
+		utf8_cleanup ();
 	}
 
 	if (screen_initialized) {

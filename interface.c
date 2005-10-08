@@ -2771,10 +2771,8 @@ void interface_cmdline_file_info (const int server_sock)
 						TAGS_COMMENTS | TAGS_TIME);
 			
 			/* get the title */
-			if (curr_file.tags->title) {
+			if (curr_file.tags->title)
 				title = build_title (curr_file.tags);
-				title = iconv_str (title, 0);
-			}
 			else
 				title = xstrdup ("");
 		}

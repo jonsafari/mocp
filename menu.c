@@ -29,6 +29,7 @@
 #include "menu.h"
 #include "files.h"
 #include "rbtree.h"
+#include "utf8.h"
 
 #ifndef HAVE_STRCASESTR
 /* Case insensitive version od strstr(). */
@@ -65,7 +66,7 @@ static void draw_item (const struct menu *menu, const struct menu_item *mi,
 		const int pos, const int item_info_pos, const int title_space,
 		const int number_space, const int draw_selected)
 {
-	int title_len;
+	int title_width;
 	int j;
 
 	assert (menu != NULL);
@@ -79,7 +80,7 @@ static void draw_item (const struct menu *menu, const struct menu_item *mi,
 	
 	if (number_space) {
 		wattrset (menu->win, menu->info_attr);
-		wprintw (menu->win, "%*d ", number_space - 1, mi->num + 1);
+		xwprintw (menu->win, "%*d ", number_space - 1, mi->num + 1);
 	}
 
 	/* Set attributes */
@@ -92,16 +93,16 @@ static void draw_item (const struct menu *menu, const struct menu_item *mi,
 	else
 		wattrset (menu->win, mi->attr_normal);
 	
-	title_len = strlen (mi->title);
+	title_width = strwidth (mi->title);
 
-	if (title_len <= title_space || mi->align == MENU_ALIGN_LEFT)
-		waddnstr (menu->win, mi->title, title_space);
+	if (title_width <= title_space || mi->align == MENU_ALIGN_LEFT)
+		xwaddnstr (menu->win, mi->title, title_space);
 	else
-		waddstr (menu->win, mi->title + title_len - title_space);
+		xwaddstr (menu->win, mi->title + title_width - title_space);
 	
 	/* Make blank line to the right side of the screen */
 	if (mi == menu->selected)
-		for (j = title_len + 1; j <= title_space; j++)
+		for (j = title_width + 1; j <= title_space; j++)
 			waddch (menu->win, ' ');
 
 	/* Description */
@@ -110,13 +111,13 @@ static void draw_item (const struct menu *menu, const struct menu_item *mi,
 
 	if (menu->show_time && menu->show_format
 			&& (*mi->time || *mi->format))
-		wprintw (menu->win, "[%5s|%3s]",
+		xwprintw (menu->win, "[%5s|%3s]",
 				mi->time ? mi->time : "     ",
 				mi->format);
 	else if (menu->show_time && mi->time[0])
-		wprintw (menu->win, "[%5s]", mi->time);
+		xwprintw (menu->win, "[%5s]", mi->time);
 	else if (menu->show_format && mi->format[0])
-		wprintw (menu->win, "[%3s]", mi->format);
+		xwprintw (menu->win, "[%3s]", mi->format);
 }
 
 void menu_draw (const struct menu *menu, const int active)

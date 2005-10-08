@@ -51,7 +51,9 @@ mocp_SOURCES = log.c \
 	       rbtree.c \
 	       rbtree.h \
 	       tags_cache.c \
-	       tags_cache.h
+	       tags_cache.h \
+	       utf8.c \
+	       utf8.h
 EXTRA_mocp_SOURCES = gnugetopt.h \
 		     getopt.c \
 		     getopt1.c \

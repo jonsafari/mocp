@@ -19,6 +19,7 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
 #include "common.h"
 #include "log.h"
 #include "options.h"
@@ -166,8 +167,6 @@ void options_init ()
 	option_add_str ("MOCDir", "~/.moc");
 	option_add_int ("UseMmap", 1);
 	option_add_int ("Precache", 1);
-	option_add_str ("TagsIconv", NULL);
-	option_add_str ("FileNamesIconv", NULL);
 	option_add_int ("SavePlaylist", 1);
 	option_add_str ("Keymap", NULL);
 	option_add_int ("SyncPlaylist", 1);
@@ -270,14 +269,6 @@ int check_str_option (const char *name, const char *val)
 				&& strcasecmp(val, "IfAvailable"))
 			return 0;
 	}
-	else if (!strcasecmp(name, "TagsIconv")) {
-		char *colon;
-
-		/* simple check if val is FORMAT1:FORMAT2 */
-		if (!(colon = strchr(val, ':')) || strchr(colon + 1, ':')
-				|| *(colon + 1) == 0 || colon == val)
-			return 0;
-	}
 	else if (!strcmp(name, "ResampleMethod")) {
 		if (strcasecmp(val, "SincBestQuality")
 				&& strcasecmp(val, "SincMediumQuality")
@@ -290,10 +281,26 @@ int check_str_option (const char *name, const char *val)
 	return 1;
 }
 
+static int is_deprecated_option (const char *name)
+{
+	if (!strcmp(name, "TagsIconv")
+			|| !strcmp(name, "FileNamesIconv"))
+		return 1;
+
+	return 0;
+}
+
 /* Set an option read from the configuration file. Return 0 on error. */
 static int set_option (const char *name, const char *value)
 {
 	int i = find_option (name, OPTION_ANY);
+
+	if (is_deprecated_option(name)) {
+		fprintf (stderr, "Option '%s' was ignored, remove it "
+				"from the configuration file.\n", name);
+		sleep (1);
+		return 1;
+	}
 
 	if (i == -1) {
 		fprintf (stderr, "Wrong option name: '%s'.", name);
