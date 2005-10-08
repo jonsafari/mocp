@@ -189,7 +189,6 @@ static void musepack_info (const char *file_name, struct file_tags *info,
 	if (tags_sel & TAGS_COMMENTS) {
 		TagLib_File *tf;
 		
-		taglib_set_strings_unicode (0);
 		tf = taglib_file_new_type (file_name, TagLib_File_MPC);
 		if (tf) {
 			TagLib_Tag *tt;

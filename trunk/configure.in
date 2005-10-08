@@ -34,11 +34,15 @@ AC_HEADER_STDC
 AC_CHECK_HEADERS([fcntl.h string.h strings.h sys/param.h unistd.h sys/un.h \
 		  sys/socket.h sys/types.h signal.h sys/time.h \
 		  sys/wait.h sys/ioctl.h \
-		  time.h errno.h sys/stat.h assert.h locale.h],,
+		  time.h errno.h sys/stat.h assert.h locale.h wchar.h],,
 		 AC_MSG_ERROR([Can't find required header files.]))
 AC_CHECK_HEADERS([sys/select.h inttypes.h limits.h stdint.h])
 
 AC_CHECK_FUNCS([sched_get_priority_max])
+
+dnl langinfo
+AC_CHECK_HEADERS([langinfo.h])
+AC_CHECK_FUNCS([nl_langinfo])
 
 AC_C_BIGENDIAN
 
