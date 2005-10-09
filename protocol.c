@@ -283,6 +283,7 @@ void packet_buf_add_tags (struct packet_buf *b, const struct file_tags *tags)
 		packet_buf_add_int (b, tags->track);
 		packet_buf_add_int (b, tags->filled & TAGS_TIME ?
 				tags->time : -1);
+		packet_buf_add_int (b, tags->filled);
 	}
 	else {
 		
@@ -292,6 +293,7 @@ void packet_buf_add_tags (struct packet_buf *b, const struct file_tags *tags)
 		packet_buf_add_str (b, ""); /* album */
 		packet_buf_add_int (b, -1); /* track */
 		packet_buf_add_int (b, -1); /* time */
+		packet_buf_add_int (b, 0); /* filled */
 	}
 }
 
@@ -382,8 +384,11 @@ struct file_tags *recv_tags (int sock)
 		return NULL;
 	}
 
-	if (tags->time != -1)
-		tags->filled |= TAGS_TIME;
+	if (!get_int(sock, &tags->filled)) {
+		logit ("Error while receiving 'filled'");
+		tags_free (tags);
+		return NULL;
+	}
 
 	/* Set NULL instead of empty tags. */
 	if (!tags->title[0]) {
@@ -398,9 +403,6 @@ struct file_tags *recv_tags (int sock)
 		free (tags->album);
 		tags->album = NULL;
 	}
-
-	if (tags->title || tags->artist || tags->album || tags->track != -1)
-		tags->filled |= TAGS_COMMENTS;
 
 	return tags;
 }
