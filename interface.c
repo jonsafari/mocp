@@ -1626,6 +1626,7 @@ static void add_dir_plist ()
 	else {
 		int i;
 		
+		switch_titles_file (&plist);
 		if (get_tags_setting())
 			ask_for_tags (&plist, get_tags_setting());
 
