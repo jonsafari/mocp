@@ -362,6 +362,9 @@ void menu_free (struct menu *menu)
 void menu_driver (struct menu *menu, const enum menu_request req)
 {
 	assert (menu != NULL);
+
+	if (menu->nitems == 0)
+		return;
 	
 	if (req == REQ_DOWN && menu->selected->next) {
 		menu->selected = menu->selected->next;
