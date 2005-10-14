@@ -1924,7 +1924,7 @@ static void init_lines ()
 static void check_term_size ()
 {
 	if (COLS < 79 || LINES < 7)
-		fatal ("The terminal is too small after resizeing.");
+		interface_fatal ("The terminal is too small after resizeing.");
 }
 
 /* Update the title with the current fill. */
