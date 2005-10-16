@@ -1,0 +1,34 @@
+# Theme to match the 'darkdot' vim theme, by David Lazar (david_bv|at|yahoo|com)
+
+background		= default	default
+frame			= white		default
+window_title		= white		default
+directory		= blue		default	bold
+selected_directory	= black		cyan
+playlist		= white		default	bold
+selected_playlist	= black		cyan
+file			= white		default
+selected_file		= black		cyan
+marked_file		= white		default	bold
+marked_selected_file	= white		cyan	bold
+info			= white		default
+status			= white		default
+title			= white		default bold
+state			= white		default	bold
+current_time		= white		default	bold
+time_left		= black		default	bold
+total_time		= white		default
+time_total_frames	= white		default
+sound_parameters	= white		default bold
+legend			= white		default
+disabled		= black		default bold
+enabled			= white		default	bold
+empty_mixer_bar		= white		default
+filled_mixer_bar	= black		white
+empty_time_bar		= white		default
+filled_time_bar		= black		white
+entry			= white		default
+entry_title		= white		default
+error			= white		red	bold
+message			= white		default
+plist_time		= white		default
