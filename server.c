@@ -373,6 +373,10 @@ static void add_event_all (const int event, const void *data)
 						|| event == EV_STATUS_MSG) {
 					data_copy = xstrdup (data);
 				}
+				else if (event == EV_PLIST_MOVE)
+					data_copy = move_ev_data_dup (
+							(struct move_ev_data *)
+							data);
 				else
 					logit ("Unhandled data!");
 			}
@@ -755,6 +759,20 @@ static int plist_sync_cmd (struct client *cli, const int cmd)
 		add_event_all (EV_PLIST_DEL, file);
 		free (file);
 	}
+	else if (cmd == CMD_CLI_PLIST_MOVE) {
+		struct move_ev_data m;
+
+		if (!(m.from = get_str(cli->socket))
+				|| !(m.to = get_str(cli->socket))) {
+			logit ("Error while reveiving file");
+			return 0;
+		}
+
+		add_event_all (EV_PLIST_MOVE, &m);
+
+		free (m.from);
+		free (m.to);
+	}
 	else { /* it can be only CMD_CLI_PLIST_CLEAR */
 		debug ("Sending EV_PLIST_CLEAR");
 		add_event_all (EV_PLIST_CLEAR, NULL);
@@ -901,6 +919,27 @@ static int abort_tags_requests (const int cli_id)
 	return 1;
 }
 
+/* Handle CMD_LIST_MOVE. Return 0 on error. */
+static int req_list_move (struct client *cli)
+{
+	char *from;
+	char *to;
+
+	if (!(from = get_str(cli->socket)))
+		return 0;
+	if (!(to = get_str(cli->socket))) {
+		free (from);
+		return 0;
+	}
+	
+	audio_plist_move (from, to);
+	
+	free (from);
+	free (to);
+
+	return 1;
+}
+
 /* Reveive a command from the client and execute it. */
 static void handle_command (const int client_id)
 {
@@ -1026,6 +1065,7 @@ static void handle_command (const int client_id)
 		case CMD_CLI_PLIST_ADD:
 		case CMD_CLI_PLIST_DEL:
 		case CMD_CLI_PLIST_CLEAR:
+		case CMD_CLI_PLIST_MOVE:
 			if (!plist_sync_cmd(cli, cmd))
 				err = 1;
 			break;
@@ -1066,6 +1106,10 @@ static void handle_command (const int client_id)
 			break;
 		case CMD_ABORT_TAGS_REQUESTS:
 			if (!abort_tags_requests(client_id))
+				err = 1;
+			break;
+		case CMD_LIST_MOVE:
+			if (!req_list_move(cli))
 				err = 1;
 			break;
 		default:

@@ -1367,6 +1367,20 @@ static void side_menu_use_main (struct side_menu *m)
 	}
 }
 
+static void side_menu_swap_items (struct side_menu *m, const char *file1,
+		const char *file2)
+{
+	assert (m != NULL);
+	assert (m->visible);
+	assert (m->type == MENU_PLAYLIST || m->type == MENU_DIR);
+	assert (file1 != NULL);
+	assert (file2 != NULL);
+	assert (m->menu.list.main != NULL);
+	assert (m->menu.list.copy == NULL);
+
+	menu_swap_items (m->menu.list.main, file1, file2);
+}
+
 static void side_menu_select_file (struct side_menu *m, const char *file)
 {
 	assert (m != NULL);
@@ -1720,6 +1734,20 @@ static void main_win_handle_help_key (struct main_win *w, const int ch)
 	else if (ch != KEY_RESIZE)
 		w->in_help = 0;
 
+	main_win_draw (w);
+}
+
+static void main_win_swap_plist_items (struct main_win *w, const char *file1,
+		const char *file2)
+{
+	struct side_menu *m;
+	
+	assert (w != NULL);
+	assert (file1 != NULL);
+	assert (file2 != NULL);
+
+	m = find_side_menu (w, MENU_PLAYLIST);
+	side_menu_swap_items (m, file1, file2);
 	main_win_draw (w);
 }
 
@@ -3229,5 +3257,11 @@ void iface_toggle_layout ()
 	}
 	
 	main_win_use_layout (&main_win, layout_fmt);
+	wrefresh (main_win.win);
+}
+
+void iface_swap_plist_items (const char *file1, const char *file2)
+{
+	main_win_swap_plist_items (&main_win, file1, file2);
 	wrefresh (main_win.win);
 }

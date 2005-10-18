@@ -10,7 +10,6 @@ Before 2.4:
    are visible (as an option).
 *$ Tags cache saved to a file on exit and read at startup.
 * Count speex time by reading granule position from the last page.
-* Moving items on the playlist up and down.
 *$ Support for Audio-CD.
 *$ Support for CDDB.
 * Move the playlist to see the song that is currently played.

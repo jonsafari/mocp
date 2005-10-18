@@ -605,6 +605,22 @@ static struct command commands[] = {
  		CON_MENU,
  		{ 'x', -1 },
  		1
+  	},
+ 	{
+ 		KEY_CMD_PLIST_MOVE_UP,
+ 		"plist_move_up",
+ 		"Move playlist item up",
+ 		CON_MENU,
+ 		{ 'u', -1 },
+ 		1
+  	},
+ 	{
+ 		KEY_CMD_PLIST_MOVE_DOWN,
+ 		"plist_move_down",
+ 		"Move playlist item down",
+ 		CON_MENU,
+ 		{ 'j', -1 },
+ 		1
   	}
 };
 

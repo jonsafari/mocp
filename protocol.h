@@ -23,6 +23,14 @@ struct tag_ev_response
 	struct file_tags *tags;
 };
 
+/* Used as data field in the event queue for EV_PLIST_MOVE. */
+struct move_ev_data
+{
+	/* Two files that are to be exchanged. */
+	char *from;
+	char *to;
+};
+
 /* Status of nonblock sending/receiving function. */
 enum noblock_io_status
 {
@@ -51,9 +59,10 @@ enum noblock_io_status
 
 /* Events caused by a client that wants to modify the playlist (see
  * CMD_CLI_PLIST* commands. */
-#define EV_PLIST_ADD	0x5e /* add an item, followed by the file name */
-#define EV_PLIST_DEL	0x5f /* delete an item, followed by the file name */
-#define EV_PLIST_CLEAR	0x50 /* clear the playlist */
+#define EV_PLIST_ADD	0x50 /* add an item, followed by the file name */
+#define EV_PLIST_DEL	0x51 /* delete an item, followed by the file name */
+#define EV_PLIST_MOVE	0x52 /* move an item, followed by 2 file names */
+#define EV_PLIST_CLEAR	0x53 /* clear the playlist */
 
 /* State of the server. */
 #define STATE_PLAY	0x01
@@ -107,6 +116,8 @@ enum noblock_io_status
 #define CMD_GET_FILE_TAGS	0x2f	/* get tags for the specified file */
 #define CMD_ABORT_TAGS_REQUESTS	0x30	/* abort previous CMD_GET_FILE_TAGS
 					   requests up to some file */
+#define CMD_CLI_PLIST_MOVE	0x31	/* move an item */
+#define CMD_LIST_MOVE		0x32	/* move an item */
 
 char *socket_name ();
 int get_int (int sock, int *i);
@@ -130,5 +141,8 @@ void event_push (struct event_queue *q, const int event, void *data);
 int event_queue_empty (const struct event_queue *q);
 enum noblock_io_status event_send_noblock (int sock, struct event_queue *q);
 void free_tag_ev_data (struct tag_ev_response *d);
+void free_move_ev_data (struct move_ev_data *m);
+struct move_ev_data *move_ev_data_dup (const struct move_ev_data *m);
+struct move_ev_data *recv_move_ev_data (int sock);
 
 #endif

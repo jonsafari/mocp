@@ -109,3 +109,5 @@ go_to_fast_dir10 =	)
 toggle_mixer =		x
 history_up =		UP
 history_down =		DOWN
+plist_move_up =		u
+plist_move_down =	j
