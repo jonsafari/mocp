@@ -741,3 +741,86 @@ int menu_is_visible (const struct menu *menu, const struct menu_item *mi)
 
 	return 0;
 }
+
+static void menu_items_swap (struct menu *menu, struct menu_item *mi1,
+		struct menu_item *mi2)
+{
+	int t;
+	
+	assert (menu != NULL);
+	assert (mi1 != NULL);
+	assert (mi2 != NULL);
+	assert (mi1 != mi2);
+
+	/* if they are next to each other, change the pointers so that mi2
+	 * is the second one */
+	if (mi2->next == mi1) {
+		struct menu_item *i = mi1;
+
+		mi1 = mi2;
+		mi2 = i;
+	}
+
+	if (mi1->next == mi2) {
+		if (mi2->next)
+			mi2->next->prev = mi1;
+		if (mi1->prev)
+			mi1->prev->next = mi2;
+		
+		mi1->next = mi2->next;
+		mi2->prev = mi1->prev;
+		mi1->prev = mi2;
+		mi2->next = mi1;
+	}
+	else {
+		if (mi2->next)
+			mi2->next->prev = mi1;
+		if (mi2->prev)
+			mi2->prev->next = mi1;
+		mi2->next = mi1->next;
+		mi2->prev = mi1->prev;
+		
+		if (mi1->next)
+			mi1->next->prev = mi2;
+		if (mi1->prev)
+			mi1->prev->next = mi2;
+		mi1->next = mi2->next;
+		mi1->prev = mi2->prev;
+	}
+
+	t = mi1->num;
+	mi1->num = mi2->num;
+	mi2->num = t;
+
+	if (menu->top == mi1)
+		menu->top = mi2;
+	else if (menu->top == mi2)
+		menu->top = mi1;
+
+	if (menu->last == mi1)
+		menu->last = mi2;
+	else if (menu->last == mi2)
+		menu->last = mi1;
+
+	if (menu->items == mi1)
+		menu->items = mi2;
+	else if (menu->items == mi2)
+		menu->items = mi1;
+}
+
+void menu_swap_items (struct menu *menu, const char *file1, const char *file2)
+{
+	struct menu_item *mi1, *mi2;
+	
+	assert (menu != NULL);
+	assert (file1 != NULL);
+	assert (file2 != NULL);
+
+	if ((mi1 = menu_find(menu, file1)) && (mi2 = menu_find(menu, file2))
+			&& mi1 != mi2) {
+		menu_items_swap (menu, mi1, mi2);
+
+		/* make sure that the selected item is visible */
+		menu_setcurritem (menu, menu->selected);
+	}
+}

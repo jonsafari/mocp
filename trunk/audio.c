@@ -951,6 +951,14 @@ void audio_plist_set_serial (const int serial)
 	UNLOCK (plist_mut);
 }
 
+/* Swap 2 file on the playlist. */
+void audio_plist_move (const char *file1, const char *file2)
+{
+	LOCK (plist_mut);
+	plist_swap_files (&playlist, file1, file2);
+	UNLOCK (plist_mut);
+}
+
 struct file_tags *audio_get_curr_tags ()
 {
 	return player_get_curr_tags ();

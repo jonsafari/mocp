@@ -101,5 +101,7 @@ void plist_discard_tags (struct plist *plist);
 void plist_set_tags (struct plist *plist, const int num,
 		const struct file_tags *tags);
 struct file_tags *plist_get_tags (const struct plist *plist, const int num);
+void plist_swap_files (struct plist *plist, const char *file1,
+		const char *file2);
 
 #endif

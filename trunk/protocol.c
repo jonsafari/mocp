@@ -473,6 +473,28 @@ struct plist_item *recv_item (int sock)
 	return item;
 }
 
+struct move_ev_data *recv_move_ev_data (int sock)
+{
+	struct move_ev_data *d;
+	
+	d = (struct move_ev_data *)xmalloc (sizeof(struct move_ev_data));
+
+	if (!(d->from = get_str(sock))) {
+		logit ("Error while reveivind 'from' data");
+		free (d);
+		return NULL;
+	}
+
+	if (!(d->to = get_str(sock))) {
+		logit ("Error while reveivind 'to' data");
+		free (d->from);
+		free (d);
+		return NULL;
+	}
+
+	return d;
+}
+
 /* Push an event on the queue if it's not already there. */
 void event_push (struct event_queue *q, const int event, void *data)
 {
@@ -534,6 +556,32 @@ void free_tag_ev_data (struct tag_ev_response *d)
 	free (d);
 }
 
+void free_move_ev_data (struct move_ev_data *m)
+{
+	assert (m != NULL);
+	assert (m->from != NULL);
+	assert (m->to != NULL);
+
+	free (m->to);
+	free (m->from);
+	free (m);
+}
+
+struct move_ev_data *move_ev_data_dup (const struct move_ev_data *m)
+{
+	struct move_ev_data *new;
+
+	assert (m != NULL);
+	assert (m->from != NULL);
+	assert (m->to != NULL);
+
+	new = (struct move_ev_data *)xmalloc (sizeof(struct move_ev_data));
+	new->from = xstrdup (m->from);
+	new->to = xstrdup (m->to);
+
+	return new;
+}
+
 /* Free data associated with the event if any. */
 void free_event_data (const int type, void *data)
 {
@@ -545,6 +593,8 @@ void free_event_data (const int type, void *data)
 		free_tag_ev_data ((struct tag_ev_response *)data);
 	else if (type == EV_PLIST_DEL || type == EV_STATUS_MSG)
 		free (data);
+	else if (type == EV_PLIST_MOVE)
+		free_move_ev_data ((struct move_ev_data *)data);
 	else if (data)
 		abort (); /* BUG */
 }
@@ -624,6 +674,15 @@ static struct packet_buf *make_event_packet (const struct event *e)
 		
 		packet_buf_add_str (b, r->file);
 		packet_buf_add_tags (b, r->tags);
+	}
+	else if (e->type == EV_PLIST_MOVE) {
+		struct move_ev_data *m;
+		
+		assert (e->data != NULL);
+
+		m = (struct move_ev_data *)e->data;
+		packet_buf_add_str (b, m->from);
+		packet_buf_add_str (b, m->to);
 	}
 	else if (e->data)
 		abort (); /* BUG */

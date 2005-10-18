@@ -882,3 +882,27 @@ struct file_tags *plist_get_tags (const struct plist *plist, const int num)
 
 	return NULL;
 }
+
+/* Swap 2 file on the playlist. */
+void plist_swap_files (struct plist *plist, const char *file1,
+		const char *file2)
+{
+	struct rb_node *x1, *x2;
+
+	assert (plist != NULL);
+	assert (file1 != NULL);
+	assert (file2 != NULL);
+
+	x1 = rb_search (&plist->search_tree, file1);
+	x2 = rb_search (&plist->search_tree, file2);
+
+	if (!rb_is_null(x1) && !rb_is_null(x2)) {
+		int t;
+		
+		plist_swap (plist, (int)x1->data, (int)x2->data);
+
+		t = (int)x1->data;
+		x1->data = x2->data;
+		x2->data = (void *)t;
+	}
+}

@@ -206,6 +206,16 @@ static struct tag_ev_response *recv_tags_data_from_srv ()
 	return r;
 }
 
+static struct move_ev_data *recv_move_ev_data_from_srv ()
+{
+	struct move_ev_data *d;
+	
+	if (!(d = recv_move_ev_data(srv_sock)))
+		fatal ("Can't receive move data from the server");
+
+	return d;
+}
+
 /* Receive data for the given type of event and return them. Return NULL if
  * there is no data for the event. */
 static void *get_event_data (const int type)
@@ -218,6 +228,8 @@ static void *get_event_data (const int type)
 			return get_str_from_srv ();
 		case EV_FILE_TAGS:
 			return recv_tags_data_from_srv ();
+		case EV_PLIST_MOVE:
+			return recv_move_ev_data_from_srv ();
 	}
 
 	return NULL;
@@ -858,6 +870,26 @@ static void event_plist_del (char *file)
 				" playlist.");
 }
 
+/* Swap 2 file on the playlist. */
+static void swap_playlist_items (const char *file1, const char *file2)
+{
+	assert (file1 != NULL);
+	assert (file2 != NULL);
+
+	plist_swap_files (playlist, file1, file2);
+	iface_swap_plist_items (file1, file2);
+}
+
+/* Handle EV_PLIST_MOVE. */
+static void event_plist_move (const struct move_ev_data *d)
+{
+	assert (d != NULL);
+	assert (d->from != NULL);
+	assert (d->to != NULL);
+
+	swap_playlist_items (d->from, d->to);
+}
+
 /* Handle server event. */
 static void server_event (const int event, void *data)
 {
@@ -907,6 +939,10 @@ static void server_event (const int event, void *data)
 		case EV_PLIST_DEL:
 			if (options_get_int("SyncPlaylist"))
 				event_plist_del ((char *)data);
+			break;
+		case EV_PLIST_MOVE:
+			if (options_get_int("SyncPlaylist"))
+				event_plist_move ((struct move_ev_data *)data);
 			break;
 		case EV_TAGS:
 			update_curr_tags ();
@@ -2126,6 +2162,61 @@ static void seek_silent (const int sec)
 	}
 }
 
+/* Move the current playlist item (direction: 1 - up, -1 - down). */
+static void move_item (const int direction)
+{
+	char *file;
+	int second;
+	char *second_file;
+	
+	if (!iface_in_plist_menu()) {
+		error ("You can move only playlist items.");
+		return;
+	}
+
+	if (!(file = iface_get_curr_file()))
+		return;
+
+	second = plist_find_fname (playlist, file);
+	assert (second != -1);
+
+	if (direction == -1)
+		second = plist_next (playlist, second);
+	else if (direction == 1)
+		second = plist_prev (playlist, second);
+	else
+		abort (); /* BUG */
+
+	if (second == -1) {
+		free (file);
+		return;
+	}
+		
+	second_file = plist_get_file (playlist, second);
+	
+	send_int_to_srv (CMD_LOCK);
+	
+	if (options_get_int("SyncPlaylist")) {
+		send_int_to_srv (CMD_CLI_PLIST_MOVE);
+		send_str_to_srv (file);
+		send_str_to_srv (second_file);
+	}
+	else
+		swap_playlist_items (file, second_file);
+
+	/* update the server's playlist */
+	if (get_server_plist_serial() == plist_get_serial(playlist)) {
+		send_int_to_srv (CMD_LIST_MOVE);
+		send_str_to_srv (file);
+		send_str_to_srv (second_file);
+	}
+
+	send_int_to_srv (CMD_UNLOCK);
+	
+	free (second_file);
+	free (file);
+}
+
 /* Handle releasing silent seek key. */
 static void do_silent_seek ()
 {
@@ -2397,6 +2488,12 @@ static void menu_key (const int ch)
 				break;
 			case KEY_CMD_TOGGLE_LAYOUT:
 				iface_toggle_layout ();
+				break;
+			case KEY_CMD_PLIST_MOVE_UP:
+				move_item (1);
+				break;
+			case KEY_CMD_PLIST_MOVE_DOWN:
+				move_item (-1);
 				break;
 			default:
 				abort ();

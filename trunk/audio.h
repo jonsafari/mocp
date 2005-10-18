@@ -249,5 +249,6 @@ void audio_plist_set_serial (const int serial);
 struct file_tags *audio_get_curr_tags ();
 char *audio_get_mixer_channel_name ();
 void audio_toggle_mixer_channel ();
+void audio_plist_move (const char *file1, const char *file2);
 
 #endif
