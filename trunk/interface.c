@@ -1862,18 +1862,54 @@ static void play_from_url (const char *url)
 	send_int_to_srv (CMD_UNLOCK);
 }
 
+/* Return malloc()ed string that is a copy of str without leading and trailing
+ * white spaces. */
+static char *strip_white_spaces (const char *str)
+{
+	char *clean;
+	int n;
+
+	assert (str != NULL);
+
+	n = strlen (str);
+
+	/* Strip trailing */
+	while (isblank(str[n-1]))
+		n--;
+
+	/* Strip leading */
+	while (*str && isblank(*str)) {
+		str++;
+		n--;
+	}
+
+	if (n > 0) {
+		clean = (char *)xmalloc ((n + 1) * sizeof(char));
+		strncpy (clean, str, n);
+		clean[n] = 0;
+	}
+	else
+		clean = strdup ("");
+
+	return clean;
+}
+
 static void entry_key_go_url (const int ch)
 {
 	if (ch == '\n') {
 		char *entry_text = iface_entry_get_text ();
 		
 		if (entry_text[0]) {
+			char *clean_url = strip_white_spaces (entry_text);
+			
 			iface_entry_history_add ();
 
-			if (is_url(entry_text))
-				play_from_url (entry_text);
+			if (is_url(clean_url))
+				play_from_url (clean_url);
 			else
 				error ("Not a valid URL.");
+
+			free (clean_url);
 		}
 
 		free (entry_text);
