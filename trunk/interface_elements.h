@@ -84,5 +84,6 @@ void iface_switch_to_help ();
 void iface_handle_help_key (const int ch);
 void iface_toggle_layout ();
 void iface_swap_plist_items (const char *file1, const char *file2);
+void iface_make_visible (const enum iface_menu menu, const char *file);
 
 #endif

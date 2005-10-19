@@ -1367,6 +1367,17 @@ static void side_menu_use_main (struct side_menu *m)
 	}
 }
 
+static void side_menu_make_visible (struct side_menu *m, const char *file)
+{
+	assert (m != NULL);
+	assert (m->visible);
+	assert (m->type == MENU_PLAYLIST || m->type == MENU_DIR);
+	assert (file != NULL);
+
+	if (!m->menu.list.copy)
+		menu_make_visible (m->menu.list.main, file);
+}
+
 static void side_menu_swap_items (struct side_menu *m, const char *file1,
 		const char *file2)
 {
@@ -1808,6 +1819,19 @@ static void main_win_resize (struct main_win *w)
 	side_menu_resize (&w->menus[0], &l.menus[0]);
 	side_menu_resize (&w->menus[1], &l.menus[1]);
 
+	main_win_draw (w);
+}
+
+static void main_win_make_visible (struct main_win *w,
+		const enum side_menu_type type, const char *file)
+{
+	struct side_menu *m;
+	
+	assert (w != NULL);
+	assert (file != NULL);
+	
+	m = find_side_menu (w, type);
+	side_menu_make_visible (m, file);
 	main_win_draw (w);
 }
 
@@ -3263,5 +3287,16 @@ void iface_toggle_layout ()
 void iface_swap_plist_items (const char *file1, const char *file2)
 {
 	main_win_swap_plist_items (&main_win, file1, file2);
+	wrefresh (main_win.win);
+}
+
+/* Make sure that this file in this menu is visible. */
+void iface_make_visible (const enum iface_menu menu, const char *file)
+{
+	assert (file != NULL);
+	
+	main_win_make_visible (&main_win,
+			menu == IFACE_MENU_DIR ? MENU_DIR : MENU_PLAYLIST,
+			file);
 	wrefresh (main_win.win);
 }

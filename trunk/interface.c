@@ -95,6 +95,10 @@ static struct file_info {
 static int silent_seek_pos = -1;
 static time_t silent_seek_key_last = (time_t)0; /* when the silent seek key was
 						   last used */
+
+/* When the menu was last moved (arrow keys, page up, etc.) */
+static time_t last_menu_move_time = (time_t)0;
+
 static void sig_quit (int sig ATTR_UNUSED)
 {
 	want_quit = QUIT_CLIENT;
@@ -642,6 +646,21 @@ static void update_curr_tags ()
 	}
 }
 
+/* Make sure that the currently played file is visible if it is in one of our
+ * menus. */
+static void follow_curr_file ()
+{
+	if (curr_file.file && file_type(curr_file.file) == F_SOUND
+			&& last_menu_move_time <= time(NULL) - 2) {
+		int server_plist_serial = get_server_plist_serial();
+		
+		if (server_plist_serial == plist_get_serial(playlist))
+			iface_make_visible (IFACE_MENU_PLIST, curr_file.file);
+		else if (server_plist_serial == plist_get_serial(dir_plist))
+			iface_make_visible (IFACE_MENU_DIR, curr_file.file);
+	}
+}
+
 static void update_curr_file ()
 {
 	char *file;
@@ -671,6 +690,9 @@ static void update_curr_file ()
 			 * changed */
 			silent_seek_pos = -1;
 			iface_set_curr_time (curr_file.curr_time);
+
+			if (options_get_int("FollowPlayedFile"))
+				follow_curr_file ();
 		}
 		else
 			free (file);
@@ -2289,6 +2311,7 @@ static void menu_key (const int ch)
 			case KEY_CMD_MENU_FIRST:
 			case KEY_CMD_MENU_LAST:
 				iface_menu_key (cmd);
+				last_menu_move_time = time (NULL);
 				break;
 			case KEY_CMD_QUIT:
 				want_quit = QUIT_SERVER;
