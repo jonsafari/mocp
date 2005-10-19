@@ -22,6 +22,8 @@
 #include <sys/time.h>
 #include <sys/un.h>
 #include <time.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
@@ -266,6 +268,18 @@ static void thread_signal (const int signum, void (*func)(int))
 		fatal ("sigaction() failed: %s", strerror(errno));
 }
 
+static void redirect_output (int out_fd)
+{
+	int fd;
+
+	fd = open ("/dev/null", O_WRONLY);
+	if (fd == -1)
+		fatal ("Can't open /dev/null: %s", strerror(errno));
+
+	if (dup2(fd, out_fd) == -1)
+		fatal ("dup2() failed: %s", strerror(errno));
+}
+
 /* Initialize the server - return fd of the listening socket or -1 on error */
 int server_init (int debug, int foreground)
 {
@@ -323,8 +337,11 @@ int server_init (int debug, int foreground)
 
 	write_pid_file ();
 
-	if (!foreground)
+	if (!foreground) {
 		setsid ();
+		redirect_output (STDOUT_FILENO);
+		redirect_output (STDERR_FILENO);
+	}
 
 	return server_sock;
 }
