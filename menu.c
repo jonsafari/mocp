@@ -429,6 +429,27 @@ struct menu_item *menu_curritem (struct menu *menu)
 	return menu->selected;
 }
 
+static void make_item_visible (struct menu *menu, struct menu_item *mi)
+{
+	assert (menu != NULL);
+	assert (mi != NULL);
+	
+	if (mi->num < menu->top->num)
+		menu->top = mi;
+	else if (mi->num >= menu->top->num + menu->height)
+		menu->top = get_item_relative (mi,
+				-menu->height + 1);
+
+	if (menu->selected) {
+		if (menu->selected->num < menu->top->num)
+			menu->selected = menu->top;
+		else if (menu->selected->num >= menu->top->num + menu->height)
+			menu->selected = get_item_relative (menu->top,
+					menu->height - 1);
+		
+	}
+}
+
 /* Make this item selected */
 static void menu_setcurritem (struct menu *menu, struct menu_item *mi)
 {
@@ -436,12 +457,7 @@ static void menu_setcurritem (struct menu *menu, struct menu_item *mi)
 	assert (mi != NULL);
 	
 	menu->selected = mi;
-
-	if (mi->num < menu->top->num)
-		menu->top = mi;
-	else if (mi->num >= menu->top->num + menu->height)
-		menu->top = get_item_relative (menu->selected,
-				-menu->height + 1);
+	make_item_visible (menu, mi);
 }
 
 /* Make the item with this title selected. */
@@ -823,4 +839,16 @@ void menu_swap_items (struct menu *menu, const char *file1, const char *file2)
 		/* make sure that the selected item is visible */
 		menu_setcurritem (menu, menu->selected);
 	}
+}
+
+/* Make sure that this file is visible in the menu. */
+void menu_make_visible (struct menu *menu, const char *file)
+{
+	struct menu_item *mi;
+	
+	assert (menu != NULL);
+	assert (file != NULL);
+
+	if ((mi = menu_find(menu, file)))
+		make_item_visible (menu, mi);
 }

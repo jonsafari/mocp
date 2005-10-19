@@ -237,3 +237,7 @@ TagsCacheSize		= 256
 # Layout1		= "directory:0,0,50%,100% playlist:50%,0,50%,100%"
 # Layout2		= "directory:0,0,100%,100% playlist:0,0,100%,100%"
 # Layout3		= ""
+
+# When the song changes, should the menu be scrolled so that the currently
+# played file is visible?
+FollowPlayedFile	= yes
