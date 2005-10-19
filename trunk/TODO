@@ -6,6 +6,7 @@ Known bugs:
 
 Before 2.4:
 *$ Better international characters handling - tags in UTF.
+* UTF-8 input.
 *$ Progrssive tags reading: read them only if the menu items requiring them
    are visible (as an option).
 *$ Tags cache saved to a file on exit and read at startup.
@@ -14,7 +15,7 @@ Before 2.4:
 *$ Support for CDDB.
 * Move the playlist to see the song that is currently played.
 *$ WMA.
-* Toggle themes at run time.
+*$ Toggle themes at run time.
 * Add a command for adding an Internet stream address to the playlist.
 *$ a short cut to execute a command:
    http://moc.daper.net/phpBB2/viewtopic.php?p=186#186
@@ -58,6 +59,7 @@ In future:
 * Command line option to delete the currently played item from the playlist.
 * scripting
 * APE (http://sourceforge.net/projects/mac-port/)
+* Some options can be changed at run-time using a menu.
 
 Maybe never:
 
