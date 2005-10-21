@@ -390,26 +390,44 @@ static void get_comments (struct spx_data *data, struct file_tags *tags)
 
 static int count_time (struct spx_data *data)
 {
-	unsigned long packets = 0;
-	
-	/* FIXME: can we just read granulepos from the last page? */
-	while (!io_eof(data->stream)) {
-		char *buf;
-		int nb_read;
+	unsigned long last_granulepos = 0;
 
-		if (ogg_stream_packetout(&data->os, &data->op) == 1)
-			packets++;
-		else if (ogg_sync_pageout(&data->oy, &data->og) == 1)
-			ogg_stream_pagein (&data->os, &data->og);
-		else if (!io_eof(data->stream)) {
-			buf = ogg_sync_buffer (&data->oy, 200);
-			nb_read = io_read (data->stream, buf, 200);
-			ogg_sync_wrote (&data->oy, nb_read);
+	/* Seek to somewhere neer the last page */
+	if (io_file_size(data->stream) > 10000) {
+		debug ("Seeking near the end");
+		if (io_seek(data->stream, -10000, SEEK_END) == -1)
+			logit ("Seeking failed, scaning whole file");
+		ogg_sync_reset (&data->oy);
+	}
+	
+	/* Read granulepos from the last packet */
+	while (!io_eof(data->stream)) {
+
+		/* Sync to page and read it */
+		while (!io_eof(data->stream)) {
+			char *buf;
+			int nb_read;
+
+			if (ogg_sync_pageout(&data->oy, &data->og) == 1) {
+				debug ("Sync");
+				break;
+			}
+			else if (!io_eof(data->stream)) {
+				debug ("Need more data");
+				buf = ogg_sync_buffer (&data->oy, 200);
+				nb_read = io_read (data->stream, buf, 200);
+				ogg_sync_wrote (&data->oy, nb_read);
+			}
 		}
+
+		/* We have last packet */
+		if (io_eof(data->stream))
+			break;
+
+		last_granulepos = ogg_page_granulepos (&data->og);
 	}
 
-	return packets * data->frames_per_packet * data->frame_size
-		/ data->rate;
+	return last_granulepos / data->rate;
 }
 
 /* Fill info structure with data from spx comments */
