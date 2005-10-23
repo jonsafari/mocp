@@ -2928,7 +2928,6 @@ void interface_cmdline_file_info (const int server_sock)
 			/* get tags */
 			if (file_type(curr_file.file) == F_URL) {
 				send_int_to_srv (CMD_GET_TAGS);
-				wait_for_data ();
 				curr_file.tags = get_data_tags ();
 			}
 			else
