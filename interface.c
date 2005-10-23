@@ -272,16 +272,23 @@ static struct file_tags *get_data_tags ()
 	return recv_tags_from_srv ();
 }
 
-static void send_tags_request (const char *file, const int tags_sel)
+static int send_tags_request (const char *file, const int tags_sel)
 {
 	assert (file != NULL);
 	assert (tags_sel != 0);
 
-	send_int_to_srv (CMD_GET_FILE_TAGS);
-	send_str_to_srv (file);
-	send_int_to_srv (tags_sel);
+	if (file_type(file) == F_SOUND) {
+		send_int_to_srv (CMD_GET_FILE_TAGS);
+		send_str_to_srv (file);
+		send_int_to_srv (tags_sel);
+		debug ("Asking for tags for %s", file);
 
-	debug ("Asking for tags for %s", file);
+		return 1;
+	}
+	else {
+		debug ("Not sending tags request for URL (%s)", file);
+		return 0;
+	}
 }
 
 /* Send all items from this playlist to other clients */
@@ -521,8 +528,7 @@ static int ask_for_tags (const struct plist *plist, const int tags_sel)
 					& tags_sel)) {
 			char *file = plist_get_file (plist, i);
 			
-			send_tags_request (file, tags_sel);
-			req++;
+			req += send_tags_request (file, tags_sel);
 			free (file);
 		}
 
@@ -2863,6 +2869,8 @@ void interface_cmdline_play_first (int server_sock)
 static struct file_tags *get_tags (const char *file, const int tags_sel)
 {
 	struct file_tags *tags = NULL;
+
+	assert (file_type(file) == F_SOUND);
 	
 	send_tags_request (file, tags_sel);
 
