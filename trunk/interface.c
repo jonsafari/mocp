@@ -2986,7 +2986,8 @@ void interface_cmdline_file_info (const int server_sock)
 			printf ("CurrentSec: %d\n", curr_file.curr_time);
 		}
 
-		printf ("Bitrate: %dKbps\n", curr_file.bitrate);
+		printf ("Bitrate: %dKbps\n",
+				curr_file.bitrate > 0 ? curr_file.bitrate : 0);
 		printf ("Rate: %dKHz\n", curr_file.rate);
 		
 		file_info_cleanup (&curr_file);
