@@ -2910,6 +2910,10 @@ int iface_get_char ()
 	int meta;
 	int ch = wgetch (main_win.win);
 	
+	/* Workaround for backspace on many terminals */
+	if (ch == 0x7f)
+		ch = KEY_BACKSPACE;
+	
 	/* Recognize meta sequences */
 	if (ch == KEY_ESCAPE
 			&& (meta = wgetch(main_win.win))
