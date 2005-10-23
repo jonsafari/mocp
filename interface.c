@@ -2953,10 +2953,15 @@ void interface_cmdline_file_info (const int server_sock)
 		else
 			time_str[0] = 0;
 
-		if (curr_file.curr_time != -1 && curr_file.tags->time != -1) {
+		if (curr_file.curr_time != -1) {
 			sec_to_min (curr_time_str, curr_file.curr_time);
-			left = curr_file.tags->time - curr_file.curr_time;
-			sec_to_min (time_left_str, left > 0 ? left : 0);
+		
+			if (curr_file.tags->time != -1) {
+				sec_to_min (curr_time_str, curr_file.curr_time);
+				left = curr_file.tags->time -
+					curr_file.curr_time;
+				sec_to_min (time_left_str, left > 0 ? left : 0);
+			}
 		}
 		else {
 			strcpy (curr_time_str, "00:00");
@@ -2980,11 +2985,12 @@ void interface_cmdline_file_info (const int server_sock)
 
 		if (curr_file.tags->time != -1) {
 			printf ("TotalTime: %s\n", time_str);
-			printf ("CurrentTime: %s\n", curr_time_str);
 			printf ("TimeLeft: %s\n", time_left_str);
 			printf ("TotalSec: %d\n", curr_file.tags->time);
-			printf ("CurrentSec: %d\n", curr_file.curr_time);
 		}
+
+		printf ("CurrentTime: %s\n", curr_time_str);
+		printf ("CurrentSec: %d\n", curr_file.curr_time);
 
 		printf ("Bitrate: %dKbps\n",
 				curr_file.bitrate > 0 ? curr_file.bitrate : 0);
