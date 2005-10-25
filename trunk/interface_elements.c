@@ -20,6 +20,7 @@
 #include <assert.h>
 #include <time.h>
 #include <unistd.h>
+#include <wctype.h>
 
 // TODO: do we use this?
 #define _XOPEN_SOURCE_EXTENDED /* for ncurses wide character support */
@@ -288,6 +289,8 @@ static void entry_draw (const struct entry *e, WINDOW *w, const int posx,
 	text[e->width] = 0;
 	
 	xwprintw (w, " %-*s", e->width, text);
+
+	/* FIXME: width of the visible text can't be counted this way */
 	wmove (w, posy, e->cur_pos - e->display_from + strwidth(e->title)
 			+ posx + 2);
 }
@@ -349,14 +352,14 @@ static void entry_set_text (struct entry *e, const char *text)
 	strncpy (e->text, text, sizeof(e->text));
 	e->text[sizeof(e->text)-1] = 0;
 	width = strwidth (e->text);
-	e->cur_pos = width;
+	e->cur_pos = strlen (text);
 	
 	if (e->cur_pos - e->display_from > e->width)
 		e->display_from = width - e->width;
 }
 
 /* Add a char to the entry where the cursor is placed. */
-static void entry_add_char (struct entry *e, const char c)
+static void entry_add_char (struct entry *e, const wint_t c)
 {
 	unsigned int width = strwidth(e->text);
 
@@ -2580,7 +2583,7 @@ static void info_win_make_entry (struct info_win *w, const enum entry_type type)
 /* Handle a key while in entry. main_win is used to update the menu (filter
  * only matching items) when ENTRY_SEARCH is used. */
 static void info_win_entry_handle_key (struct info_win *iw, struct main_win *mw,
-		const int ch)
+		const wint_t ch)
 {
 	enum key_cmd cmd;
 	enum entry_type type;
@@ -2594,19 +2597,18 @@ static void info_win_entry_handle_key (struct info_win *iw, struct main_win *mw,
 
 	if (type == ENTRY_SEARCH) {
 		char *text;
-
 		
-		if (isgraph(ch) || ch == ' ') {
+		if (ch == KEY_BACKSPACE) {
+			entry_back_space (&iw->entry);
+			text = entry_get_text (&iw->entry);
+			main_win_menu_filter (mw, text);
+			free (text);
+		}
+		else if (iswgraph(ch) || ch == ' ') {
 			entry_add_char (&iw->entry, ch);
 			text = entry_get_text (&iw->entry);
 			if (!main_win_menu_filter(mw, text))
 				entry_back_space (&iw->entry);
-			free (text);
-		}
-		else if (ch == KEY_BACKSPACE) {
-			entry_back_space (&iw->entry);
-			text = entry_get_text (&iw->entry);
-			main_win_menu_filter (mw, text);
 			free (text);
 		}
 		else {
@@ -2623,9 +2625,7 @@ static void info_win_entry_handle_key (struct info_win *iw, struct main_win *mw,
 	}
 	else {
 		
-		if (isgraph(ch) || ch == ' ')
-			entry_add_char (&iw->entry, ch);
-		else if (ch == KEY_LEFT)
+		if (ch == KEY_LEFT)
 			entry_curs_left (&iw->entry);
 		else if (ch == KEY_RIGHT)
 			entry_curs_right (&iw->entry);
@@ -2637,12 +2637,15 @@ static void info_win_entry_handle_key (struct info_win *iw, struct main_win *mw,
 			entry_home (&iw->entry);
 		else if (ch == KEY_END)
 			entry_end (&iw->entry);
-		else if (type == ENTRY_GO_DIR || type == ENTRY_GO_URL) {
+		else if ((type == ENTRY_GO_DIR || type == ENTRY_GO_URL)
+				&& cmd != KEY_CMD_WRONG) {
 			if (cmd == KEY_CMD_HISTORY_UP)
 				entry_set_history_up (&iw->entry);
 			else if (cmd == KEY_CMD_HISTORY_DOWN)
 				entry_set_history_down (&iw->entry);
 		}
+		else if (iswgraph(ch) || ch == ' ')
+			entry_add_char (&iw->entry, ch);
 	}
 
 	entry_draw (&iw->entry, iw->win, 1, 0);
@@ -2905,10 +2908,13 @@ void iface_set_title (const enum iface_menu menu, const char *title)
 }
 
 /* Get the char code from the user with meta flag set if necessary. */
-int iface_get_char ()
+wint_t iface_get_char ()
 {
 	int meta;
-	int ch = wgetch (main_win.win);
+	wint_t ch;
+	
+	if (wget_wch(main_win.win, &ch) == ERR)
+		interface_fatal ("wget_wch() failed");
 	
 	/* Workaround for backspace on many terminals */
 	if (ch == 0x7f)
@@ -3172,7 +3178,7 @@ int iface_in_entry ()
 	return info_win_in_entry (&info_win);
 }
 
-void iface_entry_handle_key (const int ch)
+void iface_entry_handle_key (const wint_t ch)
 {
 	info_win_entry_handle_key (&info_win, &main_win, ch);
 	wrefresh (info_win.win);

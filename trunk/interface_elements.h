@@ -1,6 +1,8 @@
 #ifndef INTERFACE_ELEMENTS_H
 #define INTERFACE_ELEMENTS_H
 
+#include <ncurses.h>
+
 #include "files.h"
 #include "keys.h"
 
@@ -36,7 +38,7 @@ void iface_update_dir_content (const enum iface_menu iface_menu,
 		const struct file_list *dirs,
 		const struct file_list *playlists);
 void iface_set_curr_item_title (const char *title);
-int iface_get_char ();
+wint_t iface_get_char ();
 int iface_key_is_resize (const int ch);
 void iface_menu_key (const enum key_cmd cmd);
 enum file_type iface_curritem_get_type ();
@@ -67,7 +69,7 @@ void iface_del_plist_item (const char *file);
 enum entry_type iface_get_entry_type ();
 int iface_in_entry ();
 void iface_make_entry (const enum entry_type type);
-void iface_entry_handle_key (const int ch);
+void iface_entry_handle_key (const wint_t ch);
 void iface_entry_set_text (const char *text);
 char *iface_entry_get_text ();
 void iface_entry_history_add ();
