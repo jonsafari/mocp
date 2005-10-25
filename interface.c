@@ -2294,7 +2294,7 @@ static void do_silent_seek ()
 }
 
 /* Handle key */
-static void menu_key (const int ch)
+static void menu_key (const wint_t ch)
 {
 	if (iface_in_help())
 		iface_handle_help_key (ch);
@@ -2630,7 +2630,7 @@ void interface_loop ()
 
 		if (ret > 0) {
 			if (FD_ISSET(STDIN_FILENO, &fds)) {
-				int ch = iface_get_char ();
+				wint_t ch = iface_get_char ();
 
 				clear_interrupt ();
 				menu_key (ch);
