@@ -2580,6 +2580,40 @@ static void info_win_make_entry (struct info_win *w, const enum entry_type type)
 	entry_draw (&w->entry, w->win, 1, 0);
 }
 
+static void info_win_draw (const struct info_win *w)
+{
+	assert (w != NULL);
+	
+	info_win_draw_static_elements (w);
+	info_win_draw_state (w);
+	info_win_draw_time (w);
+	info_win_draw_title (w);
+	info_win_draw_options_state (w);
+	info_win_draw_status (w);
+	info_win_draw_files_time (w);
+	info_win_draw_bitrate (w);
+	info_win_draw_rate (w);
+	
+	if (w->in_entry)
+		entry_draw (&w->entry, w->win, 1, 0);
+	else
+		bar_draw (&w->mixer_bar, w->win, COLS - 37, 0);
+
+	bar_draw (&w->time_bar, w->win, 2, 3);
+	info_win_update_curs (w);
+}
+
+static void info_win_entry_disable (struct info_win *w)
+{
+	assert (w != NULL);
+	assert (w->in_entry);
+	
+	entry_destroy (&w->entry);
+	w->in_entry = 0;
+	curs_set (0);
+	info_win_draw (w);
+}
+
 /* Handle a key while in entry. main_win is used to update the menu (filter
  * only matching items) when ENTRY_SEARCH is used. */
 static void info_win_entry_handle_key (struct info_win *iw, struct main_win *mw,
@@ -2603,6 +2637,10 @@ static void info_win_entry_handle_key (struct info_win *iw, struct main_win *mw,
 			text = entry_get_text (&iw->entry);
 			main_win_menu_filter (mw, text);
 			free (text);
+		}
+		else if (cmd == KEY_CMD_CANCEL) {
+			main_win_clear_filter_menu (mw);
+			info_win_entry_disable (iw);
 		}
 		else if (iswgraph(ch) || ch == ' ') {
 			entry_add_char (&iw->entry, ch);
@@ -2637,6 +2675,8 @@ static void info_win_entry_handle_key (struct info_win *iw, struct main_win *mw,
 			entry_home (&iw->entry);
 		else if (ch == KEY_END)
 			entry_end (&iw->entry);
+		else if (cmd == KEY_CMD_CANCEL)
+			info_win_entry_disable (iw);
 		else if ((type == ENTRY_GO_DIR || type == ENTRY_GO_URL)
 				&& cmd != KEY_CMD_WRONG) {
 			if (cmd == KEY_CMD_HISTORY_UP)
@@ -2648,7 +2688,8 @@ static void info_win_entry_handle_key (struct info_win *iw, struct main_win *mw,
 			entry_add_char (&iw->entry, ch);
 	}
 
-	entry_draw (&iw->entry, iw->win, 1, 0);
+	if (iw->in_entry) /* the entry could be disabled above */
+		entry_draw (&iw->entry, iw->win, 1, 0);
 }
 
 static void info_win_entry_set_text (struct info_win *w, const char *text)
@@ -2675,40 +2716,6 @@ static void info_win_entry_history_add (struct info_win *w)
 	assert (w->in_entry);
 	
 	entry_add_text_to_history (&w->entry);
-}
-
-static void info_win_draw (const struct info_win *w)
-{
-	assert (w != NULL);
-	
-	info_win_draw_static_elements (w);
-	info_win_draw_state (w);
-	info_win_draw_time (w);
-	info_win_draw_title (w);
-	info_win_draw_options_state (w);
-	info_win_draw_status (w);
-	info_win_draw_files_time (w);
-	info_win_draw_bitrate (w);
-	info_win_draw_rate (w);
-	
-	if (w->in_entry)
-		entry_draw (&w->entry, w->win, 1, 0);
-	else
-		bar_draw (&w->mixer_bar, w->win, COLS - 37, 0);
-
-	bar_draw (&w->time_bar, w->win, 2, 3);
-	info_win_update_curs (w);
-}
-
-static void info_win_entry_disable (struct info_win *w)
-{
-	assert (w != NULL);
-	assert (w->in_entry);
-	
-	entry_destroy (&w->entry);
-	w->in_entry = 0;
-	curs_set (0);
-	info_win_draw (w);
 }
 
 static void info_win_entry_set_file (struct info_win *w, const char *file)
