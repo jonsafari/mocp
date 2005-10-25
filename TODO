@@ -1,8 +1,13 @@
 Items marked with $ are bigger changes requiring more time.
 
 Known bugs:
-* on 1024x768 framebuffer the volume ar is not drawn properly
 * hight CPU usage on FreeBSD with the gui process when started to play a song.
+* sorting after -a or -e doesn't work.
+* mp3 tags seems to be read as latin1
+* ESC key doesn't work in entries
+* There's also a small bug with the display of the time connected to a stream:
+  once it passes 100 minutes, it seems to display as "XXXm9" where XXX is some
+  value 100 or above.
 
 Before 2.4:
 *$ Better international characters handling - tags in UTF.
@@ -10,10 +15,6 @@ Before 2.4:
 *$ Progrssive tags reading: read them only if the menu items requiring them
    are visible (as an option).
 *$ Tags cache saved to a file on exit and read at startup.
-* Count speex time by reading granule position from the last page.
-*$ Support for Audio-CD.
-*$ Support for CDDB.
-* Move the playlist to see the song that is currently played.
 *$ WMA.
 *$ Toggle themes at run time.
 * Add a command for adding an Internet stream address to the playlist.
@@ -21,7 +22,11 @@ Before 2.4:
    http://moc.daper.net/phpBB2/viewtopic.php?p=186#186
 * Call clear_area only if windows are overlaping. (if this will improve the
   performance)
-* remove leading and trailing whitespaces from entered url's
+* -e is an alias for -a which should be recursively.
+* Pressing n when nothing is played should start playing from the first item
+  on the playlist
+* Add content of a playlist file to the playlist
+* Pause Internet streams - like stop (pause) and play (unpause) the same stream
 
 In future:
 
