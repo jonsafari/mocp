@@ -355,7 +355,7 @@ static void show_tags (const struct file_tags *tags)
 static void update_tags (const struct decoder *f, void *decoder_data,
 		struct io_stream *s)
 {
-	char *stream_title;
+	char *stream_title = NULL;
 	int tags_changed = 0;
 	struct file_tags *new_tags;
 
@@ -378,6 +378,8 @@ static void update_tags (const struct decoder *f, void *decoder_data,
 		show_tags (curr_tags);
 		tags_changed = 1;
 	}
+	else if (stream_title)
+		free (stream_title);
 
 	if (tags_changed)
 		tags_change ();
