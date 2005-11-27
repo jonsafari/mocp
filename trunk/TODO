@@ -4,10 +4,11 @@ Known bugs:
 * hight CPU usage on FreeBSD with the gui process when started to play a song.
 * sorting after -a or -e doesn't work.
 * mp3 tags seems to be read as latin1
-* ESC key doesn't work in entries
 * There's also a small bug with the display of the time connected to a stream:
   once it passes 100 minutes, it seems to display as "XXXm9" where XXX is some
   value 100 or above.
+* Pressing m when in playlist doesn't switch to the directory menu
+* press C and total time is still like on the playlist
 
 Before 2.4:
 *$ Better international characters handling - tags in UTF.
@@ -27,6 +28,7 @@ Before 2.4:
   on the playlist
 * Add content of a playlist file to the playlist
 * Pause Internet streams - like stop (pause) and play (unpause) the same stream
+* After startup, show the playlist if we play from the playlist (as an option)
 
 In future:
 
