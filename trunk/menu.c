@@ -17,7 +17,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#ifdef HAVE_NCURSES_H
+#ifdef HAVE_NCURSESW_H
+# include <ncursesw/curses.h>
+#elif HAVE_NCURSES_H
 # include <ncurses.h>
 #elif HAVE_CURSES_H
 # include <curses.h>
