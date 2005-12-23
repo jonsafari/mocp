@@ -34,7 +34,9 @@ AC_DEFUN([MP_WITH_CURSES],
 		mp_cv_ncursesw=yes, mp_cv_ncursesw=no)])
 	   if test "$mp_cv_ncursesw" = yes
 	   then
-	     AC_DEFINE(HAVE_NCURSES_H, 1, [Define if you have ncurses.h])
+	     AC_CHECK_HEADER([ncursesw/curses.h], AC_DEFINE(HAVE_NCURSESW_H, 1,
+	     	[Define if you have ncursesw.h]))
+	     AC_DEFINE(HAVE_NCURSES_H, 1, [Define if you have ncursesw/curses.h])
 	     AC_DEFINE(HAVE_NCURSESW, 1, [Define if you have libncursesw])
 	     CURSES_LIB="-lncursesw"
 	   fi

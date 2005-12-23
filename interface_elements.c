@@ -15,17 +15,24 @@
 # include "config.h"
 #endif
 
+#define _XOPEN_SOURCE	500 /* for wcswidth() */
+
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
+#include <stdio.h>
 #include <assert.h>
 #include <time.h>
 #include <unistd.h>
 #include <wctype.h>
+#include <wchar.h>
 
 // TODO: do we use this?
 #define _XOPEN_SOURCE_EXTENDED /* for ncurses wide character support */
 
-#ifdef HAVE_NCURSES_H
+#ifdef HAVE_NCURSESW_H
+# include <ncursesw/curses.h>
+#elif HAVE_NCURSES_H
 # include <ncurses.h>
 #elif HAVE_CURSES_H
 # include <curses.h>
@@ -47,6 +54,9 @@
 
 #define STARTUP_MESSAGE	"Welcome to " PACKAGE_STRING "!"
 #define HISTORY_SIZE	50
+
+/* parameter passed to wcswidth() as a maximum width */
+#define WIDTH_MAX	1024
 
 /* TODO: removing/adding a char to the entry may increase width of the text
  * by more than one column. */
@@ -146,7 +156,10 @@ struct entry
 {
 	enum entry_type type;
 	int width;		/* width of the entry part for typing */
-	char text[512];		/* the text the user types */
+
+	/* The text the user types: */
+	wchar_t text_ucs[512];	/* unicode */
+	
 	char title[32];		/* displayed title */
 	char *file;		/* optional: file associated with the entry */
 	int cur_pos;		/* cursor position */
@@ -272,7 +285,9 @@ static char *entry_history_get (const struct entry_history *h, const int num)
 static void entry_draw (const struct entry *e, WINDOW *w, const int posx,
 		const int posy)
 {
-	char text[sizeof(e->text)];
+	char *text;
+	wchar_t *text_ucs;
+	int len;
 	
 	assert (e != NULL);
 	assert (w != NULL);
@@ -284,15 +299,27 @@ static void entry_draw (const struct entry *e, WINDOW *w, const int posx,
 	xwprintw (w, "%s:", e->title);
 	
 	wattrset (w, get_color(CLR_ENTRY));
+	len = wcslen(e->text_ucs) - e->display_from;
 
-	strncpy (text, e->text + e->display_from, e->width);
-	text[e->width] = 0;
+	text_ucs = (wchar_t *)xmalloc(sizeof(wchar_t) * (len + 1));
+	memcpy (text_ucs, e->text_ucs + e->display_from,
+			sizeof(wchar_t) * (len + 1));
+	if (len > e->width)
+		text_ucs[e->width] = L'\0';
+	len = wcstombs (NULL, text_ucs, -1);
+	assert (len >= 0);
+
+	text = (char *)xmalloc (len + 1);
+	wcstombs (text, text_ucs, len + 1);
 	
 	xwprintw (w, " %-*s", e->width, text);
 
-	/* FIXME: width of the visible text can't be counted this way */
+	/* Move the cursor */
 	wmove (w, posy, e->cur_pos - e->display_from + strwidth(e->title)
 			+ posx + 2);
+
+	free (text);
+	free (text_ucs);
 }
 
 static void entry_init (struct entry *e, const enum entry_type type,
@@ -323,7 +350,7 @@ static void entry_init (struct entry *e, const enum entry_type type,
 	}
 	
 	e->type = type;
-	e->text[0] = 0;
+	e->text_ucs[0] = L'\0';
 	e->file = NULL;
 	strcpy (e->title, title);
 	e->width = width - strwidth(title);
@@ -349,35 +376,34 @@ static void entry_set_text (struct entry *e, const char *text)
 	
 	assert (e != NULL);
 
-	strncpy (e->text, text, sizeof(e->text));
-	e->text[sizeof(e->text)-1] = 0;
-	width = strwidth (e->text);
-	e->cur_pos = strlen (text);
+	mbstowcs (e->text_ucs, text, sizeof(e->text_ucs));
+	e->text_ucs[sizeof(e->text_ucs)-1] = L'\0';
+	width = wcswidth (e->text_ucs, 1024);
+	e->cur_pos = wcslen (e->text_ucs);
 	
 	if (e->cur_pos - e->display_from > e->width)
 		e->display_from = width - e->width;
 }
 
 /* Add a char to the entry where the cursor is placed. */
-static void entry_add_char (struct entry *e, const wint_t c)
+static void entry_add_char (struct entry *e, const wchar_t c)
 {
-	unsigned int width = strwidth(e->text);
-
+	size_t len;
+	
 	assert (e != NULL);
 
-	// FIXME: not UTF-8 compatible
+	len = wcslen (e->text_ucs);
+	if (len >= sizeof(e->text_ucs)/sizeof(e->text_ucs[0]) - 1)
+		return;
 
-	if (width < sizeof(e->text) - 1) {
-		memmove (e->text + e->cur_pos + 1,
-				e->text + e->cur_pos,
-				width - e->cur_pos + 1);
-		
-		e->text[e->cur_pos] = c;
-		e->cur_pos++;
-
-		if (e->cur_pos - e->display_from > e->width)
-			e->display_from++;
-	}
+	memmove (e->text_ucs + e->cur_pos + 1,
+			e->text_ucs + e->cur_pos,
+			(len - e->cur_pos + 1) * sizeof(e->text_ucs[0]));
+	e->text_ucs[e->cur_pos] = c;
+	e->cur_pos++;
+	
+	if (e->cur_pos - e->display_from > e->width)
+		e->display_from++;
 }
 
 /* Delete the char before the cursor. */
@@ -385,15 +411,13 @@ static void entry_back_space (struct entry *e)
 {
 	assert (e != NULL);
 
-	// FIXME: not UTF-8 compatible
-
 	if (e->cur_pos > 0) {
-		int width = strwidth (e->text);
+		int width = wcslen (e->text_ucs);
 		
-		memmove (e->text + e->cur_pos - 1,
-				e->text + e->cur_pos,
+		memmove (e->text_ucs + e->cur_pos - 1,
+				e->text_ucs + e->cur_pos,
 				width - e->cur_pos);
-		e->text[--width] = 0;
+		e->text_ucs[--width] = L'\0';
 		e->cur_pos--;
 
 		if (e->cur_pos < e->display_from)
@@ -413,16 +437,14 @@ static void entry_del_char (struct entry *e)
 
 	assert (e != NULL);
 
-	// FIXME: not UTF-8 compatible
-
-	len = strwidth (e->text);
+	len = wcslen (e->text_ucs);
 
 	if (e->cur_pos < len) {
 		len--;
-		memmove (e->text + e->cur_pos,
-				e->text + e->cur_pos + 1,
+		memmove (e->text_ucs + e->cur_pos,
+				e->text_ucs + e->cur_pos + 1,
 				len - e->cur_pos);
-		e->text[len] = 0;
+		e->text_ucs[len] = L'\0';
 		
 		/* Can we show more after deleting the char? */
 		if (e->display_from > 0
@@ -452,7 +474,7 @@ static void entry_curs_right (struct entry *e)
 	
 	assert (e != NULL);
 
-	width = strwidth (e->text);
+	width = wcslen (e->text_ucs);
 
 	if (e->cur_pos < width) {
 		e->cur_pos++;
@@ -469,7 +491,7 @@ static void entry_end (struct entry *e)
 	
 	assert (e != NULL);
 
-	width = strwidth (e->text);
+	width = wcslen (e->text_ucs);
 
 	e->cur_pos = width;
 	
@@ -558,17 +580,29 @@ static void entry_destroy (struct entry *e)
 
 static char *entry_get_text (const struct entry *e)
 {
+	char *text;
+	int len;
+	
 	assert (e != NULL);
 
-	return xstrdup (e->text);
+	len = wcstombs (NULL, e->text_ucs, -1);
+	assert (len >= 0);
+	text = (char *)xmalloc (sizeof(wchar_t) * (len + 1));
+	wcstombs (text, e->text_ucs, (len + 1) * sizeof(wchar_t));
+
+	return text;
 }
 
 static void entry_add_text_to_history (struct entry *e)
 {
+	char *text;
+	
 	assert (e != NULL);
 	assert (e->history);
 
-	entry_history_add (e->history, e->text);
+	text = entry_get_text (e);
+	entry_history_add (e->history, text);
+	free (text);
 }
 
 static void side_menu_init (struct side_menu *m, const enum side_menu_type type,
@@ -2684,7 +2718,7 @@ static void info_win_entry_handle_key (struct info_win *iw, struct main_win *mw,
 			else if (cmd == KEY_CMD_HISTORY_DOWN)
 				entry_set_history_down (&iw->entry);
 		}
-		else if (iswgraph(ch) || ch == ' ')
+		else if (iswprint(ch) || ch == ' ')
 			entry_add_char (&iw->entry, ch);
 	}
 
@@ -2920,8 +2954,13 @@ wint_t iface_get_char ()
 	int meta;
 	wint_t ch;
 	
+#ifdef HAVE_NCURSESW
 	if (wget_wch(main_win.win, &ch) == ERR)
 		interface_fatal ("wget_wch() failed");
+#else
+	if ((ch = wgetch(main_win.win)) == (wint_t)ERR)
+		interface_fatal ("wgetch() failed");
+#endif
 	
 	/* Workaround for backspace on many terminals */
 	if (ch == 0x7f)

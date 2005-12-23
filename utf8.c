@@ -20,7 +20,9 @@
 #ifdef HAVE_LANGINFO_H
 # include <langinfo.h>
 #endif
-#ifdef HAVE_NCURSES_H
+#ifdef HAVE_NCURSESW_H
+# include <ncursesw/curses.h>
+#elif HAVE_NCURSES_H
 # include <ncurses.h>
 #else
 # include <curses.h>
@@ -242,4 +244,19 @@ size_t strwidth (const char *s)
 {
 	return strlen (s); // temporary
 	// TODO: consider also UTF8 -> ASCII conversion
+}
+
+/* Convert wchar_t to utf8 character. buf must be at least 7 chars.
+ * 0 is added after the char. Return  on failure. */
+int ucs_to_utf8 (char *buf, const wchar_t c)
+{
+	/* TODO: remove this function */
+	wchar_t src[2];
+
+	assert (buf != NULL);
+
+	src[0] = c;
+	src[1] = 0;
+
+	return wcstombs(buf, src, 7) > 0;
 }
