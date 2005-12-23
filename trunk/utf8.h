@@ -19,6 +19,5 @@ int xwprintw (WINDOW *win, const char *fmt, ...);
 #endif
 
 size_t strwidth (const char *s);
-int ucs_to_utf8 (char *buf, const wchar_t c);
 
 #endif
