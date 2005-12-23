@@ -1762,7 +1762,8 @@ static int main_win_is_time_for_all (const struct main_win *w)
 	return side_menu_is_time_for_all (&w->menus[w->selected_menu]);
 }
 
-static void main_win_handle_help_key (struct main_win *w, const int ch)
+static void main_win_handle_help_key (struct main_win *w,
+		const struct iface_key *k)
 {
 	int help_lines;
 
@@ -1771,16 +1772,21 @@ static void main_win_handle_help_key (struct main_win *w, const int ch)
 
 	get_keys_help (&help_lines);
 
-	if (ch == KEY_DOWN || ch == KEY_NPAGE || ch == '\n') {
+	if ((k->type == IFACE_KEY_FUNCTION && (
+					k->key.func == KEY_DOWN
+					|| k->key.func == KEY_NPAGE))
+			|| (k->key.ucs == '\n')) {
 		if (w->help_screen_top + LINES - 5 <= help_lines)
 			w->help_screen_top++;
 	}
-	else if (ch == KEY_UP || ch == KEY_PPAGE) {
-		if (w->help_screen_top > 0)
-			w->help_screen_top--;
+	else if (k->type == IFACE_KEY_FUNCTION) {
+		if (k->key.func == KEY_UP || k->key.func == KEY_PPAGE) {
+			if (w->help_screen_top > 0)
+				w->help_screen_top--;
+		}
+		else if (k->key.func != KEY_RESIZE)
+			w->in_help = 0;
 	}
-	else if (ch != KEY_RESIZE)
-		w->in_help = 0;
 
 	main_win_draw (w);
 }
@@ -2651,7 +2657,7 @@ static void info_win_entry_disable (struct info_win *w)
 /* Handle a key while in entry. main_win is used to update the menu (filter
  * only matching items) when ENTRY_SEARCH is used. */
 static void info_win_entry_handle_key (struct info_win *iw, struct main_win *mw,
-		const wint_t ch)
+		const struct iface_key *k)
 {
 	enum key_cmd cmd;
 	enum entry_type type;
@@ -2660,13 +2666,24 @@ static void info_win_entry_handle_key (struct info_win *iw, struct main_win *mw,
 	assert (mw != NULL);
 	assert (iw->in_entry);
 
-	cmd = get_key_cmd (CON_ENTRY, ch);
+	cmd = get_key_cmd (CON_ENTRY,
+			k->type == IFACE_KEY_CHAR ? k->key.ucs : k->key.func);
 	type = entry_get_type (&iw->entry);
 
 	if (type == ENTRY_SEARCH) {
 		char *text;
 		
-		if (ch == KEY_BACKSPACE) {
+		if (k->type == IFACE_KEY_CHAR) {
+			if (iswprint(k->key.ucs)) {
+				entry_add_char (&iw->entry, k->key.ucs);
+				text = entry_get_text (&iw->entry);
+				if (!main_win_menu_filter(mw, text))
+					entry_back_space (&iw->entry);
+				free (text);
+			}
+
+		}
+		else if (k->key.func == KEY_BACKSPACE) {
 			entry_back_space (&iw->entry);
 			text = entry_get_text (&iw->entry);
 			main_win_menu_filter (mw, text);
@@ -2676,19 +2693,14 @@ static void info_win_entry_handle_key (struct info_win *iw, struct main_win *mw,
 			main_win_clear_filter_menu (mw);
 			info_win_entry_disable (iw);
 		}
-		else if (iswgraph(ch) || ch == ' ') {
-			entry_add_char (&iw->entry, ch);
-			text = entry_get_text (&iw->entry);
-			if (!main_win_menu_filter(mw, text))
-				entry_back_space (&iw->entry);
-			free (text);
-		}
 		else {
-			enum key_cmd cmd = get_key_cmd (CON_MENU, ch);
+			enum key_cmd cmd = get_key_cmd (CON_MENU,
+					k->type == IFACE_KEY_CHAR
+					? k->key.ucs : k->key.func);
 
 			if (cmd == KEY_CMD_MENU_UP
 					|| cmd == KEY_CMD_MENU_DOWN
-					|| cmd== KEY_CMD_MENU_NPAGE
+					|| cmd == KEY_CMD_MENU_NPAGE
 					|| cmd == KEY_CMD_MENU_PPAGE
 					|| cmd == KEY_CMD_MENU_FIRST
 					|| cmd == KEY_CMD_MENU_LAST)
@@ -2696,18 +2708,21 @@ static void info_win_entry_handle_key (struct info_win *iw, struct main_win *mw,
 		}
 	}
 	else {
-		
-		if (ch == KEY_LEFT)
+		if (k->type == IFACE_KEY_CHAR) {
+			if (iswprint(k->key.ucs))
+				entry_add_char (&iw->entry, k->key.ucs);
+		}
+		else if (k->key.func == KEY_LEFT)
 			entry_curs_left (&iw->entry);
-		else if (ch == KEY_RIGHT)
+		else if (k->key.func == KEY_RIGHT)
 			entry_curs_right (&iw->entry);
-		else if (ch == KEY_BACKSPACE)
+		else if (k->key.func == KEY_BACKSPACE)
 			entry_back_space (&iw->entry);
-		else if (ch == KEY_DC)
+		else if (k->key.func == KEY_DC)
 			entry_del_char (&iw->entry);
-		else if (ch == KEY_HOME)
+		else if (k->key.func == KEY_HOME)
 			entry_home (&iw->entry);
-		else if (ch == KEY_END)
+		else if (k->key.func == KEY_END)
 			entry_end (&iw->entry);
 		else if (cmd == KEY_CMD_CANCEL)
 			info_win_entry_disable (iw);
@@ -2718,8 +2733,6 @@ static void info_win_entry_handle_key (struct info_win *iw, struct main_win *mw,
 			else if (cmd == KEY_CMD_HISTORY_DOWN)
 				entry_set_history_down (&iw->entry);
 		}
-		else if (iswprint(ch) || ch == ' ')
-			entry_add_char (&iw->entry, ch);
 	}
 
 	if (iw->in_entry) /* the entry could be disabled above */
@@ -2949,36 +2962,43 @@ void iface_set_title (const enum iface_menu menu, const char *title)
 }
 
 /* Get the char code from the user with meta flag set if necessary. */
-wint_t iface_get_char ()
+void iface_get_key (struct iface_key *k)
 {
-	int meta;
 	wint_t ch;
 	
-#ifdef HAVE_NCURSESW
-	if (wget_wch(main_win.win, &ch) == ERR)
-		interface_fatal ("wget_wch() failed");
-#else
 	if ((ch = wgetch(main_win.win)) == (wint_t)ERR)
 		interface_fatal ("wgetch() failed");
+	
+	if (ch < 255) { /* Regular char */
+#ifdef HAVE_NCURSESW
+		ungetch (ch);
+		if (wget_wch(main_win.win, &ch) == ERR)
+			interface_fatal ("wget_wch() failed");
 #endif
+		k->type = IFACE_KEY_CHAR;
+		k->key.ucs = ch;
+	}
+	else {
+		int meta;
 	
-	/* Workaround for backspace on many terminals */
-	if (ch == 0x7f)
-		ch = KEY_BACKSPACE;
+		/* Workaround for backspace on many terminals */
+		if (ch == 0x7f)
+			ch = KEY_BACKSPACE;
 	
-	/* Recognize meta sequences */
-	if (ch == KEY_ESCAPE
-			&& (meta = wgetch(main_win.win))
-			!= ERR)
-		ch = meta | META_KEY_FLAG;
-
-	return ch;
+		/* Recognize meta sequences */
+		if (ch == KEY_ESCAPE
+				&& (meta = wgetch(main_win.win))
+				!= ERR)
+			ch = meta | META_KEY_FLAG;
+		k->type = IFACE_KEY_FUNCTION;
+		k->key.func = ch;
+	}
 }
 
 /* Return a non zero value if the key is not a real key - KEY_RESIZE. */
-int iface_key_is_resize (const int ch)
+int iface_key_is_resize (const struct iface_key *k)
 {
-	return ch == KEY_RESIZE;
+	return k->type == IFACE_KEY_FUNCTION && k->key.func == KEY_RESIZE;
 }
 
 /* Handle a key command for the menu. */
@@ -3224,9 +3244,9 @@ int iface_in_entry ()
 	return info_win_in_entry (&info_win);
 }
 
-void iface_entry_handle_key (const wint_t ch)
+void iface_entry_handle_key (const struct iface_key *k)
 {
-	info_win_entry_handle_key (&info_win, &main_win, ch);
+	info_win_entry_handle_key (&info_win, &main_win, k);
 	wrefresh (info_win.win);
 	wrefresh (main_win.win);
 }
@@ -3314,9 +3334,9 @@ void iface_switch_to_help ()
 	wrefresh (main_win.win);
 }
 
-void iface_handle_help_key (const int ch)
+void iface_handle_help_key (const struct iface_key *k)
 {
-	main_win_handle_help_key (&main_win, ch);
+	main_win_handle_help_key (&main_win, k);
 	wrefresh (main_win.win);
 }
 

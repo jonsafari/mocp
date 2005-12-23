@@ -1825,9 +1825,9 @@ static char *make_dir (const char *str)
 	return dir;
 }
 
-static void entry_key_go_dir (const int ch)
+static void entry_key_go_dir (const struct iface_key *k)
 {
-	if (ch == '\t') {
+	if (k->type == IFACE_KEY_CHAR && k->key.ucs == '\t') {
 		char *dir;
 		char *complete_dir;
 		char buf[PATH_MAX+1];
@@ -1849,7 +1849,7 @@ static void entry_key_go_dir (const int ch)
 		iface_entry_set_text (buf);
 		free (dir);
 	}
-	else if (ch == '\n') {
+	else if (k->type == IFACE_KEY_CHAR && k->key.ucs == '\n') {
 		char *entry_text = iface_entry_get_text ();
 		
 		if (entry_text[0]) {
@@ -1871,7 +1871,7 @@ static void entry_key_go_dir (const int ch)
 		free (entry_text);
 	}
 	else
-		iface_entry_handle_key (ch);
+		iface_entry_handle_key (k);
 }
 
 /* Request playing from the specified URL. */
@@ -1922,9 +1922,9 @@ static char *strip_white_spaces (const char *str)
 	return clean;
 }
 
-static void entry_key_go_url (const int ch)
+static void entry_key_go_url (const struct iface_key *k)
 {
-	if (ch == '\n') {
+	if (k->type == IFACE_KEY_CHAR && k->key.ucs == '\n') {
 		char *entry_text = iface_entry_get_text ();
 		
 		if (entry_text[0]) {
@@ -1944,12 +1944,12 @@ static void entry_key_go_url (const int ch)
 		iface_entry_disable ();
 	}
 	else
-		iface_entry_handle_key (ch);
+		iface_entry_handle_key (k);
 }
 
-static void entry_key_search (const int ch)
+static void entry_key_search (const struct iface_key *k)
 {
-	if (ch == '\n') {
+	if (k->type == IFACE_KEY_CHAR && k->key.ucs == '\n') {
 		char *file = iface_get_curr_file ();
 		char *text = iface_entry_get_text ();
 		
@@ -1970,7 +1970,7 @@ static void entry_key_search (const int ch)
 		free (file);
 	}
 	else
-		iface_entry_handle_key (ch);
+		iface_entry_handle_key (k);
 }
 
 static void save_playlist (const char *file, const char *cwd)
@@ -1986,9 +1986,9 @@ static void save_playlist (const char *file, const char *cwd)
 	iface_set_status ("");
 }
 
-static void entry_key_plist_save (const int ch)
+static void entry_key_plist_save (const struct iface_key *k)
 {
-	if (ch == '\n') {
+	if (k->type == IFACE_KEY_CHAR && k->key.ucs == '\n') {
 		char *text = iface_entry_get_text ();
 
 		iface_entry_disable ();
@@ -2027,12 +2027,12 @@ static void entry_key_plist_save (const int ch)
 		free (text);
 	}
 	else
-		iface_entry_handle_key (ch);
+		iface_entry_handle_key (k);
 }
 
-static void entry_key_plist_overwrite (const int ch)
+static void entry_key_plist_overwrite (const struct iface_key *k)
 {
-	if (toupper(ch) == 'Y') {
+	if (k->type == IFACE_KEY_CHAR && toupper(k->key.ucs) == 'Y') {
 		char *file = iface_entry_get_file ();
 
 		assert (file != NULL);
@@ -2045,30 +2045,30 @@ static void entry_key_plist_overwrite (const int ch)
 		
 		free (file);
 	}
-	else if (toupper(ch) == 'N') {
+	else if (k->type == IFACE_KEY_CHAR && toupper(k->key.ucs) == 'N') {
 		iface_entry_disable ();
 		iface_message ("Not overwriting.");
 	}
 }
 
 /* Handle keys while in an entry. */
-static void entry_key (const int ch)
+static void entry_key (const struct iface_key *k)
 {
 	switch (iface_get_entry_type()) {
 		case ENTRY_GO_DIR:
-			entry_key_go_dir (ch);
+			entry_key_go_dir (k);
 			break;
 		case ENTRY_GO_URL:
-			entry_key_go_url (ch);
+			entry_key_go_url (k);
 			break;
 		case ENTRY_SEARCH:
-			entry_key_search (ch);
+			entry_key_search (k);
 			break;
 		case ENTRY_PLIST_SAVE:
-			entry_key_plist_save (ch);
+			entry_key_plist_save (k);
 			break;
 		case ENTRY_PLIST_OVERWRITE:
-			entry_key_plist_overwrite (ch);
+			entry_key_plist_overwrite (k);
 			break;
 		default:
 			abort (); /* BUG */
@@ -2294,14 +2294,16 @@ static void do_silent_seek ()
 }
 
 /* Handle key */
-static void menu_key (const wint_t ch)
+static void menu_key (const struct iface_key *k)
 {
 	if (iface_in_help())
-		iface_handle_help_key (ch);
+		iface_handle_help_key (k);
 	else if (iface_in_entry())
-		entry_key (ch);
-	else if (!iface_key_is_resize(ch)) {
-		enum key_cmd cmd = get_key_cmd (CON_MENU, ch);
+		entry_key (k);
+	else if (!iface_key_is_resize(k)) {
+		enum key_cmd cmd = get_key_cmd (CON_MENU,
+				k->type == IFACE_KEY_CHAR ? k->key.ucs :
+				k->key.func);
 		
 		switch (cmd) {
 			case KEY_CMD_QUIT_CLIENT:
@@ -2630,10 +2632,12 @@ void interface_loop ()
 
 		if (ret > 0) {
 			if (FD_ISSET(STDIN_FILENO, &fds)) {
-				wint_t ch = iface_get_char ();
+				struct iface_key k;
+				
+				iface_get_key (&k);
 
 				clear_interrupt ();
-				menu_key (ch);
+				menu_key (&k);
 			}
 
 			if (!want_quit) {

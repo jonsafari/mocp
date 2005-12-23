@@ -22,6 +22,21 @@ enum entry_type
 	ENTRY_PLIST_OVERWRITE
 };
 
+struct iface_key
+{
+	/* Type of the key */
+	enum
+	{
+		IFACE_KEY_CHAR,		/* Regular char */
+		IFACE_KEY_FUNCTION	/* Function key (arrow, F12, etc. */
+	} type;
+	
+	union {
+		wchar_t ucs;	/* IFACE_KEY_CHAR */
+		int func;	/* IFACE_KEY_FUNCTION */
+	} key;
+};
+
 void sec_to_min (char *buff, const int seconds);
 
 void windows_init ();
@@ -38,8 +53,8 @@ void iface_update_dir_content (const enum iface_menu iface_menu,
 		const struct file_list *dirs,
 		const struct file_list *playlists);
 void iface_set_curr_item_title (const char *title);
-wint_t iface_get_char ();
-int iface_key_is_resize (const int ch);
+void iface_get_key (struct iface_key *k);
+int iface_key_is_resize (const struct iface_key *k);
 void iface_menu_key (const enum key_cmd cmd);
 enum file_type iface_curritem_get_type ();
 int iface_in_dir_menu ();
@@ -69,7 +84,7 @@ void iface_del_plist_item (const char *file);
 enum entry_type iface_get_entry_type ();
 int iface_in_entry ();
 void iface_make_entry (const enum entry_type type);
-void iface_entry_handle_key (const wint_t ch);
+void iface_entry_handle_key (const struct iface_key *k);
 void iface_entry_set_text (const char *text);
 char *iface_entry_get_text ();
 void iface_entry_history_add ();
@@ -83,7 +98,7 @@ void iface_set_title (const enum iface_menu menu, const char *title);
 void iface_select_file (const char *file);
 int iface_in_help ();
 void iface_switch_to_help ();
-void iface_handle_help_key (const int ch);
+void iface_handle_help_key (const struct iface_key *k);
 void iface_toggle_layout ();
 void iface_swap_plist_items (const char *file1, const char *file2);
 void iface_make_visible (const enum iface_menu menu, const char *file);
