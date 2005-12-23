@@ -110,7 +110,7 @@ static char *get_tag (struct id3_tag *tag, const char *what)
 	if (frame && (field = &frame->fields[1])) {
 		ucs4 = id3_field_getstrings (field, 0);
 		if (ucs4)
-			comm = id3_ucs4_utf8duplicate (ucs4);
+			comm = (char *)id3_ucs4_utf8duplicate (ucs4);
 	}
 
 	return comm;
