@@ -33,6 +33,7 @@
 #include "common.h"
 #include "decoder.h"
 #include "log.h"
+#include "files.h"
 
 struct ffmpeg_data
 {
@@ -89,7 +90,8 @@ static void ffmpeg_info (const char *file_name,
 	}
 
 	if (tags_sel & TAGS_TIME)
-		info->time = ic->duration / AV_TIME_BASE;
+		info->time = ic->duration >= 0 ? ic->duration / AV_TIME_BASE
+			: -1;
 }
 
 static void *ffmpeg_open (const char *file)
@@ -327,17 +329,24 @@ static int ffmpeg_get_duration (void *prv_data)
 {
 	struct ffmpeg_data *data = (struct ffmpeg_data *)prv_data;
 
-	return data->ic->duration / AV_TIME_BASE;
+	return (data->ic->duration >= 0) ? data->ic->duration / AV_TIME_BASE
+		: -1;
 }
 
-static void ffmpeg_get_name (const char *file ATTR_UNUSED, char buf[4])
+static void ffmpeg_get_name (const char *file, char buf[4])
 {
-	strcpy (buf, "WMA");
+	char *ext = ext_pos (file);
+
+	if (!strcasecmp(ext, "ra"))
+		strcpy (buf, "RA");
+	else if (!strcasecmp(ext, "wma"))
+		strcpy (buf, "WMA");
 }
 
 static int ffmpeg_our_format_ext (const char *ext)
 {
-	return !strcasecmp(ext, "wma");
+	return !strcasecmp(ext, "wma")
+		|| !strcasecmp(ext, "ra");
 }
 
 static void ffmpeg_get_error (void *prv_data, struct decoder_error *error)
