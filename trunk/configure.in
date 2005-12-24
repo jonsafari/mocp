@@ -285,6 +285,22 @@ then
 			   [true])
 fi
 
+dnl ffmpeg
+AC_ARG_WITH(ffmpeg, AS_HELP_STRING(--without-ffmpeg,
+	    Compile without ffmpeg))
+if test "x$with_ffmpeg" != "xno"
+then
+	AC_CHECK_PROG([FFMPEG_CONFIG], [ffmpeg-config], [yes])
+	if test "x$FFMPEG_CONFIG" = "xyes"
+	then
+		ffmpeg_CFLAGAS=`ffmpeg-config --cflags`
+		ffmpeg_LIBS=`ffmpeg-config --plugin-libs avformat`
+		AC_SUBST(ffmpeg_CFLAGAS)
+		AC_SUBST(ffmpeg_LIBS)
+		DECODER_PLUGINS="$DECODER_PLUGINS ffmpeg"
+	fi
+fi
+
 dnl speex
 AC_ARG_WITH(speex, AS_HELP_STRING(--without-speex,
 	    Compile without speex support))
@@ -354,6 +370,7 @@ AC_OUTPUT([Makefile
 	  decoder_plugins/sndfile/Makefile
 	  decoder_plugins/speex/Makefile
 	  decoder_plugins/musepack/Makefile
+	  decoder_plugins/ffmpeg/Makefile
 	  ])
 
 echo
