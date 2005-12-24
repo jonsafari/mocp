@@ -87,6 +87,9 @@ static void ffmpeg_info (const char *file_name,
 		if (ic->album[0] != 0)
 			info->album = xstrdup (ic->album);
 	}
+
+	if (tags_sel & TAGS_TIME)
+		info->time = ic->duration / AV_TIME_BASE;
 }
 
 static void *ffmpeg_open (const char *file)
@@ -155,6 +158,7 @@ static void *ffmpeg_open (const char *file)
 	data->remain_buf_len = 0;
 
 	data->ok = 1;
+	data->bitrate = data->ic->bit_rate / 1024;
 
 	return data;
 }
@@ -303,6 +307,10 @@ static int ffmpeg_decode (void *prv_data, char *buf, int buf_len,
 		}
 	}
 
+	/* 2.0 - 16bit/sample*/
+	data->bitrate = pkt.size * 8 / ((filled + data->remain_buf_len) / 2.0 /
+			sound_params->channels / sound_params->rate) / 1024;
+
 	av_free_packet (&pkt);
 	
 	return filled;
@@ -319,7 +327,7 @@ static int ffmpeg_get_duration (void *prv_data)
 {
 	struct ffmpeg_data *data = (struct ffmpeg_data *)prv_data;
 
-	return /*data->duration*/ 0;
+	return data->ic->duration / AV_TIME_BASE;
 }
 
 static void ffmpeg_get_name (const char *file ATTR_UNUSED, char buf[4])
