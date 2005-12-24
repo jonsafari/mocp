@@ -28,7 +28,6 @@
 
 #include "server.h"
 #include "common.h"
-#include "audio.h"
 #include "decoder.h"
 #include "playlist.h"
 #include "log.h"
@@ -50,6 +49,7 @@
 #include "protocol.h"
 #include "options.h"
 #include "player.h"
+#include "audio.h"
 #include "files.h"
 #include "io.h"
 #include "audio_conversion.h"

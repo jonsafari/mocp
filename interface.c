@@ -42,9 +42,8 @@
 #include "protocol.h"
 #include "keys.h"
 #include "options.h"
-#include "audio.h"
-#include "decoder.h"
 #include "files.h"
+#include "decoder.h"
 
 #define INTERFACE_LOG	"mocp_client_log"
 

@@ -23,7 +23,6 @@
 #include <ltdl.h>
 
 #include "common.h"
-#include "audio.h"
 #include "decoder.h"
 #include "files.h"
 #include "log.h"
