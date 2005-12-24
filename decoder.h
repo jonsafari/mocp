@@ -1,7 +1,6 @@
 #ifndef DECODER_H
 #define DECODER_H
 
-#include "audio.h"
 #include "playlist.h"
 #include "io.h"
 

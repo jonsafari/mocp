@@ -33,9 +33,9 @@
 
 /*#define DEBUG*/
 
+#include "audio.h"
 #include "decoder.h"
 #include "common.h"
-#include "audio.h"
 #include "log.h"
 
 /* Use speex's audio enhancement feature */

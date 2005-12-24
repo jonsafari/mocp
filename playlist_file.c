@@ -28,6 +28,7 @@
 #include "files.h"
 #include "options.h"
 #include "interface.h"
+#include "audio.h"
 #include "decoder.h"
 
 int is_plist_file (const char *name)

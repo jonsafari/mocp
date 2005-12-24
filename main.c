@@ -38,6 +38,7 @@
 #include "log.h"
 #include "compat.h"
 #include "common.h"
+#include "audio.h"
 #include "decoder.h"
 
 struct parameters
