@@ -229,6 +229,7 @@ static int musepack_seek (void *prv_data, int sec)
 	res = mpc_decoder_seek_seconds (&data->decoder, sec) ? sec : -1;
 
 	if (res != -1 && data->remain_buf) {
+		free (data->remain_buf);
 		data->remain_buf = NULL;
 		data->remain_buf_len = 0;
 	}
