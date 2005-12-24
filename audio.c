@@ -775,7 +775,7 @@ static void print_output_capabilities (const struct output_driver_caps *caps)
 			sfmt_str(caps->formats, fmt_name, sizeof(fmt_name)));
 }
 
-void audio_init ()
+void audio_initialize ()
 {
 	find_working_driver (options_get_str("SoundDriver"), &hw);
 

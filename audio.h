@@ -222,7 +222,7 @@ void audio_next ();
 void audio_prev ();
 void audio_pause ();
 void audio_unpause ();
-void audio_init ();
+void audio_initialize ();
 void audio_exit ();
 void audio_seek (const int sec);
 

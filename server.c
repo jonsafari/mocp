@@ -324,7 +324,7 @@ int server_init (int debug, int foreground)
 	if (listen(server_sock, 1) == -1)
 		fatal ("listen() failed: %s", strerror(errno));
 
-	audio_init ();
+	audio_initialize ();
 	tags_cache_init (&tags_cache, options_get_int("TagsCacheSize") * 1024);
 	clients_init ();
 
