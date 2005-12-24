@@ -53,10 +53,40 @@ struct ffmpeg_data
 static int registered = 0;
 
 /* Fill info structure with data from ffmpeg comments */
-static void ffmpeg_info (const char *file_name ATTR_UNUSED,
-		struct file_tags *info ATTR_UNUSED,
-		const int tags_sel ATTR_UNUSED)
+static void ffmpeg_info (const char *file_name,
+		struct file_tags *info,
+		const int tags_sel)
 {
+	AVFormatParameters ap;
+	AVFormatContext *ic;
+	int err;
+	
+	if (!registered) {
+		registered = 1;
+		av_register_all ();
+	}
+	
+	memset (&ap, 0, sizeof(ap));
+
+	if ((err = av_open_input_file(&ic, file_name, NULL, 0, &ap)) < 0) {
+		logit ("av_open_input_file() failed (%d)", err);
+		return;
+	}
+	if ((err = av_find_stream_info(ic)) < 0) {
+		logit ("av_find_stream_info() failed (%d)", err);
+		return;
+	}
+
+	if (tags_sel & TAGS_COMMENTS) {
+		if (ic->track != 0)
+			info->track = ic->track;
+		if (ic->title[0] != 0)
+			info->title = xstrdup (ic->title);
+		if (ic->author[0] != 0)
+			info->artist = xstrdup (ic->author);
+		if (ic->album[0] != 0)
+			info->album = xstrdup (ic->album);
+	}
 }
 
 static void *ffmpeg_open (const char *file)
