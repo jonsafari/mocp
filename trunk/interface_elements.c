@@ -45,7 +45,6 @@
 #include "interface_elements.h"
 #include "log.h"
 #include "files.h"
-#include "audio.h"
 #include "decoder.h"
 #include "keys.h"
 #include "playlist.h"

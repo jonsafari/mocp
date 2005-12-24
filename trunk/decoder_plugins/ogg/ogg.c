@@ -25,9 +25,9 @@
 
 #include "common.h"
 #include "log.h"
-#include "audio.h"
 #include "decoder.h"
 #include "io.h"
+#include "audio.h"
 
 struct ogg_data
 {

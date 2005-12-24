@@ -37,7 +37,6 @@
 #include "playlist.h"
 #include "common.h"
 #include "interface.h"
-#include "audio.h"
 #include "decoder.h"
 #include "options.h"
 #include "files.h"
