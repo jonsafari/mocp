@@ -3,7 +3,7 @@ Items marked with $ are bigger changes requiring more time.
 Known bugs:
 * hight CPU usage on FreeBSD with the gui process when started to play a song.
 * sorting after -a or -e doesn't work.
-* mp3 tags seems to be read as latin1
+* mp3 tags seem to be read as latin1
 * There's also a small bug with the display of the time connected to a stream:
   once it passes 100 minutes, it seems to display as "XXXm9" where XXX is some
   value 100 or above.
@@ -12,7 +12,6 @@ Known bugs:
 
 Before 2.4:
 *$ Better international characters handling - tags in UTF.
-* UTF-8 input.
 *$ Progrssive tags reading: read them only if the menu items requiring them
    are visible (as an option).
 *$ Tags cache saved to a file on exit and read at startup.
@@ -29,7 +28,6 @@ Before 2.4:
 * Add content of a playlist file to the playlist
 * Pause Internet streams - like stop (pause) and play (unpause) the same stream
 * After startup, show the playlist if we play from the playlist (as an option)
-* Dynamically allocated entry buffers (reallocate on terminal resize).
 
 In future:
 
