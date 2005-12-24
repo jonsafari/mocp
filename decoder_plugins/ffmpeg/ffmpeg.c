@@ -181,18 +181,22 @@ static void ffmpeg_close (void *prv_data)
 	free (data);
 }
 
-static int ffmpeg_seek (void *prv_data, int sec ATTR_UNUSED)
+static int ffmpeg_seek (void *prv_data, int sec)
 {
 	struct ffmpeg_data *data = (struct ffmpeg_data *)prv_data;
+	int err;
 
-#if 0
-	if (nuccessful_seek() && data->remain_buf) {
+	/*if ((err = av_seek_frame(data->ic, -1, sec, 0)) < 0)
+		logit ("Seek error %d", err);
+	else if (data->remain_buf) {
+		free (data->remain_buf);
 		data->remain_buf = NULL;
 		data->remain_buf_len = 0;
 	}
-#endif
 
-	return /*ov_time_seek (&data->vf, sec) ? -1 : sec;*/ -1;
+	return err >= 0 ? sec : -1;*/
+
+	return -1;
 }
 
 static int ffmpeg_decode (void *prv_data, char *buf, int buf_len,
