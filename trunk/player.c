@@ -22,8 +22,8 @@
 
 #include "common.h"
 #include "log.h"
-#include "decoder.h"
 #include "audio.h"
+#include "decoder.h"
 #include "out_buf.h"
 #include "server.h"
 #include "options.h"

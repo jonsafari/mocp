@@ -18,6 +18,7 @@
 #include <string.h>
 #include <strings.h>
 #include <sndfile.h>
+#include "audio.h"
 #include "decoder.h"
 #include "common.h"
 #include "server.h"
