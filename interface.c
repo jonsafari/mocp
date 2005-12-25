@@ -1102,6 +1102,9 @@ static int go_to_dir (const char *dir, const int reload)
 	
 	iface_set_title (IFACE_MENU_DIR, cwd);
 
+	if (iface_in_plist_menu())
+		iface_switch_to_dir ();
+
 	return 1;
 }
 
