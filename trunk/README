@@ -59,6 +59,7 @@ To support audio formats you need:
  - Speex - libspeex (http://www.speex.org/)
  - Musepack (mpc) - libmpcdec (http://www.musepack.net/) and taglib
      (http://developer.kde.org/~wheeler/taglib.html)
+ - wma, ReadAudio (.ra) - FFmpeg (http://ffmpeg.sourceforge.net/index.php)
 
 For network streams:
  - libcurl 7.12.0 or newer (http://curl.haxx.se)
