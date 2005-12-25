@@ -1779,8 +1779,9 @@ static void main_win_handle_help_key (struct main_win *w,
 		if (w->help_screen_top + LINES - 5 <= help_lines)
 			w->help_screen_top++;
 	}
-	else if (k->type == IFACE_KEY_FUNCTION) {
-		if (k->key.func == KEY_UP || k->key.func == KEY_PPAGE) {
+	else {
+		if (k->type == IFACE_KEY_FUNCTION && (k->key.func == KEY_UP
+					|| k->key.func == KEY_PPAGE)) {
 			if (w->help_screen_top > 0)
 				w->help_screen_top--;
 		}
