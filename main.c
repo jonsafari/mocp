@@ -58,7 +58,6 @@ struct parameters
 	int previous;
 	int get_file_info;
 	int toggle_pause;
-	int recursively;
 	int playit;
 	int seek_by;
 };
@@ -187,8 +186,7 @@ static void start_moc (const struct parameters *params, char **args,
 		if (ping_server(server_sock)) {
 			if (!params->dont_run_iface) {
 				init_interface (server_sock, params->debug,
-						args, arg_num,
-						params->recursively);
+						args, arg_num);
 				interface_loop ();
 				interface_end ();
 			}
@@ -275,11 +273,11 @@ static void show_usage (const char *prg_name) {
 "-F --foreground        Run server in foreground, log to stdout.\n"
 "-R --sound-driver NAME Use the specified sound driver (oss, alsa, jack, null).\n"
 "-m --music-dir         Start in MusicDir.\n"
-"-a --append            Append the files passed in command line to playlist\n"
-"                       and exit.\n"
+"-a --append            Append the files/directories/playlists passed in\n"
+"                       the command line to playlist and exit.\n"
 "-c --clear             Clear the playlist and exit.\n"
 "-p --play              Start playing from the first item on the playlist.\n"
-"-l --playit            Play files given on command line without modifing the"
+"-l --playit            Play files given on command line without modifing the\n"
 "                       playlist.\n"
 "-s --stop              Stop playing.\n"
 "-f --next              Play next song.\n"
@@ -296,8 +294,7 @@ static void show_usage (const char *prg_name) {
 "-n --nosync            Don't synchronize the playlist with other clients.\n"
 "-A --ascii             Use ASCII characters to draw lines.\n"
 "-i --info              Print the information about the currently played file.\n"
-"-e --recursively       Make a playlist from the content of the directory given\n"
-"                       at the command line.\n"
+"-e --recursively       Alias for -a.\n"
 "-k --seek N            Seek by N seconds (can be negative).\n"
 , prg_name);
 }
@@ -454,6 +451,7 @@ int main (int argc, char *argv[])
 				option_ignore_config ("StartInMusicDir");
 				break;
 			case 'a':
+			case 'e':
 				params.append = 1;
 				params.dont_run_iface = 1;
 				break;
@@ -522,9 +520,6 @@ int main (int argc, char *argv[])
 			case 'G':
 				params.toggle_pause = 1;
 				params.dont_run_server = 1;
-				break;
-			case 'e':
-				params.recursively = 1;
 				break;
 			case 'k':
 				params.seek_by = get_num_param (optarg);

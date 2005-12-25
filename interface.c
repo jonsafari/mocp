@@ -1251,10 +1251,9 @@ static int use_server_playlist ()
 }
 
 /* Process file names passwd as arguments. */
-static void process_args (char **args, const int num, const int recursively)
+static void process_args (char **args, const int num)
 {
-	if (num == 1 && !recursively && !is_url(args[0])
-			&& isdir(args[0]) == 1) {
+	if (num == 1 && !is_url(args[0]) && isdir(args[0]) == 1) {
 		set_cwd (args[0]);
 		if (!go_to_dir(NULL, 0))
 			enter_first_dir ();
@@ -1307,6 +1306,8 @@ static void process_args (char **args, const int num, const int recursively)
 			else if (!dir && (is_sound_file(path)
 						|| is_url(path)))
 				plist_add (playlist, path);
+			else if (is_plist_file(path))
+				plist_load (playlist, path, NULL);
 		}
 	}
 
@@ -1330,7 +1331,7 @@ static void load_playlist ()
 }
 
 void init_interface (const int sock, const int logging, char **args,
-		const int arg_num, const int recursively)
+		const int arg_num)
 {
 	srv_sock = sock;
 
@@ -1366,7 +1367,7 @@ void init_interface (const int sock, const int logging, char **args,
 	
 
 	if (arg_num) {
-		process_args (args, arg_num, recursively);
+		process_args (args, arg_num);
 	
 		if (plist_count(playlist) == 0) {
 			if (!options_get_int("SyncPlaylist")
@@ -2844,6 +2845,8 @@ void interface_cmdline_append (int server_sock, char **args,
 			plist_add (&plist, args[i]);
 	}
 
+	/* FIXME: Avoid duplicates! */
+	
 	if (plist_count(&plist)) {
 		if (options_get_int("SyncPlaylist")) {
 			struct plist clients_plist;

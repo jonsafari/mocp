@@ -2,7 +2,7 @@
 #define INTERFACE_H
 
 void init_interface (const int sock, const int logging, char **args,
-		const int arg_num, const int recursively);
+		const int arg_num);
 void interface_loop ();
 void interface_end ();
 int user_wants_interrupt ();

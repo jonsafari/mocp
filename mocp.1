@@ -1,4 +1,4 @@
-.TH MOC 1 "30 September 2005" "Version 2.4.0" "music on console"
+.TH MOC 1 "25 December 2005" "Version 2.4.0" "music on console"
 
 .SH NAME
 MOC \- console audio player
@@ -51,7 +51,8 @@ configuration file as StartInMusicDir.
 
 .TP
 .I -a --append
-Append files given after options to the playlist.
+Append files, directories (recursivelly) and playlists given after options to
+the playlist. Don't start the interface.
 
 .TP
 .I -c --clear
@@ -125,9 +126,7 @@ Print the information about the currently played file.
 
 .TP
 .I -e --recursively
-If you specify one directory at command line argument, make a playlist from
-files from this directory (recursively). Without this option MOC will just
-anter it after startup.
+Alias for -a for backward compatybility.
 
 .TP
 .I -h --help
