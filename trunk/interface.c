@@ -1947,6 +1947,71 @@ static void entry_key_go_url (const struct iface_key *k)
 		iface_entry_handle_key (k);
 }
 
+static void add_url_to_plist (const char *url)
+{
+	assert (url != NULL);
+	
+	if (plist_find_fname(playlist, url) == -1) {
+		send_int_to_srv (CMD_LOCK);
+
+		if (options_get_int("SyncPlaylist")) {
+			struct plist_item *item = plist_new_item ();
+
+			item->file = xstrdup (url);
+			item->title_file = xstrdup (url);
+			item->title = item->title_file;
+			
+			send_int_to_srv (CMD_CLI_PLIST_ADD);
+			send_item_to_srv (item);
+
+			plist_free_item_fields (item);
+			free (item);
+		}
+		else {
+			int added;
+			
+			added = plist_add (playlist, url);
+			make_file_title (playlist, added, 0);
+			iface_add_to_plist (playlist, added);
+		}
+				
+		/* Add to the server's playlist if the server has our
+		 * playlist */
+		if (get_server_plist_serial() == plist_get_serial(playlist)) {
+			send_int_to_srv (CMD_LIST_ADD);
+			send_str_to_srv (url);
+		}
+		send_int_to_srv (CMD_UNLOCK);
+	}
+	else
+		error ("URL already on the playlist");
+}
+
+static void entry_key_add_url (const struct iface_key *k)
+{
+	if (k->type == IFACE_KEY_CHAR && k->key.ucs == '\n') {
+		char *entry_text = iface_entry_get_text ();
+		
+		if (entry_text[0]) {
+			char *clean_url = strip_white_spaces (entry_text);
+			
+			iface_entry_history_add ();
+
+			if (is_url(clean_url))
+				add_url_to_plist (clean_url);
+			else
+				error ("Not a valid URL.");
+
+			free (clean_url);
+		}
+
+		free (entry_text);
+		iface_entry_disable ();
+	}
+	else
+		iface_entry_handle_key (k);
+}
+
 static void entry_key_search (const struct iface_key *k)
 {
 	if (k->type == IFACE_KEY_CHAR && k->key.ucs == '\n') {
@@ -2060,6 +2125,9 @@ static void entry_key (const struct iface_key *k)
 			break;
 		case ENTRY_GO_URL:
 			entry_key_go_url (k);
+			break;
+		case ENTRY_ADD_URL:
+			entry_key_add_url (k);
 			break;
 		case ENTRY_SEARCH:
 			entry_key_search (k);
@@ -2561,6 +2629,9 @@ static void menu_key (const struct iface_key *k)
 				break;
 			case KEY_CMD_PLIST_MOVE_DOWN:
 				move_item (-1);
+				break;
+			case KEY_CMD_ADD_STREAM:
+				iface_make_entry (ENTRY_ADD_URL);
 				break;
 			default:
 				abort ();

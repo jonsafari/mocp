@@ -342,6 +342,9 @@ static void entry_init (struct entry *e, const enum entry_type type,
 		case ENTRY_GO_URL:
 			title = "URL";
 			break;
+		case ENTRY_ADD_URL:
+			title = "ADD URL";
+			break;
 		case ENTRY_PLIST_OVERWRITE:
 			title = "File exists, overwrite?";
 			break;
@@ -2611,6 +2614,9 @@ static void info_win_make_entry (struct info_win *w, const enum entry_type type)
 		case ENTRY_GO_URL:
 			history = &w->urls_history;
 			break;
+		case ENTRY_ADD_URL:
+			history = &w->urls_history;
+			break;
 		default:
 			history = NULL;
 	}
@@ -2727,7 +2733,8 @@ static void info_win_entry_handle_key (struct info_win *iw, struct main_win *mw,
 			entry_end (&iw->entry);
 		else if (cmd == KEY_CMD_CANCEL)
 			info_win_entry_disable (iw);
-		else if ((type == ENTRY_GO_DIR || type == ENTRY_GO_URL)
+		else if ((type == ENTRY_GO_DIR || type == ENTRY_GO_URL
+					|| type == ENTRY_ADD_URL)
 				&& cmd != KEY_CMD_WRONG) {
 			if (cmd == KEY_CMD_HISTORY_UP)
 				entry_set_history_up (&iw->entry);
