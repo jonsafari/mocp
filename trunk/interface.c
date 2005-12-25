@@ -2866,16 +2866,23 @@ void interface_cmdline_append (int server_sock, char **args,
 
 	if (options_get_int("SyncPlaylist")) {
 		struct plist clients_plist;
+		struct plist new;
 
 		plist_init (&clients_plist);
+		plist_init (&new);
+		
 		if (recv_server_plist(&clients_plist)) {
-			add_recursively (&clients_plist, args, arg_num);
+			add_recursively (&new, args, arg_num);
+			plist_sort_fname (&new);
+			
 			send_int_to_srv (CMD_LOCK);
-			send_items_to_clients (&clients_plist);
+
+			plist_remove_common_items (&new, &clients_plist);
+			send_items_to_clients (&new);
 
 			if (get_server_plist_serial()
 					== plist_get_serial(&clients_plist))
-				send_playlist (&clients_plist, 1);
+				send_playlist (&new, 0);
 			send_int_to_srv (CMD_UNLOCK);
 		}
 		else {
@@ -2893,11 +2900,15 @@ void interface_cmdline_append (int server_sock, char **args,
 						create_file_name(
 							"playlist.m3u"),
 						cwd);
-			add_recursively (&saved_plist, args, arg_num);
+			add_recursively (&new, args, arg_num);
+			plist_sort_fname (&new);
 
 			send_int_to_srv (CMD_LOCK);
+			plist_remove_common_items (&new, &saved_plist);
 			send_playlist (&saved_plist, 0);
 			send_int_to_srv (CMD_UNLOCK);
+
+			plist_cat (&saved_plist, &new);
 			if (options_get_int("SavePlaylist")) {
 				fill_tags (&saved_plist, TAGS_COMMENTS
 						| TAGS_TIME, 1);
@@ -2911,6 +2922,7 @@ void interface_cmdline_append (int server_sock, char **args,
 		}
 
 		plist_free (&clients_plist);
+		plist_free (&new);
 	}
 }
 
