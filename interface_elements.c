@@ -853,7 +853,7 @@ void sec_to_min (char *buff, const int seconds)
 	else if (seconds < 10000 * 60) 
 
 		/* the time is less than 9999 minutes */
-		snprintf (buff, 6, "%dm", seconds/60);
+		snprintf (buff, 6, "%4dm", seconds/60);
 	else
 		strcpy (buff, "!!!!!");
 }
