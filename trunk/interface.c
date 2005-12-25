@@ -1676,6 +1676,8 @@ static void add_dir_plist ()
 	
 	send_int_to_srv (CMD_LOCK);
 
+	plist_remove_common_items (&plist, playlist);
+
 	/* Add the new files to the server's playlist if the server has our
 	 * playlist */
 	if (get_server_plist_serial() == plist_get_serial(playlist))
