@@ -17,6 +17,8 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
+#include <errno.h>
 
 #define DEBUG
 
@@ -189,6 +191,7 @@ static void tags_cache_add (struct tags_cache *c, const char *file,
 		struct file_tags *tags)
 {
 	assert (c != NULL);
+	assert (tags != NULL);
 	
 	if (!c->cache.head) {
 		c->cache.head = (struct cache_list_node *)xmalloc (
@@ -465,4 +468,145 @@ void tags_cache_clear_up_to (struct tags_cache *c, const char *file,
 	debug ("Removing requests for client %d up to file %s", client_id,
 			file);
 	UNLOCK (c->mutex);
+}
+
+void tags_cache_save (struct tags_cache *c, const char *file_name)
+{
+	struct cache_list_node *n;
+	FILE *file;
+
+	if (!(file = fopen(file_name, "w"))) {
+		logit ("Can't write tags cache to %s: %s", file_name,
+				strerror(errno));
+		return;
+	}
+	
+	LOCK (c->mutex);
+	logit ("Saving tags cache to %s...", file_name);
+	n = c->cache.head;
+
+	while (n) {
+		fprintf (file, "%s\n", n->file);
+		fprintf (file, "%ld\n", (long)n->mod_time);
+		fprintf (file, "%s\n", n->tags->title ? n->tags->title : "");
+		fprintf (file, "%s\n", n->tags->artist ? n->tags->artist : "");
+		fprintf (file, "%s\n", n->tags->album ? n->tags->album : "");
+		fprintf (file, "%d\n", n->tags->track);
+		fprintf (file, "%d\n", n->tags->time);
+
+		n = n->next;
+	}
+	
+	UNLOCK (c->mutex);
+
+	fclose (file);
+}
+
+void tags_cache_load (struct tags_cache *c, const char *file_name)
+{
+	FILE *file;
+	int count = 0;
+
+	if (!(file = fopen(file_name, "r"))) {
+		logit ("Can't read tags cache from %s: %s", file_name,
+				strerror(errno));
+		return;
+	}
+	
+	LOCK (c->mutex);
+	logit ("Loading tags cache from %s...", file_name);
+	/* Remember not to load more than the cache size! */
+
+	while (!feof(file)) {
+		char *node_file_name;
+		struct file_tags *tags;
+		long mod_time;
+		char *tmp;
+
+		node_file_name = read_line (file);
+		if (!node_file_name)
+			break;
+
+		
+		if (!fscanf(file, "%ld\n", &mod_time)) {
+			logit ("File broken, no modification time");
+			free (node_file_name);
+			break;
+		}
+
+		if (get_mtime(node_file_name) != mod_time) {
+			free (node_file_name);
+			continue;
+		}
+
+		tags = tags_new ();
+		
+		if (!(tmp = read_line(file))) {
+			free (node_file_name);
+			tags_free (tags);
+			logit ("File broken, no title");
+			break;
+		}
+		if (tmp[0])
+			tags->title = tmp;
+		else
+			free (tmp);
+
+		if (!(tmp = read_line(file))) {
+			free (node_file_name);
+			tags_free (tags);
+			logit ("File broken, no artist");
+			break;
+		}
+		if (tmp[0])
+			tags->artist = tmp;
+		else
+			free (tmp);
+
+		if (!(tmp = read_line(file))) {
+			free (node_file_name);
+			tags_free (tags);
+			logit ("File broken, no album");
+			break;
+		}
+		if (tmp[0])
+			tags->album = tmp;
+		else
+			free (tmp);
+
+		if (!fscanf(file, "%d\n", &tags->track)) {
+			free (node_file_name);
+			tags_free (tags);
+			logit ("File broken, no track");
+			break;
+		}
+
+		if (!fscanf(file, "%d\n", &tags->time)) {
+			free (node_file_name);
+			tags_free (tags);
+			logit ("File broken, no time");
+			break;
+		}
+		
+		if (tags->title)
+			tags->filled |= TAGS_COMMENTS;
+		if (tags->time != -1)
+			tags->filled |= TAGS_TIME;
+
+		debug ("Adding file %s", node_file_name);
+		tags_cache_add (c, node_file_name, tags);
+		count++;
+
+		free (node_file_name);
+
+		if (c->size > c->max_size) {
+			logit ("Maximum tags cache size exceeded");
+			break;
+		}
+	}
+	
+	UNLOCK (c->mutex);
+
+	logit ("Loaded %d items to the cache", count);
+	fclose (file);
 }
