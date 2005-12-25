@@ -373,8 +373,7 @@ int read_directory (const char *directory, struct file_list *dirs,
 
 /* Recursively add files from the directory to the playlist. 
  * Return 1 if OK (and even some errors), 0 if the user interrupted. */
-int read_directory_recurr (const char *directory, struct plist *plist,
-		const int check_duplicates)
+int read_directory_recurr (const char *directory, struct plist *plist)
 {
 	DIR *dir;
 	struct dirent *entry;
@@ -406,8 +405,8 @@ int read_directory_recurr (const char *directory, struct plist *plist,
 		}
 		type = file_type (file);
 		if (type == F_DIR)
-			read_directory_recurr(file, plist, check_duplicates);
-		else if (type == F_SOUND)
+			read_directory_recurr(file, plist);
+		else if (type == F_SOUND && plist_find_fname(plist, file) == -1)
 			plist_add (plist, file);
 	}
 

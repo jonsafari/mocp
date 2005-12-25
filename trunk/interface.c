@@ -1302,7 +1302,7 @@ static void process_args (char **args, const int num)
 			}
 
 			if (dir == 1)
-				read_directory_recurr (path, playlist, 1);
+				read_directory_recurr (path, playlist);
 			else if (!dir && (is_sound_file(path)
 						|| is_url(path)))
 				plist_add (playlist, path);
@@ -1670,13 +1670,11 @@ static void add_dir_plist ()
 
 	iface_set_status ("reading directories...");
 	plist_init (&plist);
-	read_directory_recurr (file, &plist, 0);
+	read_directory_recurr (file, &plist);
 
 	plist_sort_fname (&plist);
 	
 	send_int_to_srv (CMD_LOCK);
-
-	plist_remove_common_items (&plist, playlist);
 
 	/* Add the new files to the server's playlist if the server has our
 	 * playlist */
@@ -2825,88 +2823,93 @@ void interface_cmdline_clear_plist (int server_sock)
 	plist_free (&plist);
 }
 
-void interface_cmdline_append (int server_sock, char **args,
+static void add_recursively (struct plist *plist, char **args,
 		const int arg_num)
 {
 	int i;
-	struct plist plist;
 
+	for (i = 0; i < arg_num; i++) {
+		int dir;
+		char path[PATH_MAX+1];
+
+		if (!is_url(args[i]) && args[i][0] != '/') {
+			if (args[0][0] == '/')
+				strcpy (path, "/");
+			else if (!getcwd(path, sizeof(path)))
+				interface_fatal ("Can't get CWD: %s",
+						strerror(errno));
+			resolve_path (path, sizeof(path), args[i]);
+		}
+		else {
+			strncpy (path, args[i], sizeof(path));
+			path[sizeof(path)-1] = 0;
+			resolve_path (path, sizeof(path), "");
+		}
+			
+		dir = !is_url(path) && isdir(path);
+
+		if (dir == 1)
+			read_directory_recurr (path, plist);
+		else if ((is_url(path) || is_sound_file(path))
+				&& plist_find_fname(plist, path) == -1)
+			plist_add (plist, path);
+	}
+}
+
+void interface_cmdline_append (int server_sock, char **args,
+		const int arg_num)
+{
 	srv_sock = server_sock; /* the interface is not initialized, so set it
 				   here */
 
-	plist_init (&plist);
+	if (options_get_int("SyncPlaylist")) {
+		struct plist clients_plist;
 
-	for (i = 0; i < arg_num; i++) {
-		int dir = !is_url(args[i]) && isdir(args[i]);
-
-		if (dir == 1)
-			read_directory_recurr (args[i], &plist, 1);
-		else if (is_url(args[i]) || is_sound_file(args[i]))
-			plist_add (&plist, args[i]);
-	}
-
-	/* FIXME: Avoid duplicates! */
-	
-	if (plist_count(&plist)) {
-		if (options_get_int("SyncPlaylist")) {
-			struct plist clients_plist;
-
-			plist_init (&clients_plist);
-			if (recv_server_plist(&clients_plist)) {
-				send_int_to_srv (CMD_LOCK);
-				send_items_to_clients (&plist);
-
-				if (get_server_plist_serial()
-						== plist_get_serial(
-							&clients_plist))
-					send_playlist (&plist, 0);
-				send_int_to_srv (CMD_UNLOCK);
-			}
-			else {
-				struct plist saved_plist;
-
-				if (!getcwd(cwd, sizeof(cwd)))
-					fatal ("Can't get CWD: %s.",
-							strerror(errno));
-				plist_init (&saved_plist);
-
-				/* this checks if the file exists */
-				if (file_type(create_file_name("playlist.m3u"))
-							== F_PLAYLIST)
-						plist_load (&saved_plist,
-							create_file_name(
-								"playlist.m3u"),
-							cwd);
-				plist_cat (&saved_plist, &plist);
-				
-				send_int_to_srv (CMD_LOCK);
-				send_playlist (&saved_plist, 0);
-				send_int_to_srv (CMD_UNLOCK);
-				if (options_get_int("SavePlaylist")) {
-					fill_tags (&saved_plist, TAGS_COMMENTS
-							| TAGS_TIME, 1);
-					plist_save (&saved_plist,
-							create_file_name(
-								"playlist.m3u"),
-							NULL);
-				}
-
-				plist_free (&saved_plist);
-			}
-
-			plist_free (&clients_plist);
-		}
-		else {
+		plist_init (&clients_plist);
+		if (recv_server_plist(&clients_plist)) {
+			add_recursively (&clients_plist, args, arg_num);
 			send_int_to_srv (CMD_LOCK);
-			change_srv_plist_serial ();
-			send_playlist (&plist, 0);
+			send_items_to_clients (&clients_plist);
+
+			if (get_server_plist_serial()
+					== plist_get_serial(&clients_plist))
+				send_playlist (&clients_plist, 1);
 			send_int_to_srv (CMD_UNLOCK);
 		}
-	}
-	else
-		fatal ("No files could be added");
+		else {
+			struct plist saved_plist;
 
-	plist_free (&plist);
+			if (!getcwd(cwd, sizeof(cwd)))
+				fatal ("Can't get CWD: %s.",
+						strerror(errno));
+			plist_init (&saved_plist);
+
+			/* this checks if the file exists */
+			if (file_type(create_file_name("playlist.m3u"))
+						== F_PLAYLIST)
+					plist_load (&saved_plist,
+						create_file_name(
+							"playlist.m3u"),
+						cwd);
+			add_recursively (&saved_plist, args, arg_num);
+
+			send_int_to_srv (CMD_LOCK);
+			send_playlist (&saved_plist, 0);
+			send_int_to_srv (CMD_UNLOCK);
+			if (options_get_int("SavePlaylist")) {
+				fill_tags (&saved_plist, TAGS_COMMENTS
+						| TAGS_TIME, 1);
+				plist_save (&saved_plist,
+						create_file_name(
+							"playlist.m3u"),
+						NULL);
+			}
+
+			plist_free (&saved_plist);
+		}
+
+		plist_free (&clients_plist);
+	}
 }
 
 void interface_cmdline_play_first (int server_sock)
