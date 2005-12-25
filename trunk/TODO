@@ -15,7 +15,6 @@ Before 2.4:
   start the interface.
 *$ Progrssive tags reading: read them only if the menu items requiring them
    are visible (as an option).
-*$ Tags cache saved to a file on exit and read at startup.
 *$ Toggle themes at run time.
 *$ a short cut to execute a command:
    http://moc.daper.net/phpBB2/viewtopic.php?p=186#186

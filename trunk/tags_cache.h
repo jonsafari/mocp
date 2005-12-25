@@ -62,5 +62,7 @@ void tags_cache_destroy (struct tags_cache *c);
 void tags_cache_init (struct tags_cache *c, const size_t max_size);
 void tags_cache_clear_up_to (struct tags_cache *c, const char *file,
 		const int client_id);
+void tags_cache_save (struct tags_cache *c, const char *file_name);
+void tags_cache_load (struct tags_cache *c, const char *file_name);
 
 #endif

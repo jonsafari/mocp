@@ -326,6 +326,7 @@ int server_init (int debug, int foreground)
 
 	audio_initialize ();
 	tags_cache_init (&tags_cache, options_get_int("TagsCacheSize") * 1024);
+	tags_cache_load (&tags_cache, create_file_name("tags_cache"));
 	clients_init ();
 
 	server_tid = pthread_self ();
@@ -446,6 +447,7 @@ static void server_shutdown ()
 	
 	logit ("Server exiting...");
 	audio_exit ();
+	tags_cache_save (&tags_cache, create_file_name("tags_cache"));
 	tags_cache_destroy (&tags_cache);
 	unlink (socket_name());
 	unlink (create_file_name(PID_FILE));
