@@ -623,6 +623,14 @@ static struct command commands[] = {
  		CON_MENU,
  		{ 'j', -1 },
  		1
+  	},
+ 	{
+ 		KEY_CMD_ADD_STREAM,
+ 		"plist_add_stream",
+ 		"Add a URL to the playlist using entry",
+ 		CON_MENU,
+ 		{ CTRL('U'), -1 },
+ 		1
   	}
 };
 
