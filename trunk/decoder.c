@@ -193,6 +193,8 @@ static int lt_load_plugin (const char *file, lt_ptr debug_info_ptr)
 							lt_dlerror());
 			}
 			else {
+				if (plugins[plugins_num].decoder->init)
+					plugins[plugins_num].decoder->init ();
 				plugins_num++;
 				if (debug_info)
 					printf ("OK\n");
@@ -221,6 +223,12 @@ void decoder_init (int debug_info)
 
 void decoder_cleanup ()
 {
+	int i;
+	
+	for (i = 0; i < plugins_num; i++)
+		if (plugins[i].decoder->destroy)
+			plugins[i].decoder->destroy ();
+
 	if (lt_dlexit())
 		logit ("lt_exit() failed: %s", lt_dlerror());
 }

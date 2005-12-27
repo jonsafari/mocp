@@ -356,6 +356,8 @@ static void musepack_get_error (void *prv_data, struct decoder_error *error)
 
 static struct decoder musepack_decoder = {
 	DECODER_API_VERSION,
+	NULL,
+	NULL,
 	musepack_open,
 	musepack_open_stream,
 	NULL /* musepack_can_decode */,

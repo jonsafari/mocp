@@ -659,6 +659,8 @@ static int mp3_can_decode (struct io_stream *stream)
 
 static struct decoder mp3_decoder = {
 	DECODER_API_VERSION,
+	NULL,
+	NULL,
 	mp3_open,
 	mp3_open_stream,
 	mp3_can_decode,
