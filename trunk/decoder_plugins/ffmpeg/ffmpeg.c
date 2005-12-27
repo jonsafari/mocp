@@ -150,7 +150,7 @@ static void *ffmpeg_open (const char *file)
 	data->remain_buf_len = 0;
 
 	data->ok = 1;
-	data->bitrate = data->ic->bit_rate / 1024;
+	data->bitrate = data->ic->bit_rate / 1000;
 
 	return data;
 }
@@ -305,7 +305,7 @@ static int ffmpeg_decode (void *prv_data, char *buf, int buf_len,
 
 	/* 2.0 - 16bit/sample*/
 	data->bitrate = pkt.size * 8 / ((filled + data->remain_buf_len) / 2.0 /
-			sound_params->channels / sound_params->rate) / 1024;
+			sound_params->channels / sound_params->rate) / 1000;
 
 	av_free_packet (&pkt);
 	
