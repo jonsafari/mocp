@@ -50,8 +50,10 @@ struct ffmpeg_data
 	int bitrate;
 };
 
-/* Was av_register_all() called? */
-static int registered = 0;
+static void ffmpeg_init ()
+{
+	av_register_all ();
+}
 
 /* Fill info structure with data from ffmpeg comments */
 static void ffmpeg_info (const char *file_name,
@@ -61,11 +63,6 @@ static void ffmpeg_info (const char *file_name,
 	AVFormatParameters ap;
 	AVFormatContext *ic;
 	int err;
-	
-	if (!registered) {
-		registered = 1;
-		av_register_all ();
-	}
 	
 	memset (&ap, 0, sizeof(ap));
 
@@ -105,13 +102,6 @@ static void *ffmpeg_open (const char *file)
 	data->ok = 0;
 
 	decoder_error_init (&data->error);
-
-
-	if (!registered) {
-		registered = 1;
-		av_register_all ();
-	}
-
 	memset (&data->ap, 0, sizeof(data->ap));
 
 	err = av_open_input_file (&data->ic, file, NULL, 0, &data->ap);
@@ -362,6 +352,8 @@ static void ffmpeg_get_error (void *prv_data, struct decoder_error *error)
 
 static struct decoder ffmpeg_decoder = {
 	DECODER_API_VERSION,
+	ffmpeg_init,
+	NULL,
 	ffmpeg_open,
 	NULL,
 	NULL,

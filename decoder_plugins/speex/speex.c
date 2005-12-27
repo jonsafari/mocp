@@ -688,6 +688,8 @@ static int spx_our_mime (const char *mime)
 
 static struct decoder spx_decoder = {
 	DECODER_API_VERSION,
+	NULL,
+	NULL,
 	spx_open,
 	spx_open_stream,
 	spx_can_decode,

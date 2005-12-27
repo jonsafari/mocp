@@ -406,6 +406,8 @@ static int ogg_our_mime (const char *mime)
 
 static struct decoder ogg_decoder = {
 	DECODER_API_VERSION,
+	NULL,
+	NULL,
 	ogg_open,
 	ogg_open_stream,
 	ogg_can_decode,
