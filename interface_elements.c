@@ -1522,6 +1522,18 @@ static void main_win_draw (const struct main_win *w)
 	}
 }
 
+static enum side_menu_type iface_to_side_menu (const enum iface_menu iface_menu)
+{
+	switch (iface_menu) {
+		case IFACE_MENU_PLIST:
+			return MENU_PLAYLIST;
+		case IFACE_MENU_DIR:
+			return MENU_DIR;
+		default:
+			abort (); /* BUG */
+	};
+}
+
 static void main_win_set_dir_content (struct main_win *w,
 		const enum iface_menu iface_menu, const struct plist *files,
 		const struct file_list *dirs, const struct file_list *playlists)
@@ -1530,8 +1542,7 @@ static void main_win_set_dir_content (struct main_win *w,
 	
 	assert (w != NULL);
 	
-	m = find_side_menu (w, iface_menu == IFACE_MENU_DIR ? MENU_DIR
-			: MENU_PLAYLIST);
+	m = find_side_menu (w, iface_to_side_menu(iface_menu));
 
 	side_menu_make_list_content (m, files, dirs, playlists,
 			iface_menu == MENU_PLAYLIST);
@@ -1653,26 +1664,19 @@ static void main_win_set_curr_item_title (struct main_win *w, const char *title)
 }
 
 /* Update item title and time on all menus where it's present. */
-static void main_win_update_item (struct main_win *w, const struct plist *plist,
+static void main_win_update_item (struct main_win *w,
+		const enum iface_menu iface_menu, const struct plist *plist,
 		const int n)
 {
-	int i;
-	int must_redraw = 0;
+	struct side_menu *m;
 
 	assert (w != NULL);
 	assert (plist != NULL);
 	assert (n >= 0 && n < plist->num);
 
-	for (i = 0; i < (int)(sizeof(w->menus)/sizeof(w->menus[0])); i++) {
-		struct side_menu *m = &w->menus[i];
-		
-		if (m->visible && (m->type == MENU_DIR
-					|| m->type == MENU_PLAYLIST))
-			must_redraw = side_menu_update_item (m, plist, n)
-				|| must_redraw;
-	}
+	m = find_side_menu (w, iface_to_side_menu(iface_menu));
 
-	if (must_redraw)
+	if (side_menu_update_item(m, plist, n))
 		main_win_draw (w);
 }
 
@@ -1751,14 +1755,38 @@ static void main_win_add_to_plist (struct main_win *w, const struct plist *plist
 		main_win_draw (w);
 }
 
-static int main_win_get_files_time (const struct main_win *w)
+static int main_win_get_files_time (const struct main_win *w,
+		const enum iface_menu menu)
+{
+	struct side_menu *m;
+	
+	assert (w != NULL);
+
+	m = find_side_menu ((struct main_win *)w, iface_to_side_menu(menu));
+
+	return side_menu_get_files_time (m);
+}
+
+static int main_win_is_time_for_all (const struct main_win *w,
+		const enum iface_menu menu)
+{
+	struct side_menu *m;
+	
+	assert (w != NULL);
+
+	m = find_side_menu ((struct main_win *)w, iface_to_side_menu(menu));
+
+	return side_menu_is_time_for_all (m);
+}
+
+static int main_win_get_curr_files_time (const struct main_win *w)
 {
 	assert (w != NULL);
 
 	return side_menu_get_files_time (&w->menus[w->selected_menu]);
 }
 
-static int main_win_is_time_for_all (const struct main_win *w)
+static int main_win_is_curr_time_for_all (const struct main_win *w)
 {
 	assert (w != NULL);
 
@@ -2908,8 +2936,9 @@ void iface_set_dir_content (const enum iface_menu iface_menu,
 {
 	main_win_set_dir_content (&main_win, iface_menu, files, dirs,
 			playlists);
-	info_win_set_files_time (&info_win, main_win_get_files_time(&main_win),
-			main_win_is_time_for_all(&main_win));
+	info_win_set_files_time (&info_win,
+			main_win_get_files_time(&main_win, iface_menu),
+			main_win_is_time_for_all(&main_win, iface_menu));
 
 	iface_show_num_files (plist_count(files) + (dirs ? dirs->num : 0)
 			+ (playlists ? playlists->num : 0));
@@ -2927,8 +2956,9 @@ void iface_update_dir_content (const enum iface_menu iface_menu,
 {
 	main_win_update_dir_content (&main_win, iface_menu, files, dirs,
 			playlists);
-	info_win_set_files_time (&info_win, main_win_get_files_time(&main_win),
-			main_win_is_time_for_all(&main_win));
+	info_win_set_files_time (&info_win,
+			main_win_get_files_time(&main_win, iface_menu),
+			main_win_is_time_for_all(&main_win, iface_menu));
 	
 	iface_show_num_files (plist_count(files) + (dirs ? dirs->num : 0)
 			+ (playlists ? playlists->num : 0));
@@ -2937,14 +2967,16 @@ void iface_update_dir_content (const enum iface_menu iface_menu,
 	wrefresh (main_win.win);
 }
 
-/* Update item title and time on all menus where it's present. */
-void iface_update_item (const struct plist *plist, const int n)
+/* Update item title and time in the menu. */
+void iface_update_item (const enum iface_menu menu,
+		const struct plist *plist, const int n)
 {
 	assert (plist != NULL);
 
-	main_win_update_item (&main_win, plist, n);
-	info_win_set_files_time (&info_win, main_win_get_files_time(&main_win),
-			main_win_is_time_for_all(&main_win));
+	main_win_update_item (&main_win, menu, plist, n);
+	info_win_set_files_time (&info_win,
+			main_win_get_curr_files_time(&main_win),
+			main_win_is_curr_time_for_all(&main_win));
 	wrefresh (info_win.win);
 	wrefresh (main_win.win);
 }
@@ -3140,8 +3172,9 @@ void iface_set_mixer_value (const int value)
 void iface_switch_to_plist ()
 {
 	main_win_switch_to (&main_win, MENU_PLAYLIST);
-	info_win_set_files_time (&info_win, main_win_get_files_time(&main_win),
-			main_win_is_time_for_all(&main_win));
+	info_win_set_files_time (&info_win,
+			main_win_get_curr_files_time(&main_win),
+			main_win_is_curr_time_for_all(&main_win));
 	wrefresh (info_win.win);
 	wrefresh (main_win.win);
 }
@@ -3150,8 +3183,9 @@ void iface_switch_to_plist ()
 void iface_switch_to_dir ()
 {
 	main_win_switch_to (&main_win, MENU_DIR);
-	info_win_set_files_time (&info_win, main_win_get_files_time(&main_win),
-			main_win_is_time_for_all(&main_win));
+	info_win_set_files_time (&info_win,
+			main_win_get_curr_files_time(&main_win),
+			main_win_is_curr_time_for_all(&main_win));
 	wrefresh (info_win.win);
 	wrefresh (main_win.win);
 }
@@ -3162,8 +3196,9 @@ void iface_add_to_plist (const struct plist *plist, const int num)
 	assert (plist != NULL);
 	
 	main_win_add_to_plist (&main_win, plist, num);
-	info_win_set_files_time (&info_win, main_win_get_files_time(&main_win),
-			main_win_is_time_for_all(&main_win));
+	info_win_set_files_time (&info_win,
+			main_win_get_curr_files_time(&main_win),
+			main_win_is_curr_time_for_all(&main_win));
 	
 	iface_show_num_files (plist_count(plist));
 		
@@ -3230,8 +3265,9 @@ void iface_del_plist_item (const char *file)
 	assert (file != NULL);
 
 	main_win_del_plist_item (&main_win, file);
-	info_win_set_files_time (&info_win, main_win_get_files_time(&main_win),
-			main_win_is_time_for_all(&main_win));
+	info_win_set_files_time (&info_win,
+			main_win_get_curr_files_time(&main_win),
+			main_win_is_curr_time_for_all(&main_win));
 	wrefresh (info_win.win);
 	wrefresh (main_win.win);
 }

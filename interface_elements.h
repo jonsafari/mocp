@@ -61,7 +61,8 @@ enum file_type iface_curritem_get_type ();
 int iface_in_dir_menu ();
 int iface_in_plist_menu ();
 char *iface_get_curr_file ();
-void iface_update_item (const struct plist *plist, const int n);
+void iface_update_item (const enum iface_menu menu, const struct plist *plist,
+		const int n);
 void iface_set_curr_time (const int time);
 void iface_set_total_time (const int time);
 void iface_set_state (const int state);
