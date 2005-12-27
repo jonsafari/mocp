@@ -586,7 +586,6 @@ static void update_item_tags (struct plist *plist, const int num,
 static void ev_file_tags (const struct tag_ev_response *data)
 {
 	int n;
-	int found;
 
 	assert (data != NULL);
 	assert (data->file != NULL);
@@ -596,16 +595,12 @@ static void ev_file_tags (const struct tag_ev_response *data)
 
 	if ((n = plist_find_fname(dir_plist, data->file)) != -1) {
 		update_item_tags (dir_plist, n, data->tags);
-		iface_update_item (dir_plist, n);
-		found = 1;
+		iface_update_item (IFACE_MENU_DIR, dir_plist, n);
 	}
-	else
-		found = 0;
 	
 	if ((n = plist_find_fname(playlist, data->file)) != -1) {
 		update_item_tags (playlist, n, data->tags);
-		if (!found) /* don't do it twice */
-			iface_update_item (playlist, n);
+		iface_update_item (IFACE_MENU_PLIST, playlist, n);
 	}
 
 	if (curr_file.file && !strcmp(data->file, curr_file.file)) {
@@ -2148,7 +2143,8 @@ static void entry_key (const struct iface_key *k)
 }
 
 /* Update items in the menu for all items on the playlist. */
-static void update_iface_menu (const struct plist *plist)
+static void update_iface_menu (const enum iface_menu menu,
+		const const struct plist *plist)
 {
 	int i;
 	
@@ -2156,7 +2152,7 @@ static void update_iface_menu (const struct plist *plist)
 	
 	for (i = 0; i < plist->num; i++)
 		if (!plist_deleted(plist, i))
-			iface_update_item (plist, i);
+			iface_update_item (menu, plist, i);
 }
 
 /* Switch ReadTags options and update the menu. */
@@ -2177,8 +2173,8 @@ static void switch_read_tags ()
 		iface_set_status ("ReadTags: yes");
 	}
 
-	update_iface_menu (dir_plist);
-	update_iface_menu (playlist);
+	update_iface_menu (IFACE_MENU_DIR, dir_plist);
+	update_iface_menu (IFACE_MENU_PLIST, playlist);
 }
 
 static void seek (const int sec)
