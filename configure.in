@@ -28,6 +28,12 @@ AC_SUBST([DECODER_PLUGIN_DIR])
 PLUGIN_LDFLAGS='-module -avoid-version'
 AC_SUBST([PLUGIN_LDFLAGS])
 
+OS=`uname 2>/dev/null`
+if test "$OS" = "Linux"
+then
+	AC_DEFINE([LINUX], 1, [Define if you system is GNU/Linux])
+fi
+
 LDFLAGS="$LDFLAGS -export-dynamic"
 
 AC_HEADER_STDC
