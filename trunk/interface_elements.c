@@ -27,8 +27,10 @@
 #include <wctype.h>
 #include <wchar.h>
 
-// TODO: do we use this?
-#define _XOPEN_SOURCE_EXTENDED /* for ncurses wide character support */
+/* On FreeBSD 5.4 this breaks compilation, so use it only on Linux */
+#ifdef LINUX
+# define _XOPEN_SOURCE_EXTENDED /* for wget_wch() */
+#endif
 
 #ifdef HAVE_NCURSESW_H
 # include <ncursesw/curses.h>
