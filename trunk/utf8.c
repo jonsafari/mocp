@@ -229,7 +229,7 @@ void utf8_init ()
 #endif /* HAVE_NL_LANGINFO_CODESET */
 
 #ifdef HAVE_ICONV
-	if (!using_utf8) {
+	if (!using_utf8 && terminal_charset) {
 		iconv_desc = iconv_open (terminal_charset, "UTF-8");
 		if (iconv_desc == (iconv_t)(-1))
 			logit ("iconv_open() failed: %s", strerror(errno));
