@@ -74,7 +74,15 @@ For JACK (low-latency audio server):
 Which systems is MOC running on?
 --------------------------------------------------------------------------------
 
-I've tested it on Linux and FreeBSD.
+I develop and test MOC under GNU/Linux. Sometimes I try to run it on other
+operating systems, and I know it compiles and possibly works under:
+- FreeBSD
+- NetBSD
+- OpenBSD
+
+Not every release is extensivelly tested under other systems by me, so don't
+expect it to run perfectly under your OS. If you have any problems, please
+contact me, I'm interested where MOC can and cannot be used.
 
 --------------------------------------------------------------------------------
 How to install it?
@@ -87,7 +95,8 @@ type:
 And as root:
 	make install
 
-If you use FreeBSD, you may have to run configure in this way:
+Under FreeBSD, NetBSD, and possibly other systems it is required to run the
+configure script this way:
 ./configure LDFLAGS=-L/usr/local/lib CPPFLAGS=-I/usr/local/include
 
 --------------------------------------------------------------------------------
