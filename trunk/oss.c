@@ -19,7 +19,13 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <sys/soundcard.h>
+
+#ifdef HAVE_SOUNDCARD_H
+# include <soundcard.h>
+#else
+# include <sys/soundcard.h>
+#endif
+
 #include <errno.h>
 #include <string.h>
 #include <strings.h>

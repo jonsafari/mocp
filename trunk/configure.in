@@ -93,12 +93,13 @@ then
 fi
 
 COMPILE_OSS="no"
-AC_CHECK_HEADER([sys/soundcard.h],
-		[AC_DEFINE([HAVE_OSS], 1, [Define if you have OSS.])
-		EXTRA_OBJS="$EXTRA_OBJS oss.o"
-		COMPILE_OSS="yes"],)
-if test "$COMPILE_OSS" = yes
+AC_CHECK_HEADERS([sys/soundcard.h soundcard.h])
+if test "$ac_cv_header_sys_soundcard_h" = "yes" \
+	-o "$ac_cv_header_soundcard_h" = "yes"
 then
+	AC_DEFINE([HAVE_OSS], 1, [Define if you have OSS.])
+	EXTRA_OBJS="$EXTRA_OBJS oss.o"
+	COMPILE_OSS="yes"
 	AC_CHECK_LIB([ossaudio], [_oss_ioctl],
 		     [EXTRA_LIBS="$EXTRA_LIBS -lossaudio"])
 fi
