@@ -17,8 +17,6 @@
 # include "config.h"
 #endif
 
-#define _XOPEN_SOURCE   600 /* we need the POSIX version of strerror_r() */
-
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>
