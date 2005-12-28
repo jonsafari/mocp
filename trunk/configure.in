@@ -49,7 +49,7 @@ AC_CHECK_HEADERS([fcntl.h string.h strings.h sys/param.h unistd.h sys/un.h \
 		 AC_MSG_ERROR([Can't find required header files.]))
 AC_CHECK_HEADERS([sys/select.h inttypes.h limits.h stdint.h])
 
-AC_CHECK_FUNCS([sched_get_priority_max])
+AC_CHECK_FUNCS([sched_get_priority_max wcswidth])
 
 dnl langinfo
 AC_CHECK_HEADERS([langinfo.h])
