@@ -63,19 +63,45 @@ AC_TRY_LINK([
 	     # include <langinfo.h>
 	     #endif
 	     ], [char *cs = nl_langinfo(CODESET);],
-	     AC_MSG_RESULT(yes);
+	     AC_MSG_RESULT(yes)
 	     AC_DEFINE([HAVE_NL_LANGINFO_CODESET], 1,
 		       [Define if you have CODESET constant]),
 	     AC_MSG_RESULT(no))
 
 AC_C_BIGENDIAN
 
-dnl iconv()
-AC_CHECK_LIB([iconv], [iconv_open], [EXTRA_LIBS="$EXTRA_LIBS -liconv"])
-AC_CHECK_HEADERS([iconv.h],
-		 [AC_DEFINE([HAVE_ICONV], 1, [Define if you have iconv.h])
-		 COMPILE_ICONV=yes],
-		 [COMPILE_ICONV=no])
+AC_CHECK_HEADERS([iconv.h])
+
+dnl iconv test taken from VIM:
+dnl Link with iconv for charset translation, if not found without library.
+dnl check for iconv() requires including iconv.h
+dnl Add "-liconv" when possible; Solaris has iconv but use GNU iconv when it
+dnl has been installed.
+AC_MSG_CHECKING(for iconv_open())
+save_LIBS="$LIBS"
+LIBS="$LIBS -liconv"
+AC_TRY_LINK([
+#ifdef HAVE_ICONV_H
+# include <iconv.h>
+#endif
+    ], [iconv_open("fr", "to");],
+    AC_MSG_RESULT(yes; with -liconv)
+    AC_DEFINE([HAVE_ICONV], 1, [Define if you have iconv])
+    COMPILE_ICONV=yes
+    EXTRA_LIBS="$EXTRA_LIBS -liconv",
+    LIBS="$save_LIBS"
+    
+    AC_TRY_LINK([
+#ifdef HAVE_ICONV_H
+# include <iconv.h>
+#endif
+	], [iconv_open("fr", "to");],
+	AC_MSG_RESULT(yes)
+	AC_DEFINE([HAVE_ICONV], 1, [Define if you have iconv])
+	COMPILE_ICONV=yes,
+	AC_MSG_RESULT(no)
+	COMPILE_ICONV=no)
+        )
 
 AC_C_CONST
 AC_C_INLINE
