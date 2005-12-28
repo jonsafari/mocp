@@ -17,6 +17,7 @@ Before 2.4:
 * Add content of a playlist file to the playlist
 * Pause Internet streams - like stop (pause) and play (unpause) the same stream
 * After startup, show the playlist if we play from the playlist (as an option)
+* Review strcpy() usage, change to strncpy() where possible.
 
 In future:
 
