@@ -53,7 +53,20 @@ AC_CHECK_FUNCS([sched_get_priority_max])
 
 dnl langinfo
 AC_CHECK_HEADERS([langinfo.h])
+AC_CHECK_HEADERS([nl_types.h])
 AC_CHECK_FUNCS([nl_langinfo])
+
+dnl CODESET (taken from vim)
+AC_MSG_CHECKING(for nl_langinfo(CODESET))
+AC_TRY_LINK([
+	     #ifdef HAVE_LANGINFO_H
+	     # include <langinfo.h>
+	     #endif
+	     ], [char *cs = nl_langinfo(CODESET);],
+	     AC_MSG_RESULT(yes);
+	     AC_DEFINE([HAVE_NL_LANGINFO_CODESET], 1,
+		       [Define if you have CODESET constant]),
+	     AC_MSG_RESULT(no))
 
 AC_C_BIGENDIAN
 
@@ -83,8 +96,7 @@ COMPILE_OSS="no"
 AC_CHECK_HEADER([sys/soundcard.h],
 		[AC_DEFINE([HAVE_OSS], 1, [Define if you have OSS.])
 		EXTRA_OBJS="$EXTRA_OBJS oss.o"
-		COMPILE_OSS="yes"],
-		[echo -e "\nWARNING!!! YOU DONT HAVE OSS, THE PROGRAM CAN BE USELESS!\n"])
+		COMPILE_OSS="yes"],)
 if test "$COMPILE_OSS" = yes
 then
 	AC_CHECK_LIB([ossaudio], [_oss_ioctl],
@@ -112,6 +124,12 @@ then
 			   [COMPILE_JACK="no"])
 else
 	COMPILE_JACK="no"
+fi
+
+if test "$COMPILE_OSS" = "no" -a "$COMPILE_ALSA" = "no" \
+	-a "$COMPILE_JACK$" = "no"
+then
+	echo "\nNo Sound output method is to be compiled, you will not hear any sound!\n"
 fi
 
 AC_ARG_ENABLE(debug, AS_HELP_STRING(--disable-debug,Disable debug code))

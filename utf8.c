@@ -17,6 +17,9 @@
 #ifdef HAVE_ICONV
 # include <iconv.h>
 #endif
+#ifdef HAVE_NL_TYPES_H
+# include <nl_types.h>
+#endif
 #ifdef HAVE_LANGINFO_H
 # include <langinfo.h>
 #endif
@@ -202,6 +205,7 @@ static void iconv_cleanup ()
 
 void utf8_init ()
 {
+#ifdef HAVE_NL_LANGINFO_CODESET
 #ifdef HAVE_NL_LANGINFO
 	terminal_charset = xstrdup (nl_langinfo(CODESET));
 	assert (terminal_charset != NULL);
@@ -222,6 +226,7 @@ void utf8_init ()
 	terminal_charset = xstrdup ("US-ASCII");
 	logit ("Assuming US-ASCII terminal character set");
 #endif /* HAVE_NL_LANGINFO */
+#endif /* HAVE_NL_LANGINFO_CODESET */
 
 #ifdef HAVE_ICONV
 	if (!using_utf8) {
