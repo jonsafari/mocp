@@ -29,10 +29,15 @@ PLUGIN_LDFLAGS='-module -avoid-version'
 AC_SUBST([PLUGIN_LDFLAGS])
 
 OS=`uname 2>/dev/null`
-if test "$OS" = "Linux"
-then
-	AC_DEFINE([LINUX], 1, [Define if you system is GNU/Linux])
-fi
+
+case "$OS" in
+	Linux)
+		AC_DEFINE([LINUX], 1, [Define if your system is GNU/Linux])
+		;;
+	OpenBSD)
+		AC_DEFINE([OPENBSD], 1, [Define if your system is OpenBSD])
+		;;
+esac
 
 LDFLAGS="$LDFLAGS -export-dynamic"
 

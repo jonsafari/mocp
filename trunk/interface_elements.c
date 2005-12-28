@@ -15,7 +15,10 @@
 # include "config.h"
 #endif
 
-#define _XOPEN_SOURCE	500 /* for wcswidth() */
+/* _XOPEN_SOURCE is known to break cmpilation under OpenBSD */
+#ifndef OPENBSD
+# define _XOPEN_SOURCE	500 /* for wcswidth() */
+#endif
 
 #include <stdlib.h>
 #include <string.h>
