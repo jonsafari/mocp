@@ -386,7 +386,13 @@ static void entry_set_text (struct entry *e, const char *text)
 
 	mbstowcs (e->text_ucs, text, sizeof(e->text_ucs));
 	e->text_ucs[sizeof(e->text_ucs)-1] = L'\0';
+
+#ifdef HAVE_WCSWIDTH
 	width = wcswidth (e->text_ucs, 1024);
+#else
+	width = wcslen (e->text_ucs);
+#endif
+	
 	e->cur_pos = wcslen (e->text_ucs);
 	
 	if (e->cur_pos - e->display_from > e->width)
