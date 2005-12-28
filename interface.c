@@ -2144,7 +2144,7 @@ static void entry_key (const struct iface_key *k)
 
 /* Update items in the menu for all items on the playlist. */
 static void update_iface_menu (const enum iface_menu menu,
-		const const struct plist *plist)
+		const struct plist *plist)
 {
 	int i;
 	
