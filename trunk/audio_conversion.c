@@ -51,6 +51,7 @@
 #include "common.h"
 #include "log.h"
 #include "options.h"
+#include "compat.h"
 
 /* Byte order conversion */
 /* TODO: use functions from byteswap.h if available */
