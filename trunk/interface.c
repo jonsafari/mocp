@@ -2361,6 +2361,33 @@ static void do_silent_seek ()
 	}
 }
 
+/* Handle the 'next' command. */
+static void cmd_next ()
+{
+	if (curr_file.state != STATE_STOP)
+		send_int_to_srv (CMD_NEXT);
+	else if (plist_count(playlist)) {
+		if (plist_get_serial(playlist) != -1
+				|| get_server_plist_serial()
+				!= plist_get_serial(playlist)) {
+			int serial;
+			
+			send_int_to_srv (CMD_LOCK);
+			
+			send_playlist (playlist, 1);
+			serial = get_safe_serial();
+			plist_set_serial (playlist, serial);
+			send_int_to_srv (CMD_PLIST_SET_SERIAL);
+			send_int_to_srv (plist_get_serial(playlist));
+			
+			send_int_to_srv (CMD_UNLOCK);
+		}
+	
+		send_int_to_srv (CMD_PLAY);
+		send_str_to_srv ("");
+	}
+};
+
 /* Handle key */
 static void menu_key (const struct iface_key *k)
 {
@@ -2396,7 +2423,7 @@ static void menu_key (const struct iface_key *k)
 				send_int_to_srv (CMD_STOP);
 				break;
 			case KEY_CMD_NEXT:
-				send_int_to_srv (CMD_NEXT);
+				cmd_next ();
 				break;
 			case KEY_CMD_PREVIOUS:
 				send_int_to_srv (CMD_PREV);
