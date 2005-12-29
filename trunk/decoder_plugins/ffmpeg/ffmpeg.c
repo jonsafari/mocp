@@ -205,7 +205,7 @@ static int ffmpeg_decode (void *prv_data, char *buf, int buf_len,
 
 	sound_params->channels = data->enc->channels;
 	sound_params->rate = data->enc->sample_rate;
-	sound_params->fmt = SFMT_S16 | SFMT_LE;
+	sound_params->fmt = SFMT_S16 | SFMT_NE;
 	
 	if (data->remain_buf) {
 		int to_copy = MIN (buf_len, data->remain_buf_len);
@@ -335,12 +335,18 @@ static void ffmpeg_get_name (const char *file, char buf[4])
 		strcpy (buf, "RA");
 	else if (!strcasecmp(ext, "wma"))
 		strcpy (buf, "WMA");
+	else if (!strcasecmp(ext, "aac"))
+		strcpy (buf, "AAC");
+	else if (!strcasecmp(ext, "m4a"))
+		strcpy (buf, "M4A");
 }
 
 static int ffmpeg_our_format_ext (const char *ext)
 {
 	return !strcasecmp(ext, "wma")
-		|| !strcasecmp(ext, "ra");
+		|| !strcasecmp(ext, "ra")
+		|| !strcasecmp(ext, "m4a")
+		|| !strcasecmp(ext, "aac");
 }
 
 static void ffmpeg_get_error (void *prv_data, struct decoder_error *error)
