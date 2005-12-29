@@ -6,5 +6,6 @@ themes_DATA = transparent-background \
 	      yellow_red_theme \
 	      black_theme \
 	      moca_theme \
-	      red_theme
+	      red_theme \
+	      darkdot_theme
 EXTRA_DIST = $(themes_DATA)
