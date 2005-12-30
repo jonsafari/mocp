@@ -74,7 +74,8 @@ static void draw_item (const struct menu *menu, const struct menu_item *mi,
 	assert (menu != NULL);
 	assert (mi != NULL);
 	assert (pos >= 0);
-	assert (item_info_pos > menu->posx);
+	assert (item_info_pos > menu->posx
+			|| (!menu->show_time && !menu->show_format));
 	assert (title_space > 0);
 	assert (number_space == 0 || number_space >= 2);
 
