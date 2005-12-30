@@ -126,7 +126,9 @@ int xwaddstr (WINDOW *win, const char *str)
 int xwaddnstr (WINDOW *win, const char *str, const int n)
 {
 	int res;
+
 	assert (n > 0);
+	assert (str != NULL);
 	
 	if (using_utf8) {
 
@@ -142,7 +144,8 @@ int xwaddnstr (WINDOW *win, const char *str, const int n)
 		size = mbstowcs (NULL, str, 0);
 		ucs = (wchar_t *)xmalloc (sizeof(wchar_t) * (size + 1));
 		mbstowcs (ucs, str, size);
-		ucs[n] = L'\0';
+		if ((size_t)n < size)
+			ucs[n] = L'\0';
 		utf_num_chars = wcstombs (NULL, ucs, 0);
 		free (ucs);
 		res = waddnstr (win, str, utf_num_chars);
