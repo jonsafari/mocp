@@ -23,6 +23,7 @@
 #ifdef HAVE_LANGINFO_H
 # include <langinfo.h>
 #endif
+
 #ifdef HAVE_NCURSESW_H
 # include <ncursesw/curses.h>
 #elif HAVE_NCURSES_H
@@ -125,9 +126,27 @@ int xwaddstr (WINDOW *win, const char *str)
 int xwaddnstr (WINDOW *win, const char *str, const int n)
 {
 	int res;
+	assert (n > 0);
 	
-	if (using_utf8)
-		res = waddnstr (win, str, n);
+	if (using_utf8) {
+
+		/* This nasty hack is because we need to count n in chars, but
+		 * [w]addnstr() takes argument in bytes (in UTF-8 i char can be
+		 * more than 1 byte. There are also problems with [w]addnwstr()
+		 * (screen garbled). I have no better idea. */
+		
+		wchar_t *ucs;
+		size_t size;
+		size_t utf_num_chars;
+
+		size = mbstowcs (NULL, str, 0);
+		ucs = (wchar_t *)xmalloc (sizeof(wchar_t) * (size + 1));
+		mbstowcs (ucs, str, size);
+		ucs[n] = L'\0';
+		utf_num_chars = wcstombs (NULL, ucs, 0);
+		free (ucs);
+		res = waddnstr (win, str, utf_num_chars);
+	}
 	else {
 		char *lstr = iconv_str (str);
 
@@ -247,6 +266,5 @@ void utf8_cleanup ()
 /* Return the number of columns the string takes when displayed. */
 size_t strwidth (const char *s)
 {
-	return strlen (s); // temporary
-	// TODO: consider also UTF8 -> ASCII conversion
+	return mbstowcs (NULL, s, 0);
 }
