@@ -22,7 +22,9 @@
 
 /* Various functions that some systems lack of. */
 
+#ifndef HAVE_STRERROR_R
 static pthread_mutex_t strerror_r_mutex = PTHREAD_MUTEX_INITIALIZER;
+#endif
 
 #ifndef HAVE_STRERROR_R
 int strerror_r(int errnum, char *buf, size_t n)
@@ -48,7 +50,9 @@ int strerror_r(int errnum, char *buf, size_t n)
 
 void compat_cleanup ()
 {
+#ifndef HAVE_STRERROR_R
 	if (pthread_mutex_destroy(&strerror_r_mutex))
 		logit ("Can't destroy strerror_r_mutex: %s", strerror(errno));
+#endif
 
 }
