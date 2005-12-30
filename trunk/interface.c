@@ -2878,7 +2878,9 @@ static void add_recursively (struct plist *plist, char **args,
 		else {
 			strncpy (path, args[i], sizeof(path));
 			path[sizeof(path)-1] = 0;
-			resolve_path (path, sizeof(path), "");
+
+			if (!is_url(args[i]))
+				resolve_path (path, sizeof(path), "");
 		}
 			
 		dir = !is_url(path) && isdir(path);
