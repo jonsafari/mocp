@@ -1641,6 +1641,7 @@ static void add_dir_plist ()
 {
 	struct plist plist;
 	char *file;
+	enum file_type type;
 
 	if (iface_in_plist_menu()) {
 		error ("Can't add to the playlist a file from the "
@@ -1652,9 +1653,10 @@ static void add_dir_plist ()
 
 	if (!file)
 		return;
-	
-	if (iface_curritem_get_type() != F_DIR) {
-		error ("This is not a directory.");
+
+	type = iface_curritem_get_type ();
+	if (type != F_DIR && type != F_PLAYLIST) {
+		error ("This is not a directory or a playlist.");
 		free (file);
 		return;
 	}
@@ -1668,9 +1670,13 @@ static void add_dir_plist ()
 
 	iface_set_status ("reading directories...");
 	plist_init (&plist);
-	read_directory_recurr (file, &plist);
 
-	plist_sort_fname (&plist);
+	if (type == F_DIR) {
+		read_directory_recurr (file, &plist);
+		plist_sort_fname (&plist);
+	}
+	else
+		plist_load (&plist, file, cwd);
 	
 	send_int_to_srv (CMD_LOCK);
 
@@ -2863,9 +2869,10 @@ static void add_recursively (struct plist *plist, char **args,
 		if (!is_url(args[i]) && args[i][0] != '/') {
 			if (args[0][0] == '/')
 				strcpy (path, "/");
-			else if (!getcwd(path, sizeof(path)))
-				interface_fatal ("Can't get CWD: %s",
-						strerror(errno));
+			else {
+				strncpy (path, cwd, sizeof(path));
+				path[sizeof(path)-1] = 0;
+			}
 			resolve_path (path, sizeof(path), args[i]);
 		}
 		else {
@@ -2878,6 +2885,8 @@ static void add_recursively (struct plist *plist, char **args,
 
 		if (dir == 1)
 			read_directory_recurr (path, plist);
+		else if (is_plist_file(args[i]))
+			plist_load (plist, args[i], cwd);
 		else if ((is_url(path) || is_sound_file(path))
 				&& plist_find_fname(plist, path) == -1)
 			plist_add (plist, path);
@@ -2897,6 +2906,9 @@ void interface_cmdline_append (int server_sock, char **args,
 		plist_init (&clients_plist);
 		plist_init (&new);
 		
+		if (!getcwd(cwd, sizeof(cwd)))
+			fatal ("Can't get CWD: %s.", strerror(errno));
+		
 		if (recv_server_plist(&clients_plist)) {
 			add_recursively (&new, args, arg_num);
 			plist_sort_fname (&new);
@@ -2914,9 +2926,6 @@ void interface_cmdline_append (int server_sock, char **args,
 		else {
 			struct plist saved_plist;
 
-			if (!getcwd(cwd, sizeof(cwd)))
-				fatal ("Can't get CWD: %s.",
-						strerror(errno));
 			plist_init (&saved_plist);
 
 			/* this checks if the file exists */
