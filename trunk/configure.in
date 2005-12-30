@@ -349,11 +349,17 @@ then
 	AC_CHECK_PROG([FFMPEG_CONFIG], [ffmpeg-config], [yes])
 	if test "x$FFMPEG_CONFIG" = "xyes"
 	then
-		ffmpeg_CFLAGAS=`ffmpeg-config --cflags`
-		ffmpeg_LIBS=`ffmpeg-config --plugin-libs avformat`
-		AC_SUBST(ffmpeg_CFLAGAS)
-		AC_SUBST(ffmpeg_LIBS)
+		libavformat_CFLAGAS=`ffmpeg-config --cflags`
+		libavformat_LIBS=`ffmpeg-config --libs avformat`
+		AC_SUBST(libavformat_CFLAGAS)
+		AC_SUBST(libavformat_LIBS)
 		DECODER_PLUGINS="$DECODER_PLUGINS ffmpeg"
+	else
+		PKG_CHECK_MODULES(libavformat, libavformat,
+				  [AC_SUBST(libavformat_CFLAGS)
+				  AC_SUBST(libavformat_LIBS)
+				  DECODER_PLUGINS="$DECODER_PLUGINS ffmpeg"],
+				  [true])
 	fi
 fi
 
