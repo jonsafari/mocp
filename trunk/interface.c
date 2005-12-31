@@ -1419,8 +1419,13 @@ void init_interface (const int sock, const int logging, char **args,
 	
 	if (options_get_int("SyncPlaylist"))
 		send_int_to_srv (CMD_CAN_SEND_PLIST);
-	
+
 	update_state ();
+	
+	if (options_get_int("CanStartInPlaylist")
+			&& curr_file.file
+			&& plist_find_fname(playlist, curr_file.file) != -1)
+		iface_switch_to_plist ();
 }
 
 #ifdef SIGWINCH
