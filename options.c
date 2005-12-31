@@ -200,6 +200,7 @@ void options_init ()
 			"directory:0,0,100%,100% playlist:0,0,100%,100%");
 	option_add_str ("Layout3", NULL);
 	option_add_int ("FollowPlayedFile", 1);
+	option_add_int ("CanStartInPlaylist", 1);
 }
 
 /* Return 1 if a parameter to an integer option is valid. */
@@ -220,6 +221,7 @@ int check_int_option (const char *name, const int val)
 			|| !strcasecmp(name, "Mp3IgnoreCRCErrors")
 			|| !strcasecmp(name, "PlaylistNumbering")
 			|| !strcasecmp(name, "FollowPlayedFile")
+			|| !strcasecmp(name, "CanStartInPlaylist")
 			) {
 		if (!(val == 1 || val == 0))
 			return 0;

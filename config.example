@@ -241,3 +241,8 @@ TagsCacheSize		= 256
 # When the song changes, should the menu be scrolled so that the currently
 # played file is visible?
 FollowPlayedFile	= yes
+
+# What to do if the interface was started and something from the playlist is
+# playing? If CanStartInPlaylist is set to "yes", the interface will switch to
+# the playlist. When set to "no" it will start from the last directory.
+CanStartInPlaylist	= yes
