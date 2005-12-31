@@ -1362,7 +1362,6 @@ void init_interface (const int sock, const int logging, char **args,
 #ifdef SIGWINCH
 	signal (SIGWINCH, sig_winch);
 #endif
-	
 
 	if (arg_num) {
 		process_args (args, arg_num);
