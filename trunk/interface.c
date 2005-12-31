@@ -671,6 +671,10 @@ static void update_curr_file ()
 	if (file[0]) {
 		if (!curr_file.file || strcmp(file, curr_file.file)) {
 			file_info_cleanup (&curr_file);
+
+			/* The total time could not get reset. */
+			iface_set_total_time (-1);
+			
 			iface_set_played_file (file);
 			send_tags_request (file, TAGS_COMMENTS | TAGS_TIME);
 			curr_file.file = file;
