@@ -94,6 +94,10 @@ static struct sound_params req_sound_params = { 0, 0, 0 };
 static struct audio_conversion sound_conv;
 static int need_audio_conversion = 0;
 
+/* URL of the last played stream. Used to fake pause/unpause of internet
+ * streams. Protected by curr_playing_mu. */
+static char *last_stream_url = NULL;
+
 /* Check if the two sample rates don't differ as much that we can't play. */
 #define sample_rate_compat(sound, device) ((device) * 1.05 >= sound \
 		&& (device) * 0.95 <= sound)
@@ -399,6 +403,10 @@ static void *play_thread (void *unused ATTR_UNUSED)
 			free (curr_playing_fname);
 			curr_playing_fname = NULL;
 		}
+		if (last_stream_url) {
+			free (last_stream_url);
+			last_stream_url = NULL;
+		}
 		UNLOCK (curr_playing_mut);
 
 		if (stop_playing) {
@@ -441,6 +449,17 @@ void audio_stop ()
 		stop_playing = 0;
 		logit ("done stopping");
 	}
+	else if (state == STATE_PAUSE) {
+		
+		/* Paused internet stream - we are in fact stopped already. */
+		if (curr_playing_fname) {
+			free (curr_playing_fname);
+			curr_playing_fname = NULL;
+		}
+
+		state = STATE_STOP;
+		state_change ();
+	}
 }
 
 /* Start playing from the file fname. If fname is an empty string,
@@ -479,14 +498,11 @@ void audio_play (const char *fname)
 			curr_playing = -1;
 	}
 	
-	if (curr_playing != -1) {
-		if (pthread_create(&playing_thread, NULL, play_thread, NULL))
-			error ("can't create thread");
-		play_thread_running = 1;
-	}
-	else
-		logit ("Client wanted to play a file not present on the "
-				"playlist.");
+	if (pthread_create(&playing_thread, NULL, play_thread,
+				curr_playing != -1 ? NULL : (void *)fname))
+		error ("can't create thread");
+	play_thread_running = 1;
+	
 	UNLOCK (plist_mut);
 	UNLOCK (curr_playing_mut);
 }
@@ -515,11 +531,26 @@ void audio_pause ()
 	if (curr_playing != -1) {
 		char *sname = plist_get_file (curr_plist, curr_playing);
 		
-		if (file_type(sname) != F_URL) {
-			out_buf_pause (&out_buf);
-			state = STATE_PAUSE;
-			state_change ();
+	
+		if (file_type(sname) == F_URL) {
+			UNLOCK (curr_playing_mut);
+			UNLOCK (plist_mut);
+			audio_stop ();
+			LOCK (curr_playing_mut);
+			LOCK (plist_mut);
+
+			if (last_stream_url)
+				free (last_stream_url);
+			last_stream_url = xstrdup (sname);
+
+			/* Pretend that we are paused on this. */
+			curr_playing_fname = xstrdup (sname);
 		}
+		else
+			out_buf_pause (&out_buf);
+		
+		state = STATE_PAUSE;
+		state_change ();
 		
 		free (sname);
 	}
@@ -530,9 +561,22 @@ void audio_pause ()
 
 void audio_unpause ()
 {
-	out_buf_unpause (&out_buf);
-	state = STATE_PLAY;
-	state_change ();
+	LOCK (curr_playing_mut);
+	if (last_stream_url && file_type(last_stream_url) == F_URL) {
+		char *url = xstrdup (last_stream_url);
+
+		UNLOCK (curr_playing_mut);
+		audio_play (url);
+		free (url);
+	}
+	else if (curr_playing != -1) {
+		out_buf_unpause (&out_buf);
+		state = STATE_PLAY;
+		state_change ();
+		UNLOCK (curr_playing_mut);
+	}
+	else
+		UNLOCK (curr_playing_mut);
 }
 
 static void reset_sound_params (struct sound_params *params)
@@ -805,6 +849,9 @@ void audio_exit ()
 		logit ("Can't destroy plist_mut: %s", strerror(errno));
 	if (pthread_mutex_destroy(&request_mut))
 		logit ("Can't destroy request_mut: %s", strerror(errno));
+
+	if (last_stream_url)
+		free (last_stream_url);
 }
 
 void audio_seek (const int sec)

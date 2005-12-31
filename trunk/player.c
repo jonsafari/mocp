@@ -38,7 +38,9 @@ enum request
 {
 	REQ_NOTHING,
 	REQ_SEEK,
-	REQ_STOP
+	REQ_STOP,
+	REQ_PAUSE,
+	REQ_UNPAUSE
 };
 
 struct bitrate_list_node
@@ -796,6 +798,25 @@ void player_seek (const int sec)
 {
 	request = REQ_SEEK;
 	req_seek = sec + audio_get_time();
+	LOCK (request_cond_mutex);
+	pthread_cond_signal (&request_cond);
+	UNLOCK (request_cond_mutex);
+}
+
+/* Stop playing, clear the output buffer, but allow to unpause by starting
+ * playing the same stream. This is usefull for internet streams that can't
+ * be really paused. */
+void player_pause ()
+{
+	request = REQ_PAUSE;
+	LOCK (request_cond_mutex);
+	pthread_cond_signal (&request_cond);
+	UNLOCK (request_cond_mutex);
+}
+
+void player_unpause ()
+{
+	request = REQ_UNPAUSE;
 	LOCK (request_cond_mutex);
 	pthread_cond_signal (&request_cond);
 	UNLOCK (request_cond_mutex);
