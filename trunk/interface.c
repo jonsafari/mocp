@@ -1324,8 +1324,12 @@ static void load_playlist ()
 {
 	char *plist_file = create_file_name ("playlist.m3u");
 
-	if (file_type(plist_file) == F_PLAYLIST)
+	if (file_type(plist_file) == F_PLAYLIST) {
 		go_to_playlist (plist_file);
+
+		/* We don't want to swith to the playlist after loading. */
+		waiting_for_plist_load = 0;
+	}
 }
 
 void init_interface (const int sock, const int logging, char **args,
