@@ -590,6 +590,17 @@ void tags_cache_load (struct tags_cache *c, const char *file_name)
 		
 		if (tags->title)
 			tags->filled |= TAGS_COMMENTS;
+		else {
+			if (tags->artist) {
+				free (tags->artist);
+				tags->artist = NULL;
+			}
+			if (tags->album) {
+				free (tags->album);
+				tags->album = NULL;
+			}
+				
+		}
 		if (tags->time != -1)
 			tags->filled |= TAGS_TIME;
 
