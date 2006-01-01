@@ -489,11 +489,11 @@ static void parse_icy_metadata (struct io_stream *s, const char *packet,
 		
 		while (*c && c - packet < size)
 			c++;
-		if (!*c)
+		if (c - packet < size && !*c)
 			parse_icy_string (s, p);
 		
 		/* pass the padding */
-		while (!*c && c - packet < size)
+		while (c - packet < size && !*c)
 			c++;
 	}
 }
@@ -514,17 +514,23 @@ static int read_icy_metadata (struct io_stream *s)
 		debug ("Got empty metadata packet");
 		return 1;
 	}
+
+	if (size_packet == 0) {
+		debug ("Got empty metadata packet");
+		return 1;
+	}
+	
 	size = size_packet * 16;
 
 	/* make sure that the whole packet is in the buffer */
 	while (s->curl.buf_fill < size && s->curl.handle
 			&& !s->stop_read_thread)
 		if (!curl_read_internal(s))
-			return -1;
+			return 0;
 
 	if (s->curl.buf_fill < size) {
 		logit ("Icy metadata packet broken");
-		return -1;
+		return 0;
 	}
 
 	packet = (char *)xmalloc (size);
