@@ -180,8 +180,7 @@ static void tags_cache_remove_oldest (struct tags_cache *c)
 		c->size -= n->size;
 		
 		free (n->file);
-		tags_clear (n->tags);
-		free (n->tags);
+		tags_free (n->tags);
 		free (n);
 	}
 }
