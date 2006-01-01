@@ -264,6 +264,13 @@ struct file_tags *read_file_tags (const char *file,
 	}
 
 	if (needed_tags) {
+
+		/* This makes sure that we don't cause a memory leak */
+		assert (!((needed_tags & TAGS_COMMENTS) &&
+					(tags->title
+					 || tags->artist
+					 || tags->album)));
+
 		df->info (file, tags, needed_tags);
 		tags->filled |= tags_sel;
 	}

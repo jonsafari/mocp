@@ -262,7 +262,7 @@ static void tags_cache_read_add (struct tags_cache *c, const int client_id,
 
 		if (time != -1) {
 			tags->time = time;
-			tags->filled = TAGS_TIME;
+			tags->filled |= TAGS_TIME;
 			tags_sel &= ~TAGS_TIME;
 		}
 	}
