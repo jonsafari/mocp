@@ -339,8 +339,12 @@ static void mp3_close (void *void_data)
 {
 	struct mp3_data *data = (struct mp3_data *)void_data;
 
-	if (data->ok)
+	if (data->ok) {
 		io_close (data->io_stream);
+		mad_stream_finish (&data->stream);
+		mad_frame_finish (&data->frame);
+		mad_synth_finish (&data->synth);
+	}
 	decoder_error_clear (&data->error);
 	free (data);
 }
