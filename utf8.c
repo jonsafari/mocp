@@ -141,10 +141,10 @@ int xwaddnstr (WINDOW *win, const char *str, const int n)
 		size_t size;
 		size_t utf_num_chars;
 
-		size = mbstowcs (NULL, str, 0);
-		ucs = (wchar_t *)xmalloc (sizeof(wchar_t) * (size + 1));
+		size = mbstowcs (NULL, str, 0) + 1;
+		ucs = (wchar_t *)xmalloc (sizeof(wchar_t) * size);
 		mbstowcs (ucs, str, size);
-		if ((size_t)n < size)
+		if ((size_t)n < size - 1)
 			ucs[n] = L'\0';
 		utf_num_chars = wcstombs (NULL, ucs, 0);
 		free (ucs);
