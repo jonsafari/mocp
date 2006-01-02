@@ -29,7 +29,7 @@
 #include "io.h"
 #include "audio.h"
 
-struct ogg_data
+struct vorbis_data
 {
 	struct io_stream *stream;
 	OggVorbis_File vf;
@@ -78,7 +78,7 @@ static void get_comment_tags (OggVorbis_File *vf, struct file_tags *info)
 }
 
 /* Return a malloc()ed description of an ov_*() error. */
-static char *ogg_strerror (const int code)
+static char *vorbis_strerror (const int code)
 {
 	char *err;
 	
@@ -106,12 +106,12 @@ static char *ogg_strerror (const int code)
 }
 
 /* Fill info structure with data from ogg comments */
-static void ogg_info (const char *file_name, struct file_tags *info,
+static void vorbis_tags (const char *file_name, struct file_tags *info,
 		const int tags_sel)
 {
 	OggVorbis_File vf;
 	FILE *file;
-	int ogg_time;
+	int vorbis_time;
 	int err_code;
 
 	if (!(file = fopen (file_name, "r"))) {
@@ -123,10 +123,10 @@ static void ogg_info (const char *file_name, struct file_tags *info,
 	 * with it. */
 	if (tags_sel & TAGS_TIME) {
 		if ((err_code = ov_open(file, &vf, NULL, 0)) < 0) {
-			char *ogg_err = ogg_strerror (err_code);
+			char *vorbis_err = vorbis_strerror (err_code);
 			
-			logit ("Can't open %s: %s", file_name, ogg_err);
-			free (ogg_err);
+			logit ("Can't open %s: %s", file_name, vorbis_err);
+			free (vorbis_err);
 			fclose (file);
 			
 			return;
@@ -134,10 +134,10 @@ static void ogg_info (const char *file_name, struct file_tags *info,
 	}
 	else {
 		if ((err_code = ov_test(file, &vf, NULL, 0)) < 0) {
-			char *ogg_err = ogg_strerror (err_code);
+			char *vorbis_err = vorbis_strerror (err_code);
 			
-			logit ("Can't open %s: %s", file_name, ogg_err);
-			free (ogg_err);
+			logit ("Can't open %s: %s", file_name, vorbis_err);
+			free (vorbis_err);
 			fclose (file);
 			
 			return;
@@ -148,8 +148,8 @@ static void ogg_info (const char *file_name, struct file_tags *info,
 		get_comment_tags (&vf, info);
 
 	if ((tags_sel & TAGS_TIME)
-			&& (ogg_time = ov_time_total(&vf, -1)) != OV_EINVAL)
-		info->time = ogg_time;
+			&& (vorbis_time = ov_time_total(&vf, -1)) != OV_EINVAL)
+		info->time = vorbis_time;
 
 	ov_clear (&vf);
 }
@@ -193,7 +193,7 @@ static long tell_callback (void *datasource)
 	return io_tell (datasource);
 }
 
-static void ogg_open_stream_internal (struct ogg_data *data)
+static void vorbis_open_stream_internal (struct vorbis_data *data)
 {
 	int res;
 	ov_callbacks callbacks = {
@@ -207,12 +207,12 @@ static void ogg_open_stream_internal (struct ogg_data *data)
 	
 	if ((res = ov_open_callbacks(data->stream, &data->vf, NULL, 0,
 					callbacks)) < 0) {
-		char *ogg_err = ogg_strerror (res);
+		char *vorbis_err = vorbis_strerror (res);
 		
 		decoder_error (&data->error, ERROR_FATAL, 0,
-				ogg_err);
-		debug ("ov_open error: %s", ogg_err);
-		free (ogg_err);
+				vorbis_err);
+		debug ("ov_open error: %s", vorbis_err);
+		free (vorbis_err);
 
 		io_close (data->stream);
 	}
@@ -227,10 +227,10 @@ static void ogg_open_stream_internal (struct ogg_data *data)
 	}
 }
 
-static void *ogg_open (const char *file)
+static void *vorbis_open (const char *file)
 {
-	struct ogg_data *data;
-	data = (struct ogg_data *)xmalloc (sizeof(struct ogg_data));
+	struct vorbis_data *data;
+	data = (struct vorbis_data *)xmalloc (sizeof(struct vorbis_data));
 	data->ok = 0;
 
 	decoder_error_init (&data->error);
@@ -245,12 +245,12 @@ static void *ogg_open (const char *file)
 		io_close (data->stream);
 	}
 	else
-		ogg_open_stream_internal (data);
+		vorbis_open_stream_internal (data);
 	
 	return data;
 }
 
-static int ogg_can_decode (struct io_stream *stream)
+static int vorbis_can_decode (struct io_stream *stream)
 {
 	char buf[34];
 
@@ -261,23 +261,23 @@ static int ogg_can_decode (struct io_stream *stream)
 	return 0;
 }
 
-static void *ogg_open_stream (struct io_stream *stream)
+static void *vorbis_open_stream (struct io_stream *stream)
 {
-	struct ogg_data *data;
+	struct vorbis_data *data;
 
-	data = (struct ogg_data *)xmalloc (sizeof(struct ogg_data));
+	data = (struct vorbis_data *)xmalloc (sizeof(struct vorbis_data));
 	data->ok = 0;
 
 	decoder_error_init (&data->error);
 	data->stream = stream;
-	ogg_open_stream_internal (data);
+	vorbis_open_stream_internal (data);
 	
 	return data;
 }
 
-static void ogg_close (void *prv_data)
+static void vorbis_close (void *prv_data)
 {
-	struct ogg_data *data = (struct ogg_data *)prv_data;
+	struct vorbis_data *data = (struct vorbis_data *)prv_data;
 
 	if (data->ok) {
 		ov_clear (&data->vf);
@@ -290,17 +290,17 @@ static void ogg_close (void *prv_data)
 	free (data);
 }
 
-static int ogg_seek (void *prv_data, int sec)
+static int vorbis_seek (void *prv_data, int sec)
 {
-	struct ogg_data *data = (struct ogg_data *)prv_data;
+	struct vorbis_data *data = (struct vorbis_data *)prv_data;
 
 	return ov_time_seek (&data->vf, sec) ? -1 : sec;
 }
 
-static int ogg_decode (void *prv_data, char *buf, int buf_len,
+static int vorbis_decode (void *prv_data, char *buf, int buf_len,
 		struct sound_params *sound_params)
 {
-	struct ogg_data *data = (struct ogg_data *)prv_data;
+	struct vorbis_data *data = (struct vorbis_data *)prv_data;
 	int ret;
 	int current_section;
 	int bitrate;
@@ -346,9 +346,9 @@ static int ogg_decode (void *prv_data, char *buf, int buf_len,
 	return ret;
 }
 
-static int ogg_current_tags (void *prv_data, struct file_tags *tags)
+static int vorbis_current_tags (void *prv_data, struct file_tags *tags)
 {
-	struct ogg_data *data = (struct ogg_data *)prv_data;
+	struct vorbis_data *data = (struct vorbis_data *)prv_data;
 
 	tags_copy (tags, data->tags);
 
@@ -360,72 +360,72 @@ static int ogg_current_tags (void *prv_data, struct file_tags *tags)
 	return 0;
 }
 
-static int ogg_get_bitrate (void *prv_data)
+static int vorbis_get_bitrate (void *prv_data)
 {
-	struct ogg_data *data = (struct ogg_data *)prv_data;
+	struct vorbis_data *data = (struct vorbis_data *)prv_data;
 
 	return data->bitrate;
 }
 
-static int ogg_get_duration (void *prv_data)
+static int vorbis_get_duration (void *prv_data)
 {
-	struct ogg_data *data = (struct ogg_data *)prv_data;
+	struct vorbis_data *data = (struct vorbis_data *)prv_data;
 
 	return data->duration;
 }
 
-static struct io_stream *ogg_get_stream (void *prv_data)
+static struct io_stream *vorbis_get_stream (void *prv_data)
 {
-	struct ogg_data *data = (struct ogg_data *)prv_data;
+	struct vorbis_data *data = (struct vorbis_data *)prv_data;
 
 	return data->stream;
 }
 
-static void ogg_get_name (const char *file ATTR_UNUSED, char buf[4])
+static void vorbis_get_name (const char *file ATTR_UNUSED, char buf[4])
 {
 	strcpy (buf, "OGG");
 }
 
-static int ogg_our_format_ext (const char *ext)
+static int vorbis_our_format_ext (const char *ext)
 {
 	return !strcasecmp(ext, "ogg");
 }
 
-static void ogg_get_error (void *prv_data, struct decoder_error *error)
+static void vorbis_get_error (void *prv_data, struct decoder_error *error)
 {
-	struct ogg_data *data = (struct ogg_data *)prv_data;
+	struct vorbis_data *data = (struct vorbis_data *)prv_data;
 
 	decoder_error_copy (error, &data->error);
 }
 
-static int ogg_our_mime (const char *mime)
+static int vorbis_our_mime (const char *mime)
 {
 	return !strcmp(mime, "application/ogg")
 		|| !strcmp(mime, "application/x-ogg");
 }
 
-static struct decoder ogg_decoder = {
+static struct decoder vorbis_decoder = {
 	DECODER_API_VERSION,
 	NULL,
 	NULL,
-	ogg_open,
-	ogg_open_stream,
-	ogg_can_decode,
-	ogg_close,
-	ogg_decode,
-	ogg_seek,
-	ogg_info,
-	ogg_get_bitrate,
-	ogg_get_duration,
-	ogg_get_error,
-	ogg_our_format_ext,
-	ogg_our_mime,
-	ogg_get_name,
-	ogg_current_tags,
-	ogg_get_stream
+	vorbis_open,
+	vorbis_open_stream,
+	vorbis_can_decode,
+	vorbis_close,
+	vorbis_decode,
+	vorbis_seek,
+	vorbis_tags,
+	vorbis_get_bitrate,
+	vorbis_get_duration,
+	vorbis_get_error,
+	vorbis_our_format_ext,
+	vorbis_our_mime,
+	vorbis_get_name,
+	vorbis_current_tags,
+	vorbis_get_stream
 };
 
 struct decoder *plugin_init ()
 {
-	return &ogg_decoder;
+	return &vorbis_decoder;
 }
