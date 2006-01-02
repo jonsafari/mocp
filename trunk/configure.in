@@ -310,13 +310,15 @@ then
 fi
 
 dnl vorbis
-AC_ARG_WITH(ogg, AS_HELP_STRING(--without-ogg,Compile without OGG support.))
-if test "x$with_ogg" != "xno"
+AC_ARG_WITH(vorbis, AS_HELP_STRING(--without-vorbis,
+	    [Compile without Ogg Vorbis support.]))
+if test "x$with_vorbis" != "xno"
 then
-	PKG_CHECK_MODULES(OGG_VORBIS, [ogg >= 1.0 vorbis >= 1.0 vorbisfile >= 1.0],
+	PKG_CHECK_MODULES(OGG_VORBIS,
+			  [ogg >= 1.0 vorbis >= 1.0 vorbisfile >= 1.0],
 			  [AC_SUBST(OGG_VORBIS_LIBS)
 			  AC_SUBST(OGG_VORBIS_CFLAGS)
-			  DECODER_PLUGINS="$DECODER_PLUGINS ogg"],
+			  DECODER_PLUGINS="$DECODER_PLUGINS vorbis"],
 			  [true])
 fi
 
@@ -427,7 +429,7 @@ AC_OUTPUT([Makefile
 	  themes/Makefile
 	  decoder_plugins/Makefile
 	  decoder_plugins/mp3/Makefile
-	  decoder_plugins/ogg/Makefile
+	  decoder_plugins/vorbis/Makefile
 	  decoder_plugins/flac/Makefile
 	  decoder_plugins/sndfile/Makefile
 	  decoder_plugins/speex/Makefile
