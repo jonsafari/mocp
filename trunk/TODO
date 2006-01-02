@@ -4,14 +4,13 @@ Known bugs:
 - NONE
 
 Before 2.4:
-* After startup, show the playlist if we play from the playlist (as an option)
 *$ Toggle themes at run time.
 *$ a short cut to execute a command:
    http://moc.daper.net/phpBB2/viewtopic.php?p=186#186
-* Pause Internet streams - like stop (pause) and play (unpause) the same stream
 * Call clear_area only if windows are overlaping. (if this will improve the
   performance)
 * librcc for mp3 tags.
+* Valgrind
 
 In future:
 
