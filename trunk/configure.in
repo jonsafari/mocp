@@ -88,7 +88,8 @@ AC_TRY_LINK([
     AC_MSG_RESULT(yes; with -liconv)
     AC_DEFINE([HAVE_ICONV], 1, [Define if you have iconv])
     COMPILE_ICONV=yes
-    EXTRA_LIBS="$EXTRA_LIBS -liconv",
+    EXTRA_LIBS="$EXTRA_LIBS -liconv"
+    LIBS="$save_LIBS",
     LIBS="$save_LIBS"
     
     AC_TRY_LINK([
