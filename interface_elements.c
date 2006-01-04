@@ -30,7 +30,7 @@
 #include <wctype.h>
 #include <wchar.h>
 
-/* On FreeBSD 5.4 this breaks compilation, so use it only on Linux */
+/* This breaks compilationon FreeBSD 5.4, so use it only on Linux */
 #ifdef LINUX
 # define _XOPEN_SOURCE_EXTENDED /* for wget_wch() */
 #endif
