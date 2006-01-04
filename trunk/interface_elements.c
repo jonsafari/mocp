@@ -1034,6 +1034,9 @@ static void side_menu_draw_frame (const struct side_menu *m)
 {
 	char *title;
 
+	assert (m != NULL);
+	assert (m->visible);
+
 	if (m->title) {
 		int width = strwidth (m->title);
 
