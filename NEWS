@@ -1,3 +1,13 @@
+2.3.3
+	* Workaround for backspace key on many terminals (like aterm).
+	* Fixed a memory leak when playing internet streams. (rixx)
+	* Fixed a crash when an mpc file coudn't be read.
+	* Fixed a memory leak occuring with every played mp3 file.
+	* Fixed a memory leak when seeking in MPC file.
+	* Fixed compilation on OpenBSD. (Tilo Stritzky)
+	* Fixed parsing Icy metadata packages (possible segfault).
+	* Fixed resource leak when reading tags from invalid OGG file.
+	* Check if FileNamesIconv has valid format at startup like TagsIconv.
 2.3.2
 	* Optimized 24bit->16bit conversion. Helps playing mp3 on handheld
 	  devices without FPU.
