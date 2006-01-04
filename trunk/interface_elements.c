@@ -869,7 +869,7 @@ void sec_to_min (char *buff, const int seconds)
 		strcpy (buff, "!!!!!");
 }
 
-/* Make a title sutible to display in a menu from the title of a playlist item.
+/* Make a title suitable to display in a menu from the title of a playlist item.
  * Returned memory is malloc()ed.
  * made_from tags - was the playlist title made from tags? 
  * for_plist - is this title to be displayed in the playlist?
