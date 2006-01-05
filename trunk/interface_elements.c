@@ -3027,26 +3027,28 @@ void iface_get_key (struct iface_key *k)
 		interface_fatal ("wgetch() failed");
 	
 	if (ch < 255) { /* Regular char */
+		int meta;
+
 #ifdef HAVE_NCURSESW
 		ungetch (ch);
 		if (wget_wch(main_win.win, &ch) == ERR)
 			interface_fatal ("wget_wch() failed");
 #endif
-		k->type = IFACE_KEY_CHAR;
-		k->key.ucs = ch;
-	}
-	else {
-		int meta;
-	
-		/* Workaround for backspace on many terminals */
-		if (ch == 0x7f)
-			ch = KEY_BACKSPACE;
-	
 		/* Recognize meta sequences */
 		if (ch == KEY_ESCAPE
 				&& (meta = wgetch(main_win.win))
 				!= ERR)
 			ch = meta | META_KEY_FLAG;
+
+		k->type = IFACE_KEY_CHAR;
+		k->key.ucs = ch;
+	}
+	else {
+	
+		/* Workaround for backspace on many terminals */
+		if (ch == 0x7f)
+			ch = KEY_BACKSPACE;
+	
 		k->type = IFACE_KEY_FUNCTION;
 		k->key.func = ch;
 	}
