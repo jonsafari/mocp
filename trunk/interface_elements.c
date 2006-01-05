@@ -907,6 +907,7 @@ static int add_to_menu (struct menu *menu, const struct plist *plist,
 	struct menu_item *added;
 	const struct plist_item *item = &plist->items[num];
 	char *title;
+	const char *type_name;
 
 	title = make_menu_title (item->title, item->title == item->title_tags,
 			for_playlist);
@@ -926,7 +927,9 @@ static int add_to_menu (struct menu *menu, const struct plist *plist,
 	menu_item_set_attr_sel_marked (added,
 			get_color(CLR_MENU_ITEM_FILE_MARKED_SELECTED));
 	
-	menu_item_set_format (added, file_type_name(item->file));
+	if (!(type_name = file_type_name(item->file)))
+		type_name = "";
+	menu_item_set_format (added, type_name);
 
 	if (for_playlist && item->title == item->title_file)
 		menu_item_set_align (added, MENU_ALIGN_RIGHT);
