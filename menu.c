@@ -588,6 +588,7 @@ void menu_item_set_time (struct menu_item *mi, const char *time)
 void menu_item_set_format (struct menu_item *mi, const char *format)
 {
 	assert (mi != NULL);
+	assert (format != NULL);
 
 	mi->format[sizeof(mi->format)-1] = 0;
 	strncpy (mi->format, format,
