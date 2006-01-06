@@ -60,6 +60,7 @@ void iface_menu_key (const enum key_cmd cmd);
 enum file_type iface_curritem_get_type ();
 int iface_in_dir_menu ();
 int iface_in_plist_menu ();
+int iface_in_theme_menu ();
 char *iface_get_curr_file ();
 void iface_update_item (const enum iface_menu menu, const struct plist *plist,
 		const int n);
@@ -104,5 +105,8 @@ void iface_handle_help_key (const struct iface_key *k);
 void iface_toggle_layout ();
 void iface_swap_plist_items (const char *file1, const char *file2);
 void iface_make_visible (const enum iface_menu menu, const char *file);
+void iface_switch_to_theme_menu ();
+void iface_add_file (const char *file, const char *title,
+		const enum file_type type);
 
 #endif

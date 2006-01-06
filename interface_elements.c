@@ -71,6 +71,7 @@ enum side_menu_type
 {
 	MENU_DIR,	/* list of files in a directory */
 	MENU_PLAYLIST,	/* a playlist of files */
+	MENU_THEMES,	/* list of available themes */
 	MENU_TREE	/* tree of directories */
 };
 
@@ -655,6 +656,11 @@ static void side_menu_init (struct side_menu *m, const enum side_menu_type type,
 		menu_set_info_attr (m->menu.list.main,
 				get_color(CLR_MENU_ITEM_INFO));
 	}
+	else if (type == MENU_THEMES) {
+		m->menu.list.main = menu_new (m->win, m->posx + 1, m->posy + 1,
+				m->width - 2, m->height - 1);
+		m->menu.list.copy = NULL;
+	}
 	else
 		abort ();
 	
@@ -666,7 +672,8 @@ static void side_menu_destroy (struct side_menu *m)
 	assert (m != NULL);
 
 	if (m->visible) {
-		if (m->type == MENU_DIR || m->type == MENU_PLAYLIST) {
+		if (m->type == MENU_DIR || m->type == MENU_PLAYLIST
+				|| m->type == MENU_THEMES) {
 			menu_free (m->menu.list.main);
 			if (m->menu.list.copy)
 				menu_free (m->menu.list.copy);
@@ -837,6 +844,7 @@ static void main_win_destroy (struct main_win *w)
 
 	side_menu_destroy (&w->menus[0]);
 	side_menu_destroy (&w->menus[1]);
+	side_menu_destroy (&w->menus[2]);
 
 	if (w->win)
 		delwin (w->win);
@@ -1096,7 +1104,8 @@ static void side_menu_draw (const struct side_menu *m, const int active)
 	clear_area (m->win, m->posx, m->posy, m->width, m->height);
 	side_menu_draw_frame (m);
 	
-	if (m->type == MENU_DIR || m->type == MENU_PLAYLIST)
+	if (m->type == MENU_DIR || m->type == MENU_PLAYLIST
+			|| m->type == MENU_THEMES)
 		menu_draw (m->menu.list.main, active);
 	else
 		abort ();
@@ -1107,7 +1116,8 @@ static void side_menu_cmd (struct side_menu *m, const enum key_cmd cmd)
 	assert (m != NULL);
 	assert (m->visible);
 
-	if (m->type == MENU_DIR || m->type == MENU_PLAYLIST) {
+	if (m->type == MENU_DIR || m->type == MENU_PLAYLIST
+			|| m->type == MENU_THEMES) {
 		switch (cmd) {
 			case KEY_CMD_MENU_DOWN:
 				menu_driver (m->menu.list.main, REQ_DOWN);
@@ -1141,7 +1151,8 @@ static enum file_type side_menu_curritem_get_type (const struct side_menu *m)
 	
 	assert (m != NULL);
 	assert (m->visible);
-	assert (m->type == MENU_DIR || m->type == MENU_PLAYLIST);
+	assert (m->type == MENU_DIR || m->type == MENU_PLAYLIST
+			|| m->type == MENU_THEMES);
 
 	mi = menu_curritem (m->menu.list.main);
 
@@ -1157,7 +1168,8 @@ static char *side_menu_get_curr_file (const struct side_menu *m)
 	
 	assert (m != NULL);
 	assert (m->visible);
-	assert (m->type == MENU_DIR || m->type == MENU_PLAYLIST);
+	assert (m->type == MENU_DIR || m->type == MENU_PLAYLIST
+			|| m->type == MENU_THEMES);
 
 	mi = menu_curritem (m->menu.list.main);
 
@@ -1288,6 +1300,20 @@ static void side_menu_mark_file (struct side_menu *m, const char *file)
 		menu_mark_item (m->menu.list.copy, file);
 }
 
+static void side_menu_add_file (struct side_menu *m, const char *file,
+		const char *title, const enum file_type type)
+{
+	struct menu_item *added;
+	
+	added = menu_add (m->menu.list.main, title, type, file);
+
+	menu_item_set_attr_normal (added, get_color(CLR_MENU_ITEM_FILE));
+	menu_item_set_attr_sel (added, get_color(CLR_MENU_ITEM_FILE_SELECTED));
+	menu_item_set_attr_marked (added, get_color(CLR_MENU_ITEM_FILE_MARKED));
+	menu_item_set_attr_sel_marked (added,
+			get_color(CLR_MENU_ITEM_FILE_MARKED_SELECTED));
+}
+
 static int side_menu_add_plist_item (struct side_menu *m,
 		const struct plist *plist, const int num)
 {
@@ -1378,6 +1404,7 @@ static void side_menu_set_plist_time (struct side_menu *m, const int time,
 {
 	assert (m != NULL);
 	assert (time >= 0);
+	assert (m->type == MENU_DIR || m->type == MENU_PLAYLIST);
 	
 	m->total_time = time;
 	m->total_time_for_all = time_for_all;
@@ -1470,7 +1497,8 @@ static void side_menu_resize (struct side_menu *m,
 	m->height = wp->height;
 	m->width = wp->width;
 
-	if (m->type == MENU_DIR || m->type == MENU_PLAYLIST) {
+	if (m->type == MENU_DIR || m->type == MENU_PLAYLIST
+			|| m->type == MENU_THEMES) {
 		menu_update_size (m->menu.list.main, m->posx + 1, m->posy + 1,
 				m->width - 2, m->height - 1);
 		if (m->menu.list.copy)
@@ -1609,6 +1637,9 @@ static void main_win_switch_to (struct main_win *w,
 	
 	assert (w != NULL);
 
+	if (w->selected_menu == 2) /* if the themes menu is selected */
+		side_menu_destroy (&w->menus[2]);
+
 	for (i = 0; i < (int)(sizeof(w->menus)/sizeof(w->menus[0])); i++)
 		if (w->menus[i].type == menu) {
 			w->selected_menu = i;
@@ -1626,6 +1657,21 @@ static void main_win_switch_to_help (struct main_win *w)
 
 	w->in_help = 1;
 	main_win_draw (w);
+}
+
+static void main_win_create_themes_menu (struct main_win *w)
+{
+	struct window_params p;
+	
+	assert (w != NULL);
+
+	p.x = 0;
+	p.y = 0;
+	p.width = COLS;
+	p.height = LINES - 4;
+
+	side_menu_init (&w->menus[2], MENU_THEMES, w->win, &p);
+	side_menu_set_title (&w->menus[2], "Themes");
 }
 
 static void main_win_menu_cmd (struct main_win *w, const enum key_cmd cmd)
@@ -1669,6 +1715,13 @@ static int main_win_in_plist_menu (const struct main_win *w)
 	assert (w != NULL);
 
 	return w->menus[w->selected_menu].type == MENU_PLAYLIST;
+}
+
+static int main_win_in_theme_menu (const struct main_win *w)
+{
+	assert (w != NULL);
+
+	return w->menus[w->selected_menu].type == MENU_THEMES;
 }
 
 static void main_win_set_curr_item_title (struct main_win *w, const char *title)
@@ -1770,6 +1823,17 @@ static void main_win_add_to_plist (struct main_win *w, const struct plist *plist
 		side_menu_mark_file (m, w->curr_file);
 	if (need_redraw)
 		main_win_draw (w);
+}
+
+static void main_win_add_file (struct main_win *w, const char *file,
+		const char *title, const enum file_type type)
+{
+	assert (w != NULL);
+	assert (file != NULL);
+	assert (title != NULL);
+
+	side_menu_add_file (&w->menus[w->selected_menu], file, title, type);
+	main_win_draw (w);
 }
 
 static int main_win_get_files_time (const struct main_win *w,
@@ -1910,6 +1974,17 @@ static void main_win_resize (struct main_win *w)
 	
 	side_menu_resize (&w->menus[0], &l.menus[0]);
 	side_menu_resize (&w->menus[1], &l.menus[1]);
+
+	if (w->menus[2].visible) { /* Themes menu */
+		struct window_params p;
+	
+		p.x = 0;
+		p.y = 0;
+		p.width = COLS;
+		p.height = LINES - 4;
+
+		side_menu_resize (&w->menus[2], &p);
+	}
 
 	main_win_draw (w);
 }
@@ -3085,6 +3160,12 @@ int iface_in_plist_menu ()
 	return main_win_in_plist_menu (&main_win);
 }
 
+/* Return a non zero value if the theme menu is currently selected. */
+int iface_in_theme_menu ()
+{
+	return main_win_in_theme_menu (&main_win);
+}
+
 /* Return the currently selected file (malloc()ed) or NULL if the menu is
  * empty. */
 char *iface_get_curr_file ()
@@ -3194,6 +3275,7 @@ void iface_switch_to_plist ()
 	info_win_set_files_time (&info_win,
 			main_win_get_curr_files_time(&main_win),
 			main_win_is_curr_time_for_all(&main_win));
+
 	wrefresh (info_win.win);
 	wrefresh (main_win.win);
 }
@@ -3205,6 +3287,7 @@ void iface_switch_to_dir ()
 	info_win_set_files_time (&info_win,
 			main_win_get_curr_files_time(&main_win),
 			main_win_is_curr_time_for_all(&main_win));
+	
 	wrefresh (info_win.win);
 	wrefresh (main_win.win);
 }
@@ -3437,5 +3520,23 @@ void iface_make_visible (const enum iface_menu menu, const char *file)
 	main_win_make_visible (&main_win,
 			menu == IFACE_MENU_DIR ? MENU_DIR : MENU_PLAYLIST,
 			file);
+	wrefresh (main_win.win);
+}
+
+void iface_switch_to_theme_menu ()
+{
+	main_win_create_themes_menu (&main_win);
+	main_win_switch_to (&main_win, MENU_THEMES);
+	wrefresh (main_win.win);
+}
+
+/* Add a file to the current menu. */
+void iface_add_file (const char *file, const char *title,
+		const enum file_type type)
+{
+	assert (file != NULL);
+	assert (file != NULL);
+
+	main_win_add_file (&main_win, file, title, type);
 	wrefresh (main_win.win);
 }

@@ -41,5 +41,6 @@ enum color_index
 
 void theme_init (const int has_xterm);
 int get_color (const enum color_index);
+void themes_switch_theme (const char *file);
 
 #endif

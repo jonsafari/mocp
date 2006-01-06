@@ -631,6 +631,14 @@ static struct command commands[] = {
  		CON_MENU,
  		{ CTRL('U'), -1 },
  		1
+  	},
+ 	{
+ 		KEY_CMD_THEME_MENU,
+ 		"theme_menu",
+ 		"Switch to the theme selection menu",
+ 		CON_MENU,
+ 		{ 'T', -1 },
+ 		1
   	}
 };
 
