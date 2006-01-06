@@ -44,21 +44,22 @@
 
 static int colors[CLR_LAST];
 
+/* Counter used for making colors (init_pair()) */
+static short pair_count = 1;
+
 /* Initialize a color item of given index (CLR_*) with colors and
  * attributes. Do nothing if the item is already initialized. */
 static void make_color (const enum color_index index, const short foreground,
 		const short background,	const attr_t attr)
 {
-	static int pair = 1;
-
-	assert (pair < COLOR_PAIRS);
+	assert (pair_count < COLOR_PAIRS);
 	assert (index < CLR_LAST);
 
 	if (colors[index] == -1) {
-		init_pair (pair, foreground, background);
-		colors[index] = COLOR_PAIR (pair) | attr;
+		init_pair (pair_count, foreground, background);
+		colors[index] = COLOR_PAIR (pair_count) | attr;
 
-		pair++;
+		pair_count++;
 	}
 }
 
@@ -224,15 +225,20 @@ static short find_color_name (const char *name)
 	return -1;
 }
 
-static void new_colordef (const int line_num, const char *name, const short red,
-		const short green, const short blue)
+static int new_colordef (const int line_num, const char *name, const short red,
+		const short green, const short blue, const int errors_are_fatal)
 {
 	short color = find_color_name (name);
 
-	if (color == -1)
-		theme_parse_error (line_num, "bad color name");
+	if (color == -1) {
+		if (errors_are_fatal)
+			theme_parse_error (line_num, "bad color name");
+		return 0;
+	}
 	if (can_change_color())
 		init_color (color, red, green, blue);
+
+	return 1;
 }
 
 /* Find path to the theme for the given name. Returned memory is static. */
@@ -272,8 +278,11 @@ static char *find_theme_file (const char *name)
 }
 
 /* Parse a theme element line. strtok() should be already invoked and consumed
- * the element name. */
-static void parse_theme_element (const int line_num, const char *name)
+ * the element name.
+ * On error: if errors_are_fatal is true,
+ * theme_parse_error() is invoked, otherwise 0 is returned. */
+static int parse_theme_element (const int line_num, const char *name,
+		const int errors_are_fatal)
 {
 	char *tmp;
 	char *foreground, *background, *attributes;
@@ -281,21 +290,33 @@ static void parse_theme_element (const int line_num, const char *name)
 	enum color_index element;
 	short clr_fore, clr_back;
 
-	if (!(tmp = strtok(NULL, " \t")) || strcmp(tmp, "="))
-		theme_parse_error (line_num, "expected '='");
-	if (!(foreground = strtok(NULL, " \t")))
-		theme_parse_error (line_num, "foreground color not "
-				"specified");
-	if (!(background = strtok(NULL, " \t")))
-		theme_parse_error (line_num, "background color not "
-				"specified");
+	if (!(tmp = strtok(NULL, " \t")) || strcmp(tmp, "=")) {
+		if (errors_are_fatal)
+			theme_parse_error (line_num, "expected '='");
+		return 0;
+	}
+	if (!(foreground = strtok(NULL, " \t"))) {
+		if (errors_are_fatal)
+			theme_parse_error (line_num,
+					"foreground color not specified");
+		return 0;
+	}
+	if (!(background = strtok(NULL, " \t"))) {
+		if (errors_are_fatal)
+			theme_parse_error (line_num,
+					"background color not specified");
+		return 0;
+	}
 	if ((attributes = strtok(NULL, " \t"))) {
 		char *attr;
 
-		if ((tmp = strtok(NULL, " \t")))
-			theme_parse_error (line_num,
+		if ((tmp = strtok(NULL, " \t"))) {
+			if (errors_are_fatal)
+				theme_parse_error (line_num,
 					"unexpected chars at the end "
 					"of line");
+			return 0;
+		}
 		
 		attr = strtok (attributes, ",");
 
@@ -316,63 +337,102 @@ static void parse_theme_element (const int line_num, const char *name)
 				curses_attr |= A_BOLD;
 			else if (!strcasecmp(attr, "protect"))
 				curses_attr |= A_PROTECT;
-			else
-				theme_parse_error (line_num,
+			else {
+				if (errors_are_fatal)
+					theme_parse_error (line_num,
 						"unknown attribute");
+				return 0;
+			}
 		} while ((attr = strtok(NULL, ",")));
 	}
 
-	if ((element = find_color_element_name(name)) == CLR_WRONG)
-		theme_parse_error (line_num, "unknown element");
-	if ((clr_fore = find_color_name(foreground)) == -1)
-		theme_parse_error (line_num,
-				"bad foreground color name");
-	if ((clr_back = find_color_name(background)) == -1)
-		theme_parse_error (line_num,
-				"bad background color name");
+	if ((element = find_color_element_name(name)) == CLR_WRONG) {
+		if (errors_are_fatal)
+			theme_parse_error (line_num, "unknown element");
+		return 0;
+	}
+	if ((clr_fore = find_color_name(foreground)) == -1) {
+		if (errors_are_fatal)
+			theme_parse_error (line_num,
+					"bad foreground color name");
+		return 0;
+	}
+	if ((clr_back = find_color_name(background)) == -1) {
+		if (errors_are_fatal)
+			theme_parse_error (line_num,
+					"bad background color name");
+		return 0;
+	}
 
 	make_color (element, clr_fore, clr_back, curses_attr);
+
+	return 1;
 }
 
 /* Parse a color value. strtok() should be already invoked and should "point"
- * to the number. */
-static short parse_rgb_color_value (const int line_num)
+ * to the number. If errors_are_fatal, use theme_parse_error() on error,
+ * otherwise return -1. */
+static short parse_rgb_color_value (const int line_num,
+		const int errors_are_fatal)
 {
 	char *tmp;
 	char *end;
 	long color;
 
-	if (!(tmp = strtok(NULL, " \t")))
-		theme_parse_error (line_num, "3 color values expected");
+	if (!(tmp = strtok(NULL, " \t"))) {
+		if (errors_are_fatal)
+			theme_parse_error (line_num, "3 color values expected");
+		return -1;
+	}
 	color = strtol (tmp, &end, 10);
-	if (*end)
-		theme_parse_error (line_num, "color value is not a valid"
-				" number");
-	if (color < 0 || color > 1000)
-		theme_parse_error (line_num, "color value should be in range"
-				" 0-1000");
+	if (*end) {
+		if (errors_are_fatal)
+			theme_parse_error (line_num,
+					"color value is not a valid number");
+		return -1;
+	}
+	if (color < 0 || color > 1000) {
+		if (errors_are_fatal)
+			theme_parse_error (line_num,
+					"color value should be in range 0-1000");
+		return -1;
+	}
 
 	return color;
 }
 
 /* Parse a theme color definition. strtok() should be already invoked and
- * consumed 'colordef'. */
-static void parse_theme_colordef (const int line_num)
+ * consumed 'colordef'. On error: if errors_are_fatal is true,
+ * theme_parse_error() is invoked, otherwise 0 is returned. */
+static int parse_theme_colordef (const int line_num,
+		const int errors_are_fatal)
 {
 	char *name;
 	char *tmp;
 	short red, green, blue;
 
-	if (!(name = strtok(NULL, " \t")))
-		theme_parse_error (line_num, "expected color name");	
-	if (!(tmp = strtok(NULL, " \t")) || strcmp(tmp, "="))
-		theme_parse_error (line_num, "expected '='");
+	if (!(name = strtok(NULL, " \t"))) {
+		if (errors_are_fatal)
+			theme_parse_error (line_num, "expected color name");
+		return 0;
+	}
+	if (!(tmp = strtok(NULL, " \t")) || strcmp(tmp, "=")) {
+		if (errors_are_fatal)
+			theme_parse_error (line_num, "expected '='");
+		return 0;
+	}
 	
-	red = parse_rgb_color_value (line_num);
-	green = parse_rgb_color_value (line_num);
-	blue = parse_rgb_color_value (line_num);
+	if ((red = parse_rgb_color_value(line_num, errors_are_fatal) == -1)
+			|| (green = parse_rgb_color_value(line_num,
+					errors_are_fatal)) == -1
+			|| (blue = parse_rgb_color_value(line_num,
+					errors_are_fatal)) == -1)
+		return 0;
 
-	new_colordef (line_num, name, red, green, blue);
+	if (!new_colordef(line_num, name, red, green, blue, errors_are_fatal))
+		return 0;
+
+	return 1;
 }
 
 /* The lines should be in format:
@@ -381,40 +441,56 @@ static void parse_theme_colordef (const int line_num)
  * or:
  * colordef COLORNAME = RED GREEN BLUE
  * 
- * Blank lines and beginning with # are ignored, see example_theme. */
-static void parse_theme_line (const int line_num, char *line)
+ * Blank lines and beginning with # are ignored, see example_theme.
+ *
+ * On error: if errors_are_fatal is true, interface_fatal() is invoked,
+ * otherwise 0 is returned. */
+static int parse_theme_line (const int line_num, char *line,
+		const int errors_are_fatal)
 {
 	char *name;
 	
 	if (line[0] == '#' || !(name = strtok(line, " \t"))) {
 
 		/* empty line or a comment */
-		return;
+		return 1;
 	}
 
 	if (!strcasecmp(name, "colordef"))
-		parse_theme_colordef (line_num);
-	else
-		parse_theme_element (line_num, name);
+		return parse_theme_colordef (line_num, errors_are_fatal);
+	return parse_theme_element (line_num, name, errors_are_fatal);
 }
 
-static void load_color_theme (const char *name)
+/* Load a color theme. If errors_are_fatal is true, errors cause
+ * interface_fatal(), otherwise 0 is returned on error. */
+static int load_color_theme (const char *name, const int errors_are_fatal)
 {
 	FILE *file;
 	char *line;
 	int line_num = 0;
 	char *theme_file = find_theme_file (name);
 
-	if (!(file = fopen(theme_file, "r")))
-		interface_fatal ("Can't open theme file: %s", strerror(errno));
+	if (!(file = fopen(theme_file, "r"))) {
+		if (errors_are_fatal)
+			interface_fatal ("Can't open theme file: %s",
+					strerror(errno));
+		return 0;
+	}
 
 	while ((line = read_line(file))) {
+		int res;
+		
 		line_num++;
-		parse_theme_line (line_num, line);
+		res = parse_theme_line (line_num, line, errors_are_fatal);
 		free (line);
+
+		if (!res)
+			return 0;
 	}
 
 	fclose (file);
+
+	return 1;
 }
 
 static void reset_colors_table ()
@@ -431,11 +507,11 @@ void theme_init (const int has_xterm)
 
 	if (has_colors()) {
 		if (options_get_str("ForceTheme"))
-			load_color_theme (options_get_str("ForceTheme"));
+			load_color_theme (options_get_str("ForceTheme"), 1);
 		else if (has_xterm && options_get_str("XTermTheme"))
-			load_color_theme (options_get_str("XTermTheme"));
+			load_color_theme (options_get_str("XTermTheme"), 1);
 		else if (options_get_str("Theme"))
-			load_color_theme (options_get_str("Theme"));
+			load_color_theme (options_get_str("Theme"), 1);
 
 		set_default_colors ();
 	}
@@ -446,4 +522,18 @@ void theme_init (const int has_xterm)
 int get_color (const enum color_index index)
 {
 	return colors[index];
+}
+
+void themes_switch_theme (const char *file)
+{
+	if (has_colors()) {
+		pair_count = 1;
+		reset_colors_table ();
+		if (!load_color_theme(file, 0)) {
+			interface_error ("Error loading theme!");
+			pair_count = 1;
+			reset_colors_table ();
+			set_default_colors ();
+		}
+	}
 }

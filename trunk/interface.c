@@ -31,6 +31,16 @@
 # include <sys/select.h>
 #endif
 
+/* Include dirent for various systems */
+#ifdef HAVE_DIRENT_H
+# include <dirent.h>
+#else
+# define dirent direct
+# if HAVE_SYS_NDIR_H
+#  include <sys/ndir.h>
+# endif
+#endif
+
 #define DEBUG
 
 #include "log.h"
@@ -44,6 +54,7 @@
 #include "options.h"
 #include "files.h"
 #include "decoder.h"
+#include "themes.h"
 
 #define INTERFACE_LOG	"mocp_client_log"
 
@@ -2406,6 +2417,103 @@ static void cmd_next ()
 	}
 };
 
+/* Add themes found in the directory to the theme selection menu.
+ * Return the number of items added. */
+static int add_themes_to_menu (const char *themes_dir)
+{
+	DIR *dir;
+	struct dirent *entry;
+	int count = 0;
+
+	if (!(dir = opendir(themes_dir))) {
+		logit ("Can't open themes directory %s: %s", themes_dir,
+				strerror(errno));
+		return 0;
+	}
+
+	while ((entry = readdir(dir))) {
+		char file[PATH_MAX];
+		
+		if (entry->d_name[0] == '.')
+			continue;
+
+		/* Filter out backup files (file~) */
+		if (entry->d_name[strlen(entry->d_name)-1] == '~')
+			continue;
+
+		if (snprintf(file, sizeof(file), "%s/%s", themes_dir,
+					entry->d_name) >= (int)sizeof(file))
+			continue;
+
+		iface_add_file (file, entry->d_name, F_THEME);
+		count++;
+	}
+
+	closedir (dir);
+
+	return count;
+}
+
+static void make_theme_menu ()
+{
+	iface_switch_to_theme_menu ();
+
+	if (add_themes_to_menu (create_file_name("themes"))
+			+ add_themes_to_menu (SYSTEM_THEMES_DIR) == 0) {
+		if (!cwd[0])
+
+			/* we were at the playlist from the startup */
+			enter_first_dir ();
+		else
+			iface_switch_to_dir ();
+
+		error ("No themes found.");
+	}
+}
+
+/* Use theme from the currently selected file. */
+static void use_theme ()
+{
+	char *file = iface_get_curr_file ();
+
+	assert (iface_curritem_get_type() == F_THEME);
+
+	if (!file)
+		return;
+
+	themes_switch_theme (file);
+	iface_refresh ();
+
+	free (file);
+}
+
+/* Handle keys while in the theme menu. */
+static void theme_menu_key (const struct iface_key *k)
+{
+	if (!iface_key_is_resize(k)) {
+		enum key_cmd cmd = get_key_cmd (CON_MENU,
+				k->type == IFACE_KEY_CHAR ? k->key.ucs :
+				k->key.func);
+		
+		switch (cmd) {
+			case KEY_CMD_GO:
+				use_theme ();
+				break;
+			case KEY_CMD_MENU_DOWN:
+			case KEY_CMD_MENU_UP:
+			case KEY_CMD_MENU_NPAGE:
+			case KEY_CMD_MENU_PPAGE:
+			case KEY_CMD_MENU_FIRST:
+			case KEY_CMD_MENU_LAST:
+				iface_menu_key (cmd);
+				break;
+			default:
+				iface_switch_to_dir ();
+				logit ("Bad key");
+		}
+	}
+}
+
 /* Handle key */
 static void menu_key (const struct iface_key *k)
 {
@@ -2413,6 +2521,8 @@ static void menu_key (const struct iface_key *k)
 		iface_handle_help_key (k);
 	else if (iface_in_entry())
 		entry_key (k);
+	else if (iface_in_theme_menu())
+		theme_menu_key (k);
 	else if (!iface_key_is_resize(k)) {
 		enum key_cmd cmd = get_key_cmd (CON_MENU,
 				k->type == IFACE_KEY_CHAR ? k->key.ucs :
@@ -2677,6 +2787,9 @@ static void menu_key (const struct iface_key *k)
 				break;
 			case KEY_CMD_ADD_STREAM:
 				iface_make_entry (ENTRY_ADD_URL);
+				break;
+			case KEY_CMD_THEME_MENU:
+				make_theme_menu ();
 				break;
 			default:
 				abort ();
