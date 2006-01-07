@@ -436,6 +436,7 @@ AC_OUTPUT([Makefile
 	  decoder_plugins/speex/Makefile
 	  decoder_plugins/musepack/Makefile
 	  decoder_plugins/ffmpeg/Makefile
+	  moc.spec
 	  ])
 
 echo
