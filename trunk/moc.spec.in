@@ -1,0 +1,218 @@
+# This file is made by Fredrik Rambris <fredrik@rambirs.com>
+
+Name: moc
+Summary: Music on Console - Console audio player for Linux/UNIX
+Version: @VERSION@ 
+Release: 1
+License: GPL
+Group: Applications/Multimedia
+URL: http://moc.draper.net
+Source: ftp://ftp.daper.net/pub/soft/moc/stable/moc-%{version}.tar.bz2
+BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
+Requires: ncurses alsa-lib
+BuildRequires: ncurses-devel alsa-lib-devel
+
+%description
+MOC (music on console) is a console audio player for LINUX/UNIX designed to be
+powerful and easy to use. You just need to select a file from some directory
+using the menu similar to Midnight Commander, and MOC will start playing all
+files in this directory beginning from the chosen file.
+
+
+%if %{!?_without_mp3:1}0
+%package mp3
+Summary: MP3 decoder for MoC - Music on Console
+Group: Applications/Multimedia
+BuildRequires: libmad-devel libid3tag-devel
+Requires: libmad libid3tag
+Requires: %{name} = %{version}
+%description mp3
+MOC (music on console) is a console audio player for LINUX/UNIX designed to be
+powerful and easy to use. You just need to select a file from some directory
+using the menu similar to Midnight Commander, and MOC will start playing all
+files in this directory beginning from the chosen file.
+
+This package contains the MP3 decoder
+%endif
+
+%if %{?_with_musepack:1}0
+%package musepack 
+Summary: Musepack (MPC) decoder for MoC - Music on Console
+Group: Applications/Multimedia
+BuildRequires: libmpcdec-devel taglib-devel
+Requires: libmpcdec taglib
+Requires: %{name} = %{version}
+%description musepack 
+MOC (music on console) is a console audio player for LINUX/UNIX designed to be
+powerful and easy to use. You just need to select a file from some directory
+using the menu similar to Midnight Commander, and MOC will start playing all
+files in this directory beginning from the chosen file.
+
+This package contains the Musepack (MPC) decoder
+%endif
+
+%if %{!?_without_ogg:1}0
+%package ogg
+Summary: Ogg decoder for MoC - Music on Console
+Group: Applications/Multimedia
+BuildRequires: libogg-devel libvorbis-devel
+Requires: libogg libvorbis
+Requires: %{name} = %{version}
+%description ogg
+MOC (music on console) is a console audio player for LINUX/UNIX designed to be
+powerful and easy to use. You just need to select a file from some directory
+using the menu similar to Midnight Commander, and MOC will start playing all
+files in this directory beginning from the chosen file.
+
+This package contains the ogg decoder
+%endif
+
+%if %{!?_without_flac:1}0
+%package flac
+Summary: FLAC decoder for MoC - Music on Console
+Group: Applications/Multimedia
+BuildRequires: flac-devel 
+Requires: flac
+Requires: %{name} = %{version}
+%description flac 
+MOC (music on console) is a console audio player for LINUX/UNIX designed to be
+powerful and easy to use. You just need to select a file from some directory
+using the menu similar to Midnight Commander, and MOC will start playing all
+files in this directory beginning from the chosen file.
+
+This package contains the FLAC decoder
+%endif
+
+%if %{!?_without_sndfile:1}0
+%package sndfile
+Summary: Decoder of the sndfile formats for MoC - Music on Console
+Group: Applications/Multimedia
+BuildRequires: libsndfile-devel 
+Requires: libsndfile
+Requires: %{name} = %{version}
+%description sndfile
+MOC (music on console) is a console audio player for LINUX/UNIX designed to be
+powerful and easy to use. You just need to select a file from some directory
+using the menu similar to Midnight Commander, and MOC will start playing all
+files in this directory beginning from the chosen file.
+
+This package contains the decoders of sndfile
+%endif
+
+%if %{!?_without_speex:1}0
+%package speex
+Summary: Speex decoder for MoC - Music on Console
+Group: Applications/Multimedia
+BuildRequires: speex-devel 
+Requires: speex 
+Requires: %{name} = %{version}
+%description speex 
+MOC (music on console) is a console audio player for LINUX/UNIX designed to be
+powerful and easy to use. You just need to select a file from some directory
+using the menu similar to Midnight Commander, and MOC will start playing all
+files in this directory beginning from the chosen file.
+
+This package contains the Speex decoder
+%endif
+
+%if %{?_with_ffmpeg:1}0
+%package ffmpeg 
+Summary: FFMPEG (WMA, Real etc.) decoder for MoC - Music on Console
+Group: Applications/Multimedia
+BuildRequires: ffmpeg-devel
+Requires: ffmpeg
+Requires: %{name} = %{version}
+%description ffmpeg 
+MOC (music on console) is a console audio player for LINUX/UNIX designed to be
+powerful and easy to use. You just need to select a file from some directory
+using the menu similar to Midnight Commander, and MOC will start playing all
+files in this directory beginning from the chosen file.
+
+This package contains the FFMPEG (WMA, Real etc.) decoder
+%endif
+
+%if %{!?_without_samplerate:1}0
+BuildRequires: libsamplerate-devel 
+Requires: libsamplerate
+%endif
+
+%if %{!?_without_curl:1}0
+BuildRequires: curl-devel 
+Requires: curl 
+%endif
+
+
+%prep
+%setup -q
+
+%build
+%configure \
+		%{?_without_mp3:--without-mp3} \
+		%{!?_with_musepack:--without-musepack} \
+		%{?_without_ogg:--without-ogg} \
+		%{?_without_flac:--without-flac} \
+		%{?_without_sndfile:--without-sndfile} \
+		%{?_without_speex:--without-speex} \
+		%{?_without_samplerate:--without-samplerate} \
+		%{?_without_curl:--without-curl} \
+		%{!?_with_ffmpeg:--without-ffmpeg} \
+		--disable-debug
+%{__make} %{?_smp_mflags}
+			
+%install
+[ -n "$RPM_BUILD_ROOT" -a "$RPM_BUILD_ROOT" != / ] && rm -rf "$RPM_BUILD_ROOT"
+%makeinstall
+%{__rm} -rf $RPM_BUILD_ROOT/usr/share/doc/moc
+
+%clean
+[ -n "$RPM_BUILD_ROOT" -a "$RPM_BUILD_ROOT" != / ] && rm -rf "$RPM_BUILD_ROOT"
+
+%files
+%defattr(-, root, root)
+%doc README COPYING config.example keymap.example
+%_bindir/*
+%_datadir/%{name}/*
+%_mandir/*/*
+
+
+%if %{?_with_musepack:1}0
+%files musepack 
+%defattr(-, root, root)
+%_libdir/libmusepack_decoder.*
+%endif
+
+%if %{!?_without_flac:1}0
+%files flac
+%defattr(-, root, root)
+%_libdir/libflac_decoder.*
+%endif
+
+%if %{!?_without_mp3:1}0
+%files mp3
+%defattr(-, root, root)
+%_libdir/libmp3_decoder.*
+%endif
+
+%if %{!?_without_ogg:1}0
+%files ogg
+%defattr(-, root, root)
+%_libdir/libogg_decoder.*
+%endif
+
+%if %{!?_without_sndfile:1}0
+%files sndfile
+%defattr(-, root, root)
+%_libdir/libsndfile_formats_decoder.*
+%endif
+
+%if %{!?_without_speex:1}0
+%files speex 
+%defattr(-, root, root)
+%_libdir/libspeex_decoder.*
+%endif
+
+%if %{?_with_ffmpeg:1}0
+%files ffmpeg 
+%defattr(-, root, root)
+%_libdir/libffmpeg_decoder.*
+%endif
