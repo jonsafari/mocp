@@ -29,6 +29,10 @@
 #include <mad.h>
 #include <id3tag.h>
 #include <pthread.h>
+#include <assert.h>
+#ifdef HAVE_RCC
+# include <librcc.h>
+#endif
 
 #define DEBUG
 
@@ -99,6 +103,21 @@ static size_t fill_buff (struct mp3_data *data)
 	return read_size;
 }
 
+static char *do_rcc (char *str)
+{
+#ifdef HAVE_RCC
+	char *reencoded;
+
+	assert (str != NULL);
+
+	if (*str && (reencoded = rccRecode(NULL, 0, 1, str)) != NULL) {
+		free (str);
+		return reencoded;
+	}
+#endif
+	return str;
+}
+
 static char *get_tag (struct id3_tag *tag, const char *what)
 {
 	struct id3_frame *frame;
@@ -109,8 +128,11 @@ static char *get_tag (struct id3_tag *tag, const char *what)
 	frame = id3_tag_findframe (tag, what, 0);
 	if (frame && (field = &frame->fields[1])) {
 		ucs4 = id3_field_getstrings (field, 0);
-		if (ucs4)
+		if (ucs4) {
 			comm = (char *)id3_ucs4_utf8duplicate (ucs4);
+			if (comm)
+				comm = do_rcc (comm);
+		}
 	}
 
 	return comm;
@@ -661,10 +683,37 @@ static int mp3_can_decode (struct io_stream *stream)
 	return 0;
 }
 
+static void mp3_init ()
+{
+#ifdef HAVE_RCC
+	rcc_class classes[] = {
+		{ "input", RCC_CLASS_STANDARD, NULL, NULL, "Input Encoding",
+			0 },
+		{ "output", RCC_CLASS_TRANSLATE_LOCALE, "UTF-8", NULL,
+			"Output Encoding", 0 },
+		{ NULL, 0, NULL, NULL, NULL, 0 }
+	};
+
+	rccInit ();
+	rccInitDefaultContext(NULL, 0, 0, classes, 0);
+	rccLoad(NULL, "moc");
+	rccSetOption(NULL, RCC_OPTION_TRANSLATE,
+			RCC_OPTION_TRANSLATE_SKIP_PARRENT);
+	rccSetOption(NULL, RCC_OPTION_AUTODETECT_LANGUAGE, 1);
+#endif
+}
+
+static void mp3_destroy ()
+{
+#ifdef HAVE_RCC
+	rccFree ();
+#endif
+}
+
 static struct decoder mp3_decoder = {
 	DECODER_API_VERSION,
-	NULL,
-	NULL,
+	mp3_init,
+	mp3_destroy,
 	mp3_open,
 	mp3_open_stream,
 	mp3_can_decode,

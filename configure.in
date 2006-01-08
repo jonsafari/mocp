@@ -247,6 +247,22 @@ then
 			     [-lz])
 		AC_CHECK_HEADER([id3tag.h],,
 				[AC_MSG_ERROR([You need header file for libid3tag to compile with mp3 support, check the README file.])])
+
+		dnl librcc
+		AC_ARG_WITH(rcc, AS_HELP_STRING(--without-rcc,
+			    [Compile without LIBRCC support.]))
+		COMPILE_RCC=no
+		if test "x$with_rcc" != "xno"
+		then
+			AC_CHECK_HEADERS([librcc.h],
+					 [AC_DEFINE([HAVE_RCC], 1, [Define if you have librcc.h])
+					 AC_CHECK_LIB(rcc, rccInit,
+						      [RCC_LIBS="-lrcc"
+						       AC_SUBST([RCC_LIBS])
+						       COMPILE_RCC=yes])
+					 ])
+		fi
+		
 		DECODER_PLUGINS="$DECODER_PLUGINS mp3"
 	fi
 fi
@@ -448,6 +464,7 @@ echo "ALSA:              "$COMPILE_ALSA
 echo "JACK:              "$COMPILE_JACK
 echo "DEBUG:             "$COMPILE_DEBUG
 echo "ICONV:             "$COMPILE_ICONV
+echo "RCC:               "$COMPILE_RCC
 echo "Network streams:   "$COMPILE_CURL
 echo "Resampling:        "$COMPILE_SAMPLERATE
 echo

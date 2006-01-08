@@ -72,6 +72,9 @@ For resampling (playing files with sample rate not supported by your hardware):
 For JACK (low-latency audio server):
  - http://jackit.sourceforge.net/
 
+For librcc (fixes encoding in broken mp3 tags).
+ - http://rusxmms.sourceforge.net/
+
 --------------------------------------------------------------------------------
 Which systems is MOC running on?
 --------------------------------------------------------------------------------
