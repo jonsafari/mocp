@@ -123,6 +123,66 @@ int xwaddstr (WINDOW *win, const char *str)
 	return res;
 }
 
+/* Convert multi byte sequence to wide characters. Change invalid UTF-8
+ * sequences to '?'. dest can be NULL like in mbstowcs().
+ * If invalid_char is not null it will be set to 1 if an invalid character
+ * appears in the string, 0 otherwise. */
+static size_t xmbstowcs (wchar_t *dest, const char *src, size_t len,
+		int *invalid_char)
+{
+	mbstate_t ps;
+	size_t count = 0;
+
+	assert (src != NULL);
+	assert (!dest || len > 0);
+
+	memset (&ps, 0, sizeof(ps));
+
+	if (dest)
+		memset (dest, 0, len * sizeof(wchar_t));
+
+	if (invalid_char)
+		*invalid_char = 0;
+
+	while (src && (len || !dest)) {
+		size_t res;
+
+		res = mbsrtowcs (dest, &src, len, &ps);
+		if (res != (size_t)-1) {
+			count += res;
+			src = NULL;
+		}
+		else {
+			size_t converted;
+			
+			src++;
+			if (dest) {
+				converted = wcslen (dest);
+				dest += converted;
+				count += converted;
+				len -= converted;
+
+				if (len > 1) {
+					*dest = L'?';
+					dest++;
+					*dest = L'\0';
+					len--;
+				}
+				else
+					*(dest - 1) = L'\0';
+			}
+			else
+				count++;
+			memset (&ps, 0, sizeof(ps));
+
+			if (invalid_char)
+				*invalid_char = 1;
+		}
+	}
+
+	return count;
+}
+
 int xwaddnstr (WINDOW *win, const char *str, const int n)
 {
 	int res;
@@ -140,15 +200,23 @@ int xwaddnstr (WINDOW *win, const char *str, const int n)
 		wchar_t *ucs;
 		size_t size;
 		size_t utf_num_chars;
+		int inv_char;
 
-		size = mbstowcs (NULL, str, 0) + 1;
+		size = xmbstowcs (NULL, str, -1, NULL) + 1;
 		ucs = (wchar_t *)xmalloc (sizeof(wchar_t) * size);
-		mbstowcs (ucs, str, size);
+		xmbstowcs (ucs, str, size, &inv_char);
 		if ((size_t)n < size - 1)
 			ucs[n] = L'\0';
 		utf_num_chars = wcstombs (NULL, ucs, 0);
+		if (inv_char) {
+			char *utf8 = (char *)xmalloc (utf_num_chars + 1);
+
+			wcstombs (utf8, ucs, utf_num_chars + 1);
+			res = waddstr (win, utf8);
+		}
+		else
+			res = waddnstr (win, str, utf_num_chars);
 		free (ucs);
-		res = waddnstr (win, str, utf_num_chars);
 	}
 	else {
 		char *lstr = iconv_str (str);
@@ -269,5 +337,5 @@ void utf8_cleanup ()
 /* Return the number of columns the string takes when displayed. */
 size_t strwidth (const char *s)
 {
-	return mbstowcs (NULL, s, 0);
+	return xmbstowcs (NULL, s, -1, NULL);
 }
