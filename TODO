@@ -46,6 +46,7 @@ In future:
 * Add a key for switching sort modes.
 *$ Equalizel like in Beep Media Player
 *$ Make equal volume level for every song like in http://volnorm.sourceforge.net
+*$ Replaygain
 * Seek to arbitrary position (by typing a number).
 *$ VQF (like http://www.csn.ul.ie/~mel/projects/linux/vqfplugin/)
 *$ AAC by libfaad
