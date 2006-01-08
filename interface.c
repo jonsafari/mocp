@@ -1240,7 +1240,8 @@ static int get_server_playlist (struct plist *plist)
 	iface_set_status ("Getting the playlist...");
 	debug ("Getting the playlist...");
 	if (recv_server_plist(plist)) {
-		ask_for_tags (plist, get_tags_setting());
+		if (get_tags_setting())
+				ask_for_tags (plist, get_tags_setting());
 		switch_titles_tags (plist);
 		iface_set_status ("");
 		return 1;
@@ -1326,7 +1327,8 @@ static void process_args (char **args, const int num)
 
 	if (plist_count(playlist) && !options_get_int("SyncPlaylist")) {
 		switch_titles_file (playlist);
-		ask_for_tags (playlist, get_tags_setting());
+		if (get_tags_setting())
+			ask_for_tags (playlist, get_tags_setting());
 		iface_set_dir_content (IFACE_MENU_PLIST, playlist, NULL, NULL);
 		iface_switch_to_plist ();
 	}
