@@ -178,7 +178,7 @@ AC_FUNC_STAT
 AC_CHECK_FUNCS([getcwd memmove strcasecmp strdup strerror strncasecmp strrchr \
 		socket gettimeofday getenv fork setsid kill bind listen \
 		accept time connect unlink send recv select strftime \
-		localtime_r],,
+		localtime_r mbsrtowcs mbstowcs],,
 	       AC_MSG_ERROR([Required standard C functions are not present.]))
 
 dnl optional functions
