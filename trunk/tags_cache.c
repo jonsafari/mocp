@@ -528,7 +528,7 @@ void tags_cache_load (struct tags_cache *c, const char *file_name)
 			break;
 
 		
-		if (!fscanf(file, "%ld\n", &mod_time)) {
+		if (!fscanf(file, "%ld", &mod_time)) {
 			logit ("File broken, no modification time");
 			free (node_file_name);
 			break;
@@ -574,14 +574,14 @@ void tags_cache_load (struct tags_cache *c, const char *file_name)
 		else
 			free (tmp);
 
-		if (!fscanf(file, "%d\n", &tags->track)) {
+		if (!fscanf(file, "%d", &tags->track)) {
 			free (node_file_name);
 			tags_free (tags);
 			logit ("File broken, no track");
 			break;
 		}
 
-		if (!fscanf(file, "%d\n", &tags->time)) {
+		if (!fscanf(file, "%d", &tags->time)) {
 			free (node_file_name);
 			tags_free (tags);
 			logit ("File broken, no time");
