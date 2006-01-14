@@ -639,6 +639,86 @@ static struct command commands[] = {
  		CON_MENU,
  		{ 'T', -1 },
  		1
+  	},
+ 	{
+ 		KEY_CMD_EXEC1,
+ 		"exec_command1",
+ 		"Execute ExecCommand1",
+ 		CON_MENU,
+ 		{ KEY_F(1), -1 },
+ 		1
+  	},
+ 	{
+ 		KEY_CMD_EXEC2,
+ 		"exec_command2",
+ 		"Execute ExecCommand2",
+ 		CON_MENU,
+ 		{ KEY_F(2), -1 },
+ 		1
+  	},
+ 	{
+ 		KEY_CMD_EXEC3,
+ 		"exec_command3",
+ 		"Execute ExecCommand3",
+ 		CON_MENU,
+ 		{ KEY_F(3), -1 },
+ 		1
+  	},
+ 	{
+ 		KEY_CMD_EXEC4,
+ 		"exec_command4",
+ 		"Execute ExecCommand4",
+ 		CON_MENU,
+ 		{ KEY_F(4), -1 },
+ 		1
+  	},
+ 	{
+ 		KEY_CMD_EXEC5,
+ 		"exec_command5",
+ 		"Execute ExecCommand5",
+ 		CON_MENU,
+ 		{ KEY_F(5), -1 },
+ 		1
+  	},
+ 	{
+ 		KEY_CMD_EXEC6,
+ 		"exec_command6",
+ 		"Execute ExecCommand6",
+ 		CON_MENU,
+ 		{ KEY_F(6), -1 },
+ 		1
+  	},
+ 	{
+ 		KEY_CMD_EXEC7,
+ 		"exec_command7",
+ 		"Execute ExecCommand7",
+ 		CON_MENU,
+ 		{ KEY_F(7), -1 },
+ 		1
+  	},
+ 	{
+ 		KEY_CMD_EXEC8,
+ 		"exec_command8",
+ 		"Execute ExecCommand8",
+ 		CON_MENU,
+ 		{ KEY_F(8), -1 },
+ 		1
+  	},
+ 	{
+ 		KEY_CMD_EXEC9,
+ 		"exec_command9",
+ 		"Execute ExecCommand9",
+ 		CON_MENU,
+ 		{ KEY_F(9), -1 },
+ 		1
+  	},
+ 	{
+ 		KEY_CMD_EXEC10,
+ 		"exec_command10",
+ 		"Execute ExecCommand10",
+ 		CON_MENU,
+ 		{ KEY_F(10), -1 },
+ 		1
   	}
 };
 

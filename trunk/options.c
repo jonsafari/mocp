@@ -24,7 +24,7 @@
 #include "log.h"
 #include "options.h"
 
-#define OPTIONS_MAX	64
+#define OPTIONS_MAX	128
 #define OPTION_NAME_MAX	32
 
 enum option_type
@@ -185,6 +185,16 @@ void options_init ()
 	option_add_str ("FastDir8", NULL);
 	option_add_str ("FastDir9", NULL);
 	option_add_str ("FastDir10", NULL);
+	option_add_str ("ExecCommand1", NULL);
+	option_add_str ("ExecCommand2", NULL);
+	option_add_str ("ExecCommand3", NULL);
+	option_add_str ("ExecCommand4", NULL);
+	option_add_str ("ExecCommand5", NULL);
+	option_add_str ("ExecCommand6", NULL);
+	option_add_str ("ExecCommand7", NULL);
+	option_add_str ("ExecCommand8", NULL);
+	option_add_str ("ExecCommand9", NULL);
+	option_add_str ("ExecCommand10", NULL);
 	option_add_int ("Mp3IgnoreCRCErrors", 1);
 	option_add_int ("SeekTime", 1);
 	option_add_int ("SilentSeekTime", 5);
