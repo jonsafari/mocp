@@ -27,6 +27,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/time.h>
+#include <sys/wait.h>
 #ifdef HAVE_SYS_SELECT_H
 # include <sys/select.h>
 #endif
@@ -573,12 +574,14 @@ static void update_item_tags (struct plist *plist, const int num,
 	if (!(tags->filled & TAGS_TIME) && old_tags && old_tags->time != -1)
 		plist_set_item_time (plist, num, old_tags->time);
 
+	if (plist->items[num].title_tags) {
+		free (plist->items[num].title_tags);
+		plist->items[num].title_tags = NULL;
+	}
+
+	make_tags_title (plist, num);
+
 	if (options_get_int("ReadTags")) {
-		if (plist->items[num].title_tags) {
-			free (plist->items[num].title_tags);
-			plist->items[num].title_tags = NULL;
-		}
-		make_tags_title (plist, num);
 		if (plist->items[num].title_tags)
 			plist->items[num].title = plist->items[num].title_tags;
 		else {
@@ -631,6 +634,10 @@ static void ev_file_tags (const struct tag_ev_response *data)
 			curr_file.title = build_title (data->tags);
 			iface_set_played_file_title (curr_file.title);
 		}
+
+		if (curr_file.tags)
+			tags_free (curr_file.tags);
+		curr_file.tags = tags_dup (data->tags);
 	}
 }
 
@@ -2516,6 +2523,321 @@ static void theme_menu_key (const struct iface_key *k)
 	}
 }
 
+/* Make sure that we have tags and a title for this file which is in a menu. */
+static void make_sure_tags_exist (const char *file)
+{
+	struct plist *plist;
+	int item_num;
+
+	if (file_type(file) != F_SOUND)
+		return;
+
+	if ((item_num = plist_find_fname(dir_plist, file)) != -1)
+		plist = dir_plist;
+	else if ((item_num = plist_find_fname(playlist, file)) != -1)
+		plist = playlist;
+	else
+		return;
+
+	if (!plist->items[item_num].tags
+			|| plist->items[item_num].tags->filled
+				!= (TAGS_COMMENTS | TAGS_TIME)) {
+		int got_it = 0;
+		
+		send_tags_request (file, TAGS_COMMENTS | TAGS_TIME);
+
+		while (!got_it) {
+			int type = get_int_from_srv ();
+			void *data = get_event_data (type);
+			
+			if (type == EV_FILE_TAGS) {
+				struct tag_ev_response *ev
+					= (struct tag_ev_response *)data;
+
+				if (!strcmp(ev->file, file))
+					got_it = 1;
+			}
+
+			server_event (type, data);
+		}
+	}
+}
+
+/* Request tags from the server for a file in the playlist or the directory
+ * menu, wait until they arrive and return them (malloc()ed). */
+static struct file_tags *get_tags (const char *file)
+{
+	struct plist *plist;
+	int item_num;
+
+	make_sure_tags_exist (file);
+
+	if ((item_num = plist_find_fname(dir_plist, file)) != -1)
+		plist = dir_plist;
+	else if ((item_num = plist_find_fname(playlist, file)) != -1)
+		plist = playlist;
+	else
+		return tags_new ();
+
+	if (file_type(file) == F_SOUND)
+		return tags_dup (plist->items[item_num].tags);
+	
+	return tags_new ();
+}
+
+/* Get the title of a file (malloc()ed) that is present in a menu. */
+static char *get_title (const char *file)
+{
+	struct plist *plist;
+	int item_num;
+
+	make_sure_tags_exist (file);
+
+	if ((item_num = plist_find_fname(dir_plist, file)) != -1)
+		plist = dir_plist;
+	else if ((item_num = plist_find_fname(playlist, file)) != -1)
+		plist = playlist;
+	else
+		return NULL;
+	
+	return xstrdup (plist->items[item_num].title_tags
+			? plist->items[item_num].title_tags
+			: plist->items[item_num].title_file);
+}
+
+/* Substitute arguments for custom command that begin with '%'.
+ * The argument is free()ed is substituted, the new value is returned. */
+static char *custom_cmd_substitute (char *arg)
+{
+	if (!strcmp(arg, "%i")) {
+		char *file = iface_get_curr_file ();
+
+		free (arg);
+		arg = get_title (file);
+		free (file);
+	}
+	else if (!strcmp(arg, "%t")) {
+		struct file_tags *tags;
+		char *file = iface_get_curr_file ();
+		
+		free (arg);
+
+		tags = get_tags (file);
+		arg = xstrdup (tags->title);
+		
+		free (file);
+		tags_free (tags);
+	}
+	else if (!strcmp(arg, "%a")) {
+		struct file_tags *tags;
+		char *file = iface_get_curr_file ();
+		
+		free (arg);
+
+		tags = get_tags (file);
+		arg = xstrdup (tags->album);
+		
+		free (file);
+		tags_free (tags);
+	}
+	else if (!strcmp(arg, "%r")) {
+		struct file_tags *tags;
+		char *file = iface_get_curr_file ();
+		
+		free (arg);
+
+		tags = get_tags (file);
+		arg = xstrdup (tags->artist);
+		
+		free (file);
+		tags_free (tags);
+	}
+	else if (!strcmp(arg, "%n")) {
+		struct file_tags *tags;
+		char *file = iface_get_curr_file ();
+		
+		free (arg);
+
+		tags = get_tags (file);
+		arg = (char *)xmalloc(sizeof(char) * 10);
+		snprintf (arg, 10, "%d", tags->track);
+		
+		free (file);
+		tags_free (tags);
+	}
+	else if (!strcmp(arg, "%m")) {
+		struct file_tags *tags;
+		char *file = iface_get_curr_file ();
+		
+		free (arg);
+
+		tags = get_tags (file);
+		arg = (char *)xmalloc(sizeof(char) * 10);
+		snprintf (arg, 10, "%d", tags->time);
+		
+		free (file);
+		tags_free (tags);
+	}
+	else if (!strcmp(arg, "%f")) {
+		free (arg);
+		arg = iface_get_curr_file ();
+	}
+	else if (!strcmp(arg, "%I")) {
+		free (arg);
+		arg = xstrdup (curr_file.title);
+	}
+	else if (!strcmp(arg, "%T")) {
+		free (arg);
+		if (curr_file.tags && curr_file.tags->title)
+			arg = xstrdup (curr_file.tags->title);
+		else
+			arg = NULL;
+	}
+	else if (!strcmp(arg, "%A")) {
+		free (arg);
+		if (curr_file.tags && curr_file.tags->album)
+			arg = xstrdup (curr_file.tags->album);
+		else
+			arg = NULL;
+	}
+	else if (!strcmp(arg, "%R")) {
+		free (arg);
+		if (curr_file.tags && curr_file.tags->artist)
+			arg = xstrdup (curr_file.tags->artist);
+		else
+			arg = NULL;
+	}
+	else if (!strcmp(arg, "%N")) {
+		free (arg);
+		if (curr_file.tags && curr_file.tags->track != -1) {
+			arg = (char *)xmalloc(sizeof(char) * 10);
+			snprintf (arg, 10, "%d", curr_file.tags->track);
+		}
+		else
+			arg = NULL;
+	}
+	else if (!strcmp(arg, "%M")) {
+		free (arg);
+		if (curr_file.tags && curr_file.tags->time != -1) {
+			arg = (char *)xmalloc(sizeof(char) * 10);
+			snprintf (arg, 10, "%d", curr_file.tags->time);
+		}
+		else
+			arg = NULL;
+	}
+	else if (!strcmp(arg, "%F")) {
+		free (arg);
+		if (curr_file.file)
+			arg = xstrdup (curr_file.file);
+		else
+			arg = NULL;
+	}
+
+	/* Replace nonexisting data with an empty string. */
+	if (!arg)
+		arg = xstrdup ("");
+
+	return arg;
+}
+
+static void run_external_cmd (char **args, const int arg_num)
+{
+	pid_t child;
+
+	assert (args != NULL);
+	assert (arg_num >= 1);
+	
+	iface_temporary_exit ();
+	
+	child = fork();
+	if (child == -1)
+		error ("fork() failed");
+	else {
+		int status;
+		
+		if (child == 0) { /* I'm a child */
+			
+			putchar ('\n');
+			execvp (args[0], args);
+
+			/* We have an error */
+			fprintf (stderr, "\nError executing %s: %s\n", args[0],
+					strerror(errno));
+			sleep (2);
+			exit (1);
+		}
+
+		/* parent */
+		waitpid (child, &status, 0);
+		if (WIFEXITED(status) && WEXITSTATUS(status) != 0) {
+			fprintf (stderr, "\nCommand exited with error "
+					"(status %d).\n", WEXITSTATUS(status));
+			sleep (2);
+		}
+		iface_restore ();
+	}
+}
+
+/* Exec (execvp()) a custom command (ExecCommand[1-10] options). */
+static void exec_custom_command (const char *option)
+{
+	char *cmd;
+	char *args[20];
+	int arg_num = 1;
+
+	assert (option != NULL);
+	
+	cmd = xstrdup (options_get_str(option));
+	if (!cmd || !cmd[0]) {
+		error ("%s is not set", option);
+		if (cmd)
+			free (cmd);
+		return;
+	}
+
+	/* Split into arguments */
+
+	if (!(args[0] = xstrdup(strtok(cmd, " \t")))) {
+		error ("Malformed %s option", option);
+		free (cmd);
+		return;
+	}
+	
+	while (arg_num < (int)(sizeof(args)/sizeof(args[0])) - 1
+			&& (args[arg_num] = xstrdup(strtok(NULL, " \t")))) {
+		args[arg_num] = custom_cmd_substitute (args[arg_num]);
+		arg_num++;
+	}
+	if (arg_num == (int)sizeof(args)/sizeof(args[0]) - 1) {
+		error ("Too many arguments in %s", option);
+
+		do {
+			free (args[--arg_num]);
+		} while (arg_num);
+		
+		free (cmd);
+		return;
+	}
+
+	args[arg_num] = NULL;
+
+	{
+		int i;
+		
+		logit ("Running command:");
+
+		for (i = 0; i < arg_num; i++)
+			logit ("'%s'", args[i]);
+	}
+
+	run_external_cmd (args, arg_num);
+
+	do {
+		free (args[--arg_num]);
+	} while (arg_num);
+	free (cmd);
+}
+
 /* Handle key */
 static void menu_key (const struct iface_key *k)
 {
@@ -2792,6 +3114,36 @@ static void menu_key (const struct iface_key *k)
 				break;
 			case KEY_CMD_THEME_MENU:
 				make_theme_menu ();
+				break;
+			case KEY_CMD_EXEC1:
+				exec_custom_command ("ExecCommand1");
+				break;
+			case KEY_CMD_EXEC2:
+				exec_custom_command ("ExecCommand2");
+				break;
+			case KEY_CMD_EXEC3:
+				exec_custom_command ("ExecCommand3");
+				break;
+			case KEY_CMD_EXEC4:
+				exec_custom_command ("ExecCommand4");
+				break;
+			case KEY_CMD_EXEC5:
+				exec_custom_command ("ExecCommand5");
+				break;
+			case KEY_CMD_EXEC6:
+				exec_custom_command ("ExecCommand6");
+				break;
+			case KEY_CMD_EXEC7:
+				exec_custom_command ("ExecCommand7");
+				break;
+			case KEY_CMD_EXEC8:
+				exec_custom_command ("ExecCommand8");
+				break;
+			case KEY_CMD_EXEC9:
+				exec_custom_command ("ExecCommand9");
+				break;
+			case KEY_CMD_EXEC10:
+				exec_custom_command ("ExecCommand10");
 				break;
 			default:
 				abort ();
@@ -3124,8 +3476,9 @@ void interface_cmdline_play_first (int server_sock)
 }
 
 /* Request tags from the server, wait until they arrive and return them
- * (malloc()ed). */
-static struct file_tags *get_tags (const char *file, const int tags_sel)
+ * (malloc()ed). This function assumes that the interface is not initialized. */
+static struct file_tags *get_tags_no_iface (const char *file,
+		const int tags_sel)
 {
 	struct file_tags *tags = NULL;
 
@@ -3190,7 +3543,8 @@ void interface_cmdline_file_info (const int server_sock)
 				curr_file.tags = get_data_tags ();
 			}
 			else
-				curr_file.tags = get_tags (curr_file.file,
+				curr_file.tags = get_tags_no_iface (
+						curr_file.file,
 						TAGS_COMMENTS | TAGS_TIME);
 			
 			/* get the title */

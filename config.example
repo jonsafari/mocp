@@ -246,3 +246,31 @@ FollowPlayedFile	= yes
 # playing? If CanStartInPlaylist is set to "yes", the interface will switch to
 # the playlist. When set to "no" it will start from the last directory.
 CanStartInPlaylist	= yes
+
+# Executing external commands (1 - 10) invoked with key commands (F1 - F10 by
+# default).
+# Some arguments are substituted befor executing:
+# %f - file path
+# %i - title made from tags
+#
+# Data from tags:
+# %t - title
+# %a - album
+# %r - artist
+# %n - track
+# %m - time of the file (in seconds)
+#
+# Parameters above applys to the currently selected file. If you change them to
+# capital letters, they are taken from the currently played file.
+#
+# Programms are run using execv(), not a shell, so you can't do things like
+# redirecting the output to a file. The command string is split using blank
+# characters as separators, the first element is the command to be executed
+# and the rest are parameters, so if you use "echo Playing: %i" we run program
+# echo (from $PATH) with 2 parameters: 'Playing:' string and the title. Even
+# if the title contains spaces it's still one parameter and it's safe if it
+# contains `rm -rf /`.
+#
+# Examples:
+# ExecCommand1		= "cp %f /mnt/usb_drive"
+# ExecCommand2		= "/home/joe/now_playing %i"

@@ -3540,3 +3540,16 @@ void iface_add_file (const char *file, const char *title,
 	main_win_add_file (&main_win, file, title, type);
 	wrefresh (main_win.win);
 }
+
+/* Temporary exit the interface (ncurses mode). */
+void iface_temporary_exit ()
+{
+	endwin ();
+}
+
+/* Restore the interface after iface_temporary_exit(). */
+void iface_restore ()
+{
+	iface_refresh ();
+	curs_set (0);
+}

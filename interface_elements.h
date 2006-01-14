@@ -108,5 +108,7 @@ void iface_make_visible (const enum iface_menu menu, const char *file);
 void iface_switch_to_theme_menu ();
 void iface_add_file (const char *file, const char *title,
 		const enum file_type type);
+void iface_temporary_exit ();
+void iface_restore ();
 
 #endif
