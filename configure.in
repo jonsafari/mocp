@@ -369,7 +369,7 @@ then
 	if test "x$FFMPEG_CONFIG" = "xyes"
 	then
 		libavformat_CFLAGAS=`ffmpeg-config --cflags`
-		libavformat_LIBS=`ffmpeg-config --libs avformat`
+		libavformat_LIBS=`ffmpeg-config --plugin-libs avformat`
 		AC_SUBST(libavformat_CFLAGAS)
 		AC_SUBST(libavformat_LIBS)
 		DECODER_PLUGINS="$DECODER_PLUGINS ffmpeg"
