@@ -211,6 +211,7 @@ void options_init ()
 	option_add_str ("Layout3", NULL);
 	option_add_int ("FollowPlayedFile", 1);
 	option_add_int ("CanStartInPlaylist", 1);
+	option_add_int ("UseCursorSelection", 0);
 }
 
 /* Return 1 if a parameter to an integer option is valid. */
