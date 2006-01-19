@@ -3369,8 +3369,15 @@ static void add_recursively (struct plist *plist, char **args,
 		else if (is_plist_file(args[i]))
 			plist_load (plist, args[i], cwd);
 		else if ((is_url(path) || is_sound_file(path))
-				&& plist_find_fname(plist, path) == -1)
-			plist_add (plist, path);
+				&& plist_find_fname(plist, path) == -1) {
+			int added = plist_add (plist, path);
+			
+			if (is_url(path)) {
+				make_file_title (plist, added, 0);
+				plist->items[added].title =
+					plist->items[added].title_file;
+			}
+		}
 	}
 }
 

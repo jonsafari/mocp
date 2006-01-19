@@ -418,14 +418,20 @@ static int plist_save_m3u (struct plist *plist, const char *fname,
 	
 	for (i = 0; i < plist->num; i++)
 		if (!plist_deleted(plist, i)) {
+			int ret;
 
 			/* EXTM3U */
-			if (fprintf(file, "#EXTINF:%d,%s\r\n",
+			if (plist->items[i].tags)
+				ret = fprintf (file, "#EXTINF:%d,%s\r\n",
 						plist->items[i].tags->time,
 						plist->items[i].title_tags ?
 						plist->items[i].title_tags
-						: plist->items[i].title_file)
-					< 0) {
+						: plist->items[i].title_file);
+			else
+				ret = fprintf (file, "#EXTINF:%d,%s\r\n", 0,
+						plist->items[i].title_file);
+			
+			if (ret < 0) {
 				error ("Error writing playlist: %s",
 						strerror(errno));
 				fclose (file);
