@@ -28,6 +28,7 @@
 #include <assert.h>
 #include <ctype.h>
 #include "common.h"
+#include "options.h"
 #include "menu.h"
 #include "files.h"
 #include "rbtree.h"
@@ -95,7 +96,7 @@ static void draw_item (const struct menu *menu, const struct menu_item *mi,
 		wattrset (menu->win, mi->attr_marked);
 	else
 		wattrset (menu->win, mi->attr_normal);
-	
+
 	title_width = strwidth (mi->title);
 
 	if (title_width <= title_space || mi->align == MENU_ALIGN_LEFT)
@@ -166,6 +167,16 @@ void menu_draw (const struct menu *menu, const int active)
 		draw_item (menu, mi, mi->num - menu->top->num + menu->posy,
 				menu->posx + info_pos, title_width,
 				number_space, active);
+}
+
+/* Move the cursor to the selected file. */
+void menu_set_cursor (const struct menu *m)
+{
+	assert (m != NULL);
+
+	if (m->selected)
+		wmove (m->win, m->selected->num - m->top->num + m->posy,
+				m->posx);
 }
 
 static int rb_compare (const void *a, const void *b, void *adata ATTR_UNUSED)

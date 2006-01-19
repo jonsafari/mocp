@@ -125,5 +125,6 @@ void menu_item_set_align (struct menu_item *mi, const enum menu_align align);
 int menu_is_visible (const struct menu *menu, const struct menu_item *mi);
 void menu_swap_items (struct menu *menu, const char *file1, const char *file2);
 void menu_make_visible (struct menu *menu, const char *file);
+void menu_set_cursor (const struct menu *m);
 
 #endif

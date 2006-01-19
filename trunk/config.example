@@ -274,3 +274,7 @@ CanStartInPlaylist	= yes
 # Examples:
 # ExecCommand1		= "cp %f /mnt/usb_drive"
 # ExecCommand2		= "/home/joe/now_playing %i"
+
+# Display the cursor in the line with the selected file. This can be usefu with
+# a braille display.
+# UseCursorSelection	= no
