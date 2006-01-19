@@ -49,7 +49,7 @@ AC_CHECK_HEADERS([fcntl.h string.h strings.h sys/param.h unistd.h sys/un.h \
 		 AC_MSG_ERROR([Can't find required header files.]))
 AC_CHECK_HEADERS([sys/select.h inttypes.h limits.h stdint.h])
 
-AC_CHECK_FUNCS([sched_get_priority_max wcswidth])
+AC_CHECK_FUNCS([sched_get_priority_max])
 
 dnl langinfo
 AC_CHECK_HEADERS([langinfo.h])
@@ -178,7 +178,7 @@ AC_FUNC_STAT
 AC_CHECK_FUNCS([getcwd memmove strcasecmp strdup strerror strncasecmp strrchr \
 		socket gettimeofday getenv fork setsid kill bind listen \
 		accept time connect unlink send recv select strftime \
-		localtime_r mbsrtowcs mbstowcs execvp],,
+		localtime_r mbsrtowcs mbstowcs execvp wcswidth],,
 	       AC_MSG_ERROR([Required standard C/UNIX functions are not present.]))
 
 dnl optional functions
