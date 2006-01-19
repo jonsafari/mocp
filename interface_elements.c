@@ -60,9 +60,6 @@
 #define STARTUP_MESSAGE	"Welcome to " PACKAGE_STRING "!"
 #define HISTORY_SIZE	50
 
-/* parameter passed to wcswidth() as a maximum width */
-#define WIDTH_MAX	1024
-
 /* TODO: removing/adding a char to the entry may increase width of the text
  * by more than one column. */
 
@@ -1049,17 +1046,15 @@ static void side_menu_draw_frame (const struct side_menu *m)
 	assert (m->visible);
 
 	if (m->title) {
-		int width = strwidth (m->title);
-
-		if (width > m->width - 4) {
-			title = (char *)xmalloc (sizeof(char) *
-					(m->width - 3));
-			sprintf (title, "...%s",
-					m->title + width - m->width + 7);
+		if ((int)strwidth(m->title) > m->width - 4) {
+			char *tail;
+			
+			tail = xstrtail (m->title, m->width - 7);
+			title = (char *)xmalloc (strlen(tail) + 4);
+			sprintf (title, "...%s", tail);
 		}
 		else
 			title = xstrdup (m->title);
-			
 	}
 	else
 		title = NULL;
@@ -1075,8 +1070,6 @@ static void side_menu_draw_frame (const struct side_menu *m)
 	wvline (m->win, lines.vert, m->height - 1);
 	wmove (m->win, m->posy + 1, m->posx + m->width - 1);
 	wvline (m->win, lines.vert, m->height - 1);
-	/*wborder (m->win, lines.vert, lines.vert, lines.horiz, ' ',
-			lines.ulcorn, lines.urcorn, lines.vert, lines.vert);*/
 
 	/* The title */
 	if (title) {

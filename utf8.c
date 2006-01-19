@@ -13,6 +13,11 @@
 # include "config.h"
 #endif
 
+/* _XOPEN_SOURCE is known to break cmpilation under OpenBSD */
+#ifndef OPENBSD
+# define _XOPEN_SOURCE  500 /* for wcswidth() */
+#endif
+
 #include <stdarg.h>
 #ifdef HAVE_ICONV
 # include <iconv.h>
@@ -338,4 +343,37 @@ void utf8_cleanup ()
 size_t strwidth (const char *s)
 {
 	return xmbstowcs (NULL, s, -1, NULL);
+}
+
+/* Return a malloc()ed string containing the tail of str maximum of len chars
+ * (in columns occupied on the screen). */
+char *xstrtail (const char *str, const int len)
+{
+	wchar_t *ucs;
+	wchar_t *ucs_tail;
+	size_t size;
+	int width;
+	char *tail;
+
+	assert (str != NULL);
+	assert (len > 0);
+
+	size = xmbstowcs(NULL, str, -1, NULL) + 1;
+	ucs = (wchar_t *)xmalloc (sizeof(wchar_t) * size);
+	xmbstowcs (ucs, str, size, NULL);
+	ucs_tail = ucs;
+	
+	width = wcswidth (ucs, WIDTH_MAX);
+	assert (width >= 0);
+
+	while (width > len)
+		width -= wcwidth (*ucs_tail++);
+
+	size = wcstombs (NULL, ucs_tail, 0) + 1;
+	tail = (char *)xmalloc (size);
+	wcstombs (tail, ucs_tail, size);
+	
+	free (ucs);
+
+	return tail;
 }
