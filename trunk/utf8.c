@@ -341,7 +341,19 @@ void utf8_cleanup ()
 /* Return the number of columns the string takes when displayed. */
 size_t strwidth (const char *s)
 {
-	return xmbstowcs (NULL, s, -1, NULL);
+	wchar_t *ucs;
+	size_t size;
+	size_t width;
+
+	assert (s != NULL);
+
+	size = xmbstowcs (NULL, s, -1, NULL) + 1;
+	ucs = (wchar_t *)xmalloc (sizeof(wchar_t) * size);
+	xmbstowcs (ucs, s, size, NULL);
+	width = wcswidth (ucs, WIDTH_MAX);
+	free (ucs);
+
+	return width;
 }
 
 /* Return a malloc()ed string containing the tail of str maximum of len chars
