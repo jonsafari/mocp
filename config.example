@@ -124,14 +124,14 @@ UseMmap			= yes
 # read from playlist files. This option has format: FROM:TO.
 # To get list of supported sets use the iconv -l command.
 
-# Just strip non-ASCII chars
-#TagsIconv		= ASCII:ASCII
+# Assume this encoding for ID3 version 1/1.1 tags (mp3 files). Unlike ID3v2
+# UTF-8 is not used here and MOC can't guess how tags are encoded. Another
+# solution is using librcc (see the next option). This option is ignored
+# if UseRCC is set to yes.
+#ID3v1TagsEncoding		= WINDOWS-1250
 
-# Usefull for Poles: Convert from Windows encoding to ISO
-#TagsIconv		= WINDOWS-1250:ISO-8859-2
-
-# Strip non-ASCII chars from file names
-#FileNamesIconv		= ASCII:ASCII
+# Use librcc to fix ID3 version 1/1.1 tags encoding.
+#UseRCC				= yes
 
 # Remember the playlist after exit?
 SavePlaylist		= yes
