@@ -24,12 +24,16 @@
 
 #include <unistd.h>
 #include <stdlib.h>
+#include <errno.h>
 #include <string.h>
 #include <strings.h>
 #include <mad.h>
 #include <id3tag.h>
 #include <pthread.h>
 #include <assert.h>
+#ifdef HAVE_ICONV
+# include <iconv.h>
+#endif
 #ifdef HAVE_RCC
 # include <librcc.h>
 #endif
@@ -44,8 +48,12 @@
 #include "io.h"
 #include "options.h"
 #include "files.h"
+#include "utf8.h"
+#include "options.h"
 
 #define INPUT_BUFFER	(32 * 1024)
+
+static iconv_t iconv_id3_fix;
 
 struct mp3_data
 {
@@ -103,9 +111,9 @@ static size_t fill_buff (struct mp3_data *data)
 	return read_size;
 }
 
+#ifdef HAVE_RCC
 static char *do_rcc (char *str)
 {
-#ifdef HAVE_RCC
 	char *reencoded;
 
 	assert (str != NULL);
@@ -114,8 +122,17 @@ static char *do_rcc (char *str)
 		free (str);
 		return reencoded;
 	}
-#endif
 	return str;
+}
+#endif
+
+static char *id3v1_fix (const char *str)
+{
+#ifdef HAVE_ICONV
+	if (iconv_id3_fix != (iconv_t)-1)
+		return iconv_str (iconv_id3_fix, str);
+#endif
+	return xstrdup (str);
 }
 
 static char *get_tag (struct id3_tag *tag, const char *what)
@@ -129,9 +146,30 @@ static char *get_tag (struct id3_tag *tag, const char *what)
 	if (frame && (field = &frame->fields[1])) {
 		ucs4 = id3_field_getstrings (field, 0);
 		if (ucs4) {
-			comm = (char *)id3_ucs4_utf8duplicate (ucs4);
-			if (comm)
-				comm = do_rcc (comm);
+			
+#ifdef HAVE_ICONV
+			/* Workaround for ID3 tags v1/v1.1 where the encoding
+			 * is latin1. */
+			if (id3_tag_options(tag, 0, 0) & ID3_TAG_OPTION_ID3V1) {
+				char *t;
+
+				comm = (char *)id3_ucs4_latin1duplicate (ucs4);
+
+#ifdef HAVE_RCC
+				if (options_get_int("UseRCC"))
+					comm = do_rcc (comm);
+				else {
+#endif /* HAVE_RCC */
+					t = comm;
+					comm = id3v1_fix (comm);
+					free (t);
+#ifdef HAVE_RCC
+				}
+#endif /* HAVE_RCC */
+			}
+			else
+#endif /* HAVE_INCOV */
+				comm = (char *)id3_ucs4_utf8duplicate (ucs4);
 		}
 	}
 
@@ -701,12 +739,24 @@ static void mp3_init ()
 			RCC_OPTION_TRANSLATE_SKIP_PARRENT);
 	rccSetOption(NULL, RCC_OPTION_AUTODETECT_LANGUAGE, 1);
 #endif
+	
+#ifdef HAVE_ICONV
+	iconv_id3_fix = iconv_open ("UTF-8",
+			options_get_str("ID3v1TagsEncoding"));
+		if (iconv_id3_fix == (iconv_t)(-1))
+			logit ("iconv_open() failed: %s", strerror(errno));
+#endif
 }
 
 static void mp3_destroy ()
 {
 #ifdef HAVE_RCC
 	rccFree ();
+#endif
+	
+#ifdef HAVE_ICONV
+	if (iconv_close(iconv_id3_fix) == -1)
+		logit ("iconv_close() failed: %s", strerror(errno));
 #endif
 }
 

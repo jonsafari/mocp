@@ -55,7 +55,7 @@ static iconv_t iconv_desc = (iconv_t)(-1);
 /* Return a malloc()ed string converted using iconv().
  * if for_file_name is not 0, uses the conversion defined for file names.
  * For NULL returns NULL. */
-static char *iconv_str (const char *str)
+char *iconv_str (const iconv_t desc, const char *str)
 {
 #ifdef HAVE_ICONV
 	char buf[512];
@@ -66,7 +66,7 @@ static char *iconv_str (const char *str)
 
 	if (!str)
 		return NULL;
-	if (iconv_desc == (iconv_t)(-1))
+	if (desc == (iconv_t)(-1))
 		return xstrdup (str);
 
 	str_copy = inbuf = xstrdup (str);
@@ -74,10 +74,10 @@ static char *iconv_str (const char *str)
 	inbytesleft = strlen(inbuf);
 	outbytesleft = sizeof(buf) - 1;
 
-	iconv (iconv_desc, NULL, NULL, NULL, NULL);
+	iconv (desc, NULL, NULL, NULL, NULL);
 	
 	while (inbytesleft) {
-		if (iconv(iconv_desc, &inbuf, &inbytesleft, &outbuf,
+		if (iconv(desc, &inbuf, &inbytesleft, &outbuf,
 					&outbytesleft)
 				== (size_t)(-1)) {
 			if (errno == EILSEQ) {
@@ -107,8 +107,7 @@ static char *iconv_str (const char *str)
 	
 	return converted;
 #else /* HAVE_ICONV */
-	return xstrdup (str); /* TODO: we should strip unicode (non-ASCII)
-				 characters here */
+	return xstrdup (str);
 #endif
 }
 
@@ -119,7 +118,7 @@ int xwaddstr (WINDOW *win, const char *str)
 	if (using_utf8)
 		res = waddstr (win, str);
 	else {
-		char *lstr = iconv_str (str);
+		char *lstr = iconv_str (iconv_desc, str);
 
 		res = waddstr (win, lstr);
 		free (lstr);
@@ -224,7 +223,7 @@ int xwaddnstr (WINDOW *win, const char *str, const int n)
 		free (ucs);
 	}
 	else {
-		char *lstr = iconv_str (str);
+		char *lstr = iconv_str (iconv_desc, str);
 
 		res = waddnstr (win, lstr, n);
 		free (lstr);
@@ -240,7 +239,7 @@ int xmvwaddstr (WINDOW *win, const int y, const int x, const char *str)
 	if (using_utf8)
 		res = mvwaddstr (win, y, x, str);
 	else {
-		char *lstr = iconv_str (str);
+		char *lstr = iconv_str (iconv_desc, str);
 
 		res = mvwaddstr (win, y, x, lstr);
 		free (lstr);
@@ -257,7 +256,7 @@ int xmvwaddnstr (WINDOW *win, const int y, const int x, const char *str,
 	if (using_utf8)
 		res = mvwaddnstr (win, y, x, str, n);
 	else {
-		char *lstr = iconv_str (str);
+		char *lstr = iconv_str (iconv_desc, str);
 
 		res = mvwaddnstr (win, y, x, lstr, n);
 		free (lstr);
@@ -280,7 +279,7 @@ int xwprintw (WINDOW *win, const char *fmt, ...)
 	if (using_utf8)
 		res = waddstr (win, buf);
 	else {
-		char *lstr = iconv_str (buf);
+		char *lstr = iconv_str (iconv_desc, buf);
 
 		res = waddstr (win, lstr);
 		free (lstr);

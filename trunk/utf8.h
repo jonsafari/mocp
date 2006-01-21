@@ -1,7 +1,18 @@
 #ifndef UTF8_H
 #define UTF8_H
 
+#ifdef HAVE_NCURSESW_H
+# include <ncursesw/curses.h>
+#elif HAVE_NCURSES_H
+# include <ncurses.h>
+#else
+# include <curses.h>
+#endif
+
 #include <stdarg.h>
+#ifdef HAVE_ICONV
+# include <iconv.h>
+#endif
 
 /* parameter passed to wcswidth() as a maximum width */
 #define WIDTH_MAX	2048
@@ -22,5 +33,9 @@ int xwprintw (WINDOW *win, const char *fmt, ...);
 
 size_t strwidth (const char *s);
 char *xstrtail (const char *str, const int len);
+
+#ifdef HAVE_ICONV
+char *iconv_str (const iconv_t desc, const char *str);
+#endif
 
 #endif
