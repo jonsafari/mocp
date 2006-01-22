@@ -313,11 +313,25 @@ static void go_to_another_file ()
 	else
 		curr_plist = &playlist;
 
-	/* if curr_playing == -1 now, the playlist is empty */
+	/* If curr_playing == -1 now, the playlist is empty.
+	 * 
+	 * Order of files on the playlist could have been changed, so we can't
+	 * just use plist_prev()/plist_next(), we must first find the current
+	 * position of the last played file. */
 	
 	if (play_prev == 1 && curr_playing != -1) { 
+		int curr_playing_current_pos;
+
 		logit ("Playing previous...");
-		curr_playing = plist_prev (curr_plist, curr_playing);
+		
+		curr_playing_current_pos = plist_find_fname (curr_plist,
+				curr_playing_fname);
+
+		if (curr_playing_current_pos != -1)
+			curr_playing = plist_prev (curr_plist,
+					curr_playing_current_pos);
+		else
+			curr_playing = plist_prev (curr_plist, curr_playing);
 		if (curr_playing == -1) {
 			if (options_get_int("Repeat"))
 				curr_playing = plist_last (curr_plist);
@@ -328,7 +342,16 @@ static void go_to_another_file ()
 	}
 	else if (curr_playing != -1
 			&& (options_get_int("AutoNext") || play_next)) {
-		curr_playing = plist_next (curr_plist, curr_playing);
+		int curr_playing_current_pos;
+
+		curr_playing_current_pos = plist_find_fname (curr_plist,
+				curr_playing_fname);
+
+		if (curr_playing_current_pos != -1)
+			curr_playing = plist_next (curr_plist,
+					curr_playing_current_pos);
+		else
+			curr_playing = plist_next (curr_plist, curr_playing);
 		if (curr_playing == -1 && options_get_int("Repeat")) {
 			if (shuffle) {
 				plist_clear (&shuffled_plist);
@@ -399,10 +422,6 @@ static void *play_thread (void *unused ATTR_UNUSED)
 		}
 
 		LOCK (curr_playing_mut);
-		if (curr_playing_fname) {
-			free (curr_playing_fname);
-			curr_playing_fname = NULL;
-		}
 		if (last_stream_url) {
 			free (last_stream_url);
 			last_stream_url = NULL;
@@ -419,6 +438,11 @@ static void *play_thread (void *unused ATTR_UNUSED)
 			go_to_another_file ();
 
 		state_change ();
+	}
+
+	if (curr_playing_fname) {
+		free (curr_playing_fname);
+		curr_playing_fname = NULL;
 	}
 
 	audio_close ();
