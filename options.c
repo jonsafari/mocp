@@ -214,6 +214,7 @@ void options_init ()
 	option_add_int ("UseCursorSelection", 0);
 	option_add_str ("ID3v1TagsEncoding", "WINDOWS-1250");
 	option_add_int ("UseRCC", 1);
+	option_add_int ("SetXtermTitle", 1);
 }
 
 /* Return 1 if a parameter to an integer option is valid. */
@@ -237,6 +238,7 @@ int check_int_option (const char *name, const int val)
 			|| !strcasecmp(name, "CanStartInPlaylist")
 			|| !strcasecmp(name, "UseCursorSelection")
 			|| !strcasecmp(name, "UseRCC")
+			|| !strcasecmp(name, "SetXtermTitle")
 			) {
 		if (!(val == 1 || val == 0))
 			return 0;
