@@ -2073,7 +2073,7 @@ static void detect_term ()
 
 static void xterm_set_title (const int state, const char *title)
 {
-	if (has_xterm) {
+	if (has_xterm && options_get_int("SetXtermTitle")) {
 		write (1, "\033]0;", sizeof("\033]0;")-1);
 		write (1, "MOC ", sizeof("MOC ")-1);
 		
@@ -2100,7 +2100,7 @@ static void xterm_set_title (const int state, const char *title)
 
 static void xterm_clear_title ()
 {
-	if (has_xterm)
+	if (has_xterm && options_get_int("SetXtermTitle"))
 		write (1, "\033]2;\007", sizeof("\033]2;\007")-1);
 }
 

@@ -278,3 +278,6 @@ CanStartInPlaylist	= yes
 # Display the cursor in the line with the selected file. This can be usefu with
 # a braille display.
 # UseCursorSelection	= no
+
+# Set the terminal title when running under xterm.
+#SetXtermTitle		= yes
