@@ -2977,14 +2977,26 @@ void windows_end ()
 	}
 }
 
+static void iface_refresh_screen ()
+{
+	/* We must do it in proper order to get the right cursor position. */
+	if (iface_in_entry()) {
+		wrefresh (main_win.win);
+		wrefresh (info_win.win);
+	}
+	else {
+		wrefresh (info_win.win);
+		wrefresh (main_win.win);
+	}
+}
+
 /* Set state of the options displayed in the information window. */
 void iface_set_option_state (const char *name, const int value)
 {
 	assert (name != NULL);
 
 	info_win_set_option_state (&info_win, name, value);
-	wrefresh (info_win.win);
-	wrefresh (main_win.win);
+	iface_refresh_screen ();
 }
 
 /* Set the mixer name. */
@@ -2993,8 +3005,7 @@ void iface_set_mixer_name (const char *name)
 	assert (name != NULL);
 	
 	info_win_set_mixer_name (&info_win, name);
-	wrefresh (info_win.win);
-	wrefresh (main_win.win);
+	iface_refresh_screen ();
 }
 
 /* Set the status message in the info window. */
@@ -3004,8 +3015,7 @@ void iface_set_status (const char *msg)
 
 	if (iface_initialized) {
 		info_win_set_status (&info_win, msg);
-		wrefresh (info_win.win);
-		wrefresh (main_win.win);
+		iface_refresh_screen ();
 	}
 }
 
@@ -3031,9 +3041,8 @@ void iface_set_dir_content (const enum iface_menu iface_menu,
 
 	iface_show_num_files (plist_count(files) + (dirs ? dirs->num : 0)
 			+ (playlists ? playlists->num : 0));
-	
-	wrefresh (info_win.win);
-	wrefresh (main_win.win);
+
+	iface_refresh_screen ();
 }
 
 /* Like iface_set_dir_content(), but before replacing the menu content, save
@@ -3052,8 +3061,7 @@ void iface_update_dir_content (const enum iface_menu iface_menu,
 	iface_show_num_files (plist_count(files) + (dirs ? dirs->num : 0)
 			+ (playlists ? playlists->num : 0));
 	
-	wrefresh (info_win.win);
-	wrefresh (main_win.win);
+	iface_refresh_screen ();
 }
 
 /* Update item title and time in the menu. */
@@ -3066,8 +3074,7 @@ void iface_update_item (const enum iface_menu menu,
 	info_win_set_files_time (&info_win,
 			main_win_get_curr_files_time(&main_win),
 			main_win_is_curr_time_for_all(&main_win));
-	wrefresh (info_win.win);
-	wrefresh (main_win.win);
+	iface_refresh_screen ();
 }
 
 /* Chenge the current item in the directory menu to this item. */
@@ -3076,7 +3083,7 @@ void iface_set_curr_item_title (const char *title)
 	assert (title != NULL);
 	
 	main_win_set_curr_item_title (&main_win, title);
-	wrefresh (main_win.win);
+	iface_refresh_screen ();
 }
 
 /* Set the title for the directory menu. */
@@ -3087,7 +3094,7 @@ void iface_set_title (const enum iface_menu menu, const char *title)
 	main_win_set_title (&main_win,
 			menu == IFACE_MENU_DIR ? MENU_DIR : MENU_PLAYLIST,
 			title);
-	wrefresh (main_win.win);
+	iface_refresh_screen ();
 }
 
 /* Get the char code from the user with meta flag set if necessary. */
@@ -3136,7 +3143,7 @@ int iface_key_is_resize (const struct iface_key *k)
 void iface_menu_key (const enum key_cmd cmd)
 {
 	main_win_menu_cmd (&main_win, cmd);
-	wrefresh (main_win.win);
+	iface_refresh_screen ();
 }
 
 /* Get the type of the currently selected item. */
@@ -3174,24 +3181,21 @@ char *iface_get_curr_file ()
 void iface_set_curr_time (const int time)
 {
 	info_win_set_curr_time (&info_win, time);
-	wrefresh (info_win.win);
-	wrefresh (main_win.win);
+	iface_refresh_screen ();
 }
 
 /* Set the total time for the currently played file. */
 void iface_set_total_time (const int time)
 {
 	info_win_set_total_time (&info_win, time);
-	wrefresh (info_win.win);
-	wrefresh (main_win.win);
+	iface_refresh_screen ();
 }
 
 /* Set the state (STATE_(PLAY|STOP|PAUSE)). */
 void iface_set_state (const int state)
 {
 	info_win_set_state (&info_win, state);
-	wrefresh (info_win.win);
-	wrefresh (main_win.win);
+	iface_refresh_screen ();
 }
 
 /* Set the bitrate (in Kbps). 0 or -1 means no bitrate information. */
@@ -3200,8 +3204,7 @@ void iface_set_bitrate (const int bitrate)
 	assert (bitrate >= -1);
 	
 	info_win_set_bitrate (&info_win, bitrate);
-	wrefresh (info_win.win);
-	wrefresh (main_win.win);
+	iface_refresh_screen ();
 }
 
 /* Set the rate (in KHz). 0 or -1 means no rate information. */
@@ -3210,8 +3213,7 @@ void iface_set_rate (const int rate)
 	assert (rate >= -1);
 	
 	info_win_set_rate (&info_win, rate);
-	wrefresh (info_win.win);
-	wrefresh (main_win.win);
+	iface_refresh_screen ();
 }
 
 /* Set the number of channels. */
@@ -3220,8 +3222,7 @@ void iface_set_channels (const int channels)
 	assert (channels == 1 || channels == 2);
 	
 	info_win_set_channels (&info_win, channels);
-	wrefresh (info_win.win);
-	wrefresh (main_win.win);
+	iface_refresh_screen ();
 }
 
 /* Set the currently played file. If file is NULL, nothing is played. */
@@ -3236,14 +3237,12 @@ void iface_set_played_file (const char *file)
 		info_win_set_curr_time (&info_win, -1);
 		info_win_set_total_time (&info_win, -1);
 		info_win_set_option_state (&info_win, "Net", 0);
-		wrefresh (info_win.win);
 	}
 	else if (is_url(file)) {
 		info_win_set_option_state (&info_win, "Net", 1);
-		wrefresh (info_win.win);
 	}
 
-	wrefresh (main_win.win);
+	iface_refresh_screen ();
 }
 
 /* Set the title for the currently played file. */
@@ -3252,8 +3251,7 @@ void iface_set_played_file_title (const char *title)
 	assert (title != NULL);
 
 	info_win_set_played_title (&info_win, title);
-	wrefresh (info_win.win);
-	wrefresh (main_win.win);
+	iface_refresh_screen ();
 }
 
 /* Update timeouts, refresh the screen if needed. This should be called at
@@ -3261,8 +3259,7 @@ void iface_set_played_file_title (const char *title)
 void iface_tick ()
 {
 	info_win_tick (&info_win);
-	wrefresh (info_win.win);
-	wrefresh (main_win.win);
+	iface_refresh_screen ();
 }
 
 void iface_set_mixer_value (const int value)
@@ -3270,8 +3267,7 @@ void iface_set_mixer_value (const int value)
 	assert (value >= 0 && value <= 100);
 
 	info_win_set_mixer_value (&info_win, value);
-	wrefresh (info_win.win);
-	wrefresh (main_win.win);
+	iface_refresh_screen ();
 }
 
 /* Switch to the playlist menu. */
@@ -3282,8 +3278,7 @@ void iface_switch_to_plist ()
 			main_win_get_curr_files_time(&main_win),
 			main_win_is_curr_time_for_all(&main_win));
 
-	wrefresh (info_win.win);
-	wrefresh (main_win.win);
+	iface_refresh_screen ();
 }
 
 /* Switch to the directory menu. */
@@ -3294,8 +3289,7 @@ void iface_switch_to_dir ()
 			main_win_get_curr_files_time(&main_win),
 			main_win_is_curr_time_for_all(&main_win));
 	
-	wrefresh (info_win.win);
-	wrefresh (main_win.win);
+	iface_refresh_screen ();
 }
 
 /* Add the item from the playlist to the playlist menu. */
@@ -3310,8 +3304,7 @@ void iface_add_to_plist (const struct plist *plist, const int num)
 	
 	iface_show_num_files (plist_count(plist));
 		
-	wrefresh (info_win.win);
-	wrefresh (main_win.win);
+	iface_refresh_screen ();
 }
 
 /* Display an error message. */
@@ -3319,8 +3312,7 @@ void iface_error (const char *msg)
 {
 	if (iface_initialized) {
 		info_win_msg (&info_win, msg, 1);
-		wrefresh (info_win.win);
-		wrefresh (main_win.win);
+		iface_refresh_screen ();
 	}
 	else
 		fprintf (stderr, "ERROR: %s", msg);
@@ -3335,8 +3327,7 @@ void iface_resize ()
 	refresh ();
 	main_win_resize (&main_win);
 	info_win_resize (&info_win);
-	wrefresh (info_win.win);
-	wrefresh (main_win.win);
+	iface_refresh_screen ();
 }
 
 void iface_refresh ()
@@ -3347,26 +3338,25 @@ void iface_refresh ()
 	main_win_draw (&main_win);
 	info_win_draw (&info_win);
 	
-	wrefresh (info_win.win);
-	wrefresh (main_win.win);
+	iface_refresh_screen ();
 }
 
 void iface_update_show_time ()
 {
 	main_win_update_show_time (&main_win);
-	wrefresh (main_win.win);
+	iface_refresh_screen ();
 }
 
 void iface_update_show_format ()
 {
 	main_win_update_show_format (&main_win);
-	wrefresh (main_win.win);
+	iface_refresh_screen ();
 }
 
 void iface_clear_plist ()
 {
 	main_win_clear_plist (&main_win);
-	wrefresh (main_win.win);
+	iface_refresh_screen ();
 }
 
 void iface_del_plist_item (const char *file)
@@ -3377,14 +3367,13 @@ void iface_del_plist_item (const char *file)
 	info_win_set_files_time (&info_win,
 			main_win_get_curr_files_time(&main_win),
 			main_win_is_curr_time_for_all(&main_win));
-	wrefresh (info_win.win);
-	wrefresh (main_win.win);
+	iface_refresh_screen ();
 }
 
 void iface_make_entry (const enum entry_type type)
 {
 	info_win_make_entry (&info_win, type);
-	wrefresh (info_win.win);
+	iface_refresh_screen ();
 }
 
 enum entry_type iface_get_entry_type ()
@@ -3400,8 +3389,7 @@ int iface_in_entry ()
 void iface_entry_handle_key (const struct iface_key *k)
 {
 	info_win_entry_handle_key (&info_win, &main_win, k);
-	wrefresh (info_win.win);
-	wrefresh (main_win.win);
+	iface_refresh_screen ();
 }
 
 void iface_entry_set_text (const char *text)
@@ -3409,7 +3397,7 @@ void iface_entry_set_text (const char *text)
 	assert (text != NULL);
 
 	info_win_entry_set_text (&info_win, text);
-	wrefresh (info_win.win);
+	iface_refresh_screen ();
 }
 
 /* Get text from the entry. Returned memory is amlloc()ed. */
@@ -3428,8 +3416,7 @@ void iface_entry_disable ()
 	if (iface_get_entry_type() == ENTRY_SEARCH)
 		main_win_clear_filter_menu (&main_win);
 	info_win_entry_disable (&info_win);
-	wrefresh (info_win.win);
-	wrefresh (main_win.win);
+	iface_refresh_screen ();
 }
 
 void iface_entry_set_file (const char *file)
@@ -3450,15 +3437,13 @@ void iface_message (const char *msg)
 	assert (msg != NULL);
 	
 	info_win_msg (&info_win, msg, 0);
-	wrefresh (info_win.win);
-	wrefresh (main_win.win);
+	iface_refresh_screen ();
 }
 
 void iface_disable_message ()
 {
 	info_win_disable_msg (&info_win);
-	wrefresh (info_win.win);
-	wrefresh (main_win.win);
+	iface_refresh_screen ();
 }
 
 void iface_plist_set_total_time (const int time, const int for_all_files)
@@ -3466,8 +3451,7 @@ void iface_plist_set_total_time (const int time, const int for_all_files)
 	if (iface_in_plist_menu())
 		info_win_set_files_time (&info_win, time, for_all_files);
 	main_win_set_plist_time (&main_win, time, for_all_files);
-	wrefresh (info_win.win);
-	wrefresh (main_win.win);
+	iface_refresh_screen ();
 }
 
 void iface_select_file (const char *file)
@@ -3475,7 +3459,7 @@ void iface_select_file (const char *file)
 	assert (file != NULL);
 
 	main_win_select_file (&main_win, file);
-	wrefresh (main_win.win);
+	iface_refresh_screen ();
 }
 
 int iface_in_help ()
@@ -3486,13 +3470,13 @@ int iface_in_help ()
 void iface_switch_to_help ()
 {
 	main_win_switch_to_help (&main_win);
-	wrefresh (main_win.win);
+	iface_refresh_screen ();
 }
 
 void iface_handle_help_key (const struct iface_key *k)
 {
 	main_win_handle_help_key (&main_win, k);
-	wrefresh (main_win.win);
+	iface_refresh_screen ();
 }
 
 void iface_toggle_layout ()
@@ -3512,13 +3496,13 @@ void iface_toggle_layout ()
 	}
 	
 	main_win_use_layout (&main_win, layout_fmt);
-	wrefresh (main_win.win);
+	iface_refresh_screen ();
 }
 
 void iface_swap_plist_items (const char *file1, const char *file2)
 {
 	main_win_swap_plist_items (&main_win, file1, file2);
-	wrefresh (main_win.win);
+	iface_refresh_screen ();
 }
 
 /* Make sure that this file in this menu is visible. */
@@ -3529,14 +3513,14 @@ void iface_make_visible (const enum iface_menu menu, const char *file)
 	main_win_make_visible (&main_win,
 			menu == IFACE_MENU_DIR ? MENU_DIR : MENU_PLAYLIST,
 			file);
-	wrefresh (main_win.win);
+	iface_refresh_screen ();
 }
 
 void iface_switch_to_theme_menu ()
 {
 	main_win_create_themes_menu (&main_win);
 	main_win_switch_to (&main_win, MENU_THEMES);
-	wrefresh (main_win.win);
+	iface_refresh_screen ();
 }
 
 /* Add a file to the current menu. */
@@ -3547,7 +3531,7 @@ void iface_add_file (const char *file, const char *title,
 	assert (file != NULL);
 
 	main_win_add_file (&main_win, file, title, type);
-	wrefresh (main_win.win);
+	iface_refresh_screen ();
 }
 
 /* Temporary exit the interface (ncurses mode). */
