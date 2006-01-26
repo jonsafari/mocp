@@ -423,9 +423,14 @@ then
 		curl_ver=`curl-config --version | awk '{print $2}'`
 		curl_ver_major=`echo $curl_ver | awk -F. '{print $1}'`
 		curl_ver_minor=`echo $curl_ver | awk -F. '{print $2}'`
+		curl_ver_fix=`echo $curl_ver | awk -F. '{print $3}'`
 
-		if test \( $curl_ver_major -ge 7 -a $curl_ver_minor -ge 12 \) \
-			-o $curl_ver_major -ge 8
+		# make 071201 from 7.12.1
+		curl_ver_number=`printf "%02d%02d%02d" $curl_ver_major \
+			$curl_ver_minor $curl_ver_fix`
+
+
+		if test "$curl_ver_number" -ge "071202"
 		then
 			AC_MSG_RESULT([$curl_ver, OK])
 			CFLAGS="$CFLAGS `curl-config --cflags`"
@@ -434,7 +439,7 @@ then
 			AC_DEFINE([HAVE_CURL], 1, [Define if you have libcurl])
 			COMPILE_CURL="yes"
 		else
-			AC_MSG_RESULT([$curl_ver, but minimum is 7.12.0])
+			AC_MSG_RESULT([$curl_ver, but minimum is 7.12.2])
 		fi
 	fi
 fi
