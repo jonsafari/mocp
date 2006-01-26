@@ -213,11 +213,13 @@ void io_curl_open (struct io_stream *s, const char *url)
 
 	if (!(s->curl.multi_handle = curl_multi_init())) {
 		logit ("curl_multi_init() returned NULL");
+		s->errno_val = EINVAL;
 		return;
 	}
 	
 	if (!(s->curl.handle = curl_easy_init())) {
 		logit ("curl_easy_init() returned NULL");
+		s->errno_val = EINVAL;
 		return;
 	}
 
@@ -262,11 +264,13 @@ void io_curl_open (struct io_stream *s, const char *url)
 	if ((s->curl.multi_status = curl_multi_add_handle(s->curl.multi_handle,
 					s->curl.handle)) != CURLM_OK) {
 		logit ("curl_multi_add_handle() failed");
+		s->errno_val = EINVAL;
 		return;
 	}
 
 	if (pipe(s->curl.wake_up_pipe) < 0) {
 		logit ("pipe() failed: %s", strerror(errno));
+		s->errno_val = EINVAL;
 		return;
 	}
 
