@@ -189,6 +189,29 @@ static int ffmpeg_seek (void *prv_data, int sec)
 	return -1;
 }
 
+static void put_in_remain_buf (struct ffmpeg_data *data, const char *buf,
+		const int len)
+{
+	debug ("Remain: %dB", len);
+	
+	data->remain_buf_len = len;
+	data->remain_buf = (char *)xmalloc (len);
+	memcpy (data->remain_buf, buf, len);
+}
+
+static void add_to_remain_buf (struct ffmpeg_data *data, const char *buf,
+		const int len)
+{
+	debug ("Adding %dB to remain_buf", len);
+
+	data->remain_buf = (char *)xrealloc (data->remain_buf,
+			data->remain_buf_len + len);
+	memcpy (data->remain_buf + data->remain_buf_len, buf, len);
+	data->remain_buf_len += len;
+
+	debug ("remain_buf is %dB long", data->remain_buf_len);
+}
+
 static int ffmpeg_decode (void *prv_data, char *buf, int buf_len,
 		struct sound_params *sound_params)
 {
@@ -198,7 +221,7 @@ static int ffmpeg_decode (void *prv_data, char *buf, int buf_len,
 	char avbuf[AVCODEC_MAX_AUDIO_FRAME_SIZE * sizeof(int16_t)];
 	AVPacket pkt;
 	uint8_t *pkt_data;
-	int pkt_size;
+	int pkt_size = 0;
 	int filled = 0;
 
 	decoder_error_clear (&data->error);
@@ -228,81 +251,57 @@ static int ffmpeg_decode (void *prv_data, char *buf, int buf_len,
 
 		return to_copy;
 	}
-	
-	ret = av_read_frame (data->ic, &pkt);
-	if (ret < 0) {
-		decoder_error (&data->error, ERROR_FATAL, 0,
-				"Error in the stream!");
-		return 0;
-	}
 
-	pkt_data = pkt.data;
-	pkt_size = pkt.size;
+	do {
+		ret = av_read_frame (data->ic, &pkt);
+		if (ret < 0)
+			return 0;
 
-	debug ("Got %dB packet", pkt_size);
+		pkt_data = pkt.data;
+		pkt_size = pkt.size;
+		debug ("Got %dB packet", pkt_size);
+
 		
-	while (pkt_size) {
-		int len;
+		while (pkt_size) {
+			int len;
 		
-		len = avcodec_decode_audio (data->enc, (int16_t *)avbuf,
-				&data_size, pkt_data, pkt_size);
-		debug ("Decoded %dB", data_size);
+			len = avcodec_decode_audio (data->enc, (int16_t *)avbuf,
+					&data_size, pkt_data, pkt_size);
+			debug ("Decoded %dB", data_size);
 
-		if (len < 0)  {
-			/* skip frame */
-
-			ret = av_read_frame (data->ic, &pkt);
-			if (ret < 0) {
-				decoder_error (&data->error, ERROR_FATAL, 0,
+			if (len < 0)  {
+				/* skip frame */
+				decoder_error (&data->error, ERROR_STREAM, 0,
 						"Error in the stream!");
-				return 0;
+				break;
 			}
 
-			decoder_error (&data->error, ERROR_STREAM, 0,
-					"Error in the stream!");
-			pkt_data = pkt.data;
-			pkt_size = pkt.size;
+			pkt_data += len;
+			pkt_size -= len;
+
+			if (buf_len) {
+				int to_copy = MIN (data_size, buf_len);
 			
-			continue;
-		}
-		
-		pkt_data += len;
-		pkt_size -= len;
+				memcpy (buf, avbuf, to_copy);
 
-		if (buf_len) {
-			int to_copy = MIN (data_size, buf_len);
-			
-			memcpy (buf, avbuf, to_copy);
+				buf += to_copy;
+				filled += to_copy;
+				buf_len -= to_copy;
 
-			buf += to_copy;
-			filled += to_copy;
-			buf_len -= to_copy;
+				debug ("Copying %dB (%dB filled)", to_copy,
+						filled);
 
-			debug ("Copying %dB (%dB filled)", to_copy, filled);
-
-			if (to_copy < data_size) {
-				data->remain_buf_len = data_size - to_copy;
-				debug ("Remain: %dB", data->remain_buf_len);
-				data->remain_buf = (char *)xmalloc (
-						data->remain_buf_len);
-				memcpy (data->remain_buf,
-						avbuf + to_copy,
-						data->remain_buf_len);
+				if (to_copy < data_size)
+					put_in_remain_buf (data,
+							avbuf + to_copy,
+							data_size - to_copy);
 			}
-		}
-		else if (data_size) {
-			debug ("Adding %dB to remain_buf", data_size);
+			else if (data_size)
+				add_to_remain_buf (data, avbuf, data_size);
 			
-			data->remain_buf = (char *)xrealloc (data->remain_buf,
-					data->remain_buf_len + data_size);
-			memcpy (data->remain_buf + data->remain_buf_len,
-					avbuf, data_size);
-			data->remain_buf_len += data_size;
-			
-			debug ("remain_buf is %dB long", data->remain_buf_len);
 		}
-	}
-
+	} while (!filled);
+	
 	/* 2.0 - 16bit/sample*/
 	data->bitrate = pkt.size * 8 / ((filled + data->remain_buf_len) / 2.0 /
 			sound_params->channels / sound_params->rate) / 1000;
