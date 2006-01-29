@@ -217,6 +217,7 @@ int xwaddnstr (WINDOW *win, const char *str, const int n)
 
 			wcstombs (utf8, ucs, utf_num_chars + 1);
 			res = waddstr (win, utf8);
+			free (utf8);
 		}
 		else
 			res = waddnstr (win, str, utf_num_chars);
