@@ -686,46 +686,52 @@ static void update_curr_file ()
 
 	file = get_curr_file ();
 
-	if (file[0]) {
-		if (!curr_file.file || strcmp(file, curr_file.file)) {
-			file_info_cleanup (&curr_file);
+	if (!file[0] || curr_file.state == STATE_STOP) {
 
-			/* The total time could not get reset. */
-			iface_set_total_time (-1);
-			
-			iface_set_played_file (file);
-			send_tags_request (file, TAGS_COMMENTS | TAGS_TIME);
-			curr_file.file = file;
-
-			/* make a title that will be used until we get tags */
-			if (file_type(file) == F_URL || !strchr(file, '/')) {
-				curr_file.title = xstrdup (file);
-				update_curr_tags ();
-			}
-			else
-				curr_file.title =
-					xstrdup (strrchr(file, '/') + 1);
-
-			iface_set_played_file (file);
-			iface_set_played_file_title (curr_file.title);
-			
-			/* Silent seeking makes no sense if the playing file has
-			 * changed */
-			silent_seek_pos = -1;
-			iface_set_curr_time (curr_file.curr_time);
-
-			if (options_get_int("FollowPlayedFile"))
-				follow_curr_file ();
-		}
-		else
-			free (file);
-	}
-	else {
+		/* Nothing is played/paused */
+		
 		file_info_cleanup (&curr_file);
 		file_info_reset (&curr_file);
 		iface_set_played_file (NULL);
 		free (file);
 	}
+	else if (file[0] &&
+			(!curr_file.file || strcmp(file, curr_file.file))) {
+
+
+		/* played file has changed */
+		
+		file_info_cleanup (&curr_file);
+
+		/* The total time could not get reset. */
+		iface_set_total_time (-1);
+		
+		iface_set_played_file (file);
+		send_tags_request (file, TAGS_COMMENTS | TAGS_TIME);
+		curr_file.file = file;
+
+		/* make a title that will be used until we get tags */
+		if (file_type(file) == F_URL || !strchr(file, '/')) {
+			curr_file.title = xstrdup (file);
+			update_curr_tags ();
+		}
+		else
+			curr_file.title =
+				xstrdup (strrchr(file, '/') + 1);
+
+		iface_set_played_file (file);
+		iface_set_played_file_title (curr_file.title);
+		
+		/* Silent seeking makes no sense if the playing file has
+		 * changed */
+		silent_seek_pos = -1;
+		iface_set_curr_time (curr_file.curr_time);
+
+		if (options_get_int("FollowPlayedFile"))
+			follow_curr_file ();
+	}
+	else
+		free (file);
 }
 
 static void update_rate ()
