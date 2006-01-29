@@ -502,6 +502,27 @@ void tags_cache_save (struct tags_cache *c, const char *file_name)
 	fclose (file);
 }
 
+/* Read a line from a file, convert it to a number. Return 0 on error. */
+static int read_num (FILE *file, long *num)
+{
+	char *tmp;
+	
+	if ((tmp = read_line(file))) {
+		char *num_err;
+		
+		*num = strtol (tmp, &num_err, 10);
+		if (*num_err) {
+			free (tmp);
+			return 0;
+		}
+
+		free (tmp);
+		return 1;
+	}
+
+	return 0;
+}
+
 void tags_cache_load (struct tags_cache *c, const char *file_name)
 {
 	FILE *file;
@@ -515,79 +536,76 @@ void tags_cache_load (struct tags_cache *c, const char *file_name)
 	
 	LOCK (c->mutex);
 	logit ("Loading tags cache from %s...", file_name);
-	/* Remember not to load more than the cache size! */
 
 	while (!feof(file)) {
 		char *node_file_name;
 		struct file_tags *tags;
 		long mod_time;
-		char *tmp;
+		long tmp;
 
 		node_file_name = read_line (file);
 		if (!node_file_name)
 			break;
 
-		
-		if (!fscanf(file, "%ld", &mod_time)) {
+		if (!read_num(file, &mod_time)) {
+			free (node_file_name);
 			logit ("File broken, no modification time");
-			free (node_file_name);
 			break;
-		}
-
-		if (get_mtime(node_file_name) != mod_time) {
-			free (node_file_name);
-			continue;
 		}
 
 		tags = tags_new ();
 		
-		if (!(tmp = read_line(file))) {
+		/* read the title */
+		if (!(tags->title = read_line(file))) {
 			free (node_file_name);
 			tags_free (tags);
 			logit ("File broken, no title");
 			break;
 		}
-		if (tmp[0])
-			tags->title = tmp;
-		else
-			free (tmp);
+		if (!tags->title[0]) {
+			free (tags->title);
+			tags->title = NULL;
+		}
 
-		if (!(tmp = read_line(file))) {
+		/* read the artist */
+		if (!(tags->artist = read_line(file))) {
 			free (node_file_name);
 			tags_free (tags);
 			logit ("File broken, no artist");
 			break;
 		}
-		if (tmp[0])
-			tags->artist = tmp;
-		else
-			free (tmp);
+		if (!tags->artist[0]) {
+			free (tags->artist);
+			tags->artist = NULL;
+		}
 
-		if (!(tmp = read_line(file))) {
+		/* read the album */
+		if (!(tags->album = read_line(file))) {
 			free (node_file_name);
 			tags_free (tags);
-			logit ("File broken, no album");
+			logit ("File broken, no artist");
 			break;
 		}
-		if (tmp[0])
-			tags->album = tmp;
-		else
-			free (tmp);
+		if (!tags->album[0]) {
+			free (tags->album);
+			tags->album = NULL;
+		}
 
-		if (!fscanf(file, "%d", &tags->track)) {
+		if (!read_num(file, &tmp)) {
 			free (node_file_name);
 			tags_free (tags);
 			logit ("File broken, no track");
 			break;
 		}
+		tags->track = tmp;
 
-		if (!fscanf(file, "%d", &tags->time)) {
+		if (!read_num(file, &tmp)) {
 			free (node_file_name);
 			tags_free (tags);
 			logit ("File broken, no time");
-			break;
 		}
-		
+		tags->time = tmp;
+
 		if (tags->title)
 			tags->filled |= TAGS_COMMENTS;
 		else {
@@ -604,9 +622,15 @@ void tags_cache_load (struct tags_cache *c, const char *file_name)
 		if (tags->time != -1)
 			tags->filled |= TAGS_TIME;
 
-		debug ("Adding file %s", node_file_name);
-		tags_cache_add (c, node_file_name, tags);
-		count++;
+		
+		/* check if the file was changed */
+		if (get_mtime(node_file_name) == mod_time) {
+			debug ("Adding file %s", node_file_name);
+			tags_cache_add (c, node_file_name, tags);
+			count++;
+		}
+		else
+			debug ("File %s was modified", node_file_name);
 
 		free (node_file_name);
 
