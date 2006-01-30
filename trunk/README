@@ -155,16 +155,16 @@ Hacking
 Want to modify MOC? You are welcome, I'd love to see patches.
 
 MOC is written in C, so you must at least know this language to make simple
-changes. It is multi-thread program, but there are placec where you don't need
-to worry about that (the interface is only a one thread process). It uses
+changes. It is multi-threaded program, but there are placec where you don't
+need to worry about that (the interface is only a one thread process). It uses
 autoconf, automake, and libtool chain to generate configuration/compilation
 stuff, so you must know how to use it for example if you need to link to an
 additional library.
 
-There is documentation for some parts of the internal API for creating decoder
-plugins (file format support) and sound output drivers. You must have Doxygen
-(http://www.doxygen.org) to generate HTML pages from the comments in the source
-code. Just run doxygen command from the MOC source directory.
+The documentation for some parts of the internal API for creating decoder
+plugins (file format support) and sound output drivers can be generated using
+Dooxygen (http://www.doxygen.org). Just run the doxygen command from the MOC
+source directory.
 
 Before you change anything it is a good idea to check for the latest develoment
 version (check out from the Subversion repository if the best). Your changes
