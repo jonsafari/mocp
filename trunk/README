@@ -155,7 +155,7 @@ Hacking
 Want to modify MOC? You are welcome, I'd love to see patches.
 
 MOC is written in C, so you must at least know this language to make simple
-changes. It is multi-threaded program, but there are placec where you don't
+changes. It is multi-threaded program, but there are places where you don't
 need to worry about that (the interface is only a one thread process). It uses
 autoconf, automake, and libtool chain to generate configuration/compilation
 stuff, so you must know how to use it for example if you need to link to an
