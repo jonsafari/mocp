@@ -58,6 +58,8 @@ What software is required to compile it?
 
  - UNIX system with POSIX threads (eg.. Linux or FreeBSD)
  - ncurses (probably already installed in your system)
+ - C and C++ compilers (MOC is written in C, but libtool requires a C++
+   compiler).
 
 To support audio formats you need:
  - Ogg Vorbis - libvorbis (http://www.xiph.org/ogg/vorbis/download/)
