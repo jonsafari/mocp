@@ -87,10 +87,7 @@ static void *read_thread (void *arg)
 			debug ("Setting read_thread_waiting flag");
 			buf->read_thread_waiting = 1;
 		}
-		
-		debug ("sending the signal");
-		pthread_cond_broadcast (&buf->ready_cond);
-		
+	
 		if (buf->free_callback) {
 
 			/* unlock the mutex to make calls to out_buf functions
@@ -99,6 +96,9 @@ static void *read_thread (void *arg)
 			buf->free_callback ();
 			LOCK (buf->mutex);
 		}
+		
+		debug ("sending the signal");
+		pthread_cond_broadcast (&buf->ready_cond);
 		
 		if ((fifo_buf_get_fill(&buf->buf) == 0 || buf->pause
 					|| buf->stop)
