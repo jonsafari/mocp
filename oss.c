@@ -31,6 +31,7 @@
 #include <strings.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <assert.h>
 
 #include "server.h"
 #include "audio.h"
@@ -81,18 +82,11 @@ static int set_capabilities (struct output_driver_caps *caps)
 		caps->formats |= SFMT_S8;
 	if (format_mask & AFMT_U8)
 		caps->formats |= SFMT_U8;
-	if (format_mask & AFMT_S16_NE)
-		caps->formats |= SFMT_S16;
-#ifdef AFMT_S32_LE
-	if (format_mask & AFMT_S32_LE)
-		caps->formats |= SFMT_S32;
-#endif
-#ifdef AFMT_U32_LE
-	if (format_mask & AFMT_U32_LE)
-		caps->formats |= SFMT_U32;
-#endif
-
-	caps->formats |= SFMT_LE;
+	
+	if (format_mask & AFMT_S16_LE)
+		caps->formats |= SFMT_S16 | SFMT_LE;
+	if (format_mask & AFMT_S16_BE)
+		caps->formats |= SFMT_S16 | SFMT_BE;
 
 	if (!caps->formats) {
 		error ("No known format supported by the audio device.");
@@ -236,18 +230,11 @@ static int oss_set_params ()
 			req_format = AFMT_U8;
 			break;
 		case SFMT_S16:
-			req_format = AFMT_S16_LE;
+			if (params.fmt & SFMT_LE)
+				req_format = AFMT_S16_LE;
+			else
+				req_format = AFMT_S16_BE;
 			break;
-#ifdef AFMT_S32_LE
-		case SFMT_S32:
-			req_format = AFMT_S32_LE;
-			break;
-#endif
-#ifdef AFMT_U32_LE
-		case SFMT_U32:
-			req_format = AFMT_U32_LE;
-			break;
-#endif
 		default:
 			error ("format %s is not supported by the device",
 				sfmt_str(params.fmt, fmt_name,
