@@ -1,3 +1,67 @@
+2.4.0
+
+	* Layout of the main window can be changed using Layout[123] options.
+	  Switching between layouts is done using the 'l' key and now TAB is
+	  used to switch between the playlist and the directory menu. For
+	  example, you can configure the layout to see both the playlist and a
+	  directory content.
+	* Support for WMA, RealAudio, MP4 and AAC file using FFmpeg.
+	* UTF-8 support.
+	* Selecting themes at runtime - T command (this does not change the
+	  config file).
+	* Executing external commands, like 'cp %f /mnt/usb_drive' where %f is
+	  substituted with the path to the currently selected file.
+	* Tags are cached at the server side and read in a separate thread.
+	  The interface is not locked until the tags are read. Size of the
+	  cache can be adjusted using TagsCacheSize. The cache is saved at exit
+	  and loaded at startup.
+	* Moving items up and down: u and j commands.
+	* Workaround for encoding of ID3v1 tags. New options: UseRCC - to use
+	  librcc for ID3v1 reencoding (Initial patch by Alexey Gladkov),
+	  ID3v1TagsEncoding - assumed encoding for ID3v1 tags.
+	* Added UseCursorSelection option (default: no) to display cursor on
+	  the selected file. This is useful with braille displays.
+	* Added SetXtermTitle option (disable/enable setting xterm title).
+	* Added m4a and aac to the list of extensions supported by ffmpeg.
+	* Pressing n when nothing is played starts playing from the first item
+	  on the playlist.
+	* Added FollowPlayedFile option: menu follows the currently played file
+	  so that it is scrolled if the file is outside the visible part
+	  (default to yes).
+	* Numbering items in the playlist. Can be turned off using
+	  PlaylistNumbering.
+	* New themes: moca_theme (Nicola Vitale), red_theme (yyz), and
+	  darkdot_theme (David Lazar).
+	* Added a command for adding a URL to the playlist using entry (CTRL-u).
+	* A and --append can add files from playlists.
+	* Interface show the playlist after startup if something from the
+	  playlist is played (CanStartInPlaylist option).
+	* Commands: --append, --clear, --play work now as expected even if there
+	  is no client running.
+	* Use full paths instead of just file names for displaying on the
+	  playlist.
+	* Internet streams can be paused.
+	* Ogg plugin name was changed to vorbis.
+	* Added RPM SPEC file. (Fredrik Rambris)
+	* Redesign of the interface code. This is a big change in the code, but
+	  not really visible to the user. It was necessary to maintain and
+	  extend the interface in the future.
+	* MOC can now be compiled under OpenBSD. Thanks to Tilo Stritzky for
+	  pointing out the issues.
+	* Striping leading and trailing white characters from URLs entered by
+	  the user.
+	* Count speex time without scaning the whole file.
+	* -e is an alias for -a.
+	* Display the current time for internet streams.
+	* MusicDir can be a playlist.
+	* Silent seeking can be configured using SilentSeekTime option.
+	* After adding a file to the playlist, the cursor is moved down.
+	* The help screen's position is kept when it's not displayed.
+	* Some operations like deleting items from the playlist should now be
+	  faster.
+	* Fixed a possible deadlock while seeking. This fixes a hang on
+	  FreeBSD 6.
+	* Fixed OSS support on some machones (like G3 iBook).
 2.3.3
 	* Workaround for backspace key on many terminals (like aterm).
 	* Fixed a memory leak when playing internet streams. (rixx)
