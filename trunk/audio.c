@@ -229,8 +229,13 @@ static long sfmt_best_matching (const long formats_with_endian,
 
 	assert (best != 0);
 
-	if (!(best & (SFMT_S8 | SFMT_U8)))
-		best |= req_with_endian & SFMT_MASK_ENDIANES;
+	if (!(best & (SFMT_S8 | SFMT_U8))) {
+		if ((formats_with_endian & SFMT_LE)
+				&& (formats_with_endian & SFMT_BE))
+			best |= SFMT_NE;
+		else
+			best |= formats_with_endian & SFMT_MASK_ENDIANES;
+	}
 
 	debug ("Choosed %s as the best matching %s",
 			sfmt_str(best, fmt_name1, sizeof(fmt_name1)),
