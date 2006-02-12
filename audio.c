@@ -230,7 +230,7 @@ static long sfmt_best_matching (const long formats_with_endian,
 	assert (best != 0);
 
 	if (!(best & (SFMT_S8 | SFMT_U8)))
-		best |= formats_with_endian & SFMT_MASK_ENDIANES;
+		best |= req_with_endian & SFMT_MASK_ENDIANES;
 
 	debug ("Choosed %s as the best matching %s",
 			sfmt_str(best, fmt_name1, sizeof(fmt_name1)),
