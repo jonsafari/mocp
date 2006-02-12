@@ -1,5 +1,4 @@
 2.4.0
-
 	* Layout of the main window can be changed using Layout[123] options.
 	  Switching between layouts is done using the 'l' key and now TAB is
 	  used to switch between the playlist and the directory menu. For
