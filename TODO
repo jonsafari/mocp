@@ -1,10 +1,8 @@
 Items marked with $ are bigger changes requiring more time.
 
 Known bugs:
-- items seems to disappear from the playlist.
-
-Before 2.4:
-* Valgrind
+- Must try other sample rates in ALSA if the rate is not supported
+  (http://moc.daper.net/node/114)
 
 Before 2.5:
 * Move TODO to moc.daper.net/roadmap
@@ -14,11 +12,13 @@ Before 2.5:
   %F -- expands to (the expansion of) the current FormatString
   if there is a song playing or paused, and empty string if stopped.
   %S --  expands to play/stop/pause.
+* -i shows also the average bitrate.
 
 In future:
 
 * Review strcpy()/sprintf() usage, change to strncpy()/snprintf() where
   possible.
+* More side menus: many directory/playlist views.
 * LADSPA
 * Don't display not printable chars.
 * Editing the title of an item on the playlist (for internet streams).
