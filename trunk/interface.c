@@ -1471,12 +1471,15 @@ static void do_resize ()
 }
 #endif
 
-static void go_dir_up ()
+/* Strip the last directory from the path. Returned memory is mallod()ed. */
+static char *dir_up (const char *path)
 {
-	char *dir;
 	char *slash;
+	char *dir;
 
-	dir = xstrdup (cwd);
+	assert (path != NULL);
+
+	dir = xstrdup (path);
 	slash = strrchr (dir, '/');
 	assert (slash != NULL);
 	if (slash == dir)
@@ -1484,6 +1487,14 @@ static void go_dir_up ()
 	else
 		*slash = 0;
 
+	return dir;
+}
+
+static void go_dir_up ()
+{
+	char *dir;
+
+	dir = dir_up (cwd);
 	go_to_dir (dir, 0);
 	free (dir);
 }
@@ -2064,6 +2075,12 @@ static void entry_key_search (const struct iface_key *k)
 		iface_entry_disable ();
 		
 		if (text[0]) {
+
+			if (!strcmp(file, "..")) {
+				free (file);
+				file = dir_up (cwd);
+			}
+			
 			if (is_url(file))
 				play_from_url (file);
 			else if (file_type(file) == F_DIR)
