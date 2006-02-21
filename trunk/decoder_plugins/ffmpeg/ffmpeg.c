@@ -336,6 +336,8 @@ static void ffmpeg_get_name (const char *file, char buf[4])
 		strcpy (buf, "WMA");
 	else if (!strcasecmp(ext, "aac"))
 		strcpy (buf, "AAC");
+	else if (!strcasecmp(ext, "mp4"))
+		strcpy (buf, "MP4");
 	else if (!strcasecmp(ext, "m4a"))
 		strcpy (buf, "M4A");
 }
@@ -345,6 +347,7 @@ static int ffmpeg_our_format_ext (const char *ext)
 	return !strcasecmp(ext, "wma")
 		|| !strcasecmp(ext, "ra")
 		|| !strcasecmp(ext, "m4a")
+		|| !strcasecmp(ext, "mp4")
 		|| !strcasecmp(ext, "aac");
 }
 
