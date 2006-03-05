@@ -1,4 +1,4 @@
-# This file is made by Fredrik Rambris <fredrik@rambirs.com>
+# This file is made by Fredrik Rambris <fredrik@rambris.com>
 
 Name: moc
 Summary: Music on Console - Console audio player for Linux/UNIX
@@ -39,7 +39,7 @@ This package contains the MP3 decoder
 %package musepack 
 Summary: Musepack (MPC) decoder for MoC - Music on Console
 Group: Applications/Multimedia
-BuildRequires: libmpcdec-devel taglib-devel
+BuildRequires: libmpcdec-devel taglib-devel 
 Requires: libmpcdec taglib
 Requires: %{name} = %{version}
 %description musepack 
@@ -51,20 +51,21 @@ files in this directory beginning from the chosen file.
 This package contains the Musepack (MPC) decoder
 %endif
 
-%if %{!?_without_ogg:1}0
-%package ogg
+%if %{!?_without_vorbis:1}0
+%package vorbis
 Summary: Ogg decoder for MoC - Music on Console
 Group: Applications/Multimedia
 BuildRequires: libogg-devel libvorbis-devel
 Requires: libogg libvorbis
 Requires: %{name} = %{version}
-%description ogg
+Obsoletes: ogg
+%description vorbis 
 MOC (music on console) is a console audio player for LINUX/UNIX designed to be
 powerful and easy to use. You just need to select a file from some directory
 using the menu similar to Midnight Commander, and MOC will start playing all
 files in this directory beginning from the chosen file.
 
-This package contains the ogg decoder
+This package contains the Ogg Vorbis decoder
 %endif
 
 %if %{!?_without_flac:1}0
@@ -143,13 +144,13 @@ Requires: curl
 
 
 %prep
-%setup -q
+%setup
 
 %build
 %configure \
 		%{?_without_mp3:--without-mp3} \
 		%{!?_with_musepack:--without-musepack} \
-		%{?_without_ogg:--without-ogg} \
+		%{?_without_vorbis:--without-vorbis} \
 		%{?_without_flac:--without-flac} \
 		%{?_without_sndfile:--without-sndfile} \
 		%{?_without_speex:--without-speex} \
@@ -163,6 +164,9 @@ Requires: curl
 [ -n "$RPM_BUILD_ROOT" -a "$RPM_BUILD_ROOT" != / ] && rm -rf "$RPM_BUILD_ROOT"
 %makeinstall
 %{__rm} -rf $RPM_BUILD_ROOT/usr/share/doc/moc
+mkdir -p $RPM_BUILD_ROOT%_libdir/moc/decoder_plugins
+mv $RPM_BUILD_ROOT%_libdir/*.so $RPM_BUILD_ROOT%_libdir/moc/decoder_plugins
+rm -f $RPM_BUILD_ROOT%_libdir/*.la
 
 %clean
 [ -n "$RPM_BUILD_ROOT" -a "$RPM_BUILD_ROOT" != / ] && rm -rf "$RPM_BUILD_ROOT"
@@ -173,46 +177,48 @@ Requires: curl
 %_bindir/*
 %_datadir/%{name}/*
 %_mandir/*/*
-
+%dir %_libdir/moc
+%dir %_libdir/moc/decoder_plugins
 
 %if %{?_with_musepack:1}0
 %files musepack 
 %defattr(-, root, root)
-%_libdir/libmusepack_decoder.*
+%_libdir/moc/decoder_plugins/libmusepack_decoder.*
 %endif
 
 %if %{!?_without_flac:1}0
 %files flac
 %defattr(-, root, root)
-%_libdir/libflac_decoder.*
+%_libdir/moc/decoder_plugins/libflac_decoder.*
 %endif
 
 %if %{!?_without_mp3:1}0
 %files mp3
 %defattr(-, root, root)
-%_libdir/libmp3_decoder.*
+%_libdir/moc/decoder_plugins/libmp3_decoder.*
 %endif
 
-%if %{!?_without_ogg:1}0
-%files ogg
+%if %{!?_without_vorbis:1}0
+%files vorbis
 %defattr(-, root, root)
-%_libdir/libogg_decoder.*
+%_libdir/moc/decoder_plugins/libvorbis_decoder.*
 %endif
 
 %if %{!?_without_sndfile:1}0
 %files sndfile
 %defattr(-, root, root)
-%_libdir/libsndfile_formats_decoder.*
+%_libdir/moc/decoder_plugins/libsndfile_formats_decoder.*
 %endif
 
 %if %{!?_without_speex:1}0
 %files speex 
 %defattr(-, root, root)
-%_libdir/libspeex_decoder.*
+%_libdir/moc/decoder_plugins/libspeex_decoder.*
 %endif
 
 %if %{?_with_ffmpeg:1}0
 %files ffmpeg 
 %defattr(-, root, root)
-%_libdir/libffmpeg_decoder.*
+%_libdir/moc/decoder_plugins/libffmpeg_decoder.*
 %endif
+
