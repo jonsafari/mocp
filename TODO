@@ -3,6 +3,17 @@ Items marked with $ are bigger changes requiring more time.
 Known bugs:
 - Must try other sample rates in ALSA if the rate is not supported
   (http://moc.daper.net/node/114)
+- RCC should be used for file names. http://moc.daper.net/node/116
+- Do we assume filesystem in UTF-8? It's incorrect.
+- Repeat is not working properly. http://moc.daper.net/node/124
+- Side menus should have bottom lines sometimes. http://moc.daper.net/node/124
+- lock up when seeking backward
+- Newest FFmpeg causes compilation error (ffmpeg.c:124: error: incompatible
+  types in assignment)
+- I have a problem with moc 2.4.0 on FreeBSD 6.1-PRERELEASE. When I build moc
+  with musepack (libmpcdec) support moc allways core dumps on exit.
+- first console: `mocp -D`, second: `mocp -c -a -p file.mp3` and we got
+  'FATAL_ERROR: Can't send() int to the server.'
 
 Before 2.5:
 * Move TODO to moc.daper.net/roadmap
@@ -13,6 +24,8 @@ Before 2.5:
   if there is a song playing or paused, and empty string if stopped.
   %S --  expands to play/stop/pause.
 * -i shows also the average bitrate.
+* When killed by a signal, save the tags cache.
+* Communication protocol in a separate library.
 
 In future:
 
