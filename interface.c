@@ -3351,8 +3351,8 @@ void interface_cmdline_clear_plist (int server_sock)
 		send_int_to_srv (CMD_PLIST_SET_SERIAL);
 		send_int_to_srv (serial);
 		send_int_to_srv (CMD_LIST_CLEAR);
+		send_int_to_srv (CMD_UNLOCK);
 	}
-	send_int_to_srv (CMD_UNLOCK);
 	
 	unlink (create_file_name("playlist.m3u"));
 
