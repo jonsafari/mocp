@@ -281,3 +281,40 @@ CanStartInPlaylist	= yes
 
 # Set the terminal title when running under xterm.
 #SetXtermTitle		= yes
+
+# Enable oversampling (yes/no)
+#ModPlug_Oversampling = yes
+# Enable noise reduction (yes/no)
+#ModPlug_NoiseReduction = yes
+# Enable reverb (yes/no)
+#ModPlug_Reverb = no
+# Enable mega-bass (yes/no)
+#ModPlug_MegaBass = no
+# Enable surround (yes/no)
+#ModPlug_Surround = no
+# Resampling mode. One of FIR/SPLINE/LINEAR/NEAREST
+# FIR :      8 tap fir filter (extremely high quality)
+# SPLINE :   Cubic spline interpolation (high quality)
+# LINEAR :   Linear interpolation (fast, good quality)
+# NEAREST :  No interpolation (very fast, extremely bad sound quality)
+#ModPlug_ResamplingMode = FIR
+# Number of channles (1 or 2)
+#ModPlug_Channels = 2
+# Bits per sample (8,16,32). 32 Bits seems ot be buggy...
+#ModPlug_Bits = 16 
+# Sampling rate (11025, 22050, 44100, 48000)
+#ModPlug_Frequency = 44100
+# Reverb level 0(quiet)-100(loud)
+#ModPlug_ReverbDepth = 0
+# Reverb delay in ms, usually 40-200ms
+#ModPlug_ReverbDelay = 0
+# Bass level 0(quiet)-100(loud)
+#ModPlug_BassAmount = 0
+# Bass cutoff in Hz (10-100)
+#ModPlug_BassRange = 10
+# Surround level 0(quiet)-100(heavy)
+#ModPlug_SurroundDepth = 0
+# Surround delay in ms, usually 5-40ms
+#ModPlug_SurroundDelay = 0
+# Number of times to loop. Zero prevents looping. -1 loops forever.
+#ModPlug_LoopCount = 0

@@ -360,6 +360,18 @@ then
 			   [true])
 fi
 
+dnl libmodplug
+AC_ARG_WITH(modplug, AS_HELP_STRING(--without-modplug,
+	    Compile without libmodplug))
+if test "x$with_modplug" != "xno"
+then
+	PKG_CHECK_MODULES(modplug, libmodplug >= 0.7,
+			   [AC_SUBST(modplug_LIBS)
+			   AC_SUBST(modplug_CFLAGS)
+			   DECODER_PLUGINS="$DECODER_PLUGINS modplug"],
+			   [true])
+fi
+
 dnl ffmpeg
 AC_ARG_WITH(ffmpeg, AS_HELP_STRING(--without-ffmpeg,
 	    Compile without ffmpeg))
@@ -457,6 +469,7 @@ AC_OUTPUT([Makefile
 	  decoder_plugins/speex/Makefile
 	  decoder_plugins/musepack/Makefile
 	  decoder_plugins/ffmpeg/Makefile
+          decoder_plugins/modplug/Makefile
 	  moc.spec
 	  ])
 
