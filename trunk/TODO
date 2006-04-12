@@ -8,12 +8,10 @@ Known bugs:
 - Repeat is not working properly. http://moc.daper.net/node/124
 - Side menus should have bottom lines sometimes. http://moc.daper.net/node/124
 - lock up when seeking backward
-- Newest FFmpeg causes compilation error (ffmpeg.c:124: error: incompatible
-  types in assignment)
 - I have a problem with moc 2.4.0 on FreeBSD 6.1-PRERELEASE. When I build moc
   with musepack (libmpcdec) support moc allways core dumps on exit.
-- first console: `mocp -D`, second: `mocp -c -a -p file.mp3` and we got
-  'FATAL_ERROR: Can't send() int to the server.'
+- libdl problem
+- Option and a command to turn off displaying the full paths in the playlist.
 
 Before 2.5:
 * Move TODO to moc.daper.net/roadmap
@@ -26,6 +24,7 @@ Before 2.5:
 * -i shows also the average bitrate.
 * When killed by a signal, save the tags cache.
 * Communication protocol in a separate library.
+* More command line options: shuffle, repeat, autonext, volume etc.
 
 In future:
 
@@ -71,6 +70,7 @@ In future:
 * scripting
 * APE (http://sourceforge.net/projects/mac-port/)
 * Some options can be changed at run-time using a menu.
+* http://www.wavpack.com
 
 Maybe never:
 
