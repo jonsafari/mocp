@@ -424,7 +424,9 @@ static char *get_curr_file ()
 
 static void update_mixer_value ()
 {
-	iface_set_mixer_value (get_mixer_value());
+	int val = get_mixer_value ();
+	
+	iface_set_mixer_value (val >= 0 ? val : 0);
 }
 
 static void update_mixer_name ()
