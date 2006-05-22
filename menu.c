@@ -549,7 +549,7 @@ struct menu *menu_filter_pattern (const struct menu *menu, const char *pattern)
 	menu_set_show_format (new, menu->show_format);
 	menu_set_info_attr (new, menu->info_attr);
 	
-	for (mi = menu->top; mi; mi = mi->next)
+	for (mi = menu->items; mi; mi = mi->next)
 		if (strcasestr(mi->title, pattern))
 			menu_add_from_item (new, mi);
 
