@@ -12,6 +12,7 @@ Known bugs:
   with musepack (libmpcdec) support moc allways core dumps on exit.
 - libdl problem
 - Option and a command to turn off displaying the full paths in the playlist.
+- Crash on FreeBSD 5.5 http://moc.daper.net/node/148
 
 Before 2.5:
 * Move TODO to moc.daper.net/roadmap
