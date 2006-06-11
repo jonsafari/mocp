@@ -114,13 +114,16 @@ static size_t fill_buff (struct mp3_data *data)
 #ifdef HAVE_RCC
 static char *do_rcc (char *str)
 {
+	rcc_string rccstring;
 	char *reencoded;
 
 	assert (str != NULL);
 
-	if (*str && (reencoded = rccRecode(NULL, 0, 1, str)) != NULL) {
-		free (str);
-		return reencoded;
+	rccstring = rccFrom(NULL, 0, str);
+	if (*rccstring && (reencoded = rccToCharset(NULL, "UTF-8", rccstring))) {
+	    free(str);
+	    free(rccstring);
+	    return reencoded;
 	}
 	return str;
 }
@@ -727,7 +730,7 @@ static void mp3_init ()
 	rcc_class classes[] = {
 		{ "input", RCC_CLASS_STANDARD, NULL, NULL, "Input Encoding",
 			0 },
-		{ "output", RCC_CLASS_TRANSLATE_LOCALE, "UTF-8", NULL,
+		{ "output", RCC_CLASS_KNOWN, NULL, NULL,
 			"Output Encoding", 0 },
 		{ NULL, 0, NULL, NULL, NULL, 0 }
 	};
