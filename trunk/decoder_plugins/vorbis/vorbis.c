@@ -148,7 +148,7 @@ static void vorbis_tags (const char *file_name, struct file_tags *info,
 		get_comment_tags (&vf, info);
 
 	if ((tags_sel & TAGS_TIME)
-			&& (vorbis_time = ov_time_total(&vf, -1)) != OV_EINVAL)
+			&& (vorbis_time = ov_time_total(&vf, -1)) >= 0)
 		info->time = vorbis_time;
 
 	ov_clear (&vf);
