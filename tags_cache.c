@@ -603,8 +603,16 @@ void tags_cache_load (struct tags_cache *c, const char *file_name)
 			free (node_file_name);
 			tags_free (tags);
 			logit ("File broken, no time");
+			break;
 		}
 		tags->time = tmp;
+
+		if (tags->time < 0) {
+			free (node_file_name);
+			tags_free (tags);
+			logit ("File broken, invalid time");
+			break;
+		}
 
 		if (tags->title)
 			tags->filled |= TAGS_COMMENTS;
