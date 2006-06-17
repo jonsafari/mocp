@@ -120,10 +120,14 @@ static char *do_rcc (char *str)
 	assert (str != NULL);
 
 	rccstring = rccFrom(NULL, 0, str);
-	if (*rccstring && (reencoded = rccToCharset(NULL, "UTF-8", rccstring))) {
-	    free(str);
-	    free(rccstring);
-	    return reencoded;
+	if (rccstring) {
+		if (*rccstring && (reencoded = rccToCharset(NULL, "UTF-8", rccstring))) {
+		    free(str);
+		    free(rccstring);
+		    return reencoded;
+		}
+		
+		free (rccstring);
 	}
 	return str;
 }
