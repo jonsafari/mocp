@@ -1826,10 +1826,15 @@ static void cmd_clear_playlist ()
 static void go_to_music_dir ()
 {
 	if (options_get_str("MusicDir")) {
-		if (file_type(options_get_str("MusicDir")) == F_DIR)
-			go_to_dir (options_get_str("MusicDir"), 0);
-		else if (file_type(options_get_str("MusicDir")) == F_PLAYLIST)
-			go_to_playlist (options_get_str("MusicDir"));
+		char music_dir[PATH_MAX] = "/";
+
+		resolve_path (music_dir, sizeof(music_dir),
+				options_get_str("MusicDir"));
+		
+		if (file_type(music_dir) == F_DIR)
+			go_to_dir (music_dir, 0);
+		else if (file_type(music_dir) == F_PLAYLIST)
+			go_to_playlist (music_dir);
 		else
 			error ("MusicDir is neither a directory nor a "
 					"playlist.");
@@ -2863,6 +2868,24 @@ static void exec_custom_command (const char *option)
 	free (cmd);
 }
 
+static void go_to_fast_dir (const int num)
+{
+	char option_name[20];
+
+	assert (num >= 1 && num <= 10);
+
+	sprintf (option_name, "FastDir%d", num);
+	
+	if (options_get_str(option_name)) {
+		char dir[PATH_MAX] = "/";
+		
+		resolve_path (dir, sizeof(dir), options_get_str(option_name));
+		go_to_dir (dir, 0);
+	}
+	else
+		error ("%s is not defined", option_name);
+}
+
 /* Handle key */
 static void menu_key (const struct iface_key *k)
 {
@@ -3042,84 +3065,34 @@ static void menu_key (const struct iface_key *k)
 				set_mixer (90);
 				break;
 			case KEY_CMD_FAST_DIR_1:
-				if (options_get_str("FastDir1"))
-					go_to_dir (options_get_str(
-								"FastDir1"), 0);
-				else
-					error ("FastDir1 not "
-							"defined");
+				go_to_fast_dir (1);
 				break;
 			case KEY_CMD_FAST_DIR_2:
-				if (options_get_str("FastDir2"))
-					go_to_dir (options_get_str(
-								"FastDir2"), 0);
-				else
-					error ("FastDir2 not "
-							"defined");
+				go_to_fast_dir (2);
 				break;
 			case KEY_CMD_FAST_DIR_3:
-				if (options_get_str("FastDir3"))
-					go_to_dir (options_get_str(
-								"FastDir3"), 0);
-				else
-					error ("FastDir3 not "
-							"defined");
+				go_to_fast_dir (3);
 				break;
 			case KEY_CMD_FAST_DIR_4:
-				if (options_get_str("FastDir4"))
-					go_to_dir (options_get_str(
-								"FastDir4"), 0);
-				else
-					error ("FastDir4 not "
-							"defined");
+				go_to_fast_dir (4);
 				break;
 			case KEY_CMD_FAST_DIR_5:
-				if (options_get_str("FastDir5"))
-					go_to_dir (options_get_str(
-								"FastDir5"), 0);
-				else
-					error ("FastDir5 not "
-							"defined");
+				go_to_fast_dir (5);
 				break;
 			case KEY_CMD_FAST_DIR_6:
-				if (options_get_str("FastDir6"))
-					go_to_dir (options_get_str(
-								"FastDir6"), 0);
-				else
-					error ("FastDir6 not "
-							"defined");
+				go_to_fast_dir (6);
 				break;
 			case KEY_CMD_FAST_DIR_7:
-				if (options_get_str("FastDir7"))
-					go_to_dir (options_get_str(
-								"FastDir7"), 0);
-				else
-					error ("FastDir7 not "
-							"defined");
+				go_to_fast_dir (7);
 				break;
 			case KEY_CMD_FAST_DIR_8:
-				if (options_get_str("FastDir8"))
-					go_to_dir (options_get_str(
-								"FastDir8"), 0);
-				else
-					error ("FastDir8 not "
-							"defined");
+				go_to_fast_dir (8);
 				break;
 			case KEY_CMD_FAST_DIR_9:
-				if (options_get_str("FastDir9"))
-					go_to_dir (options_get_str(
-								"FastDir9"), 0);
-				else
-					error ("FastDir9 not "
-							"defined");
+				go_to_fast_dir (9);
 				break;
 			case KEY_CMD_FAST_DIR_10:
-				if (options_get_str("FastDir10"))
-					go_to_dir (options_get_str(
-								"FastDir10"), 0);
-				else
-					error ("FastDir10 not "
-							"defined");
+				go_to_fast_dir (10);
 				break;
 			case KEY_CMD_TOGGLE_MIXER:
 				debug ("Toggle mixer.");
