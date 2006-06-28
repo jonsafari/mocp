@@ -65,6 +65,12 @@ int isdir (const char *file)
 	return S_ISDIR(file_stat.st_mode) ? 1 : 0;
 }
 
+/* Return 1 if the file can be read by this user, 0 if not */
+int can_read_file (const char *file)
+{
+	return access(file, R_OK) == 0;
+}
+
 enum file_type file_type (const char *file)
 {
 	struct stat file_stat;

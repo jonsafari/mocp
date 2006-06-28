@@ -1762,6 +1762,61 @@ static void add_dir_plist ()
 	free (file);
 }
 
+/* To avoid lots of locks and unlocks, this assumes a lock is sent before 
+ * the first call and an unlock after the last.
+ *
+ * It's also assumed to be in the menu.
+ */
+static void remove_file_from_playlist (const char *file)
+{
+	assert (file != NULL);
+	assert (plist_count(playlist) > 0);
+
+	if (options_get_int("SyncPlaylist")) {
+		send_int_to_srv (CMD_CLI_PLIST_DEL);
+		send_str_to_srv (file);
+	}
+	else {
+		int n = plist_find_fname (playlist, file);
+
+		assert (n != -1);
+
+		plist_delete (playlist, n);
+		iface_del_plist_item (file);
+
+		if (plist_count(playlist) == 0)
+			clear_playlist ();
+	}
+
+	/* Delete this item from the server's playlist if it has our
+	 * playlist */
+	if (get_server_plist_serial() == plist_get_serial(playlist)) {
+		send_int_to_srv (CMD_DELETE);
+		send_str_to_srv (file);
+	}
+}
+
+/* Remove all dead entries (point to non-existent or unreadable) */
+static void remove_dead_entries_plist ()
+{
+	const char *file = NULL;
+	int i;
+
+	if (! iface_in_plist_menu()) { 
+		error ("Can't prune when not in the playlist.");
+		return; 
+	}
+
+	send_int_to_srv (CMD_LOCK);
+	for (i = 0, file = plist_get_next_dead_entry(playlist, &i);
+	     file != NULL;
+	     file = plist_get_next_dead_entry(playlist, &i)) {
+		remove_file_from_playlist (file);
+	}
+	send_int_to_srv (CMD_UNLOCK);
+}
+
+
 static void toggle_option (const char *name)
 {
 	send_int_to_srv (CMD_SET_OPTION);
@@ -2266,30 +2321,7 @@ static void delete_item ()
 	file = iface_get_curr_file ();
 	
 	send_int_to_srv (CMD_LOCK);
-	
-	if (options_get_int("SyncPlaylist")) {
-		send_int_to_srv (CMD_CLI_PLIST_DEL);
-		send_str_to_srv (file);
-	}
-	else {
-		int n = plist_find_fname (playlist, file);
-
-		assert (n != -1);
-
-		plist_delete (playlist, n);
-		iface_del_plist_item (file);
-
-		if (plist_count(playlist) == 0)
-			clear_playlist ();
-	}
-
-	/* Delete this item from the server's playlist if it has our
-	 * playlist */
-	if (get_server_plist_serial() == plist_get_serial(playlist)) {
-		send_int_to_srv (CMD_DELETE);
-		send_str_to_srv (file);
-	}
-	
+	remove_file_from_playlist (file);
 	send_int_to_srv (CMD_UNLOCK);
 
 	free (file);
@@ -2954,6 +2986,9 @@ static void menu_key (const struct iface_key *k)
 				break;
 			case KEY_CMD_PLIST_ADD_DIR:
 				add_dir_plist ();
+				break;
+			case KEY_CMD_PLIST_REMOVE_DEAD_ENTRIES:
+				remove_dead_entries_plist ();
 				break;
 			case KEY_CMD_MIXED_DEC_1:
 				adjust_mixer (-1);
