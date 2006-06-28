@@ -57,6 +57,7 @@ toggle_menu =		TAB
 toggle_layout =		l
 add_file =		a
 clear_playlist =	C
+remove_dead_entries =	Y
 add_directory =		A
 volume_down_1 =		<
 volume_up_1 =		>

@@ -95,6 +95,8 @@ void plist_set_serial (struct plist *plist, const int serial);
 int plist_get_serial (const struct plist *plist);
 int plist_last (const struct plist *plist);
 int plist_find_del_fname (const struct plist *plist, const char *file);
+const char *plist_get_next_dead_entry (const struct plist *plist,
+                                       int *last_index);
 void plist_item_copy (struct plist_item *dst, const struct plist_item *src);
 enum file_type plist_file_type (const struct plist *plist, const int num);
 void plist_remove_common_items (struct plist *a, struct plist *b);

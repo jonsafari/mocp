@@ -424,6 +424,31 @@ int plist_find_del_fname (const struct plist *plist, const char *file)
 	return item;
 }
 
+/* Returns the next filename that is a dead entry, or NULL if there are none
+ * left.
+ *
+ * It will set the index on success.
+ */
+const char *plist_get_next_dead_entry (const struct plist *plist,
+                                       int *last_index)
+{
+	int i;
+
+	assert (last_index != NULL);
+	assert (plist != NULL);
+
+	for (i = *last_index; i < plist->num; i++) {
+		if (plist->items[i].file
+			  && ! plist_deleted(plist, i)
+			  && ! can_read_file(plist->items[i].file)) {
+			*last_index = i + 1;
+			return plist->items[i].file;
+		}
+	}
+
+	return NULL;
+}
+
 #define if_not_empty(str)	((str) && (*str) ? (str) : NULL)
 
 static char *title_expn_subs(char fmt, const struct file_tags *tags)

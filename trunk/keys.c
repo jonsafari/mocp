@@ -233,6 +233,14 @@ static struct command commands[] = {
 		1
 	},
 	{
+		KEY_CMD_PLIST_REMOVE_DEAD_ENTRIES,
+		"remove_dead_entries",
+		"Remove all playlist entries that point to non-existent files",
+		CON_MENU,
+		{ 'Y', -1 },
+		1
+	},
+	{
 		KEY_CMD_MIXED_DEC_1,
 		"volume_down_1",
 		"Decrease volume by 1%",
