@@ -727,6 +727,14 @@ static struct command commands[] = {
  		CON_MENU,
  		{ KEY_F(10), -1 },
  		1
+  	},
+ 	{
+ 		KEY_CMD_TOGGLE_PLAYLIST_FULL_PATHS,
+ 		"playlist_full_paths",
+ 		"Toggle displaying full paths in the playlist",
+ 		CON_MENU,
+ 		{ 'P', -1 },
+ 		1
   	}
 };
 

@@ -215,6 +215,7 @@ void options_init ()
 	option_add_str ("ID3v1TagsEncoding", "WINDOWS-1250");
 	option_add_int ("UseRCC", 1);
 	option_add_int ("SetXtermTitle", 1);
+	option_add_int ("PlaylistFullPaths", 1);
 
         option_add_int ("ModPlug_Channels", 2);
         option_add_int ("ModPlug_Frequency", 44100);
@@ -259,6 +260,7 @@ int check_int_option (const char *name, const int val)
 			|| !strcasecmp(name, "UseCursorSelection")
 			|| !strcasecmp(name, "UseRCC")
 			|| !strcasecmp(name, "SetXtermTitle")
+			|| !strcasecmp(name, "PlaylistFullPaths")
 			) {
 		if (!(val == 1 || val == 0))
 			return 0;

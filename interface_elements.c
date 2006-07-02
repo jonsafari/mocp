@@ -872,15 +872,15 @@ void sec_to_min (char *buff, const int seconds)
 /* Make a title suitable to display in a menu from the title of a playlist item.
  * Returned memory is malloc()ed.
  * made_from tags - was the playlist title made from tags? 
- * for_plist - is this title to be displayed in the playlist?
+ * full_paths - If the title is the file name, use the full path?
  */
 static char *make_menu_title (const char *plist_title,
-		const int made_from_tags, const int for_plist)
+		const int made_from_tags, const int full_path)
 {
 	char *title = xstrdup (plist_title);
 	
 	if (!made_from_tags) {
-		if (!for_plist) {
+		if (!full_path) {
 
 			/* Use only the file name instead of the full path. */
 			char *slash = strrchr (title, '/');
@@ -898,11 +898,11 @@ static char *make_menu_title (const char *plist_title,
 }
 
 /* Add an item from the playlist to the menu.
- * If for_playlist has non-zero value, full paths will be displayed instead of
+ * If full_paths has non-zero value, full paths will be displayed instead of
  * just file names.
  * Return a non-zero value if the added item is visible on the screen. */
 static int add_to_menu (struct menu *menu, const struct plist *plist,
-		const int num, const int for_playlist)
+		const int num, const int full_paths)
 {
 	struct menu_item *added;
 	const struct plist_item *item = &plist->items[num];
@@ -910,7 +910,7 @@ static int add_to_menu (struct menu *menu, const struct plist *plist,
 	const char *type_name;
 
 	title = make_menu_title (item->title, item->title == item->title_tags,
-			for_playlist);
+			full_paths);
 	added = menu_add (menu, title, plist_file_type(plist, num), item->file);
 	free (title);
 
@@ -931,7 +931,7 @@ static int add_to_menu (struct menu *menu, const struct plist *plist,
 		type_name = "";
 	menu_item_set_format (added, type_name);
 
-	if (for_playlist && item->title == item->title_file)
+	if (full_paths && item->title == item->title_file)
 		menu_item_set_align (added, MENU_ALIGN_RIGHT);
 
 	return menu_is_visible (menu, added);
@@ -1010,7 +1010,8 @@ static void side_menu_make_list_content (struct side_menu *m,
 	for (i = 0; i < files->num; i++) {
 		if (!plist_deleted(files, i))
 			add_to_menu (m->menu.list.main, files, i,
-					m->type == MENU_PLAYLIST);
+					m->type == MENU_PLAYLIST
+					&& options_get_int("PlaylistFullPaths"));
 	}
 
 	m->total_time = plist_total_time (files, &m->total_time_for_all);
@@ -1200,7 +1201,7 @@ static void side_menu_set_curr_item_title (struct side_menu *m,
 /* Update menu item using the playlist item. */
 static void update_menu_item (struct menu_item *mi,
 		const struct plist *plist,
-		const int n, const int for_plist)
+		const int n, const int full_path)
 {
 	char *title;
 	const struct plist_item *item;
@@ -1221,11 +1222,11 @@ static void update_menu_item (struct menu_item *mi,
 		menu_item_set_time (mi, "");
 
 	title = make_menu_title (item->title,
-			item->title == item->title_tags, for_plist);
+			item->title == item->title_tags, full_path);
 
 	menu_item_set_title (mi, title);
 	
-	if (for_plist && item->title == item->title_file)
+	if (full_path && item->title == item->title_file)
 		menu_item_set_align (mi, MENU_ALIGN_RIGHT);
 	else
 		menu_item_set_align (mi, MENU_ALIGN_LEFT);
@@ -1253,12 +1254,14 @@ static int side_menu_update_item (struct side_menu *m,
 	assert (file != NULL);
 
 	if ((mi = menu_find(m->menu.list.main, file))) {
-		update_menu_item (mi, plist, n, m->type == MENU_PLAYLIST);
+		update_menu_item (mi, plist, n, m->type == MENU_PLAYLIST
+				&& options_get_int("PlaylistFullpaths"));
 		visible = menu_is_visible (m->menu.list.main, mi);
 	}
 	if (m->menu.list.copy
 			&& (mi = menu_find(m->menu.list.copy, file))) {
-		update_menu_item (mi, plist, n, m->type == MENU_PLAYLIST);
+		update_menu_item (mi, plist, n, m->type == MENU_PLAYLIST
+				&& options_get_int("PlaylistFullpaths"));
 		visible = visible || menu_is_visible (m->menu.list.main, mi);
 	}
 
@@ -1317,7 +1320,9 @@ static int side_menu_add_plist_item (struct side_menu *m,
 
 	visible = add_to_menu (m->menu.list.copy ? m->menu.list.copy
 			: m->menu.list.main,
-			plist, num, m->type == MENU_PLAYLIST);
+			plist, num,
+			m->type == MENU_PLAYLIST
+			&& options_get_int("PlaylistFullPaths"));
 	m->total_time = plist_total_time (plist, &m->total_time_for_all);
 
 	return visible;

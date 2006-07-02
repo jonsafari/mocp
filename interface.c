@@ -2919,6 +2919,20 @@ static void go_to_fast_dir (const int num)
 		error ("%s is not defined", option_name);
 }
 
+static void toggle_playlist_full_paths (void)
+{
+	int new_val = !options_get_int("PlaylistFullPaths");
+	
+	option_set_int ("PlaylistFullPaths", new_val);
+
+	if (new_val)
+		iface_set_status ("PlaylistFullPaths: on");
+	else
+		iface_set_status ("PlaylistFullPaths: off");
+
+	update_iface_menu (IFACE_MENU_PLIST, playlist);
+}
+
 /* Handle key */
 static void menu_key (const struct iface_key *k)
 {
@@ -2978,6 +2992,9 @@ static void menu_key (const struct iface_key *k)
 				break;
 			case KEY_CMD_TOGGLE_MENU:
 				toggle_menu ();
+				break;
+			case KEY_CMD_TOGGLE_PLAYLIST_FULL_PATHS:
+				toggle_playlist_full_paths ();
 				break;
 			case KEY_CMD_PLIST_ADD_FILE:
 				add_file_plist ();
