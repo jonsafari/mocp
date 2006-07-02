@@ -282,6 +282,9 @@ CanStartInPlaylist	= yes
 # Set the terminal title when running under xterm.
 #SetXtermTitle		= yes
 
+# Display full paths instead of just file names in the playlist.
+#PlaylistFullPaths	= yes
+
 # Enable oversampling (yes/no)
 #ModPlug_Oversampling = yes
 # Enable noise reduction (yes/no)
