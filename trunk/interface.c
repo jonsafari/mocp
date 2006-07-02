@@ -1392,7 +1392,8 @@ void init_interface (const int sock, const int logging, char **args,
 	update_mixer_name ();
 
 	signal (SIGQUIT, sig_quit);
-	/*signal (SIGTERM, sig_quit);*/
+	signal (SIGTERM, sig_quit);
+	signal (SIGHUP, sig_quit);
 	signal (SIGINT, sig_interrupt);
 	
 #ifdef SIGWINCH
