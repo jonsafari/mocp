@@ -612,6 +612,29 @@ static void entry_add_text_to_history (struct entry *e)
 	free (text);
 }
 
+/* Return the list menu height inside the side menu. */
+static int side_menu_get_menu_height (const struct side_menu *m)
+{
+	if (m->posy + m->height == LINES - 4)
+		return m->height - 1;
+	return m->height - 2;
+}
+
+static void side_menu_init_menu (struct side_menu *m)
+{
+	int height;
+	
+	assert (m != NULL);
+
+	if (m->posy + m->height == LINES - 4)
+		height = m->height - 1;
+	else
+		height = m->height - 2;
+
+	m->menu.list.main = menu_new (m->win, m->posx + 1, m->posy + 1,
+			m->width - 2, side_menu_get_menu_height(m));
+}
+
 static void side_menu_init (struct side_menu *m, const enum side_menu_type type,
 		WINDOW *parent_win, const struct window_params *wp)
 {
@@ -634,8 +657,7 @@ static void side_menu_init (struct side_menu *m, const enum side_menu_type type,
 	m->total_time_for_all = 0;
 
 	if (type == MENU_DIR || type == MENU_PLAYLIST) {
-		m->menu.list.main = menu_new (m->win, m->posx + 1, m->posy + 1,
-				m->width - 2, m->height - 1);
+		side_menu_init_menu (m);
 		m->menu.list.copy = NULL;
 		
 		menu_set_items_numbering (m->menu.list.main,
@@ -649,8 +671,7 @@ static void side_menu_init (struct side_menu *m, const enum side_menu_type type,
 				get_color(CLR_MENU_ITEM_INFO));
 	}
 	else if (type == MENU_THEMES) {
-		m->menu.list.main = menu_new (m->win, m->posx + 1, m->posy + 1,
-				m->width - 2, m->height - 1);
+		side_menu_init_menu (m);
 		m->menu.list.copy = NULL;
 	}
 	else
@@ -946,8 +967,7 @@ static void side_menu_clear (struct side_menu *m)
 	assert (m->menu.list.copy == NULL);
 
 	menu_free (m->menu.list.main);
-	m->menu.list.main = menu_new (m->win, m->posx + 1, m->posy + 1,
-			m->width - 2, m->height - 1);
+	side_menu_init_menu (m);
 	menu_set_items_numbering (m->menu.list.main, m->type == MENU_PLAYLIST
 			&& options_get_int("PlaylistNumbering"));
 	
@@ -1057,15 +1077,39 @@ static void side_menu_draw_frame (const struct side_menu *m)
 	
 	/* Border */
 	wattrset (m->win, get_color(CLR_FRAME));
+
+	/* upper left corner */
 	wmove (m->win, m->posy, m->posx);
 	waddch (m->win, lines.ulcorn);
+
+	/* upper line */
 	whline (m->win, lines.horiz, m->width - 2);
+	
+	/* upper right corner */
 	wmove (m->win, m->posy, m->posx + m->width - 1);
 	waddch (m->win, lines.urcorn);
+	
+	/* left line */
 	wmove (m->win, m->posy + 1, m->posx);
 	wvline (m->win, lines.vert, m->height - 1);
+	
+	/* right line */
 	wmove (m->win, m->posy + 1, m->posx + m->width - 1);
 	wvline (m->win, lines.vert, m->height - 1);
+
+	if (m->posy + m->height < LINES - 4) {
+
+		/* bottom left corner */
+		wmove (m->win, m->posy + m->height - 1, m->posx);
+		waddch (m->win, lines.llcorn);
+	
+		/* bottom line */
+		whline (m->win, lines.horiz, m->width - 2);
+
+		/* bottom right corner */
+		wmove (m->win, m->posy + m->height - 1, m->posx + m->width - 1);
+		waddch (m->win, lines.lrcorn);	
+	}
 
 	/* The title */
 	if (title) {
@@ -1496,11 +1540,11 @@ static void side_menu_resize (struct side_menu *m,
 	if (m->type == MENU_DIR || m->type == MENU_PLAYLIST
 			|| m->type == MENU_THEMES) {
 		menu_update_size (m->menu.list.main, m->posx + 1, m->posy + 1,
-				m->width - 2, m->height - 1);
+				m->width - 2, side_menu_get_menu_height(m));
 		if (m->menu.list.copy)
 			menu_update_size (m->menu.list.copy, m->posx + 1,
 					m->posy + 1, m->width - 2,
-					m->height - 1);
+					side_menu_get_menu_height(m));
 	}
 	else
 		abort ();
