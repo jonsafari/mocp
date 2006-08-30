@@ -2899,6 +2899,9 @@ static void exec_custom_command (const char *option)
 		free (args[--arg_num]);
 	} while (arg_num);
 	free (cmd);
+
+	if (iface_in_dir_menu())
+		reread_dir ();
 }
 
 static void go_to_fast_dir (const int num)
