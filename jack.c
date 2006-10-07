@@ -17,6 +17,7 @@
 #include <jack/ringbuffer.h>
 #include <string.h>
 #include <assert.h>
+#include <math.h>
 #include "audio.h"
 #include "common.h"
 #include "log.h"
@@ -274,7 +275,8 @@ static int moc_jack_read_mixer ()
 static void moc_jack_set_mixer (int vol)
 {
 	volume_integer = vol;
-	volume = (jack_default_audio_sample_t)vol / 100.0;
+	volume = (jack_default_audio_sample_t)((exp((double)vol / 100.0) - 1)
+			/ (M_E - 1));
 }
 
 static int moc_jack_get_buff_fill ()
