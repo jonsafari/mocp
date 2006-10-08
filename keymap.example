@@ -114,3 +114,14 @@ history_down =		DOWN
 plist_move_up =		u
 plist_move_down =	j
 theme_menu =		T
+
+exec_command1 = 	F1
+exec_command2 = 	F2
+exec_command3 = 	F3
+exec_command4 = 	F4
+exec_command5 = 	F5
+exec_command6 = 	F6
+exec_command7 = 	F7
+exec_command8 = 	F8
+exec_command9 = 	F9
+exec_command10 = 	F10
