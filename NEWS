@@ -1,3 +1,32 @@
+2.4.1
+	* Added Command 'P' and a configuration option PlaylistFullPaths to turn
+	  on/off displaying full paths for files in the playlist.
+	* Fixed choosing endianess when playing float samples (musepack or
+	  wave and other libsndfile formats).
+	* Fixed a crash when going to '../' with the search entry.
+	* Added MP4 to the list of supported by FFmpeg extensions.
+	* Fixed clearing playlist from the command line (crash on mocp -c -a -p
+	  file.mp3).
+	* Fixed handling mixer errors (crash in some situations).
+	* Fix searching with '/' (search began with the current item, not the
+	  whole list).
+	* Correct support librcc: tags ID3v1/v1.1 will be recoded in UTF-8
+	  instead of the local encoding. (Alexey Gladkov)
+	* Fixed handling invalid time in tags cache.
+	* Fixed handling error when time information for a file could not be
+	  read.
+	* MusicDir and FastDirX are parsed before they are used, this handles
+	  not "clean" directories in the config file (like /bin/ - with slash
+	  at the end).
+	* When interface is killed by SIGTERM or SIGHUP the playlist is saved
+	  and the terminal mode is restored.
+	* Setting volume in jack using an exponential function instead of
+	  linear. (x37v.alex)
+	* Draw bottom lines for side menus that don't touch the botom of the
+	  main menu.
+	* Reload directory content after running a custom command to see changes
+	  made in the filesystem by this command.
+	* Added missing exec_command# keys in the example keymap file.
 2.4.0
 	* Layout of the main window can be changed using Layout[123] options.
 	  Switching between layouts is done using the 'l' key and now TAB is
