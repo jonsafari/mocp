@@ -356,6 +356,8 @@ static void fill_tag (FLAC__StreamMetadata_VorbisComment_Entry *comm,
 	}
 	else
 		free (value);
+
+	free (name);
 }
 
 static void get_vorbiscomments (const char *filename, struct file_tags *tags)
