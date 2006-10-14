@@ -344,7 +344,7 @@ static int curl_read_internal (struct io_stream *s)
 			FD_ZERO (&write_fds);
 			FD_ZERO (&exc_fds);
 
-			s->curl.multi_status == curl_multi_fdset (
+			s->curl.multi_status = curl_multi_fdset (
 					s->curl.multi_handle,
 					&read_fds, &write_fds, &exc_fds,
 					&max_fd);
@@ -364,7 +364,7 @@ static int curl_read_internal (struct io_stream *s)
 			}
 			
 			if (ret < 0) {
-				s->errno_val == errno;
+				s->errno_val = errno;
 				logit ("select() failed");
 				return 0;
 			}
