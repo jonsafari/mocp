@@ -3482,7 +3482,7 @@ void interface_cmdline_append (int server_sock, char **args,
 
 			send_int_to_srv (CMD_LOCK);
 			plist_remove_common_items (&new, &saved_plist);
-			send_playlist (&saved_plist, 0);
+			send_playlist (&new, 0);
 			send_int_to_srv (CMD_UNLOCK);
 
 			plist_cat (&saved_plist, &new);
