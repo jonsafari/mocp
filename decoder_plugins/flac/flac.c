@@ -28,6 +28,13 @@
 #include "log.h"
 #include "io.h"
 
+/* by LEGACY_FLAC we mean pre-1.1.3, before FLAC__SeekableStreamDecoder was merged into FLAC__StreamDecoder */
+#if !defined(FLAC_API_VERSION_CURRENT) || FLAC_API_VERSION_CURRENT < 8
+#define LEGACY_FLAC
+#else
+#undef LEGACY_FLAC
+#endif
+
 #define MAX_SUPPORTED_CHANNELS		2
 
 #define SAMPLES_PER_WRITE		512
@@ -35,7 +42,11 @@
 
 struct flac_data
 {
+#ifdef LEGACY_FLAC
 	FLAC__SeekableStreamDecoder *decoder;
+#else
+	FLAC__StreamDecoder *decoder;
+#endif
 	struct io_stream *stream;
 	int bitrate;
 	int abort; /* abort playing (due to an error) */
@@ -109,7 +120,11 @@ static size_t pack_pcm_signed (FLAC__byte *data,
 }
 
 static FLAC__StreamDecoderWriteStatus write_callback (
+#ifdef LEGACY_FLAC
 		const FLAC__SeekableStreamDecoder *decoder ATTR_UNUSED,
+#else
+		const FLAC__StreamDecoder *decoder ATTR_UNUSED,
+#endif
 		const FLAC__Frame *frame,
 		const FLAC__int32 * const buffer[], void *client_data)
 {
@@ -127,7 +142,11 @@ static FLAC__StreamDecoderWriteStatus write_callback (
 }
 
 static void metadata_callback (
+#ifdef LEGACY_FLAC
 		const FLAC__SeekableStreamDecoder *decoder ATTR_UNUSED,
+#else
+		const FLAC__StreamDecoder *decoder ATTR_UNUSED,
+#endif
 		const FLAC__StreamMetadata *metadata, void *client_data)
 {
 	struct flac_data *data = (struct flac_data *)client_data;
@@ -147,7 +166,11 @@ static void metadata_callback (
 }
 
 static void error_callback (
+#ifdef LEGACY_FLAC
 		const FLAC__SeekableStreamDecoder *decoder ATTR_UNUSED,
+#else
+		const FLAC__StreamDecoder *decoder ATTR_UNUSED,
+#endif
 		FLAC__StreamDecoderErrorStatus status, void *client_data)
 {
 	struct flac_data *data = (struct flac_data *)client_data;
@@ -160,9 +183,15 @@ static void error_callback (
 		decoder_error (&data->error, ERROR_FATAL, 0, "FLAC: lost sync");
 }
 
+#ifdef LEGACY_FLAC
 static FLAC__SeekableStreamDecoderReadStatus read_callback (
 		const FLAC__SeekableStreamDecoder *decoder ATTR_UNUSED,
 		FLAC__byte buffer[], unsigned *bytes, void *client_data)
+#else
+static FLAC__StreamDecoderReadStatus read_callback (
+		const FLAC__StreamDecoder *decoder ATTR_UNUSED,
+		FLAC__byte buffer[], size_t *bytes, void *client_data)
+#endif
 {
 	struct flac_data *data = (struct flac_data *)client_data;
 	ssize_t res;
@@ -171,52 +200,97 @@ static FLAC__SeekableStreamDecoderReadStatus read_callback (
 
 	if (res > 0) {
 		*bytes = res;
+#ifdef LEGACY_FLAC
+		return FLAC__SEEKABLE_STREAM_DECODER_READ_STATUS_OK;
+#else
 		return FLAC__STREAM_DECODER_READ_STATUS_CONTINUE;
+#endif
 	}
 	
 	if (res == 0) {
 		*bytes = 0;
+		/* not sure why this works, but if it ain't broke... */
 		return FLAC__STREAM_DECODER_READ_STATUS_END_OF_STREAM;
 	}
 
 	error ("read error: %s", io_strerror(data->stream));
 
+#ifdef LEGACY_FLAC
+	return FLAC__SEEKABLE_STREAM_DECODER_READ_STATUS_ERROR;
+#else
 	return FLAC__STREAM_DECODER_READ_STATUS_ABORT;
+#endif
 }
 
+#ifdef LEGACY_FLAC
 static FLAC__SeekableStreamDecoderSeekStatus seek_callback (
 		const FLAC__SeekableStreamDecoder *decoder ATTR_UNUSED,
 		FLAC__uint64 absolute_byte_offset, void *client_data)
+#else
+static FLAC__StreamDecoderSeekStatus seek_callback (
+		const FLAC__StreamDecoder *decoder ATTR_UNUSED,
+		FLAC__uint64 absolute_byte_offset, void *client_data)
+#endif
 {
 	struct flac_data *data = (struct flac_data *)client_data;
 	
+#ifdef LEGACY_FLAC
 	return io_seek(data->stream, absolute_byte_offset, SEEK_SET) >= 0
 		? FLAC__SEEKABLE_STREAM_DECODER_SEEK_STATUS_OK
 		: FLAC__SEEKABLE_STREAM_DECODER_SEEK_STATUS_ERROR;
+#else
+	return io_seek(data->stream, absolute_byte_offset, SEEK_SET) >= 0
+		? FLAC__STREAM_DECODER_SEEK_STATUS_OK
+		: FLAC__STREAM_DECODER_SEEK_STATUS_ERROR;
+#endif
 }
 
+#ifdef LEGACY_FLAC
 static FLAC__SeekableStreamDecoderTellStatus tell_callback (
 		const FLAC__SeekableStreamDecoder *decoder ATTR_UNUSED,
 		FLAC__uint64 *absolute_byte_offset, void *client_data)
+#else
+static FLAC__StreamDecoderTellStatus tell_callback (
+		const FLAC__StreamDecoder *decoder ATTR_UNUSED,
+		FLAC__uint64 *absolute_byte_offset, void *client_data)
+#endif
 {
 	struct flac_data *data = (struct flac_data *)client_data;
 
 	*absolute_byte_offset = io_tell (data->stream);
+#ifdef LEGACY_FLAC
 	return FLAC__SEEKABLE_STREAM_DECODER_TELL_STATUS_OK;
+#else
+	return FLAC__STREAM_DECODER_TELL_STATUS_OK;
+#endif
 }
 
+#ifdef LEGACY_FLAC
 static FLAC__SeekableStreamDecoderLengthStatus length_callback (
 		const FLAC__SeekableStreamDecoder *decoder ATTR_UNUSED,
 		FLAC__uint64 *stream_length, void *client_data)
+#else
+static FLAC__StreamDecoderLengthStatus length_callback (
+		const FLAC__StreamDecoder *decoder ATTR_UNUSED,
+		FLAC__uint64 *stream_length, void *client_data)
+#endif
 {
 	struct flac_data *data = (struct flac_data *)client_data;
 
 	*stream_length = io_file_size (data->stream);
+#ifdef LEGACY_FLAC
 	return FLAC__SEEKABLE_STREAM_DECODER_LENGTH_STATUS_OK;
+#else
+	return FLAC__STREAM_DECODER_LENGTH_STATUS_OK;
+#endif
 }
 
 static FLAC__bool eof_callback (
+#ifdef LEGACY_FLAC
 		const FLAC__SeekableStreamDecoder *decoder ATTR_UNUSED,
+#else
+		const FLAC__StreamDecoder *decoder ATTR_UNUSED,
+#endif
 		void *client_data)
 {
 	struct flac_data *data = (struct flac_data *)client_data;
@@ -248,6 +322,7 @@ static void *flac_open_internal (const char *file, const int buffered)
 
 	data->ok = 1;
 
+#ifdef LEGACY_FLAC
 	if (!(data->decoder = FLAC__seekable_stream_decoder_new())) {
 		decoder_error (&data->error, ERROR_FATAL, 0,
 				"FLAC__seekable_stream_decoder_new() failed");
@@ -279,7 +354,7 @@ static void *flac_open_internal (const char *file, const int buffered)
 			eof_callback);
 
 	if (FLAC__seekable_stream_decoder_init(data->decoder)
-			!= FLAC__FILE_DECODER_OK) {
+			!= FLAC__SEEKABLE_STREAM_DECODER_OK) {
 		decoder_error (&data->error, ERROR_FATAL, 0,
 				"FLAC__seekable_stream_decoder_init() failed");
 		data->ok = 0;
@@ -294,6 +369,36 @@ static void *flac_open_internal (const char *file, const int buffered)
 		data->ok = 0;
 		return data;
 	}
+#else
+	if (!(data->decoder = FLAC__stream_decoder_new())) {
+		decoder_error (&data->error, ERROR_FATAL, 0,
+				"FLAC__stream_decoder_new() failed");
+		data->ok = 0;
+		return data;
+	}
+
+	FLAC__stream_decoder_set_md5_checking (data->decoder, false);
+	
+	FLAC__stream_decoder_set_metadata_ignore_all (data->decoder);
+	FLAC__stream_decoder_set_metadata_respond (data->decoder,
+			FLAC__METADATA_TYPE_STREAMINFO);
+
+	if (FLAC__stream_decoder_init_stream(data->decoder, read_callback, seek_callback, tell_callback, length_callback, eof_callback, write_callback, metadata_callback, error_callback, data)
+			!= FLAC__STREAM_DECODER_INIT_STATUS_OK) {
+		decoder_error (&data->error, ERROR_FATAL, 0,
+				"FLAC__stream_decoder_init() failed");
+		data->ok = 0;
+		return data;
+	}
+
+	if (!FLAC__stream_decoder_process_until_end_of_metadata(data->decoder)) {
+		decoder_error (&data->error, ERROR_FATAL, 0,
+				"FLAC__stream_decoder_process_until_end_of_metadata()"
+				" failed.");
+		data->ok = 0;
+		return data;
+	}
+#endif
 
 	return data;
 }
@@ -309,8 +414,13 @@ static void flac_close (void *void_data)
 
 	if (data->ok) {
 		if (data->decoder) {
+#ifdef LEGACY_FLAC
 			FLAC__seekable_stream_decoder_finish (data->decoder);
 			FLAC__seekable_stream_decoder_delete (data->decoder);
+#else
+			FLAC__stream_decoder_finish (data->decoder);
+			FLAC__stream_decoder_delete (data->decoder);
+#endif
 		}
 		io_close (data->stream);
 	}
@@ -432,11 +542,19 @@ static int flac_seek (void *void_data, int sec)
 	target_sample = (FLAC__uint64)((sec/(double)data->length) *
 			(double)data->total_samples);
 	
+#ifdef LEGACY_FLAC
 	if (FLAC__seekable_stream_decoder_seek_absolute(data->decoder,
 				target_sample))
+#else
+	if (FLAC__stream_decoder_seek_absolute(data->decoder, target_sample))
+#endif
 		return sec;
 	else {
+#ifdef LEGACY_FLAC
 		logit ("FLAC__seekable_stream_decoder_seek_absolute() failed.");
+#else
+		logit ("FLAC__stream_decoder_seek_absolute() failed.");
+#endif
 		return -1;
 	}
 }
@@ -471,22 +589,34 @@ static int flac_decode (void *void_data, char *buf, int buf_len,
 	if (!data->sample_buffer_fill) {
 		debug ("decoding...");
 		
-		if (FLAC__seekable_stream_decoder_get_state(data->decoder)
-				== FLAC__FILE_DECODER_END_OF_FILE) {
+#ifdef LEGACY_FLAC
+		if (FLAC__seekable_stream_decoder_get_state(data->decoder) == FLAC__SEEKABLE_STREAM_DECODER_END_OF_STREAM)
+#else
+		if (FLAC__stream_decoder_get_state(data->decoder) == FLAC__STREAM_DECODER_END_OF_STREAM)
+#endif
+		{
 			logit ("EOF");
 			return 0;
 		}
 
-		if (!FLAC__seekable_stream_decoder_process_single(
-					data->decoder)) {
+#ifdef LEGACY_FLAC
+		if (!FLAC__seekable_stream_decoder_process_single(data->decoder))
+#else
+		if (!FLAC__stream_decoder_process_single(data->decoder))
+#endif
+		{
 			decoder_error (&data->error, ERROR_FATAL, 0,
 					"Read error processing frame.");
 			return 0;
 		}
 
 		/* Count the bitrate */
+#ifdef LEGACY_FLAC
 		if(!FLAC__seekable_stream_decoder_get_decode_position(
 					data->decoder, &decode_position))
+#else
+		if(!FLAC__stream_decoder_get_decode_position(data->decoder, &decode_position))
+#endif
 			decode_position = 0;
 		if (decode_position > data->last_decode_position) {
 			int bytes_per_sec = bytes_per_sample * data->sample_rate
