@@ -133,6 +133,9 @@ UseMmap			= yes
 # Use librcc to fix ID3 version 1/1.1 tags encoding.
 #UseRCC				= yes
 
+# Use librcc to filenames and directory names encoding.
+#UseRCCForFilesystem			= yes
+
 # Remember the playlist after exit?
 SavePlaylist		= yes
 

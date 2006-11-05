@@ -214,6 +214,7 @@ void options_init ()
 	option_add_int ("UseCursorSelection", 0);
 	option_add_str ("ID3v1TagsEncoding", "WINDOWS-1250");
 	option_add_int ("UseRCC", 1);
+ 	option_add_int ("UseRCCForFilesystem", 1);
 	option_add_int ("SetXtermTitle", 1);
 	option_add_int ("PlaylistFullPaths", 1);
 
@@ -259,6 +260,7 @@ int check_int_option (const char *name, const int val)
 			|| !strcasecmp(name, "CanStartInPlaylist")
 			|| !strcasecmp(name, "UseCursorSelection")
 			|| !strcasecmp(name, "UseRCC")
+			|| !strcasecmp(name, "UseRCCForFilesystem")
 			|| !strcasecmp(name, "SetXtermTitle")
 			|| !strcasecmp(name, "PlaylistFullPaths")
 			) {

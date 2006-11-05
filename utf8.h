@@ -37,5 +37,6 @@ char *xstrtail (const char *str, const int len);
 #ifdef HAVE_ICONV
 char *iconv_str (const iconv_t desc, const char *str);
 #endif
+char *iconv_rcc (char *str);
 
 #endif

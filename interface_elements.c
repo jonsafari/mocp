@@ -914,7 +914,6 @@ static char *make_menu_title (const char *plist_title,
 			}
 		}
 	}
-
 	return title;
 }
 
@@ -1002,9 +1001,18 @@ static void side_menu_make_list_content (struct side_menu *m,
 	if (dirs)
 		for (i = 0; i < dirs->num; i++) {
 			char title[PATH_MAX];
+			char *t_str = NULL;
 
 			strcpy (title, strrchr(dirs->items[i], '/') + 1);
 			strcat (title, "/");
+#ifdef HAVE_RCC 
+			if (options_get_int("UseRCCForFilesystem")) {
+				t_str = xstrdup (title);
+				t_str = iconv_rcc (t_str);
+				snprintf(title, PATH_MAX, "%s", t_str);
+				free(t_str);
+			}
+#endif
 			
 			added = menu_add (m->menu.list.main, title, F_DIR,
 					dirs->items[i]);
