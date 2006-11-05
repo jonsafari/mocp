@@ -1,18 +1,17 @@
 Items marked with $ are bigger changes requiring more time.
 
 Known bugs:
-- Must try other sample rates in ALSA if the rate is not supported
-  (http://moc.daper.net/node/114)
+- ESC is not working.
+- Repeat is not working properly. http://moc.daper.net/node/124
 - RCC should be used for file names. http://moc.daper.net/node/116
 - Do we assume filesystem in UTF-8? It's incorrect.
-- Repeat is not working properly. http://moc.daper.net/node/124
-- Side menus should have bottom lines sometimes. http://moc.daper.net/node/124
 - lock up when seeking backward
 - I have a problem with moc 2.4.0 on FreeBSD 6.1-PRERELEASE. When I build moc
   with musepack (libmpcdec) support moc allways core dumps on exit.
-- libdl problem
-- Option and a command to turn off displaying the full paths in the playlist.
 - Crash on FreeBSD 5.5 http://moc.daper.net/node/148
+- When sorting by file name (directories), put files beggining with a
+  non alphanuemric character at the top.
+- mmap should be turned off by default.
 
 Before 2.5:
 * Move TODO to moc.daper.net/roadmap
@@ -23,9 +22,11 @@ Before 2.5:
   if there is a song playing or paused, and empty string if stopped.
   %S --  expands to play/stop/pause.
 * -i shows also the average bitrate.
-* When killed by a signal, save the tags cache.
 * Communication protocol in a separate library.
 * More command line options: shuffle, repeat, autonext, volume etc.
+* Abiliti to have empty key list in the keymap file.
+* Better message for "Can't receive int value from the server". Say that
+  probably the server crashed and suggest using mocp -SD.
 
 In future:
 
@@ -33,7 +34,6 @@ In future:
   possible.
 * More side menus: many directory/playlist views.
 * LADSPA
-* Don't display not printable chars.
 * Editing the title of an item on the playlist (for internet streams).
 *$ Media library: tree-like menu for artists and albums.
 * Seek by a % value (also using keys for 10%, 20% etc.)
@@ -63,8 +63,6 @@ In future:
 * Seek to arbitrary position (by typing a number).
 *$ VQF (like http://www.csn.ul.ie/~mel/projects/linux/vqfplugin/)
 *$ AAC by libfaad
-*$ MP4
-*$ mod
 *$ ESD
 *$ CUE-sheet
 * Command line option to delete the currently played item from the playlist.
