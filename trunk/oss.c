@@ -47,6 +47,15 @@ static int mixer_channel_current;
 
 static struct sound_params params = { 0, 0, 0 };
 
+static const struct {
+	const char *name;
+	const int num;
+} mixer_channels[] = {
+	{ "pcm", SOUND_MIXER_PCM },
+	{ "master", SOUND_MIXER_VOLUME },
+	{ "speaker", SOUND_MIXER_SPEAKER }
+};
+
 static int open_dev ()
 {
 	if ((dsp_fd = open(options_get_str("OSSDevice"), O_WRONLY)) == -1) {
@@ -148,6 +157,18 @@ static int oss_read_mixer ()
 	return -1;
 }
 
+static int oss_mixer_name_to_channel (const char *name)
+{
+	int i;
+
+	for (i = 0; i < (int)(sizeof(mixer_channels)/sizeof(mixer_channels[0]));
+			i++)
+		if (!strcasecmp(mixer_channels[i].name, name))
+			return i;
+
+	return -1;
+}
+
 static int oss_init (struct output_driver_caps *caps)
 {
 	/* Open the mixer device */
@@ -157,24 +178,14 @@ static int oss_init (struct output_driver_caps *caps)
 				options_get_str("OSSMixerDevice"),
 				strerror(errno));
 	else {
-		char *channel;
-		
-		/* first channel */
-		channel = options_get_str ("OSSMixerChannel");
-		if (!strcasecmp(channel, "pcm"))
-			mixer_channel1 = SOUND_MIXER_PCM;
-		else if (!strcasecmp(channel, "master"))
-			mixer_channel1 = SOUND_MIXER_VOLUME;
-		else
+		mixer_channel1 = oss_mixer_name_to_channel (
+				options_get_str("OSSMixerChannel"));
+		mixer_channel2 = oss_mixer_name_to_channel (
+				options_get_str("OSSMixerChannel2"));
+
+		if (mixer_channel1 == -1)
 			fatal ("Bad first OSS mixer channel!");
-		
-		/* second channel */
-		channel = options_get_str ("OSSMixerChannel2");
-		if (!strcasecmp(channel, "pcm"))
-			mixer_channel2 = SOUND_MIXER_PCM;
-		else if (!strcasecmp(channel, "master"))
-			mixer_channel2 = SOUND_MIXER_VOLUME;
-		else
+		if (mixer_channel2 == -1)
 			fatal ("Bad second OSS mixer channel!");
 		
 		/* test mixer channels */
