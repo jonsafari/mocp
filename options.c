@@ -365,10 +365,6 @@ int check_str_option (const char *name, const char *val)
 		if (strcasecmp(val, "FileName"))
 			return 0;
 	}
-	else if (!strcasecmp(name, "OSSMixerChannel")) {
-		if (strcasecmp(val, "master") && strcasecmp(val, "pcm"))
-			return 0;
-	}
 	else if (!strcasecmp(name, "ShowTime")) {
 		if (strcasecmp(val, "yes") && strcasecmp(val, "no")
 				&& strcasecmp(val, "IfAvailable"))
