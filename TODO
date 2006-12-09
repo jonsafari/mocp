@@ -12,6 +12,11 @@ Known bugs:
 - When sorting by file name (directories), put files beggining with a
   non alphanuemric character at the top.
 - mmap should be turned off by default.
+- Compilation failure without libiconv
+- http://www.tzi.de/~hiben/moc/2.4.1-ffmpegbug.patch
+- Option to disable 24bit output because of problems with some sound cards
+  (reported on Realtek ALC655 with ALSA).
+- new rcc patch to 2.4
 
 Before 2.5:
 * Move TODO to moc.daper.net/roadmap
@@ -23,7 +28,7 @@ Before 2.5:
   %S --  expands to play/stop/pause.
 * -i shows also the average bitrate.
 * Communication protocol in a separate library.
-* More command line options: shuffle, repeat, autonext, volume etc.
+* More command line options: shuffle, repeat, autonext etc.
 * Abiliti to have empty key list in the keymap file.
 * Better message for "Can't receive int value from the server". Say that
   probably the server crashed and suggest using mocp -SD.

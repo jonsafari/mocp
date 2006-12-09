@@ -22,5 +22,5 @@ void interface_cmdline_play_first (int server_sock);
 void interface_cmdline_file_info (const int server_sock);
 void interface_cmdline_playit (int server_sock, char **args, const int arg_num);
 void interface_cmdline_seek_by (int server_sock, const int seek_by);
-
+void interface_cmdline_adj_volume (int server_soc, const char *arg);
 #endif
