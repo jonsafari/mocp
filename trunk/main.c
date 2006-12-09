@@ -60,6 +60,7 @@ struct parameters
 	int toggle_pause;
 	int playit;
 	int seek_by;
+	char *adj_volume;
 };
 
 
@@ -209,6 +210,9 @@ static void start_moc (const struct parameters *params, char **args,
 		if (params->seek_by)
 			interface_cmdline_seek_by (server_sock,
 					params->seek_by);
+		if (params->adj_volume)
+			interface_cmdline_adj_volume (server_sock,
+					params->adj_volume);
 		send_int (server_sock, CMD_DISCONNECT);
 	}
 	else if (params->only_server)
@@ -290,6 +294,7 @@ static void show_usage (const char *prg_name) {
 "-P --pause             Pause.\n"
 "-U --unpause           Unpause.\n"
 "-G --toggle-pause      Toggle between play/pause.\n"
+"-v --volume (+/-)LEVEL Adjust PCM volume.\n"
 "-y --sync              Synchronize the playlist with other clients.\n"
 "-n --nosync            Don't synchronize the playlist with other clients.\n"
 "-A --ascii             Use ASCII characters to draw lines.\n"
@@ -410,6 +415,7 @@ int main (int argc, char *argv[])
 		{ "info",		0, NULL, 'i' },
 		{ "recursively",	0, NULL, 'e' },
 		{ "seek",		1, NULL, 'k' },
+		{ "volume",		1, NULL, 'v' },
 		{ 0, 0, 0, 0 }
 	};
 	int ret, opt_index = 0;
@@ -420,7 +426,7 @@ int main (int argc, char *argv[])
 	options_init ();
 
 	while ((ret = getopt_long(argc, argv,
-					"VhDSFR:macpsxT:C:M:PUynArfiGelk:",
+					"VhDSFR:macpsxT:C:M:PUynArfiGelk:v:",
 					long_options, &opt_index)) != -1) {
 		switch (ret) {
 			case 'V':
@@ -523,6 +529,10 @@ int main (int argc, char *argv[])
 				break;
 			case 'k':
 				params.seek_by = get_num_param (optarg);
+				params.dont_run_iface = 1;
+				break;
+			case 'v' :
+				params.adj_volume = optarg;
 				params.dont_run_iface = 1;
 				break;
 			default:

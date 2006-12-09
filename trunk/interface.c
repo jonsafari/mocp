@@ -3721,3 +3721,15 @@ void interface_cmdline_seek_by (int server_sock, const int seek_by)
 				   here */
 	seek (seek_by);
 }
+
+void interface_cmdline_adj_volume (int server_sock, const char *arg)
+{
+	srv_sock = server_sock;
+
+	if(arg[0] == '+')
+		adjust_mixer(atoi(arg + 1));
+	else if(arg[0] == '-')
+		adjust_mixer(atoi(arg)); /* atoi can handle -  */
+	else if (arg[0] != 0)
+		set_mixer(atoi(arg));
+}
