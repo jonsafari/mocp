@@ -3733,3 +3733,42 @@ void interface_cmdline_adj_volume (int server_sock, const char *arg)
 	else if (arg[0] != 0)
 		set_mixer(atoi(arg));
 }
+
+void interface_cmdline_set (int server_sock, char *arg, const int val)
+{
+	srv_sock = server_sock;
+	char *last;
+	char *tok;
+
+	tok = strtok_r(arg, ",", &last);
+
+	while(tok) {
+
+		if(!strncmp(tok, "shuffle", 8) || !strncmp(tok,"s",2))
+			tok = "Shuffle";
+		else if(!strncmp(tok, "autonext", 9) || !strncmp(tok, "n",2))
+			tok = "AutoNext";
+		else if(!strncmp(tok, "repeat", 7) || !strncmp(tok, "r", 2))
+			tok = "Repeat";
+		else {
+			fprintf (stderr, "Unknown option '%s'\n", tok);
+			break;
+		}
+
+		if(val == 2) {
+			send_int_to_srv(CMD_GET_OPTION);
+			send_str_to_srv(tok);
+			option_set_int(tok, get_data_int());			
+		}
+
+		send_int_to_srv(CMD_SET_OPTION);
+		send_str_to_srv(tok);
+
+		if(val == 2)
+			send_int_to_srv(!options_get_int(tok));
+		else
+			send_int_to_srv(val);
+		
+		tok = strtok_r(NULL, ",", &last);
+	}
+}

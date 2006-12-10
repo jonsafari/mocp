@@ -32,6 +32,7 @@ Before 2.5:
 * Abiliti to have empty key list in the keymap file.
 * Better message for "Can't receive int value from the server". Say that
   probably the server crashed and suggest using mocp -SD.
+* Add -v, -t, --on/--off to the man page.
 
 In future:
 

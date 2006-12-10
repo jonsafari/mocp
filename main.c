@@ -61,6 +61,9 @@ struct parameters
 	int playit;
 	int seek_by;
 	char *adj_volume;
+	char *toggle;
+	char *on;
+	char *off;
 };
 
 
@@ -213,6 +216,12 @@ static void start_moc (const struct parameters *params, char **args,
 		if (params->adj_volume)
 			interface_cmdline_adj_volume (server_sock,
 					params->adj_volume);
+		if (params->toggle)
+			interface_cmdline_set (server_sock, params->toggle, 2);
+		if (params->on)
+			interface_cmdline_set (server_sock, params->on, 1);
+		if (params->off)
+			interface_cmdline_set (server_sock, params->off, 0);
 		send_int (server_sock, CMD_DISCONNECT);
 	}
 	else if (params->only_server)
@@ -301,6 +310,9 @@ static void show_usage (const char *prg_name) {
 "-i --info              Print the information about the currently played file.\n"
 "-e --recursively       Alias for -a.\n"
 "-k --seek N            Seek by N seconds (can be negative).\n"
+"-o --on <controls>     Turn on a control (shuffle,autonext,repeat).\n"
+"-u --off <controls>    Turn off a control (shuffle,autonext,repeat).\n"
+"-t --toggle <controls> Toggle a control (shuffle,autonext,repeat).\n"
 , prg_name);
 }
 
@@ -416,6 +428,9 @@ int main (int argc, char *argv[])
 		{ "recursively",	0, NULL, 'e' },
 		{ "seek",		1, NULL, 'k' },
 		{ "volume",		1, NULL, 'v' },
+		{ "toggle",		1, NULL, 't' },
+		{ "on",			1, NULL, 'o' },
+		{ "off",		1, NULL, 'u' },
 		{ 0, 0, 0, 0 }
 	};
 	int ret, opt_index = 0;
@@ -426,7 +441,7 @@ int main (int argc, char *argv[])
 	options_init ();
 
 	while ((ret = getopt_long(argc, argv,
-					"VhDSFR:macpsxT:C:M:PUynArfiGelk:v:",
+					"VhDSFR:macpsxT:C:M:PUynArfiGelk:v:t:o:u:",
 					long_options, &opt_index)) != -1) {
 		switch (ret) {
 			case 'V':
@@ -533,6 +548,18 @@ int main (int argc, char *argv[])
 				break;
 			case 'v' :
 				params.adj_volume = optarg;
+				params.dont_run_iface = 1;
+				break;
+			case 't' :
+				params.toggle = optarg;
+				params.dont_run_iface = 1;
+				break;
+			case 'o' :
+				params.on = optarg;
+				params.dont_run_iface = 1;
+				break;
+			case 'u' :
+				params.off = optarg;
 				params.dont_run_iface = 1;
 				break;
 			default:
