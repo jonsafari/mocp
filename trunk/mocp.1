@@ -136,6 +136,23 @@ Print list of options with short description and exit.
 .I -V --version
 Print program version and exit.
 
+.TP
+.I -v --volume
+Adjust the mixer volume. You can set (-v 50), or adjust (-v +10), (-v -10).
+
+.TP
+.I -t --toggle
+.TP
+.I -o --on
+.TP
+.I -u --off
+
+Followed by a list of identifiers, these will control MOC's playlist options.
+Valid identifiers: shuffle, repeat, and autonext. Can be shortened to
+s, r, and n respectively.
+
+Example: -t shuffle,r,n would toggle shuffle repeat and autonext all at once.
+
 .SH FILES
 
 .TP
