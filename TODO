@@ -26,12 +26,10 @@ Before 2.5:
   %F -- expands to (the expansion of) the current FormatString
   if there is a song playing or paused, and empty string if stopped.
   %S --  expands to play/stop/pause.
-* -i shows also the average bitrate.
 * Communication protocol in a separate library.
 * Abiliti to have empty key list in the keymap file.
 * Better message for "Can't receive int value from the server". Say that
   probably the server crashed and suggest using mocp -SD.
-* Add -v, -t, --on/--off to the man page.
 
 In future:
 
