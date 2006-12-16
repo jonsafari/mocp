@@ -76,10 +76,12 @@ static char err_msg[265] = "";
 
 /* Information about currently played file */
 static struct {
+	int avg_bitrate;
 	int bitrate;
 	int rate;
 	int channels;
 } sound_info = {
+	-1,
 	-1,
 	-1,
 	-1
@@ -1024,6 +1026,10 @@ static void handle_command (const int client_id)
 			if (!send_data_int(cli, sound_info.bitrate))
 				err = 1;
 			break;
+		case CMD_GET_AVG_BITRATE:
+			if (!send_data_int(cli, sound_info.avg_bitrate))
+				err = 1;
+			break;
 		case CMD_GET_RATE:
 			if (!send_data_int(cli, sound_info.rate))
 				err = 1;
@@ -1292,6 +1298,12 @@ void set_info_rate (const int rate)
 {
 	sound_info.rate = rate;
 	add_event_all (EV_RATE, NULL);
+}
+
+void set_info_avg_bitrate (const int avg_bitrate)
+{
+	sound_info.avg_bitrate = avg_bitrate;
+	add_event_all (EV_AVG_BITRATE, NULL);
 }
 
 /* Notify the client about change of the player state. */

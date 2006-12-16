@@ -49,6 +49,7 @@ struct flac_data
 #endif
 	struct io_stream *stream;
 	int bitrate;
+	int avg_bitrate;
 	int abort; /* abort playing (due to an error) */
 	
 	unsigned length;
@@ -307,6 +308,7 @@ static void *flac_open_internal (const char *file, const int buffered)
 	
 	data->decoder = NULL;
 	data->bitrate = -1;
+	data->avg_bitrate = -1;
 	data->abort = 0;
 	data->sample_buffer_fill = 0;
 	data->last_decode_position = 0;
@@ -399,6 +401,7 @@ static void *flac_open_internal (const char *file, const int buffered)
 		return data;
 	}
 #endif
+	data->avg_bitrate = (data->bits_per_sample) * data->sample_rate;
 
 	return data;
 }
@@ -652,6 +655,13 @@ static int flac_get_bitrate (void *void_data)
 	return data->bitrate;
 }
 
+static int flac_get_avg_bitrate (void *void_data)
+{
+	struct flac_data *data = (struct flac_data *)void_data;
+
+	return data->avg_bitrate / 1000;
+}
+
 static int flac_get_duration (void *void_data)
 {
 	struct flac_data *data = (struct flac_data *)void_data;
@@ -694,7 +704,8 @@ static struct decoder flac_decoder = {
 	NULL,
 	flac_get_name,
 	NULL,
-	NULL
+	NULL,
+	flac_get_avg_bitrate
 };
 
 struct decoder *plugin_init ()

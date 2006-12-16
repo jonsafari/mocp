@@ -607,6 +607,7 @@ static void play_file (const char *file, const struct decoder *f,
 		decoder_data = precache.decoder_data;
 		set_info_channels (sound_params.channels);
 		set_info_rate (sound_params.rate / 1000);
+
 		if (!audio_open(&sound_params))
 			return;
 		audio_send_buf (precache.buf, precache.buf_fill);
@@ -621,6 +622,12 @@ static void play_file (const char *file, const struct decoder *f,
 		}
 
 		already_decoded_time = precache.decoded_time;
+
+		if(f->get_avg_bitrate)
+			set_info_avg_bitrate (f->get_avg_bitrate(decoder_data));
+		else
+			set_info_avg_bitrate (0);
+
 		bitrate_list_init (&bitrate_list);
 		bitrate_list.head = precache.bitrate_list.head;
 		bitrate_list.tail = precache.bitrate_list.tail;
@@ -644,6 +651,8 @@ static void play_file (const char *file, const struct decoder *f,
 		}
 
 		already_decoded_time = 0.0;
+		if(f->get_avg_bitrate)
+			set_info_avg_bitrate (f->get_avg_bitrate(decoder_data));
 		bitrate_list_init (&bitrate_list);
 	}
 

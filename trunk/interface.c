@@ -95,6 +95,7 @@ static struct file_info {
 	char *file;
 	struct file_tags *tags;
 	char *title;
+	int avg_bitrate;
 	int bitrate;
 	int rate;
 	int curr_time;
@@ -407,6 +408,12 @@ static int get_rate ()
 static int get_bitrate ()
 {
 	send_int_to_srv (CMD_GET_BITRATE);
+	return get_data_int ();
+}
+
+static int get_avg_bitrate ()
+{
+	send_int_to_srv (CMD_GET_AVG_BITRATE);
 	return get_data_int ();
 }
 
@@ -1008,6 +1015,9 @@ static void server_event (const int event, void *data)
 			break;
 		case EV_FILE_TAGS:
 			ev_file_tags ((struct tag_ev_response *)data);
+			break;
+		case EV_AVG_BITRATE:
+			curr_file.avg_bitrate = get_avg_bitrate ();
 			break;
 		default:
 			interface_fatal ("Unknown event: 0x%02x", event);
@@ -3621,6 +3631,7 @@ void interface_cmdline_file_info (const int server_sock)
 		curr_file.rate = get_rate ();
 		curr_file.bitrate = get_bitrate ();
 		curr_file.curr_time = get_curr_time ();
+		curr_file.avg_bitrate = get_avg_bitrate ();
 
 		if (curr_file.tags->time != -1)
 			sec_to_min (time_str, curr_file.tags->time);
@@ -3668,6 +3679,9 @@ void interface_cmdline_file_info (const int server_sock)
 
 		printf ("Bitrate: %dKbps\n",
 				curr_file.bitrate > 0 ? curr_file.bitrate : 0);
+		printf ("AvgBitrate: %dKbps\n", 
+				curr_file.avg_bitrate > 0
+				? curr_file.avg_bitrate : 0);
 		printf ("Rate: %dKHz\n", curr_file.rate);
 		
 		file_info_cleanup (&curr_file);

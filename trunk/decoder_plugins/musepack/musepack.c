@@ -37,6 +37,7 @@ struct musepack_data
 	mpc_decoder decoder;
 	mpc_reader reader;
 	mpc_streaminfo info;
+	int avg_bitrate;
 	int bitrate;
 	struct decoder_error error;
 	int ok; /* was this stream successfully opened? */
@@ -119,7 +120,8 @@ static void musepack_open_stream_internal (struct musepack_data *data)
 		return;
 	}
 
-	debug ("Avg bitrate: %d", (int)(data->info.average_bitrate / 1000));
+	data->avg_bitrate = (int) (data->info.average_bitrate / 1000);
+	debug ("Avg bitrate: %d", data->avg_bitrate);
 
 	data->remain_buf = NULL;
 	data->remain_buf_len = 0;
@@ -323,6 +325,13 @@ static int musepack_get_bitrate (void *prv_data)
 	return data->bitrate;
 }
 
+static int musepack_get_avg_bitrate (void *prv_data)
+{
+	struct musepack_data *data = (struct musepack_data *)prv_data;
+
+	return data->avg_bitrate;
+}
+
 static int musepack_get_duration (void *prv_data)
 {
 	struct musepack_data *data = (struct musepack_data *)prv_data;
@@ -372,7 +381,8 @@ static struct decoder musepack_decoder = {
 	NULL /*musepack_our_mime*/,
 	musepack_get_name,
 	NULL /* musepack_current_tags */,
-	musepack_get_stream
+	musepack_get_stream,
+	musepack_get_avg_bitrate
 };
 
 struct decoder *plugin_init ()
