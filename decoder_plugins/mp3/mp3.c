@@ -59,6 +59,8 @@ struct mp3_data
 {
 	struct io_stream *io_stream;
 	unsigned long bitrate;
+	long avg_bitrate;
+
 	unsigned int freq;
 	short channels;
 	signed long duration; /* Total time of the file in seconds.
@@ -289,6 +291,9 @@ static int count_time_internal (struct mp3_data *data)
 		/* samplerate is a constant */
 		num_frames = (long) (time * header.samplerate / nsamples);
 
+		/* the average bitrate is the constant bitrate */
+		data->avg_bitrate = bitrate;
+
 		mad_timer_set(&duration, (long)time, (long)(timefrac*100),
 				100);
 	}
@@ -303,6 +308,10 @@ static int count_time_internal (struct mp3_data *data)
 		debug ("Counted duration by counting frames durations in "
 				"VBR file.");
 	}
+
+	if (data->avg_bitrate == -1)
+		data->avg_bitrate = data->size 
+				/ mad_timer_count(duration, MAD_UNITS_SECONDS) * 8;
 
 	mad_header_finish(&header);
 
@@ -325,6 +334,7 @@ static struct mp3_data *mp3_open_internal (const char *file,
 	data->channels = 0;
 	data->skip_frames = 0;
 	data->bitrate = -1;
+	data->avg_bitrate = -1;
 
 	/* Open the file */
 	data->io_stream = io_open (file, buffered);
@@ -652,6 +662,13 @@ static int mp3_get_bitrate (void *void_data)
 	return data->bitrate / 1000;
 }
 
+static int mp3_get_avg_bitrate (void *void_data)
+{
+	struct mp3_data *data = (struct mp3_data *)void_data;
+
+	return data->avg_bitrate / 1000;
+}
+
 static int mp3_get_duration (void *void_data)
 {
 	struct mp3_data *data = (struct mp3_data *)void_data;
@@ -785,7 +802,8 @@ static struct decoder mp3_decoder = {
 	mp3_our_mime,
 	mp3_get_name,
 	NULL,
-	mp3_get_stream
+	mp3_get_stream,
+	mp3_get_avg_bitrate
 };
 
 struct decoder *plugin_init ()

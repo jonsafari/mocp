@@ -704,7 +704,8 @@ static struct decoder spx_decoder = {
 	spx_our_mime,
 	spx_get_name,
 	NULL /*spx_current_tags*/,
-	spx_get_stream
+	spx_get_stream,
+	NULL
 };
 
 struct decoder *plugin_init ()

@@ -9,7 +9,7 @@
  *
  * On every change in the decoder API this number will be changed, so MOC will
  * not load plugins compiled with older/newer decoder.h. */
-#define DECODER_API_VERSION	6
+#define DECODER_API_VERSION	7
 
 /** Type of the decoder error. */
 enum decoder_error_type
@@ -241,6 +241,16 @@ struct decoder
 	 * \return Pointer to the used IO stream.
 	 */
 	struct io_stream *(*get_stream)(void *data);
+
+	/** Get the average bitrate.
+	 *
+	 * Get the bitrate of the whole file.
+	 *
+	 * \param data Decoder's private data.
+	 * 
+	 * \return Average bitrate in Kbps or -1 if not available.
+	 */
+	int (*get_avg_bitrate)(void *data);
 };
 
 /** Initialize decoder plugin.

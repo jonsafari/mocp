@@ -29,6 +29,9 @@
 #undef COMMON_H
 #undef LOG_H
 
+/* same for logging... */
+#undef LOG_H
+
 #define DEBUG
 
 #include "common.h"
@@ -49,6 +52,7 @@ struct ffmpeg_data
 	int ok; /* was this stream successfully opened? */
 	struct decoder_error error;
 	int bitrate;
+	int avg_bitrate;
 };
 
 static void ffmpeg_init ()
@@ -151,6 +155,8 @@ static void *ffmpeg_open (const char *file)
 	data->remain_buf_len = 0;
 
 	data->ok = 1;
+	data->avg_bitrate = (int) (data->ic->file_size / 
+			(data->ic->duration / 1000000) * 8);
 	data->bitrate = data->ic->bit_rate / 1000;
 
 	return data;
@@ -319,6 +325,13 @@ static int ffmpeg_get_bitrate (void *prv_data)
 	return data->bitrate;
 }
 
+static int ffmpeg_get_avg_bitrate (void *prv_data)
+{
+	struct ffmpeg_data *data = (struct ffmpeg_data *)prv_data;
+
+	return data->avg_bitrate / 1000;	
+}
+
 static int ffmpeg_get_duration (void *prv_data)
 {
 	struct ffmpeg_data *data = (struct ffmpeg_data *)prv_data;
@@ -377,7 +390,8 @@ static struct decoder ffmpeg_decoder = {
 	NULL,
 	ffmpeg_get_name,
 	NULL,
-	NULL
+	NULL,
+	ffmpeg_get_avg_bitrate
 };
 
 struct decoder *plugin_init ()

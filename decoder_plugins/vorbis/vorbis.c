@@ -35,6 +35,7 @@ struct vorbis_data
 	OggVorbis_File vf;
 	int last_section;
 	int bitrate;
+	int avg_bitrate;
 	int duration;
 	struct decoder_error error;
 	int ok; /* was this stream successfully opened? */
@@ -218,7 +219,8 @@ static void vorbis_open_stream_internal (struct vorbis_data *data)
 	}
 	else {
 		data->last_section = -1;
-		data->bitrate = ov_bitrate(&data->vf, -1) / 1000;
+		data->avg_bitrate = ov_bitrate(&data->vf, -1) / 1000;
+		data->bitrate = data->avg_bitrate;
 		if ((data->duration = ov_time_total(&data->vf, -1))
 				== OV_EINVAL)
 			data->duration = -1;
@@ -367,6 +369,13 @@ static int vorbis_get_bitrate (void *prv_data)
 	return data->bitrate;
 }
 
+static int vorbis_get_avg_bitrate (void *prv_data)
+{
+	struct vorbis_data *data = (struct vorbis_data *)prv_data;
+	
+	return data->avg_bitrate;
+}
+
 static int vorbis_get_duration (void *prv_data)
 {
 	struct vorbis_data *data = (struct vorbis_data *)prv_data;
@@ -422,7 +431,8 @@ static struct decoder vorbis_decoder = {
 	vorbis_our_mime,
 	vorbis_get_name,
 	vorbis_current_tags,
-	vorbis_get_stream
+	vorbis_get_stream,
+	vorbis_get_avg_bitrate
 };
 
 struct decoder *plugin_init ()

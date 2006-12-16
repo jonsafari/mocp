@@ -56,6 +56,7 @@ enum noblock_io_status
 #define EV_STATUS_MSG	0x0f /* Followed by a status message */
 #define EV_MIXER_CHANGE	0x10 /* the mixer channel was changed */
 #define EV_FILE_TAGS	0x11 /* tags in a response for tags request */
+#define EV_AVG_BITRATE  0x12 /* average bitrate has changed (new song) */
 
 /* Events caused by a client that wants to modify the playlist (see
  * CMD_CLI_PLIST* commands. */
@@ -118,6 +119,7 @@ enum noblock_io_status
 					   requests up to some file */
 #define CMD_CLI_PLIST_MOVE	0x31	/* move an item */
 #define CMD_LIST_MOVE		0x32	/* move an item */
+#define CMD_GET_AVG_BITRATE	0x33	/* get the average bitrate */
 
 char *socket_name ();
 int get_int (int sock, int *i);

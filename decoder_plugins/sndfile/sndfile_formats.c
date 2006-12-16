@@ -200,6 +200,7 @@ static struct decoder sndfile_decoder = {
 	NULL,
 	sndfile_get_name,
 	NULL,
+	NULL,
 	NULL
 };
 
