@@ -24,9 +24,10 @@
 #endif
 #include <ffmpeg/avformat.h>
 
-/* FFmpeg also likes common names, without that, our common.h would not be
- * included. */
+/* FFmpeg also likes common names, without that, our common.h and log.h would
+ * not be included. */
 #undef COMMON_H
+#undef LOG_H
 
 #define DEBUG
 
