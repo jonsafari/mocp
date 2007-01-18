@@ -30,6 +30,8 @@
 #include "interface.h"
 #include "decoder.h"
 
+#define MAX(a,b)	((a) > (b) ? (a) : (b))
+
 int is_plist_file (const char *name)
 {
 	const char *ext = ext_pos (name);
@@ -199,11 +201,14 @@ static char *read_ini_value (FILE *file, const char *section, const char *key)
 	char *line = NULL;
 	int in_section = 0;
 	char *value = NULL;
+	int key_len;
 	
 	if (fseek(file, 0, SEEK_SET)) {
 		error ("File fseek() error: %s", strerror(errno));
 		return NULL;
 	}
+
+	key_len = strlen (key);
 
 	while ((line = read_line(file))) {
 		if (line[0] == '[') {
@@ -248,7 +253,8 @@ static char *read_ini_value (FILE *file, const char *section, const char *key)
 				break;
 			}
 
-			if (!strncasecmp(line, key, t2 - line + 1)) {
+			if (!strncasecmp(line, key,
+						MAX(t2 - line + 1, key_len))) {
 				value = t + 1;
 
 				while (isblank(value[0]))
