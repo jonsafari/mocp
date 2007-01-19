@@ -3171,13 +3171,16 @@ void iface_get_key (struct iface_key *k)
 			interface_fatal ("wget_wch() failed");
 #endif
 		/* Recognize meta sequences */
-		if (ch == KEY_ESCAPE
-				&& (meta = wgetch(main_win.win))
-				!= ERR)
-			ch = meta | META_KEY_FLAG;
-
-		k->type = IFACE_KEY_CHAR;
-		k->key.ucs = ch;
+		if (ch == KEY_ESCAPE) {
+			if((meta = wgetch(main_win.win)) != ERR)
+				ch = meta | META_KEY_FLAG;
+			k->type = IFACE_KEY_FUNCTION;
+			k->key.func = ch;
+		}
+		else {
+			k->type = IFACE_KEY_CHAR;
+			k->key.ucs = ch;
+		}
 	}
 	else {
 	
