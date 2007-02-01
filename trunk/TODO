@@ -1,7 +1,6 @@
 Items marked with $ are bigger changes requiring more time.
 
 Known bugs:
-- ESC is not working.
 - Repeat is not working properly. http://moc.daper.net/node/124
 - RCC should be used for file names. http://moc.daper.net/node/116
 - Do we assume filesystem in UTF-8? It's incorrect.
@@ -13,7 +12,6 @@ Known bugs:
   non alphanuemric character at the top.
 - mmap should be turned off by default.
 - Compilation failure without libiconv
-- http://www.tzi.de/~hiben/moc/2.4.1-ffmpegbug.patch
 - Option to disable 24bit output because of problems with some sound cards
   (reported on Realtek ALC655 with ALSA).
 - new rcc patch to 2.4
