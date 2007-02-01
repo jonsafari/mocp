@@ -3161,8 +3161,12 @@ void iface_get_key (struct iface_key *k)
 	
 	if ((ch = wgetch(main_win.win)) == (wint_t)ERR)
 		interface_fatal ("wgetch() failed");
-	
-	if (ch < 255) { /* Regular char */
+
+	if (ch < 32) {  /* Unprintable, generally control sequences */
+		k->type = IFACE_KEY_FUNCTION;
+		k->key.func = ch;
+	}
+	else if (ch < 255) { /* Regular char */
 		int meta;
 
 #ifdef HAVE_NCURSESW
