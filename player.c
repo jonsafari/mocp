@@ -86,6 +86,11 @@ static int req_seek;
 
 /* Tags of the currentply played file. */
 static struct file_tags *curr_tags = NULL;
+
+/* Last value of io_get_metadata_title() of the current stream. */
+static char *last_stream_title = NULL;
+
+/* Mutex for curr_tags and last_stream_title. */
 static pthread_mutex_t curr_tags_mut = PTHREAD_MUTEX_INITIALIZER;
 
 /* Stream associated with the currently playing decoder. */
@@ -372,13 +377,16 @@ static void update_tags (const struct decoder *f, void *decoder_data,
 		show_tags (curr_tags);
 	}
 	else if (s && (stream_title = io_get_metadata_title(s))
-			&& (!curr_tags->title
-				|| strcmp(stream_title, curr_tags->title))) {
+			&& (!curr_tags->title || !last_stream_title
+				|| strcmp(stream_title, last_stream_title))) {
 		logit ("New io stream tags");
 		tags_clear (curr_tags);
 		curr_tags->title = stream_title;
 		show_tags (curr_tags);
 		tags_changed = 1;
+		if (last_stream_title)
+			free (last_stream_title);
+		last_stream_title = xstrdup (stream_title);
 	}
 	else if (stream_title)
 		free (stream_title);
@@ -420,6 +428,7 @@ static void decode_loop (const struct decoder *f, void *decoder_data,
 	
 	LOCK (curr_tags_mut);
 	curr_tags = tags_new ();
+	last_stream_title = NULL;
 	UNLOCK (curr_tags_mut);
 
 	if (f->get_stream) {
@@ -573,6 +582,11 @@ static void decode_loop (const struct decoder *f, void *decoder_data,
 	if (curr_tags) {
 		tags_free (curr_tags);
 		curr_tags = NULL;
+
+		if (last_stream_title) {
+			free (last_stream_title);
+			last_stream_title = NULL;
+		}
 	}
 	UNLOCK (curr_tags_mut);
 
