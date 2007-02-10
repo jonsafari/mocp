@@ -237,6 +237,12 @@ void options_init ()
         option_add_int ("ModPlug_SurroundDepth", 0);
         option_add_int ("ModPlug_SurroundDelay", 0);
         option_add_int ("ModPlug_LoopCount", 0);
+
+        option_add_int ("TiMidity_Volume", 100);
+        option_add_int ("TiMidity_Rate", 44100);
+        option_add_int ("TiMidity_Bits", 16);
+        option_add_int ("TiMidity_Channels", 2);
+        option_add_str ("TiMidity_Config", NULL);
 }
 
 /* Return 1 if a parameter to an integer option is valid. */
@@ -353,6 +359,27 @@ int check_int_option (const char *name, const int val)
         else  if(!strcasecmp(name, "ModPlug_LoopCount"))
         {
             if (val < -1)
+              return 0;
+        }
+        else  if(!strcasecmp(name, "TiMidity_Channels"))
+        {
+            if (!(val == 1 || val == 2)  )
+              return 0;
+        }
+        else  if(!strcasecmp(name, "TiMidity_Bits"))
+        {
+            if (!(val == 8 || val == 16)  )
+              return 0;
+        }
+        else  if(!strcasecmp(name, "TiMidity_Volume"))
+        {
+            if (val < 0 || val > 800)
+              return 0;
+        }
+        else  if(!strcasecmp(name, "TiMidity_Rate"))
+        {
+            // not sure about the limits... I like 44100
+            if (val < 8000 || val > 48000)
               return 0;
         }
 	return 1;
