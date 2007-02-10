@@ -30,7 +30,7 @@
 static struct plugin {
 	lt_dlhandle handle;
 	struct decoder *decoder;
-} plugins[8];
+} plugins[16];
 
 static int plugins_num = 0;
 
