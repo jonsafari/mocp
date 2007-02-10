@@ -324,3 +324,17 @@ CanStartInPlaylist	= yes
 #ModPlug_SurroundDelay = 0
 # Number of times to loop. Zero prevents looping. -1 loops forever.
 #ModPlug_LoopCount = 0
+
+#TiMidity-Options
+# Rate must be in between 8000 and 48000
+#TiMidity_Rate = 44100
+# Bitrate is 8 or 16
+#TiMidity_Bits = 16
+# Channels is 1 or 2
+#TiMidity_Channels = 2
+# Volume-Range is 0-800
+#TiMidity_Volume = 100
+# You can setup a TiMidity-Config-File here
+# Leave unset to use library defaults (/etc/timidity.cfg mostly)
+#TiMidity_Config =
+
