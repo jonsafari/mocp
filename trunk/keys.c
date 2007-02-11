@@ -866,6 +866,25 @@ static int parse_key (const char *symbol)
 	return -1;
 }
 
+/* Remove default keys definition for a command. Return 0 on error. */
+static int clear_default_keys (const char *command)
+{
+	unsigned int cmd_idx;
+
+	/* Find the command */
+	for (cmd_idx = 0; cmd_idx < COMMANDS_NUM; cmd_idx++)
+		if (!(strcasecmp(commands[cmd_idx].name, command)))
+			break;
+
+	if (cmd_idx == COMMANDS_NUM)
+		return 0;
+
+	commands[cmd_idx].default_keys_set = 0;
+	commands[cmd_idx].keys[0] = -1;
+
+	return 1;
+}
+
 /* Add a key to the command defined in the keypap file in line
  * line_num (used only when reporting an error). */
 static void add_key (const int line_num, const char *command,
@@ -882,12 +901,6 @@ static void add_key (const int line_num, const char *command,
 
 	if (cmd_idx == COMMANDS_NUM)
 		keymap_parse_error (line_num, "unknown command");
-
-	/* Remove default keys */
-	if (commands[cmd_idx].default_keys_set) {
-		commands[cmd_idx].default_keys_set = 0;
-		commands[cmd_idx].keys[0] = -1;
-	}
 
 	/* Go to the last key */
 	for (i = 0; commands[cmd_idx].keys[i] != -1; i++)
@@ -921,7 +934,6 @@ static void load_key_map (const char *file_name)
 		char *command;
 		char *tmp;
 		char *key;
-		int added_keys = 0;
 
 		line_num++;
 		if (line[0] == '#' || !(command = strtok(line, " \t"))) {
@@ -934,13 +946,12 @@ static void load_key_map (const char *file_name)
 		if (!(tmp = strtok(NULL, " \t")) || strcmp(tmp, "="))
 			keymap_parse_error (line_num, "expected '='");
 
+		if (!clear_default_keys(command))
+			keymap_parse_error (line_num, "unknown command");
+
 		while ((key = strtok(NULL, " \t"))) {
 			add_key (line_num, command, key);
-			added_keys++;
 		}
-
-		if (!added_keys)
-			keymap_parse_error (line_num, "empty key list");
 
 		free (line);
 	}
