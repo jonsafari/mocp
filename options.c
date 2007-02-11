@@ -165,7 +165,7 @@ void options_init ()
 	option_add_str ("XTermTheme", NULL);
 	option_add_str ("ForceTheme", NULL); /* Used when -T is set */
 	option_add_str ("MOCDir", "~/.moc");
-	option_add_int ("UseMmap", 1);
+	option_add_int ("UseMmap", 0);
 	option_add_int ("Precache", 1);
 	option_add_int ("SavePlaylist", 1);
 	option_add_str ("Keymap", NULL);
