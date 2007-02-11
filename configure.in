@@ -77,6 +77,7 @@ dnl Link with iconv for charset translation, if not found without library.
 dnl check for iconv() requires including iconv.h
 dnl Add "-liconv" when possible; Solaris has iconv but use GNU iconv when it
 dnl has been installed.
+HAVE_ICONV=no
 AC_MSG_CHECKING(for iconv_open())
 save_LIBS="$LIBS"
 LIBS="$LIBS -liconv"
@@ -86,8 +87,7 @@ AC_TRY_LINK([
 #endif
     ], [iconv_open("fr", "to");],
     AC_MSG_RESULT(yes; with -liconv)
-    AC_DEFINE([HAVE_ICONV], 1, [Define if you have iconv])
-    COMPILE_ICONV=yes
+    HAVE_ICONV=yes
     EXTRA_LIBS="$EXTRA_LIBS -liconv"
     LIBS="$save_LIBS",
     LIBS="$save_LIBS"
@@ -98,11 +98,14 @@ AC_TRY_LINK([
 #endif
 	], [iconv_open("fr", "to");],
 	AC_MSG_RESULT(yes)
-	AC_DEFINE([HAVE_ICONV], 1, [Define if you have iconv])
-	COMPILE_ICONV=yes,
-	AC_MSG_RESULT(no)
-	COMPILE_ICONV=no)
+	HAVE_ICONV=yes,
+	AC_MSG_RESULT(no))
         )
+
+if test "$HAVE_ICONV" != "yes"
+then
+	AC_MSG_ERROR([No iconv library found.])
+fi
 
 AC_C_CONST
 AC_C_INLINE
@@ -494,7 +497,6 @@ echo "OSS:               "$COMPILE_OSS
 echo "ALSA:              "$COMPILE_ALSA
 echo "JACK:              "$COMPILE_JACK
 echo "DEBUG:             "$COMPILE_DEBUG
-echo "ICONV:             "$COMPILE_ICONV
 echo "RCC:               "$COMPILE_RCC
 echo "Network streams:   "$COMPILE_CURL
 echo "Resampling:        "$COMPILE_SAMPLERATE

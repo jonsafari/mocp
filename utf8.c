@@ -19,7 +19,7 @@
 #endif
 
 #include <stdarg.h>
-#ifdef HAVE_ICONV
+#ifdef HAVE_ICONV_H
 # include <iconv.h>
 #endif
 #ifdef HAVE_RCC
@@ -51,9 +51,7 @@
 static char *terminal_charset = NULL;
 static int using_utf8 = 0;
 
-#ifdef HAVE_ICONV
 static iconv_t iconv_desc = (iconv_t)(-1);
-#endif
 
 char *iconv_rcc (char *str)
 {
@@ -84,7 +82,6 @@ char *iconv_rcc (char *str)
  * For NULL returns NULL. */
 char *iconv_str (const iconv_t desc, const char *str)
 {
-#ifdef HAVE_ICONV
 	char buf[512];
 	char *inbuf, *outbuf;
 	char *str_copy;
@@ -133,9 +130,6 @@ char *iconv_str (const iconv_t desc, const char *str)
 	free (str_copy);
 	
 	return converted;
-#else /* HAVE_ICONV */
-	return xstrdup (str);
-#endif
 }
 
 int xwaddstr (WINDOW *win, const char *str)
@@ -318,11 +312,9 @@ int xwprintw (WINDOW *win, const char *fmt, ...)
 
 static void iconv_cleanup ()
 {
-#ifdef HAVE_ICONV
 	if (iconv_desc != (iconv_t)(-1)
 			&& iconv_close(iconv_desc) == -1)
 		logit ("iconv_close() failed: %s", strerror(errno));
-#endif
 #ifdef HAVE_RCC
 	rccFree ();
 #endif
@@ -353,13 +345,11 @@ void utf8_init ()
 #endif /* HAVE_NL_LANGINFO */
 #endif /* HAVE_NL_LANGINFO_CODESET */
 
-#ifdef HAVE_ICONV
 	if (!using_utf8 && terminal_charset) {
 		iconv_desc = iconv_open (terminal_charset, "UTF-8");
 		if (iconv_desc == (iconv_t)(-1))
 			logit ("iconv_open() failed: %s", strerror(errno));
 	}
-#endif
 #ifdef HAVE_RCC
 	rcc_class classes[] = {
 		{ "input", RCC_CLASS_STANDARD, NULL, NULL, "Input Encoding",

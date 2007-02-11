@@ -10,7 +10,7 @@
 #endif
 
 #include <stdarg.h>
-#ifdef HAVE_ICONV
+#ifdef HAVE_ICONV_H
 # include <iconv.h>
 #endif
 
@@ -34,9 +34,7 @@ int xwprintw (WINDOW *win, const char *fmt, ...);
 size_t strwidth (const char *s);
 char *xstrtail (const char *str, const int len);
 
-#ifdef HAVE_ICONV
 char *iconv_str (const iconv_t desc, const char *str);
-#endif
 char *iconv_rcc (char *str);
 
 #endif
