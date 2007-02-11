@@ -856,6 +856,12 @@ void audio_initialize ()
 	assert (sound_format_ok(hw_caps.formats));
 
 	print_output_capabilities (&hw_caps);
+	if (!options_get_int("Allow24bitOutput")
+			&& hw_caps.formats & (SFMT_S32 | SFMT_U32)) {
+		logit ("Disabling 24bit modes because Allow24bitOutput is set "
+				"to no.");
+		hw_caps.formats &= ~(SFMT_S32 | SFMT_U32);
+	}
 	
 	out_buf_init (&out_buf, options_get_int("OutputBuffer") * 1024);
 	plist_init (&playlist);

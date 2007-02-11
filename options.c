@@ -217,6 +217,7 @@ void options_init ()
  	option_add_int ("UseRCCForFilesystem", 1);
 	option_add_int ("SetXtermTitle", 1);
 	option_add_int ("PlaylistFullPaths", 1);
+	option_add_int ("Allow24bitOutput", 0);
 
         option_add_int ("ModPlug_Channels", 2);
         option_add_int ("ModPlug_Frequency", 44100);
@@ -269,6 +270,7 @@ int check_int_option (const char *name, const int val)
 			|| !strcasecmp(name, "UseRCCForFilesystem")
 			|| !strcasecmp(name, "SetXtermTitle")
 			|| !strcasecmp(name, "PlaylistFullPaths")
+			|| !strcasecmp(name, "Allow24bitOutput")
 			) {
 		if (!(val == 1 || val == 0))
 			return 0;
