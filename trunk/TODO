@@ -2,7 +2,6 @@ Items marked with $ are bigger changes requiring more time.
 
 Known bugs:
 - Repeat is not working properly. http://moc.daper.net/node/124
-- RCC should be used for file names. http://moc.daper.net/node/116
 - Do we assume filesystem in UTF-8? It's incorrect.
 - lock up when seeking backward
 - I have a problem with moc 2.4.0 on FreeBSD 6.1-PRERELEASE. When I build moc
@@ -10,11 +9,8 @@ Known bugs:
 - Crash on FreeBSD 5.5 http://moc.daper.net/node/148
 - When sorting by file name (directories), put files beggining with a
   non alphanuemric character at the top.
-- mmap should be turned off by default.
-- Compilation failure without libiconv
-- Option to disable 24bit output because of problems with some sound cards
-  (reported on Realtek ALC655 with ALSA).
-- new rcc patch to 2.4
+- id3tags v2.3 with UTF-16 are not properly handled by libid3tag, taglib has
+  no problems. Need to use libtag here?
 
 Before 2.5:
 * Move TODO to moc.daper.net/roadmap
