@@ -195,6 +195,7 @@ static struct decoder timidity_decoder =
   NULL,
   timidity_get_name,
   NULL,
+  NULL,
   NULL
 };
 
