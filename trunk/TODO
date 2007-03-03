@@ -20,7 +20,7 @@ Before 2.5:
   %F -- expands to (the expansion of) the current FormatString
   if there is a song playing or paused, and empty string if stopped.
   %S --  expands to play/stop/pause.
-* Communication protocol in a separate library.
+* OnSongChange should read tags from the cache.
 
 In future:
 
