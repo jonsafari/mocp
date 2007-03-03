@@ -21,9 +21,6 @@ Before 2.5:
   if there is a song playing or paused, and empty string if stopped.
   %S --  expands to play/stop/pause.
 * Communication protocol in a separate library.
-* Abiliti to have empty key list in the keymap file.
-* Better message for "Can't receive int value from the server". Say that
-  probably the server crashed and suggest using mocp -SD.
 
 In future:
 
@@ -35,7 +32,6 @@ In future:
 *$ Media library: tree-like menu for artists and albums.
 * Seek by a % value (also using keys for 10%, 20% etc.)
 * Ability to play from a playlist made of items found after searching.
-* http://www.audioscrobbler.com/ (last.fm)
 * JACK: intelligent bahaviour when we get disconnected from the server
   - detect it, try connect and exit if it fails.
 * FastGo instead of FastDir: go to a directory, URL or a playlist.
@@ -67,10 +63,11 @@ In future:
 * APE (http://sourceforge.net/projects/mac-port/)
 * Some options can be changed at run-time using a menu.
 * http://www.wavpack.com
+* posix_fadvise() with POSIX_FADV_WILLNEED instead of the input buffer thread
+  for files.
 
 Maybe never:
 
-* posix_fadvise()
 * Say about ignored options that affects server when the server is not being
   run.
 * Funny ASCII equalizer.
