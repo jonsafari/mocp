@@ -244,6 +244,8 @@ void options_init ()
         option_add_int ("TiMidity_Bits", 16);
         option_add_int ("TiMidity_Channels", 2);
         option_add_str ("TiMidity_Config", NULL);
+
+	option_add_str ("OnSongChange", NULL);
 }
 
 /* Return 1 if a parameter to an integer option is valid. */

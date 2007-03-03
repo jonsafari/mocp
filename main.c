@@ -140,6 +140,8 @@ static void start_moc (const struct parameters *params, char **args,
 	decoder_init (params->debug);
 	srand (time(NULL));
 
+	signal (SIGCHLD, sig_chld);
+
 	if (!params->foreground && (server_sock = server_connect()) == -1) {
 		int notify_pipe[2];
 		int i = 0;
@@ -183,7 +185,6 @@ static void start_moc (const struct parameters *params, char **args,
 		server_loop (list_sock);
 	}
 
-	signal (SIGCHLD, sig_chld);
 
 	if (!params->only_server) {
 		signal (SIGPIPE, SIG_IGN);
