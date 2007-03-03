@@ -344,3 +344,18 @@ CanStartInPlaylist	= yes
 # Leave unset to use library defaults (/etc/timidity.cfg mostly)
 #TiMidity_Config =
 
+# OnSongChange
+# Specify the full path (i.e. no ~) of an executable to run
+# Arguments will be passed, and you can use the following escapes:
+#  %a album
+#  %r artist
+#  %f filename
+#  %t title
+#  %n track
+#
+# No pipes/redirects can be used directly, but writing a shell
+# script can do the job.
+#
+# Example:
+#
+#OnSongChange = "/home/jack/.moc/myscript %a %r"

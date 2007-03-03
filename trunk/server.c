@@ -45,6 +45,7 @@
 #include "server.h"
 #include "playlist.h"
 #include "tags_cache.h"
+#include "files.h"
 
 #define SERVER_LOG	"mocp_server_log"
 #define PID_FILE	"pid"
@@ -375,10 +376,105 @@ static void add_event (struct client *cli, const int event, void *data)
 	UNLOCK (cli->events_mutex);
 }
 
+void on_song_change()
+{
+	struct file_tags *curr_tags = NULL;
+	static char *last_file = NULL;
+
+	char *curr_file = NULL;
+	char *command = NULL;
+	char *bin = NULL;
+	char **args = NULL;
+	char *save = NULL;
+	char *track = NULL;
+
+	int argc = 2;
+	int i = 0;
+
+	if(audio_get_state() != STATE_PLAY)
+		return;
+
+	curr_file = audio_get_sname();
+	command = strdup(options_get_str("OnSongChange"));
+
+	if((command)&&(curr_file) && 
+			((!last_file) || (strcmp(last_file,curr_file)))) {
+		while(command[i] != 0) {
+			if((command[i] == '/')&&(argc == 2))
+				bin = &command[i] + 1;
+			else if(command[i] == ' ')
+				argc++;
+			i++;
+		}
+
+		curr_tags = read_file_tags(curr_file, NULL, TAGS_COMMENTS);
+		args = malloc(sizeof(char *) * argc);
+		
+		args[0] = bin;
+
+		strtok_r(command, " ", &save);
+		
+		for(i=1;i<(argc - 1);i++) {
+			args[i] = strtok_r(NULL, " ", &save);
+			if((args[i][0] == '%')&&(curr_tags)) {
+				switch(args[i][1]) {
+					case 'a' :
+						args[i] = curr_tags->artist ? 
+							curr_tags->artist : 
+							"";
+						break;
+					case 'r' :
+						args[i] = curr_tags->album ?
+							curr_tags->album :
+							"";
+						break;
+					case 't' :
+						args[i] = curr_tags->title ?
+							curr_tags->title :
+							"";
+						break;
+					case 'n' :
+						if (curr_tags->track >= 0) {
+							track = malloc(4);
+							snprintf(track, 4, "%d",
+								curr_tags->track);
+							args[i] = track;
+						}
+						else
+							args[i] = "";
+						break;
+					case 'f' :
+						args[i] = curr_file;
+						break;
+				}
+			}
+		}
+
+		args[argc - 1] = NULL;
+
+		if(!fork()) {
+			execve(command, args, NULL);
+			exit(-1);
+		}
+
+		free(command);
+		if (track)
+			free(track);
+		free(args);
+		free(curr_tags);
+	}
+
+	free(last_file);
+	last_file = curr_file;
+}
+
 static void add_event_all (const int event, const void *data)
 {
 	int i;
 	int added = 0;
+
+	if (event == EV_STATE)
+		on_song_change();
 
 	for (i = 0; i < CLIENTS_MAX; i++)
 		if (clients[i].socket != -1 && clients[i].wants_events) {
@@ -400,6 +496,7 @@ static void add_event_all (const int event, const void *data)
 				else
 					logit ("Unhandled data!");
 			}
+
 			
 			add_event (&clients[i], event, data_copy);
 			added++;

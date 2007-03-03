@@ -601,8 +601,8 @@ void audio_unpause ()
 	else if (curr_playing != -1) {
 		out_buf_unpause (&out_buf);
 		state = STATE_PLAY;
-		state_change ();
 		UNLOCK (curr_playing_mut);
+		state_change ();
 	}
 	else
 		UNLOCK (curr_playing_mut);
