@@ -395,7 +395,7 @@ void on_song_change()
 		return;
 
 	curr_file = audio_get_sname();
-	command = strdup(options_get_str("OnSongChange"));
+	command = xstrdup(options_get_str("OnSongChange"));
 
 	if((command)&&(curr_file) && 
 			((!last_file) || (strcmp(last_file,curr_file)))) {
@@ -408,7 +408,7 @@ void on_song_change()
 		}
 
 		curr_tags = read_file_tags(curr_file, NULL, TAGS_COMMENTS);
-		args = malloc(sizeof(char *) * argc);
+		args = xmalloc(sizeof(char *) * argc);
 		
 		args[0] = bin;
 
@@ -435,7 +435,7 @@ void on_song_change()
 						break;
 					case 'n' :
 						if (curr_tags->track >= 0) {
-							track = malloc(4);
+							track = xmalloc(4);
 							snprintf(track, 4, "%d",
 								curr_tags->track);
 							args[i] = track;
