@@ -347,8 +347,8 @@ CanStartInPlaylist	= yes
 # OnSongChange
 # Specify the full path (i.e. no ~) of an executable to run
 # Arguments will be passed, and you can use the following escapes:
-#  %a album
-#  %r artist
+#  %a artist
+#  %r album
 #  %f filename
 #  %t title
 #  %n track
