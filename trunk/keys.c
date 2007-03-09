@@ -211,7 +211,7 @@ static struct command commands[] = {
 	{
 		KEY_CMD_PLIST_ADD_FILE,
 		"add_file",
-		"Add a file to the playlist",
+		"Add a file/directory to the playlist",
 		CON_MENU,
 		{ 'a', -1 },
 		1
