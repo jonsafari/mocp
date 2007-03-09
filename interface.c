@@ -1637,67 +1637,6 @@ static void adjust_mixer (const int diff)
 	set_mixer (get_mixer_value() + diff);
 }
 
-/* Add the currently selected file to the playlist. */
-static void add_file_plist ()
-{
-	char *file;
-
-	if (iface_in_plist_menu()) {
-		error ("Can't add to the playlist a file from the "
-				"playlist.");
-		return;
-	}
-
-	if (iface_curritem_get_type() == F_DIR) {
-		error ("This is a directory.");
-		return;
-	}
-	
-	file = iface_get_curr_file ();
-
-	if (!file)
-		return;
-	
-	if (iface_curritem_get_type() != F_SOUND) {
-		error ("You can only add a file using this command.");
-		free (file);
-		return;
-	}
-
-
-	if (plist_find_fname(playlist, file) == -1) {
-		struct plist_item *item = &dir_plist->items[
-			plist_find_fname(dir_plist, file)];
-
-		send_int_to_srv (CMD_LOCK);
-
-		if (options_get_int("SyncPlaylist")) {
-			send_int_to_srv (CMD_CLI_PLIST_ADD);
-			send_item_to_srv (item);
-		}
-		else {
-			int added;
-			
-			added = plist_add_from_item (playlist, item);
-			iface_add_to_plist (playlist, added);
-		}
-				
-		/* Add to the server's playlist if the server has our
-		 * playlist */
-		if (get_server_plist_serial() == plist_get_serial(playlist)) {
-			send_int_to_srv (CMD_LIST_ADD);
-			send_str_to_srv (file);
-		}
-		send_int_to_srv (CMD_UNLOCK);
-	}
-	else
-		error ("The file is already on the playlist.");
-
-	iface_menu_key (KEY_CMD_MENU_DOWN);
-
-	free (file);
-}
-
 /* Recursively add the content of a directory to the playlist. */
 static void add_dir_plist ()
 {
@@ -1827,6 +1766,67 @@ static void remove_dead_entries_plist ()
 	send_int_to_srv (CMD_UNLOCK);
 }
 
+
+/* Add the currently selected file to the playlist. */
+static void add_file_plist ()
+{
+	char *file;
+
+	if (iface_in_plist_menu()) {
+		error ("Can't add to the playlist a file from the "
+				"playlist.");
+		return;
+	}
+
+	if (iface_curritem_get_type() == F_DIR) {
+		add_dir_plist();
+		return;
+	}
+	
+	file = iface_get_curr_file ();
+
+	if (!file)
+		return;
+	
+	if (iface_curritem_get_type() != F_SOUND) {
+		error ("You can only add a file using this command.");
+		free (file);
+		return;
+	}
+
+
+	if (plist_find_fname(playlist, file) == -1) {
+		struct plist_item *item = &dir_plist->items[
+			plist_find_fname(dir_plist, file)];
+
+		send_int_to_srv (CMD_LOCK);
+
+		if (options_get_int("SyncPlaylist")) {
+			send_int_to_srv (CMD_CLI_PLIST_ADD);
+			send_item_to_srv (item);
+		}
+		else {
+			int added;
+			
+			added = plist_add_from_item (playlist, item);
+			iface_add_to_plist (playlist, added);
+		}
+				
+		/* Add to the server's playlist if the server has our
+		 * playlist */
+		if (get_server_plist_serial() == plist_get_serial(playlist)) {
+			send_int_to_srv (CMD_LIST_ADD);
+			send_str_to_srv (file);
+		}
+		send_int_to_srv (CMD_UNLOCK);
+	}
+	else
+		error ("The file is already on the playlist.");
+
+	iface_menu_key (KEY_CMD_MENU_DOWN);
+
+	free (file);
+}
 
 static void toggle_option (const char *name)
 {
