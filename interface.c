@@ -1663,7 +1663,7 @@ static void add_dir_plist ()
 	}
 
 
-	if (!strcmp(file, "../")) {
+	if (!strcmp(file, "..")) {
 		error ("Can't add '..'.");
 		free (file);
 		return;
