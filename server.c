@@ -90,6 +90,8 @@ static struct {
 
 static struct tags_cache tags_cache;
 
+extern char **environ;
+
 static void write_pid_file ()
 {
 	char *fname = create_file_name (PID_FILE);
@@ -453,7 +455,7 @@ void on_song_change()
 		args[argc - 1] = NULL;
 
 		if(!fork()) {
-			execve(command, args, NULL);
+			execve(command, args, environ);
 			exit(-1);
 		}
 
