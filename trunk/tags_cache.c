@@ -218,9 +218,11 @@ static void tags_cache_add (struct tags_cache *c, const char *file,
 	c->size += c->cache.tail->size;
 }
 
-/* Read the selected tags for this file and add it to the cache. */
-static void tags_cache_read_add (struct tags_cache *c, const int client_id,
-		const char *file, int tags_sel)
+/* Read the selected tags for this file and add it to the cache.
+ * If client_id != -1, the server is notified using tags_response().
+ * If client_id == -1, copy of file_tag sis returned. */
+static struct file_tags *tags_cache_read_add (struct tags_cache *c,
+		const int client_id, const char *file, int tags_sel)
 {
 	struct file_tags *tags;
 	struct rb_node *x;
@@ -233,8 +235,9 @@ static void tags_cache_read_add (struct tags_cache *c, const int client_id,
 
 	LOCK (c->mutex);
 
-	/* If this entry is already presend in the cache, we have 2 options:
-	 * we must read different tags (TAGS_*) or the tags are outdated */
+	/* If this entry is already presend in the cache, we have 3 options:
+	 * we must read different tags (TAGS_*) or the tags are outdated
+	 * or this is an immediate tags read (client_id == -1) */
 	if (!rb_is_null(x = rb_search(&c->search_tree, file))) {
 		node = (struct cache_list_node *)x->data;
 			
@@ -247,10 +250,17 @@ static void tags_cache_read_add (struct tags_cache *c, const int client_id,
 
 			debug ("Tags in the cache are outdated");
 		}
+		else if ((node->tags->filled & tags_sel) && client_id == -1) {
+			debug ("Tags are in the cache.");
+			tags = tags_dup (node->tags);
+			UNLOCK (c->mutex);
+
+			return tags;
+		}
 		else {
 			tags = node->tags; /* read tags in addition to already
 					   present tags */
-			debug ("Tags in the cache are not what we want");
+			debug ("Tags in the cache are not what we want.");
 		}
 	}
 	else
@@ -281,7 +291,12 @@ static void tags_cache_read_add (struct tags_cache *c, const int client_id,
 	else
 		debug ("Tags updated");
 
-	tags_response (client_id, file, tags);
+	if (client_id != -1) {
+		tags_response (client_id, file, tags);
+		tags = NULL;
+	}
+	else
+		tags = tags_dup (tags);
 	
 	/* Removed the oldest items from the cache if we exceeded the maximum
 	 * cache size */
@@ -289,6 +304,8 @@ static void tags_cache_read_add (struct tags_cache *c, const int client_id,
 		tags_cache_remove_oldest (c);
 	debug ("Cache is %.2fKB big", c->size / 1024.0);
 	UNLOCK (c->mutex);
+
+	return tags;
 }
 
 static void *reader_thread (void *cache_ptr)
@@ -655,4 +672,19 @@ void tags_cache_load (struct tags_cache *c, const char *file_name)
 
 	logit ("Loaded %d items to the cache", count);
 	fclose (file);
+}
+
+/* Immediatelly read tags for a file bypassing the request queue. */
+struct file_tags *tags_cache_get_immediate (struct tags_cache *c,
+		const char *file, const int tags_sel)
+{
+	struct file_tags *tags;
+
+	assert (c != NULL);
+	assert (file != NULL);
+
+	debug ("Immediate tags read for %s", file);
+	tags = tags_cache_read_add (c, -1, file, tags_sel);
+
+	return tags;
 }

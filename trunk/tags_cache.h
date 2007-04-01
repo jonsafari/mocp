@@ -58,6 +58,8 @@ struct tags_cache
 void tags_cache_clear_queue (struct tags_cache *c, const int client_id);
 void tags_cache_add_request (struct tags_cache *c, const char *file,
 		const int tags_sel, const int client_id);
+struct file_tags *tags_cache_get_immediate (struct tags_cache *c,
+		const char *file, const int tags_sel);
 void tags_cache_destroy (struct tags_cache *c);
 void tags_cache_init (struct tags_cache *c, const size_t max_size);
 void tags_cache_clear_up_to (struct tags_cache *c, const char *file,
