@@ -352,6 +352,8 @@ CanStartInPlaylist	= yes
 #  %f filename
 #  %t title
 #  %n track
+#  %d file duration in XX:YY form
+#  %D file duration, number of seconds
 #
 # No pipes/redirects can be used directly, but writing a shell
 # script can do the job.

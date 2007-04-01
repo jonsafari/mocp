@@ -389,6 +389,8 @@ void on_song_change()
 	char **args = NULL;
 	char *save = NULL;
 	char *track = NULL;
+	char duration_sec[10] = "";
+	char duration_nice[12] = "";
 
 	int argc = 2;
 	int i = 0;
@@ -448,6 +450,19 @@ void on_song_change()
 						break;
 					case 'f' :
 						args[i] = curr_file;
+						break;
+					case 'D':
+						if (curr_tags->time >= 0)
+							sprintf (duration_sec,
+									"%d",
+									curr_tags->time);
+						args[i] = duration_sec;
+						break;
+					case 'd':
+						if (curr_tags->time >= 0)
+							sec_to_min (duration_nice,
+									curr_tags->time);
+						args[i] = duration_nice;
 						break;
 				}
 			}

@@ -11,6 +11,16 @@ Known bugs:
   non alphanuemric character at the top.
 - id3tags v2.3 with UTF-16 are not properly handled by libid3tag, taglib has
   no problems. Need to use libtag here?
+  NEW: recognision of ID3 tags v1 is broken (example: small.mp3)
+  Thanks for the patch. It works. Perhaps MOC can add support for the frame
+  field_type to differentiate between ID3_FIELD_TYPE_LATIN1 and
+  ID3_FIELD_TYPE_STRING.
+- ExecCommand:
+  Thanks for explain. It work. But when I del the file, mocp writes: Comman exited with
+  error (status 2632692). And delete file. Is that normal? What's that? 
+  MOC version: 2.4.1
+  OS: FreeBSD 6.0-RELEASE
+  Daper: Tested with FreeBSD 6.0 - works OK without any error message.
 
 Before 2.5:
 * Move TODO to moc.daper.net/roadmap
@@ -20,10 +30,14 @@ Before 2.5:
   %F -- expands to (the expansion of) the current FormatString
   if there is a song playing or paused, and empty string if stopped.
   %S --  expands to play/stop/pause.
-* OnSongChange should read tags from the cache.
+* OnSongStop.
 
 In future:
 
+* Tags cache in BerkeleyDB: 
+  - bigger capacity since not the whole cache is in RAM
+  - better relablity.
+  - faster
 * Review strcpy()/sprintf() usage, change to strncpy()/snprintf() where
   possible.
 * More side menus: many directory/playlist views.
