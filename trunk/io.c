@@ -32,7 +32,7 @@
 # include <sys/mman.h>
 #endif
 
-#define DEBUG
+/*#define DEBUG*/
 
 #include "common.h"
 #include "log.h"
