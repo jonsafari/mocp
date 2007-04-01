@@ -246,6 +246,7 @@ void options_init ()
         option_add_str ("TiMidity_Config", NULL);
 
 	option_add_str ("OnSongChange", NULL);
+	option_add_str ("OnStop", NULL);
 }
 
 /* Return 1 if a parameter to an integer option is valid. */

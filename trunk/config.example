@@ -361,3 +361,9 @@ CanStartInPlaylist	= yes
 # Example:
 #
 #OnSongChange = "/home/jack/.moc/myscript %a %r"
+
+# OnStop
+# Run the following command (full path, no arguments) when MOC changes state
+# to stopped (when user stopped playing or changes a song).
+#
+#OnStop = "/home/jack/.moc/myscript_on_stop"

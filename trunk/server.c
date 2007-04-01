@@ -395,9 +395,6 @@ void on_song_change()
 	int argc = 2;
 	int i = 0;
 
-	if(audio_get_state() != STATE_PLAY)
-		return;
-
 	curr_file = audio_get_sname();
 	command = xstrdup(options_get_str("OnSongChange"));
 
@@ -486,13 +483,49 @@ void on_song_change()
 	last_file = curr_file;
 }
 
+/* Handle running external command on Stop event. */
+static void on_stop ()
+{
+	char *command;
+
+	command = xstrdup (options_get_str("OnStop"));
+
+	if (command) {
+		char *args[2];
+
+		args[0] = xstrdup (command);
+		args[1] = NULL;
+
+		switch (fork()) {
+			case 0:
+				execve (command, args, environ);
+				exit (0);
+			case -1:
+				logit ("Error when running OnStop command '%s': %s",
+						command, strerror(errno));
+				break;
+		}
+
+		free (command);
+		free (args[0]);
+	}
+}
+
 static void add_event_all (const int event, const void *data)
 {
 	int i;
 	int added = 0;
 
-	if (event == EV_STATE)
-		on_song_change();
+	if (event == EV_STATE) {
+		switch (audio_get_state()) {
+			case STATE_PLAY:
+				on_song_change ();
+				break;
+			case STATE_STOP:
+				on_stop ();
+				break;
+		}
+	}
 
 	for (i = 0; i < CLIENTS_MAX; i++)
 		if (clients[i].socket != -1 && clients[i].wants_events) {
