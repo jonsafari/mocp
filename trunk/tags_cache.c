@@ -708,7 +708,10 @@ struct file_tags *tags_cache_get_immediate (struct tags_cache *c,
 	assert (file != NULL);
 
 	debug ("Immediate tags read for %s", file);
-	tags = tags_cache_read_add (c, -1, file, tags_sel);
+	if (!is_url(file))
+		tags = tags_cache_read_add (c, -1, file, tags_sel);
+	else
+		tags = tags_new ();
 
 	return tags;
 }
