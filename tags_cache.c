@@ -231,6 +231,8 @@ static void tags_cache_read_add (struct tags_cache *c, const int client_id,
 
 	debug ("Getting tags for %s", file);
 
+	LOCK (c->mutex);
+
 	/* If this entry is already presend in the cache, we have 2 options:
 	 * we must read different tags (TAGS_*) or the tags are outdated */
 	if (!rb_is_null(x = rb_search(&c->search_tree, file))) {
@@ -253,6 +255,7 @@ static void tags_cache_read_add (struct tags_cache *c, const int client_id,
 	}
 	else
 		tags = tags_new ();
+	UNLOCK (c->mutex);
 
 	if (tags_sel & TAGS_TIME) {
 		int time;
