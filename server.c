@@ -479,7 +479,7 @@ void on_song_change()
 		if (track)
 			free(track);
 		free(args);
-		free(curr_tags);
+		tags_free (curr_tags);
 	}
 
 	free(last_file);
