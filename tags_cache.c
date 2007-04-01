@@ -263,7 +263,8 @@ static struct file_tags *tags_cache_read_add (struct tags_cache *c,
 
 			debug ("Tags in the cache are outdated");
 		}
-		else if ((node->tags->filled & tags_sel) && client_id == -1) {
+		else if ((node->tags->filled & tags_sel) == tags_sel
+				&& client_id == -1) {
 			debug ("Tags are in the cache.");
 			tags = tags_dup (node->tags);
 			UNLOCK (c->mutex);
