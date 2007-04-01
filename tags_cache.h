@@ -29,6 +29,8 @@ struct cache_list_node
 	struct file_tags *tags;
 	size_t size; /* number of bytes allocated for this node (file name and
 			tags) */
+	int during_operation; /* If set to != 0 there is operation pending on
+				 this node (reading tags). */
 };
 
 /* List of items in the cache - olders are first. */
@@ -51,6 +53,8 @@ struct tags_cache
 				   non-zero) */
 	pthread_cond_t request_cond; /* condition for signalizing new
 					requests */
+	pthread_cond_t response_cond; /* condition for signalizing a cache
+					 node read */
 	pthread_mutex_t mutex; /* mutex for all above data */
 	pthread_t reader_thread; /* tid of the reading thread */
 };

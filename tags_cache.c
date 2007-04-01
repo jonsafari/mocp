@@ -174,6 +174,11 @@ static void tags_cache_remove_oldest (struct tags_cache *c)
 {
 	struct cache_list_node *n;
 
+	if (c->cache.tail && c->cache.tail->during_operation) {
+		debug ("Not deleting the oldest iten because it's in use.");
+		return;
+	}
+
 	if ((n = cache_list_pop(&c->cache))) {
 		debug ("Removing from cache: %s", n->file);
 		rb_delete (&c->search_tree, n->file);
@@ -212,6 +217,7 @@ static void tags_cache_add (struct tags_cache *c, const char *file,
 	c->cache.tail->mod_time = get_mtime (file);
 	c->cache.tail->size = sizeof(struct cache_list_node) +
 		strlen(file) + 1 + tags_mem (tags);
+	c->cache.tail->during_operation = 0;
 	c->cache.tail->next = NULL;
 
 	rb_insert (&c->search_tree, c->cache.tail);
@@ -241,6 +247,13 @@ static struct file_tags *tags_cache_read_add (struct tags_cache *c,
 	if (!rb_is_null(x = rb_search(&c->search_tree, file))) {
 		node = (struct cache_list_node *)x->data;
 			
+		if (node->during_operation) {
+			debug ("Cache node is during operation, waiting to "
+					"finish...");
+			while (node->during_operation)
+				pthread_cond_wait (&c->response_cond, &c->mutex);
+		}
+
 		if (node->mod_time != get_mtime(file)) {
 
 			/* outdated tags - remove them and reread */
@@ -262,6 +275,8 @@ static struct file_tags *tags_cache_read_add (struct tags_cache *c,
 					   present tags */
 			debug ("Tags in the cache are not what we want.");
 		}
+
+		node->during_operation = 1;
 	}
 	else
 		tags = tags_new ();
@@ -288,8 +303,11 @@ static struct file_tags *tags_cache_read_add (struct tags_cache *c,
 		debug ("Adding to the cache");
 		tags_cache_add (c, file, tags);
 	}
-	else
+	else {
 		debug ("Tags updated");
+		node->during_operation = 0;
+		pthread_cond_broadcast (&c->response_cond);
+	}
 
 	if (client_id != -1) {
 		tags_response (client_id, file, tags);
@@ -402,6 +420,9 @@ void tags_cache_init (struct tags_cache *c, const size_t max_size)
 	
 	if (pthread_cond_init(&c->request_cond, NULL))
 		fatal ("Can't create request_cond");
+
+	if (pthread_cond_init(&c->response_cond, NULL))
+		fatal ("Can't create response_cond");
 	
 	if (pthread_create(&c->reader_thread, NULL, reader_thread, c))
 		fatal ("Can't create tags cache thread.");
@@ -416,6 +437,7 @@ void tags_cache_destroy (struct tags_cache *c)
 	LOCK (c->mutex);
 	c->stop_reader_thread = 1;
 	pthread_cond_signal (&c->request_cond);
+	pthread_cond_broadcast (&c->response_cond);
 	UNLOCK (c->mutex);
 
 	if (pthread_join(c->reader_thread, NULL))
@@ -430,6 +452,8 @@ void tags_cache_destroy (struct tags_cache *c)
 	if (pthread_mutex_destroy(&c->mutex))
 		logit ("Can't destroy mutex");
 	if (pthread_cond_destroy(&c->request_cond))
+		logit ("Can't destroy request_cond");
+	if (pthread_cond_destroy(&c->response_cond))
 		logit ("Can't destroy request_cond");
 }
 
