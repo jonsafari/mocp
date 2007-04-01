@@ -409,7 +409,8 @@ void on_song_change()
 			i++;
 		}
 
-		curr_tags = read_file_tags(curr_file, NULL, TAGS_COMMENTS);
+		curr_tags = tags_cache_get_immediate (&tags_cache, curr_file,
+				TAGS_COMMENTS | TAGS_TIME);
 		args = xmalloc(sizeof(char *) * argc);
 		
 		args[0] = bin;
