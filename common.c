@@ -17,6 +17,7 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 #include "server.h"
 #include "interface.h"
@@ -124,4 +125,25 @@ char *create_file_name (const char *file)
 	return fname;
 }
 
+/* Convert time in second to min:sec text format. buff must be 6 chars long. */
+void sec_to_min (char *buff, const int seconds)
+{
+	assert (seconds >= 0);
 
+	if (seconds < 6000) {
+
+		/* the time is less than 99:59 */
+		int min, sec;
+		
+		min = seconds / 60;
+		sec = seconds % 60;
+
+		snprintf (buff, 6, "%02d:%02d", min, sec);
+	}
+	else if (seconds < 10000 * 60) 
+
+		/* the time is less than 9999 minutes */
+		snprintf (buff, 6, "%4dm", seconds/60);
+	else
+		strcpy (buff, "!!!!!");
+}

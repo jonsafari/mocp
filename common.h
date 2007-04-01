@@ -55,4 +55,6 @@ void error (const char *format, ...);
 void set_me_server ();
 char *create_file_name (const char *file);
 
+void sec_to_min (char *buff, const int seconds);
+
 #endif

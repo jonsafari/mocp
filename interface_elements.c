@@ -867,29 +867,6 @@ static void main_win_destroy (struct main_win *w)
 		free (w->layout_fmt);
 }
 
-/* Convert time in second to min:sec text format. buff must be 6 chars long. */
-void sec_to_min (char *buff, const int seconds)
-{
-	assert (seconds >= 0);
-
-	if (seconds < 6000) {
-
-		/* the time is less than 99:59 */
-		int min, sec;
-		
-		min = seconds / 60;
-		sec = seconds % 60;
-
-		snprintf (buff, 6, "%02d:%02d", min, sec);
-	}
-	else if (seconds < 10000 * 60) 
-
-		/* the time is less than 9999 minutes */
-		snprintf (buff, 6, "%4dm", seconds/60);
-	else
-		strcpy (buff, "!!!!!");
-}
-
 /* Make a title suitable to display in a menu from the title of a playlist item.
  * Returned memory is malloc()ed.
  * made_from tags - was the playlist title made from tags? 
