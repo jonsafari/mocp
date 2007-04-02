@@ -245,6 +245,16 @@ void options_init ()
         option_add_int ("TiMidity_Channels", 2);
         option_add_str ("TiMidity_Config", NULL);
 
+	option_add_int ("SidPlay2_DefaultSongLength", 180);
+	option_add_int ("SidPlay2_MinimumSongLength", 0);
+	option_add_str ("SidPlay2_Database", NULL);
+	option_add_int ("SidPlay2_Frequency", 44100);
+	option_add_int ("SidPlay2_Bits", 16);
+	option_add_str ("SidPlay2_PlayMode", "M");
+	option_add_int ("SidPlay2_Optimisation", 0);
+	option_add_int ("SidPlay2_StartAtStart", 1);
+	option_add_int ("SidPlay2_PlaySubTunes", 1);
+
 	option_add_str ("OnSongChange", NULL);
 	option_add_str ("OnStop", NULL);
 }
@@ -274,6 +284,8 @@ int check_int_option (const char *name, const int val)
 			|| !strcasecmp(name, "SetXtermTitle")
 			|| !strcasecmp(name, "PlaylistFullPaths")
 			|| !strcasecmp(name, "Allow24bitOutput")
+			|| !strcasecmp(name, "SidPlay2_StartAtStart")
+			|| !strcasecmp(name, "SidPlay2_PlaySubTunes")
 			) {
 		if (!(val == 1 || val == 0))
 			return 0;
@@ -387,6 +399,31 @@ int check_int_option (const char *name, const int val)
             if (val < 8000 || val > 48000)
               return 0;
         }
+        else if(!strcasecmp(name, "SidPlay2_DefaultSongLength"))
+        {
+          if(val < 0)
+            return 0;
+        }
+        else if(!strcasecmp(name, "SidPlay2_MinimumSongLength"))
+        {
+          if(val < 0)
+            return 0;
+        }
+        else if(!strcasecmp(name, "SidPlay2_Frequency"))
+        {
+          if(val < 4000 || val > 48000)
+            return 0;
+        }
+        else if(!strcasecmp(name, "SidPlay2_Bits"))
+        {
+          if(!(val == 8 || val == 16))
+            return 0;
+        }
+        else if(!strcasecmp(name, "SidPlay2_Optimisation"))
+        {
+          if(val < 0 || val > 2)
+            return 0;
+        }
 	return 1;
 }
 
@@ -416,6 +453,15 @@ int check_str_option (const char *name, const char *val)
               && strcasecmp(val, "SPLINE")
               && strcasecmp(val, "LINEAR")
               && strcasecmp(val, "NEAREST")
+             )
+            return 0;
+        }
+        else if(!strcasecmp(name, "SidPlay2_PlayMode")) {
+          if (
+              strcasecmp(val, "M")
+              && strcasecmp(val, "S")
+              && strcasecmp(val, "L")
+              && strcasecmp(val, "R")
              )
             return 0;
         }
