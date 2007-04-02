@@ -344,6 +344,31 @@ CanStartInPlaylist	= yes
 # Leave unset to use library defaults (/etc/timidity.cfg mostly)
 #TiMidity_Config =
 
+
+# SidPlay2-Options
+# Default length of a song if not in database (seconds)
+#SidPlay2_DefaultSongLength = 180
+# Play at least a specific time if song is shorter (seconds)
+#SidPlay2_MinimumSongLength = 0
+# Set path to a HVSC-compatible database (if not set, database is disabled)
+#SidPlay2_Database
+# Sampling Frequency (4000-48000Hz)
+#SidPlay2_Frequency = 44100
+# Sampling Resolution (8/16)
+#SidPlay2_Bits = 16
+# Playback Mode :
+# "M": Mono (best for mady SIDs)
+# "S": Stereo
+# "L"/"R": Left / Right
+#SidPlay2_PlayMode = "M"
+# Optimisation-level (0-2), 0 is best quality
+#SidPlay2_Optimisation = 0
+# Use start-song information from SID (1) or start at first song (0)
+# Songs before the start-song won't be played.
+#SidPlay2_StartAtStart = 1
+# Play sub-tunes
+#SidPlay2_PlaySubTunes = 1
+
 # OnSongChange
 # Specify the full path (i.e. no ~) of an executable to run
 # Arguments will be passed, and you can use the following escapes:
