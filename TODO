@@ -30,7 +30,6 @@ Before 2.5:
   %F -- expands to (the expansion of) the current FormatString
   if there is a song playing or paused, and empty string if stopped.
   %S --  expands to play/stop/pause.
-* OnSongStop.
 
 In future:
 
@@ -58,7 +57,6 @@ In future:
 * lirc
 * handle SIGBUS - when mmap()ed file is truncated.
 * Don't use PATH_MAX.
-*$ libsidplay2
 * Seek forward using the content of the output buffer.
 *$ Locales.
 *$ Song ratings or something like Q in XMMS.
