@@ -205,7 +205,7 @@ void options_init ()
 	option_add_int ("TagsCacheSize", 256);
 	option_add_int ("PlaylistNumbering", 1);
 	option_add_str ("Layout1",
-			"directory:0,0,50%,100% playlist:50%,0,50%,100%");
+			"directory:0,0,50%,100% playlist:50%,0,FILL,100%");
 	option_add_str ("Layout2",
 			"directory:0,0,100%,100% playlist:0,0,100%,100%");
 	option_add_str ("Layout3", NULL);
