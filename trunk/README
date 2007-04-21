@@ -32,7 +32,7 @@ next file to be played is precached while playing the current file.
 
 Supported file formats are: mp3, Ogg Vorbis, FLAC, Musepack (mpc), Speex, WAVE,
 supported by FFmpeg (WMA, RealAudio, AAC, MP4), AIFF, AU, SVX, Sphere Nist WAV,
-IRCAM SF, Creative VOC.
+IRCAM SF, Creative VOC, SID, wavpack, MIDI, modplug.
 
 Other features:
  - Simple mixer.
@@ -72,6 +72,10 @@ To support audio formats you need:
      (http://developer.kde.org/~wheeler/taglib.html)
  - WMA, ReadAudio, (.ra), AAC, MP4 - FFmpeg
  	(http://ffmpeg.sourceforge.net/index.php)
+ - modplug - libmodplug (http://modplug-xmms.sourceforge.net)
+ - MIDI - libtimidity (http://timidity.sourceforge.net/)
+ - SID - sidplay2 (sidplay2.sourceforge.net/)
+ - wavpack - libwavpack (http://www.wavpack.com/)
 
 For network streams:
  - libcurl 7.12.0 or newer (http://curl.haxx.se)
