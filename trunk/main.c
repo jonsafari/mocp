@@ -127,7 +127,8 @@ static void sig_chld (int sig ATTR_UNUSED)
 {
 	logit ("Got SIGCHLD");
 
-	waitpid(-1, NULL, WNOHANG);
+	while (waitpid(-1, NULL, WNOHANG) > 0)
+		;
 }
 
 /* Run client and the server if needed. */
@@ -139,8 +140,6 @@ static void start_moc (const struct parameters *params, char **args,
 
 	decoder_init (params->debug);
 	srand (time(NULL));
-
-	signal (SIGCHLD, sig_chld);
 
 	if (!params->foreground && (server_sock = server_connect()) == -1) {
 		int notify_pipe[2];
@@ -160,6 +159,7 @@ static void start_moc (const struct parameters *params, char **args,
 				write (notify_pipe[1], &i, sizeof(i));
 				close (notify_pipe[0]);
 				close (notify_pipe[1]);
+				signal (SIGCHLD, sig_chld);
 				server_loop (list_sock);
 				options_free ();
 				exit (0);
