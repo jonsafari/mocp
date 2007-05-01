@@ -95,17 +95,15 @@ static void wav_close (void *prv_data)
 
 	decoder_error_clear (&data->error);
 	free (data);
+	logit ("File closed");
 }
 
 static int wav_seek (void *prv_data, int sec)
 {
 	struct wavpack_data *data = (struct wavpack_data *)prv_data;
 
-	if ( WavpackSeekSample (data->wpc, sec * data->sample_rate) ) {
-		debug ("sample %d of %d", WavpackGetSampleIndex (data->wpc),
-			 data->sample_num);
+	if ( WavpackSeekSample (data->wpc, sec * data->sample_rate) )
 		return sec;
-	}
 	
 	decoder_error (&data->error, ERROR_FATAL, 0,
 					"Fatal seeking error!");
@@ -194,40 +192,58 @@ static int wav_decode (void *prv_data, char *buf, int buf_len,
 		struct sound_params *sound_params)
 {
 	struct wavpack_data *data = (struct wavpack_data *)prv_data;
-	int ret, i, s_num, Bps;
+	int ret, i, s_num, iBps, oBps;
 
-	int16_t *obuf = (int16_t *) buf;
+	int8_t * buf8 = buf;
+	int16_t * buf16 = buf;
+	int32_t * buf32 = buf;
 
-	Bps = data->channels * WavpackGetBytesPerSample (data->wpc);
-	s_num = buf_len / Bps;
+
+	iBps = data->channels * WavpackGetBytesPerSample (data->wpc);
+	oBps = (iBps == 6) ? 8 : iBps;
+	s_num = buf_len / oBps;
 
 	decoder_error_clear (&data->error);
 
 	int32_t *dbuf = (int32_t *)xcalloc (
-			 s_num, data->channels * sizeof(int32_t));
+			 s_num, data->channels * 4);
 	
 	ret = WavpackUnpackSamples (data->wpc, dbuf, s_num );
 
 	if (ret == 0) {
 		free (dbuf);
 		return 0;
-	}
+	}	
 
-	if (Bps / data->channels == 2) {
-		for (i = 0; i < ret * data->channels; i++)
-			obuf[i] = dbuf[i];
-		sound_params->fmt = SFMT_S16 | SFMT_LE;
+	if (data->mode & MODE_FLOAT) {	
+		sound_params->fmt = SFMT_FLOAT; 
+		memcpy (buf, dbuf, ret * oBps);
 	} else	{
-		memcpy (buf, dbuf, ret * Bps);
-		sound_params->fmt = (data->mode & MODE_FLOAT) ?
-		 		SFMT_FLOAT : (SFMT_S32 | SFMT_LE); 
+		debug ("iBps %d", iBps);
+		switch (iBps / data->channels){
+		case 4: for (i = 0; i < ret * data->channels; i++) 
+				buf32[i] = dbuf[i];
+			sound_params->fmt = SFMT_S32 | SFMT_LE;	
+			break;
+		case 3: for (i = 0; i < ret * data->channels; i++) 
+				buf32[i] = dbuf[i] * 256;
+			sound_params->fmt = SFMT_S32 | SFMT_LE;	
+			break;
+		case 2: for (i = 0; i < ret * data->channels; i++) 
+				buf16[i] = dbuf[i];
+			sound_params->fmt = SFMT_S16 | SFMT_LE;
+			break;
+		case 1: for (i = 0; i < ret * data->channels; i++) 
+				buf8[i] = dbuf[i];
+			sound_params->fmt = SFMT_S8 | SFMT_LE;	
+		}
 	}	
 
 	sound_params->channels = data->channels;
 	sound_params->rate = data->sample_rate;
 
 	free (dbuf);
-	return ret * Bps ;
+	return ret * oBps ;
 }
 
 static int wav_our_mime (const char *mime)
@@ -267,7 +283,7 @@ static struct decoder wv_decoder = {
         wav_our_mime,
         wav_get_name,
         NULL,//wav_current_tags,
-        NULL,//,//wav_get_stream
+        NULL,//wav_get_stream
 	wav_get_avg_bitrate
 };
 
