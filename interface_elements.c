@@ -215,6 +215,9 @@ static struct info_win
 /* Are we running on xterm? */
 static int has_xterm = 0;
 
+/* Are we running inside screen? */
+static int has_screen = 0;
+
 /* Was the interface initialized? */
 static int iface_initialized = 0;
 
@@ -2138,6 +2141,56 @@ static void xterm_clear_title ()
 		write (1, "\033]2;\007", sizeof("\033]2;\007")-1);
 }
 
+/* Set the has_screen variable. */
+static void detect_screen ()
+{
+	char *window;
+	char *term;
+
+	if (((term = getenv("TERM")) && !strcmp(term, "screen")==0)
+	   || ((window = getenv("WINDOW")) && isdigit(*window)))
+		
+		has_screen = 1;
+}
+
+#define SCREEN_TITLE_START "\033k"
+#define SCREEN_TITLE_END "\033\\"
+static void screen_set_title (const int state, const char *title)
+{
+	if (has_screen && options_get_int("SetScreenTitle")) {
+		write (1, SCREEN_TITLE_START, sizeof(SCREEN_TITLE_START)-1);
+		write (1, "MOC ", sizeof("MOC ")-1);
+		
+		switch (state) {
+			case STATE_PLAY:
+				write (1, "[play]", sizeof("[play]")-1);
+				break;
+			case STATE_STOP:
+				write (1, "[stop]", sizeof("[stop]")-1);
+				break;
+			case STATE_PAUSE:
+				write (1, "[pause]", sizeof("[pause]")-1);
+				break;
+		}
+		
+		if (title) {
+			write (1, " - ", sizeof(" - ")-1);
+			write (1, title, strlen(title));
+		}
+
+		write (1, SCREEN_TITLE_END, sizeof(SCREEN_TITLE_END)-1);
+	}
+}
+
+static void screen_clear_title ()
+{
+	if (has_screen && options_get_int("SetScreenTitle"))
+	{
+		write (1, SCREEN_TITLE_START, sizeof(SCREEN_TITLE_START)-1);
+		write (1, SCREEN_TITLE_END, sizeof(SCREEN_TITLE_END)-1);
+	}
+}
+
 /* Based on ASCIILines option initialize line characters with curses lines or
  * ASCII characters. */
 static void init_lines ()
@@ -2427,6 +2480,7 @@ static void info_win_set_state (struct info_win *w, const int state)
 
 	w->state_play = state;
 	xterm_set_title (state, w->title);
+	screen_set_title (state, w->title);
 	info_win_draw_state (w);
 }
 
@@ -2499,6 +2553,7 @@ static void info_win_set_played_title (struct info_win *w, const char *title)
 		free (w->title);
 	w->title = xstrdup (title);
 	xterm_set_title (w->state_play, title);
+	screen_set_title (w->state_play, title);
 	info_win_draw_title (w);
 }
 
@@ -2971,6 +3026,7 @@ void windows_init ()
 	check_term_size ();
 	
 	detect_term ();
+	detect_screen ();
 	start_color ();
 	theme_init (has_xterm);
 	init_lines ();
@@ -2996,6 +3052,7 @@ void windows_end ()
 		info_win_destroy (&info_win);
 
 		xterm_clear_title ();
+		screen_clear_title ();
 		utf8_cleanup ();
 	}
 

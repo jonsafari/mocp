@@ -216,6 +216,7 @@ void options_init ()
 	option_add_int ("UseRCC", 1);
  	option_add_int ("UseRCCForFilesystem", 1);
 	option_add_int ("SetXtermTitle", 1);
+	option_add_int ("SetScreenTitle", 1);
 	option_add_int ("PlaylistFullPaths", 1);
 	option_add_int ("Allow24bitOutput", 0);
 
@@ -282,6 +283,7 @@ int check_int_option (const char *name, const int val)
 			|| !strcasecmp(name, "UseRCC")
 			|| !strcasecmp(name, "UseRCCForFilesystem")
 			|| !strcasecmp(name, "SetXtermTitle")
+			|| !strcasecmp(name, "SetScreenTitle")
 			|| !strcasecmp(name, "PlaylistFullPaths")
 			|| !strcasecmp(name, "Allow24bitOutput")
 			|| !strcasecmp(name, "SidPlay2_StartAtStart")
