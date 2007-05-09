@@ -2147,7 +2147,7 @@ static void detect_screen ()
 	char *window;
 	char *term;
 
-	if (((term = getenv("TERM")) && !strcmp(term, "screen")==0)
+	if (((term = getenv("TERM")) && !strcmp(term, "screen"))
 	   || ((window = getenv("WINDOW")) && isdigit(*window)))
 		
 		has_screen = 1;
