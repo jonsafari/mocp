@@ -608,6 +608,7 @@ static void play_file (const char *file, const struct decoder *f,
 	if (precache.ok && strcmp(precache.file, file)) {
 		logit ("The precached file is not the file we want.");
 		precache.f->close (precache.decoder_data);
+		precache_reset (&precache);
 	}
 
 	if (precache.ok && !strcmp(precache.file, file)) {
