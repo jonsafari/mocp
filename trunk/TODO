@@ -21,6 +21,11 @@ Known bugs:
   MOC version: 2.4.1
   OS: FreeBSD 6.0-RELEASE
   Daper: Tested with FreeBSD 6.0 - works OK without any error message.
+- curl 7.16.2 doesn't work in most cases (EOF after reading headers).
+- mocp -a playlist.pls should not sort added files.
+  http://moc.daper.net/node/240
+- MOC needs to be restarted (when switching themes) in order to understand the
+  ATTRIBUTE correctly.
 
 Before 2.5:
 * Move TODO to moc.daper.net/roadmap
@@ -74,9 +79,9 @@ In future:
 * scripting
 * APE (http://sourceforge.net/projects/mac-port/)
 * Some options can be changed at run-time using a menu.
-* http://www.wavpack.com
 * posix_fadvise() with POSIX_FADV_WILLNEED instead of the input buffer thread
   for files.
+* recording played sound to a file.
 
 Maybe never:
 
