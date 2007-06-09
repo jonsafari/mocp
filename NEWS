@@ -1,3 +1,19 @@
+2.4.2
+	* Disable 24bit output by default due to reported problems with some
+	  sound cards. It can be enabled by setting Allow24bitOutput option
+	  to yes.
+	* Fix escape key handling. (Jack Miller)
+	* Fix CTRL-key combinations in entries. (Jack Miller)
+	* Fix a crash when a file is precached and user requests playing a
+	  different file.
+	* Disabled using mmap() for reading files in the default configuration
+	  due to reported incrased memory usage.
+	* Fix ffmpeg build failure due to LOG_H defined by ffmpeg headers.
+	* Fix reading PLS playlists with more than 9 entries.
+	* Fix configure script: libiconv is required to build moc.
+	* Fix the A command for '..' directory (Debian Bug#416102)
+	* Fix displaying the playlist panel when the width of the terminal is
+	  an odd number.
 2.4.1
 	* Added Command 'P' and a configuration option PlaylistFullPaths to turn
 	  on/off displaying full paths for files in the playlist.
