@@ -26,6 +26,7 @@ Known bugs:
   http://moc.daper.net/node/240
 - MOC needs to be restarted (when switching themes) in order to understand the
   ATTRIBUTE correctly.
+- avformat.h is not detected by configure and build may fail.
 
 Before 2.5:
 * Move TODO to moc.daper.net/roadmap
