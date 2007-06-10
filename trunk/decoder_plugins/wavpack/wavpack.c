@@ -223,19 +223,19 @@ static int wav_decode (void *prv_data, char *buf, int buf_len,
 		switch (iBps / data->channels){
 		case 4: for (i = 0; i < ret * data->channels; i++) 
 				buf32[i] = dbuf[i];
-			sound_params->fmt = SFMT_S32 | SFMT_LE;	
+			sound_params->fmt = SFMT_S32 | SFMT_NE;	
 			break;
 		case 3: for (i = 0; i < ret * data->channels; i++) 
 				buf32[i] = dbuf[i] * 256;
-			sound_params->fmt = SFMT_S32 | SFMT_LE;	
+			sound_params->fmt = SFMT_S32 | SFMT_NE;	
 			break;
 		case 2: for (i = 0; i < ret * data->channels; i++) 
 				buf16[i] = dbuf[i];
-			sound_params->fmt = SFMT_S16 | SFMT_LE;
+			sound_params->fmt = SFMT_S16 | SFMT_NE;
 			break;
 		case 1: for (i = 0; i < ret * data->channels; i++) 
 				buf8[i] = dbuf[i];
-			sound_params->fmt = SFMT_S8 | SFMT_LE;	
+			sound_params->fmt = SFMT_S8 | SFMT_NE;	
 		}
 	}	
 
