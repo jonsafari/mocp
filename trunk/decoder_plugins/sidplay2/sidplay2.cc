@@ -105,6 +105,16 @@ static sidplay2_data * make_data()
   
   s2d->frequency = s2d->cfg.frequency;
   
+#ifdef WORDS_BIGENDIAN
+  s2d->cfg.sampleFormat = SID2_BIG_SIGNED;
+#else
+  s2d->cfg.sampleFormat = SID2_LITTLE_SIGNED;
+#endif
+
+  s2d->player->config(s2d->cfg);
+
+  s2d->cfg = s2d->player->config();
+  
   switch(s2d->cfg.sampleFormat)
   {
     case SID2_LITTLE_SIGNED:
