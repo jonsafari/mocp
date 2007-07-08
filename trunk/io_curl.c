@@ -234,6 +234,7 @@ void io_curl_open (struct io_stream *s, const char *url)
 	s->curl.http_headers = curl_slist_append (NULL, "Icy-MetaData: 1");
 
 	curl_easy_setopt (s->curl.handle, CURLOPT_NOPROGRESS, 1);
+	curl_easy_setopt (s->curl.handle, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
 	curl_easy_setopt (s->curl.handle, CURLOPT_WRITEFUNCTION,
 			write_callback);
 	curl_easy_setopt (s->curl.handle, CURLOPT_WRITEDATA, s);
