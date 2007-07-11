@@ -2103,6 +2103,8 @@ static void detect_term ()
 
 	if ((((term = getenv("TERM")) && !strcmp(term, "xterm"))
 				|| !strcmp(term, "rxvt")
+				|| !strcmp(term, "xterm-color")
+				|| !strcmp(term, "rxvt-unicode")
 				|| !strcmp(term, "eterm")
 				|| !strcmp(term, "Eterm")))
 		has_xterm = 1;
