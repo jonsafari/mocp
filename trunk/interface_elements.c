@@ -426,7 +426,7 @@ static void entry_back_space (struct entry *e)
 		
 		memmove (e->text_ucs + e->cur_pos - 1,
 				e->text_ucs + e->cur_pos,
-				width - e->cur_pos);
+				(width - e->cur_pos) * sizeof(e->text_ucs[0]));
 		e->text_ucs[--width] = L'\0';
 		e->cur_pos--;
 
@@ -453,7 +453,7 @@ static void entry_del_char (struct entry *e)
 		len--;
 		memmove (e->text_ucs + e->cur_pos,
 				e->text_ucs + e->cur_pos + 1,
-				len - e->cur_pos);
+				(len - e->cur_pos) * sizeof(e->text_ucs[0]));
 		e->text_ucs[len] = L'\0';
 		
 		/* Can we show more after deleting the char? */
