@@ -418,7 +418,6 @@ static void *play_thread (void *unused ATTR_UNUSED)
 			if (next_file)
 				free (next_file);
 
-			state = STATE_STOP;
 			set_info_rate (0);
 			set_info_bitrate (0);
 			set_info_channels (1);
@@ -442,8 +441,11 @@ static void *play_thread (void *unused ATTR_UNUSED)
 		else
 			go_to_another_file ();
 
-		state_change ();
 	}
+
+
+	state = STATE_STOP;
+	state_change ();
 
 	if (curr_playing_fname) {
 		free (curr_playing_fname);
