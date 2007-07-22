@@ -98,9 +98,12 @@ static int set_capabilities (struct output_driver_caps *caps)
 		caps->formats |= SFMT_S16 | SFMT_BE;
 
 	if (!caps->formats) {
-		error ("No known format supported by the audio device.");
-		close (dsp_fd);
-		return 0;
+		/* Workaround for vmix that lies that it doesn't support any
+		 * format. */
+		error ("The driver claims that no format known to me is "
+				"supported. I will assume that SFMT_S8 and "
+				"SFMT_S16 (native endian) are supported.");
+		caps->formats = SFMT_S8 | SFMT_S16 | SFMT_NE;
 	}
 
 	caps->min_channels = caps->max_channels = 1;
