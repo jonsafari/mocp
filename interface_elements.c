@@ -745,8 +745,11 @@ static const char *parse_layout_coordinate (const char *fmt, int *val,
 		else
 			*val = v;
 
-		if (*val < 0 || *val > max)
+		if (*val < 0 || *val > max) {
+			logit ("Coordinate out of range - %d is not in (0, %d)",
+					*val, max);
 			return NULL;
+		}
 	}
 
 	if (*e == ',')
@@ -789,35 +792,54 @@ static int parse_layout (struct main_win_layout *l, const char *fmt)
 		if (!*++c)
 			return 0;
 
-		if (!(c = parse_layout_coordinate(c, &p.x, COLS)))
+		if (!(c = parse_layout_coordinate(c, &p.x, COLS))) {
+			logit ("Coordinate parse error when parsing X");
 			return 0;
-		if (!(c = parse_layout_coordinate(c, &p.y, LINES - 4)))
+		}
+		if (!(c = parse_layout_coordinate(c, &p.y, LINES - 4))) {
+			logit ("Coordinate parse error when parsing Y");
 			return 0;
-		if (!(c = parse_layout_coordinate(c, &p.width, COLS)))
+		}
+		if (!(c = parse_layout_coordinate(c, &p.width, COLS))) {
+			logit ("Coordinate parse error when parsing width");
 			return 0;
-		if (!(c = parse_layout_coordinate(c, &p.height, LINES - 4)))
+		}
+		if (!(c = parse_layout_coordinate(c, &p.height, LINES - 4))) {
+			logit ("Coordinate parse error when parsing height");
 			return 0;
+		}
 
 		if (p.width == LAYOUT_SIZE_FILL)
 			p.width = COLS - p.x;
 		if (p.height == LAYOUT_SIZE_FILL)
 			p.height = LINES - 4 - p.y;
 
-		if (p.width < 15)
+		if (p.width < 15) {
+			logit ("Width is less than 15");
 			return 0;
-		if (p.height < 2)
+		}
+		if (p.height < 2) {
+			logit ("Height is less than 2");
 			return 0;
-		if (p.x + p.width > COLS)
+		}
+		if (p.x + p.width > COLS) {
+			logit ("X + width is more than COLS (%d)", COLS);
 			return 0;
-		if (p.y + p.height > LINES - 4)
+		}
+		if (p.y + p.height > LINES - 4) {
+			logit ("Y + height is more than LINES - 4 (%d)",
+					LINES - 4);
 			return 0;
+		}
 
 		if (!strcmp(name, "directory"))
 			l->menus[MENU_DIR] = p;
 		else if (!strcmp(name, "playlist"))
 			l->menus[MENU_PLAYLIST] = p;
-		else
+		else {
+			logit ("Bad subwindow name '%s'", name);
 			return 0;
+		}
 
 		while (isblank(*c))
 			c++;
