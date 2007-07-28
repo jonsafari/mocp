@@ -1,9 +1,7 @@
 Items marked with $ are bigger changes requiring more time.
 
 Known bugs:
-- Repeat is not working properly. http://moc.daper.net/node/124
 - Do we assume filesystem in UTF-8? It's incorrect.
-- lock up when seeking backward
 - I have a problem with moc 2.4.0 on FreeBSD 6.1-PRERELEASE. When I build moc
   with musepack (libmpcdec) support moc allways core dumps on exit.
 - Crash on FreeBSD 5.5 http://moc.daper.net/node/148
@@ -15,18 +13,11 @@ Known bugs:
   Thanks for the patch. It works. Perhaps MOC can add support for the frame
   field_type to differentiate between ID3_FIELD_TYPE_LATIN1 and
   ID3_FIELD_TYPE_STRING.
-- ExecCommand:
-  Thanks for explain. It work. But when I del the file, mocp writes: Comman exited with
-  error (status 2632692). And delete file. Is that normal? What's that? 
-  MOC version: 2.4.1
-  OS: FreeBSD 6.0-RELEASE
-  Daper: Tested with FreeBSD 6.0 - works OK without any error message.
-- curl 7.16.2 doesn't work in most cases (EOF after reading headers).
 - mocp -a playlist.pls should not sort added files.
   http://moc.daper.net/node/240
 - MOC needs to be restarted (when switching themes) in order to understand the
   ATTRIBUTE correctly.
-- avformat.h is not detected by configure and build may fail.
+- FollowPlaylist problem after cli restart http://moc.daper.net/node/275
 
 Before 2.5:
 * Move TODO to moc.daper.net/roadmap
@@ -61,7 +52,6 @@ In future:
   about an internet stream (from IceCast headers like icy-url, icy-pub).
 *$ Lyrics downloaded from the Internet.
 * lirc
-* handle SIGBUS - when mmap()ed file is truncated.
 * Don't use PATH_MAX.
 * Seek forward using the content of the output buffer.
 *$ Locales.
