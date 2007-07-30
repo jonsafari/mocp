@@ -77,7 +77,7 @@ static void strip_string (char *str)
 
 /* Load M3U file into plist. Return number of items read. */
 static int plist_load_m3u (struct plist *plist, const char *fname,
-		const char *cwd)
+		const char *cwd, const int load_serial)
 {
 	FILE *file;
 	char *line;
@@ -170,6 +170,22 @@ static int plist_load_m3u (struct plist *plist, const char *fname,
 				plist_delete (plist, last_added);
 
 			after_extinf = 0;
+		}
+		else if (load_serial && !strncmp(line, "#MOCSERIAL: ",
+					sizeof("#MOCSERIAL: ") - 1)) {
+			char *serial_str = line + sizeof("#MOCSERIAL: ") - 1;
+
+			if (serial_str[0]) {
+				char *err;
+				long serial;
+
+				serial = strtol (serial_str, &err, 0);
+				if (!*err) {
+					plist_set_serial (plist, serial);
+					logit ("Got MOCSERIAL tag with serial %d",
+							(int)serial);
+				}
+			}
 		}
 		free (line);
 	}
@@ -306,7 +322,7 @@ static int plist_load_pls (struct plist *plist, const char *fname,
 		/* Assume that it is a pls file version 1 - plist_load_m3u()
 		 * should handle it like m3u file without m3u extensions */
 		fclose (file);
-		return plist_load_m3u (plist, fname, cwd);
+		return plist_load_m3u (plist, fname, cwd, 0);
 	}
 	
 	nitems = strtol (line, &e, 10);
@@ -379,7 +395,8 @@ static int plist_load_pls (struct plist *plist, const char *fname,
 
 /* Load a playlist into plist. Return the number of items on the list. */
 /* The playlist may have deleted items. */
-int plist_load (struct plist *plist, const char *fname, const char *cwd)
+int plist_load (struct plist *plist, const char *fname, const char *cwd,
+		const int load_serial)
 {
 	int num;
 	int read_tags = options_get_int ("ReadTags");
@@ -389,7 +406,7 @@ int plist_load (struct plist *plist, const char *fname, const char *cwd)
 	if (ext && !strcasecmp(ext, "pls"))
 		num = plist_load_pls (plist, fname, cwd);
 	else
-		num = plist_load_m3u (plist, fname, cwd);
+		num = plist_load_m3u (plist, fname, cwd, load_serial);
 
 	if (read_tags)
 		switch_titles_tags (plist);
@@ -399,9 +416,11 @@ int plist_load (struct plist *plist, const char *fname, const char *cwd)
 	return num;
 }
 
-/* Save plist in m3u format. Strip pathes by strip_path bytes. */
+/* Save plist in m3u format. Strip pathes by strip_path bytes.
+ * If save_serial is not 0, the playlist serial is saved in a
+ * comment. */
 static int plist_save_m3u (struct plist *plist, const char *fname,
-		const int strip_path)
+		const int strip_path, const int save_serial)
 {
 	FILE *file;
 	int i;
@@ -421,6 +440,14 @@ static int plist_save_m3u (struct plist *plist, const char *fname,
 		fclose (file);
 		return 0;
 	}
+
+	if (save_serial && fprintf(file, "#MOCSERIAL: %d\r\n",
+				plist_get_serial(plist)) < 0) {
+		error ("Error writing playlist: %s", strerror(errno));
+		fclose (file);
+		return 0;
+	}
+
 	
 	for (i = 0; i < plist->num; i++)
 		if (!plist_deleted(plist, i)) {
@@ -509,7 +536,8 @@ static void find_common_path (char *buf, const int buf_size,
 
 /* Save the playlist into the file. Return 0 on error. if cwd is NULL, use
  * absolute paths. */
-int plist_save (struct plist *plist, const char *file, const char *cwd)
+int plist_save (struct plist *plist, const char *file, const char *cwd,
+		const int save_serial)
 {
 	char common_path[PATH_MAX+1];
 
@@ -522,5 +550,5 @@ int plist_save (struct plist *plist, const char *file, const char *cwd)
 	/* FIXME: checkif it possible to just add some directories to make
 	 * relative path working. */
 	return plist_save_m3u (plist, file, cwd && !strcmp(common_path, cwd) ?
-			strlen(common_path) : 0);
+			strlen(common_path) : 0, save_serial);
 }
