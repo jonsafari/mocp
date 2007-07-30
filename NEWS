@@ -1,3 +1,16 @@
+2.4.3
+	* Fix displaying tags from internet streams, sometimes the name of the
+	  station or other less seful text was displayed instead the title.
+	* Fix a problem with opening internet streams with curl 7.16.x. (Samid
+	  Tennakoon)
+	* Fix XTermTitle for urxvt.
+	* Fix delete and backspace keys in entries.
+	* Fix a race (crash) when issuing the next commands one after another
+	  very fast.
+	* Fix problems with vmix OSS virtual driver (no supported audio
+	  formats).
+	* Fix FollowPlayedFile after CLI restart.
+	* Updated moc.spec (Klaus Ethgen)
 2.4.2
 	* Disable 24bit output by default due to reported problems with some
 	  sound cards. It can be enabled by setting Allow24bitOutput option
