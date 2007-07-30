@@ -686,6 +686,8 @@ static void follow_curr_file ()
 			iface_make_visible (IFACE_MENU_PLIST, curr_file.file);
 		else if (server_plist_serial == plist_get_serial(dir_plist))
 			iface_make_visible (IFACE_MENU_DIR, curr_file.file);
+		else
+			logit ("Not my playlist.");
 	}
 }
 
@@ -1180,7 +1182,7 @@ static void toggle_menu ()
 }
 
 /* Load the playlist file and switch the menu to it. Return 1 on success. */
-static int go_to_playlist (const char *file)
+static int go_to_playlist (const char *file, const int load_serial)
 {
 	if (plist_count(playlist)) {
 		error ("Please clear the playlist, because "
@@ -1191,11 +1193,12 @@ static int go_to_playlist (const char *file)
 	plist_clear (playlist);
 
 	iface_set_status ("Loading playlist...");
-	if (plist_load(playlist, file, cwd)) {
+	if (plist_load(playlist, file, cwd, load_serial)) {
 	
 		if (options_get_int("SyncPlaylist")) {
 			send_int_to_srv (CMD_LOCK);
-			change_srv_plist_serial ();
+			if (!load_serial)
+				change_srv_plist_serial ();
 			send_int_to_srv (CMD_CLI_PLIST_CLEAR);
 			iface_set_status ("Notifying clients...");
 			send_items_to_clients (playlist);
@@ -1235,7 +1238,7 @@ static void enter_first_dir ()
 			set_cwd (music_dir);
 			if (first_run && file_type(music_dir) == F_PLAYLIST
 					&& plist_count(playlist) == 0
-					&& go_to_playlist(music_dir)) {
+					&& go_to_playlist(music_dir, 0)) {
 				cwd[0] = 0;
 				first_run = 0;
 			}
@@ -1314,7 +1317,7 @@ static void process_args (char **args, const int num)
 		*slash = 0;
 		
 		iface_set_status ("Loading playlist...");
-		plist_load (playlist, args[0], path);
+		plist_load (playlist, args[0], path, 0);
 		iface_set_status ("");
 	}
 	else {
@@ -1346,7 +1349,7 @@ static void process_args (char **args, const int num)
 						|| is_url(path)))
 				plist_add (playlist, path);
 			else if (is_plist_file(path))
-				plist_load (playlist, path, NULL);
+				plist_load (playlist, path, NULL, 0);
 		}
 	}
 
@@ -1367,7 +1370,7 @@ static void load_playlist ()
 	char *plist_file = create_file_name ("playlist.m3u");
 
 	if (file_type(plist_file) == F_PLAYLIST) {
-		go_to_playlist (plist_file);
+		go_to_playlist (plist_file, 1);
 
 		/* We don't want to swith to the playlist after loading. */
 		waiting_for_plist_load = 0;
@@ -1521,7 +1524,8 @@ static int get_safe_serial ()
 	do {
 		send_int_to_srv (CMD_GET_SERIAL);
 		serial = get_data_int ();
-	} while (serial == plist_get_serial(playlist)); /* check only the
+	} while (playlist &&
+			serial == plist_get_serial(playlist)); /* check only the
 							   playlist, because
 							   dir_plist has serial
 							   -1 */
@@ -1601,7 +1605,7 @@ static void go_file ()
 			go_to_dir (file, 0);
 	}
 	else if (type == F_PLAYLIST)
-		go_to_playlist (file);
+		go_to_playlist (file, 0);
 
 	free (file);
 }
@@ -1677,7 +1681,7 @@ static void add_dir_plist ()
 		plist_sort_fname (&plist);
 	}
 	else
-		plist_load (&plist, file, cwd);
+		plist_load (&plist, file, cwd, 0);
 	
 	send_int_to_srv (CMD_LOCK);
 
@@ -1900,7 +1904,7 @@ static void go_to_music_dir ()
 		if (file_type(music_dir) == F_DIR)
 			go_to_dir (music_dir, 0);
 		else if (file_type(music_dir) == F_PLAYLIST)
-			go_to_playlist (music_dir);
+			go_to_playlist (music_dir, 0);
 		else
 			error ("MusicDir is neither a directory nor a "
 					"playlist.");
@@ -2159,7 +2163,7 @@ static void entry_key_search (const struct iface_key *k)
 			else if (file_type(file) == F_DIR)
 				go_to_dir (file, 0);
 			else if (file_type(file) == F_PLAYLIST)
-				go_to_playlist (file);
+				go_to_playlist (file, 0);
 			else
 				play_it (file);
 		}
@@ -2171,12 +2175,13 @@ static void entry_key_search (const struct iface_key *k)
 		iface_entry_handle_key (k);
 }
 
-static void save_playlist (const char *file, const char *cwd)
+static void save_playlist (const char *file, const char *cwd,
+		const int save_serial)
 {
 	iface_set_status ("Saving the playlist...");
 	fill_tags (playlist, TAGS_COMMENTS | TAGS_TIME, 0);
 	if (!user_wants_interrupt()) {
-		if (plist_save(playlist, file, cwd))
+		if (plist_save(playlist, file, cwd, save_serial))
 			interface_message ("Playlist saved");
 	}
 	else
@@ -2213,7 +2218,7 @@ static void entry_key_plist_save (const struct iface_key *k)
 			}
 			else {
 				save_playlist (file, strchr(text, '/')
-						? NULL : cwd);
+						? NULL : cwd, 0);
 
 				if (iface_in_dir_menu())
 					reread_dir ();
@@ -2237,7 +2242,7 @@ static void entry_key_plist_overwrite (const struct iface_key *k)
 
 		iface_entry_disable ();
 		
-		save_playlist (file, NULL); /* FIXME: not always NULL! */
+		save_playlist (file, NULL, 0); /* FIXME: not always NULL! */
 		if (iface_in_dir_menu())
 			reread_dir ();
 		
@@ -3323,7 +3328,7 @@ static void save_playlist_in_moc ()
 	char *plist_file = create_file_name("playlist.m3u");
 
 	if (plist_count(playlist) && options_get_int("SavePlaylist"))
-		save_playlist (plist_file, NULL);
+		save_playlist (plist_file, NULL, 1);
 	else
 		unlink (plist_file);
 }
@@ -3431,7 +3436,7 @@ static void add_recursively (struct plist *plist, char **args,
 		if (dir == 1)
 			read_directory_recurr (path, plist);
 		else if (is_plist_file(args[i]))
-			plist_load (plist, args[i], cwd);
+			plist_load (plist, args[i], cwd, 0);
 		else if ((is_url(path) || is_sound_file(path))
 				&& plist_find_fname(plist, path) == -1) {
 			int added = plist_add (plist, path);
@@ -3486,12 +3491,16 @@ void interface_cmdline_append (int server_sock, char **args,
 					plist_load (&saved_plist,
 						create_file_name(
 							"playlist.m3u"),
-						cwd);
+						cwd, 1);
 			add_recursively (&new, args, arg_num);
 			plist_sort_fname (&new);
 
 			send_int_to_srv (CMD_LOCK);
 			plist_remove_common_items (&new, &saved_plist);
+			if (plist_get_serial(&saved_plist))
+				plist_set_serial(&saved_plist,
+						get_safe_serial());
+			plist_set_serial(&new, plist_get_serial(&saved_plist));
 			send_playlist (&new, 0);
 			send_int_to_srv (CMD_UNLOCK);
 
@@ -3502,7 +3511,7 @@ void interface_cmdline_append (int server_sock, char **args,
 				plist_save (&saved_plist,
 						create_file_name(
 							"playlist.m3u"),
-						NULL);
+						NULL, 1);
 			}
 
 			plist_free (&saved_plist);
@@ -3531,7 +3540,7 @@ void interface_cmdline_play_first (int server_sock)
 	if (!recv_server_plist(&plist)
 			&& file_type(create_file_name("playlist.m3u"))
 			== F_PLAYLIST)
-		plist_load (&plist, create_file_name("playlist.m3u"), cwd);
+		plist_load (&plist, create_file_name("playlist.m3u"), cwd, 1);
 	
 	send_int_to_srv (CMD_LOCK);
 	if (get_server_plist_serial() != plist_get_serial(&plist)) {
