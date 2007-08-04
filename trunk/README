@@ -70,12 +70,13 @@ To support audio formats you need:
  - Speex - libspeex (http://www.speex.org/)
  - Musepack (mpc) - libmpcdec (http://www.musepack.net/) and taglib
      (http://developer.kde.org/~wheeler/taglib.html)
- - WMA, ReadAudio, (.ra), AAC, MP4 - FFmpeg
+ - WMA, ReadAudio, (.ra), MP4 - FFmpeg
  	(http://ffmpeg.sourceforge.net/index.php)
  - modplug - libmodplug (http://modplug-xmms.sourceforge.net)
  - MIDI - libtimidity (http://timidity.sourceforge.net/)
  - SID - sidplay2 (sidplay2.sourceforge.net/)
  - wavpack - libwavpack (http://www.wavpack.com/)
+ - AAC - libfaad2 and libid3tag
 
 For network streams:
  - libcurl 7.12.0 or newer (http://curl.haxx.se)
