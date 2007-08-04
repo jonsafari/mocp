@@ -231,26 +231,28 @@ AC_CHECK_FUNC(getopt_long,
 			    )]
 	      )
 	      
+dnl libid3tag (with zlib)
+AC_CHECK_LIB(z, gzopen, [HAVE_ZLIB=yes],)
+AC_CHECK_LIB(id3tag, id3_file_open, [HAVE_LIBID3TAG=yes],)
+AC_CHECK_HEADER([id3tag.h],[HAVE_LIBID3TAG_H=yes],)
+
+if test "x$HAVE_ZLIB" = "xyes" -a "x$HAVE_LIBID3TAG" = "xyes" \
+	-a "x$HAVE_LIBID3TAG_H" = "xyes"
+then
+	HAVE_ID3TAG=yes
+else
+	HAVE_ID3TAG=no
+fi
+
 dnl libmad (mp3)
 AC_ARG_WITH(mp3, AS_HELP_STRING(--without-mp3,Compile without mp3 support (libmad)))
 if test "x$with_mp3" != "xno"
 then
 	AC_CHECK_LIB(mad, mad_stream_init, [
-		AC_CHECK_HEADER([mad.h], ,
-			AC_MSG_ERROR([You need mad header file (mad devel package).]))
-	])
+		AC_CHECK_HEADER([mad.h], ,)])
 
-	if test "$ac_cv_lib_mad_mad_stream_init" = yes
+	if test "$ac_cv_lib_mad_mad_stream_init" = "yes" -a "$HAVE_ID3TAG" = "yes"
 	then
-		dnl libid3tag (with zlib)
-		AC_CHECK_LIB(z, gzopen, [true],
-			     [AC_MSG_ERROR([You need zlib for libid3tag to play mp3, check the README file.])])
-		AC_CHECK_LIB(id3tag, id3_file_open, [true],
-			     [AC_MSG_ERROR([You need libid3tag to play mp3, check the README file.])],
-			     [-lz])
-		AC_CHECK_HEADER([id3tag.h],,
-				[AC_MSG_ERROR([You need header file for libid3tag to compile with mp3 support, check the README file.])])
-
 		dnl librcc
 		AC_ARG_WITH(rcc, AS_HELP_STRING(--without-rcc,
 			    [Compile without LIBRCC support.]))
@@ -269,6 +271,25 @@ then
 		DECODER_PLUGINS="$DECODER_PLUGINS mp3"
 	fi
 fi
+
+dnl libfaad2 (aac)
+AC_ARG_WITH(aac, AS_HELP_STRING(--without-aac,Compile without AAC support (libfaad2)))
+if test "x$with_aac" != "xno"
+then
+	AC_CHECK_LIB(faad, faacDecInit, [
+		AC_CHECK_HEADER([faad.h], ,
+			AC_MSG_ERROR([You need libfaad2 header file (libfaad2 devel package).]))
+	])
+
+	if test "$ac_cv_lib_faad_faacDecInit" = "yes" -a "$HAVE_ID3TAG" = "yes"
+	then
+		FAAD2_LIBS="-lfaad"
+		AC_SUBST([FAAD2_CFLAGS])
+		AC_SUBST([FAAD2_LIBS])
+		DECODER_PLUGINS="$DECODER_PLUGINS aac"
+	fi
+fi
+
 
 dnl libmpcdec
 AC_ARG_WITH(musepack, AS_HELP_STRING(--without-musepack, [Compile without musepack (mpc) support]))
@@ -540,6 +561,7 @@ AC_OUTPUT([Makefile
           decoder_plugins/modplug/Makefile
           decoder_plugins/timidity/Makefile
           decoder_plugins/sidplay2/Makefile
+          decoder_plugins/aac/Makefile
 	  moc.spec
 	  ])
 
