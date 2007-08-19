@@ -497,6 +497,7 @@ static void reset_colors_table ()
 {
 	int i;
 
+	pair_count = 1;
 	for (i = 0; i < CLR_LAST; i++)
 		colors[i] = -1;
 }
@@ -527,13 +528,12 @@ int get_color (const enum color_index index)
 void themes_switch_theme (const char *file)
 {
 	if (has_colors()) {
-		pair_count = 1;
 		reset_colors_table ();
 		if (!load_color_theme(file, 0)) {
 			interface_error ("Error loading theme!");
-			pair_count = 1;
 			reset_colors_table ();
-			set_default_colors ();
 		}
+
+		set_default_colors ();
 	}
 }
