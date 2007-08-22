@@ -81,9 +81,16 @@ static void draw_item (const struct menu *menu, const struct menu_item *mi,
 	assert (number_space == 0 || number_space >= 2);
 
 	wmove (menu->win, pos, menu->posx);
-	
+
 	if (number_space) {
-		wattrset (menu->win, menu->info_attr);
+		if (draw_selected && mi == menu->selected && mi == menu->marked)
+			wattrset (menu->win, menu->info_attr_sel_marked);
+		else if (draw_selected && mi == menu->selected)
+			wattrset (menu->win, menu->info_attr_sel);
+		else if (mi == menu->marked)
+			wattrset (menu->win, menu->info_attr_marked);
+		else
+			wattrset (menu->win, menu->info_attr_normal);
 		xwprintw (menu->win, "%*d ", number_space - 1, mi->num + 1);
 	}
 
@@ -103,20 +110,27 @@ static void draw_item (const struct menu *menu, const struct menu_item *mi,
 		xwaddnstr (menu->win, mi->title, title_space);
 	else
 		xwaddstr (menu->win, mi->title + title_width - title_space);
-	
+
 	/* Make blank line to the right side of the screen */
 	if (mi == menu->selected)
 		for (j = title_width + 1; j <= title_space; j++)
 			waddch (menu->win, ' ');
 
 	/* Description */
-	wattrset (menu->win, menu->info_attr);
+	if (draw_selected && mi == menu->selected && mi == menu->marked)
+		wattrset (menu->win, menu->info_attr_sel_marked);
+	else if (draw_selected && mi == menu->selected)
+		wattrset (menu->win, menu->info_attr_sel);
+	else if (mi == menu->marked)
+		wattrset (menu->win, menu->info_attr_marked);
+	else
+		wattrset (menu->win, menu->info_attr_normal);
 	wmove (menu->win, pos, item_info_pos);
 
 	if (menu->show_time && menu->show_format
 			&& (*mi->time || *mi->format))
 		xwprintw (menu->win, "[%5s|%3s]",
-				mi->time ? mi->time : "     ",
+				mi->time ? mi->time : "	 ",
 				mi->format);
 	else if (menu->show_time && mi->time[0])
 		xwprintw (menu->win, "[%5s]", mi->time);
@@ -223,7 +237,10 @@ struct menu *menu_new (WINDOW *win, const int posx, const int posy,
 	menu->marked = NULL;
 	menu->show_time = 0;
 	menu->show_format = 0;
-	menu->info_attr = A_NORMAL;
+	menu->info_attr_normal = A_NORMAL;
+	menu->info_attr_sel = A_NORMAL;
+	menu->info_attr_marked = A_NORMAL;
+	menu->info_attr_sel_marked = A_NORMAL;
 	menu->number_items = 0;
 
 	rb_init_tree (&menu->search_tree, rb_compare, rb_fname_compare, NULL);
@@ -547,8 +564,11 @@ struct menu *menu_filter_pattern (const struct menu *menu, const char *pattern)
 			menu->height);
 	menu_set_show_time (new, menu->show_time);
 	menu_set_show_format (new, menu->show_format);
-	menu_set_info_attr (new, menu->info_attr);
-	
+	menu_set_info_attr_normal (new, menu->info_attr_normal);
+	menu_set_info_attr_sel (new, menu->info_attr_sel);
+	menu_set_info_attr_marked (new, menu->info_attr_marked);
+	menu_set_info_attr_sel_marked (new, menu->info_attr_sel_marked);
+
 	for (mi = menu->items; mi; mi = mi->next)
 		if (strcasestr(mi->title, pattern))
 			menu_add_from_item (new, mi);
@@ -611,22 +631,43 @@ void menu_item_set_format (struct menu_item *mi, const char *format)
 void menu_set_show_time (struct menu *menu, const int t)
 {
 	assert (menu != NULL);
-	
+
 	menu->show_time = t;
 }
 
 void menu_set_show_format (struct menu *menu, const int t)
 {
 	assert (menu != NULL);
-	
+
 	menu->show_format = t;
 }
 
-void menu_set_info_attr (struct menu *menu, const int attr)
+void menu_set_info_attr_normal (struct menu *menu, const int attr)
 {
 	assert (menu != NULL);
-	
-	menu->info_attr = attr;
+
+	menu->info_attr_normal = attr;
+}
+
+void menu_set_info_attr_sel (struct menu *menu, const int attr)
+{
+	assert (menu != NULL);
+
+	menu->info_attr_sel = attr;
+}
+
+void menu_set_info_attr_marked (struct menu *menu, const int attr)
+{
+	assert (menu != NULL);
+
+	menu->info_attr_marked = attr;
+}
+
+void menu_set_info_attr_sel_marked (struct menu *menu, const int attr)
+{
+	assert (menu != NULL);
+
+	menu->info_attr_sel_marked = attr;
 }
 
 enum file_type menu_item_get_type (const struct menu_item *mi)

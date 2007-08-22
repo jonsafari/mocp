@@ -670,8 +670,14 @@ static void side_menu_init (struct side_menu *m, const enum side_menu_type type,
 				options_get_int("ShowFormat"));
 		menu_set_show_time (m->menu.list.main,
 				strcasecmp(options_get_str("ShowTime"), "no"));
-		menu_set_info_attr (m->menu.list.main,
+		menu_set_info_attr_normal (m->menu.list.main,
 				get_color(CLR_MENU_ITEM_INFO));
+		menu_set_info_attr_sel (m->menu.list.main,
+				get_color(CLR_MENU_ITEM_INFO_SELECTED));
+		menu_set_info_attr_marked (m->menu.list.main,
+				get_color(CLR_MENU_ITEM_INFO_MARKED));
+		menu_set_info_attr_sel_marked (m->menu.list.main,
+				get_color(CLR_MENU_ITEM_INFO_MARKED_SELECTED));
 	}
 	else if (type == MENU_THEMES) {
 		side_menu_init_menu (m);
@@ -971,11 +977,14 @@ static void side_menu_clear (struct side_menu *m)
 	side_menu_init_menu (m);
 	menu_set_items_numbering (m->menu.list.main, m->type == MENU_PLAYLIST
 			&& options_get_int("PlaylistNumbering"));
-	
+
 	menu_set_show_format (m->menu.list.main, options_get_int("ShowFormat"));
 	menu_set_show_time (m->menu.list.main,
 			strcasecmp(options_get_str("ShowTime"), "no"));
-	menu_set_info_attr (m->menu.list.main, get_color(CLR_MENU_ITEM_INFO));
+	menu_set_info_attr_normal (m->menu.list.main, get_color(CLR_MENU_ITEM_INFO));
+	menu_set_info_attr_sel (m->menu.list.main, get_color(CLR_MENU_ITEM_INFO_SELECTED));
+	menu_set_info_attr_marked (m->menu.list.main, get_color(CLR_MENU_ITEM_INFO_MARKED));
+	menu_set_info_attr_sel_marked (m->menu.list.main, get_color(CLR_MENU_ITEM_INFO_MARKED_SELECTED));
 }
 
 /* Fill the directory or playlist side menu with this content. */
@@ -1058,6 +1067,7 @@ static void clear_area (WINDOW *w, const int posx, const int posy,
 	memset (line, ' ', width);
 	line[width] = 0;
 
+	wattrset (w, get_color(CLR_BACKGROUND));
 	for (y = posy; y < posy + height; y++) {
 		wmove (w, y, posx);
 		xwaddstr (w, line);

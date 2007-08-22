@@ -33,6 +33,10 @@
 # marked_selected_file - a file that is currently beeing played and is also
 #                      selected using arrows
 # info               - information shown at the right side of files
+# selected_info      - see selected directory
+# marked_info        - a file (its time) that is currently beeing played
+# marked_selected_info - a file (its time) that is currently beeing played
+#                      and is also selected using arrows
 # status             - the status line with a message
 # title              - the title of the file that is currently beeing played
 # state              - the state: play, stop, or paus (>, [], ||)
@@ -96,6 +100,9 @@ selected_file		= white		black
 marked_file		= green		blue	bold
 marked_selected_file	= green		black	bold
 info			= blue		blue	bold
+selected_info		= blue		black	bold
+marked_info		= blue		blue	bold
+marked_selected_info	= blue		black	bold
 status			= white		blue
 title			= white		blue	bold
 state			= white		blue	bold

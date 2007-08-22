@@ -71,7 +71,10 @@ struct menu
 	int show_time;
 	int show_format;
 
-	int info_attr;	/* attributes for information about the file */
+	int info_attr_normal;	/* attributes for information about the file */
+	int info_attr_sel;
+	int info_attr_marked;
+	int info_attr_sel_marked;
 	int number_items; /* display item number (position) */
 
 	struct rb_tree search_tree; /* RB tree for searching by file name */
@@ -112,7 +115,10 @@ void menu_unmark_item (struct menu *menu);
 struct menu *menu_filter_pattern (const struct menu *menu, const char *pattern);
 void menu_set_show_time (struct menu *menu, const int t);
 void menu_set_show_format (struct menu *menu, const int t);
-void menu_set_info_attr (struct menu *menu, const int attr);
+void menu_set_info_attr_normal (struct menu *menu, const int attr);
+void menu_set_info_attr_sel (struct menu *menu, const int attr);
+void menu_set_info_attr_marked (struct menu *menu, const int attr);
+void menu_set_info_attr_sel_marked (struct menu *menu, const int attr);
 void menu_set_items_numbering (struct menu *menu, const int number);
 enum file_type menu_item_get_type (const struct menu_item *mi);
 char *menu_item_get_file (const struct menu_item *mi);

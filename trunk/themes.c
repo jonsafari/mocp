@@ -82,6 +82,9 @@ static void set_default_colors ()
 	make_color (CLR_MENU_ITEM_FILE_MARKED_SELECTED, COLOR_GREEN,
 			COLOR_BLACK, A_BOLD);
 	make_color (CLR_MENU_ITEM_INFO, COLOR_BLUE, COLOR_BLUE, A_BOLD);
+	make_color (CLR_MENU_ITEM_INFO_SELECTED, COLOR_BLUE, COLOR_BLACK, A_BOLD);
+	make_color (CLR_MENU_ITEM_INFO_MARKED, COLOR_BLUE, COLOR_BLUE, A_BOLD);
+	make_color (CLR_MENU_ITEM_INFO_MARKED_SELECTED, COLOR_BLUE, COLOR_BLACK, A_BOLD);
 	make_color (CLR_STATUS, COLOR_WHITE, COLOR_BLUE, A_NORMAL);
 	make_color (CLR_TITLE, COLOR_WHITE, COLOR_BLUE, A_BOLD);
 	make_color (CLR_STATE, COLOR_WHITE, COLOR_BLUE, A_BOLD);
@@ -118,7 +121,10 @@ static void set_bw_colors ()
 	colors[CLR_MENU_ITEM_FILE_SELECTED] = A_REVERSE;
 	colors[CLR_MENU_ITEM_FILE_MARKED] = A_BOLD;
 	colors[CLR_MENU_ITEM_FILE_MARKED_SELECTED] = A_BOLD | A_REVERSE;
-	colors[CLR_MENU_ITEM_INFO] = A_BOLD;
+	colors[CLR_MENU_ITEM_INFO] = A_NORMAL;
+	colors[CLR_MENU_ITEM_INFO_SELECTED] = A_REVERSE;
+	colors[CLR_MENU_ITEM_INFO_MARKED] = A_BOLD;
+	colors[CLR_MENU_ITEM_INFO_MARKED_SELECTED] = A_BOLD | A_REVERSE;
 	colors[CLR_STATUS] = A_NORMAL;
 	colors[CLR_TITLE] = A_BOLD;
 	colors[CLR_STATE] = A_BOLD;
@@ -167,6 +173,9 @@ static enum color_index find_color_element_name (const char *name)
 		{ "marked_file",	CLR_MENU_ITEM_FILE_MARKED },
 		{ "marked_selected_file", CLR_MENU_ITEM_FILE_MARKED_SELECTED },
 		{ "info",		CLR_MENU_ITEM_INFO },
+		{ "selected_info",	CLR_MENU_ITEM_INFO_SELECTED },
+		{ "marked_info",	CLR_MENU_ITEM_INFO_MARKED },
+		{ "marked_selected_info", CLR_MENU_ITEM_INFO_MARKED_SELECTED },
 		{ "status",		CLR_STATUS },
 		{ "title",		CLR_TITLE },
 		{ "state",		CLR_STATE },
