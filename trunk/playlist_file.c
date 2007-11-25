@@ -505,47 +505,12 @@ static void strip_uncommon (char *buf, const char *path)
 	*slash = 0;
 }
 
-/* Find common element at the beginning of all files on the playlist. */
-/* FIXME: it doesn't work */
-static void find_common_path (char *buf, const int buf_size,
-		struct plist *plist)
-{
-	int i;
-	char *slash;
-	
-	i = plist_next (plist, -1); /* find the first not deleted item */
-	if (i == -1) {
-		buf[0] = 0;
-		return;
-	}
-	
-	strncpy(buf, plist->items[i].file, buf_size);
-	if (buf[buf_size-1])
-		fatal ("Path too long");
-	slash = strrchr(buf, '/');
-	assert (slash != NULL);
-	*slash = 0;
-
-	for (++i; i < plist->num; i++)
-		if (!plist_deleted(plist, i)) {
-			strip_uncommon (buf, plist->items[i].file);
-			if (!buf[0])
-				break;
-		}
-}
-
 /* Save the playlist into the file. Return 0 on error. if cwd is NULL, use
  * absolute paths. */
 int plist_save (struct plist *plist, const char *file, const char *cwd,
 		const int save_serial)
 {
 	char common_path[PATH_MAX+1];
-
-	if (cwd)
-		
-		/* TODO: make this a configurable bahaviour (absolute or
-		 * relative paths) */
-		find_common_path (common_path, sizeof(common_path), plist);
 
 	/* FIXME: checkif it possible to just add some directories to make
 	 * relative path working. */
