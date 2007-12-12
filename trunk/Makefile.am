@@ -53,7 +53,9 @@ mocp_SOURCES = log.c \
 	       tags_cache.c \
 	       tags_cache.h \
 	       utf8.c \
-	       utf8.h
+	       utf8.h \
+	       softmixer.c \
+	       softmixer.h
 EXTRA_mocp_SOURCES = gnugetopt.h \
 		     getopt.c \
 		     getopt1.c \

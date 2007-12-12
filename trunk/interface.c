@@ -56,6 +56,7 @@
 #include "files.h"
 #include "decoder.h"
 #include "themes.h"
+#include "softmixer.h"
 
 #define INTERFACE_LOG	"mocp_client_log"
 
@@ -439,15 +440,16 @@ static void update_mixer_value ()
 static void update_mixer_name ()
 {
 	char *name;
-	
-	send_int_to_srv (CMD_GET_MIXER_CHANNEL_NAME);
-	name = get_data_str ();
 
+	send_int_to_srv (CMD_GET_MIXER_CHANNEL_NAME);
+        name = get_data_str();
 	debug ("Mixer name: %s", name);
 
 	iface_set_mixer_name (name);
-	free (name);
-	update_mixer_value ();
+	
+        free (name);
+	
+        update_mixer_value ();
 }
 
 /* Make new cwd path from CWD and this path */
@@ -3168,6 +3170,10 @@ static void menu_key (const struct iface_key *k)
 			case KEY_CMD_TOGGLE_MIXER:
 				debug ("Toggle mixer.");
 				send_int_to_srv (CMD_TOGGLE_MIXER_CHANNEL);
+				break;
+			case KEY_CMD_TOGGLE_SOFTMIXER:
+				debug ("Toggle softmixer.");
+				send_int_to_srv (CMD_TOGGLE_SOFTMIXER);
 				break;
 			case KEY_CMD_TOGGLE_LAYOUT:
 				iface_toggle_layout ();

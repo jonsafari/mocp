@@ -617,6 +617,14 @@ static struct command commands[] = {
  		1
   	},
  	{
+ 		KEY_CMD_TOGGLE_SOFTMIXER,
+ 		"toggle_softmixer",
+ 		"Toggles the software-mixer",
+ 		CON_MENU,
+ 		{ 'w', -1 },
+ 		1
+  	},
+ 	{
  		KEY_CMD_PLIST_MOVE_UP,
  		"plist_move_up",
  		"Move playlist item up",

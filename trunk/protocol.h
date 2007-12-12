@@ -121,6 +121,8 @@ enum noblock_io_status
 #define CMD_LIST_MOVE		0x32	/* move an item */
 #define CMD_GET_AVG_BITRATE	0x33	/* get the average bitrate */
 
+#define CMD_TOGGLE_SOFTMIXER    0x34    /* toggle use of softmixer */
+
 char *socket_name ();
 int get_int (int sock, int *i);
 enum noblock_io_status get_int_noblock (int sock, int *i);
