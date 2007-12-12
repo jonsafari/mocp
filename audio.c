@@ -45,6 +45,8 @@
 # include "jack.h"
 #endif
 
+#include "softmixer.h"
+
 #include "out_buf.h"
 #include "protocol.h"
 #include "options.h"
@@ -97,6 +99,8 @@ static int need_audio_conversion = 0;
 /* URL of the last played stream. Used to fake pause/unpause of internet
  * streams. Protected by curr_playing_mu. */
 static char *last_stream_url = NULL;
+
+static int current_mixer = 0;
 
 /* Check if the two sample rates don't differ as much that we can't play. */
 #define sample_rate_compat(sound, device) ((device) * 1.05 >= sound \
@@ -717,7 +721,7 @@ int audio_send_buf (const char *buf, const size_t size)
 	size_t out_data_len = size;
 	int res;
 	char *converted = NULL;
-	
+
 	if (need_audio_conversion)
 		converted = audio_conv (&sound_conv, buf, size, &out_data_len);
 	
@@ -750,12 +754,32 @@ int audio_get_buf_fill ()
 
 int audio_send_pcm (const char *buf, const size_t size)
 {
-	int played;
+        char *softmixed = NULL;
+        
+        if(softmixer_is_active())
+        {
+          softmixed = xmalloc(size);
+          memcpy(softmixed, buf, size);
+ 
+          softmixer_process_buffer
+          (
+              softmixed
+            , size
+            , &driver_sound_params
+          );
+
+          buf = softmixed;
+        }
+        
+        int played;
 	
 	played = hw.play (buf, size);
 
 	if (played == 0)
 		fatal ("Audio output error.");
+
+        if(softmixed!=NULL)
+          free(softmixed);
 
 	return played;
 }
@@ -866,7 +890,10 @@ void audio_initialize ()
 	}
 	
 	out_buf_init (&out_buf, options_get_int("OutputBuffer") * 1024);
-	plist_init (&playlist);
+
+        softmixer_init();
+
+        plist_init (&playlist);
 	plist_init (&shuffled_plist);
 	player_init ();
 }
@@ -889,6 +916,8 @@ void audio_exit ()
 
 	if (last_stream_url)
 		free (last_stream_url);
+
+        softmixer_shutdown();
 }
 
 void audio_seek (const int sec)
@@ -944,13 +973,21 @@ char *audio_get_sname ()
 
 int audio_get_mixer ()
 {
-	return hw.read_mixer ();
+        if(current_mixer==2)
+          return softmixer_get_value();
+	
+        return hw.read_mixer ();
 }
 
 void audio_set_mixer (const int val)
 {
 	if (val >= 0 && val <= 100)
-		hw.set_mixer (val);
+        {
+                if(current_mixer==2)
+                  softmixer_set_value(val);
+                else
+		  hw.set_mixer (val);
+        }
 	else
 		logit ("Tried to set mixer to volume out of range.");
 }
@@ -1050,10 +1087,15 @@ struct file_tags *audio_get_curr_tags ()
 
 char *audio_get_mixer_channel_name ()
 {
-	return hw.get_mixer_channel_name ();
+        if(current_mixer==2)
+          return softmixer_name();
+	
+        return hw.get_mixer_channel_name ();
 }
 
 void audio_toggle_mixer_channel ()
 {
-	hw.toggle_mixer_channel ();
+        current_mixer=(current_mixer+1)%3;
+        if(current_mixer<2)
+          hw.toggle_mixer_channel ();
 }

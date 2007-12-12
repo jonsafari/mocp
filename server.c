@@ -46,6 +46,7 @@
 #include "playlist.h"
 #include "tags_cache.h"
 #include "files.h"
+#include "softmixer.h"
 
 #define SERVER_LOG	"mocp_server_log"
 #define PID_FILE	"pid"
@@ -1056,6 +1057,13 @@ void req_toggle_mixer_channel ()
 	add_event_all (EV_MIXER_CHANGE, NULL);
 }
 
+/* Handle CMD_TOGGLE_SOFTMIXER. Return 0 on error. */
+void req_toggle_softmixer ()
+{
+        softmixer_set_active(!softmixer_is_active());
+	add_event_all (EV_MIXER_CHANGE, NULL);
+}
+
 /* Handle CMD_GET_FILE_TAGS. Return 0 on error. */
 static int get_file_tags (const int cli_id)
 {
@@ -1268,6 +1276,9 @@ static void handle_command (const int client_id)
 			break;
 		case CMD_TOGGLE_MIXER_CHANNEL:
 			req_toggle_mixer_channel ();
+			break;
+		case CMD_TOGGLE_SOFTMIXER:
+			req_toggle_softmixer ();
 			break;
 		case CMD_GET_MIXER_CHANNEL_NAME:
 			if (!req_get_mixer_channel_name(cli))

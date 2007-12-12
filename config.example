@@ -88,6 +88,18 @@ AlsaMixer2		= Master
 # ALSA output device
 AlsaDevice		= default
 
+# Save software mixer state ?
+# If enabled, a file 'softmixer' will
+# be created in '~/.moc/' storing the 
+# mixersetting set when the server is shut-down.
+# Note that there is a 'hidden' 'Amplification'
+# setting in that file.
+# Amplification (0-200) is used to scale
+# the mixer setting (0-100). This results
+# in a higher signal amplitude but may also
+# produce clipping.
+#Softmixer_SaveState = yes
+
 # Show files with dot at the beginning?
 ShowHiddenFiles		= no
 

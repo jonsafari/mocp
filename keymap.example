@@ -109,6 +109,8 @@ go_to_fast_dir10 =	)
 
 plist_add_stream =	^u
 toggle_mixer =		x
+# for softmixer
+#toggle_softmixer =	w
 history_up =		UP
 history_down =		DOWN
 plist_move_up =		u
