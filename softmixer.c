@@ -204,7 +204,7 @@ void softmixer_read_config()
         {
           if(tmp>=0 && tmp<=100)
           {
-            mixer_val = tmp;
+            softmixer_set_value(tmp);
           }
           else
           {
