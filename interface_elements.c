@@ -128,6 +128,7 @@ static struct main_win
 	char *curr_file; /* currently played file. */
 
 	int in_help; /* are we displaying help screen? */
+	int too_small; /* is the terminal window too small to display mocp? */
 	int help_screen_top; /* first visible line of the help screen. */
 	
 	struct side_menu menus[3];
@@ -180,6 +181,8 @@ static struct info_win
 	int msg_is_error; /* is the above message an error? */
 	time_t msg_timeout; /* how many seconds remain before the message
 				disapperars */
+
+	int too_small; /* is the current window too small to display this widget? */
 
 	struct entry entry;
 	int in_entry;		/* are we using the entry (is the above
@@ -868,6 +871,7 @@ static void main_win_init (struct main_win *w, const char *layout_fmt)
 
 	w->curr_file = NULL;
 	w->in_help = 0;
+	w->too_small = 0;
 	w->help_screen_top = 0;
 	w->layout_fmt = xstrdup (layout_fmt);
 
@@ -1570,6 +1574,21 @@ static void side_menu_resize (struct side_menu *m,
 		abort ();
 }
 
+static void main_win_draw_too_small_screen (const struct main_win *w)
+{
+	assert (w != NULL);
+	assert (w->too_small);
+
+	werase (w->win);
+	wbkgd (w->win, get_color(CLR_BACKGROUND));
+
+	wmove (w->win, 0, 0);
+	wattrset (w->win, get_color(CLR_MESSAGE));
+	xmvwaddstr (w->win, LINES/2,
+			COLS/2 - (sizeof("...TERMINAL IS TOO SMALL...")-1)/2,
+			"...TERMINAL TOO SMALL...");
+}
+
 static void main_win_draw_help_screen (const struct main_win *w)
 {
 	int i;
@@ -1613,6 +1632,8 @@ static void main_win_draw (const struct main_win *w)
 
 	if (w->in_help)
 		main_win_draw_help_screen (w);
+	else if (w->too_small)
+		main_win_draw_too_small_screen (w);
 	else {
 		werase (w->win);
 		
@@ -2252,10 +2273,9 @@ static void init_lines ()
 }
 
 /* End the program if the terminal is too small. */
-static void check_term_size ()
+static void check_term_size (struct main_win *mw, struct info_win *iw)
 {
-	if (COLS < 79 || LINES < 7)
-		interface_fatal ("The terminal is too small after resizeing.");
+	mw->too_small = iw->too_small = COLS < 59 || LINES < 17;
 }
 
 /* Update the title with the current fill. */
@@ -2372,6 +2392,8 @@ static void info_win_init (struct info_win *w)
 	w->win = newwin (4, COLS, LINES - 4, 0);
 	wbkgd (w->win, get_color(CLR_BACKGROUND));
 
+	w->too_small = 0;
+
 	w->state_stereo = 0;
 	w->state_shuffle = 0;
 	w->state_repeat = 0;
@@ -2422,7 +2444,7 @@ static void info_win_update_curs (const struct info_win *w)
 {
 	assert (w != NULL);
 	
-	if (w->in_entry)
+	if (w->in_entry && !w->too_small)
 		entry_draw (&w->entry, w->win, 1, 0);
 }
 
@@ -2432,7 +2454,7 @@ static void info_win_set_mixer_name (struct info_win *w, const char *name)
 	assert (name != NULL);
 	
 	bar_set_title (&w->mixer_bar, name);
-	if (!w->in_entry) {
+	if (!w->in_entry && !w->too_small) {
 		bar_draw (&w->mixer_bar, w->win, COLS - 37, 0);
 		info_win_update_curs (w);
 	}
@@ -2442,7 +2464,7 @@ static void info_win_draw_status (const struct info_win *w)
 {
 	assert (w != NULL);
 
-	if (!w->in_entry) {
+	if (!w->in_entry && !w->too_small) {
 		wattrset (w->win, get_color(CLR_STATUS));
 		wmove (w->win, 0, 6);
 		xwprintw (w->win, "%-*s", sizeof(w->status_msg) - 1,
@@ -2481,8 +2503,11 @@ static void info_win_draw_state (const struct info_win *w)
 			abort (); /* BUG */
 	}
 
-	wattrset (w->win, get_color(CLR_STATE));
-	xmvwaddstr (w->win, 1, 1, state_symbol);
+	if (!w->too_small) {
+		wattrset (w->win, get_color(CLR_STATE));
+		xmvwaddstr (w->win, 1, 1, state_symbol);
+	}
+
 	info_win_update_curs (w);
 }
 
@@ -2491,16 +2516,18 @@ static void info_win_draw_title (const struct info_win *w)
 {
 	assert (w != NULL);
 
-	clear_area (w->win, 4, 1, COLS - 5, 1);
+	if (!w->too_small) {
+		clear_area (w->win, 4, 1, COLS - 5, 1);
 
-	if (w->msg && w->msg_timeout >= time(NULL)) {
+		if (w->msg && w->msg_timeout >= time(NULL)) {
 		wattrset (w->win, w->msg_is_error ? get_color(CLR_ERROR)
-				: get_color(CLR_MESSAGE));
+			: get_color(CLR_MESSAGE));
 		xmvwaddnstr (w->win, 1, 4, w->msg, COLS - 5);
-	}
-	else {
+		}
+		else {
 		wattrset (w->win, get_color(CLR_TITLE));
 		xmvwaddnstr (w->win, 1, 4, w->title, COLS - 5);
+		}
 	}
 
 	info_win_update_curs (w);
@@ -2524,29 +2551,31 @@ static void info_win_draw_time (const struct info_win *w)
 
 	assert (w != NULL);
 	
-	/* current time */
-	sec_to_min (time_str, w->curr_time != -1 ? w->curr_time : 0);
-	wattrset (w->win, get_color(CLR_TIME_CURRENT));
-	xmvwaddstr (w->win, 2, 1, time_str);
+	if (!w->too_small) {
+		/* current time */
+		sec_to_min (time_str, w->curr_time != -1 ? w->curr_time : 0);
+		wattrset (w->win, get_color(CLR_TIME_CURRENT));
+		xmvwaddstr (w->win, 2, 1, time_str);
 
-	/* time left */
-	if (w->total_time > 0 && w->curr_time >= 0
-			&& w->total_time >= w->curr_time) {
-		sec_to_min (time_str, w->total_time - w->curr_time);
-		wmove (w->win, 2, 7);
-		wattrset (w->win, get_color(CLR_TIME_LEFT));
+		/* time left */
+		if (w->total_time > 0 && w->curr_time >= 0
+				&& w->total_time >= w->curr_time) {
+			sec_to_min (time_str, w->total_time - w->curr_time);
+			wmove (w->win, 2, 7);
+			wattrset (w->win, get_color(CLR_TIME_LEFT));
+			xwaddstr (w->win, time_str);
+		}
+		else
+			xmvwaddstr (w->win, 2, 7, "	 ");
+
+		/* total time */
+		sec_to_min (time_str, w->total_time != -1 ? w->total_time : 0);
+		wmove (w->win, 2, 14);
+		wattrset (w->win, get_color(CLR_TIME_TOTAL));
 		xwaddstr (w->win, time_str);
+
+		bar_draw (&w->time_bar, w->win, 2, 3);
 	}
-	else
-		xmvwaddstr (w->win, 2, 7, "     ");
-
-	/* total time */
-	sec_to_min (time_str, w->total_time != -1 ? w->total_time : 0);
-	wmove (w->win, 2, 14);
-	wattrset (w->win, get_color(CLR_TIME_TOTAL));
-	xwaddstr (w->win, time_str);
-
-	bar_draw (&w->time_bar, w->win, 2, 3);
 	info_win_update_curs (w);
 }
 
@@ -2607,12 +2636,14 @@ static void info_win_draw_bitrate (const struct info_win *w)
 {
 	assert (w != NULL);
 
-	wattrset (w->win, get_color(CLR_SOUND_PARAMS));
-	wmove (w->win, 2, 29);
-	if (w->bitrate != -1)
+	if (!w->too_small) {
+		wattrset (w->win, get_color(CLR_SOUND_PARAMS));
+		wmove (w->win, 2, 29);
+		if (w->bitrate != -1)
 		xwprintw (w->win, "%4d", w->bitrate);
-	else
-		xwaddstr (w->win, "    ");
+		else
+		xwaddstr (w->win, "	");
+	}
 	info_win_update_curs (w);
 }
 
@@ -2640,7 +2671,7 @@ static void info_win_set_mixer_value (struct info_win *w, const int value)
 	assert (value >= 0 && value <= 100);
 
 	bar_set_fill (&w->mixer_bar, value);
-	if (!w->in_entry)
+	if (!w->in_entry && !w->too_small)
 		bar_draw (&w->mixer_bar, w->win, COLS - 37, 0);
 }
 
@@ -2651,10 +2682,12 @@ static void info_win_draw_switch (const struct info_win *w, const int posx,
 	assert (w != NULL);
 	assert (title != NULL);
 
-	wattrset (w->win, get_color(
-				value ? CLR_INFO_ENABLED : CLR_INFO_DISABLED));
-	wmove (w->win, posy, posx);
-	xwprintw (w->win, "[%s]", title);
+	if (!w->too_small) {
+		wattrset (w->win, get_color(
+					value ? CLR_INFO_ENABLED : CLR_INFO_DISABLED));
+		wmove (w->win, posy, posx);
+		xwprintw (w->win, "[%s]", title);
+	}
 	info_win_update_curs (w);
 }
 
@@ -2759,7 +2792,7 @@ static void info_win_draw_files_time (const struct info_win *w)
 {
 	assert (w != NULL);
 
-	if (!w->in_entry) {
+	if (!w->in_entry && !w->too_small) {
 		char buf[10];
 
 		sec_to_min_plist (buf, w->plist_time);
@@ -2800,36 +2833,38 @@ static void info_win_draw_static_elements (const struct info_win *w)
 {
 	assert (w != NULL);
 	
-	/* window frame */
-	wattrset (w->win, get_color(CLR_FRAME));
-	wborder (w->win, lines.vert, lines.vert, lines.horiz, lines.horiz,
-			lines.ltee, lines.rtee, lines.llcorn, lines.lrcorn);
+	if (!w->too_small) {
+		/* window frame */
+		wattrset (w->win, get_color(CLR_FRAME));
+		wborder (w->win, lines.vert, lines.vert, lines.horiz, lines.horiz,
+				lines.ltee, lines.rtee, lines.llcorn, lines.lrcorn);
 
-	/* mixer frame */
-	mvwaddch (w->win, 0, COLS - 38, lines.rtee);
-	mvwaddch (w->win, 0, COLS - 17, lines.ltee);
-	
-	/* playlist time frame */
-	mvwaddch (w->win, 0, COLS - 13, lines.rtee);
-	mvwaddch (w->win, 0, COLS - 2, lines.ltee);
+		/* mixer frame */
+		mvwaddch (w->win, 0, COLS - 38, lines.rtee);
+		mvwaddch (w->win, 0, COLS - 17, lines.ltee);
+		
+		/* playlist time frame */
+		mvwaddch (w->win, 0, COLS - 13, lines.rtee);
+		mvwaddch (w->win, 0, COLS - 2, lines.ltee);
 
-	/* total time frames */
-	wattrset (w->win, get_color(CLR_TIME_TOTAL_FRAMES));
-	mvwaddch (w->win, 2, 13, '[');
-	mvwaddch (w->win, 2, 19, ']');
+		/* total time frames */
+		wattrset (w->win, get_color(CLR_TIME_TOTAL_FRAMES));
+		mvwaddch (w->win, 2, 13, '[');
+		mvwaddch (w->win, 2, 19, ']');
 
-	/* time bar frame */
-	mvwaddch (w->win, 3, COLS - 2, lines.ltee);
-	mvwaddch (w->win, 3, 1, lines.rtee);
-	
-	/* status line frame */
-	mvwaddch (w->win, 0, 5, lines.rtee);
-	mvwaddch (w->win, 0, 5 + sizeof(w->status_msg), lines.ltee);
-	
-	/* rate and bitrate units */
-	wmove (w->win, 2, 25);
-	wattrset (w->win, get_color(CLR_LEGEND));
-	xwaddstr (w->win, "KHz     Kbps");
+		/* time bar frame */
+		mvwaddch (w->win, 3, COLS - 2, lines.ltee);
+		mvwaddch (w->win, 3, 1, lines.rtee);
+		
+		/* status line frame */
+		mvwaddch (w->win, 0, 5, lines.rtee);
+		mvwaddch (w->win, 0, 5 + sizeof(w->status_msg), lines.ltee);
+		
+		/* rate and bitrate units */
+		wmove (w->win, 2, 25);
+		wattrset (w->win, get_color(CLR_LEGEND));
+		xwaddstr (w->win, "KHz	 Kbps");
+	}
 
 	info_win_update_curs (w);
 }
@@ -2864,23 +2899,25 @@ static void info_win_make_entry (struct info_win *w, const enum entry_type type)
 static void info_win_draw (const struct info_win *w)
 {
 	assert (w != NULL);
-	
-	info_win_draw_static_elements (w);
-	info_win_draw_state (w);
-	info_win_draw_time (w);
-	info_win_draw_title (w);
-	info_win_draw_options_state (w);
-	info_win_draw_status (w);
-	info_win_draw_files_time (w);
-	info_win_draw_bitrate (w);
-	info_win_draw_rate (w);
-	
-	if (w->in_entry)
-		entry_draw (&w->entry, w->win, 1, 0);
-	else
-		bar_draw (&w->mixer_bar, w->win, COLS - 37, 0);
 
-	bar_draw (&w->time_bar, w->win, 2, 3);
+	if (!w->too_small) {
+		info_win_draw_static_elements (w);
+		info_win_draw_state (w);
+		info_win_draw_time (w);
+		info_win_draw_title (w);
+		info_win_draw_options_state (w);
+		info_win_draw_status (w);
+		info_win_draw_files_time (w);
+		info_win_draw_bitrate (w);
+		info_win_draw_rate (w);
+		
+		if (w->in_entry)
+			entry_draw (&w->entry, w->win, 1, 0);
+		else
+			bar_draw (&w->mixer_bar, w->win, COLS - 37, 0);
+
+		bar_draw (&w->time_bar, w->win, 2, 3);
+	}
 	info_win_update_curs (w);
 }
 
@@ -3057,8 +3094,6 @@ void windows_init ()
 		curs_set (0);
 	use_default_colors ();
 
-	check_term_size ();
-	
 	detect_term ();
 	detect_screen ();
 	start_color ();
@@ -3066,9 +3101,11 @@ void windows_init ()
 	init_lines ();
 
 	main_win_init (&main_win, options_get_str("Layout1"));
-	main_win_draw (&main_win);
-
 	info_win_init (&info_win);
+	
+	check_term_size (&main_win, &info_win);
+
+	main_win_draw (&main_win);
 	info_win_draw (&info_win);
 	
 	wrefresh (main_win.win);
@@ -3453,7 +3490,7 @@ void iface_error (const char *msg)
 /* Handle screen resizing. */
 void iface_resize ()
 {
-	check_term_size ();
+	check_term_size (&main_win, &info_win);
 	validate_layouts ();
 	endwin ();
 	refresh ();
