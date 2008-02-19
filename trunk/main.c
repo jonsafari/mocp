@@ -60,6 +60,8 @@ struct parameters
 	int toggle_pause;
 	int playit;
 	int seek_by;
+	char *formatted_into_param;
+	int get_formatted_info;
 	char *adj_volume;
 	char *toggle;
 	char *on;
@@ -214,6 +216,9 @@ static void start_moc (const struct parameters *params, char **args,
 		if (params->seek_by)
 			interface_cmdline_seek_by (server_sock,
 					params->seek_by);
+		if (params->get_formatted_info)
+			interface_cmdline_formatted_info (server_sock,
+					params->formatted_into_param);
 		if (params->adj_volume)
 			interface_cmdline_adj_volume (server_sock,
 					params->adj_volume);
@@ -308,7 +313,8 @@ static void show_usage (const char *prg_name) {
 "-y --sync              Synchronize the playlist with other clients.\n"
 "-n --nosync            Don't synchronize the playlist with other clients.\n"
 "-A --ascii             Use ASCII characters to draw lines.\n"
-"-i --info              Print the information about the currently played file.\n"
+"-i --info FORMAT       Print the information about the currently played file.\n"
+"-Q --format            Print the formatted information about the currently played file.\n"
 "-e --recursively       Alias for -a.\n"
 "-k --seek N            Seek by N seconds (can be negative).\n"
 "-o --on <controls>     Turn on a control (shuffle,autonext,repeat).\n"
@@ -428,6 +434,7 @@ int main (int argc, char *argv[])
 		{ "info",		0, NULL, 'i' },
 		{ "recursively",	0, NULL, 'e' },
 		{ "seek",		1, NULL, 'k' },
+		{ "format",		1, NULL, 'Q' },
 		{ "volume",		1, NULL, 'v' },
 		{ "toggle",		1, NULL, 't' },
 		{ "on",			1, NULL, 'o' },
@@ -442,7 +449,7 @@ int main (int argc, char *argv[])
 	options_init ();
 
 	while ((ret = getopt_long(argc, argv,
-					"VhDSFR:macpsxT:C:M:PUynArfiGelk:v:t:o:u:",
+					"VhDSFR:macpsxT:C:M:PUynArfiGelk:v:t:o:u:Q:",
 					long_options, &opt_index)) != -1) {
 		switch (ret) {
 			case 'V':
@@ -561,6 +568,11 @@ int main (int argc, char *argv[])
 				break;
 			case 'u' :
 				params.off = optarg;
+				params.dont_run_iface = 1;
+				break;
+			case 'Q':
+				params.formatted_into_param = optarg;
+				params.get_formatted_info = 1;
 				params.dont_run_iface = 1;
 				break;
 			default:

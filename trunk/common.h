@@ -44,6 +44,8 @@ void *xcalloc (size_t nmemb, size_t size);
 void *xrealloc (void *ptr, const size_t size);
 char *xstrdup (const char *s);
 
+char *str_repl (char *target, const char *oldstr, const char *newstr);
+
 #ifdef HAVE__ATTRIBUTE__
 void fatal (const char *format, ...) __attribute__((format (printf, 1, 2)));
 void error (const char *format, ...) __attribute__((format (printf, 1, 2)));

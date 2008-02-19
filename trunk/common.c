@@ -27,6 +27,8 @@
 
 static int im_server = 0; /* Em I the server? */
 
+static int count_str(const char *src, const char *str);
+
 void error (const char *format, ...)
 {
 	va_list va;
@@ -101,6 +103,58 @@ void set_me_server ()
 {
 	im_server = 1;
 }
+
+static int count_str (const char *src, const char *str)
+{
+	size_t str_len = strlen(str);
+	size_t src_len = strlen(src);
+	if (str_len > src_len)
+		return 0;
+	const char *s, *p;
+	s = src;
+	int count = 0;
+	while (s != NULL) {
+		p = strstr(s, str);
+		if (p == NULL)
+			break;
+		else
+			count++;
+		if ((int)strlen(s) - (int)str_len < 0)
+			break;
+		s = p + str_len;
+	}
+
+	return count;
+}
+
+char *str_repl (char *target, const char *oldstr, const char *newstr)
+{
+	size_t oldstr_len = strlen(oldstr);
+	size_t newstr_len = strlen(newstr);
+	size_t target_len = strlen(target);
+	if (oldstr_len > target_len)
+		return target;
+	int hits = count_str(target, oldstr);
+	if (hits == 0)
+		return target;
+	char *s, *p;
+
+	if (oldstr_len != newstr_len)
+		target = xrealloc(target,
+		                  target_len - hits*oldstr_len + hits*newstr_len + 1);
+
+	s = target;
+	while (s != NULL) {
+		p = strstr(s, oldstr);
+		if (p == NULL)
+			return target;
+		memmove(p + newstr_len, p + oldstr_len, strlen(p + oldstr_len) + 1);
+		memcpy(p, newstr, newstr_len);
+		s = p + newstr_len;
+	}
+	return target;
+}
+
 
 /* Return path to a file in MOC config directory. NOT THREAD SAFE */
 char *create_file_name (const char *file)
