@@ -3801,3 +3801,190 @@ void interface_cmdline_set (int server_sock, char *arg, const int val)
 		tok = strtok_r(NULL, ",", &last);
 	}
 }
+
+/* Print formatted info
+State       %state
+File        %file
+Title       %title
+Artist      %artist
+SongTitle   %song
+Album       %album
+TotalTime   %tt
+TimeLeft    %tl
+TotalSec    %ts
+CurrentTime %ct
+CurrentSec  %cs
+Bitrate     %b
+Rate        %r
+*/
+void interface_cmdline_formatted_info (const int server_sock,
+		const char *format_str)
+{
+	typedef struct {
+		char *state;
+		char *file;
+		char *title;
+		char *artist;
+		char *song;
+		char *album;
+		char *totaltime;
+		char *timeleft;
+		char *totalsec;
+		char *currenttime;
+		char *currentsec;
+		char *bitrate;
+		char *rate;
+	} info_t;
+
+	char curr_time_str[6];
+	char time_left_str[6];
+	char time_str[6];
+	char time_sec_str[5];
+	char curr_time_sec_str[5];
+	char file_bitrate_str[4];
+	char file_rate_str[3];
+	
+	char *str;
+	info_t str_info;
+	
+	srv_sock = server_sock;	/* the interface is not initialized, so set it
+				   here */
+	init_playlists ();
+	file_info_reset (&curr_file);
+	
+	curr_file.state = get_state ();
+	
+	/* extra paranoid about struct data */
+	memset(&str_info, 0, sizeof(str_info));
+	curr_time_str[0] = time_left_str[0] = time_str[0] =
+	  time_sec_str[0] = curr_time_sec_str[0] =
+	  file_bitrate_str[0] = file_rate_str[0] = '\0';
+
+	str_info.currenttime = curr_time_str;
+	str_info.timeleft = time_left_str;
+	str_info.totaltime = time_str;
+	str_info.totalsec = time_sec_str;
+	str_info.currentsec = curr_time_sec_str;
+	str_info.bitrate = file_bitrate_str;
+	str_info.rate = file_rate_str;
+	
+	/* string with formatting tags */
+	str = xstrdup(format_str);
+	
+	if (curr_file.state == STATE_STOP)
+		str_info.state = "STOP";
+	else {
+		int left;
+		
+		if (curr_file.state == STATE_PLAY)
+			str_info.state = "PLAY";
+		else if (curr_file.state == STATE_PAUSE)
+			str_info.state = "PAUSE";
+
+		curr_file.file = get_curr_file ();
+
+		if (curr_file.file[0]) {
+
+			/* get tags */
+			if (file_type(curr_file.file) == F_URL) {
+				send_int_to_srv (CMD_GET_TAGS);
+				curr_file.tags = get_data_tags ();
+			}
+			else
+				curr_file.tags = get_tags_no_iface (
+						curr_file.file,
+						TAGS_COMMENTS | TAGS_TIME);
+			
+			/* get the title */
+			if (curr_file.tags->title)
+				str_info.title = build_title (curr_file.tags);
+			else
+				str_info.title = xstrdup ("");
+		}
+		else
+			str_info.title = xstrdup ("");
+
+		curr_file.channels = get_channels ();
+		curr_file.rate = get_rate ();
+		curr_file.bitrate = get_bitrate ();
+		curr_file.curr_time = get_curr_time ();
+
+		if (curr_file.tags->time != -1)
+			sec_to_min (time_str, curr_file.tags->time);
+		else
+			time_str[0] = 0;
+
+		if (curr_file.curr_time != -1) {
+			sec_to_min (curr_time_str, curr_file.curr_time);
+		
+			if (curr_file.tags->time != -1) {
+				sec_to_min (curr_time_str, curr_file.curr_time);
+				left = curr_file.tags->time -
+					curr_file.curr_time;
+				sec_to_min (time_left_str, left > 0 ? left : 0);
+			}
+		}
+		else {
+			strcpy (curr_time_str, "00:00");
+			time_left_str[0] = 0;
+		}
+
+		str_info.file = curr_file.file;
+
+		if (curr_file.tags) {
+			str_info.artist =
+					curr_file.tags->artist ? curr_file.tags->artist : "";
+			str_info.song =
+					curr_file.tags->title ? curr_file.tags->title : "";
+			str_info.album =
+					curr_file.tags->album ? curr_file.tags->album : "";
+		}
+
+		if (curr_file.tags->time != -1)
+			snprintf(time_sec_str, 5, "%d", curr_file.tags->time);
+
+		snprintf(curr_time_sec_str, 5, "%d", curr_file.curr_time);
+		snprintf(file_bitrate_str, 4, "%d",
+				curr_file.bitrate > 0 ? curr_file.bitrate : 0);
+		snprintf(file_rate_str, 3, "%d", curr_file.rate);
+	}
+
+	str = str_repl(str, "%state", str_info.state);
+	str = str_repl(str, "%file", 
+			str_info.file ? str_info.file : "");
+	str = str_repl(str, "%title",
+			str_info.title ? str_info.title : "");
+	str = str_repl(str, "%artist",
+			str_info.artist ? str_info.artist : "");
+	str = str_repl(str, "%song",
+			str_info.song ? str_info.song : "");
+	str = str_repl(str, "%album",
+			str_info.album ? str_info.album : "");
+	str = str_repl(str, "%tt",
+			str_info.totaltime ? str_info.totaltime : "");
+	str = str_repl(str, "%tl",
+			str_info.timeleft ? str_info.timeleft : "");
+	str = str_repl(str, "%ts",
+			str_info.totalsec ? str_info.totalsec : "");
+	str = str_repl(str, "%ct",
+			str_info.currenttime ? str_info.currenttime : "");
+	str = str_repl(str, "%cs",
+			str_info.currentsec ? str_info.currentsec : "");
+	str = str_repl(str, "%b",
+			str_info.bitrate ? str_info.bitrate : "");
+	str = str_repl(str, "%r",
+			str_info.rate ? str_info.rate : "");
+	str = str_repl(str, "\\n", "\n");
+
+	if (str_info.title)
+		free(str_info.title);
+	
+	if (curr_file.state != STATE_STOP)
+		file_info_cleanup (&curr_file);
+
+	plist_free (dir_plist);
+	plist_free (playlist);
+
+	printf("%s\n", str);
+	free(str);
+}

@@ -125,6 +125,54 @@ Use ASCII characters to draw lines (helps on some terminals).
 Print the information about the currently played file.
 
 .TP
+.I -Q --format FORMAT_STRING
+Print information about the currently played file using a format string.
+Replace string sequences with proper information:
+
+.TP
+State
+%state
+.TP
+File
+%file
+.TP
+Title
+%title
+.TP
+Artist
+%artist
+.TP
+SongTitle
+%song
+.TP
+Album
+%album
+.TP
+TotalTime
+%tt
+.TP
+TimeLeft
+%tl
+.TP
+TotalSec
+%ts
+.TP
+CurrentTime
+%ct
+.TP
+CurrentSec
+%cs
+.TP
+Bitrate
+%b
+.TP
+Rate
+%r
+.TP
+\\n
+\\n
+
+.TP
 .I -e --recursively
 Alias for -a for backward compatybility.
 
