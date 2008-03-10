@@ -332,7 +332,7 @@ int server_init (int debug, int foreground)
 
 	audio_initialize ();
 	tags_cache_init (&tags_cache, options_get_int("TagsCacheSize") * 1024);
-	tags_cache_load (&tags_cache, create_file_name("tags_cache"));
+	tags_cache_load (&tags_cache, create_file_name("cache"));
 	clients_init ();
 
 	server_tid = pthread_self ();
