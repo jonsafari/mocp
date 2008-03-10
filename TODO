@@ -17,7 +17,6 @@ Known bugs:
   http://moc.daper.net/node/240
 - MOC needs to be restarted (when switching themes) in order to understand the
   ATTRIBUTE correctly.
-- FollowPlaylist problem after cli restart http://moc.daper.net/node/275
 
 Before 2.5:
 * Move TODO to moc.daper.net/roadmap
@@ -30,10 +29,9 @@ Before 2.5:
 
 In future:
 
-* Tags cache in BerkeleyDB: 
-  - bigger capacity since not the whole cache is in RAM
-  - better relablity.
-  - faster
+* Command line option to play from a specified file/first from the last added files.
+* multiple file selection to move many files at once up and down.
+  http://moc.daper.net/node/288
 * Review strcpy()/sprintf() usage, change to strncpy()/snprintf() where
   possible.
 * More side menus: many directory/playlist views.
@@ -63,7 +61,6 @@ In future:
 *$ Replaygain
 * Seek to arbitrary position (by typing a number).
 *$ VQF (like http://www.csn.ul.ie/~mel/projects/linux/vqfplugin/)
-*$ AAC by libfaad
 *$ ESD
 *$ CUE-sheet
 * Command line option to delete the currently played item from the playlist.
