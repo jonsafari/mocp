@@ -2,6 +2,7 @@
 #define TAGS_CACHE_H
 
 #include <pthread.h>
+#include <db.h>
 
 #include "playlist.h"
 
@@ -20,42 +21,21 @@ struct request_queue
 	struct request_queue_node *tail;
 };
 
-/* Element of the cache pool. */
-struct cache_list_node
-{
-	struct cache_list_node *next;
-	char *file;
-	time_t mod_time;		/* last modification time of the file */
-	struct file_tags *tags;
-	size_t size; /* number of bytes allocated for this node (file name and
-			tags) */
-	int during_operation; /* If set to != 0 there is operation pending on
-				 this node (reading tags). */
-};
-
-/* List of items in the cache - olders are first. */
-struct cache_list
-{
-	struct cache_list_node *head;
-	struct cache_list_node *tail;
-};
-
 struct tags_cache
 {
-	struct rb_tree search_tree; /* search tree used for fast searching
-				       by file name */
-	struct cache_list cache;
+	/* BerkeleyDB's stuff for storing cache. */
+	DB_ENV *db_env;
+	DB *db;
+	u_int32_t locker;
+
 	struct request_queue queues[CLIENTS_MAX]; /* requests queues for each
 						     client */
-	size_t size; /* number of bytes allocated for the cache */
-	size_t max_size; /* maximum allowed cache size */
 	int stop_reader_thread; /* request for stopping read thread (if
 				   non-zero) */
 	pthread_cond_t request_cond; /* condition for signalizing new
 					requests */
-	pthread_cond_t response_cond; /* condition for signalizing a cache
-					 node read */
-	pthread_mutex_t mutex; /* mutex for all above data */
+	pthread_mutex_t mutex; /* mutex for all above data (except db because
+				  it's thread-safe) */
 	pthread_t reader_thread; /* tid of the reading thread */
 };
 

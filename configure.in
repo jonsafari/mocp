@@ -122,6 +122,12 @@ then
 		      EXTRA_LIBS="$EXTRA_LIBS -lm"])
 fi
 
+AX_PATH_BDB([3], [
+	       LIBS="$BDB_LIBS $EXTRA_LIBS"
+	       LDFLAGS="$BDB_LDFLAGS $LDFLAGS"
+	       CPPFLAGS="$CPPFLAGS $BDB_CPPFLAGS"
+	       ])
+
 COMPILE_OSS="no"
 AC_CHECK_HEADERS([sys/soundcard.h soundcard.h])
 if test "$ac_cv_header_sys_soundcard_h" = "yes" \
