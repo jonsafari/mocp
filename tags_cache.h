@@ -28,6 +28,7 @@ struct tags_cache
 	DB *db;
 	u_int32_t locker;
 
+	int max_items;		/* maximum number of items in the cache. */
 	struct request_queue queues[CLIENTS_MAX]; /* requests queues for each
 						     client */
 	int stop_reader_thread; /* request for stopping read thread (if

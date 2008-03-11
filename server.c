@@ -331,7 +331,7 @@ int server_init (int debug, int foreground)
 		fatal ("listen() failed: %s", strerror(errno));
 
 	audio_initialize ();
-	tags_cache_init (&tags_cache, options_get_int("TagsCacheSize") * 1024);
+	tags_cache_init (&tags_cache, options_get_int("TagsCacheSize"));
 	tags_cache_load (&tags_cache, create_file_name("cache"));
 	clients_init ();
 
