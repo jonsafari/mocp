@@ -384,20 +384,49 @@ int read_directory (const char *directory, struct file_list *dirs,
 	return 1;
 }
 
+static int dir_symlink_loop (const ino_t inode_no, const ino_t *dir_stack,
+		const int depth)
+{
+	int i;
+
+	for (i = 0; i < depth; i++)
+		if (dir_stack[i] == inode_no)
+			return 1;
+
+	return 0;
+}
+
 /* Recursively add files from the directory to the playlist. 
  * Return 1 if OK (and even some errors), 0 if the user interrupted. */
-int read_directory_recurr (const char *directory, struct plist *plist)
+static int read_directory_recurr_internal (const char *directory, struct plist *plist,
+		ino_t **dir_stack, int *depth)
 {
 	DIR *dir;
 	struct dirent *entry;
+	struct stat st;
+
+	if (stat(directory, &st)) {
+		error ("Can't stat %s: %s", directory, strerror(errno));
+		return 0;
+	}
 
 	assert (plist != NULL);
 	assert (directory != NULL);
+
+	if (*dir_stack && dir_symlink_loop(st.st_ino, *dir_stack, *depth)) {
+		logit ("Detected symlink loop on %s", directory);
+		return 1;
+	}
 
 	if (!(dir = opendir(directory))) {
 		error ("Can't read directory: %s", strerror(errno));
 		return 1;
 	}
+
+	(*depth)++;
+	*dir_stack = (ino_t *)xrealloc (*dir_stack, sizeof(ino_t) * (*depth));
+	(*dir_stack)[*depth - 1] = st.st_ino;
+
 	
 	while ((entry = readdir(dir))) {
 		char file[PATH_MAX];
@@ -418,13 +447,32 @@ int read_directory_recurr (const char *directory, struct plist *plist)
 		}
 		type = file_type (file);
 		if (type == F_DIR)
-			read_directory_recurr(file, plist);
+			read_directory_recurr_internal(file, plist, dir_stack,
+					depth);
 		else if (type == F_SOUND && plist_find_fname(plist, file) == -1)
 			plist_add (plist, file);
 	}
 
+	(*depth)--;
+	*dir_stack = (ino_t *)xrealloc (*dir_stack, sizeof(ino_t) * (*depth));
+
 	closedir (dir);
 	return 1;
+}
+
+int read_directory_recurr (const char *directory, struct plist *plist)
+{
+	int ret;
+	int depth = 0;
+	ino_t *dir_stack = NULL;
+
+	ret = read_directory_recurr_internal (directory, plist, &dir_stack,
+			&depth);
+
+	if (dir_stack)
+		free (dir_stack);
+
+	return ret;
 }
 
 /* Return the file extension position or NULL if the file has no extension. */
