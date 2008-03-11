@@ -21,6 +21,7 @@
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <time.h>
 #include <db.h>
 
 #define DEBUG
@@ -37,6 +38,7 @@
 struct cache_record
 {
 	time_t mod_time;		/* last modification time of the file */
+	time_t atime;			/* Time of last access. */
 	struct file_tags *tags;
 };
 
@@ -143,27 +145,6 @@ static char *request_queue_pop (struct request_queue *q, int *tags_sel)
 	return file;
 }
 
-/* Remove the oldest element of the cache (if it is not empty). */
-static void tags_cache_remove_oldest (struct tags_cache *c)
-{
-	/*struct cache_list_node *n;
-
-	if (c->cache.tail && c->cache.tail->during_operation) {
-		debug ("Not deleting the oldest iten because it's in use.");
-		return;
-	}
-
-	if ((n = cache_list_pop(&c->cache))) {
-		debug ("Removing from cache: %s", n->file);
-		rb_delete (&c->search_tree, n->file);
-		c->size -= n->size;
-		
-		free (n->file);
-		tags_free (n->tags);
-		free (n);
-	}*/
-}
-
 static size_t strlen_null (const char *s)
 {
 	return s ? strlen(s) : 0;
@@ -183,6 +164,7 @@ static char *cache_record_serialize (const struct cache_record *rec, int *len)
 	title_len = strlen_null (rec->tags->title);
 
 	*len = sizeof(rec->mod_time)
+		+ sizeof(rec->atime)
 		+ sizeof(int) * 3 /* lenghts of title, artist, time. */
 		+ artist_len
 		+ album_len
@@ -194,6 +176,9 @@ static char *cache_record_serialize (const struct cache_record *rec, int *len)
 
 	memcpy (p, &rec->mod_time, sizeof(rec->mod_time));
 	p += sizeof(rec->mod_time);
+
+	memcpy (p, &rec->atime, sizeof(rec->atime));
+	p += sizeof(rec->atime);
 
 	memcpy (p, &artist_len, sizeof(artist_len));
 	p += sizeof(artist_len);
@@ -226,7 +211,8 @@ static char *cache_record_serialize (const struct cache_record *rec, int *len)
 }
 
 static int cache_record_deserialize (struct cache_record *rec,
-		const char *serialized, const size_t size)
+		const char *serialized, const size_t size,
+		const int skip_tags)
 {
 	const char *p = serialized;
 	size_t bytes_left = size;
@@ -235,7 +221,10 @@ static int cache_record_deserialize (struct cache_record *rec,
 	assert (rec != NULL);
 	assert (serialized != NULL);
 
-	rec->tags = tags_new ();
+	if (!skip_tags)
+		rec->tags = tags_new ();
+	else
+		rec->tags = NULL;
 
 #define extract_num(var)			\
 	if (bytes_left < sizeof(var))		\
@@ -257,27 +246,31 @@ static int cache_record_deserialize (struct cache_record *rec,
 	p += str_len;
 
 	extract_num (rec->mod_time);
-	extract_str (rec->tags->artist);
-	extract_str (rec->tags->album);
-	extract_str (rec->tags->title);
-	extract_num (rec->tags->track);
-	extract_num (rec->tags->time);
+	extract_num (rec->atime);
 
-	if (rec->tags->title)
-		rec->tags->filled |= TAGS_COMMENTS;
-	else {
-		if (rec->tags->artist)
-			free (rec->tags->artist);
-		rec->tags->artist = NULL;
-		
-		if (rec->tags->album)
-			free (rec->tags->album);
-		rec->tags->album = NULL;
+	if (!skip_tags) {
+		extract_str (rec->tags->artist);
+		extract_str (rec->tags->album);
+		extract_str (rec->tags->title);
+		extract_num (rec->tags->track);
+		extract_num (rec->tags->time);
 
+		if (rec->tags->title)
+			rec->tags->filled |= TAGS_COMMENTS;
+		else {
+			if (rec->tags->artist)
+				free (rec->tags->artist);
+			rec->tags->artist = NULL;
+
+			if (rec->tags->album)
+				free (rec->tags->album);
+			rec->tags->album = NULL;
+
+		}
+
+		if (rec->tags->time >= 0)
+			rec->tags->filled |= TAGS_TIME;
 	}
-
-	if (rec->tags->time >= 0)
-		rec->tags->filled |= TAGS_TIME;
 	
 	return 1;
 
@@ -286,6 +279,92 @@ err:
 	tags_free (rec->tags);
 	rec->tags = NULL;
 	return 0;
+}
+
+static void tags_cache_remove_rec (struct tags_cache *c, const char *fname)
+{
+	DBT key;
+	int ret;
+
+	assert (c != NULL);
+	assert (c->db != NULL);
+	assert (fname != NULL);
+
+	debug ("Removing %s from the cache...", fname);
+
+	memset (&key, 0, sizeof(key));
+	key.data = (void *)fname;
+	key.size = strlen (fname);
+
+	ret = c->db->del (c->db, NULL, &key, 0);
+	if (ret)
+		logit ("Can't remove item for %s from the cache: %s", fname,
+				db_strerror(ret));
+}
+
+/* Remove the one element of the cache based on it's access time. */
+static void tags_cache_gc (struct tags_cache *c)
+{
+	DBC *cur;
+	DBT key;
+	DBT serialized_cache_rec;
+	int ret;
+	char *last_referenced = NULL;
+	time_t last_referenced_atime = time (NULL);
+	int nitems = 0;
+
+	assert (c != NULL);
+	if (!c->db)
+		return;
+
+	c->db->cursor (c->db, NULL, &cur, 0);
+
+	memset (&key, 0, sizeof(key));
+	memset (&serialized_cache_rec, 0, sizeof(serialized_cache_rec));
+
+	key.flags = DB_DBT_MALLOC;
+	serialized_cache_rec.flags = DB_DBT_MALLOC;
+
+	while ((ret = cur->c_get(cur, &key, &serialized_cache_rec, DB_NEXT))
+			== 0) {
+		struct cache_record rec;
+
+		if (cache_record_deserialize(&rec, serialized_cache_rec.data,
+					serialized_cache_rec.size, 1)
+				&& rec.atime < last_referenced_atime) {
+			last_referenced_atime = rec.atime;
+
+			if (last_referenced)
+				free (last_referenced);
+			last_referenced = (char *)xmalloc (key.size + 1);
+			memcpy (last_referenced, key.data, key.size);
+			last_referenced[key.size] = '\0';
+		}
+
+		// TODO: remove objects with serialization error.
+
+		nitems++;
+
+		free (key.data);
+		free (serialized_cache_rec.data);
+	}
+
+	if (ret != DB_NOTFOUND)
+		logit ("Searching for element to remove failed (coursor): %s",
+				db_strerror(ret));
+
+	cur->c_close (cur);
+
+	debug ("Elements in cache: %d (limit %d)", nitems, c->max_items);
+
+	if (last_referenced) {
+		if (nitems > c->max_items)
+			tags_cache_remove_rec (c, last_referenced);
+		free (last_referenced);
+	}
+	else
+		debug ("Cache empty");
+
 }
 
 /* Add this tags object for the file to the cache. */
@@ -304,6 +383,7 @@ static void tags_cache_add (struct tags_cache *c, const char *file,
 	assert (file != NULL);
 
 	rec.mod_time = get_mtime (file);
+	rec.atime = time (NULL);
 	rec.tags = tags;
 
 	serialized_cache_rec = cache_record_serialize (&rec, &serial_len);
@@ -318,6 +398,8 @@ static void tags_cache_add (struct tags_cache *c, const char *file,
 
 	data.data = serialized_cache_rec;
 	data.size = serial_len;
+
+	tags_cache_gc  (c);
 
 	ret = c->db->put (c->db, NULL, &key, &data, 0);
 	if (ret) {
@@ -372,7 +454,7 @@ static struct file_tags *tags_cache_read_add (struct tags_cache *c,
 		struct cache_record rec;
 
 		if (cache_record_deserialize(&rec, serialized_cache_rec.data,
-				serialized_cache_rec.size)) {
+				serialized_cache_rec.size, 0)) {
 			time_t curr_mtime = get_mtime(file);
 
 			if (rec.mod_time != curr_mtime) {
@@ -509,7 +591,7 @@ void tags_cache_init (struct tags_cache *c, const size_t max_size)
 	for (i = 0; i < CLIENTS_MAX; i++)
 		request_queue_init (&c->queues[i]);
 
-	//TODO: c->max_size = max_size;
+	c->max_items = max_size;
 	c->stop_reader_thread = 0;
 	pthread_mutex_init (&c->mutex, NULL);
 	
@@ -599,7 +681,7 @@ void tags_cache_add_request (struct tags_cache *c, const char *file,
 		struct cache_record rec;
 
 		if (cache_record_deserialize(&rec, serialized_cache_rec.data,
-					serialized_cache_rec.size)) {
+					serialized_cache_rec.size, 0)) {
 			if (rec.mod_time == get_mtime(file)
 					&& (rec.tags->filled & tags_sel) == tags_sel) {
 				tags_response (client_id, file, rec.tags);
