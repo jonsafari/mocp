@@ -43,6 +43,7 @@ Other features:
  - Optional character set conversion for file tags using iconv().
  - OSS, ALSA, and JACK output.
  - User defined keys.
+ - Cache for files' tags.
 
 --------------------------------------------------------------------------------
 Documentation, how to get help.
@@ -60,6 +61,7 @@ What software is required to compile it?
  - ncurses (probably already installed in your system)
  - C and C++ compilers (MOC is written in C, but libtool requires a C++
    compiler).
+ - libdb version >= 3
 
 To support audio formats you need:
  - Ogg Vorbis - libvorbis (http://www.xiph.org/ogg/vorbis/download/)
