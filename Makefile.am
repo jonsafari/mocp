@@ -1,6 +1,7 @@
-SUBDIRS = themes decoder_plugins
+SUBDIRS = themes decoder_plugins po
 AM_CPPFLAGS = -DSYSTEM_THEMES_DIR=\"$(pkgdatadir)/themes\" \
-	      -DPLUGIN_DIR=\"$(plugindir)/$(DECODER_PLUGIN_DIR)\"
+	      -DPLUGIN_DIR=\"$(plugindir)/$(DECODER_PLUGIN_DIR)\" \
+	      -DLOCALEDIR=\"$(localedir)\"
 
 bin_PROGRAMS = mocp
 mocp_SOURCES = log.c \
@@ -68,9 +69,10 @@ EXTRA_mocp_SOURCES = gnugetopt.h \
 		     io_curl.c \
 		     io_curl.h \
 		     jack.c \
-		     jack.h
+		     jack.h \
+		     gettext.h
 man_MANS = mocp.1
-mocp_LDADD = @EXTRA_OBJS@
+mocp_LDADD = @EXTRA_OBJS@ @LIBINTL@
 mocp_DEPENDENCIES = @EXTRA_OBJS@
 mocp_LDFLAGS = @EXTRA_LIBS@ $(RCC_LIBS)
 EXTRA_DIST = config.example mocp.1 THANKS keymap.example Doxyfile \
