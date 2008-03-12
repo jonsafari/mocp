@@ -39,6 +39,13 @@
 #define isblank(c) (c == ' ' || c == '\t')
 #endif
 
+#ifdef ENABLE_NLS
+# include "gettext.h"
+# define _(x) gettext(x)
+#else
+# define _(x) x
+#endif
+
 void *xmalloc (const size_t size);
 void *xcalloc (size_t nmemb, size_t size);
 void *xrealloc (void *ptr, const size_t size);
