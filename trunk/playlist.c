@@ -496,7 +496,7 @@ static void do_title_expn (char *dest, int size, const char *fmt,
 			 * format: %(x:true:false)
 			 */
 			if (*fmt == '(') {
-				char separator, expr[100];
+				char separator, expr[256];
 				int expr_pos = 0;
 
 				check_zero(*++fmt);
@@ -589,7 +589,7 @@ static void do_title_expn (char *dest, int size, const char *fmt,
 /* Build file title from struct file_tags. Returned memory is malloc()ed. */
 char *build_title (const struct file_tags *tags)
 {
-	char title[100];
+	char title[512];
 
 	do_title_expn (title, sizeof(title), options_get_str("FormatString"),
 			tags);
