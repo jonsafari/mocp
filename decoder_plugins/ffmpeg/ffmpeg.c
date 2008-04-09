@@ -22,7 +22,11 @@
 #ifdef HAVE_INTTYPES_H
 # include <inttypes.h>
 #endif
+#if HAVE_LIBAVFORMAT_AVFORMAT_H
+#include <libavformat/avformat.h>
+#else
 #include <ffmpeg/avformat.h>
+#endif
 
 /* FFmpeg also likes common names, without that, our common.h and log.h would
  * not be included. */
