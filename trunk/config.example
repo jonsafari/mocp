@@ -131,10 +131,6 @@ ShowTime		= IfAvailable
 # Use mmap() to read files. mmap() is much slower on NFS.
 UseMmap			= no
 
-# Perform character set conversion using iconv() to tags and file names
-# read from playlist files. This option has format: FROM:TO.
-# To get list of supported sets use the iconv -l command.
-
 # Assume this encoding for ID3 version 1/1.1 tags (mp3 files). Unlike ID3v2
 # UTF-8 is not used here and MOC can't guess how tags are encoded. Another
 # solution is using librcc (see the next option). This option is ignored
