@@ -54,15 +54,6 @@ static void *sndfile_open (const char *file)
 		return data;
 	}
 
-	if (data->snd_info.channels > 2) {
-		decoder_error (&data->error, ERROR_FATAL, 0,
-				"The file has more than 2 channels, this is"
-				" not supported.");
-		sf_close (data->sndfile);
-		data->sndfile = NULL;
-		return data;
-	}
-
 	debug ("Opened file %s", file);
 	debug ("Channels: %d", data->snd_info.channels);
 	debug ("Format: %08X", data->snd_info.format);
