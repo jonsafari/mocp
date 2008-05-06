@@ -41,7 +41,7 @@ static struct
 } params = { 0, 0, SND_PCM_FORMAT_UNKNOWN };
 
 static int chunk_size = -1; /* in frames */
-static char alsa_buf[64 * 1024];
+static char alsa_buf[512 * 1024];
 static int alsa_buf_fill = 0;
 static int bytes_per_frame;
 
