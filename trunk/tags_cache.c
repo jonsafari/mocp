@@ -538,7 +538,7 @@ static void *reader_thread (void *cache_ptr)
 	while (!c->stop_reader_thread) {
 		int i;
 		char *request_file;
-		int tags_sel;
+		int tags_sel = 0;
 		
 		/* find the queue with a request waiting, begin searching at
 		 * curr_queue: we want to get one request from each queue,
