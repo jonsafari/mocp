@@ -388,8 +388,8 @@ static void entry_set_text (struct entry *e, const char *text)
 	
 	assert (e != NULL);
 
-	mbstowcs (e->text_ucs, text, sizeof(e->text_ucs));
-	e->text_ucs[sizeof(e->text_ucs)-1] = L'\0';
+	mbstowcs (e->text_ucs, text, ARRAY_SIZE(e->text_ucs));
+	e->text_ucs[ARRAY_SIZE(e->text_ucs)-1] = L'\0';
 
 	width = wcswidth (e->text_ucs, WIDTH_MAX);
 	e->cur_pos = wcslen (e->text_ucs);
@@ -406,7 +406,7 @@ static void entry_add_char (struct entry *e, const wchar_t c)
 	assert (e != NULL);
 
 	len = wcslen (e->text_ucs);
-	if (len >= sizeof(e->text_ucs)/sizeof(e->text_ucs[0]) - 1)
+	if (len >= ARRAY_SIZE(e->text_ucs) - sizeof(wchar_t))
 		return;
 
 	memmove (e->text_ucs + e->cur_pos + 1,
@@ -1246,7 +1246,7 @@ static struct side_menu *find_side_menu (struct main_win *w,
 
 	assert (w != NULL);
 
-	for (i = 0; i < (int)(sizeof(w->menus)/sizeof(w->menus[0])); i++) {
+	for (i = 0; i < (int)ARRAY_SIZE(w->menus); i++) {
 		struct side_menu *m = &w->menus[i];
 	
 		if (m->visible && m->type == type)
@@ -1639,7 +1639,7 @@ static void main_win_draw (const struct main_win *w)
 		
 		/* Draw all visible menus, draw the selected menu as the last
 		 * menu. */
-		for (i = 0; i < (int)(sizeof(w->menus)/sizeof(w->menus[0]));
+		for (i = 0; i < (int)ARRAY_SIZE(w->menus);
 				i++)
 			if (w->menus[i].visible && i != w->selected_menu)
 				side_menu_draw (&w->menus[i], 0);
@@ -1721,13 +1721,13 @@ static void main_win_switch_to (struct main_win *w,
 	if (w->selected_menu == 2) /* if the themes menu is selected */
 		side_menu_destroy (&w->menus[2]);
 
-	for (i = 0; i < (int)(sizeof(w->menus)/sizeof(w->menus[0])); i++)
+	for (i = 0; i < (int)ARRAY_SIZE(w->menus); i++)
 		if (w->menus[i].type == menu) {
 			w->selected_menu = i;
 			break;
 		}
 
-	assert (i < (int)(sizeof(w->menus)/sizeof(w->menus[0])));
+	assert (i < (int)ARRAY_SIZE(w->menus));
 
 	main_win_draw (w);
 }
@@ -1842,7 +1842,7 @@ static void main_win_set_played_file (struct main_win *w, const char *file)
 		free (w->curr_file);
 	w->curr_file = xstrdup (file);
 
-	for (i = 0; i < (int)(sizeof(w->menus)/sizeof(w->menus[0])); i++) {
+	for (i = 0; i < (int)ARRAY_SIZE(w->menus); i++) {
 		struct side_menu *m = &w->menus[i];
 
 		if (m->visible && (m->type == MENU_DIR
@@ -2089,7 +2089,7 @@ static void main_win_update_show_time (struct main_win *w)
 	
 	assert (w != NULL);
 
-	for (i = 0; i < (int)(sizeof(w->menus)/sizeof(w->menus[0])); i++) {
+	for (i = 0; i < (int)ARRAY_SIZE(w->menus); i++) {
 		struct side_menu *m = &w->menus[i];
 
 		if (m->visible && (m->type == MENU_DIR
@@ -2115,7 +2115,7 @@ static void main_win_update_show_format (struct main_win *w)
 	
 	assert (w != NULL);
 
-	for (i = 0; i < (int)(sizeof(w->menus)/sizeof(w->menus[0])); i++) {
+	for (i = 0; i < (int)ARRAY_SIZE(w->menus); i++) {
 		struct side_menu *m = &w->menus[i];
 
 		if (m->visible && (m->type == MENU_DIR
