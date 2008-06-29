@@ -736,7 +736,7 @@ static const char *parse_layout_coordinate (const char *fmt, int *val,
 		const int max)
 {
 	long v;
-	const char *e;
+	const char *e = fmt;
 
 	if (!strncasecmp(fmt, "FILL", sizeof("FILL") - 1)) {
 		*val = LAYOUT_SIZE_FILL;
