@@ -3761,7 +3761,7 @@ void interface_cmdline_adj_volume (int server_sock, const char *arg)
 void interface_cmdline_set (int server_sock, char *arg, const int val)
 {
 	srv_sock = server_sock;
-	char *last;
+	char *last = NULL;
 	char *tok;
 
 	tok = strtok_r(arg, ",", &last);
