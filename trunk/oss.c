@@ -39,11 +39,17 @@
 #include "options.h"
 #include "common.h"
 
-static int mixer_fd = -1;
+#ifndef SNDCTL_DSP_GETPLAYVOL
+#define OSSv3_MIXER
+#endif
+
 static int volatile dsp_fd = -1;
+#ifdef OSSv3_MIXER
+static int mixer_fd = -1;
 static int mixer_channel1 = -1;
 static int mixer_channel2 = -1;
 static int mixer_channel_current;
+#endif
 
 static struct sound_params params = { 0, 0, 0 };
 
@@ -146,10 +152,15 @@ static int set_capabilities (struct output_driver_caps *caps)
 static int oss_read_mixer ()
 {
 	int vol;
-	
+
+#ifdef OSSv3_MIXER
 	if (mixer_fd != -1 && mixer_channel_current != -1) {
 		if (ioctl(mixer_fd, MIXER_READ(mixer_channel_current), &vol)
 				== -1)
+#else
+	if(dsp_fd != -1) {
+		if (ioctl(dsp_fd, SNDCTL_DSP_GETPLAYVOL, &vol) == -1)
+#endif
 			error ("Can't read from mixer");
 		else {
 			/* Average between left and right */
@@ -174,6 +185,7 @@ static int oss_mixer_name_to_channel (const char *name)
 
 static int oss_init (struct output_driver_caps *caps)
 {
+#ifdef OSSv3_MIXER
 	/* Open the mixer device */
 	mixer_fd = open (options_get_str("OSSMixerDevice"), O_RDWR);
 	if (mixer_fd == -1)
@@ -203,16 +215,19 @@ static int oss_init (struct output_driver_caps *caps)
 		if (mixer_channel1 != -1)
 			mixer_channel_current = mixer_channel1;
 	}
+#endif
 
 	return set_capabilities (caps);
 }
 
 static void oss_shutdown ()
 {
+#ifdef OSSv3_MIXER
 	if (mixer_fd != -1) {
 		close (mixer_fd);
 		mixer_fd = -1;
 	}
+#endif
 }
 
 static void oss_close ()
@@ -326,15 +341,23 @@ static int oss_play (const char *buff, const size_t size)
 /* Set PCM volume */
 static void oss_set_mixer (int vol)
 {
+#ifdef OSSv3_MIXER
 	if (mixer_fd != -1) {
+#else
+	if (dsp_fd != -1) {
+#endif
 		if (vol > 100)
 			vol = 100;
 		else if (vol < 0)
 			vol = 0;
 		
 		vol = vol | (vol << 8);
+#ifdef OSSv3_MIXER
 		if (ioctl(mixer_fd, MIXER_WRITE(mixer_channel_current), &vol)
 				== -1)
+#else
+		if (ioctl(dsp_fd, SNDCTL_DSP_SETPLAYVOL, &vol) == -1)
+#endif
 			error ("Can't set mixer, ioctl failed");
 	}
 }
@@ -380,17 +403,23 @@ static int oss_reset ()
 
 static void oss_toggle_mixer_channel ()
 {
+#ifdef OSSv3_MIXER
 	if (mixer_channel_current == mixer_channel1 && mixer_channel2 != -1)
 		mixer_channel_current = mixer_channel2;
 	else if (mixer_channel1 != -1)
 		mixer_channel_current = mixer_channel1;
+#endif
 }
 
 static char *oss_get_mixer_channel_name ()
 {
+#ifdef OSSv3_MIXER
 	if (mixer_channel_current == mixer_channel1)
 		return xstrdup (options_get_str("OSSMixerChannel"));
 	return xstrdup (options_get_str("OSSMixerChannel2"));
+#else
+	return xstrdup ("moc");
+#endif
 }
 
 static int oss_get_rate ()
