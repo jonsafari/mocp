@@ -736,6 +736,14 @@ static struct command commands[] = {
  		{ KEY_F(10), -1 },
  		1
   	},
+	{
+		KEY_CMD_LYRICS,
+		"show_lyrics",
+		"Display lyrics of the current song (if available)",
+		CON_MENU,
+		{ 'L',	-1 },
+		1
+	},
  	{
  		KEY_CMD_TOGGLE_PLAYLIST_FULL_PATHS,
  		"playlist_full_paths",

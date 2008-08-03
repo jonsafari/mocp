@@ -100,6 +100,9 @@ void iface_select_file (const char *file);
 int iface_in_help ();
 void iface_switch_to_help ();
 void iface_handle_help_key (const struct iface_key *k);
+int iface_in_lyrics ();
+void iface_switch_to_lyrics ();
+void iface_handle_lyrics_key (const struct iface_key *k);
 void iface_toggle_layout ();
 void iface_swap_plist_items (const char *file1, const char *file2);
 void iface_make_visible (const enum iface_menu menu, const char *file);
@@ -108,5 +111,6 @@ void iface_add_file (const char *file, const char *title,
 		const enum file_type type);
 void iface_temporary_exit ();
 void iface_restore ();
+void iface_load_lyrics (const char *file);
 
 #endif

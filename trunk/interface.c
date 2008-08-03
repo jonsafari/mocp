@@ -733,7 +733,8 @@ static void update_curr_file ()
 
 		iface_set_played_file (file);
 		iface_set_played_file_title (curr_file.title);
-		
+		/* Try to load the lyrics of the new file */	
+		iface_load_lyrics (file);
 		/* Silent seeking makes no sense if the playing file has
 		 * changed */
 		silent_seek_pos = -1;
@@ -1577,7 +1578,7 @@ static void play_it (const char *file)
 	}
 	else
 		logit ("The server already has my playlist");
-	
+	iface_load_lyrics (file);
 	send_int_to_srv (CMD_PLAY);
 	send_str_to_srv (file);
 
@@ -2953,6 +2954,8 @@ static void menu_key (const struct iface_key *k)
 {
 	if (iface_in_help())
 		iface_handle_help_key (k);
+	if (iface_in_lyrics())
+		iface_handle_lyrics_key (k);
 	else if (iface_in_entry())
 		entry_key (k);
 	else if (iface_in_theme_menu())
@@ -3043,6 +3046,9 @@ static void menu_key (const struct iface_key *k)
 				break;
 			case KEY_CMD_HELP:
 				iface_switch_to_help ();
+				break;
+			case KEY_CMD_LYRICS:
+				iface_switch_to_lyrics ();
 				break;
 			case KEY_CMD_HIDE_MESSAGE:
 				iface_disable_message ();
