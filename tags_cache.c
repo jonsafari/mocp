@@ -165,7 +165,7 @@ static char *cache_record_serialize (const struct cache_record *rec, int *len)
 
 	*len = sizeof(rec->mod_time)
 		+ sizeof(rec->atime)
-		+ sizeof(int) * 3 /* lenghts of title, artist, time. */
+		+ sizeof(size_t) * 3 /* lenghts of title, artist, time. */
 		+ artist_len
 		+ album_len
 		+ title_len
