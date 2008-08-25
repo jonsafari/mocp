@@ -33,6 +33,7 @@
 #include "softmixer.h"
 #include "options.h"
 #include "common.h"
+#include "files.h"
 #include "log.h"
 
 #define swap_32bit_endianess(i32) \
@@ -144,10 +145,9 @@ void softmixer_read_config()
 
   char *linebuffer=NULL;
 
-  int buffersize=-1, readbytes=-1;
   int tmp;
 
-  while((readbytes=getline(&linebuffer, &buffersize, cf)>-1))
+  while((linebuffer=read_line(cf)))
   {
     if(
       strncasecmp
@@ -212,9 +212,9 @@ void softmixer_read_config()
           }
         }
     }
+    free(linebuffer);
   }
 
-  free(linebuffer);
 
   fclose(cf);
 }
