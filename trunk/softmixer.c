@@ -282,19 +282,19 @@ void softmixer_process_buffer(char *buf, size_t size, const struct sound_params 
       process_buffer_s8((int8_t *)buf, size);
       break;
     case SFMT_U16:
-      process_buffer_u16((uint16_t *)buf, size >> 1);
+      process_buffer_u16((uint16_t *)buf, size  / sizeof(uint16_t));
       break;
     case SFMT_S16:
-      process_buffer_s16((int16_t *)buf, size >> 1);
+      process_buffer_s16((int16_t *)buf, size / sizeof(int16_t));
       break;
     case SFMT_U32:
-      process_buffer_u32((uint32_t *)buf, size >> 2);
+      process_buffer_u32((uint32_t *)buf, size / sizeof(uint32_t));
       break;
     case SFMT_S32:
-      process_buffer_s32((int32_t *)buf, size >> 2);
+      process_buffer_s32((int32_t *)buf, size / sizeof(int32_t));
       break;
     case SFMT_FLOAT:
-      process_buffer_float((float *)buf, size >> 1);
+      process_buffer_float((float *)buf, size / sizeof(float));
       break;
   }
   
