@@ -14,6 +14,7 @@
 #define SOFTMIXER_CFG_ACTIVE "Active:"
 #define SOFTMIXER_CFG_AMP "Amplification:"
 #define SOFTMIXER_CFG_VALUE "Value:"
+#define SOFTMIXER_CFG_MONO "Mono:"
 
 #define SOFTMIXER_SAVE_OPTION "Softmixer_SaveState"
 #define SOFTMIXER_SAVE_FILE "softmixer"
@@ -28,6 +29,9 @@ void softmixer_set_value(const int val);
 
 int softmixer_is_active();
 void softmixer_set_active(int act);
+
+int softmixer_is_mono();
+void softmixer_set_mono(int mono);
 
 void softmixer_process_buffer(char *buf, const size_t size, const struct sound_params *sound_params); 
 

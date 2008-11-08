@@ -3176,6 +3176,26 @@ static void menu_key (const struct iface_key *k)
 				debug ("Toggle softmixer.");
 				send_int_to_srv (CMD_TOGGLE_SOFTMIXER);
 				break;
+			case KEY_CMD_TOGGLE_EQUALIZER:
+				debug ("Toggle equalizer.");
+				send_int_to_srv (CMD_TOGGLE_EQUALIZER);
+				break;
+			case KEY_CMD_EQUALIZER_REFRESH:
+				debug ("Equalizer Refresh.");
+				send_int_to_srv (CMD_EQUALIZER_REFRESH);
+				break;
+			case KEY_CMD_EQUALIZER_PREV:
+				debug ("Equalizer Prev.");
+				send_int_to_srv (CMD_EQUALIZER_PREV);
+				break;
+			case KEY_CMD_EQUALIZER_NEXT:
+				debug ("Equalizer Next.");
+				send_int_to_srv (CMD_EQUALIZER_NEXT);
+				break;
+			case KEY_CMD_TOGGLE_MAKE_MONO:
+				debug ("Toggle Mono-Mixing.");
+				send_int_to_srv (CMD_TOGGLE_MAKE_MONO);
+				break;
 			case KEY_CMD_TOGGLE_LAYOUT:
 				iface_toggle_layout ();
 				break;

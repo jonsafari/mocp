@@ -46,6 +46,7 @@
 #endif
 
 #include "softmixer.h"
+#include "equalizer.h"
 
 #include "out_buf.h"
 #include "protocol.h"
@@ -755,11 +756,29 @@ int audio_get_buf_fill ()
 int audio_send_pcm (const char *buf, const size_t size)
 {
         char *softmixed = NULL;
+        char *equalized = NULL;
+
+        if(equalizer_is_active())
+        {
+          equalized = xmalloc(size);
+          memcpy(equalized, buf, size);
+
+          equalizer_process_buffer(equalized, size, &driver_sound_params);
+
+          buf = equalized;
+        }
         
         if(softmixer_is_active())
         {
-          softmixed = xmalloc(size);
-          memcpy(softmixed, buf, size);
+          if(equalized)
+          {
+            softmixed = equalized;
+          }
+          else
+          {
+            softmixed = xmalloc(size);
+            memcpy(softmixed, buf, size);
+          }
  
           softmixer_process_buffer
           (
@@ -778,8 +797,11 @@ int audio_send_pcm (const char *buf, const size_t size)
 	if (played == 0)
 		fatal ("Audio output error.");
 
-        if(softmixed!=NULL)
+        if(softmixed && !equalized)
           free(softmixed);
+
+        if(equalized)
+          free(equalized);
 
 	return played;
 }
@@ -892,6 +914,7 @@ void audio_initialize ()
 	out_buf_init (&out_buf, options_get_int("OutputBuffer") * 1024);
 
         softmixer_init();
+        equalizer_init();
 
         plist_init (&playlist);
 	plist_init (&shuffled_plist);
@@ -918,6 +941,7 @@ void audio_exit ()
 		free (last_stream_url);
 
         softmixer_shutdown();
+        equalizer_shutdown();
 }
 
 void audio_seek (const int sec)
