@@ -41,8 +41,6 @@ mocp_SOURCES = log.c \
 	       themes.h \
 	       keys.c \
 	       keys.h \
-	       ltdl.c \
-	       ltdl.h \
 	       io.c \
 	       io.h \
 	       compat.c \
@@ -55,10 +53,14 @@ mocp_SOURCES = log.c \
 	       tags_cache.h \
 	       utf8.c \
 	       utf8.h \
+	       audio_helper.h \
+	       audio_helper.c \
 	       softmixer.c \
 	       softmixer.h \
-		   lyrics.h \
-		   lyrics.c
+	       lyrics.h \
+	       lyrics.c \
+	       equalizer.h \
+	       equalizer.c
 EXTRA_mocp_SOURCES = gnugetopt.h \
 		     getopt.c \
 		     getopt1.c \
@@ -74,7 +76,7 @@ EXTRA_mocp_SOURCES = gnugetopt.h \
 		     jack.h \
 		     gettext.h
 man_MANS = mocp.1
-mocp_LDADD = @EXTRA_OBJS@ @LIBINTL@
+mocp_LDADD = @EXTRA_OBJS@ @LIBINTL@ -lltdl
 mocp_DEPENDENCIES = @EXTRA_OBJS@
 mocp_LDFLAGS = @EXTRA_LIBS@ $(RCC_LIBS)
 EXTRA_DIST = config.example mocp.1 THANKS keymap.example Doxyfile \
@@ -83,4 +85,4 @@ EXTRA_DIST = config.example mocp.1 THANKS keymap.example Doxyfile \
 	     moc.spec
 
 docdir = $(datadir)/doc/$(PACKAGE)
-doc_DATA = config.example THANKS README keymap.example
+doc_DATA = config.example THANKS README README_equalizer keymap.example

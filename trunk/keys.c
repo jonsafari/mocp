@@ -625,6 +625,46 @@ static struct command commands[] = {
  		1
   	},
  	{
+ 		KEY_CMD_TOGGLE_EQUALIZER,
+ 		"toggle_equalizer",
+ 		"Toggles the equalizer",
+ 		CON_MENU,
+ 		{ 'E', -1 },
+ 		1
+  	},
+ 	{
+ 		KEY_CMD_EQUALIZER_REFRESH,
+ 		"equalizer_refresh",
+ 		"Reload EQ-presets",
+ 		CON_MENU,
+ 		{ 'e', -1 },
+ 		1
+  	},
+ 	{
+ 		KEY_CMD_EQUALIZER_PREV,
+ 		"equalizer_prev",
+ 		"Select previous equalizer-preset",
+ 		CON_MENU,
+ 		{ 'K', -1 },
+ 		1
+  	},
+ 	{
+ 		KEY_CMD_EQUALIZER_NEXT,
+ 		"equalizer_next",
+ 		"Select next equalizer-preset",
+ 		CON_MENU,
+ 		{ 'k', -1 },
+ 		1
+  	},
+ 	{
+ 		KEY_CMD_TOGGLE_MAKE_MONO,
+ 		"toggle_make_mono",
+ 		"Toggle mono-mixing",
+ 		CON_MENU,
+ 		{ 'J', -1 },
+ 		1
+  	},
+ 	{
  		KEY_CMD_PLIST_MOVE_UP,
  		"plist_move_up",
  		"Move playlist item up",

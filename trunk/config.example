@@ -100,6 +100,18 @@ AlsaDevice		= default
 # produce clipping.
 #Softmixer_SaveState = yes
 
+# Save equalizer state ?
+# If enabled, a file 'equalizer' will
+# be created in '~/.moc/' storing the
+# equalizer settings when the server is shut-down.
+# There is a 'hidden' 'Mixin' setting in that file.
+# Mixin (0.0-1.0) is used to determine how much of
+# the original signal is used after equalizing.
+# 0 means to only use the equalized sound, 1
+# effectively disabled the mixer.
+# Default is 0.25
+#Equalizer_SaveState = yes
+
 # Show files with dot at the beginning?
 ShowHiddenFiles		= no
 

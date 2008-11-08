@@ -260,6 +260,8 @@ void options_init ()
 	option_add_str ("OnStop", NULL);
 
         option_add_int ("Softmixer_SaveState", 1);
+        
+        option_add_int ("Equalizer_SaveState", 1);
 }
 
 /* Return 1 if a parameter to an integer option is valid. */
@@ -291,6 +293,7 @@ int check_int_option (const char *name, const int val)
 			|| !strcasecmp(name, "SidPlay2_StartAtStart")
 			|| !strcasecmp(name, "SidPlay2_PlaySubTunes")
 			|| !strcasecmp(name, "Softmixer_SaveState")
+			|| !strcasecmp(name, "Equalizer_SaveState")
 			) {
 		if (!(val == 1 || val == 0))
 			return 0;
