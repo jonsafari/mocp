@@ -6,6 +6,7 @@ if test -f Makefile; then
 	make distclean >/dev/null 2>/dev/null
 fi
 
+libtoolize -c -f -i
 autopoint -f
 aclocal -I m4 && \
 autoheader && \
