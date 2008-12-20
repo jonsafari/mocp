@@ -281,6 +281,8 @@ CanStartInPlaylist	= yes
 # Some arguments are substituted befor executing:
 # %f - file path
 # %i - title made from tags
+# %S - start block mark (in seconds)
+# %E - end block mark (in seconds)
 #
 # Data from tags:
 # %t - title

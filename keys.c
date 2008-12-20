@@ -513,6 +513,22 @@ static struct command commands[] = {
 		1
 	},
  	{
+ 		KEY_CMD_MARK_START,
+ 		"mark_start",
+ 		"Mark the start of a block",
+ 		CON_MENU,
+ 		{ '\'', -1 },
+ 		1
+ 	},
+ 	{
+ 		KEY_CMD_MARK_END,
+ 		"mark_end",
+ 		"Mark the end of a block",
+ 		CON_MENU,
+ 		{ '\"', -1 },
+ 		1
+ 	},
+ 	{
  		KEY_CMD_FAST_DIR_1,
  		"go_to_fast_dir1",
  		"Go to a fast dir 1",
