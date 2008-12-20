@@ -79,7 +79,7 @@ man_MANS = mocp.1
 mocp_LDADD = @EXTRA_OBJS@ @LIBINTL@ -lltdl
 mocp_DEPENDENCIES = @EXTRA_OBJS@
 mocp_LDFLAGS = @EXTRA_LIBS@ $(RCC_LIBS)
-EXTRA_DIST = config.example mocp.1 THANKS keymap.example Doxyfile \
+EXTRA_DIST = config.example README_equalizer mocp.1 THANKS keymap.example Doxyfile \
 	     doxy_pages/decoder_api.doxy doxy_pages/main_page.doxy \
 	     doxy_pages/sound_output_driver_api.doxy moc.spec.in \
 	     moc.spec
