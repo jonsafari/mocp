@@ -93,6 +93,8 @@ volume_60 =		M-6
 volume_70 =		M-7
 volume_80 =		M-8
 volume_90 =		M-9
+mark_start =		'
+mark_end =		"
 
 # Key binding for directories: defaults are Shift-number
 # shift 1 = ! = Fastdir1

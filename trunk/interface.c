@@ -102,6 +102,8 @@ static struct file_info {
 	int total_time;
 	int channels;
 	int state; /* STATE_* */
+	int block_start;
+	int block_end;
 } curr_file;
 
 /* Silent seeking - where we are in seconds. -1 - no seeking. */
@@ -339,6 +341,8 @@ static void file_info_reset (struct file_info *f)
 	f->total_time = -1;
 	f->channels = 1;
 	f->state = STATE_STOP;
+	f->block_start = -1;
+	f->block_end = -1;
 }
 
 static void file_info_cleanup (struct file_info *f)
@@ -634,6 +638,10 @@ static void ev_file_tags (const struct tag_ev_response *data)
 		if (data->tags->time != -1) {
 			curr_file.total_time = data->tags->time;
 			iface_set_total_time (curr_file.total_time);
+			if (curr_file.block_start < 0) {
+				curr_file.block_start = 0;
+				curr_file.block_end = curr_file.total_time;
+			}
 		}
 		else
 			debug ("Not time information");
@@ -1769,6 +1777,18 @@ static void remove_dead_entries_plist ()
 }
 
 
+static void mark_block (int *marker)
+{
+	switch (curr_file.state) {
+		case STATE_PLAY:
+		case STATE_PAUSE:
+			*marker = curr_file.curr_time;
+			break;
+		default:
+			logit ("User marked when not playing.");
+	}
+}
+
 /* Add the currently selected file to the playlist. */
 static void add_file_plist ()
 {
@@ -2808,6 +2828,24 @@ static char *custom_cmd_substitute (char *arg)
 		else
 			arg = NULL;
 	}
+	else if (!strcmp(arg, "%S")) {
+		free (arg);
+		if (curr_file.file) {
+			arg = (char *)xmalloc(sizeof(char) * 10);
+			snprintf (arg, 10, "%d", curr_file.block_start);
+		}
+		else
+			arg = NULL;
+	}
+	else if (!strcmp(arg, "%E")) {
+		free (arg);
+		if (curr_file.file) {
+			arg = (char *)xmalloc(sizeof(char) * 10);
+			snprintf (arg, 10, "%d", curr_file.block_end);
+		}
+		else
+			arg = NULL;
+	}
 
 	/* Replace nonexisting data with an empty string. */
 	if (!arg)
@@ -3137,6 +3175,12 @@ static void menu_key (const struct iface_key *k)
 				break;
 			case KEY_CMD_VOLUME_90:
 				set_mixer (90);
+				break;
+			case KEY_CMD_MARK_START:
+				mark_block (&curr_file.block_start);
+				break;
+			case KEY_CMD_MARK_END:
+				mark_block (&curr_file.block_end);
 				break;
 			case KEY_CMD_FAST_DIR_1:
 				go_to_fast_dir (1);
