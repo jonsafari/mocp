@@ -285,7 +285,7 @@ void equalizer_adjust_preamp()
 
 void equalizer_read_config()
 {
-  char *curloc = setlocale(LC_NUMERIC, NULL);
+  char *curloc = xstrdup(setlocale(LC_NUMERIC, NULL));
   setlocale(LC_NUMERIC, "C"); // posix decimal point
 
   char *sfile = xstrdup(create_file_name("equalizer"));
@@ -295,6 +295,8 @@ void equalizer_read_config()
   if(cf==NULL)
   {
     logit("Unable to read equalizer configuration");
+    if (curloc)
+	    free (curloc);
     return;
   }
 
@@ -373,12 +375,15 @@ void equalizer_read_config()
 
   fclose(cf);
 
-  setlocale(LC_NUMERIC, curloc);
+  if (curloc) {
+	  setlocale(LC_NUMERIC, curloc);
+	  free (curloc);
+  }
 }
 
 void equalizer_write_config()
 {
-  char *curloc = setlocale(LC_NUMERIC, NULL);
+  char *curloc = xstrdup(setlocale(LC_NUMERIC, NULL));
   setlocale(LC_NUMERIC, "C"); /* posix decimal point */
   
   char *cfname = create_file_name(EQUALIZER_SAVE_FILE);
@@ -388,6 +393,8 @@ void equalizer_write_config()
   if(cf==NULL)
   {
     logit ("Unable to write equalizer configuration");
+    if (curloc)
+	    free (curloc);
     return;
   }
 
@@ -398,7 +405,10 @@ void equalizer_write_config()
 
   fclose(cf);
   
-  setlocale(LC_NUMERIC, curloc);
+  if (curloc) {
+	  setlocale(LC_NUMERIC, curloc);
+	  free (curloc);
+  }
 
   logit("Equalizer configuration written");
 }
@@ -940,7 +950,7 @@ void clear_eq_set(t_eq_set_list *l)
 /* parsing stuff */
 int read_setup(char *name, char *desc, t_eq_setup **sp)
 {
-  char *curloc = setlocale(LC_NUMERIC, NULL);
+  char *curloc = xstrdup(setlocale(LC_NUMERIC, NULL));
   setlocale(LC_NUMERIC, "C"); // posix decimal point
   
   t_eq_setup *s = *sp;
@@ -949,11 +959,15 @@ int read_setup(char *name, char *desc, t_eq_setup **sp)
 
   if(!*desc)
   {
+		if (curloc)
+			free (curloc);
     return -1;
   }
 
   if(strncasecmp(desc, EQSET_HEADER, sizeof(EQSET_HEADER)-1))
   {
+		if (curloc)
+			free (curloc);
     return -2;
   }
 
@@ -991,6 +1005,8 @@ int read_setup(char *name, char *desc, t_eq_setup **sp)
       free(s->cf);
       free(s->bw);
       free(s->dg);
+			if (curloc)
+				free (curloc);
       return -3;
     }
 
@@ -1006,6 +1022,8 @@ int read_setup(char *name, char *desc, t_eq_setup **sp)
       free(s->cf);
       free(s->bw);
       free(s->dg);
+			if (curloc)
+				free (curloc);
       return -3;
     }
 
@@ -1024,6 +1042,8 @@ int read_setup(char *name, char *desc, t_eq_setup **sp)
         free(s->cf);
         free(s->bw);
         free(s->dg);
+				if (curloc)
+					free (curloc);
         return -3;
       }
 
@@ -1049,7 +1069,10 @@ int read_setup(char *name, char *desc, t_eq_setup **sp)
     }
   }
   
-  setlocale(LC_NUMERIC, curloc); // posix decimal point
+	if (curloc) {
+	  setlocale(LC_NUMERIC, curloc); // posix decimal point
+		free (curloc);
+	}
 
   return 0;
 }
