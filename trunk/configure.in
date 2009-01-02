@@ -399,9 +399,11 @@ dnl FLAC
 AC_ARG_WITH(flac, AS_HELP_STRING(--without-flac,Compile without FLAC support.))
 if test "x$with_flac" != "xno"
 then
-	AM_PATH_LIBFLAC([AC_SUBST(LIBFLAC_LIBS)
-		AC_SUBST(LIBFLAC_CFLAGS)
-		DECODER_PLUGINS="$DECODER_PLUGINS flac"])
+	PKG_CHECK_MODULES(LIBFLAC, [flac >= 1.1],
+			  [AC_SUBST(LIBFLAC_LIBS)
+			  AC_SUBST(LIBFLAC_CFLAGS)
+			  DECODER_PLUGINS="$DECODER_PLUGINS flac"],
+			  [true])
 fi
 
 dnl wavpack
