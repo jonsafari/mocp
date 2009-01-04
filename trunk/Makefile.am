@@ -1,7 +1,8 @@
 SUBDIRS = themes decoder_plugins po
 AM_CPPFLAGS = -DSYSTEM_THEMES_DIR=\"$(pkgdatadir)/themes\" \
 	      -DPLUGIN_DIR=\"$(plugindir)/$(DECODER_PLUGIN_DIR)\" \
-	      -DLOCALEDIR=\"$(localedir)\"
+	      -DLOCALEDIR=\"$(localedir)\" \
+	      -I$(top_builddir)/libltdl
 
 bin_PROGRAMS = mocp
 mocp_SOURCES = log.c \
