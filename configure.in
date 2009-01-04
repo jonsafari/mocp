@@ -262,6 +262,7 @@ else
 	HAVE_ID3TAG=no
 fi
 
+COMPILE_RCC=no
 dnl libmad (mp3)
 AC_ARG_WITH(mp3, AS_HELP_STRING(--without-mp3,Compile without mp3 support (libmad)))
 if test "x$with_mp3" != "xno"
@@ -274,7 +275,6 @@ then
 		dnl librcc
 		AC_ARG_WITH(rcc, AS_HELP_STRING(--without-rcc,
 			    [Compile without LIBRCC support.]))
-		COMPILE_RCC=no
 		if test "x$with_rcc" != "xno"
 		then
 			AC_CHECK_HEADERS([librcc.h],
