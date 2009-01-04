@@ -1,3 +1,23 @@
+2.4.4
+	* Fix crash when saving a playlist with URLs.
+	* Fix hang in case of symlink loop (like symlink to parent directory)
+	  when adding files recursivelly to the playlist.
+	* Fix bad memory acces when using FILL parameter in layouts that caused
+	  "FATAL_ERROR: Layout1 is malformed".
+	* Fix compilation with newer ffmpeg. (Alexis Ballier)
+	* Increase maximum file title (made from tags) length to 512. Helps on
+	  wide terminals.
+	* Fix displaying URLs on the playlist when it ends with a slash.
+	* Fix compilation of flac plugin by detecting libflac using pkg-config.
+	* Fix for multichannel playback. (Maarten van Es)
+	* Fix handling of invalid track number in tags. A segfault occured when
+	  the track number was at least a value of 2^31.
+	* Support for the new (SVN) libmpcdec API.
+	* Remove old, irrelevant comment about iconv from the configuration
+	  file.
+	* Fix configure to display proper information about compiled RCC.
+	* Run libtoolize in autogen.sh to prevent conflicts with installed
+	  libtool/libltdl version.
 2.4.3
 	* Fix displaying tags from internet streams, sometimes the name of the
 	  station or other less seful text was displayed instead the title.

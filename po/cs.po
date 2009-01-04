@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: moc 2.5.0-alpha3\n"
 "Report-Msgid-Bugs-To: daper@daper.net\n"
-"POT-Creation-Date: 2008-03-06 23:43+0100\n"
+"POT-Creation-Date: 2008-11-29 17:52+0100\n"
 "PO-Revision-Date: 2008-03-07 00:16+0100\n"
 "Last-Translator: Petr Pisar <petr.pisar@atlas.cz>\n"
 "Language-Team: Czech <translation-team-cs@lists.sourceforge.net>\n"
@@ -15,7 +15,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: main.c:285
+#: main.c:286
 #, c-format
 msgid ""
 "Usage:\n"
@@ -28,12 +28,12 @@ msgstr ""
 "-V --version           Vypíše verzi programu a skončí.\n"
 "-h --help              Vypíše návod na použití a skončí.\n"
 
-#: main.c:292
+#: main.c:293
 #, c-format
 msgid "-D --debug             Turn on logging to a file.\n"
 msgstr "-D --debug             Zapne protokolování do souboru.\n"
 
-#: main.c:296
+#: main.c:297
 #, c-format
 msgid ""
 "-S --server            Run only the server.\n"
