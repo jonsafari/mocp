@@ -1,8 +1,7 @@
-SUBDIRS = themes decoder_plugins libltdl
+SUBDIRS = themes decoder_plugins
 AM_CPPFLAGS = -DSYSTEM_THEMES_DIR=\"$(pkgdatadir)/themes\" \
 	      -DPLUGIN_DIR=\"$(plugindir)/$(DECODER_PLUGIN_DIR)\" \
-	      -DLOCALEDIR=\"$(localedir)\" \
-	      $(LTDLINCL)
+	      -DLOCALEDIR=\"$(localedir)\"
 
 bin_PROGRAMS = mocp
 mocp_SOURCES = log.c \
@@ -77,7 +76,7 @@ EXTRA_mocp_SOURCES = gnugetopt.h \
 		     jack.h \
 		     gettext.h
 man_MANS = mocp.1
-mocp_LDADD = @EXTRA_OBJS@ @LIBINTL@ $(LIBLTDL)
+mocp_LDADD = @EXTRA_OBJS@ @LIBINTL@ -lltdl
 mocp_DEPENDENCIES = @EXTRA_OBJS@
 mocp_LDFLAGS = @EXTRA_LIBS@ $(RCC_LIBS)
 EXTRA_DIST = config.example README_equalizer mocp.1 THANKS keymap.example Doxyfile \
