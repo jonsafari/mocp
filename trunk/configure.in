@@ -2,11 +2,6 @@ AC_INIT([moc],[2.5.0-alpha3],[daper@daper.net])
 AC_CONFIG_SRCDIR([main.c])
 AC_CONFIG_HEADERS([config.h])
 
-AC_CONFIG_AUX_DIR([libltdl/config])
-AC_CONFIG_MACRO_DIR([libltdl/m4])
-LT_CONFIG_LTDL_DIR([libltdl])
-LT_INIT
-LTDL_INIT
 AM_INIT_AUTOMAKE
 
 AC_PREREQ(2.59)
