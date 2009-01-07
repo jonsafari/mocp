@@ -59,7 +59,7 @@ Prebuffering		= 64
 #HTTPProxy		= my_proxy:port
 
 # Sound driver - OSS, ALSA, JACK, or null (only for debugging)
-# You can enter more than one driver separated by a coma. The first working
+# You can enter more than one driver separated by a comma. The first working
 # driver will be used.
 SoundDriver		= JACK, ALSA, OSS
 
@@ -137,7 +137,7 @@ ShowTime		= IfAvailable
 # XTermTheme		= transparent-background
 
 # MOC directory - where pid file, socket, and state files are stored.
-# You can use ~ at the begining
+# You can use ~ at the beginning.
 # MOCDir		= ~/.moc
 
 # Use mmap() to read files. mmap() is much slower on NFS.
@@ -232,8 +232,8 @@ TagsCacheSize		= 256
 # Number items in the playlist.
 #PlaylistNumbering	= yes
 
-# Main window layoutis can be configured. You can change the position and the
-# size of the menus (directory and playlist). You have 3 layouts ant switch
+# Main window layouts can be configured. You can change the position and the
+# size of the menus (directory and playlist). You have 3 layouts and switch
 # between then using the 'l' key (standard mapping). By default only 2 layouts
 # are configured.
 #
@@ -278,7 +278,7 @@ CanStartInPlaylist	= yes
 
 # Executing external commands (1 - 10) invoked with key commands (F1 - F10 by
 # default).
-# Some arguments are substituted befor executing:
+# Some arguments are substituted before executing:
 # %f - file path
 # %i - title made from tags
 # %S - start block mark (in seconds)
@@ -294,7 +294,7 @@ CanStartInPlaylist	= yes
 # Parameters above applys to the currently selected file. If you change them to
 # capital letters, they are taken from the currently played file.
 #
-# Programms are run using execv(), not a shell, so you can't do things like
+# Programs are run using execv(), not a shell, so you can't do things like
 # redirecting the output to a file. The command string is split using blank
 # characters as separators, the first element is the command to be executed
 # and the rest are parameters, so if you use "echo Playing: %i" we run program
@@ -306,7 +306,7 @@ CanStartInPlaylist	= yes
 # ExecCommand1		= "cp %f /mnt/usb_drive"
 # ExecCommand2		= "/home/joe/now_playing %i"
 
-# Display the cursor in the line with the selected file. This can be usefu with
+# Display the cursor in the line with the selected file. This can be useful with
 # a braille display.
 # UseCursorSelection	= no
 
