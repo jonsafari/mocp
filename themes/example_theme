@@ -14,7 +14,7 @@
 #
 # or
 #
-# colordef COLOR = RED GREEEN BLUE
+# colordef COLOR = RED GREEN BLUE
 #
 # Where names are case insensitive.
 #
@@ -29,8 +29,8 @@
 # selected_playlist  - see selected directory
 # file               - an ordinary file in the menu (mp3, ogg, ...)
 # selected_file      - see selected directory
-# marked_file        - a file that is currently beeing played
-# marked_selected_file - a file that is currently beeing played and is also
+# marked_file        - a file that is currently being played
+# marked_selected_file - a file that is currently being played and is also
 #                      selected using arrows
 # info               - information shown at the right side of files
 # selected_info      - see selected directory
@@ -38,8 +38,8 @@
 # marked_selected_info - a file (its time) that is currently beeing played
 #                      and is also selected using arrows
 # status             - the status line with a message
-# title              - the title of the file that is currently beeing played
-# state              - the state: play, stop, or paus (>, [], ||)
+# title              - the title of the file that is currently being played
+# state              - the state: play, stop, or paused (>, [], ||)
 # current_time       - current time of playing
 # time_left          - the time left to the end of playing the current file
 # total_time         - the length of the currently played file
@@ -58,7 +58,7 @@
 # message            - information message
 # plist_time         - total time of displayed items
 #
-# FOREGOUND_VOLOR and BACKGROUND_COLOR can have one of the following values:
+# FOREGOUND_COLOR and BACKGROUND_COLOR can have one of the following values:
 # black, red, green, yellow, blue, magenta, cyan, white, default (can be
 # transparent), grey (not standard, but works)
 #
@@ -75,8 +75,8 @@
 # You can specify a list of attributes separated by commas: attr1,attr2,attr3.
 # Don't use spaces anywhere in such a list.
 #
-# With colordef you can chend the definition of a color. It works only if
-# your termina supports it, if not those lines will be silently ignored.
+# With colordef you can change the definition of a color. It works only if
+# your terminal supports it, if not those lines will be silently ignored.
 # COLOR must be a valid color name and the RED GREEN and BLUE are numbers
 # from 0 to 1000. Example:
 #
