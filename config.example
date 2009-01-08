@@ -257,7 +257,7 @@ TagsCacheSize		= 256
 # Layout2 = ""
 # Layout3 = ""
 #
-# The scrren is split into two parts: playlist at the top and the directory
+# The screen is split into two parts: playlist at the top and the directory
 # menu at the bottom. Playlist will occupy 10 lines and the directory menu
 # the rest.
 # Layout1 = "playlist:0,0,100%,10 directory:0,10,100%,FILL"
