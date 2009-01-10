@@ -4041,6 +4041,8 @@ void interface_cmdline_formatted_info (const int server_sock,
 			str_info.rate ? str_info.rate : "");
 	str = str_repl(str, "\\n", "\n");
 
+	str = build_title_with_format (curr_file.tags, str);
+
 	if (str_info.title)
 		free(str_info.title);
 	
