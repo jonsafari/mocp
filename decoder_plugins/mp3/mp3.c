@@ -305,9 +305,11 @@ static int count_time_internal (struct mp3_data *data)
 				"VBR file.");
 	}
 
-	if (data->avg_bitrate == -1)
+	if (data->avg_bitrate == -1
+			&& mad_timer_count(duration, MAD_UNITS_SECONDS) > 0) {
 		data->avg_bitrate = data->size 
 				/ mad_timer_count(duration, MAD_UNITS_SECONDS) * 8;
+	}
 
 	mad_header_finish(&header);
 
