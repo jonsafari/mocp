@@ -22,7 +22,6 @@ Known bugs:
 
 Before 2.5:
 * Move TODO to moc.daper.net/roadmap
-* Options in a hash table.
 * A string-valued variable "TitleFormatString", similar to "FormatString".
   I'd suggest all the same %-escapes, plus:
   %F -- expands to (the expansion of) the current FormatString
