@@ -828,6 +828,15 @@ void player_seek (const int sec)
 	UNLOCK (request_cond_mutex);
 }
 
+void player_jump_to (const int sec)
+{
+	request = REQ_SEEK;
+	req_seek = sec;
+	LOCK (request_cond_mutex);
+	pthread_cond_signal (&request_cond);
+	UNLOCK (request_cond_mutex);
+}
+
 /* Stop playing, clear the output buffer, but allow to unpause by starting
  * playing the same stream. This is usefull for internet streams that can't
  * be really paused. */

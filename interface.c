@@ -2339,6 +2339,11 @@ static void seek (const int sec)
 	send_int_to_srv (CMD_SEEK);
 	send_int_to_srv (sec);
 }
+static void jump_to (const int sec)
+{
+	send_int_to_srv (CMD_JUMP_TO);
+	send_int_to_srv (sec);
+}
 
 static void delete_item ()
 {
@@ -3814,6 +3819,39 @@ void interface_cmdline_seek_by (int server_sock, const int seek_by)
 	srv_sock = server_sock; /* the interface is not initialized, so set it
 				   here */
 	seek (seek_by);
+}
+
+void interface_cmdline_jump_to (int server_sock, const int pos)
+{
+	srv_sock = server_sock; /* the interface is not initialized, so set it here */
+	jump_to (pos);
+}
+
+void interface_cmdline_jump_to_percent (int server_sock, const int percent)
+{
+	srv_sock = server_sock; /* the interface is not initialized, so set it here */
+	curr_file.file = get_curr_file ();
+	int new_pos;
+
+	if (percent >= 100) {
+		fprintf (stderr, "Can't jump beyond the end of file.\n");
+		return;
+	}
+
+	if (!curr_file.file[0]) {
+		fprintf (stderr, "Nothing is played.\n");
+		return;
+	}
+
+	if (file_type(curr_file.file) == F_URL) {
+		fprintf (stderr, "Can't seek in network stream.\n");
+		return;
+	}
+
+	curr_file.tags = get_tags_no_iface (curr_file.file,TAGS_TIME);
+	new_pos = (percent*curr_file.tags->time)/100;
+	printf("Jumping to: %ds. Total time is: %ds\n", new_pos, curr_file.tags->time);
+	jump_to (new_pos);
 }
 
 void interface_cmdline_adj_volume (int server_sock, const char *arg)

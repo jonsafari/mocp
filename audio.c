@@ -957,6 +957,19 @@ void audio_seek (const int sec)
 	else
 		logit ("Seeking when nothing is played.");
 }
+void audio_jump_to (const int sec)
+{
+	int playing;
+
+	LOCK (curr_playing_mut);
+	playing = curr_playing;
+	UNLOCK (curr_playing_mut);
+	
+	if (playing != -1 && state == STATE_PLAY)
+		player_jump_to (sec);
+	else
+		logit ("Jumping when nothing is played.");
+}
 
 int audio_get_state ()
 {

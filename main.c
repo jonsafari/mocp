@@ -61,6 +61,8 @@ struct parameters
 	int toggle_pause;
 	int playit;
 	int seek_by;
+	char jump_type; 
+	int jump_to;
 	char *formatted_into_param;
 	int get_formatted_info;
 	char *adj_volume;
@@ -217,6 +219,10 @@ static void start_moc (const struct parameters *params, char **args,
 		if (params->seek_by)
 			interface_cmdline_seek_by (server_sock,
 					params->seek_by);
+		if (params->jump_type=='%')
+			interface_cmdline_jump_to_percent (server_sock,params->jump_to);
+		if (params->jump_type=='s')
+			interface_cmdline_jump_to (server_sock,params->jump_to);
 		if (params->get_formatted_info)
 			interface_cmdline_formatted_info (server_sock,
 					params->formatted_into_param);
@@ -319,10 +325,11 @@ static void show_usage (const char *prg_name) {
 "-y --sync              Synchronize the playlist with other clients.\n"
 "-n --nosync            Don't synchronize the playlist with other clients.\n"
 "-A --ascii             Use ASCII characters to draw lines.\n"
-"-i --info FORMAT       Print the information about the currently played file.\n"
-"-Q --format            Print the formatted information about the currently played file.\n"
+"-i --info              Print the information about the currently played file.\n"
+"-Q --format FORMAT     Print the formatted information about the currently played file.\n"
 "-e --recursively       Alias for -a.\n"
 "-k --seek N            Seek by N seconds (can be negative).\n"
+"-j --jump N{\%,s}       Jump to some position of the current track.\n"
 "-o --on <controls>     Turn on a control (shuffle,autonext,repeat).\n"
 "-u --off <controls>    Turn off a control (shuffle,autonext,repeat).\n"
 "-t --toggle <controls> Toggle a control (shuffle,autonext,repeat).\n"
@@ -396,15 +403,15 @@ static void server_command (struct parameters *params)
 	close (sock);
 }
 
-static long get_num_param (const char *p)
+static long get_num_param (const char *p,const char ** last)
 {
-	char *e;
+	const char *e;
 	long val;
 
 	val = strtol (p, &e, 10);
-	if (*e)
+	if ((*e&&last==NULL)||e==p)
 		fatal ("The parameter should be a number.");
-
+	*last=e;
 	return val;
 }
 
@@ -440,6 +447,7 @@ int main (int argc, char *argv[])
 		{ "info",		0, NULL, 'i' },
 		{ "recursively",	0, NULL, 'e' },
 		{ "seek",		1, NULL, 'k' },
+		{ "jump",		1, NULL, 'j' },
 		{ "format",		1, NULL, 'Q' },
 		{ "volume",		1, NULL, 'v' },
 		{ "toggle",		1, NULL, 't' },
@@ -450,7 +458,8 @@ int main (int argc, char *argv[])
 	int ret, opt_index = 0;
 	struct parameters params;
 	char *config_file = NULL;
-
+	const char *jump_type;
+				
 	memset (&params, 0, sizeof(params));
 	options_init ();
 
@@ -464,7 +473,7 @@ int main (int argc, char *argv[])
 #endif
 
 	while ((ret = getopt_long(argc, argv,
-					"VhDSFR:macpsxT:C:M:PUynArfiGelk:v:t:o:u:Q:",
+					"VhDSFR:macpsxT:C:M:PUynArfiGelk:j:v:t:o:u:Q:",
 					long_options, &opt_index)) != -1) {
 		switch (ret) {
 			case 'V':
@@ -566,9 +575,21 @@ int main (int argc, char *argv[])
 				params.dont_run_server = 1;
 				break;
 			case 'k':
-				params.seek_by = get_num_param (optarg);
+				params.seek_by = get_num_param (optarg,NULL);
 				params.dont_run_iface = 1;
 				break;
+			case 'j':
+				params.jump_to=get_num_param (optarg,&jump_type);
+				if(*jump_type)
+					if(!jump_type[1])
+						if(*jump_type=='%'||tolower(*jump_type)=='s'){
+							params.jump_type=tolower(*jump_type);
+							params.dont_run_iface = 1;
+							break;
+						}
+				//TODO: Add message explaining the error
+				show_usage (argv[0]);
+				return 1;
 			case 'v' :
 				params.adj_volume = optarg;
 				params.dont_run_iface = 1;
