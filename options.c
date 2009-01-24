@@ -24,11 +24,12 @@
 #include "log.h"
 #include "options.h"
 
-#define OPTIONS_MAX	128
+#define OPTIONS_MAX	256
 #define OPTION_NAME_MAX	32
 
 enum option_type
 {
+	OPTION_FREE=0,
 	OPTION_INT,
 	OPTION_STR,
 	OPTION_ANY
@@ -47,57 +48,103 @@ struct option
 	union option_value value;
 	int ignore_in_config;
 	int set_in_config;
+	unsigned int hash;
 };
 
 static struct option options[OPTIONS_MAX];
 static int options_num = 0;
 
+
+/* Returns the str's hash using djb2 algorithm */
+static unsigned int hash(const char * str)
+{
+	unsigned int hash = 5381;
+
+	while (*str)
+		hash = ((hash << 5) + hash) + tolower(*(str++));
+	return hash;
+}
+
+/* Return an index on an option in the options hashtable. If there is no such
+ * option return -1. */
+static int find_option (const char *name, enum option_type type)
+{
+	unsigned int h=hash(name),i,init_pos=h%OPTIONS_MAX;
+	
+	
+	for(i=init_pos;i<OPTIONS_MAX;i++)
+		if(options[i].type==OPTION_FREE)
+			return -1;
+		else if(h == options[i].hash && (type == options[i].type||type == OPTION_ANY))
+			if(!strcasecmp(name, options[i].name))
+		    return i;
+
+	for(i=0;i<init_pos;i++)
+		if(options[i].type==OPTION_FREE)
+			return -1;
+		else if(h == options[i].hash && (type == options[i].type || type == OPTION_ANY))
+			if(!strcasecmp(name, options[i].name))
+		    return i;
+
+	return -1;
+}
+/* Return an index on a free slot in the options hashtable. If there is no such
+ * slot return -1. */
+static int find_free (unsigned int h)
+{
+	unsigned int i;
+
+	assert (options_num < OPTIONS_MAX);
+	h%=OPTIONS_MAX;
+
+	for(i=h;i<OPTIONS_MAX;i++)
+		if(options[i].type==OPTION_FREE)
+			return i;
+
+	for(i=0;i<h;i++)
+		if(options[i].type==OPTION_FREE)
+			return i;
+
+	return -1;
+}
+
+/* Initializes a position on the options table. This is intended to be used at
+ * initialization to make a table of valid options and its default values. */
+
+static unsigned int option_init(const char *name, enum option_type type)
+{
+	unsigned int h=hash(name);
+	int pos=find_free(h);
+	
+	assert (strlen(name) < OPTION_NAME_MAX);
+	assert(pos>=0);
+	
+	strcpy (options[pos].name, name);
+	options[pos].hash=h;
+	options[pos].type = type;
+	options[pos].ignore_in_config = 0;
+	options[pos].set_in_config = 0;
+
+	options_num++;
+	return pos;
+}
+
 /* Add an integer option to the options table. This is intended to be used at
  * initialization to make a table of valid options and its default values. */
 static void option_add_int (const char *name, const int value)
 {
-	assert (strlen(name) < OPTION_NAME_MAX);
-	assert (options_num < OPTIONS_MAX);
+	unsigned int pos=option_init(name,OPTION_INT);
 
-	strcpy (options[options_num].name, name);
-	options[options_num].type = OPTION_INT;
-	options[options_num].value.num = value;
-	options[options_num].ignore_in_config = 0;
-	options[options_num].set_in_config = 0;
-
-	options_num++;
+	options[pos].value.num = value;
 }
 
 /* Add an string option to the options table. This is intended to be used at
  * initialization to make a table of valid options and its default values. */
 static void option_add_str (const char *name, const char *value)
 {
-	assert (strlen(name) < OPTION_NAME_MAX);
-	assert (options_num < OPTIONS_MAX);
+	unsigned int pos=option_init(name, OPTION_STR);
 
-	strcpy (options[options_num].name, name);
-	options[options_num].type = OPTION_STR;
-	options[options_num].value.str = xstrdup (value);
-	options[options_num].ignore_in_config = 0;
-	options[options_num].set_in_config = 0;
-
-	options_num++;
-}
-/* Return an index on an option in the options table. If there is no such
- * option return -1. */
-static int find_option (const char *name, enum option_type type)
-{
-	int i;
-
-	for (i = 0; i < options_num; i++) {
-		if (!strcasecmp(options[i].name, name)) {
-			if (type != OPTION_ANY && options[i].type != type)
-				return -1;
-			return i;
-		}
-	}
-
-	return -1;
+	options[pos].value.str = xstrdup (value);
 }
 
 /* Set an integer option to the value. */
@@ -262,6 +309,7 @@ void options_init ()
         option_add_int ("Softmixer_SaveState", 1);
         
         option_add_int ("Equalizer_SaveState", 1);
+
 }
 
 /* Return 1 if a parameter to an integer option is valid. */
