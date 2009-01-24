@@ -1,6 +1,7 @@
 Items marked with $ are bigger changes requiring more time.
 
 Known bugs:
+- speex plugin should be linked with libogg
 - Do we assume filesystem in UTF-8? It's incorrect.
 - I have a problem with moc 2.4.0 on FreeBSD 6.1-PRERELEASE. When I build moc
   with musepack (libmpcdec) support moc allways core dumps on exit.
@@ -17,6 +18,7 @@ Known bugs:
   http://moc.daper.net/node/240
 - MOC needs to be restarted (when switching themes) in order to understand the
   ATTRIBUTE correctly.
+- db lock timeout in tags_cache
 
 Before 2.5:
 * Move TODO to moc.daper.net/roadmap
