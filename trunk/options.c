@@ -24,7 +24,7 @@
 #include "log.h"
 #include "options.h"
 
-#define OPTIONS_MAX	256
+#define OPTIONS_MAX	181
 #define OPTION_NAME_MAX	32
 
 enum option_type
