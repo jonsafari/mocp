@@ -1,3 +1,4 @@
+
 #ifndef INTERFACE_H
 #define INTERFACE_H
 
@@ -22,6 +23,8 @@ void interface_cmdline_play_first (int server_sock);
 void interface_cmdline_file_info (const int server_sock);
 void interface_cmdline_playit (int server_sock, char **args, const int arg_num);
 void interface_cmdline_seek_by (int server_sock, const int seek_by);
+void interface_cmdline_jump_to_percent (int server_sock, const int percent);
+void interface_cmdline_jump_to (int server_sock, const int pos);
 void interface_cmdline_adj_volume (int server_sock, const char *arg);
 void interface_cmdline_set (int server_sock, char *arg, const int val);
 void interface_cmdline_formatted_info (const int server_sock, const char *format_str);

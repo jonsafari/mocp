@@ -225,6 +225,7 @@ void audio_unpause ();
 void audio_initialize ();
 void audio_exit ();
 void audio_seek (const int sec);
+void audio_jump_to (const int sec);
 
 int audio_open (struct sound_params *sound_params);
 int audio_send_buf (const char *buf, const size_t size);

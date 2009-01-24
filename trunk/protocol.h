@@ -128,6 +128,7 @@ enum noblock_io_status
 #define CMD_EQUALIZER_NEXT      0x38    /* select next eq-preset */
 
 #define CMD_TOGGLE_MAKE_MONO    0x39    /* toggle mono mixing */
+#define CMD_JUMP_TO	0x3a /* jumps to a some position in the current stream */
 
 char *socket_name ();
 int get_int (int sock, int *i);

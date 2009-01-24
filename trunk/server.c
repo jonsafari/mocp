@@ -661,6 +661,18 @@ static int req_seek (struct client *cli)
 
 	return 1;
 }
+/* Handle CMD_JUMP_TO, return 1 if ok or 0 on error */
+static int req_jump_to (struct client *cli)
+{
+	int sec;
+
+	if (!get_int(cli->socket, &sec))
+		return 0;
+	logit ("Jumping to %ds", sec);
+	audio_jump_to (sec);
+
+	return 1;
+}
 
 /* Report an error logging it and sending a message to the client. */
 void server_error (const char *msg)
@@ -1239,6 +1251,10 @@ static void handle_command (const int client_id)
 			break;
 		case CMD_SEEK:
 			if (!req_seek(cli))
+				err = 1;
+			break;
+		case CMD_JUMP_TO:
+			if (!req_jump_to(cli))
 				err = 1;
 			break;
 		case CMD_GET_SNAME:
