@@ -397,7 +397,8 @@ static void vorbis_get_name (const char *file ATTR_UNUSED, char buf[4])
 
 static int vorbis_our_format_ext (const char *ext)
 {
-	return !strcasecmp(ext, "ogg");
+	return !strcasecmp(ext, "ogg")
+		|| !strcasecmp(ext, "oga");
 }
 
 static void vorbis_get_error (void *prv_data, struct decoder_error *error)
