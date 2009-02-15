@@ -517,12 +517,15 @@ int main (int argc, char *argv[])
 				break;
 			case 's':
 				params.stop = 1;
+				params.dont_run_iface = 1;
 				break;
 			case 'f':
 				params.next = 1;
+				params.dont_run_iface = 1;
 				break;
 			case 'r':
 				params.previous = 1;
+				params.dont_run_iface = 1;
 				break;
 			case 'x':
 				params.exit = 1;
@@ -530,9 +533,11 @@ int main (int argc, char *argv[])
 				break;
 			case 'P':
 				params.pause = 1;
+				params.dont_run_iface = 1;
 				break;
 			case 'U':
 				params.unpause = 1;
+				params.dont_run_iface = 1;
 				break;
 			case 'T':
 				option_set_str ("ForceTheme", optarg);
