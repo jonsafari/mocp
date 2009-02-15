@@ -50,7 +50,6 @@ struct parameters
 	int clear;
 	int play;
 	int dont_run_iface;
-	int dont_run_server;
 	int stop;
 	int exit;
 	int pause;
@@ -143,9 +142,6 @@ static void start_moc (const struct parameters *params, char **args,
 	int list_sock;
 	int server_sock = -1;
 
-	decoder_init (params->debug);
-	srand (time(NULL));
-
 	if (!params->foreground && (server_sock = server_connect()) == -1) {
 		int notify_pipe[2];
 		int i = 0;
@@ -205,39 +201,7 @@ static void start_moc (const struct parameters *params, char **args,
 			fatal ("Can't connect to the server.");
 	}
 
-	if (params->dont_run_iface) {
-		if (params->playit)
-			interface_cmdline_playit (server_sock, args, arg_num);
-		if (params->clear)
-			interface_cmdline_clear_plist (server_sock);
-		if (params->append)
-			interface_cmdline_append (server_sock, args, arg_num);
-		if (params->play)
-			interface_cmdline_play_first (server_sock);
-		if (params->get_file_info)
-			interface_cmdline_file_info (server_sock);
-		if (params->seek_by)
-			interface_cmdline_seek_by (server_sock,
-					params->seek_by);
-		if (params->jump_type=='%')
-			interface_cmdline_jump_to_percent (server_sock,params->jump_to);
-		if (params->jump_type=='s')
-			interface_cmdline_jump_to (server_sock,params->jump_to);
-		if (params->get_formatted_info)
-			interface_cmdline_formatted_info (server_sock,
-					params->formatted_into_param);
-		if (params->adj_volume)
-			interface_cmdline_adj_volume (server_sock,
-					params->adj_volume);
-		if (params->toggle)
-			interface_cmdline_set (server_sock, params->toggle, 2);
-		if (params->on)
-			interface_cmdline_set (server_sock, params->on, 1);
-		if (params->off)
-			interface_cmdline_set (server_sock, params->off, 0);
-		send_int (server_sock, CMD_DISCONNECT);
-	}
-	else if (params->only_server)
+	if (params->only_server)
 		send_int (server_sock, CMD_DISCONNECT);
 
 	
@@ -308,7 +272,7 @@ static void show_usage (const char *prg_name) {
 "                       the command line to playlist and exit.\n"
 "-c --clear             Clear the playlist and exit.\n"
 "-p --play              Start playing from the first item on the playlist.\n"
-"-l --playit            Play files given on command line without modifing the\n"
+"-l --playit            Play files given on command line without modifying the\n"
 "                       playlist.\n"
 "-s --stop              Stop playing.\n"
 "-f --next              Play next song.\n"
@@ -337,7 +301,7 @@ static void show_usage (const char *prg_name) {
 }
 
 /* Send commands requested in params to the server. */
-static void server_command (struct parameters *params)
+static void server_command (struct parameters *params, char **args, int arg_num)
 {
 	int sock;
 
@@ -346,6 +310,33 @@ static void server_command (struct parameters *params)
 
 	signal (SIGPIPE, SIG_IGN);
 	if (ping_server(sock)) {
+		if (params->playit)
+			interface_cmdline_playit (sock, args, arg_num);
+		if (params->clear)
+			interface_cmdline_clear_plist (sock);
+		if (params->append)
+			interface_cmdline_append (sock, args, arg_num);
+		if (params->play)
+			interface_cmdline_play_first (sock);
+		if (params->get_file_info)
+			interface_cmdline_file_info (sock);
+		if (params->seek_by)
+			interface_cmdline_seek_by (sock, params->seek_by);
+		if (params->jump_type=='%')
+			interface_cmdline_jump_to_percent (sock,params->jump_to);
+		if (params->jump_type=='s')
+			interface_cmdline_jump_to (sock,params->jump_to);
+		if (params->get_formatted_info)
+			interface_cmdline_formatted_info (sock,
+					params->formatted_into_param);
+		if (params->adj_volume)
+			interface_cmdline_adj_volume (sock, params->adj_volume);
+		if (params->toggle)
+			interface_cmdline_set (sock, params->toggle, 2);
+		if (params->on)
+			interface_cmdline_set (sock, params->on, 1);
+		if (params->off)
+			interface_cmdline_set (sock, params->off, 0);
 		if (params->exit) {
 			if (!send_int(sock, CMD_QUIT))
 				fatal ("Can't send command");
@@ -526,27 +517,22 @@ int main (int argc, char *argv[])
 				break;
 			case 's':
 				params.stop = 1;
-				params.dont_run_server = 1;
 				break;
 			case 'f':
 				params.next = 1;
-				params.dont_run_server = 1;
 				break;
 			case 'r':
 				params.previous = 1;
-				params.dont_run_server = 1;
 				break;
 			case 'x':
 				params.exit = 1;
-				params.dont_run_server = 1;
+                                params.dont_run_iface = 1;
 				break;
 			case 'P':
 				params.pause = 1;
-				params.dont_run_server = 1;
 				break;
 			case 'U':
 				params.unpause = 1;
-				params.dont_run_server = 1;
 				break;
 			case 'T':
 				option_set_str ("ForceTheme", optarg);
@@ -572,7 +558,7 @@ int main (int argc, char *argv[])
 				break;
 			case 'G':
 				params.toggle_pause = 1;
-				params.dont_run_server = 1;
+				params.dont_run_iface = 1;
 				break;
 			case 'k':
 				params.seek_by = get_num_param (optarg,NULL);
@@ -617,8 +603,6 @@ int main (int argc, char *argv[])
 		}
 	}
 	
-	if (params.foreground && !params.only_server)
-		fatal ("Can't use --foreground without --server");
 	if (params.dont_run_iface && params.only_server)
 		fatal ("-c, -a and -p options can't be used with --server");
 
@@ -627,9 +611,14 @@ int main (int argc, char *argv[])
 	if (config_file)
 		free (config_file);
 	check_moc_dir ();
-	
-	if (params.dont_run_server)
-		server_command (&params);
+
+        if (!params.only_server) {
+		decoder_init (params.debug);
+		srand (time(NULL));
+	}
+
+	if (!params.only_server && params.dont_run_iface)
+		server_command (&params, argv + optind, argc - optind);
 	else
 		start_moc (&params, argv + optind, argc - optind);
 
