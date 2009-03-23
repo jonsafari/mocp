@@ -276,8 +276,15 @@ static int ffmpeg_decode (void *prv_data, char *buf, int buf_len,
 		while (pkt_size) {
 			int len;
 		
+#if LIBAVCODEC_VERSION_INT >= ((51<<16)+(50<<8)+0)
+			data_size = sizeof (avbuf);
+			len = avcodec_decode_audio2 (data->enc, (int16_t *)avbuf,
+					&data_size, pkt_data, pkt_size);
+#else
 			len = avcodec_decode_audio (data->enc, (int16_t *)avbuf,
 					&data_size, pkt_data, pkt_size);
+#endif
+
 			debug ("Decoded %dB", data_size);
 
 			if (len < 0)  {
