@@ -617,10 +617,8 @@ int main (int argc, char *argv[])
 		free (config_file);
 	check_moc_dir ();
 
-        if (!params.only_server) {
-		decoder_init (params.debug);
-		srand (time(NULL));
-	}
+	decoder_init (params.debug);
+	srand (time(NULL));
 
 	if (!params.only_server && params.dont_run_iface)
 		server_command (&params, argv + optind, argc - optind);
