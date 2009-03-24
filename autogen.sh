@@ -16,7 +16,7 @@ autoconf -W syntax
 if [ "$?" != 0 ]
 then
 	cat <<EOF
-If you see errors it maight be necassary to install additional packages like
+If you see errors it might be necessary to install additional packages like
 autoconf >= 2.60
 automake >= 1.9
 libltdl (libltdl3-dev debian package)

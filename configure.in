@@ -127,7 +127,7 @@ PKG_PROG_PKG_CONFIG([0.20])
 
 if test "x$PKG_CONFIG" == "x"
 then
-	AC_MSG_WARN([No pkg-config utitlity found or it's too old, I will have troubles finding installed libraries.])
+	AC_MSG_WARN([No pkg-config utility found or it's too old, I will have trouble finding installed libraries.])
 fi
 
 AX_PATH_BDB([3], [
