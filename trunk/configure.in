@@ -130,7 +130,7 @@ then
 	AC_MSG_WARN([No pkg-config utility found or it's too old, I will have trouble finding installed libraries.])
 fi
 
-AX_PATH_BDB([3], [
+AX_PATH_BDB([4], [
 	       LIBS="$BDB_LIBS $EXTRA_LIBS"
 	       LDFLAGS="$BDB_LDFLAGS $LDFLAGS"
 	       CPPFLAGS="$CPPFLAGS $BDB_CPPFLAGS"
