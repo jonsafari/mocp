@@ -83,11 +83,6 @@ static void *read_thread (void *arg)
 		if (buf->stop)
 			fifo_buf_clear (&buf->buf);
 
-		if (fifo_buf_get_fill(&buf->buf) == 0) {
-			debug ("Setting read_thread_waiting flag");
-			buf->read_thread_waiting = 1;
-		}
-	
 		if (buf->free_callback) {
 
 			/* unlock the mutex to make calls to out_buf functions
@@ -110,6 +105,7 @@ static void *read_thread (void *arg)
 			}
 			
 			debug ("waiting for someting in the buffer");
+			buf->read_thread_waiting = 1;
 			pthread_cond_wait (&buf->play_cond, &buf->mutex);
 			debug ("someting appeard in the buffer");
 
