@@ -56,6 +56,7 @@
 #include "decoder.h"
 #include "themes.h"
 #include "softmixer.h"
+#include "utf8.h"
 
 #define INTERFACE_LOG	"mocp_client_log"
 
@@ -736,8 +737,18 @@ static void update_curr_file ()
 			update_curr_tags ();
 		}
 		else
-			curr_file.title =
-				xstrdup (strrchr(file, '/') + 1);
+        {
+            if (options_get_int ("FileNamesIconv"))
+            {
+                curr_file.title = files_iconv_str (
+                        strrchr(file, '/') + 1);
+            }
+            else
+            {
+                curr_file.title = xstrdup (
+                        strrchr(file, '/') + 1);
+            }
+        }
 
 		iface_set_played_file (file);
 		iface_set_played_file_title (curr_file.title);

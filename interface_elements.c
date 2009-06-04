@@ -61,6 +61,7 @@
 #define STARTUP_MESSAGE	"Welcome to " PACKAGE_STRING "!"
 #define HISTORY_SIZE	50
 
+
 /* TODO: removing/adding a char to the entry may increase width of the text
  * by more than one column. */
 
@@ -930,7 +931,7 @@ static char *make_menu_title (const char *plist_title,
 				char *old_title = title;
 				
 				title = xstrdup (slash + 1);
-				free (old_title);
+		                free (old_title);
 			}
 		}
 	}
@@ -949,8 +950,9 @@ static int add_to_menu (struct menu *menu, const struct plist *plist,
 	char *title;
 	const char *type_name;
 
-	title = make_menu_title (item->title, item->title == item->title_tags,
-			full_paths);
+				
+    title = make_menu_title (item->title, item->title == item->title_tags, 
+            full_paths);
 	added = menu_add (menu, title, plist_file_type(plist, num), item->file);
 	free (title);
 
@@ -1026,17 +1028,33 @@ static void side_menu_make_list_content (struct side_menu *m,
 			char title[PATH_MAX];
 			char *t_str = NULL;
 
-			strcpy (title, strrchr(dirs->items[i], '/') + 1);
-			strcat (title, "/");
 #ifdef HAVE_RCC 
 			if (options_get_int("UseRCCForFilesystem")) {
+				strcpy (title, strrchr(dirs->items[i], '/') + 1);
+				strcat (title, "/");
 				t_str = xstrdup (title);
 				t_str = iconv_rcc (t_str);
 				snprintf(title, PATH_MAX, "%s", t_str);
 				free(t_str);
 			}
+			else
 #endif
-			
+			if (options_get_int ("FileNamesIconv"))
+			{
+				char *conv_title = files_iconv_str (
+						strrchr(dirs->items[i], '/') + 1);
+
+				strcpy (title, conv_title);
+				strcat (title, "/");
+
+				free (conv_title);
+			}
+			else
+			{
+				strcpy (title, strrchr(dirs->items[i], '/') + 1);
+				strcat (title, "/");
+			}
+
 			added = menu_add (m->menu.list.main, title, F_DIR,
 					dirs->items[i]);
 			menu_item_set_attr_normal (added,
@@ -2261,15 +2279,26 @@ static void xterm_set_title (const int state, const char *title)
 				write (1, "[pause]", sizeof("[pause]")-1);
 				break;
 		}
-		
-		if (title) {
-			write (1, " - ", sizeof(" - ")-1);
-			write (1, title, strlen(title));
-		}
 
-		write (1, "\007", 1);
-	}
+        if (title) 
+        {
+            write (1, " - ", sizeof(" - ")-1);
+            if (options_get_int ("NonUTFXterm"))
+            {
+                char *iconv_title = xterm_iconv_str (title);
+                write (1, iconv_title, strlen(iconv_title));
+                free (iconv_title);
+            }
+            else
+            {
+                write (1, title, strlen(title));
+            }
+        }
+
+        write (1, "\007", 1);
+    }
 }
+
 
 static void xterm_clear_title ()
 {
@@ -3334,11 +3363,26 @@ void iface_set_curr_item_title (const char *title)
 /* Set the title for the directory menu. */
 void iface_set_title (const enum iface_menu menu, const char *title)
 {
+
 	assert (title != NULL);
 
-	main_win_set_title (&main_win,
-			menu == IFACE_MENU_DIR ? MENU_DIR : MENU_PLAYLIST,
-			title);
+    if (options_get_int ("FileNamesIconv"))
+    {
+        char *conv_title = NULL;
+        conv_title = files_iconv_str (title);
+
+        main_win_set_title (&main_win,
+                menu == IFACE_MENU_DIR ? MENU_DIR : MENU_PLAYLIST,
+                conv_title);
+
+        free (conv_title);
+    }
+    else
+    {
+        main_win_set_title (&main_win,
+                menu == IFACE_MENU_DIR ? MENU_DIR : MENU_PLAYLIST,
+                title);
+    }
 	iface_refresh_screen ();
 }
 

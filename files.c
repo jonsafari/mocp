@@ -42,9 +42,11 @@
 #include "files.h"
 #include "playlist_file.h"
 #include "log.h"
+#include "utf8.h"
 
 #define FILE_LIST_INIT_SIZE	64
 #define READ_LINE_INIT_SIZE	256
+
 
 /* Is the string an URL? */
 inline int is_url (const char *str)
@@ -108,6 +110,13 @@ void make_file_title (struct plist *plist, const int num,
 
 			if (dot)
 				*dot = 0;
+		}
+
+		if (options_get_int ("FileNamesIconv")) 
+		{
+			char *old_title = file;
+			file = files_iconv_str (file);
+			free (old_title);
 		}
 
 		plist_set_title_file (plist, num, file);
@@ -237,6 +246,8 @@ void resolve_path (char *buf, const int size, const char *file)
 	if (len > 1 && buf[len-1] == '/')
 		buf[--len] = 0;
 }
+
+
 
 /* Read selected tags for a file into tags structure (or create it if NULL).
  * If some tags are already present, don't read them.
