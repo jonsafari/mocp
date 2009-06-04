@@ -153,10 +153,14 @@ static char *get_tag (struct id3_tag *tag, const char *what)
 	if (frame && (field = &frame->fields[1])) {
 		ucs4 = id3_field_getstrings (field, 0);
 		if (ucs4) {
-			
 			/* Workaround for ID3 tags v1/v1.1 where the encoding
 			 * is latin1. */
-			if (id3_tag_options(tag, 0, 0) & ID3_TAG_OPTION_ID3V1) {
+            union id3_field *encoding_field = &frame->fields[0];
+			if ((id3_tag_options(tag, 0, 0) & ID3_TAG_OPTION_ID3V1) 
+                    || ((options_get_int ("EnforceTagsEncoding") && 
+                            (id3_field_gettextencoding((encoding_field)) 
+                             == ID3_FIELD_TEXTENCODING_ISO_8859_1))))
+            {
 				char *t;
 
 				comm = (char *)id3_ucs4_latin1duplicate (ucs4);

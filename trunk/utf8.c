@@ -19,6 +19,7 @@
 #endif
 
 #include <stdarg.h>
+
 #ifdef HAVE_ICONV_H
 # include <iconv.h>
 #endif
@@ -46,12 +47,16 @@
 
 #include "common.h"
 #include "log.h"
+#include "options.h"
 #include "utf8.h"
 
 static char *terminal_charset = NULL;
 static int using_utf8 = 0;
 
 static iconv_t iconv_desc = (iconv_t)(-1);
+static iconv_t files_iconv_desc = (iconv_t)(-1);
+static iconv_t xterm_iconv_desc = (iconv_t)(-1);
+
 
 char *iconv_rcc (char *str)
 {
@@ -130,6 +135,16 @@ char *iconv_str (const iconv_t desc, const char *str)
 	free (str_copy);
 	
 	return converted;
+}
+
+char *files_iconv_str (const char *str)
+{
+    return iconv_str (files_iconv_desc, str);
+}
+
+char *xterm_iconv_str (const char *str)
+{
+    return iconv_str (xterm_iconv_desc, str);
 }
 
 int xwaddstr (WINDOW *win, const char *str)
@@ -366,6 +381,17 @@ void utf8_init ()
 			RCC_OPTION_TRANSLATE_SKIP_PARRENT);
 	rccSetOption(NULL, RCC_OPTION_AUTODETECT_LANGUAGE, 1);
 #endif /* HAVE_RCC */
+
+	if (options_get_int ("FileNamesIconv"))
+	{
+		files_iconv_desc = iconv_open ("UTF-8", "");
+	}
+
+	if (options_get_int ("NonUTFXterm"))
+	{
+		xterm_iconv_desc = iconv_open ("", "UTF-8");
+	}
+
 }
 
 void utf8_cleanup ()

@@ -36,5 +36,7 @@ char *xstrtail (const char *str, const int len);
 
 char *iconv_str (const iconv_t desc, const char *str);
 char *iconv_rcc (char *str);
+char *files_iconv_str (const char *str);
+char *xterm_iconv_str (const char *str);
 
 #endif

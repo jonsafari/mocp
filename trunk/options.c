@@ -261,7 +261,10 @@ void options_init ()
 	option_add_int ("UseCursorSelection", 0);
 	option_add_str ("ID3v1TagsEncoding", "WINDOWS-1250");
 	option_add_int ("UseRCC", 1);
- 	option_add_int ("UseRCCForFilesystem", 1);
+	option_add_int ("UseRCCForFilesystem", 1);
+	option_add_int ("EnforceTagsEncoding", 0);
+	option_add_int ("FileNamesIconv", 0);
+	option_add_int ("NonUTFXterm", 0);
 	option_add_int ("SetXtermTitle", 1);
 	option_add_int ("SetScreenTitle", 1);
 	option_add_int ("PlaylistFullPaths", 1);
@@ -342,8 +345,11 @@ int check_int_option (const char *name, const int val)
 			|| !strcasecmp(name, "SidPlay2_PlaySubTunes")
 			|| !strcasecmp(name, "Softmixer_SaveState")
 			|| !strcasecmp(name, "Equalizer_SaveState")
+			|| !strcasecmp(name, "FileNamesIconv")
+			|| !strcasecmp(name, "NonUTFXterm")
+			|| !strcasecmp(name, "EnforceTagsEncoding")
 			) {
-		if (!(val == 1 || val == 0))
+				if (!(val == 1 || val == 0))
 			return 0;
 	}
 	else if (!strcasecmp(name, "OutputBuffer")) {
@@ -495,7 +501,7 @@ int check_str_option (const char *name, const char *val)
 				&& strcasecmp(val, "IfAvailable"))
 			return 0;
 	}
-	else if (!strcmp(name, "ResampleMethod")) {
+    else if (!strcmp(name, "ResampleMethod")) {
 		if (strcasecmp(val, "SincBestQuality")
 				&& strcasecmp(val, "SincMediumQuality")
 				&& strcasecmp(val, "SincFastest")
@@ -526,8 +532,7 @@ int check_str_option (const char *name, const char *val)
 
 static int is_deprecated_option (const char *name)
 {
-	if (!strcmp(name, "TagsIconv")
-			|| !strcmp(name, "FileNamesIconv"))
+	if (!strcmp(name, "TagsIconv"))
 		return 1;
 
 	return 0;
