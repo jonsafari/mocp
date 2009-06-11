@@ -307,8 +307,9 @@ static struct menu_item *menu_add_from_item (struct menu *menu,
 	new->attr_sel = mi->attr_sel;
 	new->attr_marked = mi->attr_marked;
 	new->attr_sel_marked = mi->attr_sel_marked;
-	strcpy (new->time, mi->time);
-	strcpy (new->format, mi->format);
+
+	strncpy(new->time, mi->time, FILE_TIME_STR_SZ);
+	strncpy(new->format, mi->format, FILE_FORMAT_SZ);
 
 	return new;
 }

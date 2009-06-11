@@ -26,6 +26,9 @@ enum menu_align
 	MENU_ALIGN_LEFT
 };
 
+#define FILE_TIME_STR_SZ        6
+#define FILE_FORMAT_SZ          4
+
 struct menu_item
 {
 	char *title;		/* Titile of the item */
@@ -43,8 +46,8 @@ struct menu_item
 	enum file_type type;
 
 	/* Additional information shown: */
-	char time[6];		/* File time string */
-	char format[4];		/* File format */
+	char time[FILE_TIME_STR_SZ];		/* File time string */
+	char format[FILE_FORMAT_SZ];		/* File format */
 
 	struct menu_item *next;
 	struct menu_item *prev;
