@@ -3773,12 +3773,12 @@ void interface_cmdline_file_info (const int server_sock)
 		printf ("CurrentTime: %s\n", curr_time_str);
 		printf ("CurrentSec: %d\n", curr_file.curr_time);
 
-		printf ("Bitrate: %dKbps\n",
+		printf ("Bitrate: %dkbps\n",
 				curr_file.bitrate > 0 ? curr_file.bitrate : 0);
-		printf ("AvgBitrate: %dKbps\n", 
+		printf ("AvgBitrate: %dkbps\n", 
 				curr_file.avg_bitrate > 0
 				? curr_file.avg_bitrate : 0);
-		printf ("Rate: %dKHz\n", curr_file.rate);
+		printf ("Rate: %dkHz\n", curr_file.rate);
 		
 		file_info_cleanup (&curr_file);
 		free (title);
