@@ -2676,7 +2676,7 @@ static void info_win_draw_time (const struct info_win *w)
 			xwaddstr (w->win, time_str);
 		}
 		else
-			xmvwaddstr (w->win, 2, 7, "	 ");
+			xmvwaddstr (w->win, 2, 7, "     ");
 
 		/* total time */
 		sec_to_min (time_str, w->total_time != -1 ? w->total_time : 0);
@@ -2752,7 +2752,7 @@ static void info_win_draw_bitrate (const struct info_win *w)
 		if (w->bitrate != -1)
 			xwprintw (w->win, "%4d", w->bitrate < 9999 ? w->bitrate : 9999);
 		else
-			xwaddstr (w->win, "	");
+			xwaddstr (w->win, "    ");
 	}
 	info_win_update_curs (w);
 }
