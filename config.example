@@ -1,13 +1,13 @@
 # This is a configuration file for the MOC player. It should be named 'config'
-# and placed in directory ~/.moc/
-# Comments begins with '#'.
+# and placed in the directory ~/.moc/
+# Comments begin with '#'.
 # You can use quotes and escape ('\') in parameters
 
 
 # Show file titles (title, author, album) instead of file names.
 ReadTags		= yes
 
-# Directory in which you store music files, if you specify it, you will be able
+# Directory in which you store music files. If you specify it you will be able
 # to quickly go to this directory with the '-m' parameter or the 'm' command.
 # This can also point to a playlist.
 #MusicDir		= "/home/joe/music"
@@ -37,7 +37,7 @@ AutoNext		= yes
 # %a - Artist
 # %A - Album
 # %t - Title
-# %(X:TRUE:FALSE) - ternary expression - if X exists, do TRUE, otherwaise
+# %(X:TRUE:FALSE) - ternary expression - if X exists, do TRUE, otherwise
 #                   FALSE. '\' - escape character (must be double, because of 
 #                   config interpreter). man zshmisc for more info.
 FormatString		= "%(n:%n :)%(a:%a - :)%(t:%t:)%(A: \(%A\):)"
@@ -55,7 +55,7 @@ InputBuffer		= 512
 Prebuffering		= 64
 
 # Use this HTTP proxy server for internet streams. If not set, the
-# environmential variables http_proxy and ALL_PROXY will be used if present.
+# environment variables http_proxy and ALL_PROXY will be used if present.
 #HTTPProxy		= my_proxy:port
 
 # Sound driver - OSS, ALSA, JACK, or null (only for debugging)
@@ -88,7 +88,7 @@ AlsaMixer2		= Master
 # ALSA output device
 AlsaDevice		= default
 
-# Save software mixer state ?
+# Save software mixer state?
 # If enabled, a file 'softmixer' will
 # be created in '~/.moc/' storing the 
 # mixersetting set when the server is shut-down.
@@ -100,7 +100,7 @@ AlsaDevice		= default
 # produce clipping.
 #Softmixer_SaveState = yes
 
-# Save equalizer state ?
+# Save equalizer state?
 # If enabled, a file 'equalizer' will
 # be created in '~/.moc/' storing the
 # equalizer settings when the server is shut-down.
@@ -133,7 +133,7 @@ ShowTime		= IfAvailable
 # /usr/share/moc/themes/ (depends on installation prefix) or ~/.moc/themes/
 # Theme			= example_theme
 
-# The theme used when running on on xterm
+# The theme used when running on an xterm
 # XTermTheme		= transparent-background
 
 # MOC directory - where pid file, socket, and state files are stored.
@@ -158,7 +158,7 @@ UseMmap			= no
 # Remember the playlist after exit?
 SavePlaylist		= yes
 
-# When using more than one client (interface) at a time, do the share the
+# When using more than one client (interface) at a time, do they share the
 # playlist?
 SyncPlaylist		= yes
 
@@ -170,8 +170,8 @@ SyncPlaylist		= yes
 # some terminals.
 ASCIILines		= no
 
-# FastDirs, these allow you jump directly to a directory, the key bindings are
-# in the keymap file.
+# FastDirs, these allow you to jump directly to a directory, the key bindings
+# are in the keymap file.
 #Fastdir1 = /mp3/rock
 #Fastdir2 = /mp3/electronic
 #Fastdir3 = /mp3/rap
@@ -190,7 +190,7 @@ ASCIILines		= no
 # stroke.
 #SilentSeekTime		= 5
 
-# Resample method to use. There are few methods of resampling sound supported
+# Resample method to use. There are a few methods of resampling sound supported
 # by libresamplerate. The default is the fastest (linear). Better description
 # is here: http://www.mega-nerd.com/libsamplerate/api_misc.html#Converters
 #
@@ -210,7 +210,7 @@ ASCIILines		= no
 #ResampleMethod		= Linear
 
 # Always use this sample rate when opening the audio device (and resample the
-# sound is necessary). When set to 0 the device is opened with the file's rate.
+# sound if necessary). When set to 0 the device is opened with the file's rate.
 #ForceSampleRate	= 48000
 
 # By default even if the sound card reports that it can output 24bit samples
@@ -237,11 +237,11 @@ TagsCacheSize		= 256
 # between then using the 'l' key (standard mapping). By default only 2 layouts
 # are configured.
 #
-# The format is as folows:
-# Each menu is described in format NAME:POSITION_X,POSITION_Y,WIDTH,HEIGHT
+# The format is as follows:
+# Each menu is described in the format NAME:POSITION_X,POSITION_Y,WIDTH,HEIGHT
 # NAME is directory or playlist
-# Other parameters define position and size of the menu. They can be absolute
-# numbers (like 10) or a percent value of the screen size (like 45%).
+# The other parameters define position and size of the menu. They can be
+# absolute numbers (like 10) or a percent value of the screen size (like 45%).
 # WIDTH and HEIGHT can have value of FILL which means fill the screen from
 # the menu's position to the border.
 # Separate menu descriptions using a space.
@@ -291,7 +291,7 @@ CanStartInPlaylist	= yes
 # %n - track
 # %m - time of the file (in seconds)
 #
-# Parameters above applys to the currently selected file. If you change them to
+# Parameters above apply to the currently selected file. If you change them to
 # capital letters, they are taken from the currently played file.
 #
 # Programs are run using execv(), not a shell, so you can't do things like
@@ -382,7 +382,7 @@ CanStartInPlaylist	= yes
 # Sampling Resolution (8/16)
 #SidPlay2_Bits = 16
 # Playback Mode :
-# "M": Mono (best for mady SIDs)
+# "M": Mono (best for many SIDs)
 # "S": Stereo
 # "L"/"R": Left / Right
 #SidPlay2_PlayMode = "M"
