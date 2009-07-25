@@ -1,6 +1,6 @@
 # Example keymap file
-# To define your own keys for MOC commands, create a keymap file in ~/.moc/
-# directory and add an options Keymap = FILE in ~/.moc/config
+# To define your own keys for MOC commands, create a keymap file in the ~/.moc/
+# directory and add options Keymap = FILE in ~/.moc/config
 #
 # The format of this file is:
 # Lines beginning with # are comments.
@@ -96,7 +96,7 @@ volume_90 =		M-9
 mark_start =		'
 mark_end =		"
 
-# Key binding for directories: defaults are Shift-number
+# Key bindings for directories: defaults are Shift-number
 # shift 1 = ! = Fastdir1
 go_to_fast_dir1 =	!
 go_to_fast_dir2 =	@
