@@ -466,19 +466,18 @@ static void make_item_visible (struct menu *menu, struct menu_item *mi)
 	assert (menu != NULL);
 	assert (mi != NULL);
 	
-	if (mi->num < menu->top->num)
-		menu->top = mi;
-	else if (mi->num >= menu->top->num + menu->height)
-		menu->top = get_item_relative (mi,
-				-menu->height + 1);
+	if (mi->num < menu->top->num || mi->num >= menu->top->num + menu->height) {
+		menu->top = get_item_relative(mi, -menu->height/2);
+
+		if (menu->top->num > menu->nitems - menu->height)
+			menu->top = get_item_relative (menu->last,
+					-menu->height + 1);
+	}
 
 	if (menu->selected) {
-		if (menu->selected->num < menu->top->num)
-			menu->selected = menu->top;
-		else if (menu->selected->num >= menu->top->num + menu->height)
-			menu->selected = get_item_relative (menu->top,
-					menu->height - 1);
-		
+		if (menu->selected->num < menu->top->num ||
+				menu->selected->num >= menu->top->num + menu->height)
+			menu->selected = mi;
 	}
 }
 
