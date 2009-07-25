@@ -203,8 +203,8 @@ static struct info_win
 	int state_next;
 	int state_net;
 
-	int bitrate;		/* in Kbps */
-	int rate;		/* in KHz */
+	int bitrate;		/* in kbps */
+	int rate;		/* in kHz */
 
 	/* time in seconds */
 	int curr_time;
@@ -2973,7 +2973,7 @@ static void info_win_draw_static_elements (const struct info_win *w)
 		/* rate and bitrate units */
 		wmove (w->win, 2, 25);
 		wattrset (w->win, get_color(CLR_LEGEND));
-		xwaddstr (w->win, "KHz	 Kbps");
+		xwaddstr (w->win, "kHz	 kbps");
 	}
 
 	info_win_update_curs (w);
@@ -3494,7 +3494,7 @@ void iface_set_state (const int state)
 	iface_refresh_screen ();
 }
 
-/* Set the bitrate (in Kbps). 0 or -1 means no bitrate information. */
+/* Set the bitrate (in kbps). 0 or -1 means no bitrate information. */
 void iface_set_bitrate (const int bitrate)
 {
 	assert (bitrate >= -1);
@@ -3503,7 +3503,7 @@ void iface_set_bitrate (const int bitrate)
 	iface_refresh_screen ();
 }
 
-/* Set the rate (in KHz). 0 or -1 means no rate information. */
+/* Set the rate (in kHz). 0 or -1 means no rate information. */
 void iface_set_rate (const int rate)
 {
 	assert (rate >= -1);

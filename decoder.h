@@ -158,7 +158,7 @@ struct decoder
 	 *
 	 * \param data Decoder's private data.
 	 * 
-	 * \return Current bitrate in Kbps or -1 if not available.
+	 * \return Current bitrate in kbps or -1 if not available.
 	 */
 	int (*get_bitrate)(void *data);
 
@@ -248,7 +248,7 @@ struct decoder
 	 *
 	 * \param data Decoder's private data.
 	 * 
-	 * \return Average bitrate in Kbps or -1 if not available.
+	 * \return Average bitrate in kbps or -1 if not available.
 	 */
 	int (*get_avg_bitrate)(void *data);
 };
