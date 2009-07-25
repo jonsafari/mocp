@@ -2750,9 +2750,9 @@ static void info_win_draw_bitrate (const struct info_win *w)
 		wattrset (w->win, get_color(CLR_SOUND_PARAMS));
 		wmove (w->win, 2, 29);
 		if (w->bitrate != -1)
-		xwprintw (w->win, "%4d", w->bitrate);
+			xwprintw (w->win, "%4d", w->bitrate < 9999 ? w->bitrate : 9999);
 		else
-		xwaddstr (w->win, "	");
+			xwaddstr (w->win, "	");
 	}
 	info_win_update_curs (w);
 }
