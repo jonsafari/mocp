@@ -296,6 +296,9 @@ static int vorbis_seek (void *prv_data, int sec)
 {
 	struct vorbis_data *data = (struct vorbis_data *)prv_data;
 
+	if (sec < 0)
+		sec = 0;
+
 	return ov_time_seek (&data->vf, sec) ? -1 : sec;
 }
 
