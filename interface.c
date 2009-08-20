@@ -645,7 +645,7 @@ static void ev_file_tags (const struct tag_ev_response *data)
 			}
 		}
 		else
-			debug ("Not time information");
+			debug ("No time information");
 
 		if (data->tags->title) {
 			if (curr_file.title)
