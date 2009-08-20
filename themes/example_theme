@@ -34,8 +34,8 @@
 #                      selected using arrows
 # info               - information shown at the right side of files
 # selected_info      - see selected directory
-# marked_info        - a file (its time) that is currently beeing played
-# marked_selected_info - a file (its time) that is currently beeing played
+# marked_info        - a file (its time) that is currently being played
+# marked_selected_info - a file (its time) that is currently being played
 #                      and is also selected using arrows
 # status             - the status line with a message
 # title              - the title of the file that is currently being played
