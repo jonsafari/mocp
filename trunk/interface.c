@@ -1065,8 +1065,24 @@ static void fill_tags (struct plist *plist, const int tags_sel,
 
 	/* Process events until we have all tags. */
 	while (files && !user_wants_interrupt()) {
-		int type = get_int_from_srv ();
-		void *data = get_event_data (type);
+		int type;
+		void *data;
+
+		/* Event queue is not initialized if there is
+		 * no interface */
+		if (!no_iface && !event_queue_empty (&events)) {
+			struct event e = *event_get_first (&events);
+			
+			type = e.type;
+			data = e.data;
+
+			event_pop (&events);
+
+		}
+		else {
+			type = get_int_from_srv ();
+			data = get_event_data (type);
+		}
 		
 		if (type == EV_FILE_TAGS) {
 			struct tag_ev_response *ev
