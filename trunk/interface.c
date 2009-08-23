@@ -1013,7 +1013,6 @@ static void server_event (const int event, void *data)
 		case EV_PLIST_ADD:
 			if (options_get_int("SyncPlaylist"))
 				event_plist_add ((struct plist_item *)data);
-			plist_free_item_fields (data);
 			break;
 		case EV_PLIST_CLEAR:
 			if (options_get_int("SyncPlaylist"))
@@ -2552,7 +2551,7 @@ static void cmd_next ()
 		send_int_to_srv (CMD_PLAY);
 		send_str_to_srv ("");
 	}
-};
+}
 
 /* Add themes found in the directory to the theme selection menu.
  * Return the number of items added. */
