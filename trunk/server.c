@@ -534,15 +534,18 @@ static void add_event_all (const int event, const void *data)
 			void *data_copy = NULL;
 
 			if (data) {
-				if (event == EV_PLIST_ADD) {
+				if (event == EV_PLIST_ADD
+						|| event == EV_QUEUE_ADD) {
 					data_copy = plist_new_item ();
 					plist_item_copy (data_copy, data);
 				}
 				else if (event == EV_PLIST_DEL
+						|| event == EV_QUEUE_DEL
 						|| event == EV_STATUS_MSG) {
 					data_copy = xstrdup (data);
 				}
-				else if (event == EV_PLIST_MOVE)
+				else if (event == EV_PLIST_MOVE
+						|| event == EV_QUEUE_MOVE)
 					data_copy = move_ev_data_dup (
 							(struct move_ev_data *)
 							data);
@@ -628,6 +631,41 @@ static int req_list_add (struct client *cli)
 	logit ("Adding '%s' to the list", file);
 	
 	audio_plist_add (file);
+	free (file);
+
+	return 1;
+}
+
+/* Handle CMD_QUEUE_ADD, return 1 if ok or 0 on error. */
+static int req_queue_add (const struct client *cli)
+{
+	char *file;
+	struct plist_item *item;
+
+	file = get_str (cli->socket);
+	if (!file)
+		return 0;
+
+	logit ("Adding '%s' to the queue", file);
+
+	audio_queue_add (file);
+
+	/* Wrap the filename in struct plist_item.
+	 * We don't need tags, because the player gets them
+	 * when playing the file. This may change if there is
+	 * support for viewing/reordering the queue and here
+	 * is the place to read the tags and fill them into
+	 * the item. */
+
+	item = plist_new_item ();
+	item->file = xstrdup (file);
+	item->type = file_type (file);
+	item->mtime = get_mtime (file);
+
+	add_event_all (EV_QUEUE_ADD, item);
+
+	plist_free_item_fields (item);
+	free (item);
 	free (file);
 
 	return 1;
@@ -783,6 +821,22 @@ static int delete_item (struct client *cli)
 	return 1;
 }
 
+static int req_queue_del (const struct client *cli)
+{
+	char *file;
+
+	if (!(file = get_str(cli->socket)))
+		return 0;
+
+	debug ("Deleting '%s' from queue", file);
+
+	audio_queue_delete (file);
+	add_event_all (EV_QUEUE_DEL, file);
+	free (file);
+
+	return 1;
+}
+
 /* Return the index of the first client able to send the playlist or -1 if
  * there isn't any. */
 static int find_sending_plist ()
@@ -909,6 +963,50 @@ static int req_send_plist (struct client *cli)
 		clients[requesting].requests_plist = 0;
 	
 	return item ? 1 : 0;
+}
+
+/* Client requested to send queue so we get it from audio.c and
+ * send it to the client */
+static int req_send_queue (struct client *cli)
+{
+	int i;
+	struct plist *queue;
+
+	logit ("Client with fd %d wants queue ... sending it", cli->socket);
+
+	if (!send_int(cli->socket, EV_DATA)) {
+		logit ("Error while sending response, disconnecting"
+				" the client.");
+		close (cli->socket);
+		del_client (cli);
+		return 0;
+	}
+
+	queue = audio_queue_get_contents ();
+
+	for (i = 0; i < queue->num; i++)
+		if (!plist_deleted(queue, i)) {
+			if(!send_item(cli->socket, &queue->items[i])){
+				logit ("Error sending queue, disconnecting"
+						" the client.");
+				close (cli->socket);
+				del_client (cli);
+				return 0;
+			}
+		}
+
+	plist_free (queue);
+
+	if (!send_item (cli->socket, NULL)) {
+		logit ("Error while sending end of playlist mark, disconnecting"
+				" the client.");
+		close (cli->socket);
+		del_client (cli);
+		return 0;
+	}
+
+	logit ("Queue sent");
+	return 1;
 }
 
 /* Handle command that synchinize playlists between interfaces (except
@@ -1200,6 +1298,34 @@ static int req_list_move (struct client *cli)
 	return 1;
 }
 
+/* Handle CMD_QUEUE_MOVE. Return 0 on error. */
+static int req_queue_move (const struct client *cli)
+{
+	/*char *from;
+	char *to;
+	*/
+	struct move_ev_data m;
+
+	if (!(m.from = get_str(cli->socket)))
+		return 0;
+	if (!(m.to = get_str(cli->socket))) {
+		free (m.from);
+		return 0;
+	}
+
+	audio_queue_move (m.from, m.to);
+
+	logit ("Swapping %s with %s in the queue", m.from, m.to);
+
+	/* Broadcast the event to clients */
+	add_event_all (EV_QUEUE_MOVE, &m);
+
+	free (m.from);
+	free (m.to);
+
+	return 1;
+}
+
 /* Reveive a command from the client and execute it. */
 static void handle_command (const int client_id)
 {
@@ -1398,6 +1524,27 @@ static void handle_command (const int client_id)
                 case CMD_TOGGLE_MAKE_MONO:
                         req_toggle_make_mono();
                         break;
+		case CMD_QUEUE_ADD:
+			if (!req_queue_add(cli))
+				err = 1;
+			break;
+		case CMD_QUEUE_DEL:
+			if (!req_queue_del(cli))
+				err = 1;
+			break;
+		case CMD_QUEUE_CLEAR:
+			logit ("Clearing the queue");
+			audio_queue_clear ();
+			add_event_all (EV_QUEUE_CLEAR, NULL);
+			break;
+		case CMD_QUEUE_MOVE:
+			if (!req_queue_move(cli))
+				err = 1;
+			break;
+		case CMD_GET_QUEUE:
+			if (!req_send_queue(cli))
+				err = 1;
+			break;
 		default:
 			logit ("Bad command (0x%x) from the client.", cmd);
 			err = 1;
@@ -1606,4 +1753,15 @@ void tags_response (const int client_id, const char *file,
 		add_event (&clients[client_id], EV_FILE_TAGS, data);
 		wake_up_server ();
 	}
+}
+
+/* Announce to clients that first file from the queue is being played
+ * and therefore needs to be removed from it */
+/* XXX: this function is called from player thread and add_event_all
+ *      imho doesn't properly lock all shared variables -- possible
+ *      race condition??? */
+void server_queue_pop (const char *filename)
+{
+	debug ("Queue pop -- broadcasting EV_QUEUE_DEL");
+	add_event_all (EV_QUEUE_DEL, filename);
 }

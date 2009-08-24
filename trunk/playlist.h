@@ -42,6 +42,7 @@ struct plist_item
 	struct file_tags *tags;
 	short deleted;
 	time_t mtime;		/* modification time */
+	int queue_pos;		/* position in the queue */
 };
 
 struct plist
@@ -107,5 +108,6 @@ void plist_set_tags (struct plist *plist, const int num,
 struct file_tags *plist_get_tags (const struct plist *plist, const int num);
 void plist_swap_files (struct plist *plist, const char *file1,
 		const char *file2);
+int plist_get_position (const struct plist *plist, int num);
 
 #endif

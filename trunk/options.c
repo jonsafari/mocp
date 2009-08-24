@@ -313,6 +313,8 @@ void options_init ()
         
         option_add_int ("Equalizer_SaveState", 1);
 
+	option_add_int ("QueueNextSongReturn", 0);
+
 }
 
 /* Return 1 if a parameter to an integer option is valid. */

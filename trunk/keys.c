@@ -807,7 +807,23 @@ static struct command commands[] = {
  		CON_MENU,
  		{ 'P', -1 },
  		1
-  	}
+  	},
+	{
+		KEY_CMD_QUEUE_TOGGLE_FILE,
+		"enqueue_file",
+		"Add (or remove) a file to (from) queue",
+		CON_MENU,
+		{ 'z', -1 },
+		1
+	},
+	{
+		KEY_CMD_QUEUE_CLEAR,
+		"clear_queue",
+		"Clear the queue",
+		CON_MENU,
+		{ 'Z', -1 },
+		1
+	}
 };
 
 static struct special_keys

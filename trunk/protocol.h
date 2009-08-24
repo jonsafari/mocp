@@ -65,6 +65,13 @@ enum noblock_io_status
 #define EV_PLIST_MOVE	0x52 /* move an item, followed by 2 file names */
 #define EV_PLIST_CLEAR	0x53 /* clear the playlist */
 
+/* These events, though similar to the four previous are caused by server
+ * which takes care of clients' queue synchronization. */
+#define EV_QUEUE_ADD	0x54
+#define EV_QUEUE_DEL	0x55
+#define EV_QUEUE_MOVE	0x56
+#define EV_QUEUE_CLEAR	0x57
+
 /* State of the server. */
 #define STATE_PLAY	0x01
 #define STATE_STOP	0x02
@@ -129,6 +136,11 @@ enum noblock_io_status
 
 #define CMD_TOGGLE_MAKE_MONO    0x39    /* toggle mono mixing */
 #define CMD_JUMP_TO	0x3a /* jumps to a some position in the current stream */
+#define CMD_QUEUE_ADD	0x3b /* add an item to the queue */
+#define CMD_QUEUE_DEL	0x3c /* delete an item from the queue */
+#define CMD_QUEUE_MOVE	0x3d /* move an item in the queue */
+#define CMD_QUEUE_CLEAR	0x3e /* clear the queue */
+#define CMD_GET_QUEUE	0x3f /* request the queue from the server */
 
 char *socket_name ();
 int get_int (int sock, int *i);

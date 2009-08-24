@@ -585,15 +585,16 @@ struct move_ev_data *move_ev_data_dup (const struct move_ev_data *m)
 /* Free data associated with the event if any. */
 void free_event_data (const int type, void *data)
 {
-	if (type == EV_PLIST_ADD) {
+	if (type == EV_PLIST_ADD || type == EV_QUEUE_ADD) {
 		plist_free_item_fields ((struct plist_item *)data);
 		free (data);
 	}
 	else if (type == EV_FILE_TAGS)
 		free_tag_ev_data ((struct tag_ev_response *)data);
-	else if (type == EV_PLIST_DEL || type == EV_STATUS_MSG)
+	else if (type == EV_PLIST_DEL || type == EV_STATUS_MSG
+			|| type == EV_QUEUE_DEL)
 		free (data);
-	else if (type == EV_PLIST_MOVE)
+	else if (type == EV_PLIST_MOVE || type == EV_QUEUE_MOVE)
 		free_move_ev_data ((struct move_ev_data *)data);
 	else if (data)
 		abort (); /* BUG */
@@ -658,11 +659,13 @@ static struct packet_buf *make_event_packet (const struct event *e)
 
 	packet_buf_add_int (b, e->type);
 
-	if (e->type == EV_PLIST_DEL || e->type == EV_STATUS_MSG) {
+	if (e->type == EV_PLIST_DEL
+			|| e->type == EV_QUEUE_DEL
+			|| e->type == EV_STATUS_MSG) {
 		assert (e->data != NULL);
 		packet_buf_add_str (b, e->data);
 	}
-	else if (e->type == EV_PLIST_ADD) {
+	else if (e->type == EV_PLIST_ADD || e->type == EV_QUEUE_ADD) {
 		assert (e->data != NULL);
 		packet_buf_add_item (b, e->data);
 	}
@@ -675,7 +678,7 @@ static struct packet_buf *make_event_packet (const struct event *e)
 		packet_buf_add_str (b, r->file);
 		packet_buf_add_tags (b, r->tags);
 	}
-	else if (e->type == EV_PLIST_MOVE) {
+	else if (e->type == EV_PLIST_MOVE || e->type == EV_QUEUE_MOVE) {
 		struct move_ev_data *m;
 		
 		assert (e->data != NULL);

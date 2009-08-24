@@ -417,3 +417,11 @@ CanStartInPlaylist	= yes
 # to stopped (when user stopped playing or changes a song).
 #
 #OnStop = "/home/jack/.moc/myscript_on_stop"
+
+# This options determines what song to play after finishing all the songs in
+# queue. Setting this to 1 causes MOC to play the song which follows the song
+# played before playing the queue. If set to 0, MOC will play the song after the
+# last song in the queue if it was in the playlist. If it wasn't, MOC will
+# choose the song as if this option was set to 1. Other players usually behave
+# like this, so it's the default.
+#QueueNextSongReturn = 0

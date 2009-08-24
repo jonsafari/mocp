@@ -62,7 +62,13 @@ static int play_thread_running = 0;
 
 /* currentlu played file */
 static int curr_playing = -1;
+/* file we played before playing songs from queue */
+static char *before_queue_fname = NULL;
 static char *curr_playing_fname = NULL;
+/* This flag is set 1 if audio_play() was called with nonempty queue,
+ * so we know that when the queue is empty, we should play the regular
+ * playlist from the beginning */
+static int started_playing_in_queue = 0;
 static pthread_mutex_t curr_playing_mut = PTHREAD_MUTEX_INITIALIZER;
 
 static struct out_buf out_buf;
@@ -82,6 +88,7 @@ static pthread_mutex_t request_mut = PTHREAD_MUTEX_INITIALIZER;
 /* Playlists. */
 static struct plist playlist;
 static struct plist shuffled_plist;
+static struct plist queue;
 static struct plist *curr_plist; /* currently used playlist */
 static pthread_mutex_t plist_mut = PTHREAD_MUTEX_INITIALIZER;
 
@@ -278,108 +285,128 @@ int sfmt_Bps (const long format)
 	return Bps;
 }
 
-/* Move to the next file depending on set options and the user request. */
+/* Move to the next file depending on set options, the user request and
+ * whether there are files in queue or not. */
 static void go_to_another_file ()
 {
-	int shuffle = options_get_int("Shuffle");
-	
+	int shuffle = options_get_int ("Shuffle");
+	int go_next = (play_next || options_get_int("AutoNext"));
+	int curr_playing_curr_pos;
+	/* shouldn't play_next be protected by mutex? */
+
 	LOCK (curr_playing_mut);
 	LOCK (plist_mut);
-	
-	if (shuffle && plist_count(&playlist)
-			&& !plist_count(&shuffled_plist)) {
-		plist_cat (&shuffled_plist, &playlist);
-		plist_shuffle (&shuffled_plist);
-		if (curr_playing != -1)
-			plist_swap_first_fname (&shuffled_plist,
-					plist_get_file(curr_plist,
-						curr_playing));
-	}
 
-	/* If Shuffle was switched while playing, we must correct curr_playing
-	 * by searching for the current item on the list where we are
-	 * switching. */
-	if (shuffle && curr_plist != &shuffled_plist) {
-		char *file = plist_get_file (&playlist, curr_playing);
+	/* If we move forward in the playlist and there are some songs in
+	 * the queue, play them */
+	if (plist_count(&queue) && go_next) {
+		logit ("Playing file from queue");
 
-		if (file) {
-			curr_playing = plist_find_del_fname (&shuffled_plist,
-					file);
-			free (file);
+		if (!before_queue_fname && curr_playing_fname) {
+			before_queue_fname = xstrdup (curr_playing_fname);
 		}
-	}
-	else if (!shuffle && curr_plist != &playlist) {
-		char *file = plist_get_file (&shuffled_plist, curr_playing);
 
-		if (file) {
-			curr_playing = plist_find_del_fname (&playlist,
-					file);
-			free (file);
+		curr_plist = &queue;
+		curr_playing = plist_next (&queue, -1);
+
+		server_queue_pop (queue.items[curr_playing].file);
+		plist_delete (&queue, curr_playing);
+	}
+	else {
+		/* If we just finished playing files from the queue and the
+		 * appropriate option is set, continue with the file played
+		 * before playing queue.
+		 * */
+		if (before_queue_fname && options_get_int("QueueNextSongReturn")) {
+			free (curr_playing_fname);
+			curr_playing_fname = before_queue_fname;
+			before_queue_fname = NULL;
 		}
-	}
-	
-	if (shuffle)
-		curr_plist = &shuffled_plist;
-	else
-		curr_plist = &playlist;
 
-	/* If curr_playing == -1 now, the playlist is empty.
-	 * 
-	 * Order of files on the playlist could have been changed, so we can't
-	 * just use plist_prev()/plist_next(), we must first find the current
-	 * position of the last played file. */
-	
-	if (play_prev == 1 && curr_playing != -1) { 
-		int curr_playing_current_pos;
+		if (shuffle) {
+			curr_plist = &shuffled_plist;
 
-		logit ("Playing previous...");
-		
-		curr_playing_current_pos = plist_find_fname (curr_plist,
-				curr_playing_fname);
-
-		if (curr_playing_current_pos != -1)
-			curr_playing = plist_prev (curr_plist,
-					curr_playing_current_pos);
-		else
-			curr_playing = plist_prev (curr_plist, curr_playing);
-		if (curr_playing == -1) {
-			if (options_get_int("Repeat"))
-				curr_playing = plist_last (curr_plist);
-			logit ("Beginning of the list.");
-		}
-		else 
-			logit ("Previous item.");
-	}
-	else if (curr_playing != -1
-			&& (options_get_int("AutoNext") || play_next)) {
-		int curr_playing_current_pos;
-
-		curr_playing_current_pos = plist_find_fname (curr_plist,
-				curr_playing_fname);
-
-		if (curr_playing_current_pos != -1)
-			curr_playing = plist_next (curr_plist,
-					curr_playing_current_pos);
-		else
-			curr_playing = plist_next (curr_plist, curr_playing);
-		if (curr_playing == -1 && options_get_int("Repeat")) {
-			if (shuffle) {
-				plist_clear (&shuffled_plist);
+			if (plist_count(&playlist)
+					&& !plist_count(&shuffled_plist)) {
 				plist_cat (&shuffled_plist, &playlist);
 				plist_shuffle (&shuffled_plist);
+
+				if (curr_playing_fname)
+					plist_swap_first_fname (&shuffled_plist,
+							curr_playing_fname);
 			}
-			curr_playing = plist_next (curr_plist, -1);
-			logit ("Going back to the first item.");
 		}
-		else if (curr_playing == -1)
-			logit ("End of the list.");
 		else
-			logit ("Next item.");
+			curr_plist = &playlist;
+
+		curr_playing_curr_pos = plist_find_fname (curr_plist,
+				curr_playing_fname);
+
+		/* If we came from the queue and the last file in
+		 * queue wasn't in the playlist, we try to revert to
+		 * the QueueNextSongReturn = 1 behaviour. */
+		if (curr_playing_curr_pos == -1 && before_queue_fname) {
+			curr_playing_curr_pos = plist_find_fname (curr_plist,
+					before_queue_fname);
+		}
+
+		if (play_prev && plist_count(curr_plist)) {
+			logit ("Playing previous...");
+
+			if (curr_playing_curr_pos == -1
+					|| started_playing_in_queue) {
+				curr_playing = plist_prev (curr_plist, -1);
+				started_playing_in_queue = 0;
+			}
+			else
+				curr_playing = plist_prev (curr_plist,
+						curr_playing_curr_pos);
+
+			if (curr_playing == -1) {
+				if (options_get_int("Repeat"))
+					curr_playing = plist_last (curr_plist);
+				logit ("Beginning of the list.");
+			}
+			else
+				logit ("Previous item.");
+		}
+		else if (go_next && plist_count(curr_plist)) {
+			logit ("Playing next...");
+
+			if (curr_playing_curr_pos == -1
+					|| started_playing_in_queue) {
+				curr_playing = plist_next (curr_plist, -1);
+				started_playing_in_queue = 0;
+			}
+			else
+				curr_playing = plist_next (curr_plist,
+						curr_playing_curr_pos);
+
+			if (curr_playing == -1 && options_get_int("Repeat")) {
+				if (shuffle) {
+					plist_clear (&shuffled_plist);
+					plist_cat (&shuffled_plist, &playlist);
+					plist_shuffle (&shuffled_plist);
+				}
+				curr_playing = plist_next (curr_plist, -1);
+				logit ("Going back to the first item.");
+			}
+			else if (curr_playing == -1)
+				logit ("End of the list");
+			else
+				logit ("Next item");
+
+		}
+		else if (!options_get_int("Repeat")) {
+			curr_playing = -1;
+		}
+		else
+			debug ("Repeating file");
+
+		if (before_queue_fname)
+			free (before_queue_fname);
+		before_queue_fname = NULL;
 	}
-	else if (!options_get_int("Repeat"))
-		curr_playing = -1;
-	else
-		debug ("Repeating file");
 
 	UNLOCK (plist_mut);
 	UNLOCK (curr_playing_mut);
@@ -507,7 +534,21 @@ void audio_play (const char *fname)
 	
 	LOCK (curr_playing_mut);
 	LOCK (plist_mut);
-	if (options_get_int("Shuffle")) {
+
+	/* If we have songs in the queue and fname is empty string, start
+	 * playing file from the queue */
+	if (plist_count(&queue) && !(*fname)) {
+		curr_plist = &queue;
+		curr_playing = plist_next (&queue, -1);
+
+		/* remove the file from queue */
+		server_queue_pop (queue.items[curr_playing].file);
+		plist_delete (curr_plist, curr_playing);
+
+		started_playing_in_queue = 1;
+
+	}
+	else if (options_get_int("Shuffle")) {
 		plist_clear (&shuffled_plist);
 		plist_cat (&shuffled_plist, &playlist);
 		plist_shuffle (&shuffled_plist);
@@ -918,6 +959,7 @@ void audio_initialize ()
 
         plist_init (&playlist);
 	plist_init (&shuffled_plist);
+	plist_init (&queue);
 	player_init ();
 }
 
@@ -929,6 +971,7 @@ void audio_exit ()
 	out_buf_destroy (&out_buf);
 	plist_free (&playlist);
 	plist_free (&shuffled_plist);
+	plist_free (&queue);
 	player_cleanup ();
 	if (pthread_mutex_destroy(&curr_playing_mut))
 		logit ("Can't destroy curr_playing_mut: %s", strerror(errno));
@@ -988,11 +1031,29 @@ void audio_plist_add (const char *file)
 	UNLOCK (plist_mut);
 }
 
+void audio_queue_add (const char *file)
+{
+	LOCK (plist_mut);
+	if (plist_find_fname(&queue, file) == -1)
+		plist_add (&queue, file);
+	else
+		logit ("Wanted to add a file that is already present in the "
+				"queue: %s", file);
+	UNLOCK (plist_mut);
+}
+
 void audio_plist_clear ()
 {
 	LOCK (plist_mut);
 	plist_clear (&shuffled_plist);
 	plist_clear (&playlist);
+	UNLOCK (plist_mut);
+}
+
+void audio_queue_clear ()
+{
+	LOCK (plist_mut);
+	plist_clear (&queue);
 	UNLOCK (plist_mut);
 }
 
@@ -1041,6 +1102,17 @@ void audio_plist_delete (const char *file)
 	num = plist_find_fname (&shuffled_plist, file);
 	if (num != -1)
 		plist_delete (&shuffled_plist, num);
+	UNLOCK (plist_mut);
+}
+
+void audio_queue_delete (const char *file)
+{
+	int num;
+
+	LOCK (plist_mut);
+	num = plist_find_fname (&queue, file);
+	if (num != -1)
+		plist_delete (&queue, num);
 	UNLOCK (plist_mut);
 }
 
@@ -1115,6 +1187,28 @@ void audio_plist_move (const char *file1, const char *file2)
 	LOCK (plist_mut);
 	plist_swap_files (&playlist, file1, file2);
 	UNLOCK (plist_mut);
+}
+
+void audio_queue_move (const char *file1, const char *file2)
+{
+	LOCK (plist_mut);
+	plist_swap_files (&queue, file1, file2);
+	UNLOCK (plist_mut);
+}
+
+/* Return copy of the song queue. We cannot just return constant
+ * pointer, because it will be used in different thread.
+ * It obviously needs to be freed after use. */
+struct plist* audio_queue_get_contents ()
+{
+	struct plist *ret = (struct plist *)xmalloc (sizeof(struct plist));
+	plist_init (ret);
+
+	LOCK (plist_mut);
+	plist_cat (ret, &queue);
+	UNLOCK (plist_mut);
+
+	return ret;
 }
 
 struct file_tags *audio_get_curr_tags ()

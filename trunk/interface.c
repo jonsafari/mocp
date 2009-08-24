@@ -60,10 +60,13 @@
 
 #define INTERFACE_LOG	"mocp_client_log"
 
+#define QUEUE_CLEAR_THRESH 128
+
 /* Socket of the server connection. */
 static int srv_sock = -1;
 
 static struct plist *playlist = NULL; /* our playlist */
+static struct plist *queue = NULL; /* our queue */
 static struct plist *dir_plist = NULL; /* content of the current directory */
 
 /* Queue for events comming from the server. */
@@ -242,13 +245,16 @@ static void *get_event_data (const int type)
 {
 	switch (type) {
 		case EV_PLIST_ADD:
+		case EV_QUEUE_ADD:
 			return recv_item_from_srv ();
 		case EV_PLIST_DEL:
+		case EV_QUEUE_DEL:
 		case EV_STATUS_MSG:
 			return get_str_from_srv ();
 		case EV_FILE_TAGS:
 			return recv_tags_data_from_srv ();
 		case EV_PLIST_MOVE:
+		case EV_QUEUE_MOVE:
 			return recv_move_ev_data_from_srv ();
 	}
 
@@ -325,6 +331,8 @@ static void init_playlists ()
 	plist_init (dir_plist);
 	playlist = (struct plist *)xmalloc (sizeof(struct plist));
 	plist_init (playlist);
+	queue = (struct plist *)xmalloc (sizeof(struct plist));
+	plist_init (queue);
 
 	/* set serial numbers for the playlist */
 	send_int_to_srv (CMD_GET_SERIAL);
@@ -811,6 +819,7 @@ static void event_plist_add (const struct plist_item *item)
 	if (plist_find_fname(playlist, item->file) == -1) {
 		int item_num = plist_add_from_item (playlist, item);
 		int needed_tags = 0;
+		int i;
 
 		if (options_get_int("ReadTags")
 				&& (!item->tags || !item->tags->title))
@@ -839,6 +848,17 @@ static void event_plist_add (const struct plist_item *item)
 				playlist->items[item_num].title_file;
 		}
 
+		/* Just calling iface_update_queue_positions (queue, playlist,
+		 * NULL, NULL) is too slow in cases when we receive a large
+		 * number of items from server (eg. loading playlist w/
+		 * SyncPlaylist on). Since we know the filename in question,
+		 * we try to find it in queue and eventually update the value
+		 */
+		if ((i = plist_find_fname(queue, item->file)) != -1) {
+			playlist->items[item_num].queue_pos
+				= plist_get_position (queue, i);
+		}
+
 		iface_add_to_plist (playlist, item_num);
 		
 		if (waiting_for_plist_load) {
@@ -847,6 +867,19 @@ static void event_plist_add (const struct plist_item *item)
 			waiting_for_plist_load = 0;
 		}
 	}
+}
+
+/* Handle EV_QUEUE_ADD. */
+static void event_queue_add (const struct plist_item *item)
+{
+	if (plist_find_fname(queue, item->file) == -1) {
+		plist_add_from_item (queue, item);
+		iface_set_files_in_queue (plist_count(queue));
+		iface_update_queue_position_last (queue, playlist, dir_plist);
+		logit ("Adding %s to queue", item->file);
+	}
+	else
+		logit ("Adding file already present in queue");
 }
 
 /* Get error message from the server and show it. */
@@ -912,6 +945,27 @@ static int recv_server_plist (struct plist *plist)
 	return 1;
 }
 
+static void recv_server_queue (struct plist *queue)
+{
+	int end_of_list = 0;
+	struct plist_item *item;
+
+	logit ("Asking server for the queue.");
+	send_int_to_srv (CMD_GET_QUEUE);
+	logit ("Waiting for response");
+	wait_for_data (); /* There must always be (possibly empty) queue. */
+
+	do {
+		item = recv_item_from_srv ();
+		if (item->file[0])
+			plist_add_from_item (queue, item);
+		else
+			end_of_list = 1;
+		plist_free_item_fields (item);
+		free (item);
+	} while (!end_of_list);
+}
+
 /* Clear the playlist locally */
 static void clear_playlist ()
 {
@@ -923,6 +977,16 @@ static void clear_playlist ()
 	if (!waiting_for_plist_load)
 		interface_message ("The playlist was cleared.");
 	iface_set_status ("");
+}
+
+static void clear_queue ()
+{
+	iface_clear_queue_positions (queue, playlist, dir_plist);
+
+	plist_clear (queue);
+	iface_set_files_in_queue (0);
+
+	interface_message ("The queue was cleared.");
 }
 
 /* Handle EV_PLIST_DEL. */
@@ -953,6 +1017,30 @@ static void event_plist_del (char *file)
 				" playlist.");
 }
 
+/* Handle EV_QUEUE_DEL. */
+static void event_queue_del (char *file)
+{
+	int item = plist_find_fname (queue, file);
+
+	if (item != -1) {
+		plist_delete (queue, item);
+
+		/* Free the deleted items occasionally.
+		 * QUEUE_CLEAR_THRESH is chosen to be two times
+		 * the initial size of the playlist */
+		if (plist_count(queue) == 0
+				&& queue->num >= QUEUE_CLEAR_THRESH)
+			plist_clear (queue);
+
+		iface_set_files_in_queue (plist_count(queue));
+		iface_update_queue_positions (queue, playlist, dir_plist, file);
+		logit ("Deleting %s from queue", file);
+	}
+	else
+		logit ("Deleting an item not present in the queue");
+
+}
+
 /* Swap 2 file on the playlist. */
 static void swap_playlist_items (const char *file1, const char *file2)
 {
@@ -971,6 +1059,17 @@ static void event_plist_move (const struct move_ev_data *d)
 	assert (d->to != NULL);
 
 	swap_playlist_items (d->from, d->to);
+}
+
+/* Handle EV_QUEUE_MOVE. */
+/* Unused for now, might be useful later */
+static void event_queue_move (const struct move_ev_data *d)
+{
+	assert (d != NULL);
+	assert (d->from != NULL);
+	assert (d->to != NULL);
+
+	plist_swap_files (queue, d->from, d->to);
 }
 
 /* Handle server event. */
@@ -1040,6 +1139,18 @@ static void server_event (const int event, void *data)
 			break;
 		case EV_AVG_BITRATE:
 			curr_file.avg_bitrate = get_avg_bitrate ();
+			break;
+		case EV_QUEUE_ADD:
+			event_queue_add ((struct plist_item *)data);
+			break;
+		case EV_QUEUE_DEL:
+			event_queue_del ((char *)data);
+			break;
+		case EV_QUEUE_CLEAR:
+			clear_queue ();
+			break;
+		case EV_QUEUE_MOVE:
+			event_queue_move ((struct move_ev_data *)data);
 			break;
 		default:
 			interface_fatal ("Unknown event: 0x%02x", event);
@@ -1174,6 +1285,7 @@ static int go_to_dir (const char *dir, const int reload)
 		iface_set_curr_item_title (last_dir);
 	
 	iface_set_title (IFACE_MENU_DIR, cwd);
+	iface_update_queue_positions (queue, NULL, dir_plist, NULL);
 
 	if (iface_in_plist_menu())
 		iface_switch_to_dir ();
@@ -1247,8 +1359,11 @@ static int go_to_playlist (const char *file, const int load_serial)
 			 */
 			plist_clear (playlist);
 		}
-		else
+		else {
 			toggle_menu ();
+			/* Shouldn't we set menu content here? */
+			iface_update_queue_positions (queue, playlist, NULL, NULL);
+		}
 
 		interface_message ("Playlist loaded.");
 	}
@@ -1322,10 +1437,22 @@ static int use_server_playlist ()
 {
 	if (get_server_playlist(playlist)) {
 		iface_set_dir_content (IFACE_MENU_PLIST, playlist, NULL, NULL);
+		iface_update_queue_positions (queue, playlist, NULL, NULL);
 		return 1;
 	}
 
 	return 0;
+}
+
+static void use_server_queue ()
+{
+	iface_set_status ("Getting the queue...");
+	debug ("Getting the queue...");
+
+	recv_server_queue(queue);
+	iface_set_files_in_queue (plist_count(queue));
+	iface_update_queue_positions (queue, playlist, dir_plist, NULL);
+	iface_set_status ("");
 }
 
 /* Process file names passwd as arguments. */
@@ -1394,6 +1521,7 @@ static void process_args (char **args, const int num)
 		if (get_tags_setting())
 			ask_for_tags (playlist, get_tags_setting());
 		iface_set_dir_content (IFACE_MENU_PLIST, playlist, NULL, NULL);
+		iface_update_queue_positions (queue, playlist, NULL, NULL);
 		iface_switch_to_plist ();
 	}
 	else
@@ -1497,7 +1625,10 @@ void init_interface (const int sock, const int logging, char **args,
 			load_playlist ();
 		enter_first_dir ();
 	}
-	
+
+	/* Ask the server for queue. */
+	use_server_queue ();
+
 	if (options_get_int("SyncPlaylist"))
 		send_int_to_srv (CMD_CAN_SEND_PLIST);
 
@@ -1876,6 +2007,62 @@ static void add_file_plist ()
 	free (file);
 }
 
+static void queue_toggle_file ()
+{
+	char *file;
+
+	file = iface_get_curr_file ();
+
+	if (!file)
+		return;
+
+	if (iface_curritem_get_type() != F_SOUND) {
+		/* TODO: Why not url? */
+		error ("You can only add a file using this command.");
+		free (file);
+		return;
+	}
+
+	/* check if the file is already in the queue; if it isn't, add it,
+	 * othrewise, remove it */
+
+	send_int_to_srv (CMD_LOCK); /* TODO do we need this lock? */
+
+	if (plist_find_fname(queue, file) == -1) {
+
+		struct plist_item *item;
+		struct plist *iface_plist;
+		int i;
+
+		assert (iface_in_plist_menu() || iface_in_dir_menu());
+		iface_plist = (iface_in_plist_menu() ? playlist : dir_plist);
+
+		i = plist_find_fname (iface_plist, file);
+		assert (i != -1);
+
+		item = &iface_plist->items[i];
+
+		/* Add item to the server's queue */
+		send_int_to_srv (CMD_QUEUE_ADD);
+		send_str_to_srv (file);
+
+		logit ("Added to queue: %s", file);
+	}
+	else {
+		/* Delete this item from the server's queue */
+		send_int_to_srv (CMD_QUEUE_DEL);
+		send_str_to_srv (file);
+
+		logit ("Removed from queue: %s", file);
+	}
+
+	send_int_to_srv (CMD_UNLOCK);
+
+	iface_menu_key (KEY_CMD_MENU_DOWN);
+
+	free (file);
+}
+
 static void toggle_option (const char *name)
 {
 	send_int_to_srv (CMD_SET_OPTION);
@@ -1935,6 +2122,11 @@ static void cmd_clear_playlist ()
 	}
 	else
 		clear_playlist ();
+}
+
+static void cmd_clear_queue ()
+{
+	send_int_to_srv (CMD_QUEUE_CLEAR);
 }
 
 static void go_to_music_dir ()
@@ -3316,6 +3508,12 @@ static void menu_key (const struct iface_key *k)
 			case KEY_CMD_EXEC10:
 				exec_custom_command ("ExecCommand10");
 				break;
+			case KEY_CMD_QUEUE_TOGGLE_FILE:
+				queue_toggle_file ();
+				break;
+			case KEY_CMD_QUEUE_CLEAR:
+				cmd_clear_queue ();
+				break;
 			default:
 				abort ();
 		}
@@ -3451,8 +3649,10 @@ void interface_end ()
 
 	plist_free (dir_plist);
 	plist_free (playlist);
+	plist_free (queue);
 	free (dir_plist);
 	free (playlist);
+	free (queue);
 
 	event_queue_free (&events);
 	
@@ -3801,6 +4001,7 @@ void interface_cmdline_file_info (const int server_sock)
 
 	plist_free (dir_plist);
 	plist_free (playlist);
+	plist_free (queue);
 }
 
 void interface_cmdline_playit (int server_sock, char **args, const int arg_num)
@@ -4115,6 +4316,7 @@ void interface_cmdline_formatted_info (const int server_sock,
 
 	plist_free (dir_plist);
 	plist_free (playlist);
+	plist_free (queue);
 
 	printf("%s\n", str);
 	free(str);
