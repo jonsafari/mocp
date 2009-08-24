@@ -71,6 +71,7 @@ void iface_set_channels (const int channels);
 void iface_set_played_file (const char *file);
 void iface_set_played_file_title (const char *title);
 void iface_set_mixer_value (const int value);
+void iface_set_files_in_queue (const int num);
 void iface_tick ();
 void iface_switch_to_plist ();
 void iface_switch_to_dir ();
@@ -112,5 +113,12 @@ void iface_add_file (const char *file, const char *title,
 void iface_temporary_exit ();
 void iface_restore ();
 void iface_load_lyrics (const char *file);
+void iface_update_queue_positions (const struct plist *queue,
+		struct plist *playlist, struct plist *dir_list,
+		const char *deleted_file);
+void iface_clear_queue_positions (const struct plist *queue,
+		struct plist *playlist, struct plist *dir_list);
+void iface_update_queue_position_last (const struct plist *queue,
+		struct plist *playlist, struct plist *dir_list);
 
 #endif

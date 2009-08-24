@@ -48,6 +48,7 @@ struct menu_item
 	/* Additional information shown: */
 	char time[FILE_TIME_STR_SZ];		/* File time string */
 	char format[FILE_FORMAT_SZ];		/* File format */
+	int queue_pos;				/* Position in the queue */
 
 	struct menu_item *next;
 	struct menu_item *prev;
@@ -103,6 +104,7 @@ void menu_item_set_attr_marked (struct menu_item *mi, const int attr);
 
 void menu_item_set_time (struct menu_item *mi, const char *time);
 void menu_item_set_format (struct menu_item *mi, const char *format);
+void menu_item_set_queue_pos (struct menu_item *mi, const int pos);
 
 void menu_free (struct menu *menu);
 void menu_driver (struct menu *menu, const enum menu_request req);

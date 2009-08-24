@@ -251,5 +251,10 @@ struct file_tags *audio_get_curr_tags ();
 char *audio_get_mixer_channel_name ();
 void audio_toggle_mixer_channel ();
 void audio_plist_move (const char *file1, const char *file2);
+void audio_queue_add (const char *file);
+void audio_queue_delete (const char *file);
+void audio_queue_clear ();
+void audio_queue_move (const char *file1, const char *file2);
+struct plist* audio_queue_get_contents ();
 
 #endif

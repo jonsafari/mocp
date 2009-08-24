@@ -184,6 +184,7 @@ struct plist_item *plist_new_item ()
 	item->title_tags = NULL;
 	item->tags = NULL;
 	item->mtime = (time_t)-1;
+	item->queue_pos = 0;
 
 	return item;
 }
@@ -210,6 +211,7 @@ int plist_add (struct plist *plist, const char *file_name)
 	plist->items[plist->num].tags = NULL;
 	plist->items[plist->num].mtime = (file_name ? get_mtime(file_name)
 			: (time_t)-1);
+	plist->items[plist->num].queue_pos = 0;
 
 	if (file_name) {
 		rb_delete (&plist->search_tree, file_name);
@@ -232,6 +234,7 @@ void plist_item_copy (struct plist_item *dst, const struct plist_item *src)
 	dst->title_file = xstrdup (src->title_file);
 	dst->title_tags = xstrdup (src->title_tags);
 	dst->mtime = src->mtime;
+	dst->queue_pos = src->queue_pos;
 	
 	if (src->tags)
 		dst->tags = tags_dup (src->tags);
@@ -943,4 +946,19 @@ void plist_swap_files (struct plist *plist, const char *file1,
 		x1->data = x2->data;
 		x2->data = (void *)t;
 	}
+}
+
+/* Return position of file in the list, starting with 1. */
+int plist_get_position (const struct plist *plist, int num)
+{
+	int i, pos = 1;
+
+	assert (num >= 0 && num < plist->num);
+
+	for (i = 0; i < num; i++) {
+		if(!plist->items[i].deleted)
+			pos++;
+	}
+
+	return pos;
 }

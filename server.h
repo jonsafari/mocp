@@ -18,5 +18,6 @@ void ctime_change ();
 void status_msg (const char *msg);
 void tags_response (const int client_id, const char *file,
 		const struct file_tags *tags);
+void server_queue_pop (const char *filename);
 
 #endif

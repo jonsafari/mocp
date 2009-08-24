@@ -66,11 +66,13 @@ static char *strcasestr (const char *haystack, const char *needle)
 
 /* Draw menu item on a given position from the top of the menu. */
 static void draw_item (const struct menu *menu, const struct menu_item *mi,
-		const int pos, const int item_info_pos, const int title_space,
+		const int pos, const int item_info_pos, int title_space,
 		const int number_space, const int draw_selected)
 {
 	int title_width;
 	int j;
+	char buf[32];
+	int queue_pos_len = 0;
 
 	assert (menu != NULL);
 	assert (mi != NULL);
@@ -104,6 +106,13 @@ static void draw_item (const struct menu *menu, const struct menu_item *mi,
 	else
 		wattrset (menu->win, mi->attr_normal);
 
+	/* Compute the length of the queue position if nonzero */
+	if (mi->queue_pos) {
+		sprintf (buf, "%d", mi->queue_pos);
+		queue_pos_len = strlen(buf) + 2;
+		title_space -= queue_pos_len;
+	}
+
 	title_width = strwidth (mi->title);
 
 	if (title_width <= title_space || mi->align == MENU_ALIGN_LEFT)
@@ -125,7 +134,14 @@ static void draw_item (const struct menu *menu, const struct menu_item *mi,
 		wattrset (menu->win, menu->info_attr_marked);
 	else
 		wattrset (menu->win, menu->info_attr_normal);
-	wmove (menu->win, pos, item_info_pos);
+	wmove (menu->win, pos, item_info_pos - queue_pos_len);
+
+	/* Position in queue */
+	if (mi->queue_pos) {
+		xwaddstr (menu->win, "[");
+		xwaddstr (menu->win, buf);
+		xwaddstr (menu->win, "]");
+	}
 
 	if (menu->show_time && menu->show_format
 			&& (*mi->time || *mi->format))
@@ -171,7 +187,7 @@ void menu_draw (const struct menu *menu, const int active)
 	}
 	else {
 		title_width = menu->width;
-		info_pos = 0;
+		info_pos = title_width;
 	}
 
 	title_width -= number_space;
@@ -271,6 +287,7 @@ struct menu_item *menu_add (struct menu *menu, const char *title,
 	
 	mi->time[0] = 0;
 	mi->format[0] = 0;
+	mi->queue_pos = 0;
 	
 	mi->next = NULL;
 	mi->prev = menu->last;
@@ -626,6 +643,13 @@ void menu_item_set_format (struct menu_item *mi, const char *format)
 			sizeof(mi->format));
 	assert (mi->format[sizeof(mi->format)-1]
 			== 0);
+}
+
+void menu_item_set_queue_pos (struct menu_item *mi, const int pos)
+{
+	assert (mi != NULL);
+
+	mi->queue_pos = pos;
 }
 
 void menu_set_show_time (struct menu *menu, const int t)

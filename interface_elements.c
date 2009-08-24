@@ -206,6 +206,8 @@ static struct info_win
 	int bitrate;		/* in kbps */
 	int rate;		/* in kHz */
 
+	int files_in_queue;
+
 	/* time in seconds */
 	int curr_time;
 	int total_time;
@@ -972,6 +974,7 @@ static int add_to_menu (struct menu *menu, const struct plist *plist,
 	if (!(type_name = file_type_name(item->file)))
 		type_name = "";
 	menu_item_set_format (added, type_name);
+	menu_item_set_queue_pos (added, item->queue_pos);
 
 	if (full_paths && item->title == item->title_file)
 		menu_item_set_align (added, MENU_ALIGN_RIGHT);
@@ -1324,6 +1327,8 @@ static void update_menu_item (struct menu_item *mi,
 		menu_item_set_align (mi, MENU_ALIGN_RIGHT);
 	else
 		menu_item_set_align (mi, MENU_ALIGN_LEFT);
+
+	menu_item_set_queue_pos (mi, item->queue_pos);
 
 	free (title);
 
@@ -2514,6 +2519,8 @@ static void info_win_init (struct info_win *w)
 	w->bitrate = -1;
 	w->rate = -1;
 
+	w->files_in_queue = 0;
+
 	w->curr_time = -1;
 	w->total_time = -1;
 
@@ -2591,6 +2598,37 @@ static void info_win_set_status (struct info_win *w, const char *msg)
 
 	strcpy (w->status_msg, msg);
 	info_win_draw_status (w);
+}
+
+static void info_win_draw_files_in_queue (const struct info_win *w)
+{
+	const int hstart = 5 + sizeof(w->status_msg) + 2;
+
+	assert (w != NULL);
+
+	if(!w->in_entry && !w->too_small) {
+		if (w->files_in_queue) {
+			wattrset (w->win, get_color(CLR_STATUS));
+			mvwaddch (w->win, 0, hstart, lines.rtee);
+			xwprintw (w->win, "Q:%3d", w->files_in_queue);
+			waddch (w->win, lines.ltee);
+		}
+		else {
+			wattrset (w->win, get_color(CLR_FRAME));
+			mvwhline (w->win, 0, hstart, lines.horiz, 9);
+		}
+	}
+
+	info_win_update_curs (w);
+}
+
+static void info_win_set_files_in_queue (struct info_win *w, const int num)
+{
+	assert (w != NULL);
+	assert (num >= 0);
+
+	w->files_in_queue = num;
+	info_win_draw_files_in_queue (w);
 }
 
 static void info_win_draw_state (const struct info_win *w)
@@ -3017,6 +3055,7 @@ static void info_win_draw (const struct info_win *w)
 		info_win_draw_title (w);
 		info_win_draw_options_state (w);
 		info_win_draw_status (w);
+		info_win_draw_files_in_queue (w);
 		info_win_draw_files_time (w);
 		info_win_draw_bitrate (w);
 		info_win_draw_rate (w);
@@ -3289,6 +3328,17 @@ void iface_set_status (const char *msg)
 
 	if (iface_initialized) {
 		info_win_set_status (&info_win, msg);
+		iface_refresh_screen ();
+	}
+}
+
+/* Set the number of files in song queue in the info window */
+void iface_set_files_in_queue (const int num)
+{
+	assert (num >= 0);
+
+	if (iface_initialized) {
+		info_win_set_files_in_queue (&info_win, num);
 		iface_refresh_screen ();
 	}
 }
@@ -3870,3 +3920,87 @@ void iface_load_lyrics (const char *file)
 	main_win.lyrics_screen_top = 0;
 	main_win_draw(&main_win);
 }
+
+static void update_queue_position (struct plist *playlist,
+		struct plist *dir_list, const char *file, const int pos)
+{
+	int i;
+
+	assert (file != NULL);
+	assert (pos >= 0);
+
+	if (playlist && (i = plist_find_fname(playlist, file)) != -1) {
+		playlist->items[i].queue_pos = pos;
+		main_win_update_item (&main_win, IFACE_MENU_PLIST,
+				playlist, i);
+	}
+
+	if (dir_list && (i = plist_find_fname(dir_list, file)) != -1) {
+		dir_list->items[i].queue_pos = pos;
+		main_win_update_item (&main_win, IFACE_MENU_DIR,
+				dir_list, i);
+	}
+}
+
+/* Update queue positions in the playlist and directory menus. Only those items
+ * which are in the queue (and whose position has therefore changed are
+ * updated. One exception is the item which was deleted from the queue --
+ * this one can be passed as the deleted_file parameter */
+void iface_update_queue_positions (const struct plist *queue,
+		struct plist *playlist, struct plist *dir_list,
+		const char *deleted_file)
+{
+	int i;
+	int pos = 1;
+
+	assert (queue != NULL);
+
+	for (i = 0; i < queue->num; i++) {
+		if (!plist_deleted(queue,i)) {
+			update_queue_position (playlist, dir_list,
+					queue->items[i].file, pos);
+			pos++;
+		}
+	}
+
+	if (deleted_file)
+		update_queue_position (playlist, dir_list, deleted_file, 0);
+
+	iface_refresh_screen ();
+}
+
+/* Clear the queue -- zero the queue positions in playlist and directory
+ * menus. */
+void iface_clear_queue_positions (const struct plist *queue,
+		struct plist *playlist, struct plist *dir_list)
+{
+	int i;
+
+	assert (queue != NULL);
+	assert (playlist != NULL);
+	assert (dir_list != NULL);
+
+	for (i = 0; i < queue->num; i++) {
+		if (!plist_deleted(queue,i)) {
+			update_queue_position (playlist, dir_list,
+					queue->items[i].file, 0);
+		}
+	}
+
+	iface_refresh_screen ();
+}
+
+void iface_update_queue_position_last (const struct plist *queue,
+		struct plist *playlist, struct plist *dir_list)
+{
+	int i;
+	int pos;
+
+	assert (queue != NULL);
+
+	i = plist_last (queue);
+	pos = plist_get_position (queue, i);
+	update_queue_position (playlist, dir_list, queue->items[i].file, pos);
+	iface_refresh_screen ();
+}
+
