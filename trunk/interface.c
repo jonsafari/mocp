@@ -79,7 +79,7 @@ static char cwd[PATH_MAX] = "";
 static volatile enum want_quit {
 	NO_QUIT,	/* don't want to quit */
 	QUIT_CLIENT,	/* only quit the client */
-	QUIT_SERVER	/* quit the client and the srever */
+	QUIT_SERVER	/* quit the client and the server */
 } want_quit = NO_QUIT;
 
 /* If user presses CTRL-C, set this to 1. This should interrupt long operations
@@ -3548,7 +3548,7 @@ static void dequeue_events ()
 	debug ("done");
 }
 
-/* Actrion after CTRL-C was pressed. */
+/* Action after CTRL-C was pressed. */
 static void handle_interrupt ()
 {
 	if (iface_in_entry())

@@ -88,6 +88,7 @@ static int find_option (const char *name, enum option_type type)
 
 	return -1;
 }
+
 /* Return an index on a free slot in the options hashtable. If there is no such
  * slot return -1. */
 static int find_free (unsigned int h)
@@ -110,7 +111,6 @@ static int find_free (unsigned int h)
 
 /* Initializes a position on the options table. This is intended to be used at
  * initialization to make a table of valid options and its default values. */
-
 static unsigned int option_init(const char *name, enum option_type type)
 {
 	unsigned int h=hash(name);

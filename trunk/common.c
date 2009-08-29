@@ -25,7 +25,7 @@
 #include "common.h"
 #include "options.h"
 
-static int im_server = 0; /* Em I the server? */
+static int im_server = 0; /* Am I the server? */
 
 void error (const char *format, ...)
 {
