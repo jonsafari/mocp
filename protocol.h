@@ -39,10 +39,10 @@ enum noblock_io_status
 	NB_IO_ERR
 };
 
-/* Definition of events send by server to the client */
+/* Definition of events sent by server to the client. */
 #define EV_STATE	0x01 /* server has changed the state */
 #define EV_CTIME	0x02 /* current time of the song has changed */
-#define EV_SRV_ERROR	0x04 /* an error occured */
+#define EV_SRV_ERROR	0x04 /* an error occurred */
 #define EV_BUSY		0x05 /* another client is connected to the server */
 #define EV_DATA		0x06 /* data in response to a request will arrive */
 #define EV_BITRATE	0x07 /* the bitrate has changed */
@@ -51,15 +51,15 @@ enum noblock_io_status
 #define EV_EXIT		0x0a /* the server is about to exit */
 #define EV_PONG		0x0b /* response for CMD_PING */
 #define EV_OPTIONS	0x0c /* the options has changed */
-#define EV_SEND_PLIST	0x0d /* Request for sending the playlist. */
-#define EV_TAGS		0x0e /* tags for the current file has changed. */
-#define EV_STATUS_MSG	0x0f /* Followed by a status message */
+#define EV_SEND_PLIST	0x0d /* request for sending the playlist */
+#define EV_TAGS		0x0e /* tags for the current file have changed */
+#define EV_STATUS_MSG	0x0f /* followed by a status message */
 #define EV_MIXER_CHANGE	0x10 /* the mixer channel was changed */
 #define EV_FILE_TAGS	0x11 /* tags in a response for tags request */
 #define EV_AVG_BITRATE  0x12 /* average bitrate has changed (new song) */
 
 /* Events caused by a client that wants to modify the playlist (see
- * CMD_CLI_PLIST* commands. */
+ * CMD_CLI_PLIST* commands). */
 #define EV_PLIST_ADD	0x50 /* add an item, followed by the file name */
 #define EV_PLIST_DEL	0x51 /* delete an item, followed by the file name */
 #define EV_PLIST_MOVE	0x52 /* move an item, followed by 2 file names */
@@ -77,7 +77,7 @@ enum noblock_io_status
 #define STATE_STOP	0x02
 #define STATE_PAUSE	0x03
 
-/* Definition of server commands */
+/* Definition of server commands. */
 #define CMD_PLAY	0x00 /* play the first element on the list */
 #define CMD_LIST_CLEAR	0x01 /* clear the list */
 #define CMD_LIST_ADD	0x02 /* add an item to the list */
@@ -105,20 +105,20 @@ enum noblock_io_status
 #define CMD_PREV	0x20 /* start playing previous song if available */
 #define CMD_SEND_PLIST	0x21 /* send the playlist to the requesting client */
 #define CMD_GET_PLIST	0x22 /* get the playlist from one of the clients */
-#define CMD_CAN_SEND_PLIST	0x23 /* mark the client as able to to send
+#define CMD_CAN_SEND_PLIST	0x23 /* mark the client as able to send
 					playlist */
-#define CMD_CLI_PLIST_ADD	0x24 /* add an item to the clients playlist */
-#define CMD_CLI_PLIST_DEL	0x25 /* delete an item from the clients
+#define CMD_CLI_PLIST_ADD	0x24 /* add an item to the client's playlist */
+#define CMD_CLI_PLIST_DEL	0x25 /* delete an item from the client's
 					playlist */
-#define CMD_CLI_PLIST_CLEAR	0x26 /* clear the clients playlist */
+#define CMD_CLI_PLIST_CLEAR	0x26 /* clear the client's playlist */
 #define CMD_GET_SERIAL	0x27 /* get an unique serial number */
-#define CMD_PLIST_SET_SERIAL	0x28 /* assign a serial number to the server
+#define CMD_PLIST_SET_SERIAL	0x28 /* assign a serial number to the server's
 					playlist */
 #define CMD_LOCK	0x29 /* acquire a lock */
 #define CMD_UNLOCK	0x2a /* release the lock */
 #define CMD_PLIST_GET_SERIAL	0x2b /* get the serial number of the server's
 					playlist */
-#define CMD_GET_TAGS	0x2c /* get tags for the currently played file. */
+#define CMD_GET_TAGS	0x2c /* get tags for the currently played file */
 #define CMD_TOGGLE_MIXER_CHANNEL	0x2d /* toggle the mixer channel */
 #define CMD_GET_MIXER_CHANNEL_NAME	0x2e /* get the mixer channel's name */
 #define CMD_GET_FILE_TAGS	0x2f	/* get tags for the specified file */

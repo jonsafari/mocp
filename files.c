@@ -185,7 +185,7 @@ void switch_titles_tags (struct plist *plist)
 		}
 }
 
-/* Add file to the directory path in buf resolveing '../' and removing './'. */
+/* Add file to the directory path in buf resolving '../' and removing './'. */
 /* buf must be absolute path. */
 void resolve_path (char *buf, const int size, const char *file)
 {

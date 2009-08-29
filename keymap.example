@@ -7,7 +7,7 @@
 # Blank lines are ignored.
 # Every other line is expected to be in format:
 #
-# COMMAND = KEY [KEY ...]
+# COMMAND = [KEY ...]
 #
 # The key can be:
 #  - just a char, like i, L, ", *
@@ -33,6 +33,8 @@
 #    F1 - F12
 #
 # Maximum number of keys for one command is 5.
+#
+# Omitting the key for a command will disassociate the key from the command.
 #
 # Default key configuration for MOC (and a list of all available commands):
 

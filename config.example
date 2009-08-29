@@ -1,7 +1,7 @@
 # This is a configuration file for the MOC player. It should be named 'config'
 # and placed in the directory ~/.moc/
 # Comments begin with '#'.
-# You can use quotes and escape ('\') in parameters
+# You can use quotes and escape ('\') in parameters.
 
 
 # Show file titles (title, author, album) instead of file names.
@@ -16,7 +16,7 @@ ReadTags		= yes
 Sort			= FileName
 
 # Show errors in the streams, for example CRC errors or broken frames in mp3
-# files
+# files.
 ShowStreamErrors	= no
 
 # Ignore CRC errors in MP3 files. Most players do that, so the default value is
@@ -29,10 +29,10 @@ Repeat			= no
 # Turn on shuffle.
 Shuffle			= no
 
-# Turn on AutoNext
+# Turn on AutoNext.
 AutoNext		= yes
 
-# Default FormatString
+# Default FormatString:
 # %n - Track number
 # %a - Artist
 # %A - Album
@@ -58,34 +58,34 @@ Prebuffering		= 64
 # environment variables http_proxy and ALL_PROXY will be used if present.
 #HTTPProxy		= my_proxy:port
 
-# Sound driver - OSS, ALSA, JACK, or null (only for debugging)
+# Sound driver - OSS, ALSA, JACK, or null (only for debugging).
 # You can enter more than one driver separated by a comma. The first working
 # driver will be used.
 SoundDriver		= JACK, ALSA, OSS
 
-# Jack output settings
+# Jack output settings.
 JackOutLeft		= "alsa_pcm:playback_1"
 JackOutRight		= "alsa_pcm:playback_2"
 
-# OSS output device
+# OSS output device.
 OSSDevice		= /dev/dsp
 
-# OSS Mixer device
+# OSS Mixer device.
 OSSMixerDevice		= /dev/mixer
 
-# OSS Mixer channel: pcm or master
+# OSS Mixer channel: pcm or master.
 OSSMixerChannel		= pcm
 
-# Second OSS Mixer channel: pcm or master
+# Second OSS Mixer channel: pcm or master.
 OSSMixerChannel2	= master
 
-# ALSA mixer device
+# ALSA mixer device.
 AlsaMixer 		= PCM
 
-# Second ALSA mixer device
+# Second ALSA mixer device.
 AlsaMixer2		= Master
 
-# ALSA output device
+# ALSA output device.
 AlsaDevice		= default
 
 # Save software mixer state?
@@ -119,21 +119,21 @@ ShowHiddenFiles		= no
 # in the current directory.
 StartInMusicDir		= no
 
-# Hide file name extensions
+# Hide file name extensions.
 HideFileExtension	= no
 
 # Show file format in menu.
 ShowFormat		= yes
 
 # Show file time in menu. Possible options: yes, no, IfAvailable - show the
-# time only when it was read before (often works faster)
+# time only when it was read before (often works faster).
 ShowTime		= IfAvailable
 
 # Theme file. This can be absolute path or relative to
 # /usr/share/moc/themes/ (depends on installation prefix) or ~/.moc/themes/
 # Theme			= example_theme
 
-# The theme used when running on an xterm
+# The theme used when running on an xterm.
 # XTermTheme		= transparent-background
 
 # MOC directory - where pid file, socket, and state files are stored.
@@ -162,7 +162,7 @@ SavePlaylist		= yes
 # playlist?
 SyncPlaylist		= yes
 
-# Choose a keymap file (relative to ~/.moc/ or absolute path)
+# Choose a keymap file (relative to ~/.moc/ or absolute path).
 # Example keymap with description is included (keymap.example).
 #Keymap			= my_keymap
 
@@ -199,13 +199,13 @@ ASCIILines		= no
 # SincBestQuality - really slow (I know you probably have an xx GHz processor,
 #			but it's not enough to not see this in the top output :)
 #			The worst case Signal-to-Noise Ratio is 97dB.
-# SincMediumQuality - much faster
-# SincFastest - the fastest bandlimited interpolation
+# SincMediumQuality - much faster.
+# SincFastest - the fastest bandlimited interpolation.
 #
 # Poor quality, but much faster methods:
 #
-# ZeroOrderHold - really poor quality, but it's really fast
-# Linear - a bit better and a bit slower
+# ZeroOrderHold - really poor quality, but it's really fast.
+# Linear - a bit better and a bit slower.
 #
 #ResampleMethod		= Linear
 
@@ -217,7 +217,7 @@ ASCIILines		= no
 # MOC converts 24bit PCM to 16bit. This option set to yes allows MOC to use
 # 24bit output (for example MP3 decoder uses this format). This is disabled
 # in the default configuration because there were reports that it prevents
-# from playing MP3 files on some soundcards.
+# MP3 files from playing on some soundcards.
 #Allow24bitOutput	= no
 
 # Use realtime priority for output buffer thread. This will prevent gaps while
@@ -239,7 +239,7 @@ TagsCacheSize		= 256
 #
 # The format is as follows:
 # Each menu is described in the format NAME:POSITION_X,POSITION_Y,WIDTH,HEIGHT
-# NAME is directory or playlist
+# NAME is directory or playlist.
 # The other parameters define position and size of the menu. They can be
 # absolute numbers (like 10) or a percent value of the screen size (like 45%).
 # WIDTH and HEIGHT can have value of FILL which means fill the screen from
@@ -247,7 +247,7 @@ TagsCacheSize		= 256
 # Separate menu descriptions using a space.
 # Menus may overlap.
 # You must describe at least one menu (default is to fill the whole window).
-# There must be at least one layout (Layout1) defined. Other can be empty ("").
+# There must be at least one layout (Layout1) defined. Others can be empty ("").
 #
 # Examples:
 #
@@ -292,19 +292,19 @@ CanStartInPlaylist	= yes
 # %m - time of the file (in seconds)
 #
 # Parameters above apply to the currently selected file. If you change them to
-# capital letters, they are taken from the currently played file.
+# capital letters, they are taken from the file currently playing.
 #
 # Programs are run using execv(), not a shell, so you can't do things like
 # redirecting the output to a file. The command string is split using blank
 # characters as separators, the first element is the command to be executed
-# and the rest are parameters, so if you use "echo Playing: %i" we run program
+# and the rest are parameters, so if you use "echo Playing: %I" we run program
 # echo (from $PATH) with 2 parameters: 'Playing:' string and the title. Even
 # if the title contains spaces it's still one parameter and it's safe if it
 # contains `rm -rf /`.
 #
 # Examples:
 # ExecCommand1		= "cp %f /mnt/usb_drive"
-# ExecCommand2		= "/home/joe/now_playing %i"
+# ExecCommand2		= "/home/joe/now_playing %I"
 
 # Display the cursor in the line with the selected file. This can be useful with
 # a braille display.
@@ -319,83 +319,83 @@ CanStartInPlaylist	= yes
 # Display full paths instead of just file names in the playlist.
 #PlaylistFullPaths	= yes
 
-# Enable oversampling (yes/no)
+# Enable oversampling (yes/no).
 #ModPlug_Oversampling = yes
-# Enable noise reduction (yes/no)
+# Enable noise reduction (yes/no).
 #ModPlug_NoiseReduction = yes
-# Enable reverb (yes/no)
+# Enable reverb (yes/no).
 #ModPlug_Reverb = no
-# Enable mega-bass (yes/no)
+# Enable mega-bass (yes/no).
 #ModPlug_MegaBass = no
-# Enable surround (yes/no)
+# Enable surround (yes/no).
 #ModPlug_Surround = no
-# Resampling mode. One of FIR/SPLINE/LINEAR/NEAREST
-# FIR :      8 tap fir filter (extremely high quality)
-# SPLINE :   Cubic spline interpolation (high quality)
-# LINEAR :   Linear interpolation (fast, good quality)
-# NEAREST :  No interpolation (very fast, extremely bad sound quality)
+# Resampling mode. One of FIR/SPLINE/LINEAR/NEAREST:
+# FIR :      8 tap fir filter (extremely high quality).
+# SPLINE :   Cubic spline interpolation (high quality).
+# LINEAR :   Linear interpolation (fast, good quality).
+# NEAREST :  No interpolation (very fast, extremely bad sound quality).
 #ModPlug_ResamplingMode = FIR
-# Number of channles (1 or 2)
+# Number of channles (1 or 2).
 #ModPlug_Channels = 2
-# Bits per sample (8,16,32). 32 Bits seems ot be buggy...
+# Bits per sample (8,16,32). 32 Bits seems to be buggy...
 #ModPlug_Bits = 16 
-# Sampling rate (11025, 22050, 44100, 48000)
+# Sampling rate (11025, 22050, 44100, 48000).
 #ModPlug_Frequency = 44100
-# Reverb level 0(quiet)-100(loud)
+# Reverb level 0(quiet)-100(loud).
 #ModPlug_ReverbDepth = 0
-# Reverb delay in ms, usually 40-200ms
+# Reverb delay in ms, usually 40-200ms.
 #ModPlug_ReverbDelay = 0
-# Bass level 0(quiet)-100(loud)
+# Bass level 0(quiet)-100(loud).
 #ModPlug_BassAmount = 0
-# Bass cutoff in Hz (10-100)
+# Bass cutoff in Hz (10-100).
 #ModPlug_BassRange = 10
-# Surround level 0(quiet)-100(heavy)
+# Surround level 0(quiet)-100(heavy).
 #ModPlug_SurroundDepth = 0
-# Surround delay in ms, usually 5-40ms
+# Surround delay in ms, usually 5-40ms.
 #ModPlug_SurroundDelay = 0
 # Number of times to loop. Zero prevents looping. -1 loops forever.
 #ModPlug_LoopCount = 0
 
-#TiMidity-Options
-# Rate must be in between 8000 and 48000
+#TiMidity-Options.
+# Rate must be in between 8000 and 48000.
 #TiMidity_Rate = 44100
-# Bitrate is 8 or 16
+# Bitrate is 8 or 16.
 #TiMidity_Bits = 16
-# Channels is 1 or 2
+# Channels is 1 or 2.
 #TiMidity_Channels = 2
-# Volume-Range is 0-800
+# Volume-Range is 0-800.
 #TiMidity_Volume = 100
-# You can setup a TiMidity-Config-File here
-# Leave unset to use library defaults (/etc/timidity.cfg mostly)
+# You can setup a TiMidity-Config-File here.
+# Leave unset to use library defaults (/etc/timidity.cfg mostly).
 #TiMidity_Config =
 
 
-# SidPlay2-Options
-# Default length of a song if not in database (seconds)
+# SidPlay2-Options.
+# Default length of a song if not in database (seconds).
 #SidPlay2_DefaultSongLength = 180
-# Play at least a specific time if song is shorter (seconds)
+# Play at least a specific time if song is shorter (seconds).
 #SidPlay2_MinimumSongLength = 0
-# Set path to a HVSC-compatible database (if not set, database is disabled)
+# Set path to a HVSC-compatible database (if not set, database is disabled).
 #SidPlay2_Database
-# Sampling Frequency (4000-48000Hz)
+# Sampling Frequency (4000-48000Hz).
 #SidPlay2_Frequency = 44100
-# Sampling Resolution (8/16)
+# Sampling Resolution (8/16).
 #SidPlay2_Bits = 16
-# Playback Mode :
-# "M": Mono (best for many SIDs)
-# "S": Stereo
-# "L"/"R": Left / Right
+# Playback Mode:
+# "M": Mono (best for many SIDs).
+# "S": Stereo.
+# "L"/"R": Left / Right.
 #SidPlay2_PlayMode = "M"
-# Optimisation-level (0-2), 0 is best quality
+# Optimisation-level (0-2), 0 is best quality.
 #SidPlay2_Optimisation = 0
-# Use start-song information from SID (1) or start at first song (0)
+# Use start-song information from SID (1) or start at first song (0).
 # Songs before the start-song won't be played.
 #SidPlay2_StartAtStart = 1
-# Play sub-tunes
+# Play sub-tunes.
 #SidPlay2_PlaySubTunes = 1
 
-# OnSongChange
-# Specify the full path (i.e. no ~) of an executable to run
+# OnSongChange.
+# Specify the full path (i.e. no ~) of an executable to run.
 # Arguments will be passed, and you can use the following escapes:
 #  %a artist
 #  %r album
@@ -412,7 +412,7 @@ CanStartInPlaylist	= yes
 #
 #OnSongChange = "/home/jack/.moc/myscript %a %r"
 
-# OnStop
+# OnStop.
 # Run the following command (full path, no arguments) when MOC changes state
 # to stopped (when user stopped playing or changes a song).
 #
