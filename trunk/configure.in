@@ -140,25 +140,38 @@ AX_PATH_BDB([4], [
 AM_GNU_GETTEXT([external])
 AM_GNU_GETTEXT_VERSION(0.15)
 
-COMPILE_OSS="no"
-AC_CHECK_HEADERS([sys/soundcard.h soundcard.h])
-if test "$ac_cv_header_sys_soundcard_h" = "yes" \
-	-o "$ac_cv_header_soundcard_h" = "yes"
+AC_ARG_WITH(oss, AS_HELP_STRING(--without-oss, Compile without OSS support.))
+
+if test "x$with_oss" != "xno"
 then
-	AC_DEFINE([HAVE_OSS], 1, [Define if you have OSS.])
-	EXTRA_OBJS="$EXTRA_OBJS oss.o"
-	COMPILE_OSS="yes"
-	AC_CHECK_LIB([ossaudio], [_oss_ioctl],
-		     [EXTRA_LIBS="$EXTRA_LIBS -lossaudio"])
+	AC_CHECK_HEADERS([sys/soundcard.h soundcard.h])
+	if test "$ac_cv_header_sys_soundcard_h" = "yes" \
+		-o "$ac_cv_header_soundcard_h" = "yes"
+	then
+		AC_DEFINE([HAVE_OSS], 1, [Define if you have OSS.])
+		EXTRA_OBJS="$EXTRA_OBJS oss.o"
+		COMPILE_OSS="yes"
+		AC_CHECK_LIB([ossaudio], [_oss_ioctl],
+		             [EXTRA_LIBS="$EXTRA_LIBS -lossaudio"])
+	fi
+else
+	COMPILE_OSS="no"
 fi
 
-PKG_CHECK_MODULES(ALSA, [alsa >= 0.9],
+AC_ARG_WITH(alsa, AS_HELP_STRING(--without-alsa, Compile without ALSA support.))
+
+if test "x$with_alsa" != "xno"
+then
+	PKG_CHECK_MODULES(ALSA, [alsa >= 0.9],
 	     [COMPILE_ALSA="yes"
 	      EXTRA_OBJS="$EXTRA_OBJS alsa.o"
 	      AC_DEFINE([HAVE_ALSA], 1, [Define if you have ALSA.])
 	      EXTRA_LIBS="$EXTRA_LIBS $ALSA_LIBS"
 	      CFLAGS="$CFLAGS $ALSA_CFLAGS"],
 	     [COMPILE_ALSA="no"])
+else
+	COMPILE_ALSA="no"
+fi
 
 AC_ARG_WITH(jack, AS_HELP_STRING(--without-jack, Compile without JACK support.))
 
@@ -173,12 +186,6 @@ then
 			   [COMPILE_JACK="no"])
 else
 	COMPILE_JACK="no"
-fi
-
-if test "$COMPILE_OSS" = "no" -a "$COMPILE_ALSA" = "no" \
-	-a "$COMPILE_JACK$" = "no"
-then
-	echo "\nNo Sound output method is to be compiled, you will not hear any sound!\n"
 fi
 
 AC_ARG_ENABLE(debug, AS_HELP_STRING(--disable-debug,Disable debug code))
@@ -604,7 +611,7 @@ AC_OUTPUT([Makefile
 echo
 echo "----------------------------------------------------------------"
 echo "MOC will be compiled with:"
-echo "Decoder plugins:   "$DECODER_PLUGINS
+echo "Decoder plugins:  "$DECODER_PLUGINS
 echo "OSS:               "$COMPILE_OSS
 echo "ALSA:              "$COMPILE_ALSA
 echo "JACK:              "$COMPILE_JACK
@@ -612,8 +619,17 @@ echo "DEBUG:             "$COMPILE_DEBUG
 echo "RCC:               "$COMPILE_RCC
 echo "Network streams:   "$COMPILE_CURL
 echo "Resampling:        "$COMPILE_SAMPLERATE
-echo
 echo "----------------------------------------------------------------"
+echo
 
-echo "WARNING: since MOC version 2 the executable file name was changed to mocp!"
-echo "Please remove old moc binary if you have installed an older version."
+if test "$COMPILE_OSS" = "no" -a "$COMPILE_ALSA" = "no" \
+	-a "$COMPILE_JACK" = "no"
+then
+	echo "WARNING: No sound output method is to be compiled; you will not hear any sound!"
+	echo
+fi
+
+echo "WARNING: Since MOC version 2 the executable file name has changed to mocp!"
+echo "         Please remove old moc binary if you have installed an older version."
+echo
+
