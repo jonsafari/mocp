@@ -402,7 +402,9 @@ static long get_num_param (const char *p,const char ** last)
 	val = strtol (p, &e, 10);
 	if ((*e&&last==NULL)||e==p)
 		fatal ("The parameter should be a number.");
-	*last=e;
+
+	if (last)
+		*last=e;
 	return val;
 }
 
