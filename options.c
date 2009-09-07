@@ -270,31 +270,31 @@ void options_init ()
 	option_add_int ("PlaylistFullPaths", 1);
 	option_add_int ("Allow24bitOutput", 0);
 
-        option_add_int ("ModPlug_Channels", 2);
-        option_add_int ("ModPlug_Frequency", 44100);
-        option_add_int ("ModPlug_Bits", 16);
+	option_add_int ("ModPlug_Channels", 2);
+	option_add_int ("ModPlug_Frequency", 44100);
+	option_add_int ("ModPlug_Bits", 16);
 
-        option_add_int ("ModPlug_Oversampling", 1);
-        option_add_int ("ModPlug_NoiseReduction", 1);
-        option_add_int ("ModPlug_Reverb", 0);
-        option_add_int ("ModPlug_MegaBass", 0);
-        option_add_int ("ModPlug_Surround", 0);
+	option_add_int ("ModPlug_Oversampling", 1);
+	option_add_int ("ModPlug_NoiseReduction", 1);
+	option_add_int ("ModPlug_Reverb", 0);
+	option_add_int ("ModPlug_MegaBass", 0);
+	option_add_int ("ModPlug_Surround", 0);
 
-        option_add_str ("ModPlug_ResamplingMode", "FIR");
+	option_add_str ("ModPlug_ResamplingMode", "FIR");
 
-        option_add_int ("ModPlug_ReverbDepth", 0);
-        option_add_int ("ModPlug_ReverbDelay", 0);
-        option_add_int ("ModPlug_BassAmount", 0);
-        option_add_int ("ModPlug_BassRange", 10);
-        option_add_int ("ModPlug_SurroundDepth", 0);
-        option_add_int ("ModPlug_SurroundDelay", 0);
-        option_add_int ("ModPlug_LoopCount", 0);
+	option_add_int ("ModPlug_ReverbDepth", 0);
+	option_add_int ("ModPlug_ReverbDelay", 0);
+	option_add_int ("ModPlug_BassAmount", 0);
+	option_add_int ("ModPlug_BassRange", 10);
+	option_add_int ("ModPlug_SurroundDepth", 0);
+	option_add_int ("ModPlug_SurroundDelay", 0);
+	option_add_int ("ModPlug_LoopCount", 0);
 
-        option_add_int ("TiMidity_Volume", 100);
-        option_add_int ("TiMidity_Rate", 44100);
-        option_add_int ("TiMidity_Bits", 16);
-        option_add_int ("TiMidity_Channels", 2);
-        option_add_str ("TiMidity_Config", NULL);
+	option_add_int ("TiMidity_Volume", 100);
+	option_add_int ("TiMidity_Rate", 44100);
+	option_add_int ("TiMidity_Bits", 16);
+	option_add_int ("TiMidity_Channels", 2);
+	option_add_str ("TiMidity_Config", NULL);
 
 	option_add_int ("SidPlay2_DefaultSongLength", 180);
 	option_add_int ("SidPlay2_MinimumSongLength", 0);
@@ -309,9 +309,9 @@ void options_init ()
 	option_add_str ("OnSongChange", NULL);
 	option_add_str ("OnStop", NULL);
 
-        option_add_int ("Softmixer_SaveState", 1);
-        
-        option_add_int ("Equalizer_SaveState", 1);
+	option_add_int ("Softmixer_SaveState", 1);
+
+	option_add_int ("Equalizer_SaveState", 1);
 
 	option_add_int ("QueueNextSongReturn", 0);
 
@@ -349,9 +349,9 @@ int check_int_option (const char *name, const int val)
 			|| !strcasecmp(name, "Equalizer_SaveState")
 			|| !strcasecmp(name, "FileNamesIconv")
 			|| !strcasecmp(name, "NonUTFXterm")
-			|| !strcasecmp(name, "EnforceTagsEncoding")
-			) {
-				if (!(val == 1 || val == 0))
+			|| !strcasecmp(name, "EnforceTagsEncoding"))
+	{
+		if (!(val == 1 || val == 0))
 			return 0;
 	}
 	else if (!strcasecmp(name, "OutputBuffer")) {
@@ -382,112 +382,92 @@ int check_int_option (const char *name, const int val)
 		if (val < 0)
 			return 0;
 	}
-        else if(
-          !strcasecmp(name, "ModPlug_Oversampling")
-          || !strcasecmp(name, "ModPlug_NoiseReduction")
-          || !strcasecmp(name, "ModPlug_Reverb")
-          || !strcasecmp(name, "ModPlug_MegaBass")
-          || !strcasecmp(name, "ModPlug_Surround")
-          ) {
-          if(!(val==0 || val==1))
-            return 0;
-        }
-        else  if(!strcasecmp(name, "ModPlug_Channels"))
-        {
-            if (!(val==1 || val==2))
-              return 0;
-        }
-        else  if(!strcasecmp(name, "ModPlug_Frequency"))
-        {
-            if (!(val==11025 || val==22050 || val==44100 || val==48000))
-              return 0;
-        }
-        else  if(!strcasecmp(name, "ModPlug_Bits"))
-        {
-            if (!(val==8 || val==16 || val==32))
-              return 0;
-        }
-        else  if(!strcasecmp(name, "ModPlug_ReverbDepth"))
-        {
-            if (!(val>=0 && val<=100))
-              return 0;
-        }
-        else  if(!strcasecmp(name, "ModPlug_ReverbDelay"))
-        {
-            if (val < 0)
-              return 0;
-        }
-        else  if(!strcasecmp(name, "ModPlug_BassAmount"))
-        {
-            if (!(val>=0 && val<=100))
-              return 0;
-        }
-        else  if(!strcasecmp(name, "ModPlug_BassRange"))
-        {
-            if (!(val>=10 && val<=100))
-              return 0;
-        }
-        else  if(!strcasecmp(name, "ModPlug_SurroundDepth"))
-        {
-            if (!(val>=0 && val<=100))
-              return 0;
-        }
-        else  if(!strcasecmp(name, "ModPlug_SurroundDelay"))
-        {
-            if (val < 0)
-              return 0;
-        }
-        else  if(!strcasecmp(name, "ModPlug_LoopCount"))
-        {
-            if (val < -1)
-              return 0;
-        }
-        else  if(!strcasecmp(name, "TiMidity_Channels"))
-        {
-            if (!(val == 1 || val == 2)  )
-              return 0;
-        }
-        else  if(!strcasecmp(name, "TiMidity_Bits"))
-        {
-            if (!(val == 8 || val == 16)  )
-              return 0;
-        }
-        else  if(!strcasecmp(name, "TiMidity_Volume"))
-        {
-            if (val < 0 || val > 800)
-              return 0;
-        }
-        else  if(!strcasecmp(name, "TiMidity_Rate"))
-        {
-            // not sure about the limits... I like 44100
-            if (val < 8000 || val > 48000)
-              return 0;
-        }
-        else if(!strcasecmp(name, "SidPlay2_DefaultSongLength"))
-        {
-          if(val < 0)
-            return 0;
-        }
-        else if(!strcasecmp(name, "SidPlay2_MinimumSongLength"))
-        {
-          if(val < 0)
-            return 0;
-        }
-        else if(!strcasecmp(name, "SidPlay2_Frequency"))
-        {
-          if(val < 4000 || val > 48000)
-            return 0;
-        }
-        else if(!strcasecmp(name, "SidPlay2_Bits"))
-        {
-          if(!(val == 8 || val == 16))
-            return 0;
-        }
-        else if(!strcasecmp(name, "SidPlay2_Optimisation"))
-        {
-          if(val < 0 || val > 2)
-            return 0;
-        }
+	else if (!strcasecmp(name, "ModPlug_Oversampling")
+			|| !strcasecmp(name, "ModPlug_NoiseReduction")
+			|| !strcasecmp(name, "ModPlug_Reverb")
+			|| !strcasecmp(name, "ModPlug_MegaBass")
+			|| !strcasecmp(name, "ModPlug_Surround"))
+	{
+		if (!(val == 0 || val == 1))
+			return 0;
+	}
+	else if (!strcasecmp(name, "ModPlug_Channels")) {
+		if (!(val == 1 || val == 2 ))
+			return 0;
+	}
+	else if (!strcasecmp(name, "ModPlug_Frequency")) {
+		if (!(val == 11025 || val == 22050 || val == 44100 || val == 48000))
+			return 0;
+	}
+	else if (!strcasecmp(name, "ModPlug_Bits")) {
+		if (!(val== 8 || val == 16 || val == 32))
+			return 0;
+	}
+	else if (!strcasecmp(name, "ModPlug_ReverbDepth")) {
+		if (!(val >= 0 && val <= 100))
+			return 0;
+	}
+	else if (!strcasecmp(name, "ModPlug_ReverbDelay")) {
+		if (val < 0)
+			return 0;
+	}
+	else if (!strcasecmp(name, "ModPlug_BassAmount")) {
+		if (!(val >= 0 && val <= 100))
+			return 0;
+	}
+	else if (!strcasecmp(name, "ModPlug_BassRange")) {
+		if (!(val >= 10 && val <= 100))
+			return 0;
+	}
+	else if (!strcasecmp(name, "ModPlug_SurroundDepth")) {
+		if (!(val >= 0 && val <= 100))
+			return 0;
+	}
+	else if (!strcasecmp(name, "ModPlug_SurroundDelay")) {
+		if (val < 0)
+			return 0;
+	}
+	else if (!strcasecmp(name, "ModPlug_LoopCount")) {
+		if (val < -1)
+			return 0;
+	}
+	else if (!strcasecmp(name, "TiMidity_Channels")) {
+		if (!(val == 1 || val == 2)  )
+			return 0;
+	}
+	else if (!strcasecmp(name, "TiMidity_Bits")) {
+		if (!(val == 8 || val == 16)  )
+			return 0;
+	}
+	else if (!strcasecmp(name, "TiMidity_Volume")) {
+		if (val < 0 || val > 800)
+			return 0;
+	}
+	else if (!strcasecmp(name, "TiMidity_Rate")) {
+		// not sure about the limits... I like 44100
+		if (val < 8000 || val > 48000)
+			return 0;
+	}
+	else if (!strcasecmp(name, "SidPlay2_DefaultSongLength")) {
+		if (val < 0)
+			return 0;
+	}
+	else if (!strcasecmp(name, "SidPlay2_MinimumSongLength")) {
+		if (val < 0)
+			return 0;
+	}
+	else if (!strcasecmp(name, "SidPlay2_Frequency")) {
+		if (val < 4000 || val > 48000)
+			return 0;
+	}
+	else if (!strcasecmp(name, "SidPlay2_Bits")) {
+		if (!(val == 8 || val == 16))
+			return 0;
+	}
+	else if (!strcasecmp(name, "SidPlay2_Optimisation")) {
+		if (val < 0 || val > 2)
+			return 0;
+	}
 	return 1;
 }
 
@@ -503,7 +483,7 @@ int check_str_option (const char *name, const char *val)
 				&& strcasecmp(val, "IfAvailable"))
 			return 0;
 	}
-    else if (!strcmp(name, "ResampleMethod")) {
+	else if (!strcmp(name, "ResampleMethod")) {
 		if (strcasecmp(val, "SincBestQuality")
 				&& strcasecmp(val, "SincMediumQuality")
 				&& strcasecmp(val, "SincFastest")
@@ -511,24 +491,20 @@ int check_str_option (const char *name, const char *val)
 				&& strcasecmp(val, "Linear"))
 			return 0;
 	}
-        else if(!strcasecmp(name, "ModPlug_ResamplingMode")) {
-          if (
-              strcasecmp(val, "FIR")
-              && strcasecmp(val, "SPLINE")
-              && strcasecmp(val, "LINEAR")
-              && strcasecmp(val, "NEAREST")
-             )
-            return 0;
-        }
-        else if(!strcasecmp(name, "SidPlay2_PlayMode")) {
-          if (
-              strcasecmp(val, "M")
-              && strcasecmp(val, "S")
-              && strcasecmp(val, "L")
-              && strcasecmp(val, "R")
-             )
-            return 0;
-        }
+	else if (!strcasecmp(name, "ModPlug_ResamplingMode")) {
+		if (strcasecmp(val, "FIR")
+			&& strcasecmp(val, "SPLINE")
+			&& strcasecmp(val, "LINEAR")
+			&& strcasecmp(val, "NEAREST"))
+			return 0;
+	}
+	else if (!strcasecmp(name, "SidPlay2_PlayMode")) {
+		if (strcasecmp(val, "M")
+			&& strcasecmp(val, "S")
+			&& strcasecmp(val, "L")
+			&& strcasecmp(val, "R"))
+			return 0;
+	}
 	return 1;
 }
 
