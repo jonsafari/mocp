@@ -1029,9 +1029,9 @@ static void side_menu_make_list_content (struct side_menu *m,
 	if (dirs)
 		for (i = 0; i < dirs->num; i++) {
 			char title[PATH_MAX];
-			char *t_str = NULL;
 
 #ifdef HAVE_RCC 
+			char *t_str = NULL;
 			if (options_get_int("UseRCCForFilesystem")) {
 				strcpy (title, strrchr(dirs->items[i], '/') + 1);
 				strcat (title, "/");

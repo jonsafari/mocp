@@ -376,8 +376,6 @@ int audio_conv_new (struct audio_conversion *conv,
 		const struct sound_params *from,
 		const struct sound_params *to)
 {
-	int err;
-	
 	assert (from->rate != to->rate || from->fmt != to->fmt
 			|| from->channels != to->channels);
 	
@@ -392,6 +390,7 @@ int audio_conv_new (struct audio_conversion *conv,
 
 	if (from->rate != to->rate) {
 #ifdef HAVE_SAMPLERATE
+		int err;
 		int resample_type = -1;
 		char *method = options_get_str ("ResampleMethod");
 

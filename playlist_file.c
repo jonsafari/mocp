@@ -491,20 +491,6 @@ static int plist_save_m3u (struct plist *plist, const char *fname,
 	return 1;
 }
 
-/* Strip buf at the point where paths buf and path differs. */
-static void strip_uncommon (char *buf, const char *path)
-{
-	int i = 0;
-	char *slash;
-
-	while (buf[i] == path[i])
-		i++;
-	buf[i] = 0;
-
-	slash = strrchr(buf, '/');
-	*slash = 0;
-}
-
 /* Save the playlist into the file. Return 0 on error. if cwd is NULL, use
  * absolute paths. */
 int plist_save (struct plist *plist, const char *file, const char *cwd,
