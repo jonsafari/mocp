@@ -77,7 +77,7 @@ struct precache
 
 struct precache precache;
 
-/* request conditional and mutex */
+/* Request conditional and mutex. */
 static pthread_cond_t request_cond = PTHREAD_COND_INITIALIZER;
 static pthread_mutex_t request_cond_mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -87,11 +87,11 @@ static int req_seek;
 /* Source of the played stream tags. */
 static enum
 {
-	TAGS_SOURCE_DECODER,	/* tags from the stream (eg. id3tags, vorbis comments) */
+	TAGS_SOURCE_DECODER,	/* tags from the stream (e.g., id3tags, vorbis comments) */
 	TAGS_SOURCE_METADATA	/* tags from icecast metadata */
 } tags_source;
 
-/* Tags of the currentply played file. */
+/* Tags of the currently played file. */
 static struct file_tags *curr_tags = NULL;
 
 /* Mutex for curr_tags and tags_source. */

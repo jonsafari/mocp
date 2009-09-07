@@ -69,7 +69,7 @@ static struct plist *playlist = NULL; /* our playlist */
 static struct plist *queue = NULL; /* our queue */
 static struct plist *dir_plist = NULL; /* content of the current directory */
 
-/* Queue for events comming from the server. */
+/* Queue for events coming from the server. */
 static struct event_queue events;
 
 /* Current working directory (the directory we show). */
@@ -454,14 +454,14 @@ static void update_mixer_name ()
 	char *name;
 
 	send_int_to_srv (CMD_GET_MIXER_CHANNEL_NAME);
-        name = get_data_str();
+	name = get_data_str();
 	debug ("Mixer name: %s", name);
 
 	iface_set_mixer_name (name);
-	
-        free (name);
-	
-        update_mixer_value ();
+
+	free (name);
+
+	update_mixer_value ();
 }
 
 /* Make new cwd path from CWD and this path */
@@ -850,7 +850,7 @@ static void event_plist_add (const struct plist_item *item)
 
 		/* Just calling iface_update_queue_positions (queue, playlist,
 		 * NULL, NULL) is too slow in cases when we receive a large
-		 * number of items from server (eg. loading playlist w/
+		 * number of items from server (e.g., loading playlist w/
 		 * SyncPlaylist on). Since we know the filename in question,
 		 * we try to find it in queue and eventually update the value
 		 */

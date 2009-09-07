@@ -1619,7 +1619,7 @@ static void close_clients ()
 		}
 }
 
-/* Handle incomming connections */
+/* Handle incoming connections */
 void server_loop (int list_sock)
 {
 	struct sockaddr_un client_name;
