@@ -93,7 +93,7 @@ static volatile int want_resize = 0;
 
 /* Are we waiting for the playlist we have loaded and sent to the clients? */
 static int waiting_for_plist_load = 0;
-					  
+
 /* Information about the currently played file. */
 static struct file_info {
 	char *file;
@@ -106,6 +106,7 @@ static struct file_info {
 	int total_time;
 	int channels;
 	int state; /* STATE_* */
+	char *block_file;
 	int block_start;
 	int block_end;
 } curr_file;
@@ -350,8 +351,6 @@ static void file_info_reset (struct file_info *f)
 	f->total_time = -1;
 	f->channels = 1;
 	f->state = STATE_STOP;
-	f->block_start = -1;
-	f->block_end = -1;
 }
 
 static void file_info_cleanup (struct file_info *f)
@@ -366,6 +365,29 @@ static void file_info_cleanup (struct file_info *f)
 	f->file = NULL;
 	f->tags = NULL;
 	f->title = NULL;
+}
+
+/* Initialise the block marker information. */
+static void file_info_block_init (struct file_info *f)
+{
+	f->block_file = NULL;
+}
+
+/* Reset the block start and end markers. */
+static void file_info_block_reset (struct file_info *f)
+{
+	if (f->block_file)
+		free (f->block_file);
+	f->block_file = NULL;
+}
+
+/* Enter the current time into a block start or end marker. */
+static void file_info_block_mark (int *marker)
+{
+	if (curr_file.block_file)
+		*marker = curr_file.curr_time;
+	else
+		logit ("User marked while not playing.");
 }
 
 /* Get an integer option from the server (like shuffle) and set it. */
@@ -647,7 +669,8 @@ static void ev_file_tags (const struct tag_ev_response *data)
 		if (data->tags->time != -1) {
 			curr_file.total_time = data->tags->time;
 			iface_set_total_time (curr_file.total_time);
-			if (curr_file.block_start < 0) {
+			if (!curr_file.block_file) {
+				curr_file.block_file = xstrdup(curr_file.file);
 				curr_file.block_start = 0;
 				curr_file.block_end = curr_file.total_time;
 			}
@@ -731,6 +754,8 @@ static void update_curr_file ()
 		/* played file has changed */
 		
 		file_info_cleanup (&curr_file);
+		if (curr_file.block_file && strcmp(file, curr_file.block_file))
+			file_info_block_reset (&curr_file);
 
 		/* The total time could not get reset. */
 		iface_set_total_time (-1);
@@ -1557,6 +1582,7 @@ void init_interface (const int sock, const int logging, char **args,
 	logit ("Starting MOC interface...");
 
 	file_info_reset (&curr_file);
+	file_info_block_init (&curr_file);
 	init_playlists ();
 	event_queue_init (&events);
 	keys_init ();
@@ -1931,19 +1957,6 @@ static void remove_dead_entries_plist ()
 		remove_file_from_playlist (file);
 	}
 	send_int_to_srv (CMD_UNLOCK);
-}
-
-
-static void mark_block (int *marker)
-{
-	switch (curr_file.state) {
-		case STATE_PLAY:
-		case STATE_PAUSE:
-			*marker = curr_file.curr_time;
-			break;
-		default:
-			logit ("User marked when not playing.");
-	}
 }
 
 /* Add the currently selected file to the playlist. */
@@ -3053,7 +3066,7 @@ static char *custom_cmd_substitute (char *arg)
 	}
 	else if (!strcmp(arg, "%S")) {
 		free (arg);
-		if (curr_file.file) {
+		if (curr_file.file && curr_file.block_file) {
 			arg = (char *)xmalloc(sizeof(char) * 10);
 			snprintf (arg, 10, "%d", curr_file.block_start);
 		}
@@ -3062,7 +3075,7 @@ static char *custom_cmd_substitute (char *arg)
 	}
 	else if (!strcmp(arg, "%E")) {
 		free (arg);
-		if (curr_file.file) {
+		if (curr_file.file && curr_file.block_file) {
 			arg = (char *)xmalloc(sizeof(char) * 10);
 			snprintf (arg, 10, "%d", curr_file.block_end);
 		}
@@ -3400,10 +3413,10 @@ static void menu_key (const struct iface_key *k)
 				set_mixer (90);
 				break;
 			case KEY_CMD_MARK_START:
-				mark_block (&curr_file.block_start);
+				file_info_block_mark (&curr_file.block_start);
 				break;
 			case KEY_CMD_MARK_END:
-				mark_block (&curr_file.block_end);
+				file_info_block_mark (&curr_file.block_end);
 				break;
 			case KEY_CMD_FAST_DIR_1:
 				go_to_fast_dir (1);
@@ -3898,6 +3911,7 @@ void interface_cmdline_file_info (const int server_sock)
 				   here */
 	init_playlists ();
 	file_info_reset (&curr_file);
+	file_info_block_init (&curr_file);
 	
 	curr_file.state = get_state ();
 	
@@ -4181,6 +4195,7 @@ void interface_cmdline_formatted_info (const int server_sock,
 				   here */
 	init_playlists ();
 	file_info_reset (&curr_file);
+	file_info_block_init (&curr_file);
 	
 	curr_file.state = get_state ();
 	
