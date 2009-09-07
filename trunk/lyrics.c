@@ -70,7 +70,7 @@ char **get_lyrics_text (const WINDOW *w, const char *filename, int *num)
 		lyrics_line = xmalloc (sizeof(char) * LINE_SIZE);
 		while (fgets(lyrics_line, y, lyrics_file) != NULL) {
 			lyrics[i] = xmalloc (sizeof(char) * LINE_SIZE); 
-			if (strlen(lyrics_line) < (y-1)) {
+			if ((int)strlen(lyrics_line) < (y-1)) {
 				space = (y-strlen(lyrics_line))/2;
 				memset(lyrics[i], ' ', space);
 				lyrics[i][space] = '\0';
