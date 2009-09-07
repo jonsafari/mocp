@@ -186,7 +186,7 @@ static struct info_win
 	char *msg; /* message displayed instead of the file's title */
 	int msg_is_error; /* is the above message an error? */
 	time_t msg_timeout; /* how many seconds remain before the message
-				disapperars */
+				disappears */
 
 	int too_small; /* is the current window too small to display this widget? */
 

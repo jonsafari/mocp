@@ -2024,7 +2024,7 @@ static void queue_toggle_file ()
 	}
 
 	/* check if the file is already in the queue; if it isn't, add it,
-	 * othrewise, remove it */
+	 * otherwise, remove it */
 
 	send_int_to_srv (CMD_LOCK); /* TODO do we need this lock? */
 
