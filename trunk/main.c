@@ -293,7 +293,7 @@ static void show_usage (const char *prg_name) {
 "-Q --format FORMAT     Print the formatted information about the currently played file.\n"
 "-e --recursively       Alias for -a.\n"
 "-k --seek N            Seek by N seconds (can be negative).\n"
-"-j --jump N{\%,s}       Jump to some position of the current track.\n"
+"-j --jump N{%%,s}       Jump to some position of the current track.\n"
 "-o --on <controls>     Turn on a control (shuffle,autonext,repeat).\n"
 "-u --off <controls>    Turn off a control (shuffle,autonext,repeat).\n"
 "-t --toggle <controls> Toggle a control (shuffle,autonext,repeat).\n"
@@ -396,7 +396,7 @@ static void server_command (struct parameters *params, char **args, int arg_num)
 
 static long get_num_param (const char *p,const char ** last)
 {
-	const char *e;
+	char *e;
 	long val;
 
 	val = strtol (p, &e, 10);

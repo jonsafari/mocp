@@ -662,6 +662,7 @@ void tags_cache_add_request (struct tags_cache *c, const char *file,
 	db_ret = c->db_env->lock_get (c->db_env, c->locker, 0,
 			&key, DB_LOCK_WRITE, &lock);
 	if (db_ret) {
+		got_lock = 0;
 		logit ("Can't get DB lock: %s", db_strerror(db_ret));
 	}
 	else {
