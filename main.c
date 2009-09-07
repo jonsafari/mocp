@@ -293,10 +293,10 @@ static void show_usage (const char *prg_name) {
 "-Q --format FORMAT     Print the formatted information about the currently played file.\n"
 "-e --recursively       Alias for -a.\n"
 "-k --seek N            Seek by N seconds (can be negative).\n"
-"-j --jump N{%%,s}       Jump to some position of the current track.\n"
-"-o --on <controls>     Turn on a control (shuffle,autonext,repeat).\n"
-"-u --off <controls>    Turn off a control (shuffle,autonext,repeat).\n"
-"-t --toggle <controls> Toggle a control (shuffle,autonext,repeat).\n"
+"-j --jump N{%%,s}      Jump to some position of the current track.\n"
+"-o --on <controls>     Turn on a control (shuffle, autonext, repeat).\n"
+"-u --off <controls>    Turn off a control (shuffle, autonext, repeat).\n"
+"-t --toggle <controls> Toggle a control (shuffle, autonext, repeat).\n"
 ));
 }
 
