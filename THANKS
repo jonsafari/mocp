@@ -12,8 +12,8 @@ Wim Speekenbrink <w.speek@wanadoo.nl> - Author of nightly_theme.
 Kamil Tarkowski <kamilt@interia.pl> - back command, some fixes and small
 	improvements.
 Jacek Lehmann <vonschlager@wp.pl> - Green theme and fixes for a few terminals.
-Morten Grunnet Buhl - Yellow/Red theme
+Morten Grunnet Buhl - Yellow/Red theme.
 Alex Norman <alex@neisis.net> - JACK output, FastDir option, other improvements.
-Adam Kowalski - Many bug reports (also tests)
-Joseph Dunn - Bug reports. He gave ma access to his FreeBSD box that allowed
+Adam Kowalski - Many bug reports (also tests).
+Joseph Dunn - Bug reports. He gave me access to his FreeBSD box that allowed
 	me to fix a bug.

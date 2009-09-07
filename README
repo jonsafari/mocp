@@ -57,7 +57,7 @@ You can also find a discussion forum on the MOC home page.
 What software is required to compile it?
 --------------------------------------------------------------------------------
 
- - UNIX system with POSIX threads (eg.. Linux or FreeBSD)
+ - UNIX system with POSIX threads (e.g., Linux or FreeBSD)
  - ncurses (probably already installed in your system)
  - C and C++ compilers (MOC is written in C, but libtool requires a C++
    compiler).
@@ -144,7 +144,7 @@ exhausting description is included (themes/example_theme), it is the
 default MOC appearance.
 
 Theme files should be placed in ~/.moc/themes/ or $(datadir)/moc/themes/
-(eg. /usr/local/share/moc/themes) directory, and can be selected
+(e.g., /usr/local/share/moc/themes) directory, and can be selected
 with the Theme configuration options or the -T command line option (see the man
 page and the example configuration file).
 
@@ -176,7 +176,7 @@ Dooxygen (http://www.doxygen.org). Just run the doxygen command from the MOC
 source directory.
 
 Before you change anything it is a good idea to check for the latest develoment
-version (check out from the Subversion repository if the best). Your changes
+version (check out from the Subversion repository is the best). Your changes
 might conflict with changes already made to the source or your feature might be
 already implemented. See also the TODO file as it is updated regularly and
 contains quite detailed information on future plans.
