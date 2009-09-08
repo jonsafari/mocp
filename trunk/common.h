@@ -36,7 +36,7 @@
 
 /* isblank() is a GNU extension */
 #ifndef isblank
-#define isblank(c) (c == ' ' || c == '\t')
+#define isblank(c) ((c) == ' ' || (c) == '\t')
 #endif
 
 #ifdef ENABLE_NLS
