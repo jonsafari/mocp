@@ -319,6 +319,21 @@ CanStartInPlaylist	= yes
 # Display full paths instead of just file names in the playlist.
 #PlaylistFullPaths	= yes
 
+# How long (in seconds) to leave a message displayed on the screen.
+# Setting this to a high value allows you to scroll through the messages
+# using the 'hide_message' key.  Setting it to zero means you'll have to
+# be quick to see any message at all.  Any new messages will queued up
+# and displayed after the current message's linger time expires.
+#MessageLingerTime	= 3
+
+# Does MOC display a prefix on delayed messages indicating
+# the number of queued messages still to be displayed?
+#PrefixQueuedMessages	= yes
+
+# String to append to the queued message count if any
+# error messages are still waiting to be displayed.
+#ErrorMessagesQueued	= "!"
+
 # Enable oversampling (yes/no).
 #ModPlug_Oversampling = yes
 # Enable noise reduction (yes/no).

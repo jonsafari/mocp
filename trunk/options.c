@@ -268,6 +268,9 @@ void options_init ()
 	option_add_int ("SetXtermTitle", 1);
 	option_add_int ("SetScreenTitle", 1);
 	option_add_int ("PlaylistFullPaths", 1);
+	option_add_int ("MessageLingerTime", 3);
+	option_add_int ("PrefixQueuedMessages", 1);
+	option_add_str ("ErrorMessagesQueued", "!");
 	option_add_int ("Allow24bitOutput", 0);
 
 	option_add_int ("ModPlug_Channels", 2);
@@ -342,6 +345,7 @@ int check_int_option (const char *name, const int val)
 			|| !strcasecmp(name, "SetXtermTitle")
 			|| !strcasecmp(name, "SetScreenTitle")
 			|| !strcasecmp(name, "PlaylistFullPaths")
+			|| !strcasecmp(name, "PrefixQueuedMessages")
 			|| !strcasecmp(name, "Allow24bitOutput")
 			|| !strcasecmp(name, "SidPlay2_StartAtStart")
 			|| !strcasecmp(name, "SidPlay2_PlaySubTunes")
@@ -379,6 +383,10 @@ int check_int_option (const char *name, const int val)
 			return 0;
 	}
 	else if (!strcasecmp(name, "TagsCacheSize")) {
+		if (val < 0)
+			return 0;
+	}
+	else if (!strcasecmp(name, "MessageLingerTime")) {
 		if (val < 0)
 			return 0;
 	}
