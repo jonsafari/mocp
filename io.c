@@ -240,11 +240,7 @@ off_t io_seek (struct io_stream *s, off_t offset, int whence)
 }
 
 /* Wake up the IO reading thread */
-#ifdef HAVE__ATTRIBUTE__
-static void io_wake_up (struct io_stream *s __attribute__((unused)))
-#else
-static void io_wake_up (struct io_stream *s)
-#endif
+static void io_wake_up (struct io_stream *s ATTR_UNUSED)
 {
 #ifdef HAVE_CURL
 	if (s->source == IO_SOURCE_CURL)
@@ -757,11 +753,7 @@ void io_cleanup ()
 /* Return the mime type if available or NULL.
  * The mime type is read by curl only after the first read (or peek), until
  * then it's NULL. */
-#ifdef HAVE__ATTRIBUTE__
-char *io_get_mime_type (struct io_stream *s __attribute__((unused)))
-#else
-char *io_get_mime_type (struct io_stream *s)
-#endif
+char *io_get_mime_type (struct io_stream *s ATTR_UNUSED)
 {
 #ifdef HAVE_CURL
 	return s->curl.mime_type;
