@@ -179,6 +179,14 @@ struct entry
 	int history_pos;	/* current position in the history */
 };
 
+/* Save a new message for display. */
+struct queued_message {
+	struct queued_message *next;
+	char *msg;
+	int is_error;
+	int duration;
+};
+
 static struct info_win
 {
 	WINDOW *win;
@@ -187,6 +195,11 @@ static struct info_win
 	int msg_is_error; /* is the above message an error? */
 	time_t msg_timeout; /* how many seconds remain before the message
 				disappears */
+
+	struct queued_message *queued_message_head;	/* FIFO queue on which pending */
+	struct queued_message *queued_message_tail;	/*          messages get saved */
+	int queued_message_total;					/* Total messages on queue */
+	int queued_message_errors;					/* Error messages on queue */
 
 	int too_small; /* is the current window too small to display this widget? */
 
@@ -2507,6 +2520,11 @@ static void info_win_init (struct info_win *w)
 	w->win = newwin (4, COLS, LINES - 4, 0);
 	wbkgd (w->win, get_color(CLR_BACKGROUND));
 
+	w->queued_message_head = NULL;
+	w->queued_message_tail = NULL;
+	w->queued_message_total = 0;
+	w->queued_message_errors = 0;
+
 	w->too_small = 0;
 
 	w->state_stereo = 0;
@@ -2533,7 +2551,7 @@ static void info_win_init (struct info_win *w)
 
 	w->msg = get_startup_message ();
 	w->msg_is_error = 0;
-	w->msg_timeout = time(NULL) + 3;
+	w->msg_timeout = time(NULL) + options_get_int ("MessageLingerTime");
 
 	bar_init (&w->mixer_bar, 20, "", 1, get_color(CLR_MIXER_BAR_FILL),
 			get_color(CLR_MIXER_BAR_EMPTY));
@@ -2850,27 +2868,114 @@ static void info_win_draw_options_state (const struct info_win *w)
 	info_win_draw_switch (w, 72, 2, "NEXT", w->state_next);
 }
 
-static void info_win_msg (struct info_win *w, const char *msg,
-		const int is_error)
+/* Display the next queued message. */
+static void info_win_display_msg (struct info_win *w)
 {
-	if (w->msg)
+	int msg_changed;
+
+	assert (w != NULL);
+
+	msg_changed = 0;
+	if (w->msg && time(NULL) > w->msg_timeout) {
 		free (w->msg);
-	w->msg = xstrdup (msg);
-	w->msg_is_error = is_error;
-	w->msg_timeout = time(NULL) + 3;
-	info_win_draw_title (w);
+		w->msg = NULL;
+		msg_changed = 1;
+	}
+
+	if (!w->msg && w->queued_message_head) {
+		struct queued_message *this_msg;
+
+		this_msg = w->queued_message_head;
+		w->queued_message_head = this_msg->next;
+		if (!w->queued_message_head)
+			w->queued_message_tail = NULL;
+		w->queued_message_total -= 1;
+		if (this_msg->is_error)
+			w->queued_message_errors -= 1;
+
+		if (msg_changed && options_get_int("PrefixQueuedMessages")) {
+			char *msg, *decorator;
+			int len;
+
+			msg = this_msg->msg;
+			decorator = options_get_str("ErrorMessagesQueued");
+			len = strlen (msg) + strlen(decorator) + 10;
+			this_msg->msg = (char *) xmalloc (len);
+			snprintf (this_msg->msg, len, "(%d%s) %s",
+			          w->queued_message_total,
+			          (w->queued_message_errors ? decorator : ""),
+			          msg);
+			this_msg->msg[len - 1] = 0x00;
+			free (msg);
+		}
+
+		w->msg = this_msg->msg;
+		w->msg_is_error = this_msg->is_error;
+		w->msg_timeout = time (NULL) + this_msg->duration;
+
+		free (this_msg);
+		msg_changed = 1;
+	}
+
+	if (msg_changed)
+		info_win_draw_title (w);
 }
 
+/* Force the next queued message to be displayed. */
 static void info_win_disable_msg (struct info_win *w)
 {
 	assert (w != NULL);
 
-	if (w->msg) {
-		free (w->msg);
-		w->msg = NULL;
+	w->msg_timeout = 0;
+	info_win_display_msg (w);
+}
+
+/* Clear all queued messages. */
+static void info_win_clear_msg (struct info_win *w)
+{
+	assert (w != NULL);
+
+	while (w->queued_message_head) {
+		struct queued_message *this_msg;
+
+		this_msg = w->queued_message_head;
+		w->queued_message_head = this_msg->next;
+		free (this_msg->msg);
+		free (this_msg);
 	}
 
-	info_win_draw_title (w);
+	w->queued_message_total = 0;
+	w->queued_message_errors = 0;
+	w->queued_message_tail = NULL;
+}
+
+/* Queue a new message for display. */
+static void info_win_msg (struct info_win *w, const char *msg,
+		const int is_error)
+{
+	struct queued_message *this_msg;
+
+	assert (w != NULL);
+	assert (msg != NULL);
+
+	this_msg = (struct queued_message *) xmalloc (sizeof (struct queued_message));
+	this_msg->next = NULL;
+	this_msg->msg = xstrdup (msg);
+	this_msg->is_error = is_error;
+	this_msg->duration = options_get_int ("MessageLingerTime");
+
+	if (w->queued_message_head) {
+		w->queued_message_tail->next = this_msg;
+		w->queued_message_tail = this_msg;
+	} else {
+		w->queued_message_head = this_msg;
+		w->queued_message_tail = this_msg;
+	}
+	w->queued_message_total += 1;
+	if (is_error)
+		w->queued_message_errors += 1;
+
+	info_win_display_msg (w);
 }
 
 static void info_win_set_channels (struct info_win *w, const int channels)
@@ -2968,12 +3073,7 @@ static void info_win_set_files_time (struct info_win *w, const int time,
 /* Update the message timeout, redraw the window if needed. */
 static void info_win_tick (struct info_win *w)
 {
-	if (w->msg && time(NULL) > w->msg_timeout) {
-		free (w->msg);
-		w->msg = NULL;
-
-		info_win_draw_title (w);
-	}
+	info_win_display_msg (w);
 }
 
 /* Draw static elements of info_win: frames, legend etc. */
@@ -3269,6 +3369,7 @@ void windows_end ()
 		iface_initialized = 0;
 
 		main_win_destroy (&main_win);
+		info_win_clear_msg (&info_win);
 		info_win_destroy (&info_win);
 
 		xterm_clear_title ();
