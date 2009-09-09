@@ -653,3 +653,30 @@ time_t get_mtime (const char *file)
 	
 	return (time_t)-1;
 }
+
+/* Convert file path to absolute path;
+ * resulting string is allocated and must be freed afterwards. */
+char *absolute_path (const char *path, const char *cwd)
+{
+	char tmp[2*PATH_MAX];
+	char *result;
+
+	assert (path);
+	assert (cwd);
+
+	if(path[0] != '/' && !is_url(path)) {
+		strncpy (tmp, cwd, sizeof(tmp));
+		tmp[sizeof(tmp)-1] = 0;
+
+		resolve_path (tmp, sizeof(tmp), path);
+
+		result = (char *)xmalloc (sizeof(char) * (strlen(tmp)+1));
+		strcpy (result, tmp);
+	}
+	else {
+		result = (char *)xmalloc (sizeof(char) * (strlen(path)+1));
+		strcpy (result, path);
+	}
+
+	return result;
+}
