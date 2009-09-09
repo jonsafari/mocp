@@ -4000,6 +4000,26 @@ void interface_cmdline_file_info (const int server_sock)
 	plist_free (queue);
 }
 
+void interface_cmdline_enqueue (int server_sock, char **args,
+		const int arg_num)
+{
+	int i;
+
+	srv_sock = server_sock; /* the interface is not initialized, so set it
+				   here */
+
+	if (!getcwd(cwd, sizeof(cwd)))
+		fatal ("Can't get CWD: %s.", strerror(errno));
+
+	for (i = 0; i < arg_num; i++)
+		if (is_sound_file(args[i]) || is_url(args[i])) {
+			char *path = absolute_path (args[i], cwd);
+			send_int_to_srv (CMD_QUEUE_ADD);
+			send_str_to_srv (path);
+			free (path);
+		}
+}
+
 void interface_cmdline_playit (int server_sock, char **args, const int arg_num)
 {
 	struct plist plist;
@@ -4008,11 +4028,17 @@ void interface_cmdline_playit (int server_sock, char **args, const int arg_num)
 	srv_sock = server_sock; /* the interface is not initialized, so set it
 				   here */
 
+	if (!getcwd(cwd, sizeof(cwd)))
+		fatal ("Can't get CWD: %s.", strerror(errno));
+
 	plist_init (&plist);
 
 	for (i = 0; i < arg_num; i++)
-		if (is_url(args[i]) || is_sound_file(args[i]))
-			plist_add (&plist, args[i]);
+		if (is_url(args[i]) || is_sound_file(args[i])) {
+			char *path = absolute_path (args[i], cwd);
+			plist_add (&plist, path);
+			free (path);
+		}
 
 	if (plist_count(&plist)) {
 		int serial;

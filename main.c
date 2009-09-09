@@ -47,6 +47,7 @@ struct parameters
 	int only_server;
 	int foreground;
 	int append;
+	int enqueue;
 	int clear;
 	int play;
 	int dont_run_iface;
@@ -270,6 +271,7 @@ static void show_usage (const char *prg_name) {
 "-m --music-dir         Start in MusicDir.\n"
 "-a --append            Append the files/directories/playlists passed in\n"
 "                       the command line to playlist and exit.\n"
+"-q --enqueue           Add the files given on command line to the queue.\n"
 "-c --clear             Clear the playlist and exit.\n"
 "-p --play              Start playing from the first item on the playlist.\n"
 "-l --playit            Play files given on command line without modifying the\n"
@@ -316,6 +318,8 @@ static void server_command (struct parameters *params, char **args, int arg_num)
 			interface_cmdline_clear_plist (sock);
 		if (params->append)
 			interface_cmdline_append (sock, args, arg_num);
+		if (params->enqueue)
+			interface_cmdline_enqueue (sock, args, arg_num);
 		if (params->play)
 			interface_cmdline_play_first (sock);
 		if (params->get_file_info)
@@ -421,6 +425,7 @@ int main (int argc, char *argv[])
 		{ "sound-driver",	1, NULL, 'R' },
 		{ "music-dir",		0, NULL, 'm' },
 		{ "append",		0, NULL, 'a' },
+		{ "enqueue",		0, NULL, 'q' },
 		{ "clear", 		0, NULL, 'c' },
 		{ "play", 		0, NULL, 'p' },
 		{ "playit",		0, NULL, 'l' },
@@ -466,7 +471,7 @@ int main (int argc, char *argv[])
 #endif
 
 	while ((ret = getopt_long(argc, argv,
-					"VhDSFR:macpsxT:C:M:PUynArfiGelk:j:v:t:o:u:Q:",
+					"VhDSFR:macpsxT:C:M:PUynArfiGelk:j:v:t:o:u:Q:q",
 					long_options, &opt_index)) != -1) {
 		switch (ret) {
 			case 'V':
@@ -499,6 +504,10 @@ int main (int argc, char *argv[])
 			case 'a':
 			case 'e':
 				params.append = 1;
+				params.dont_run_iface = 1;
+				break;
+			case 'q':
+				params.enqueue = 1;
 				params.dont_run_iface = 1;
 				break;
 			case 'c':

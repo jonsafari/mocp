@@ -33,5 +33,6 @@ void make_file_title (struct plist *plist, const int num,
 		const int hide_extension);
 int isdir (const char *file);
 int can_read_file (const char *file);
+char *absolute_path (const char *path, const char *cwd);
 
 #endif
