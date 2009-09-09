@@ -2,6 +2,31 @@
 #ifndef INTERFACE_H
 #define INTERFACE_H
 
+/* The desired state of the client (and server). */
+enum want_quit {
+	NO_QUIT,	/* don't want to quit */
+	QUIT_CLIENT,	/* only quit the client */
+	QUIT_SERVER	/* quit the client and the server */
+};
+
+/* Information about the currently played file. */
+struct file_tags;
+struct file_info {
+	char *file;
+	struct file_tags *tags;
+	char *title;
+	int avg_bitrate;
+	int bitrate;
+	int rate;
+	int curr_time;
+	int total_time;
+	int channels;
+	int state; /* STATE_* */
+	char *block_file;
+	int block_start;
+	int block_end;
+};
+
 void init_interface (const int sock, const int logging, char **args,
 		const int arg_num);
 void interface_loop ();
