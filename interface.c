@@ -2011,9 +2011,9 @@ static void queue_toggle_file ()
 	if (!file)
 		return;
 
-	if (iface_curritem_get_type() != F_SOUND) {
-		/* TODO: Why not url? */
-		error ("You can only add a file using this command.");
+	if (iface_curritem_get_type() != F_SOUND
+			&& iface_curritem_get_type() != F_URL) {
+		error ("You can only add a file or URL using this command.");
 		free (file);
 		return;
 	}
@@ -2021,22 +2021,7 @@ static void queue_toggle_file ()
 	/* check if the file is already in the queue; if it isn't, add it,
 	 * otherwise, remove it */
 
-	send_int_to_srv (CMD_LOCK); /* TODO do we need this lock? */
-
 	if (plist_find_fname(queue, file) == -1) {
-
-		struct plist_item *item;
-		struct plist *iface_plist;
-		int i;
-
-		assert (iface_in_plist_menu() || iface_in_dir_menu());
-		iface_plist = (iface_in_plist_menu() ? playlist : dir_plist);
-
-		i = plist_find_fname (iface_plist, file);
-		assert (i != -1);
-
-		item = &iface_plist->items[i];
-
 		/* Add item to the server's queue */
 		send_int_to_srv (CMD_QUEUE_ADD);
 		send_str_to_srv (file);
@@ -2050,8 +2035,6 @@ static void queue_toggle_file ()
 
 		logit ("Removed from queue: %s", file);
 	}
-
-	send_int_to_srv (CMD_UNLOCK);
 
 	iface_menu_key (KEY_CMD_MENU_DOWN);
 
