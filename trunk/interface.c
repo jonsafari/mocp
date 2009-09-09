@@ -76,11 +76,7 @@ static struct event_queue events;
 static char cwd[PATH_MAX] = "";
 
 /* If the user presses quit, or we receive a termination signal. */
-static volatile enum want_quit {
-	NO_QUIT,	/* don't want to quit */
-	QUIT_CLIENT,	/* only quit the client */
-	QUIT_SERVER	/* quit the client and the server */
-} want_quit = NO_QUIT;
+static volatile enum want_quit want_quit = NO_QUIT;
 
 /* If user presses CTRL-C, set this to 1. This should interrupt long operations
  * that blocks the interface. */
@@ -95,21 +91,7 @@ static volatile int want_resize = 0;
 static int waiting_for_plist_load = 0;
 
 /* Information about the currently played file. */
-static struct file_info {
-	char *file;
-	struct file_tags *tags;
-	char *title;
-	int avg_bitrate;
-	int bitrate;
-	int rate;
-	int curr_time;
-	int total_time;
-	int channels;
-	int state; /* STATE_* */
-	char *block_file;
-	int block_start;
-	int block_end;
-} curr_file;
+static struct file_info curr_file;
 
 /* Silent seeking - where we are in seconds. -1 - no seeking. */
 static int silent_seek_pos = -1;
