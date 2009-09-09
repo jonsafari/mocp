@@ -384,10 +384,10 @@ static void file_info_block_reset (struct file_info *f)
 /* Enter the current time into a block start or end marker. */
 static void file_info_block_mark (int *marker)
 {
-	if (curr_file.block_file)
+	if (curr_file.state != STATE_STOP && curr_file.block_file)
 		*marker = curr_file.curr_time;
 	else
-		logit ("User marked while not playing.");
+		error ("Cannot make block mark while stopped.");
 }
 
 /* Get an integer option from the server (like shuffle) and set it. */
