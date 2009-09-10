@@ -12,6 +12,9 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
+
+#include <string.h>
+
 #include "lyrics.h"
 #include "common.h"
 #include "files.h"

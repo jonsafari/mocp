@@ -1,9 +1,6 @@
 #ifndef  LYRICS_H
 #define  LYRICS_H
 
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#endif
 #ifdef HAVE_NCURSESW_H
 # include <ncursesw/curses.h>
 #elif HAVE_NCURSES_H
