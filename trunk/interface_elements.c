@@ -87,7 +87,7 @@ struct side_menu
 	int width;
 	int height;
 
-	int total_time; /* total time of the files on the plalist */
+	int total_time; /* total time of the files on the playlist */
 	int total_time_for_all; /* is the total file counted for all files? */
 	
 	union
@@ -147,7 +147,7 @@ struct bar
 {
 	int width;	/* width in chars */
 	int filled;	/* how much is it filled in percent */
-	char orig_title[40];	/* optional title */
+	char *orig_title;	/* optional title */
 	char title[512];	/* title with the percent value */
 	int show_val;	/* show the title and the value? */
 	int fill_color;	/* color (ncurses attributes) of the filled part */
@@ -2426,7 +2426,8 @@ static void bar_set_title (struct bar *b, const char *title)
 	assert (title != NULL);
 	assert (strlen(title) < sizeof(b->title) - 5);
 
-	strcpy (b->orig_title, title);
+	strncpy (b->orig_title, title, b->width);
+	b->title[b->width] = 0;
 	bar_update_title (b);
 }
 
@@ -2444,13 +2445,12 @@ static void bar_init (struct bar *b, const int width, const char *title,
 	b->fill_color = fill_color;
 	b->empty_color = empty_color;
 	
-	if (show_val)
+	if (show_val) {
+		b->orig_title = xmalloc (b->width + 1);
 		bar_set_title (b, title);
-	else {
-		int i;
-
-		for (i = 0; i < b->width; i++)
-			b->title[i] = ' ';
+	} else {
+		b->orig_title = NULL;
+		memset (b->title, ' ', b->width);
 		b->title[b->width] = 0;
 	}
 }
@@ -2489,15 +2489,20 @@ static void bar_resize (struct bar *b, const int width)
 {
 	assert (b != NULL);
 	assert (width > 5 && width < (int)sizeof(b->title));
+
+	if (b->show_val && b->width < width) {
+		char *new_title = xmalloc (width + 1);
+		strcpy (new_title, b->orig_title);
+		free (b->orig_title);
+		b->orig_title = new_title;
+	}
+
 	b->width = width;
 
 	if (b->show_val)
 		bar_update_title (b);
 	else {
-		int i;
-
-		for (i = 0; i < b->width; i++)
-			b->title[i] = ' ';
+		memset (b->title, ' ', b->width);
 		b->title[b->width] = 0;
 	}	
 }
