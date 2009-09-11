@@ -150,6 +150,7 @@ struct bar
 	char *orig_title;	/* optional title */
 	char title[512];	/* title with the percent value */
 	int show_val;	/* show the title and the value? */
+	int show_pct;	/* show percentage in the title value? */
 	int fill_color;	/* color (ncurses attributes) of the filled part */
 	int empty_color;	/* color of the empty part */
 };
@@ -2166,7 +2167,6 @@ static void main_win_resize (struct main_win *w)
 	wresize (w->win, LINES - 4, COLS);
 	werase (w->win);
 
-
 	res = parse_layout (&l, w->layout_fmt);
 	assert (res != 0);
 	
@@ -2412,7 +2412,9 @@ static void bar_update_title (struct bar *b)
 	assert (b != NULL);
 	assert (b->show_val);
 	
-	if (b->filled < 99.99)
+	if (!b->show_pct)
+		sprintf (b->title, "%*s", b->width, b->orig_title);
+	else if (b->filled < 99.99)
 		sprintf (b->title, "%*s  %02.0f%%  ", b->width - 7, b->orig_title,
 				b->filled);
 	else
@@ -2432,8 +2434,8 @@ static void bar_set_title (struct bar *b, const char *title)
 }
 
 static void bar_init (struct bar *b, const int width, const char *title,
-		const int show_val, const int fill_color,
-		const int empty_color)
+		const int show_val, const int show_pct,
+		const int fill_color, const int empty_color)
 {
 	assert (b != NULL);
 	assert (width > 5 && width < (int)sizeof(b->title));
@@ -2442,6 +2444,7 @@ static void bar_init (struct bar *b, const int width, const char *title,
 	b->width = width;
 	b->filled = 0.0;
 	b->show_val = show_val;
+	b->show_pct = show_pct;
 	b->fill_color = fill_color;
 	b->empty_color = empty_color;
 	
@@ -2558,9 +2561,9 @@ static void info_win_init (struct info_win *w)
 	w->msg_is_error = 0;
 	w->msg_timeout = time(NULL) + options_get_int ("MessageLingerTime");
 
-	bar_init (&w->mixer_bar, 20, "", 1, get_color(CLR_MIXER_BAR_FILL),
+	bar_init (&w->mixer_bar, 20, "", 1, 1, get_color(CLR_MIXER_BAR_FILL),
 			get_color(CLR_MIXER_BAR_EMPTY));
-	bar_init (&w->time_bar, COLS - 4, NULL, 0, get_color(CLR_TIME_BAR_FILL),
+	bar_init (&w->time_bar, COLS - 4, NULL, 0, 0, get_color(CLR_TIME_BAR_FILL),
 			get_color(CLR_TIME_BAR_EMPTY));
 }
 
