@@ -146,7 +146,7 @@ static struct main_win
 struct bar
 {
 	int width;	/* width in chars */
-	int filled;	/* how much is it filled in percent */
+	float filled;	/* how much is it filled in percent */
 	char *orig_title;	/* optional title */
 	char title[512];	/* title with the percent value */
 	int show_val;	/* show the title and the value? */
@@ -2412,8 +2412,8 @@ static void bar_update_title (struct bar *b)
 	assert (b != NULL);
 	assert (b->show_val);
 	
-	if (b->filled < 100)
-		sprintf (b->title, "%*s  %02d%%  ", b->width - 7, b->orig_title,
+	if (b->filled < 99.99)
+		sprintf (b->title, "%*s  %02.0f%%  ", b->width - 7, b->orig_title,
 				b->filled);
 	else
 		sprintf (b->title, "%*s 100%%  ", b->width - 7, b->orig_title);
@@ -2440,7 +2440,7 @@ static void bar_init (struct bar *b, const int width, const char *title,
 	assert (title != NULL || !show_val);
 	
 	b->width = width;
-	b->filled = 0;
+	b->filled = 0.0;
 	b->show_val = show_val;
 	b->fill_color = fill_color;
 	b->empty_color = empty_color;
@@ -2465,7 +2465,7 @@ static void bar_draw (const struct bar *b, WINDOW *win, const int pos_x,
 	assert (pos_x >= 0 && pos_x < COLS - b->width);
 	assert (pos_y >= 0 && pos_y < LINES);
 
-	fill_chars = b->filled * b->width / 100;
+	fill_chars = b->filled * b->width / 100.0;
 	
 	wattrset (win, b->fill_color);
 	xmvwaddnstr (win, pos_y, pos_x, b->title, fill_chars);
@@ -2474,12 +2474,12 @@ static void bar_draw (const struct bar *b, WINDOW *win, const int pos_x,
 	xwaddstr (win, b->title + fill_chars);
 }
 
-static void bar_set_fill (struct bar *b, const int fill)
+static void bar_set_fill (struct bar *b, const double fill)
 {
 	assert (b != NULL);
-	assert (fill >= 0);
+	assert (fill >= 0.0);
 	
-	b->filled = fill <= 100 ? fill : 100;
+	b->filled = fill <= 100.0 ? fill : 100.0;
 
 	if (b->show_val)
 		bar_update_title (b);
@@ -2757,9 +2757,9 @@ static void info_win_set_curr_time (struct info_win *w, const int time)
 
 	w->curr_time = time;
 	if (w->total_time > 0 && w->curr_time >= 0)
-		bar_set_fill (&w->time_bar, w->curr_time * 100 / w->total_time);
+		bar_set_fill (&w->time_bar, w->curr_time * 100.0 / w->total_time);
 	else
-		bar_set_fill (&w->time_bar, 0);
+		bar_set_fill (&w->time_bar, 0.0);
 	
 	info_win_draw_time (w);
 }
@@ -2772,9 +2772,9 @@ static void info_win_set_total_time (struct info_win *w, const int time)
 	w->total_time = time;
 	
 	if (w->total_time > 0 && w->curr_time >= 0)
-		bar_set_fill (&w->time_bar, w->curr_time * 100 / w->total_time);
+		bar_set_fill (&w->time_bar, w->curr_time * 100.0 / w->total_time);
 	else
-		bar_set_fill (&w->time_bar, 0);
+		bar_set_fill (&w->time_bar, 0.0);
 
 	info_win_draw_time (w);
 }
@@ -2841,7 +2841,7 @@ static void info_win_set_mixer_value (struct info_win *w, const int value)
 	assert (w != NULL);
 	assert (value >= 0 && value <= 100);
 
-	bar_set_fill (&w->mixer_bar, value);
+	bar_set_fill (&w->mixer_bar, (double) value);
 	if (!w->in_entry && !w->too_small)
 		bar_draw (&w->mixer_bar, w->win, COLS - 37, 0);
 }
