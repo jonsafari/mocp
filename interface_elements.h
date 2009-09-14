@@ -64,6 +64,7 @@ void iface_update_item (const enum iface_menu menu, const struct plist *plist,
 		const int n);
 void iface_set_curr_time (const int time);
 void iface_set_total_time (const int time);
+void iface_set_block (const int start_time, const int end_time);
 void iface_set_state (const int state);
 void iface_set_bitrate (const int bitrate);
 void iface_set_rate (const int rate);

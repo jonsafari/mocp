@@ -268,6 +268,7 @@ void options_init ()
 	option_add_int ("SetXtermTitle", 1);
 	option_add_int ("SetScreenTitle", 1);
 	option_add_int ("PlaylistFullPaths", 1);
+	option_add_str ("BlockDecorators", "`\"'");
 	option_add_int ("MessageLingerTime", 3);
 	option_add_int ("PrefixQueuedMessages", 1);
 	option_add_str ("ErrorMessagesQueued", "!");
@@ -497,6 +498,10 @@ int check_str_option (const char *name, const char *val)
 				&& strcasecmp(val, "SincFastest")
 				&& strcasecmp(val, "ZeroOrderHold")
 				&& strcasecmp(val, "Linear"))
+			return 0;
+	}
+	else if (!strcasecmp(name, "BlockDecorators")) {
+		if (strlen(val) != 3)
 			return 0;
 	}
 	else if (!strcasecmp(name, "ModPlug_ResamplingMode")) {
