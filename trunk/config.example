@@ -319,6 +319,17 @@ CanStartInPlaylist	= yes
 # Display full paths instead of just file names in the playlist.
 #PlaylistFullPaths	= yes
 
+# The following setting describes to how block markers are displayed
+# in the play time progress bar.  Its value is a string of exactly three
+# characters.  The first character is displayed in a position which
+# corresponds to the time marked as the start of a block and the last
+# character to the time marked as the end of the block.  The middle
+# character is displayed instead if both the start and the end of the block
+# would fall in the same position (within the resolution of the interface).
+# You can turn off the displaying of these block marker positions by using
+# three space characters.
+#BlockDecorators	= "`\"'"
+
 # How long (in seconds) to leave a message displayed on the screen.
 # Setting this to a high value allows you to scroll through the messages
 # using the 'hide_message' key.  Setting it to zero means you'll have to

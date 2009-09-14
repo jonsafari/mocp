@@ -376,6 +376,7 @@ static void file_info_block_mark (int *marker)
 		error ("Cannot make block marks in files of unknown duration.");
 	} else {
 		*marker = curr_file.curr_time;
+		iface_set_block (curr_file.block_start, curr_file.block_end);
 	}
 }
 
@@ -664,6 +665,7 @@ static void ev_file_tags (const struct tag_ev_response *data)
 					curr_file.block_start = 0;
 					curr_file.block_end = curr_file.total_time;
 				}
+				iface_set_block (curr_file.block_start, curr_file.block_end);
 			}
 		}
 		else

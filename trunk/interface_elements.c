@@ -225,6 +225,8 @@ static struct info_win
 	/* time in seconds */
 	int curr_time;
 	int total_time;
+	int block_start;
+	int block_end;
 
 	int plist_time;		/* total time of files displayed in the menu */
 	int plist_time_for_all;	/* is the above time for all files? */
@@ -2429,7 +2431,7 @@ static void bar_set_title (struct bar *b, const char *title)
 	assert (strlen(title) < sizeof(b->title) - 5);
 
 	strncpy (b->orig_title, title, b->width);
-	b->title[b->width] = 0;
+	b->orig_title[b->width] = 0;
 	bar_update_title (b);
 }
 
@@ -2549,6 +2551,8 @@ static void info_win_init (struct info_win *w)
 
 	w->curr_time = -1;
 	w->total_time = -1;
+	w->block_start = -1;
+	w->block_end = -1;
 
 	w->title = NULL;
 	w->status_msg[0] = 0;
@@ -2563,7 +2567,7 @@ static void info_win_init (struct info_win *w)
 
 	bar_init (&w->mixer_bar, 20, "", 1, 1, get_color(CLR_MIXER_BAR_FILL),
 			get_color(CLR_MIXER_BAR_EMPTY));
-	bar_init (&w->time_bar, COLS - 4, NULL, 0, 0, get_color(CLR_TIME_BAR_FILL),
+	bar_init (&w->time_bar, COLS - 4, "", 1, 0, get_color(CLR_TIME_BAR_FILL),
 			get_color(CLR_TIME_BAR_EMPTY));
 }
 
@@ -2753,6 +2757,15 @@ static void info_win_draw_time (const struct info_win *w)
 	info_win_update_curs (w);
 }
 
+static void info_win_draw_block (const struct info_win *w)
+{
+	assert (w != NULL);
+
+	if (!w->too_small)
+		bar_draw (&w->time_bar, w->win, 2, 3);
+	info_win_update_curs (w);
+}
+
 static void info_win_set_curr_time (struct info_win *w, const int time)
 {
 	assert (w != NULL);
@@ -2780,6 +2793,54 @@ static void info_win_set_total_time (struct info_win *w, const int time)
 		bar_set_fill (&w->time_bar, 0.0);
 
 	info_win_draw_time (w);
+}
+
+static void info_win_set_block_title (struct info_win *w)
+{
+	assert (w != NULL);
+
+	if (w->total_time == -1) {
+		bar_set_title (&w->time_bar, "");
+	} else if (w->block_start == -1 || w->block_end == -1) {
+		bar_set_title (&w->time_bar, "");
+	} else if (w->block_start == 0 && w->block_end == w->total_time) {
+		bar_set_title (&w->time_bar, "");
+	} else {
+		int start_pos, end_pos;
+		char *new_title, *decorators;
+
+		start_pos = w->block_start * w->time_bar.width / w->total_time;
+		if (w->block_end < w->total_time)
+			end_pos = w->block_end * w->time_bar.width / w->total_time;
+		else
+			end_pos = w->time_bar.width - 1;
+
+		new_title = xmalloc(w->time_bar.width + 1);
+		memset(new_title, ' ', w->time_bar.width);
+		decorators = options_get_str ("BlockDecorators");
+		if (start_pos == end_pos) {
+			new_title[start_pos] = decorators[1];
+		} else {
+			new_title[start_pos] = decorators[0];
+			new_title[end_pos] = decorators[2];
+		}
+		new_title[w->time_bar.width] = 0x00;
+
+		bar_set_title (&w->time_bar, new_title);
+	}
+}
+
+static void info_win_set_block (struct info_win *w, const int block_start, const int block_end)
+{
+	assert (w != NULL);
+	assert (block_start == -1 || (block_start >= 0 && block_start <= w->total_time));
+	assert (block_end == -1 || (block_end >= 0 && block_end <= w->total_time));
+
+	info_win.block_start = block_start;
+	info_win.block_end = block_end;
+
+	info_win_set_block_title (w);
+	info_win_draw_block (w);
 }
 
 static void info_win_set_played_title (struct info_win *w, const char *title)
@@ -3160,6 +3221,7 @@ static void info_win_draw (const struct info_win *w)
 		info_win_draw_static_elements (w);
 		info_win_draw_state (w);
 		info_win_draw_time (w);
+		info_win_draw_block (w);
 		info_win_draw_title (w);
 		info_win_draw_options_state (w);
 		info_win_draw_status (w);
@@ -3331,6 +3393,7 @@ static void info_win_resize (struct info_win *w)
 
 	bar_resize (&w->mixer_bar, 20);
 	bar_resize (&w->time_bar, COLS - 4);
+	info_win_set_block_title (w);
 
 	if (w->in_entry)
 		entry_resize (&w->entry, COLS - 4);
@@ -3643,6 +3706,14 @@ void iface_set_curr_time (const int time)
 void iface_set_total_time (const int time)
 {
 	info_win_set_total_time (&info_win, time);
+	info_win_set_block (&info_win, -1, -1);
+	iface_refresh_screen ();
+}
+
+/* Set the start and end marks for the currently played file. */
+void iface_set_block (const int block_start, const int block_end)
+{
+	info_win_set_block (&info_win, block_start, block_end);
 	iface_refresh_screen ();
 }
 
@@ -3691,6 +3762,7 @@ void iface_set_played_file (const char *file)
 		info_win_set_rate (&info_win, -1);
 		info_win_set_curr_time (&info_win, -1);
 		info_win_set_total_time (&info_win, -1);
+		info_win_set_block (&info_win, -1, -1);
 		info_win_set_option_state (&info_win, "Net", 0);
 	}
 	else if (is_url(file)) {
