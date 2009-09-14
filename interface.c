@@ -366,10 +366,17 @@ static void file_info_block_reset (struct file_info *f)
 /* Enter the current time into a block start or end marker. */
 static void file_info_block_mark (int *marker)
 {
-	if (curr_file.state != STATE_STOP && curr_file.block_file)
+	if (curr_file.state == STATE_STOP) {
+		error ("Cannot make block marks while stopped.");
+	} else if (file_type (curr_file.file) == F_URL) {
+		error ("Cannot make block marks in URLs.");
+	} else if (file_type (curr_file.file) != F_SOUND) {
+		error ("Cannot make block marks in non-audio files.");
+	} else if (!curr_file.block_file) {
+		error ("Cannot make block marks in files of unknown duration.");
+	} else {
 		*marker = curr_file.curr_time;
-	else
-		error ("Cannot make block mark while stopped.");
+	}
 }
 
 /* Get an integer option from the server (like shuffle) and set it. */
@@ -651,10 +658,12 @@ static void ev_file_tags (const struct tag_ev_response *data)
 		if (data->tags->time != -1) {
 			curr_file.total_time = data->tags->time;
 			iface_set_total_time (curr_file.total_time);
-			if (!curr_file.block_file) {
-				curr_file.block_file = xstrdup(curr_file.file);
-				curr_file.block_start = 0;
-				curr_file.block_end = curr_file.total_time;
+			if (file_type (curr_file.file) == F_SOUND) {
+				if (!curr_file.block_file) {
+					curr_file.block_file = xstrdup(curr_file.file);
+					curr_file.block_start = 0;
+					curr_file.block_end = curr_file.total_time;
+				}
 			}
 		}
 		else
