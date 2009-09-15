@@ -20,6 +20,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <limits.h>
+#include <stdarg.h>
+
 #include "common.h"
 #include "log.h"
 #include "options.h"
@@ -49,6 +52,9 @@ struct option
 	int ignore_in_config;
 	int set_in_config;
 	unsigned int hash;
+	int (*check) (int, ...);
+	int count;
+	void *constraints;
 };
 
 static struct option options[OPTIONS_MAX];
@@ -65,7 +71,7 @@ static unsigned int hash(const char * str)
 	return hash;
 }
 
-/* Return an index on an option in the options hashtable. If there is no such
+/* Return an index to an option in the options hashtable. If there is no such
  * option return -1. */
 static int find_option (const char *name, enum option_type type)
 {
@@ -109,9 +115,111 @@ static int find_free (unsigned int h)
 	return -1;
 }
 
+/* Check that a value falls within the specified range(s). */
+int option_check_range (int opt, ...)
+{
+	int rc, ix, int_val;
+	char *str_val;
+	va_list va;
+
+	assert (opt != -1);
+	assert (options[opt].count % 2 == 0);
+
+	rc = 0;
+	va_start (va, opt);
+	switch (options[opt].type) {
+		case OPTION_INT:
+			int_val = va_arg (va, int);
+			for (ix = 0; ix < options[opt].count; ix += 2) {
+				if (int_val >= ((int *) options[opt].constraints)[ix] &&
+		    		int_val <= ((int *) options[opt].constraints)[ix + 1])
+					rc = 1;
+			}
+			break;
+		case OPTION_STR:
+			str_val = va_arg (va, char *);
+			for (ix = 0; ix < options[opt].count; ix += 2) {
+				if (strcasecmp (str_val, (((char **) options[opt].constraints)[ix])) >= 0 &&
+				    strcasecmp (str_val, (((char **) options[opt].constraints)[ix + 1])) <= 0)
+					rc = 1;
+			}
+			break;
+		case OPTION_ANY:
+		case OPTION_FREE:
+			break;
+	}
+	va_end (va);
+
+	return rc;
+}
+
+/* Check that a value is one of the specified values. */
+int option_check_discrete (int opt, ...)
+{
+	int rc, ix, int_val;
+	char *str_val;
+	va_list va;
+
+	assert (opt != -1);
+
+	rc = 0;
+	va_start (va, opt);
+	switch (options[opt].type) {
+		case OPTION_INT:
+			int_val = va_arg (va, int);
+			for (ix = 0; ix < options[opt].count; ix += 1) {
+				if (int_val == ((int *) options[opt].constraints)[ix])
+					rc = 1;
+			}
+			break;
+		case OPTION_STR:
+			str_val = va_arg (va, char *);
+			for (ix = 0; ix < options[opt].count; ix += 1) {
+				if (!strcasecmp(str_val, (((char **) options[opt].constraints)[ix])))
+					rc = 1;
+			}
+			break;
+		case OPTION_ANY:
+		case OPTION_FREE:
+			break;
+	}
+	va_end (va);
+
+	return rc;
+}
+
+/* Check that a string length falls within the specified range(s). */
+int option_check_length (int opt, ...)
+{
+	int rc, ix, str_len;
+	va_list va;
+
+	assert (opt != -1);
+	assert (options[opt].count % 2 == 0);
+	assert (options[opt].type == OPTION_STR);
+
+	rc = 0;
+	va_start (va, opt);
+	str_len = strlen (va_arg (va, char *));
+	for (ix = 0; ix < options[opt].count; ix += 1) {
+		if (str_len >= ((int *) options[opt].constraints)[ix] &&
+    		str_len <= ((int *) options[opt].constraints)[ix + 1])
+			rc = 1;
+	}
+	va_end (va);
+
+	return rc;
+}
+
+/* Always pass a value as valid. */
+int option_check_true (int opt ATTR_UNUSED, ...)
+{
+	return 1;
+}
+
 /* Initializes a position on the options table. This is intended to be used at
  * initialization to make a table of valid options and its default values. */
-static unsigned int option_init(const char *name, enum option_type type)
+static int option_init(const char *name, enum option_type type)
 {
 	unsigned int h=hash(name);
 	int pos=find_free(h);
@@ -124,27 +232,58 @@ static unsigned int option_init(const char *name, enum option_type type)
 	options[pos].type = type;
 	options[pos].ignore_in_config = 0;
 	options[pos].set_in_config = 0;
+	options[pos].check = option_check_true;
+	options[pos].count = 0;
+	options[pos].constraints = NULL;
 
 	options_num++;
 	return pos;
 }
 
 /* Add an integer option to the options table. This is intended to be used at
- * initialization to make a table of valid options and its default values. */
-static void option_add_int (const char *name, const int value)
+ * initialization to make a table of valid options and their default values. */
+static void option_add_int (const char *name, const int value, int (*check) (int, ...), const int count, ...)
 {
-	unsigned int pos=option_init(name,OPTION_INT);
+	int ix, pos;
+	va_list va;
 
+	pos = option_init (name, OPTION_INT);
 	options[pos].value.num = value;
+	options[pos].check = check;
+	options[pos].count = count;
+	if (count > 0) {
+		options[pos].constraints = xcalloc (count, sizeof (int));
+		va_start (va, count);
+		for (ix = 0; ix < count; ix += 1)
+			((int *) options[pos].constraints)[ix] = va_arg (va, int);
+		va_end (va);
+	}
 }
 
-/* Add an string option to the options table. This is intended to be used at
- * initialization to make a table of valid options and its default values. */
-static void option_add_str (const char *name, const char *value)
+/* Add a string option to the options table. This is intended to be used at
+ * initialization to make a table of valid options and their default values. */
+static void option_add_str (const char *name, const char *value, int (*check) (int, ...), const int count, ...)
 {
-	unsigned int pos=option_init(name, OPTION_STR);
+	int ix, pos;
+	va_list va;
 
+	pos = option_init (name, OPTION_STR);
 	options[pos].value.str = xstrdup (value);
+	options[pos].check = check;
+	options[pos].count = count;
+	if (count > 0) {
+		va_start (va, count);
+		if (check == option_check_length) {
+			options[pos].constraints = xcalloc (count, sizeof (int));
+			for (ix = 0; ix < count; ix += 1)
+				((int *) options[pos].constraints)[ix] = va_arg (va, int);
+		} else {
+			options[pos].constraints = xcalloc (count, sizeof (char *));
+			for (ix = 0; ix < count; ix += 1)
+				((char **) options[pos].constraints)[ix] = xstrdup (va_arg (va, char *));
+		}
+		va_end (va);
+	}
 }
 
 /* Set an integer option to the value. */
@@ -180,345 +319,181 @@ void option_ignore_config (const char *name)
 	options[opt].ignore_in_config = 1;
 }
 
+#define CHECK_DISCRETE(c)	option_check_discrete, (c)
+#define CHECK_RANGE(c)		option_check_range, (2 * (c))
+#define CHECK_LENGTH(c)		option_check_length, (2 * (c))
+#define CHECK_NONE			option_check_true, 0
+
 /* Make a table of options and its default values. */
 void options_init ()
 {
 	memset (options, 0, sizeof(options));
 
-	option_add_int ("ReadTags", 1);
-	option_add_str ("MusicDir", NULL);
-	option_add_int ("StartInMusicDir", 0);
-	option_add_int ("ShowStreamErrors", 0);
-	option_add_int ("Repeat", 0);
-	option_add_int ("Shuffle", 0);
-	option_add_int ("AutoNext", 1);
-	option_add_str ("Sort", "FileName");
+	option_add_int ("ReadTags", 1, CHECK_DISCRETE(2), 0, 1);
+	option_add_str ("MusicDir", NULL, CHECK_NONE);
+	option_add_int ("StartInMusicDir", 0, CHECK_DISCRETE(2), 0, 1);
+	option_add_int ("ShowStreamErrors", 0, CHECK_DISCRETE(2), 0, 1);
+	option_add_int ("Repeat", 0, CHECK_DISCRETE(2), 0, 1);
+	option_add_int ("Shuffle", 0, CHECK_DISCRETE(2), 0, 1);
+	option_add_int ("AutoNext", 1, CHECK_DISCRETE(2), 0, 1);
+	option_add_str ("Sort", "FileName", CHECK_DISCRETE(1), "FileName");
 	option_add_str ("FormatString",
-			"%(n:%n :)%(a:%a - :)%(t:%t:)%(A: \\(%A\\):)");
-	option_add_int ("OutputBuffer", 512);
-	option_add_str ("OSSDevice", "/dev/dsp");
-	option_add_str ("OSSMixerDevice", "/dev/mixer");
-	option_add_str ("OSSMixerChannel", "pcm");
-	option_add_str ("OSSMixerChannel2", "master");
-	option_add_str ("SoundDriver", "Jack, ALSA, OSS");
-	option_add_int ("ShowHiddenFiles", 1);
-	option_add_str ("AlsaDevice", "default");
-	option_add_str ("AlsaMixer", "PCM");
-	option_add_str ("AlsaMixer2", "Master");
-	option_add_int ("HideFileExtension", 0);
-	option_add_int ("ShowFormat", 1);
-	option_add_str ("ShowTime", "IfAvailable");
-	option_add_str ("Theme", NULL);
-	option_add_str ("XTermTheme", NULL);
-	option_add_str ("ForceTheme", NULL); /* Used when -T is set */
-	option_add_str ("MOCDir", "~/.moc");
-	option_add_int ("UseMmap", 0);
-	option_add_int ("Precache", 1);
-	option_add_int ("SavePlaylist", 1);
-	option_add_str ("Keymap", NULL);
-	option_add_int ("SyncPlaylist", 1);
-	option_add_int ("InputBuffer", 512);
-	option_add_int ("Prebuffering", 64);
-	option_add_str ("JackOutLeft", "alsa_pcm:playback_1");
-	option_add_str ("JackOutRight", "alsa_pcm:playback_2");
-	option_add_int ("ASCIILines", 0);
-	option_add_str ("FastDir1", NULL);
-	option_add_str ("FastDir2", NULL);
-	option_add_str ("FastDir3", NULL);
-	option_add_str ("FastDir4", NULL);
-	option_add_str ("FastDir5", NULL);
-	option_add_str ("FastDir6", NULL);
-	option_add_str ("FastDir7", NULL);
-	option_add_str ("FastDir8", NULL);
-	option_add_str ("FastDir9", NULL);
-	option_add_str ("FastDir10", NULL);
-	option_add_str ("ExecCommand1", NULL);
-	option_add_str ("ExecCommand2", NULL);
-	option_add_str ("ExecCommand3", NULL);
-	option_add_str ("ExecCommand4", NULL);
-	option_add_str ("ExecCommand5", NULL);
-	option_add_str ("ExecCommand6", NULL);
-	option_add_str ("ExecCommand7", NULL);
-	option_add_str ("ExecCommand8", NULL);
-	option_add_str ("ExecCommand9", NULL);
-	option_add_str ("ExecCommand10", NULL);
-	option_add_int ("Mp3IgnoreCRCErrors", 1);
-	option_add_int ("SeekTime", 1);
-	option_add_int ("SilentSeekTime", 5);
-	option_add_str ("ResampleMethod", "Linear");
-	option_add_int ("ForceSampleRate", 0);
-	option_add_str ("HTTPProxy", NULL);
-	option_add_int ("UseRealtimePriority", 0);
-	option_add_int ("TagsCacheSize", 256);
-	option_add_int ("PlaylistNumbering", 1);
+			"%(n:%n :)%(a:%a - :)%(t:%t:)%(A: \\(%A\\):)", CHECK_NONE);
+	option_add_int ("OutputBuffer", 512, CHECK_RANGE(1), 128, INT_MAX);
+	option_add_str ("OSSDevice", "/dev/dsp", CHECK_NONE);
+	option_add_str ("OSSMixerDevice", "/dev/mixer", CHECK_NONE);
+	option_add_str ("OSSMixerChannel", "pcm", CHECK_NONE);
+	option_add_str ("OSSMixerChannel2", "master", CHECK_NONE);
+	option_add_str ("SoundDriver", "Jack, ALSA, OSS", CHECK_NONE);
+	option_add_int ("ShowHiddenFiles", 1, CHECK_DISCRETE(2), 0, 1);
+	option_add_str ("AlsaDevice", "default", CHECK_NONE);
+	option_add_str ("AlsaMixer", "PCM", CHECK_NONE);
+	option_add_str ("AlsaMixer2", "Master", CHECK_NONE);
+	option_add_int ("HideFileExtension", 0, CHECK_DISCRETE(2), 0, 1);
+	option_add_int ("ShowFormat", 1, CHECK_DISCRETE(2), 0, 1);
+	option_add_str ("ShowTime", "IfAvailable",
+	                 CHECK_DISCRETE(3), "yes", "no", "IfAvailable");
+	option_add_str ("Theme", NULL, CHECK_NONE);
+	option_add_str ("XTermTheme", NULL, CHECK_NONE);
+	option_add_str ("ForceTheme", NULL, CHECK_NONE); /* Used when -T is set */
+	option_add_str ("MOCDir", "~/.moc", CHECK_NONE);
+	option_add_int ("UseMmap", 0, CHECK_DISCRETE(2), 0, 1);
+	option_add_int ("Precache", 1, CHECK_DISCRETE(2), 0, 1);
+	option_add_int ("SavePlaylist", 1, CHECK_DISCRETE(2), 0, 1);
+	option_add_str ("Keymap", NULL, CHECK_NONE);
+	option_add_int ("SyncPlaylist", 1, CHECK_DISCRETE(2), 0, 1);
+	option_add_int ("InputBuffer", 512, CHECK_RANGE(1), 32, INT_MAX);
+	option_add_int ("Prebuffering", 64, CHECK_RANGE(1), 0, INT_MAX);
+	option_add_str ("JackOutLeft", "alsa_pcm:playback_1", CHECK_NONE);
+	option_add_str ("JackOutRight", "alsa_pcm:playback_2", CHECK_NONE);
+	option_add_int ("ASCIILines", 0, CHECK_DISCRETE(2), 0, 1);
+	option_add_str ("FastDir1", NULL, CHECK_NONE);
+	option_add_str ("FastDir2", NULL, CHECK_NONE);
+	option_add_str ("FastDir3", NULL, CHECK_NONE);
+	option_add_str ("FastDir4", NULL, CHECK_NONE);
+	option_add_str ("FastDir5", NULL, CHECK_NONE);
+	option_add_str ("FastDir6", NULL, CHECK_NONE);
+	option_add_str ("FastDir7", NULL, CHECK_NONE);
+	option_add_str ("FastDir8", NULL, CHECK_NONE);
+	option_add_str ("FastDir9", NULL, CHECK_NONE);
+	option_add_str ("FastDir10", NULL, CHECK_NONE);
+	option_add_str ("ExecCommand1", NULL, CHECK_NONE);
+	option_add_str ("ExecCommand2", NULL, CHECK_NONE);
+	option_add_str ("ExecCommand3", NULL, CHECK_NONE);
+	option_add_str ("ExecCommand4", NULL, CHECK_NONE);
+	option_add_str ("ExecCommand5", NULL, CHECK_NONE);
+	option_add_str ("ExecCommand6", NULL, CHECK_NONE);
+	option_add_str ("ExecCommand7", NULL, CHECK_NONE);
+	option_add_str ("ExecCommand8", NULL, CHECK_NONE);
+	option_add_str ("ExecCommand9", NULL, CHECK_NONE);
+	option_add_str ("ExecCommand10", NULL, CHECK_NONE);
+	option_add_int ("Mp3IgnoreCRCErrors", 1, CHECK_DISCRETE(2), 0, 1);
+	option_add_int ("SeekTime", 1, CHECK_RANGE(1), 1, INT_MAX);
+	option_add_int ("SilentSeekTime", 5, CHECK_RANGE(1), 1, INT_MAX);
+	option_add_str ("ResampleMethod", "Linear",
+	                 CHECK_DISCRETE(5), "SincBestQuality", "SincMediumQuality",
+	                                    "SincFastest", "ZeroOrderHold", "Linear");
+	option_add_int ("ForceSampleRate", 0, CHECK_RANGE(1), 0, 500000);
+	option_add_str ("HTTPProxy", NULL, CHECK_NONE);
+	option_add_int ("UseRealtimePriority", 0, CHECK_DISCRETE(2), 0, 1);
+	option_add_int ("TagsCacheSize", 256, CHECK_RANGE(1), 0, INT_MAX);
+	option_add_int ("PlaylistNumbering", 1, CHECK_DISCRETE(2), 0, 1);
 	option_add_str ("Layout1",
-			"directory:0,0,50%,100% playlist:50%,0,FILL,100%");
+			"directory:0,0,50%,100% playlist:50%,0,FILL,100%", CHECK_NONE);
 	option_add_str ("Layout2",
-			"directory:0,0,100%,100% playlist:0,0,100%,100%");
-	option_add_str ("Layout3", NULL);
-	option_add_int ("FollowPlayedFile", 1);
-	option_add_int ("CanStartInPlaylist", 1);
-	option_add_int ("UseCursorSelection", 0);
-	option_add_str ("ID3v1TagsEncoding", "WINDOWS-1250");
-	option_add_int ("UseRCC", 1);
-	option_add_int ("UseRCCForFilesystem", 1);
-	option_add_int ("EnforceTagsEncoding", 0);
-	option_add_int ("FileNamesIconv", 0);
-	option_add_int ("NonUTFXterm", 0);
-	option_add_int ("SetXtermTitle", 1);
-	option_add_int ("SetScreenTitle", 1);
-	option_add_int ("PlaylistFullPaths", 1);
-	option_add_str ("BlockDecorators", "`\"'");
-	option_add_int ("MessageLingerTime", 3);
-	option_add_int ("PrefixQueuedMessages", 1);
-	option_add_str ("ErrorMessagesQueued", "!");
-	option_add_int ("Allow24bitOutput", 0);
+			"directory:0,0,100%,100% playlist:0,0,100%,100%", CHECK_NONE);
+	option_add_str ("Layout3", NULL, CHECK_NONE);
+	option_add_int ("FollowPlayedFile", 1, CHECK_DISCRETE(2), 0, 1);
+	option_add_int ("CanStartInPlaylist", 1, CHECK_DISCRETE(2), 0, 1);
+	option_add_int ("UseCursorSelection", 0, CHECK_DISCRETE(2), 0, 1);
+	option_add_str ("ID3v1TagsEncoding", "WINDOWS-1250", CHECK_NONE);
+	option_add_int ("UseRCC", 1, CHECK_DISCRETE(2), 0, 1);
+	option_add_int ("UseRCCForFilesystem", 1, CHECK_DISCRETE(2), 0, 1);
+	option_add_int ("EnforceTagsEncoding", 0, CHECK_DISCRETE(2), 0, 1);
+	option_add_int ("FileNamesIconv", 0, CHECK_DISCRETE(2), 0, 1);
+	option_add_int ("NonUTFXterm", 0, CHECK_DISCRETE(2), 0, 1);
+	option_add_int ("SetXtermTitle", 1, CHECK_DISCRETE(2), 0, 1);
+	option_add_int ("SetScreenTitle", 1, CHECK_DISCRETE(2), 0, 1);
+	option_add_int ("PlaylistFullPaths", 1, CHECK_DISCRETE(2), 0, 1);
+	option_add_str ("BlockDecorators", "`\"'", CHECK_LENGTH(1), 3, 3);
+	option_add_int ("MessageLingerTime", 3, CHECK_RANGE(1), 0, INT_MAX);
+	option_add_int ("PrefixQueuedMessages", 1, CHECK_DISCRETE(2), 0, 1);
+	option_add_str ("ErrorMessagesQueued", "!", CHECK_NONE);
+	option_add_int ("Allow24bitOutput", 0, CHECK_DISCRETE(2), 0, 1);
 
-	option_add_int ("ModPlug_Channels", 2);
-	option_add_int ("ModPlug_Frequency", 44100);
-	option_add_int ("ModPlug_Bits", 16);
+	option_add_int ("ModPlug_Channels", 2, CHECK_DISCRETE(2), 1, 2);
+	option_add_int ("ModPlug_Frequency", 44100,
+	                 CHECK_DISCRETE(4), 11025, 22050, 44100, 48000);
+	option_add_int ("ModPlug_Bits", 16, CHECK_DISCRETE(3), 8, 16, 32);
 
-	option_add_int ("ModPlug_Oversampling", 1);
-	option_add_int ("ModPlug_NoiseReduction", 1);
-	option_add_int ("ModPlug_Reverb", 0);
-	option_add_int ("ModPlug_MegaBass", 0);
-	option_add_int ("ModPlug_Surround", 0);
+	option_add_int ("ModPlug_Oversampling", 1, CHECK_DISCRETE(2), 0, 1);
+	option_add_int ("ModPlug_NoiseReduction", 1, CHECK_DISCRETE(2), 0, 1);
+	option_add_int ("ModPlug_Reverb", 0, CHECK_DISCRETE(2), 0, 1);
+	option_add_int ("ModPlug_MegaBass", 0, CHECK_DISCRETE(2), 0, 1);
+	option_add_int ("ModPlug_Surround", 0, CHECK_DISCRETE(2), 0, 1);
 
-	option_add_str ("ModPlug_ResamplingMode", "FIR");
+	option_add_str ("ModPlug_ResamplingMode", "FIR",
+	                 CHECK_DISCRETE(4), "FIR", "SPLINE", "LINEAR", "NEAREST");
 
-	option_add_int ("ModPlug_ReverbDepth", 0);
-	option_add_int ("ModPlug_ReverbDelay", 0);
-	option_add_int ("ModPlug_BassAmount", 0);
-	option_add_int ("ModPlug_BassRange", 10);
-	option_add_int ("ModPlug_SurroundDepth", 0);
-	option_add_int ("ModPlug_SurroundDelay", 0);
-	option_add_int ("ModPlug_LoopCount", 0);
+	option_add_int ("ModPlug_ReverbDepth", 0, CHECK_RANGE(1), 0, 100);
+	option_add_int ("ModPlug_ReverbDelay", 0, CHECK_RANGE(1), 0, INT_MAX);
+	option_add_int ("ModPlug_BassAmount", 0, CHECK_RANGE(1), 0, 100);
+	option_add_int ("ModPlug_BassRange", 10, CHECK_RANGE(1), 10, 100);
+	option_add_int ("ModPlug_SurroundDepth", 0, CHECK_RANGE(1), 0, 100);
+	option_add_int ("ModPlug_SurroundDelay", 0, CHECK_RANGE(1), 0, INT_MAX);
+	option_add_int ("ModPlug_LoopCount", 0, CHECK_RANGE(1), -1, INT_MAX);
 
-	option_add_int ("TiMidity_Volume", 100);
-	option_add_int ("TiMidity_Rate", 44100);
-	option_add_int ("TiMidity_Bits", 16);
-	option_add_int ("TiMidity_Channels", 2);
-	option_add_str ("TiMidity_Config", NULL);
+	option_add_int ("TiMidity_Volume", 100, CHECK_RANGE(1), 0, 800);
+	option_add_int ("TiMidity_Rate", 44100, CHECK_RANGE(1), 8000, 48000);
+		// not sure about the limits... I like 44100
+	option_add_int ("TiMidity_Bits", 16, CHECK_DISCRETE(2), 8, 16);
+	option_add_int ("TiMidity_Channels", 2, CHECK_DISCRETE(2), 1, 2);
+	option_add_str ("TiMidity_Config", NULL, CHECK_NONE);
 
-	option_add_int ("SidPlay2_DefaultSongLength", 180);
-	option_add_int ("SidPlay2_MinimumSongLength", 0);
-	option_add_str ("SidPlay2_Database", NULL);
-	option_add_int ("SidPlay2_Frequency", 44100);
-	option_add_int ("SidPlay2_Bits", 16);
-	option_add_str ("SidPlay2_PlayMode", "M");
-	option_add_int ("SidPlay2_Optimisation", 0);
-	option_add_int ("SidPlay2_StartAtStart", 1);
-	option_add_int ("SidPlay2_PlaySubTunes", 1);
+	option_add_int ("SidPlay2_DefaultSongLength", 180,
+	                 CHECK_RANGE(1), 0, INT_MAX);
+	option_add_int ("SidPlay2_MinimumSongLength", 0,
+	                 CHECK_RANGE(1), 0, INT_MAX);
+	option_add_str ("SidPlay2_Database", NULL, CHECK_NONE);
+	option_add_int ("SidPlay2_Frequency", 44100, CHECK_RANGE(1), 4000, 48000);
+	option_add_int ("SidPlay2_Bits", 16, CHECK_DISCRETE(2), 8, 16);
+	option_add_str ("SidPlay2_PlayMode", "M",
+	                 CHECK_DISCRETE(4), "M", "S", "L", "R");
+	option_add_int ("SidPlay2_Optimisation", 0, CHECK_RANGE(1), 0, 2);
+	option_add_int ("SidPlay2_StartAtStart", 1, CHECK_DISCRETE(2), 0, 1);
+	option_add_int ("SidPlay2_PlaySubTunes", 1, CHECK_DISCRETE(2), 0, 1);
 
-	option_add_str ("OnSongChange", NULL);
-	option_add_str ("OnStop", NULL);
+	option_add_str ("OnSongChange", NULL, CHECK_NONE);
+	option_add_str ("OnStop", NULL, CHECK_NONE);
 
-	option_add_int ("Softmixer_SaveState", 1);
+	option_add_int ("Softmixer_SaveState", 1, CHECK_DISCRETE(2), 0, 1);
 
-	option_add_int ("Equalizer_SaveState", 1);
+	option_add_int ("Equalizer_SaveState", 1, CHECK_DISCRETE(2), 0, 1);
 
-	option_add_int ("QueueNextSongReturn", 0);
+	option_add_int ("QueueNextSongReturn", 0, CHECK_DISCRETE(2), 0, 1);
 
 }
 
 /* Return 1 if a parameter to an integer option is valid. */
 int check_int_option (const char *name, const int val)
 {
-	/* YES/NO options */
-	if (!strcasecmp(name, "ReadTags")
-			|| !strcasecmp(name, "ShowStreamErrors")
-			|| !strcasecmp(name, "Repeat")
-			|| !strcasecmp(name, "Shuffle")
-			|| !strcasecmp(name, "AutoNext")
-			|| !strcasecmp(name, "ShowHiddenFiles")
-			|| !strcasecmp(name, "StartInMusicDir")
-			|| !strcasecmp(name, "HideFileExtension")
-			|| !strcasecmp(name, "ShowFormat")
-			|| !strcasecmp(name, "SavePlaylist")
-			|| !strcasecmp(name, "SyncPlaylist")
-			|| !strcasecmp(name, "Mp3IgnoreCRCErrors")
-			|| !strcasecmp(name, "PlaylistNumbering")
-			|| !strcasecmp(name, "FollowPlayedFile")
-			|| !strcasecmp(name, "CanStartInPlaylist")
-			|| !strcasecmp(name, "UseCursorSelection")
-			|| !strcasecmp(name, "UseRCC")
-			|| !strcasecmp(name, "UseRCCForFilesystem")
-			|| !strcasecmp(name, "SetXtermTitle")
-			|| !strcasecmp(name, "SetScreenTitle")
-			|| !strcasecmp(name, "PlaylistFullPaths")
-			|| !strcasecmp(name, "PrefixQueuedMessages")
-			|| !strcasecmp(name, "Allow24bitOutput")
-			|| !strcasecmp(name, "SidPlay2_StartAtStart")
-			|| !strcasecmp(name, "SidPlay2_PlaySubTunes")
-			|| !strcasecmp(name, "Softmixer_SaveState")
-			|| !strcasecmp(name, "Equalizer_SaveState")
-			|| !strcasecmp(name, "FileNamesIconv")
-			|| !strcasecmp(name, "NonUTFXterm")
-			|| !strcasecmp(name, "EnforceTagsEncoding"))
-	{
-		if (!(val == 1 || val == 0))
-			return 0;
-	}
-	else if (!strcasecmp(name, "OutputBuffer")) {
-		if (val < 128)
-			return 0;
-	}
-	else if (!strcasecmp(name, "InputBuffer")) {
-		if (val < 32)
-			return 0;
-	}
-	else if (!strcasecmp(name, "Prebuffering")) {
-		if (val < 0)
-			return 0;
-	}
-	else if (!strcasecmp(name, "SeekTime")) {
-		if (val < 1)
-			return 0;
-	}
-	else if (!strcasecmp(name, "SilentSeekTime")) {
-		if (val < 1)
-			return 0;
-	}
-	else if (!strcasecmp(name, "ForceSampleRate")) {
-		if (val < 0 || val > 500000)
-			return 0;
-	}
-	else if (!strcasecmp(name, "TagsCacheSize")) {
-		if (val < 0)
-			return 0;
-	}
-	else if (!strcasecmp(name, "MessageLingerTime")) {
-		if (val < 0)
-			return 0;
-	}
-	else if (!strcasecmp(name, "ModPlug_Oversampling")
-			|| !strcasecmp(name, "ModPlug_NoiseReduction")
-			|| !strcasecmp(name, "ModPlug_Reverb")
-			|| !strcasecmp(name, "ModPlug_MegaBass")
-			|| !strcasecmp(name, "ModPlug_Surround"))
-	{
-		if (!(val == 0 || val == 1))
-			return 0;
-	}
-	else if (!strcasecmp(name, "ModPlug_Channels")) {
-		if (!(val == 1 || val == 2 ))
-			return 0;
-	}
-	else if (!strcasecmp(name, "ModPlug_Frequency")) {
-		if (!(val == 11025 || val == 22050 || val == 44100 || val == 48000))
-			return 0;
-	}
-	else if (!strcasecmp(name, "ModPlug_Bits")) {
-		if (!(val== 8 || val == 16 || val == 32))
-			return 0;
-	}
-	else if (!strcasecmp(name, "ModPlug_ReverbDepth")) {
-		if (!(val >= 0 && val <= 100))
-			return 0;
-	}
-	else if (!strcasecmp(name, "ModPlug_ReverbDelay")) {
-		if (val < 0)
-			return 0;
-	}
-	else if (!strcasecmp(name, "ModPlug_BassAmount")) {
-		if (!(val >= 0 && val <= 100))
-			return 0;
-	}
-	else if (!strcasecmp(name, "ModPlug_BassRange")) {
-		if (!(val >= 10 && val <= 100))
-			return 0;
-	}
-	else if (!strcasecmp(name, "ModPlug_SurroundDepth")) {
-		if (!(val >= 0 && val <= 100))
-			return 0;
-	}
-	else if (!strcasecmp(name, "ModPlug_SurroundDelay")) {
-		if (val < 0)
-			return 0;
-	}
-	else if (!strcasecmp(name, "ModPlug_LoopCount")) {
-		if (val < -1)
-			return 0;
-	}
-	else if (!strcasecmp(name, "TiMidity_Channels")) {
-		if (!(val == 1 || val == 2)  )
-			return 0;
-	}
-	else if (!strcasecmp(name, "TiMidity_Bits")) {
-		if (!(val == 8 || val == 16)  )
-			return 0;
-	}
-	else if (!strcasecmp(name, "TiMidity_Volume")) {
-		if (val < 0 || val > 800)
-			return 0;
-	}
-	else if (!strcasecmp(name, "TiMidity_Rate")) {
-		// not sure about the limits... I like 44100
-		if (val < 8000 || val > 48000)
-			return 0;
-	}
-	else if (!strcasecmp(name, "SidPlay2_DefaultSongLength")) {
-		if (val < 0)
-			return 0;
-	}
-	else if (!strcasecmp(name, "SidPlay2_MinimumSongLength")) {
-		if (val < 0)
-			return 0;
-	}
-	else if (!strcasecmp(name, "SidPlay2_Frequency")) {
-		if (val < 4000 || val > 48000)
-			return 0;
-	}
-	else if (!strcasecmp(name, "SidPlay2_Bits")) {
-		if (!(val == 8 || val == 16))
-			return 0;
-	}
-	else if (!strcasecmp(name, "SidPlay2_Optimisation")) {
-		if (val < 0 || val > 2)
-			return 0;
-	}
-	return 1;
+	int opt;
+
+	opt = find_option (name, OPTION_INT);
+	if (opt == -1)
+		return 0;
+	return options[opt].check (opt, val);
 }
 
 /* Return 1 if a parameter to a string option is valid. */
 int check_str_option (const char *name, const char *val)
 {
-	if (!strcasecmp(name, "Sort")) {
-		if (strcasecmp(val, "FileName"))
-			return 0;
-	}
-	else if (!strcasecmp(name, "ShowTime")) {
-		if (strcasecmp(val, "yes") && strcasecmp(val, "no")
-				&& strcasecmp(val, "IfAvailable"))
-			return 0;
-	}
-	else if (!strcmp(name, "ResampleMethod")) {
-		if (strcasecmp(val, "SincBestQuality")
-				&& strcasecmp(val, "SincMediumQuality")
-				&& strcasecmp(val, "SincFastest")
-				&& strcasecmp(val, "ZeroOrderHold")
-				&& strcasecmp(val, "Linear"))
-			return 0;
-	}
-	else if (!strcasecmp(name, "BlockDecorators")) {
-		if (strlen(val) != 3)
-			return 0;
-	}
-	else if (!strcasecmp(name, "ModPlug_ResamplingMode")) {
-		if (strcasecmp(val, "FIR")
-			&& strcasecmp(val, "SPLINE")
-			&& strcasecmp(val, "LINEAR")
-			&& strcasecmp(val, "NEAREST"))
-			return 0;
-	}
-	else if (!strcasecmp(name, "SidPlay2_PlayMode")) {
-		if (strcasecmp(val, "M")
-			&& strcasecmp(val, "S")
-			&& strcasecmp(val, "L")
-			&& strcasecmp(val, "R"))
-			return 0;
-	}
-	return 1;
+	int opt;
+
+	opt = find_option (name, OPTION_STR);
+	if (opt == -1)
+		return 0;
+	return options[opt].check (opt, val);
 }
 
 static int is_deprecated_option (const char *name)
@@ -710,11 +685,24 @@ void options_parse (const char *config_file)
 
 void options_free ()
 {
-	int i;
+	int i, ix;
 	
-	for (i = 0; i < options_num; i++)
-		if (options[i].type == OPTION_STR && options[i].value.str)
-			free (options[i].value.str);
+	for (i = 0; i < options_num; i++) {
+		if (options[i].type == OPTION_STR) {
+			if (options[i].value.str)
+				free (options[i].value.str);
+			options[i].value.str = NULL;
+			if (options[i].check != option_check_length) {
+				for (ix = 0; ix < options[i].count; ix += 1)
+					free (((char **) options[i].constraints)[ix]);
+			}
+		}
+		options[i].check = option_check_true;
+		options[i].count = 0;
+		if (options[i].constraints)
+			free (options[i].constraints);
+		options[i].constraints = NULL;
+	}
 }
 
 int options_get_int (const char *name)
