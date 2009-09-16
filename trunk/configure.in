@@ -43,6 +43,7 @@ esac
 LDFLAGS="$LDFLAGS -export-dynamic"
 
 AC_HEADER_STDC
+AC_HEADER_STDBOOL
 AC_CHECK_HEADERS([fcntl.h string.h strings.h sys/param.h unistd.h sys/un.h \
 		  sys/socket.h sys/types.h signal.h sys/time.h \
 		  sys/wait.h sys/ioctl.h \

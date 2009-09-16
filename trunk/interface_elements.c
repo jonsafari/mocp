@@ -2962,7 +2962,7 @@ static void info_win_display_msg (struct info_win *w)
 		if (this_msg->is_error)
 			w->queued_message_errors -= 1;
 
-		if (msg_changed && options_get_int("PrefixQueuedMessages")) {
+		if (msg_changed && options_get_bool("PrefixQueuedMessages")) {
 			char *msg, *decorator;
 			int len;
 
