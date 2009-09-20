@@ -45,7 +45,7 @@ AC_DEFUN([MP_WITH_CURSES],
    if test ! "$CURSES_LIB" -a "$with_ncurses" != yes
    then
      AC_CACHE_CHECK([for working curses], mp_cv_curses,
-       [LIBS="$LIBS -lcurses"
+       [LIBS="$mp_save_LIBS -lcurses"
         AC_TRY_LINK(
           [#include <curses.h>],
           [chtype a; int b=A_STANDOUT, c=KEY_LEFT; initscr(); ],
