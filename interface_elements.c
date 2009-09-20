@@ -2704,7 +2704,7 @@ static void info_win_draw_title (const struct info_win *w)
 		}
 		else {
 		wattrset (w->win, get_color(CLR_TITLE));
-		xmvwaddnstr (w->win, 1, 4, w->title, COLS - 5);
+		xmvwaddnstr (w->win, 1, 4, w->title ? w->title : "", COLS - 5);
 		}
 	}
 
