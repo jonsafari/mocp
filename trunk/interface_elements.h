@@ -1,7 +1,13 @@
 #ifndef INTERFACE_ELEMENTS_H
 #define INTERFACE_ELEMENTS_H
 
-#include <ncurses.h>
+#ifdef HAVE_NCURSESW_H
+# include <ncursesw/curses.h>
+#elif HAVE_NCURSES_H
+# include <ncurses.h>
+#elif HAVE_CURSES_H
+# include <curses.h>
+#endif
 
 #include "files.h"
 #include "keys.h"
