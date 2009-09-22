@@ -61,6 +61,7 @@ struct ffmpeg_data
 
 static void ffmpeg_init ()
 {
+	avcodec_register_all();
 	av_register_all ();
 }
 
@@ -229,11 +230,17 @@ static int ffmpeg_decode (void *prv_data, char *buf, int buf_len,
 	struct ffmpeg_data *data = (struct ffmpeg_data *)prv_data;
 	int ret;
 	int data_size;
-	char avbuf[AVCODEC_MAX_AUDIO_FRAME_SIZE * sizeof(int16_t)];
-	AVPacket pkt;
+	AVPacket pkt, pkt_tmp;
 	uint8_t *pkt_data;
 	int pkt_size = 0;
 	int filled = 0;
+
+	/* The sample buffer should be 16 byte aligned (because SSE), a segmentation
+	 * fault may occur otherwise.
+	 * 
+	 * See: avcodec.h in ffmpeg
+	 */
+	char avbuf[(AVCODEC_MAX_AUDIO_FRAME_SIZE * 3) / 2] __attribute__((aligned(16)));
 
 	decoder_error_clear (&data->error);
 
@@ -268,15 +275,19 @@ static int ffmpeg_decode (void *prv_data, char *buf, int buf_len,
 		if (ret < 0)
 			return 0;
 
+		memcpy(&pkt_tmp, &pkt, sizeof(pkt));
 		pkt_data = pkt.data;
 		pkt_size = pkt.size;
 		debug ("Got %dB packet", pkt_size);
-
 		
 		while (pkt_size) {
 			int len;
-		
-#if LIBAVCODEC_VERSION_INT >= ((51<<16)+(50<<8)+0)
+
+#if LIBAVCODEC_VERSION_MAJOR >= 52
+			data_size = sizeof (avbuf);
+			len = avcodec_decode_audio3 (data->enc, (int16_t *)avbuf,
+					&data_size, &pkt);
+#elif LIBAVCODEC_VERSION_INT >= ((51<<16)+(50<<8)+0)
 			data_size = sizeof (avbuf);
 			len = avcodec_decode_audio2 (data->enc, (int16_t *)avbuf,
 					&data_size, pkt_data, pkt_size);
@@ -296,6 +307,8 @@ static int ffmpeg_decode (void *prv_data, char *buf, int buf_len,
 
 			pkt_data += len;
 			pkt_size -= len;
+			pkt.data += len;
+			pkt.size -= len;
 
 			if (buf_len) {
 				int to_copy = MIN (data_size, buf_len);
@@ -324,7 +337,7 @@ static int ffmpeg_decode (void *prv_data, char *buf, int buf_len,
 	data->bitrate = pkt.size * 8 / ((filled + data->remain_buf_len) / 2.0 /
 			sound_params->channels / sound_params->rate) / 1000;
 
-	av_free_packet (&pkt);
+	av_free_packet (&pkt_tmp);
 	
 	return filled;
 }
