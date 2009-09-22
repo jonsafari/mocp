@@ -22,7 +22,18 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <time.h>
+#include <unistd.h>
 #include <db.h>
+
+/* Include dirent for various systems */
+#ifdef HAVE_DIRENT_H
+# include <dirent.h>
+#else
+# define dirent direct
+# if HAVE_SYS_NDIR_H
+#  include <sys/ndir.h>
+# endif
+#endif
 
 #define DEBUG
 
@@ -34,6 +45,13 @@
 #include "tags_cache.h"
 #include "log.h"
 #include "audio.h"
+
+/* Number used to create cache version tag to detect incompatibilities
+ * between cache verswion stored on the disk and MOC/BerkeleyDB environment.
+ *
+ * If you modify the DB structure, increase this number.
+ */
+#define CACHE_DB_FORMAT_VERSION	1
 
 struct cache_record
 {
@@ -746,22 +764,190 @@ void tags_cache_save (struct tags_cache *c, const char *file_name)
 	assert (file_name != NULL);
 }
 
+/* Purge content of a directory. */
+static int purge_directory (const char *dir_path)
+{
+	DIR *dir;
+	struct dirent *d;
+
+	logit ("Purging %s...", dir_path);
+
+	dir = opendir (dir_path);
+	if (!dir) {
+		logit ("Can't open directory %s: %s", dir_path,
+				strerror(errno));
+		return 0;
+	}
+
+	while ((d = readdir(dir))) {
+		struct stat st;
+		char *fpath;
+		int len;
+		
+		if (!strcmp(d->d_name, ".") || !strcmp(d->d_name, ".."))
+			continue;
+		
+		len = strlen(dir_path) + strlen(d->d_name) + 2;
+		fpath = (char *)xmalloc (len);
+		snprintf (fpath, len, "%s/%s", dir_path, d->d_name);
+
+		if (stat(fpath, &st) < 0) {
+			logit ("Can't stat %s: %s", fpath, strerror(errno));
+			free (fpath);
+			closedir (dir);
+			return 0;
+		}
+
+		if (S_ISDIR(st.st_mode)) {
+			if (!purge_directory(fpath)) {
+				free (fpath);
+				closedir (dir);
+				return 0;
+			}
+
+			logit ("Removing directory %s...", fpath);
+			if (rmdir(fpath) < 0) {
+				logit ("Can't remove %s: %s", fpath, strerror(errno));
+				free (fpath);
+				closedir (dir);
+				return 0;
+			}
+		}
+		else {
+			logit ("Removing file %s...", fpath);
+
+			if (unlink(fpath) < 0) {
+				logit ("Can't remove %s: %s", fpath, strerror(errno));
+				free (fpath);
+				closedir (dir);
+				return 0;
+			}
+		}
+
+		free (fpath);
+	}
+
+	closedir (dir);
+	return 1;
+}
+
+/* Create a MOC/db version string.
+ *
+ * @param buf Output buffer (at least 64 chars long)
+ */
+static const char *create_version_tag (char *buf)
+{
+	int db_major;
+	int db_minor;
+
+	db_version (&db_major, &db_minor, NULL);
+
+	snprintf (buf, 64, "%d %d %d", CACHE_DB_FORMAT_VERSION, db_major,
+			db_minor);
+
+	return buf;
+}
+
+/* Chcech version of the cache directory. If it was created
+ * using format not handled by this version of MOCE, return 0.
+ */
+static int cache_version_matches (const char *cache_dir)
+{
+	char *fname = NULL;
+	char disk_version_tag[65];
+	ssize_t rres;
+	FILE *f;
+	int compare_result = 0;
+
+	fname = (char *)xmalloc (strlen(cache_dir) + sizeof("/moc_version_tag"));
+	sprintf (fname, "%s/moc_version_tag", cache_dir);
+
+	f = fopen (fname, "r");
+	if (!f) {
+		logit ("No moc_version_tag in cache directory");
+		free (fname);
+		return 0;
+	}
+
+	rres = fread (disk_version_tag, 1, sizeof(disk_version_tag) - 1, f);
+	if (rres == sizeof(disk_version_tag) - 1) {
+		logit ("Too long on-disk version tag");
+	}
+	else {
+		char cur_version_tag[64];
+		disk_version_tag[rres] = '\0';
+
+		create_version_tag (cur_version_tag);
+		compare_result = !strcmp (disk_version_tag, cur_version_tag);
+	}
+
+
+	fclose (f);
+	free (fname);
+
+	return compare_result;
+}
+
+static void write_cache_version (const char *cache_dir)
+{
+	char cur_version_tag[64];
+	char *fname = NULL;
+	FILE *f;
+
+	fname = (char *)xmalloc (strlen(cache_dir) + sizeof("/moc_version_tag"));
+	sprintf (fname, "%s/moc_version_tag", cache_dir);
+
+	f = fopen (fname, "w");
+	if (!f) {
+		logit ("Error writing cache version tag: %s",
+				strerror(errno));
+		free (fname);
+		return;
+	}
+
+	create_version_tag (cur_version_tag);
+	fwrite (cur_version_tag, 1, strlen(cur_version_tag), f);
+
+	free (fname);
+	fclose (f);
+}
+
+/* Make sure that the cache directory exist and clear it if necessary.
+ */
+static int prepare_cache_dir (const char *file_name)
+{
+	if (mkdir(file_name, 0700) == 0)
+		return 1;
+
+	if (errno != EEXIST) {
+		error ("Failed to create directory for tags cache: %s",
+				strerror(errno));
+		return 0;
+	}
+
+	if (!cache_version_matches(file_name)) {
+		logit ("Tags cache directory is in wrong version, purging....");
+
+		if (!purge_directory(file_name))
+			return 0;
+		write_cache_version (file_name);
+	}
+
+	return 1;
+}
+
 void tags_cache_load (struct tags_cache *c, const char *file_name)
 {
 	int ret;
 
-	if (mkdir(file_name, 0700) && errno != EEXIST) {
-		error ("Failed to create directory for tags cache: %s",
-				strerror(errno));
+	if (!prepare_cache_dir(file_name))
 		return;
-	}
 
 	ret = db_env_create (&c->db_env, 0);
 	if (ret) {
 		error ("Can't create DB environment: %s", db_strerror(ret));
 		return;
 	}
-
 
 	ret = c->db_env->open (c->db_env, file_name,
 			DB_CREATE  | DB_INIT_MPOOL | DB_THREAD | DB_INIT_LOCK,
