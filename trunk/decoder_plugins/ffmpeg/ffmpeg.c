@@ -307,8 +307,6 @@ static int ffmpeg_decode (void *prv_data, char *buf, int buf_len,
 
 			pkt_data += len;
 			pkt_size -= len;
-			pkt.data += len;
-			pkt.size -= len;
 
 			if (buf_len) {
 				int to_copy = MIN (data_size, buf_len);
