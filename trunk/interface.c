@@ -14,6 +14,7 @@
 #endif
 
 #include <stdarg.h>
+#include <locale.h>
 #include <unistd.h>
 #include <assert.h>
 #include <string.h>
@@ -1573,6 +1574,10 @@ void init_interface (const int sock, const int logging, char **args,
 	}
 
 	logit ("Starting MOC interface...");
+
+	/* set locale acording to the environment variables */
+	if (!setlocale(LC_CTYPE, ""))
+		logit ("Could not net locate!");
 
 	file_info_reset (&curr_file);
 	file_info_block_init (&curr_file);
