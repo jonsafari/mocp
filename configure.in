@@ -138,9 +138,6 @@ AX_PATH_BDB([4], [
 	       ],
 	       AC_MSG_ERROR([BerkeleyDB (libdb) not found]))
 
-AM_GNU_GETTEXT([external])
-AM_GNU_GETTEXT_VERSION(0.15)
-
 AC_ARG_WITH(oss, AS_HELP_STRING(--without-oss, Compile without OSS support.))
 
 if test "x$with_oss" != "xno"
@@ -592,7 +589,6 @@ AC_SUBST(EXTRA_LIBS)
 		
 AC_OUTPUT([Makefile
 	  themes/Makefile
-	  po/Makefile.in
 	  decoder_plugins/Makefile
 	  decoder_plugins/mp3/Makefile
 	  decoder_plugins/vorbis/Makefile

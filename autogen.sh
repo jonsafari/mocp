@@ -7,7 +7,6 @@ if test -f Makefile; then
 fi
 
 libtoolize -c -f
-autopoint -f
 aclocal -I m4 && \
 autoheader && \
 automake -W all -a && \

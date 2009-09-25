@@ -55,13 +55,6 @@ typedef unsigned char _Bool;
 #define isblank(c) ((c) == ' ' || (c) == '\t')
 #endif
 
-#ifdef ENABLE_NLS
-# include "gettext.h"
-# define _(x) gettext(x)
-#else
-# define _(x) x
-#endif
-
 #define ARRAY_SIZE(x)	(sizeof(x)/sizeof(x[0]))
 
 void *xmalloc (const size_t size);

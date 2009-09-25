@@ -252,19 +252,14 @@ static void show_version ()
 
 /* Show program usage and exit */
 static void show_usage (const char *prg_name) {
-	printf (PACKAGE_STRING"\n");
-	printf (_(
+	printf (PACKAGE_STRING"\n"
 "Usage:\n"
 "%s [OPTIONS]... [FILE]...\n"
 "-V --version           Print program version and exit.\n"
 "-h --help              Print usage and exit.\n"
-), prg_name);
 #ifndef NDEBUG
-	printf (_(
 "-D --debug             Turn on logging to a file.\n"
-));
 #endif
-	printf (_(
 "-S --server            Run only the server.\n"
 "-F --foreground        Run server in foreground, log to stdout.\n"
 "-R --sound-driver NAME Use the specified sound driver (oss, alsa, jack, null).\n"
@@ -299,7 +294,7 @@ static void show_usage (const char *prg_name) {
 "-o --on <controls>     Turn on a control (shuffle, autonext, repeat).\n"
 "-u --off <controls>    Turn off a control (shuffle, autonext, repeat).\n"
 "-t --toggle <controls> Toggle a control (shuffle, autonext, repeat).\n"
-));
+, prg_name);
 }
 
 /* Send commands requested in params to the server. */
@@ -464,11 +459,6 @@ int main (int argc, char *argv[])
 	/* set locale acording to the environment variables */
 	if (!setlocale(LC_ALL, ""))
 		logit ("Could not net locate!");
-
-#ifdef ENABLE_NLS
-	textdomain(PACKAGE);
-	bindtextdomain(PACKAGE, LOCALEDIR);
-#endif
 
 	while ((ret = getopt_long(argc, argv,
 					"VhDSFR:macpsxT:C:M:PUynArfiGelk:j:v:t:o:u:Q:q",
