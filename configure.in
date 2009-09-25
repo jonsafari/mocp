@@ -1,4 +1,4 @@
-AC_INIT([moc],[2.5.0-alpha3],[daper@daper.net])
+AC_INIT([moc],[2.5.0-alpha4],[daper@daper.net])
 AC_CONFIG_SRCDIR([main.c])
 AC_CONFIG_HEADERS([config.h])
 
