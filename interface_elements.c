@@ -30,7 +30,7 @@
 #include <wctype.h>
 #include <wchar.h>
 
-/* This breaks compilationon FreeBSD 5.4, so use it only on Linux */
+/* This breaks compilation on FreeBSD 5.4, so use it only on Linux */
 #ifdef LINUX
 # define _XOPEN_SOURCE_EXTENDED /* for wget_wch() */
 #endif
@@ -2962,13 +2962,13 @@ static void info_win_display_msg (struct info_win *w)
 		if (this_msg->is_error)
 			w->queued_message_errors -= 1;
 
-		if (msg_changed && options_get_bool("PrefixQueuedMessages")) {
+		if (msg_changed && options_get_bool ("PrefixQueuedMessages")) {
 			char *msg, *decorator;
 			int len;
 
 			msg = this_msg->msg;
-			decorator = options_get_str("ErrorMessagesQueued");
-			len = strlen (msg) + strlen(decorator) + 10;
+			decorator = options_get_str ("ErrorMessagesQueued");
+			len = strlen (msg) + strlen (decorator) + 10;
 			this_msg->msg = (char *) xmalloc (len);
 			snprintf (this_msg->msg, len, "(%d%s) %s",
 			          w->queued_message_total,
@@ -3927,7 +3927,7 @@ void iface_entry_set_text (const char *text)
 	iface_refresh_screen ();
 }
 
-/* Get text from the entry. Returned memory is amlloc()ed. */
+/* Get text from the entry. Returned memory is malloc()ed. */
 char *iface_entry_get_text ()
 {
 	return info_win_entry_get_text (&info_win);

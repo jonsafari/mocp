@@ -22,7 +22,7 @@ mocp_SOURCES = log.c \
 	       audio.h \
 	       decoder.c \
 	       decoder.h \
-       	       interface.c \
+	       interface.c \
 	       interface.h \
 	       interface_elements.c \
 	       interface_elements.h \

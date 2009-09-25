@@ -91,11 +91,11 @@ enum key_cmd
 	KEY_CMD_EXEC10,
 	KEY_CMD_TOGGLE_PLAYLIST_FULL_PATHS,
 	KEY_CMD_TOGGLE_SOFTMIXER,
-        KEY_CMD_TOGGLE_EQUALIZER,
-        KEY_CMD_EQUALIZER_REFRESH,
-        KEY_CMD_EQUALIZER_PREV,
-        KEY_CMD_EQUALIZER_NEXT,
-        KEY_CMD_TOGGLE_MAKE_MONO,
+	KEY_CMD_TOGGLE_EQUALIZER,
+	KEY_CMD_EQUALIZER_REFRESH,
+	KEY_CMD_EQUALIZER_PREV,
+	KEY_CMD_EQUALIZER_NEXT,
+	KEY_CMD_TOGGLE_MAKE_MONO,
 	KEY_CMD_LYRICS,
 	KEY_CMD_QUEUE_TOGGLE_FILE,
 	KEY_CMD_QUEUE_CLEAR,
@@ -103,7 +103,7 @@ enum key_cmd
 };
 
 /* Key context is the place where the user presses a key. A key can have
- * different meanings in diffrent places. */
+ * different meanings in different places. */
 enum key_context
 {
 	CON_MENU,
