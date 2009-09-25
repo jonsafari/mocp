@@ -26,7 +26,9 @@
 #define LOCK(mutex)	pthread_mutex_lock (&mutex)
 #define UNLOCK(mutex)	pthread_mutex_unlock (&mutex)
 
+#ifndef MIN
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
+#endif
 
 #ifdef HAVE__ATTRIBUTE__
 # define ATTR_UNUSED __attribute__((unused))

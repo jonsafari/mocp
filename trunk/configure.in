@@ -598,10 +598,10 @@ AC_OUTPUT([Makefile
 	  decoder_plugins/musepack/Makefile
 	  decoder_plugins/wavpack/Makefile
 	  decoder_plugins/ffmpeg/Makefile
-          decoder_plugins/modplug/Makefile
-          decoder_plugins/timidity/Makefile
-          decoder_plugins/sidplay2/Makefile
-          decoder_plugins/aac/Makefile
+	  decoder_plugins/modplug/Makefile
+	  decoder_plugins/timidity/Makefile
+	  decoder_plugins/sidplay2/Makefile
+	  decoder_plugins/aac/Makefile
 	  moc.spec
 	  ])
 

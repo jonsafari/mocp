@@ -973,7 +973,7 @@ static int clear_default_keys (const char *command)
 	return 1;
 }
 
-/* Add a key to the command defined in the keypap file in line
+/* Add a key to the command defined in the keymap file in line
  * line_num (used only when reporting an error). */
 static void add_key (const int line_num, const char *command,
 		const char *key_symbol)
@@ -996,7 +996,7 @@ static void add_key (const int line_num, const char *command,
 
 	if (i == sizeof(commands[cmd_idx].keys)
 			/sizeof(commands[cmd_idx].keys[0]) - 2)
-		keymap_parse_error (line_num, "too much keys defined");
+		keymap_parse_error (line_num, "too many keys defined");
 
 	if ((key = parse_key(key_symbol)) == -1)
 		keymap_parse_error (line_num, "bad key sequence");
@@ -1102,7 +1102,7 @@ static void compare_keys (struct command *cmd1, struct command *cmd2)
 	}
 }
 
-/* Check if some key is ont defined more than once. */
+/* Check that no key is defined more than once. */
 static void check_keys ()
 {
 	unsigned int i, j;
