@@ -24,11 +24,15 @@
 static char *lyrics[LYRICS_LINE_NUMBER];
 
 const unsigned short LINE_SIZE = 128;
-const unsigned short FILENAME_SIZE = 200;
 
-void lyrics_remove_prefix (const char *filename, char *new_name)
+void lyrics_remove_prefix (const char *filename, char **new_name)
 {
-	strncpy(new_name, filename, strlen(filename)-strlen(strrchr(filename, '.')));
+	unsigned int filelen;
+	const char *dot = strrchr(filename, '.');
+
+	filelen = strlen(filename) - (dot ? strlen(dot) : 0);
+	*new_name = xmalloc(sizeof(char) * (filelen + 1));
+	strncpy(*new_name, filename, filelen);
 }
 
 void lyrics_cleanup (const unsigned int n)
@@ -64,9 +68,7 @@ char **get_lyrics_text (const WINDOW *w, const char *filename, int *num)
 		return lyrics;
 	}
 
-	lyrics_filename = xmalloc (sizeof(char) * FILENAME_SIZE);
-	memset (lyrics_filename, '\0', FILENAME_SIZE);
-	lyrics_remove_prefix (filename, lyrics_filename);
+	lyrics_remove_prefix (filename, &lyrics_filename);
 
 	lyrics_file = fopen (lyrics_filename, "r");
 	if (lyrics_file != NULL) {
