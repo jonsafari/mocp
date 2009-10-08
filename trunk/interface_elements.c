@@ -171,7 +171,7 @@ struct entry
 	/* The text the user types: */
 	wchar_t text_ucs[512];	/* unicode */
 	
-	char title[32];		/* displayed title */
+	char *title;		/* displayed title */
 	char *file;		/* optional: file associated with the entry */
 	int cur_pos;		/* cursor position */
 	int display_from;	/* displaying from this char */
@@ -180,22 +180,36 @@ struct entry
 	int history_pos;	/* current position in the history */
 };
 
+/* Type of message. */
+enum message_type
+{
+	NORMAL_MSG,
+	ERROR_MSG,
+	QUERY_MSG
+};
+
 /* Save a new message for display. */
-struct queued_message {
+struct queued_message
+{
 	struct queued_message *next;
+	/* What type is this message? */
+	enum message_type type;
+	/* Message to be displayed instead of the file's title. */
 	char *msg;
-	int is_error;
-	int duration;
+	/* Prompt to use for user query menu. */
+	char *prompt;
+	/* How many seconds does the message linger? */
+	time_t timeout;
+	/* The callback function and opaque data for user replies. */
+	t_user_reply_callback *callback;
+	void *data;
 };
 
 static struct info_win
 {
 	WINDOW *win;
 
-	char *msg; /* message displayed instead of the file's title */
-	int msg_is_error; /* is the above message an error? */
-	time_t msg_timeout; /* how many seconds remain before the message
-				disappears */
+	struct queued_message *current_message;	/* Message currently being displayed */
 
 	struct queued_message *queued_message_head;	/* FIFO queue on which pending */
 	struct queued_message *queued_message_tail;	/*          messages get saved */
@@ -209,6 +223,7 @@ static struct info_win
 				   structure initialized)?  */
 	struct entry_history urls_history;
 	struct entry_history dirs_history;
+	struct entry_history user_history;
 	
 	/* true/false options values */
 	int state_stereo;
@@ -234,6 +249,10 @@ static struct info_win
 	char *title;		/* title of the played song. */
 	char status_msg[26];	/* status message */
 	int state_play;		/* STATE_(PLAY | STOP | PAUSE) */
+
+	/* Saved user reply callback data. */
+	t_user_reply_callback *callback;
+	void *data;
 
 	struct bar mixer_bar;
 	struct bar time_bar;
@@ -329,7 +348,7 @@ static void entry_draw (const struct entry *e, WINDOW *w, const int posx,
 	
 	wmove (w, posy, posx);
 	wattrset (w, get_color(CLR_ENTRY_TITLE));
-	xwprintw (w, "%s:", e->title);
+	xwprintw (w, "%s", e->title);
 	
 	wattrset (w, get_color(CLR_ENTRY));
 	len = wcslen(e->text_ucs) - e->display_from;
@@ -349,14 +368,14 @@ static void entry_draw (const struct entry *e, WINDOW *w, const int posx,
 
 	/* Move the cursor */
 	wmove (w, posy, e->cur_pos - e->display_from + strwidth(e->title)
-			+ posx + 2);
+			+ posx + 1);
 
 	free (text);
 	free (text_ucs);
 }
 
 static void entry_init (struct entry *e, const enum entry_type type,
-		const int width, struct entry_history *history)
+		const int width, struct entry_history *history, const char *prompt)
 {
 	const char *title;
 	
@@ -381,6 +400,9 @@ static void entry_init (struct entry *e, const enum entry_type type,
 		case ENTRY_PLIST_OVERWRITE:
 			title = "File exists, overwrite?";
 			break;
+		case ENTRY_USER_QUERY:
+			title = prompt;
+			break;
 		default:
 			abort ();
 	}
@@ -388,7 +410,11 @@ static void entry_init (struct entry *e, const enum entry_type type,
 	e->type = type;
 	e->text_ucs[0] = L'\0';
 	e->file = NULL;
+	e->title = xmalloc (strlen (title) + 2);
 	strcpy (e->title, title);
+	if (e->title[strlen (e->title) - 1] != ':' &&
+	    e->title[strlen (e->title) - 1] != '?')
+		strcat (e->title, ":");
 	e->width = width - strwidth(title);
 	e->cur_pos = 0;
 	e->display_from = 0;
@@ -613,6 +639,8 @@ static void entry_destroy (struct entry *e)
 
 	if (e->file)
 		free (e->file);
+	if (e->title)
+		free (e->title);
 }
 
 static char *entry_get_text (const struct entry *e)
@@ -2523,6 +2551,34 @@ static char *get_startup_message ()
 	return xstrdup (buf);
 }
 
+static struct queued_message *queued_message_create (enum message_type type)
+{
+	struct queued_message *result;
+
+	result = (struct queued_message *) xmalloc (sizeof (struct queued_message));
+	result->next = NULL;
+	result->type = type;
+	result->msg = NULL;
+	result->prompt = NULL;
+	result->timeout = 0;
+	result->callback = NULL;
+	result->data = NULL;
+
+	return result;
+};
+
+static void queued_message_destroy (struct queued_message *msg)
+{
+	assert (msg != NULL);
+
+	if (msg->msg)
+		free (msg->msg);
+	if (msg->prompt)
+		free (msg->prompt);
+
+	free (msg);
+};
+
 static void info_win_init (struct info_win *w)
 {
 	assert (w != NULL);
@@ -2560,10 +2616,11 @@ static void info_win_init (struct info_win *w)
 	w->in_entry = 0;
 	entry_history_init (&w->urls_history);
 	entry_history_init (&w->dirs_history);
+	entry_history_init (&w->user_history);
 
-	w->msg = get_startup_message ();
-	w->msg_is_error = 0;
-	w->msg_timeout = time(NULL) + options_get_int ("MessageLingerTime");
+	w->current_message = queued_message_create (NORMAL_MSG);
+	w->current_message->msg = get_startup_message ();
+	w->current_message->timeout = time (NULL) + options_get_int ("MessageLingerTime");
 
 	bar_init (&w->mixer_bar, 20, "", 1, 1, get_color(CLR_MIXER_BAR_FILL),
 			get_color(CLR_MIXER_BAR_EMPTY));
@@ -2577,13 +2634,14 @@ static void info_win_destroy (struct info_win *w)
 
 	if (w->win)
 		delwin (w->win);
-	if (w->msg)
-		free (w->msg);
+	if (w->current_message)
+		queued_message_destroy (w->current_message);
 	if (w->in_entry)
 		entry_destroy (&w->entry);
 
 	entry_history_clear (&w->urls_history);
 	entry_history_clear (&w->dirs_history);
+	entry_history_clear (&w->user_history);
 }
 
 /* Set the cursor position in the right place if needed. */
@@ -2697,14 +2755,19 @@ static void info_win_draw_title (const struct info_win *w)
 	if (!w->too_small) {
 		clear_area (w->win, 4, 1, COLS - 5, 1);
 
-		if (w->msg && w->msg_timeout >= time(NULL)) {
-		wattrset (w->win, w->msg_is_error ? get_color(CLR_ERROR)
-			: get_color(CLR_MESSAGE));
-		xmvwaddnstr (w->win, 1, 4, w->msg, COLS - 5);
+		if (w->current_message &&
+		    w->current_message->msg &&
+		    w->current_message->timeout >= time (NULL))
+		{
+			wattrset (w->win, w->current_message->type == ERROR_MSG
+			                  ? get_color (CLR_ERROR)
+			                  : get_color (CLR_MESSAGE));
+			xmvwaddnstr (w->win, 1, 4, w->current_message->msg, COLS - 5);
 		}
-		else {
-		wattrset (w->win, get_color(CLR_TITLE));
-		xmvwaddnstr (w->win, 1, 4, w->title ? w->title : "", COLS - 5);
+		else
+		{
+			wattrset (w->win, get_color (CLR_TITLE));
+			xmvwaddnstr (w->win, 1, 4, w->title ? w->title : "", COLS - 5);
 		}
 	}
 
@@ -2937,6 +3000,39 @@ static void info_win_draw_options_state (const struct info_win *w)
 	info_win_draw_switch (w, 72, 2, "NEXT", w->state_next);
 }
 
+static void info_win_make_entry (struct info_win *w, const enum entry_type type)
+{
+	struct entry_history *history;
+	const char *prompt;
+	
+	assert (w != NULL);
+	assert (!w->in_entry);
+
+	prompt = NULL;
+	switch (type) {
+		case ENTRY_GO_DIR:
+			history = &w->dirs_history;
+			break;
+		case ENTRY_GO_URL:
+			history = &w->urls_history;
+			break;
+		case ENTRY_ADD_URL:
+			history = &w->urls_history;
+			break;
+		case ENTRY_USER_QUERY:
+			history = &w->user_history;
+			prompt = w->current_message->prompt;
+			break;
+		default:
+			history = NULL;
+	}
+
+	entry_init (&w->entry, type, COLS - 4, history, prompt);
+	w->in_entry = 1;
+	curs_set (1);
+	entry_draw (&w->entry, w->win, 1, 0);
+}
+
 /* Display the next queued message. */
 static void info_win_display_msg (struct info_win *w)
 {
@@ -2945,44 +3041,48 @@ static void info_win_display_msg (struct info_win *w)
 	assert (w != NULL);
 
 	msg_changed = 0;
-	if (w->msg && time(NULL) > w->msg_timeout) {
-		free (w->msg);
-		w->msg = NULL;
+	if (w->current_message && time (NULL) > w->current_message->timeout) {
+		w->callback = w->current_message->callback;
+		w->data = w->current_message->data;
+		queued_message_destroy (w->current_message);
+		w->current_message = NULL;
 		msg_changed = 1;
 	}
 
-	if (!w->msg && w->queued_message_head) {
-		struct queued_message *this_msg;
-
-		this_msg = w->queued_message_head;
-		w->queued_message_head = this_msg->next;
+	if (!w->current_message && w->queued_message_head && !w->in_entry) {
+		w->current_message = w->queued_message_head;
+		w->queued_message_head = w->current_message->next;
 		if (!w->queued_message_head)
 			w->queued_message_tail = NULL;
 		w->queued_message_total -= 1;
-		if (this_msg->is_error)
+		if (w->current_message->type == ERROR_MSG)
 			w->queued_message_errors -= 1;
 
-		if (msg_changed && options_get_bool ("PrefixQueuedMessages")) {
+		if (msg_changed &&
+		    w->current_message->msg
+		    && options_get_bool ("PrefixQueuedMessages"))
+		{
 			char *msg, *decorator;
 			int len;
 
-			msg = this_msg->msg;
+			msg = w->current_message->msg;
 			decorator = options_get_str ("ErrorMessagesQueued");
 			len = strlen (msg) + strlen (decorator) + 10;
-			this_msg->msg = (char *) xmalloc (len);
-			snprintf (this_msg->msg, len, "(%d%s) %s",
+			w->current_message->msg = (char *) xmalloc (len);
+			snprintf (w->current_message->msg, len, "(%d%s) %s",
 			          w->queued_message_total,
 			          (w->queued_message_errors ? decorator : ""),
 			          msg);
-			this_msg->msg[len - 1] = 0x00;
+			w->current_message->msg[len - 1] = 0x00;
 			free (msg);
 		}
 
-		w->msg = this_msg->msg;
-		w->msg_is_error = this_msg->is_error;
-		w->msg_timeout = time (NULL) + this_msg->duration;
+		if (w->current_message->type == QUERY_MSG) {
+			info_win_make_entry (w, ENTRY_USER_QUERY);
+			w->current_message->timeout = 86400;
+		}
 
-		free (this_msg);
+		w->current_message->timeout += time (NULL);
 		msg_changed = 1;
 	}
 
@@ -2995,8 +3095,10 @@ static void info_win_disable_msg (struct info_win *w)
 {
 	assert (w != NULL);
 
-	w->msg_timeout = 0;
-	info_win_display_msg (w);
+	if (w->current_message) {
+		w->current_message->timeout = 0;
+		info_win_display_msg (w);
+	}
 }
 
 /* Clear all queued messages. */
@@ -3009,29 +3111,33 @@ static void info_win_clear_msg (struct info_win *w)
 
 		this_msg = w->queued_message_head;
 		w->queued_message_head = this_msg->next;
-		free (this_msg->msg);
-		free (this_msg);
+		queued_message_destroy (this_msg);
 	}
 
 	w->queued_message_total = 0;
 	w->queued_message_errors = 0;
 	w->queued_message_tail = NULL;
+	w->current_message = NULL;
 }
 
 /* Queue a new message for display. */
 static void info_win_msg (struct info_win *w, const char *msg,
-		const int is_error)
+                          enum message_type msg_type, const char *prompt,
+                          t_user_reply_callback *callback, void *data)
 {
 	struct queued_message *this_msg;
 
 	assert (w != NULL);
-	assert (msg != NULL);
+	assert (msg != NULL || prompt != NULL);
 
-	this_msg = (struct queued_message *) xmalloc (sizeof (struct queued_message));
-	this_msg->next = NULL;
-	this_msg->msg = xstrdup (msg);
-	this_msg->is_error = is_error;
-	this_msg->duration = options_get_int ("MessageLingerTime");
+	this_msg = queued_message_create (msg_type);
+	if (msg)
+		this_msg->msg = xstrdup (msg);
+	if (prompt)
+		this_msg->prompt = xstrdup (prompt);
+	this_msg->timeout = options_get_int ("MessageLingerTime");
+	this_msg->callback = callback;
+	this_msg->data = data;
 
 	if (w->queued_message_head) {
 		w->queued_message_tail->next = this_msg;
@@ -3041,10 +3147,25 @@ static void info_win_msg (struct info_win *w, const char *msg,
 		w->queued_message_tail = this_msg;
 	}
 	w->queued_message_total += 1;
-	if (is_error)
+	if (msg_type == ERROR_MSG)
 		w->queued_message_errors += 1;
 
 	info_win_display_msg (w);
+}
+
+static void iface_win_user_reply (struct info_win *w, const char *reply)
+{
+	assert (w != NULL);
+
+	if (w->callback)
+		w->callback (reply, w->data);
+}
+
+static void info_win_user_history_add (struct info_win *w, const char *text)
+{
+	assert (w != NULL);
+	
+	entry_history_add (&w->user_history, text);
 }
 
 static void info_win_set_channels (struct info_win *w, const int channels)
@@ -3186,33 +3307,6 @@ static void info_win_draw_static_elements (const struct info_win *w)
 	info_win_update_curs (w);
 }
 
-static void info_win_make_entry (struct info_win *w, const enum entry_type type)
-{
-	struct entry_history *history;
-	
-	assert (w != NULL);
-	assert (!w->in_entry);
-
-	switch (type) {
-		case ENTRY_GO_DIR:
-			history = &w->dirs_history;
-			break;
-		case ENTRY_GO_URL:
-			history = &w->urls_history;
-			break;
-		case ENTRY_ADD_URL:
-			history = &w->urls_history;
-			break;
-		default:
-			history = NULL;
-	}
-
-	entry_init (&w->entry, type, COLS - 4, history);
-	w->in_entry = 1;
-	curs_set (1);
-	entry_draw (&w->entry, w->win, 1, 0);
-}
-
 static void info_win_draw (const struct info_win *w)
 {
 	assert (w != NULL);
@@ -3323,11 +3417,14 @@ static void info_win_entry_handle_key (struct info_win *iw, struct main_win *mw,
 			entry_home (&iw->entry);
 		else if (k->key.func == KEY_END)
 			entry_end (&iw->entry);
-		else if (cmd == KEY_CMD_CANCEL)
+		else if (cmd == KEY_CMD_CANCEL) {
 			info_win_entry_disable (iw);
+			if (type == ENTRY_USER_QUERY)
+				iface_user_reply (NULL);
+		}
 		else if ((type == ENTRY_GO_DIR || type == ENTRY_GO_URL
-					|| type == ENTRY_ADD_URL)
-				&& cmd != KEY_CMD_WRONG) {
+					|| type == ENTRY_ADD_URL || type == ENTRY_USER_QUERY)
+					&& cmd != KEY_CMD_WRONG) {
 			if (cmd == KEY_CMD_HISTORY_UP)
 				entry_set_history_up (&iw->entry);
 			else if (cmd == KEY_CMD_HISTORY_DOWN)
@@ -3838,7 +3935,7 @@ void iface_add_to_plist (const struct plist *plist, const int num)
 void iface_error (const char *msg)
 {
 	if (iface_initialized) {
-		info_win_msg (&info_win, msg, 1);
+		info_win_msg (&info_win, msg, ERROR_MSG, NULL, NULL, NULL);
 		iface_refresh_screen ();
 	}
 	else
@@ -3963,7 +4060,7 @@ void iface_message (const char *msg)
 {
 	assert (msg != NULL);
 	
-	info_win_msg (&info_win, msg, 0);
+	info_win_msg (&info_win, msg, NORMAL_MSG, NULL, NULL, NULL);
 	iface_refresh_screen ();
 }
 
@@ -3971,6 +4068,26 @@ void iface_disable_message ()
 {
 	info_win_disable_msg (&info_win);
 	iface_refresh_screen ();
+}
+
+void iface_user_query (const char *msg, const char *prompt,
+                       t_user_reply_callback *callback, void *data)
+{
+	assert (prompt != NULL);
+	
+	info_win_msg (&info_win, msg, QUERY_MSG, prompt, callback, data);
+	iface_refresh_screen ();
+}
+
+void iface_user_reply (const char *reply)
+{
+	info_win_disable_msg (&info_win);
+	iface_win_user_reply (&info_win, reply);
+}
+
+void iface_user_history_add (const char *text)
+{
+	info_win_user_history_add (&info_win, text);
 }
 
 void iface_plist_set_total_time (const int time, const int for_all_files)

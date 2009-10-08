@@ -2484,6 +2484,18 @@ static void entry_key_plist_overwrite (const struct iface_key *k)
 	}
 }
 
+static void entry_key_user_query (const struct iface_key *k)
+{
+	if (k->type == IFACE_KEY_CHAR && k->key.ucs == '\n') {
+		char *entry_text = iface_entry_get_text ();
+		iface_entry_disable ();
+		iface_user_reply (entry_text);
+		free (entry_text);
+	}
+	else
+		iface_entry_handle_key (k);
+}
+
 /* Handle keys while in an entry. */
 static void entry_key (const struct iface_key *k)
 {
@@ -2505,6 +2517,9 @@ static void entry_key (const struct iface_key *k)
 			break;
 		case ENTRY_PLIST_OVERWRITE:
 			entry_key_plist_overwrite (k);
+			break;
+		case ENTRY_USER_QUERY:
+			entry_key_user_query (k);
 			break;
 		default:
 			abort (); /* BUG */
