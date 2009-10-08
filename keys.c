@@ -241,7 +241,7 @@ static struct command commands[] = {
 		1
 	},
 	{
-		KEY_CMD_MIXED_DEC_1,
+		KEY_CMD_MIXER_DEC_1,
 		"volume_down_1",
 		"Decrease volume by 1%",
 		CON_MENU,
