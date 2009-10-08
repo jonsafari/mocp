@@ -33,6 +33,7 @@ void lyrics_remove_prefix (const char *filename, char **new_name)
 	filelen = strlen(filename) - (dot ? strlen(dot) : 0);
 	*new_name = xmalloc(sizeof(char) * (filelen + 1));
 	strncpy(*new_name, filename, filelen);
+	(*new_name)[filelen] = 0x00;
 }
 
 void lyrics_cleanup (const unsigned int n)
@@ -74,6 +75,10 @@ char **get_lyrics_text (const WINDOW *w, const char *filename, int *num)
 	if (lyrics_file != NULL) {
 		lyrics_line = xmalloc (sizeof(char) * LINE_SIZE);
 		while (fgets(lyrics_line, y, lyrics_file) != NULL) {
+			if (i == LYRICS_LINE_NUMBER) {
+				iface_error ("Lyrics file exceeds maximum line limit");
+				break;
+			}
 			lyrics[i] = xmalloc (sizeof(char) * LINE_SIZE); 
 			if ((int)strlen(lyrics_line) < (y-1)) {
 				space = (y-strlen(lyrics_line))/2;
