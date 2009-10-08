@@ -19,6 +19,8 @@ enum iface_menu
 	IFACE_MENU_DIR
 };
 
+typedef void t_user_reply_callback (const char *reply, void *data);
+
 enum entry_type
 {
 	ENTRY_SEARCH,
@@ -26,7 +28,8 @@ enum entry_type
 	ENTRY_GO_DIR,
 	ENTRY_GO_URL,
 	ENTRY_ADD_URL,
-	ENTRY_PLIST_OVERWRITE
+	ENTRY_PLIST_OVERWRITE,
+	ENTRY_USER_QUERY
 };
 
 struct iface_key
@@ -102,6 +105,9 @@ void iface_entry_set_file (const char *file);
 char *iface_entry_get_file ();
 void iface_message (const char *msg);
 void iface_disable_message ();
+void iface_user_query (const char *msg, const char *prompt, t_user_reply_callback *callback, void *data);
+void iface_user_reply (const char *reply);
+void iface_user_history_add (const char *text);
 void iface_plist_set_total_time (const int time, const int for_all_files);
 void iface_set_title (const enum iface_menu menu, const char *title);
 void iface_select_file (const char *file);
