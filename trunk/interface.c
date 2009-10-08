@@ -3209,7 +3209,7 @@ static void menu_key (const struct iface_key *k)
 {
 	if (iface_in_help())
 		iface_handle_help_key (k);
-	if (iface_in_lyrics())
+	else if (iface_in_lyrics())
 		iface_handle_lyrics_key (k);
 	else if (iface_in_entry())
 		entry_key (k);
@@ -3281,7 +3281,7 @@ static void menu_key (const struct iface_key *k)
 			case KEY_CMD_PLIST_REMOVE_DEAD_ENTRIES:
 				remove_dead_entries_plist ();
 				break;
-			case KEY_CMD_MIXED_DEC_1:
+			case KEY_CMD_MIXER_DEC_1:
 				adjust_mixer (-1);
 				break;
 			case KEY_CMD_MIXER_DEC_5:

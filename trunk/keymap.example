@@ -11,7 +11,7 @@
 #
 # The key can be:
 #  - just a char, like i, L, ", *
-#  - CRTL-KEY sequence: ^k (CTRL-k), ^4
+#  - CTRL-KEY sequence: ^k (CTRL-k), ^4
 #  - ALT-KEY (meta sequence): M-j (ALT-j), M-%
 #  - Special keys:
 #    DOWN

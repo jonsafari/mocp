@@ -42,7 +42,7 @@ void internal_logit (const char *file, const int line, const char *function,
 	localtime_r (&utc_time.tv_sec, &tm_time);
 	strftime (time_str, sizeof(time_str), "%b %e %T", &tm_time);
 
-	fprintf (logfp, "%s.%u: %s:%d %s(): %s\n", time_str,
+	fprintf (logfp, "%s.%06u: %s:%d %s(): %s\n", time_str,
 			(unsigned)utc_time.tv_usec, file, line, function, msg);
 	fflush (logfp);
 
