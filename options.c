@@ -307,11 +307,6 @@ static void option_add_symb (const char *name, const char *value, const int coun
 {
 	int ix, pos;
 	va_list va;
-	const char *first = "+-.0123456789";
-	const char *valid = "abcdefghijklmnopqrstuvwxyz"
-	                    "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-	                    "0123456789"
-	                    "?!.+-*/<=>:$%^&_~";
 
 	assert (name != NULL);
 	assert (value != NULL);
@@ -325,9 +320,7 @@ static void option_add_symb (const char *name, const char *value, const int coun
 	options[pos].constraints = xcalloc (count, sizeof (char *));
 	for (ix = 0; ix < count; ix += 1) {
 		char *val = va_arg (va, char *);
-		if (strlen (val) == 0 ||
-		    strlen (val) != strspn (val, valid) ||
-		    index (first, val[0]) != NULL)
+		if (!is_valid_symbol (val))
 			fatal ("Invalid symbol in '%s' constraint list.", name);
 		((char **) options[pos].constraints)[ix] = xstrdup (val);
 		if (!strcasecmp (val, value))

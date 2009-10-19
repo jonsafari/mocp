@@ -17,6 +17,7 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include <assert.h>
 
 #include "server.h"
@@ -124,6 +125,24 @@ char *str_repl (char *target, const char *oldstr, const char *newstr)
 	return target;
 }
 
+/* Return true iff the argument would be a syntactically valid symbol. */
+_Bool is_valid_symbol (const char *candidate) {
+	size_t len;
+	_Bool result;
+	const char *first = "+-.0123456789";
+	const char *valid = "abcdefghijklmnopqrstuvwxyz"
+	                    "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	                    "0123456789"
+	                    "?!.+-*/<=>:$%^&_~";
+
+	result = false;
+	len = strlen (candidate);
+	if (len > 0 && len == strspn (candidate, valid) &&
+	               index (first, candidate[0]) == NULL)
+		result = true;
+
+	return result;
+}
 
 /* Return path to a file in MOC config directory. NOT THREAD SAFE */
 char *create_file_name (const char *file)
