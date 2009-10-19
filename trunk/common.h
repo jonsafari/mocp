@@ -75,8 +75,8 @@ void error (const char *format, ...);
 #endif
 
 void set_me_server ();
+_Bool is_valid_symbol (const char *candidate);
 char *create_file_name (const char *file);
-
 void sec_to_min (char *buff, const int seconds);
 
 #endif
