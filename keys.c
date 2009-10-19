@@ -625,6 +625,22 @@ static struct command commands[] = {
  		1
   	},
  	{
+ 		KEY_CMD_DELETE_START,
+ 		"delete_to_start",
+ 		"Delete to start of line",
+ 		CON_ENTRY,
+ 		{ CTRL('u'), -1 },
+ 		1
+  	},
+ 	{
+ 		KEY_CMD_DELETE_END,
+ 		"delete_to_end",
+ 		"Delete to end of line",
+ 		CON_ENTRY,
+ 		{ CTRL('k'), -1 },
+ 		1
+  	},
+ 	{
  		KEY_CMD_TOGGLE_MIXER,
  		"toggle_mixer",
  		"Toggles the mixer channel",
