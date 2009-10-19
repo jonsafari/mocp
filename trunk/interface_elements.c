@@ -469,28 +469,40 @@ static void entry_add_char (struct entry *e, const wchar_t c)
 		e->display_from++;
 }
 
+/* Delete 'count' chars before the cursor. */
+static void entry_del_chars (struct entry *e, int count)
+{
+	assert (e != NULL);
+	assert (e->cur_pos > 0);
+
+	int width = wcslen (e->text_ucs);
+	if (e->cur_pos < count)
+		count = e->cur_pos;
+		
+	memmove (e->text_ucs + e->cur_pos - count,
+	         e->text_ucs + e->cur_pos,
+	         (width - e->cur_pos) * sizeof (e->text_ucs[0]));
+	width -= count;
+	e->text_ucs[width] = L'\0';
+	e->cur_pos -= count;
+
+	if (e->cur_pos < e->display_from)
+		e->display_from = e->cur_pos;
+
+	/* Can we show more after deleting the chars? */
+	if (e->display_from > 0 && width - e->display_from < e->width)
+		e->display_from = width - e->width;
+	if (e->display_from < 0)
+		e->display_from = 0;
+}
+
 /* Delete the char before the cursor. */
 static void entry_back_space (struct entry *e)
 {
 	assert (e != NULL);
 
-	if (e->cur_pos > 0) {
-		int width = wcslen (e->text_ucs);
-		
-		memmove (e->text_ucs + e->cur_pos - 1,
-				e->text_ucs + e->cur_pos,
-				(width - e->cur_pos) * sizeof(e->text_ucs[0]));
-		e->text_ucs[--width] = L'\0';
-		e->cur_pos--;
-
-		if (e->cur_pos < e->display_from)
-			e->display_from--;
-
-		/* Can we show more after deleting the char? */
-		if (e->display_from > 0
-				&& width - e->display_from < e->width)
-			e->display_from--;
-	}
+	if (e->cur_pos > 0)
+		entry_del_chars (e, 1);
 }
 
 /* Delete the char under the cursor. */
@@ -501,19 +513,35 @@ static void entry_del_char (struct entry *e)
 	assert (e != NULL);
 
 	len = wcslen (e->text_ucs);
-
 	if (e->cur_pos < len) {
-		len--;
-		memmove (e->text_ucs + e->cur_pos,
-				e->text_ucs + e->cur_pos + 1,
-				(len - e->cur_pos) * sizeof(e->text_ucs[0]));
-		e->text_ucs[len] = L'\0';
-		
-		/* Can we show more after deleting the char? */
-		if (e->display_from > 0
-				&& len - e->display_from < e->width)
-			e->display_from--;
-	
+		e->cur_pos += 1;
+		entry_del_chars (e, 1);
+	}
+}
+
+/* Delete the chars from cursor to start of line. */
+static void entry_del_to_start (struct entry *e)
+{
+	assert (e != NULL);
+
+	if (e->cur_pos > 0)
+		entry_del_chars (e, e->cur_pos);
+}
+
+/* Delete the chars from cursor to end of line. */
+static void entry_del_to_end (struct entry *e)
+{
+	int len;
+
+	assert (e != NULL);
+
+	len = wcslen (e->text_ucs);
+	if (e->cur_pos < len) {
+		int count;
+
+		count = len - e->cur_pos;
+		e->cur_pos = len;
+		entry_del_chars (e, count);
 	}
 }
 
@@ -3429,6 +3457,10 @@ static void info_win_entry_handle_key (struct info_win *iw, struct main_win *mw,
 				entry_set_history_up (&iw->entry);
 			else if (cmd == KEY_CMD_HISTORY_DOWN)
 				entry_set_history_down (&iw->entry);
+			else if (cmd == KEY_CMD_DELETE_START)
+				entry_del_to_start (&iw->entry);
+			else if (cmd == KEY_CMD_DELETE_END)
+				entry_del_to_end (&iw->entry);
 		}
 	}
 
