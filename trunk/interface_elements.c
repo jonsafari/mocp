@@ -444,7 +444,8 @@ static void entry_set_text (struct entry *e, const char *text)
 	width = wcswidth (e->text_ucs, WIDTH_MAX);
 	e->cur_pos = wcslen (e->text_ucs);
 	
-	if (e->cur_pos - e->display_from > e->width)
+	e->display_from = 0;
+	if (e->cur_pos > e->width)
 		e->display_from = width - e->width;
 }
 
@@ -624,7 +625,7 @@ static void entry_set_history_up (struct entry *e)
 		t = entry_history_get (e->history, e->history_pos);
 		entry_set_text (e, t);
 		free (t);
-		e->cur_pos = 0;
+		entry_home (e);
 	}
 }
 
@@ -642,7 +643,7 @@ static void entry_set_history_down (struct entry *e)
 		t = entry_history_get (e->history, e->history_pos);
 		entry_set_text (e, t);
 		free (t);
-		e->cur_pos = 0;
+		entry_home (e);
 	}
 }
 
