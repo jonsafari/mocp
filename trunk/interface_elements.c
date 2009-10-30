@@ -170,6 +170,7 @@ struct entry
 
 	/* The text the user types: */
 	wchar_t text_ucs[512];	/* unicode */
+	wchar_t saved_ucs[512];	/* unicode saved during history scrolling */
 	
 	char *title;		/* displayed title */
 	char *file;		/* optional: file associated with the entry */
@@ -295,13 +296,30 @@ static void entry_history_add (struct entry_history *h,	const char *text)
 	assert (h != NULL);
 	assert (text != NULL);
 
-	if (h->num < HISTORY_SIZE)
-		h->items[h->num++] = xstrdup (text);
-	else {
-		free (h->items[0]);
-		memmove (h->items, h->items + 1,
-				(HISTORY_SIZE - 1) * sizeof(char *));
-		h->items[h->num] = xstrdup (text);
+	if (strlen (text) != strspn (text, " ")) {
+		if (h->num == 0 || strcmp (text, h->items[h->num - 1])) {
+			if (h->num < HISTORY_SIZE)
+				h->items[h->num++] = xstrdup (text);
+			else {
+				free (h->items[0]);
+				memmove (h->items, h->items + 1,
+						(HISTORY_SIZE - 1) * sizeof (char *));
+				h->items[h->num] = xstrdup (text);
+			}
+		}
+	}
+}
+
+static void entry_history_replace (struct entry_history *h, int num, const char *text)
+{
+	assert (h != NULL);
+	assert (num >= 0 && num < h->num);
+	assert (text != NULL);
+
+	if (strlen (text) != strspn (text, " ") &&
+	    strcmp (h->items[num], text)) {
+		free (h->items[num]);
+		h->items[num] = xstrdup (text);
 	}
 }
 
@@ -409,6 +427,7 @@ static void entry_init (struct entry *e, const enum entry_type type,
 	
 	e->type = type;
 	e->text_ucs[0] = L'\0';
+	e->saved_ucs[0] = L'\0';
 	e->file = NULL;
 	e->title = xmalloc (strlen (title) + 2);
 	strcpy (e->title, title);
@@ -431,15 +450,16 @@ static enum entry_type entry_get_type (const struct entry *e)
 	return e->type;
 }
 
-/* Set the entry text. Move the cursor to the end. */
-static void entry_set_text (struct entry *e, const char *text)
+/* Set the entry text as UCS.  Move the cursor to the end. */
+static void entry_set_text_ucs (struct entry *e, const wchar_t *text)
 {
-	int width;
+	int width, len;
 	
 	assert (e != NULL);
 
-	mbstowcs (e->text_ucs, text, ARRAY_SIZE(e->text_ucs));
-	e->text_ucs[ARRAY_SIZE(e->text_ucs)-1] = L'\0';
+	len = MIN (wcslen (text) + 1, ARRAY_SIZE (e->text_ucs));
+	wmemcpy (e->text_ucs, text, len);
+	e->text_ucs[ARRAY_SIZE (e->text_ucs) - 1] = L'\0';
 
 	width = wcswidth (e->text_ucs, WIDTH_MAX);
 	e->cur_pos = wcslen (e->text_ucs);
@@ -447,6 +467,19 @@ static void entry_set_text (struct entry *e, const char *text)
 	e->display_from = 0;
 	if (e->cur_pos > e->width)
 		e->display_from = width - e->width;
+}
+
+/* Set the entry text. */
+static void entry_set_text (struct entry *e, const char *text)
+{
+	wchar_t text_ucs[ARRAY_SIZE (e->text_ucs)];
+	
+	assert (e != NULL);
+
+	mbstowcs (text_ucs, text, ARRAY_SIZE (e->text_ucs));
+	e->text_ucs[ARRAY_SIZE (e->text_ucs) - 1] = L'\0';
+
+	entry_set_text_ucs (e, text_ucs);
 }
 
 /* Add a char to the entry where the cursor is placed. */
@@ -611,6 +644,21 @@ static void entry_resize (struct entry *e, const int width)
 	entry_end (e);
 }
 
+static char *entry_get_text (const struct entry *e)
+{
+	char *text;
+	int len;
+	
+	assert (e != NULL);
+
+	len = wcstombs (NULL, e->text_ucs, -1) + 1;
+	assert (len >= 1);
+	text = (char *) xmalloc (sizeof (char) * len);
+	wcstombs (text, e->text_ucs, len);
+
+	return text;
+}
+
 /* Copy the previous history item to the entry if available, move the entry
  * history position down. */
 static void entry_set_history_up (struct entry *e)
@@ -620,12 +668,19 @@ static void entry_set_history_up (struct entry *e)
 
 	if (e->history_pos > 0) {
 		char *t;
-		
+
+		if (e->history_pos == entry_history_nitems (e->history))
+			wmemcpy (e->saved_ucs, e->text_ucs, wcslen (e->text_ucs) + 1);
+		else {
+			t = entry_get_text (e);
+			entry_history_replace (e->history, e->history_pos, t);
+			free (t);
+		}
 		e->history_pos--;
+
 		t = entry_history_get (e->history, e->history_pos);
 		entry_set_text (e, t);
 		free (t);
-		entry_home (e);
 	}
 }
 
@@ -636,14 +691,21 @@ static void entry_set_history_down (struct entry *e)
 	assert (e != NULL);
 	assert (e->history != NULL);
 
-	if (e->history_pos < entry_history_nitems(e->history) - 1) {
+	if (e->history_pos < entry_history_nitems (e->history)) {
 		char *t;
-		
-		e->history_pos++;
-		t = entry_history_get (e->history, e->history_pos);
-		entry_set_text (e, t);
+
+		t = entry_get_text (e);
+		entry_history_replace (e->history, e->history_pos, t);
 		free (t);
-		entry_home (e);
+
+		e->history_pos++;
+		if (e->history_pos == entry_history_nitems (e->history))
+			entry_set_text_ucs (e, e->saved_ucs);
+		else {
+			t = entry_history_get (e->history, e->history_pos);
+			entry_set_text (e, t);
+			free (t);
+		}
 	}
 }
 
@@ -670,21 +732,6 @@ static void entry_destroy (struct entry *e)
 		free (e->file);
 	if (e->title)
 		free (e->title);
-}
-
-static char *entry_get_text (const struct entry *e)
-{
-	char *text;
-	int len;
-	
-	assert (e != NULL);
-
-	len = wcstombs (NULL, e->text_ucs, -1) + 1;
-	assert (len >= 1);
-	text = (char *)xmalloc (sizeof(char) * len);
-	wcstombs (text, e->text_ucs, len);
-
-	return text;
 }
 
 static void entry_add_text_to_history (struct entry *e)
