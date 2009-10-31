@@ -2828,9 +2828,7 @@ static void use_theme ()
 static void theme_menu_key (const struct iface_key *k)
 {
 	if (!iface_key_is_resize(k)) {
-		enum key_cmd cmd = get_key_cmd (CON_MENU,
-				k->type == IFACE_KEY_CHAR ? k->key.ucs :
-				k->key.func);
+		enum key_cmd cmd = get_key_cmd (CON_MENU, k);
 		
 		switch (cmd) {
 			case KEY_CMD_GO:
@@ -3231,9 +3229,7 @@ static void menu_key (const struct iface_key *k)
 	else if (iface_in_theme_menu())
 		theme_menu_key (k);
 	else if (!iface_key_is_resize(k)) {
-		enum key_cmd cmd = get_key_cmd (CON_MENU,
-				k->type == IFACE_KEY_CHAR ? k->key.ucs :
-				k->key.func);
+		enum key_cmd cmd = get_key_cmd (CON_MENU, k);
 		
 		switch (cmd) {
 			case KEY_CMD_QUIT_CLIENT:

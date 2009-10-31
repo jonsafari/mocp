@@ -3435,8 +3435,7 @@ static void info_win_entry_handle_key (struct info_win *iw, struct main_win *mw,
 	assert (mw != NULL);
 	assert (iw->in_entry);
 
-	cmd = get_key_cmd (CON_ENTRY,
-			k->type == IFACE_KEY_CHAR ? k->key.ucs : k->key.func);
+	cmd = get_key_cmd (CON_ENTRY, k);
 	type = entry_get_type (&iw->entry);
 
 	if (type == ENTRY_SEARCH) {
@@ -3463,9 +3462,7 @@ static void info_win_entry_handle_key (struct info_win *iw, struct main_win *mw,
 			info_win_entry_disable (iw);
 		}
 		else {
-			enum key_cmd cmd = get_key_cmd (CON_MENU,
-					k->type == IFACE_KEY_CHAR
-					? k->key.ucs : k->key.func);
+			enum key_cmd cmd = get_key_cmd (CON_MENU, k);
 
 			if (cmd == KEY_CMD_MENU_UP
 					|| cmd == KEY_CMD_MENU_DOWN
