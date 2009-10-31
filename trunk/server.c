@@ -245,7 +245,7 @@ static void del_client (struct client *cli)
 	UNLOCK (cli->events_mutex);
 }
 
-/* CHeck if the process with ginen PID exists. Return != 0 if so. */
+/* Check if the process with given PID exists. Return != 0 if so. */
 static int valid_pid (const int pid)
 {
 	return kill(pid, 0) == 0 ? 1 : 0;
@@ -751,7 +751,7 @@ static int send_option (struct client *cli)
 	if (!(name = get_str(cli->socket)))
 		return 0;
 
-	/* We can send only a few options, other make no sense here */
+	/* We can send only a few options, others make no sense here. */
 	if (!valid_sync_option(name)) {
 		logit ("Client wantetd to get not supported option '%s'",
 				name);
@@ -880,7 +880,7 @@ static int get_client_plist (struct client *cli)
 	return 1;
 }
 
-/* Find the client requesting for the playlist. */
+/* Find the client requesting the playlist. */
 static int find_cli_requesting_plist ()
 {
 	int i;
@@ -965,8 +965,8 @@ static int req_send_plist (struct client *cli)
 	return item ? 1 : 0;
 }
 
-/* Client requested to send queue so we get it from audio.c and
- * send it to the client */
+/* Client requested we send the queue so we get it from audio.c and
+ * send it to the client. */
 static int req_send_queue (struct client *cli)
 {
 	int i;
@@ -1009,8 +1009,8 @@ static int req_send_queue (struct client *cli)
 	return 1;
 }
 
-/* Handle command that synchinize playlists between interfaces (except
- * forwarding the whole list). Return 0 on error. */
+/* Handle command that synchronises the playlists between interfaces
+ * (except forwarding the whole list). Return 0 on error. */
 static int plist_sync_cmd (struct client *cli, const int cmd)
 {
 	if (cmd == CMD_CLI_PLIST_ADD) {
@@ -1019,7 +1019,7 @@ static int plist_sync_cmd (struct client *cli, const int cmd)
 		debug ("Sending EV_PLIST_ADD");
 
 		if (!(item = recv_item(cli->socket))) {
-			logit ("Error while reveiving item");
+			logit ("Error while receiving item");
 			return 0;
 		}
 		
@@ -1033,7 +1033,7 @@ static int plist_sync_cmd (struct client *cli, const int cmd)
 		debug ("Sending EV_PLIST_DEL");
 
 		if (!(file = get_str(cli->socket))) {
-			logit ("Error while reveiving file");
+			logit ("Error while receiving file");
 			return 0;
 		}
 
@@ -1045,7 +1045,7 @@ static int plist_sync_cmd (struct client *cli, const int cmd)
 
 		if (!(m.from = get_str(cli->socket))
 				|| !(m.to = get_str(cli->socket))) {
-			logit ("Error while reveiving file");
+			logit ("Error while receiving file");
 			return 0;
 		}
 
@@ -1079,7 +1079,7 @@ static int req_plist_set_serial (struct client *cli)
 		return 0;
 	
 	if (serial < 0) {
-		logit ("Clients wants to set bad serial number");
+		logit ("Client wants to set bad serial number");
 		return 0;
 	}
 
@@ -1096,10 +1096,10 @@ static int gen_serial (const struct client *cli)
 	int serial;
 	
 	/* Each client must always get a different serial number, so we use
-	 * also the client index to generate it. It must not be also used by
-	 * our playlist to not confise clients.
+	 * also the client index to generate it. It must also not be used by
+	 * our playlist to not confuse clients.
 	 * There can be 256 different serial number per client, but it's
-	 * enough, since clients use only two playlists. */
+	 * enough since clients use only two playlists. */
 
 	do {
 		serial = (seed << 8) | client_index(cli);
@@ -1112,8 +1112,7 @@ static int gen_serial (const struct client *cli)
 	return serial;
 }
 
-/* Send the unique number to the client that no other client has. Return 0 on
- * error. */
+/* Send the unique number to the client. Return 0 on error. */
 static int send_serial (struct client *cli)
 {
 	if (!send_data_int(cli, gen_serial(cli))) {
@@ -1574,7 +1573,7 @@ static void add_clients_fds (fd_set *read, fd_set *write)
 		}
 }
 
-/* return the maximum fd from clients and the argument. */
+/* Return the maximum fd from clients and the argument. */
 static int max_fd (int max)
 {
 	int i;
@@ -1588,7 +1587,7 @@ static int max_fd (int max)
 	return max;
 }
 
-/* Handle clients which fd are ready to read. */
+/* Handle clients whose fds are ready to read. */
 static void handle_clients (fd_set *fds)
 {
 	int i;

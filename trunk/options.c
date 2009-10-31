@@ -780,7 +780,7 @@ void options_parse (const char *config_file)
 			if (!opt_name[0])
 				fatal ("Error in config file, line %d.",
 						line);
-				eq = 1;
+			eq = 1;
 			opt_value[0] = 0;
 		}
 
