@@ -119,7 +119,8 @@ enum key_context
 
 #define META_KEY_FLAG	0x80
 
-enum key_cmd get_key_cmd (const enum key_context context, const int key);
+struct iface_key;
+enum key_cmd get_key_cmd (const enum key_context context, const struct iface_key *key);
 void keys_init ();
 void keys_cleanup ();
 char **get_keys_help (int *num);

@@ -32,6 +32,7 @@
 
 #include "keys.h"
 #include "interface.h"
+#include "interface_elements.h"
 #include "options.h"
 #include "log.h"
 #include "common.h"
@@ -886,16 +887,19 @@ static struct special_keys
 
 static char *help[COMMANDS_NUM];
 
-enum key_cmd get_key_cmd (const enum key_context context, const int key)
+enum key_cmd get_key_cmd (const enum key_context context, const struct iface_key *key)
 {
+	int k;
 	unsigned int i;
 	
+	k = (key->type == IFACE_KEY_CHAR) ? key->key.ucs : key->key.func;
+
 	for (i = 0; i < sizeof(commands)/sizeof(commands[0]); i++)
 		if (commands[i].context == context) {
 			int j = 0;
 
 			while (commands[i].keys[j] != -1)
-				if (commands[i].keys[j++] == key)
+				if (commands[i].keys[j++] == k)
 					return commands[i].cmd;
 		}
 	
