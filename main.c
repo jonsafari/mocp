@@ -458,7 +458,7 @@ int main (int argc, char *argv[])
 
 	/* set locale acording to the environment variables */
 	if (!setlocale(LC_ALL, ""))
-		logit ("Could not net locate!");
+		logit ("Could not set locale!");
 
 	while ((ret = getopt_long(argc, argv,
 					"VhDSFR:macpsxT:C:M:PUynArfiGelk:j:v:t:o:u:Q:q",

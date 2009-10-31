@@ -796,53 +796,53 @@ int audio_get_buf_fill ()
 
 int audio_send_pcm (const char *buf, const size_t size)
 {
-        char *softmixed = NULL;
-        char *equalized = NULL;
+	char *softmixed = NULL;
+	char *equalized = NULL;
 
-        if(equalizer_is_active())
-        {
-          equalized = xmalloc(size);
-          memcpy(equalized, buf, size);
+	if(equalizer_is_active())
+	{
+		equalized = xmalloc(size);
+		memcpy(equalized, buf, size);
 
-          equalizer_process_buffer(equalized, size, &driver_sound_params);
+		equalizer_process_buffer(equalized, size, &driver_sound_params);
 
-          buf = equalized;
-        }
-        
-        if(softmixer_is_active())
-        {
-          if(equalized)
-          {
-            softmixed = equalized;
-          }
-          else
-          {
-            softmixed = xmalloc(size);
-            memcpy(softmixed, buf, size);
-          }
- 
-          softmixer_process_buffer
-          (
-              softmixed
-            , size
-            , &driver_sound_params
-          );
+		buf = equalized;
+	}
 
-          buf = softmixed;
-        }
-        
-        int played;
+	if(softmixer_is_active())
+	{
+		if(equalized)
+		{
+			softmixed = equalized;
+		}
+		else
+		{
+			softmixed = xmalloc(size);
+			memcpy(softmixed, buf, size);
+		}
+
+		softmixer_process_buffer
+		(
+			softmixed
+			, size
+			, &driver_sound_params
+		);
+
+		buf = softmixed;
+	}
+
+	int played;
 	
 	played = hw.play (buf, size);
 
 	if (played == 0)
 		fatal ("Audio output error.");
 
-        if(softmixed && !equalized)
-          free(softmixed);
+	if(softmixed && !equalized)
+		free(softmixed);
 
-        if(equalized)
-          free(equalized);
+	if(equalized)
+		free(equalized);
 
 	return played;
 }
