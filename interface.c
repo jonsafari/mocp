@@ -908,7 +908,7 @@ static void update_error ()
 	
 	send_int_to_srv (CMD_GET_ERROR);
 	err = get_data_str ();
-	error (err);
+	error ("%s", err);
 	free (err);
 }
 
