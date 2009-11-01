@@ -9,6 +9,9 @@
 # include <curses.h>
 #endif
 
+#include <wctype.h>
+#include <wchar.h>
+
 #include "files.h"
 #include "keys.h"
 
