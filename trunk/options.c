@@ -230,6 +230,7 @@ static int option_init(const char *name, enum option_type type)
 	int pos=find_free(h);
 	
 	assert (strlen(name) < OPTION_NAME_MAX);
+	assert (is_valid_symbol (name));
 	assert(pos>=0);
 	
 	strcpy (options[pos].name, name);
