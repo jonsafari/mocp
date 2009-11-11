@@ -3042,7 +3042,6 @@ static void info_win_set_rate (struct info_win *w, const int rate)
 static void info_win_set_mixer_value (struct info_win *w, const int value)
 {
 	assert (w != NULL);
-	assert (value >= 0 && value <= 100);
 
 	bar_set_fill (&w->mixer_bar, (double) value);
 	if (!w->in_entry && !w->too_small)
@@ -3965,7 +3964,7 @@ void iface_tick ()
 
 void iface_set_mixer_value (const int value)
 {
-	assert (value >= 0 && value <= 100);
+	assert (value >= 0);
 
 	info_win_set_mixer_value (&info_win, value);
 	iface_refresh_screen ();
