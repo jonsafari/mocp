@@ -46,6 +46,7 @@
 #include "menu.h"
 #include "themes.h"
 #include "common.h"
+#include "lists.h"
 #include "options.h"
 #include "interface_elements.h"
 #include "log.h"
@@ -1126,8 +1127,8 @@ static void side_menu_clear (struct side_menu *m)
 
 /* Fill the directory or playlist side menu with this content. */
 static void side_menu_make_list_content (struct side_menu *m,
-		const struct plist *files, const struct file_list *dirs,
-		const struct file_list *playlists, const int add_up_dir)
+		const struct plist *files, const lists_t_strs *dirs,
+		const lists_t_strs *playlists, const int add_up_dir)
 {
 	struct menu_item *added;
 	int i;
@@ -1147,13 +1148,13 @@ static void side_menu_make_list_content (struct side_menu *m,
 	}
 	
 	if (dirs)
-		for (i = 0; i < dirs->num; i++) {
+		for (i = 0; i < lists_strs_size (dirs) ; i++) {
 			char title[PATH_MAX];
 
 #ifdef HAVE_RCC 
 			char *t_str = NULL;
 			if (options_get_int("UseRCCForFilesystem")) {
-				strcpy (title, strrchr(dirs->items[i], '/') + 1);
+				strcpy (title, strrchr (lists_strs_at (dirs, i), '/') + 1);
 				strcat (title, "/");
 				t_str = xstrdup (title);
 				t_str = iconv_rcc (t_str);
@@ -1165,7 +1166,7 @@ static void side_menu_make_list_content (struct side_menu *m,
 			if (options_get_int ("FileNamesIconv"))
 			{
 				char *conv_title = files_iconv_str (
-						strrchr(dirs->items[i], '/') + 1);
+						strrchr (lists_strs_at (dirs, i), '/') + 1);
 
 				strcpy (title, conv_title);
 				strcat (title, "/");
@@ -1174,12 +1175,12 @@ static void side_menu_make_list_content (struct side_menu *m,
 			}
 			else
 			{
-				strcpy (title, strrchr(dirs->items[i], '/') + 1);
+				strcpy (title, strrchr (lists_strs_at (dirs, i), '/') + 1);
 				strcat (title, "/");
 			}
 
 			added = menu_add (m->menu.list.main, title, F_DIR,
-					dirs->items[i]);
+					lists_strs_at (dirs, i));
 			menu_item_set_attr_normal (added,
 					get_color(CLR_MENU_ITEM_DIR));
 			menu_item_set_attr_sel (added,
@@ -1187,10 +1188,10 @@ static void side_menu_make_list_content (struct side_menu *m,
 		}
 
 	if (playlists)
-		for (i = 0; i < playlists->num; i++){
+		for (i = 0; i < lists_strs_size (playlists); i++){
 			added = menu_add (m->menu.list.main,
-					strrchr(playlists->items[i], '/') + 1,
-					F_PLAYLIST, playlists->items[i]);
+					strrchr (lists_strs_at (playlists, i), '/') + 1,
+					F_PLAYLIST, lists_strs_at (playlists, i));
 			menu_item_set_attr_normal (added,
 					get_color(CLR_MENU_ITEM_PLAYLIST));
 			menu_item_set_attr_sel (added,
@@ -1846,7 +1847,7 @@ static enum side_menu_type iface_to_side_menu (const enum iface_menu iface_menu)
 
 static void main_win_set_dir_content (struct main_win *w,
 		const enum iface_menu iface_menu, const struct plist *files,
-		const struct file_list *dirs, const struct file_list *playlists)
+		const lists_t_strs *dirs, const lists_t_strs *playlists)
 {
 	struct side_menu *m;
 	
@@ -1877,7 +1878,7 @@ static void main_win_set_title (struct main_win *w,
 
 static void main_win_update_dir_content (struct main_win *w,
 		const enum iface_menu iface_menu, const struct plist *files,
-		const struct file_list *dirs, const struct file_list *playlists)
+		const lists_t_strs *dirs, const lists_t_strs *playlists)
 {
 	struct side_menu *m;
 	struct side_menu_state ms;
@@ -3706,8 +3707,8 @@ static void iface_show_num_files (const int num)
 /* Change the content of the directory menu to these files, directories, and
  * playlists. */
 void iface_set_dir_content (const enum iface_menu iface_menu,
-		const struct plist *files, const struct file_list *dirs,
-		const struct file_list *playlists)
+		const struct plist *files, const lists_t_strs *dirs,
+		const lists_t_strs *playlists)
 {
 	main_win_set_dir_content (&main_win, iface_menu, files, dirs,
 			playlists);
@@ -3715,8 +3716,9 @@ void iface_set_dir_content (const enum iface_menu iface_menu,
 			main_win_get_files_time(&main_win, iface_menu),
 			main_win_is_time_for_all(&main_win, iface_menu));
 
-	iface_show_num_files (plist_count(files) + (dirs ? dirs->num : 0)
-			+ (playlists ? playlists->num : 0));
+	iface_show_num_files (plist_count(files)
+			+ (dirs ? lists_strs_size (dirs) : 0)
+			+ (playlists ? lists_strs_size (playlists) : 0));
 
 	iface_refresh_screen ();
 }
@@ -3725,8 +3727,8 @@ void iface_set_dir_content (const enum iface_menu iface_menu,
  * the menu state (selected file, view position) and restore it after making
  * a new menu. */
 void iface_update_dir_content (const enum iface_menu iface_menu,
-		const struct plist *files, const struct file_list *dirs,
-		const struct file_list *playlists)
+		const struct plist *files, const lists_t_strs *dirs,
+		const lists_t_strs *playlists)
 {
 	main_win_update_dir_content (&main_win, iface_menu, files, dirs,
 			playlists);
@@ -3734,8 +3736,9 @@ void iface_update_dir_content (const enum iface_menu iface_menu,
 			main_win_get_files_time(&main_win, iface_menu),
 			main_win_is_time_for_all(&main_win, iface_menu));
 	
-	iface_show_num_files (plist_count(files) + (dirs ? dirs->num : 0)
-			+ (playlists ? playlists->num : 0));
+	iface_show_num_files (plist_count(files)
+			+ (dirs ? lists_strs_size (dirs) : 0)
+			+ (playlists ? lists_strs_size (playlists) : 0));
 	
 	iface_refresh_screen ();
 }
