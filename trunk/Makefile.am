@@ -58,6 +58,8 @@ mocp_SOURCES = log.c \
 	       softmixer.h \
 	       lyrics.h \
 	       lyrics.c \
+	       lists.h \
+	       lists.c \
 	       equalizer.h \
 	       equalizer.c
 EXTRA_mocp_SOURCES = gnugetopt.h \
