@@ -2,22 +2,16 @@
 #define FILES_H
 
 #include <stdio.h>
+#include "lists.h"
 #include "playlist.h"
 
-struct file_list
-{
-	int num;		/* Number of elements on the list */
-	int allocated;		/* Number of allocated elements */
-	char **items;
-};
+#define FILES_LIST_INIT_SIZE	64
 
-int read_directory (const char *directory, struct file_list *dirs,
-		struct file_list *playlists, struct plist *plist);
+int read_directory (const char *directory, lists_t_strs *dirs,
+		lists_t_strs *playlists, struct plist *plist);
 int read_directory_recurr (const char *directory, struct plist *plist);
 void resolve_path (char *buf, const int size, const char *file);
 char *ext_pos (const char *file);
-void file_list_free (struct file_list *list);
-struct file_list *file_list_new ();
 enum file_type file_type (const char *file);
 int is_url (const char *str);
 char *read_line (FILE *file);

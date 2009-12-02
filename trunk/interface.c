@@ -48,6 +48,7 @@
 #include "interface_elements.h"
 #include "interface.h"
 #include "common.h"
+#include "lists.h"
 #include "playlist.h"
 #include "playlist_file.h"
 #include "protocol.h"
@@ -529,12 +530,12 @@ static int is_subdir (const char *dir1, const char *dir2)
 	return !strncmp(dir1, dir2, strlen(dir1)) ? 1 : 0;
 }
 
-static int qsort_strcmp_func (const void *a, const void *b)
+static int sort_strcmp_func (const void *a, const void *b)
 {
 	return strcoll (*(char **)a, *(char **)b);
 }
 
-static int qsort_dirs_func (const void *a, const void *b)
+static int sort_dirs_func (const void *a, const void *b)
 {
 	char *sa = *(char **)a;
 	char *sb = *(char **)b;
@@ -1247,7 +1248,7 @@ static int go_to_dir (const char *dir, const int reload)
 	char last_dir[PATH_MAX];
 	const char *new_dir = dir ? dir : cwd;
 	int going_up = 0;
-	struct file_list *dirs, *playlists;
+	lists_t_strs *dirs, *playlists;
 
 	iface_set_status ("reading directory...");
 
@@ -1260,14 +1261,14 @@ static int go_to_dir (const char *dir, const int reload)
 	old_dir_plist = dir_plist;
 	dir_plist = (struct plist *)xmalloc (sizeof(struct plist));
 	plist_init (dir_plist);
-	dirs = file_list_new ();
-	playlists = file_list_new ();
+	dirs = lists_strs_new (FILES_LIST_INIT_SIZE);
+	playlists = lists_strs_new (FILES_LIST_INIT_SIZE);
 
 	if (!read_directory(new_dir, dirs, playlists, dir_plist)) {
 		iface_set_status ("");
 		plist_free (dir_plist);
-		file_list_free (dirs);
-		file_list_free (playlists);
+		lists_strs_free (dirs);
+		lists_strs_free (playlists);
 		free (dir_plist);
 		dir_plist = old_dir_plist;
 		return 0;
@@ -1285,9 +1286,8 @@ static int go_to_dir (const char *dir, const int reload)
 	switch_titles_file (dir_plist);
 
 	plist_sort_fname (dir_plist);
-	qsort (dirs->items, dirs->num, sizeof(char *), qsort_dirs_func);
-	qsort (playlists->items, playlists->num, sizeof(char *),
-			qsort_strcmp_func);
+	lists_strs_sort (dirs, sort_dirs_func);
+	lists_strs_sort (playlists, sort_strcmp_func);
 
 	if (get_tags_setting())
 		ask_for_tags (dir_plist, get_tags_setting());
@@ -1298,8 +1298,8 @@ static int go_to_dir (const char *dir, const int reload)
 	else
 		iface_set_dir_content (IFACE_MENU_DIR, dir_plist, dirs,
 				playlists);
-	file_list_free (dirs);
-	file_list_free (playlists);
+	lists_strs_free (dirs);
+	lists_strs_free (playlists);
 	if (going_up)
 		iface_set_curr_item_title (last_dir);
 	

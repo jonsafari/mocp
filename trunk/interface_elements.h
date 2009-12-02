@@ -12,6 +12,7 @@
 #include <wctype.h>
 #include <wchar.h>
 
+#include "lists.h"
 #include "files.h"
 #include "keys.h"
 
@@ -57,12 +58,12 @@ void iface_set_mixer_name (const char *name);
 void iface_set_status (const char *msg);
 void iface_set_dir_content (const enum iface_menu iface_menu,
 		const struct plist *files,
-		const struct file_list *dirs,
-		const struct file_list *playlists);
+		const lists_t_strs *dirs,
+		const lists_t_strs *playlists);
 void iface_update_dir_content (const enum iface_menu iface_menu,
 		const struct plist *files,
-		const struct file_list *dirs,
-		const struct file_list *playlists);
+		const lists_t_strs *dirs,
+		const lists_t_strs *playlists);
 void iface_set_curr_item_title (const char *title);
 void iface_get_key (struct iface_key *k);
 int iface_key_is_resize (const struct iface_key *k);

@@ -36,6 +36,7 @@
 
 #include "playlist.h"
 #include "common.h"
+#include "lists.h"
 #include "interface.h"
 #include "decoder.h"
 #include "options.h"
@@ -44,7 +45,6 @@
 #include "log.h"
 #include "utf8.h"
 
-#define FILE_LIST_INIT_SIZE	64
 #define READ_LINE_INIT_SIZE	256
 
 
@@ -297,48 +297,11 @@ struct file_tags *read_file_tags (const char *file,
 	return tags;
 }
 
-struct file_list *file_list_new ()
-{
-	struct file_list *list;
-
-	list = (struct file_list *)xmalloc(sizeof(struct file_list));
-	list->num = 0;
-	list->allocated = FILE_LIST_INIT_SIZE;
-	list->items = (char **)xmalloc (
-			sizeof(char *) * FILE_LIST_INIT_SIZE);
-
-	return list;
-}
-
-static void file_list_add (struct file_list *list, const char *file)
-{
-	assert (list != NULL);
-	
-	if (list->allocated == list->num) {
-		list->allocated *= 2;
-		list->items = (char **)xrealloc (list->items,
-				sizeof(char *) * list->allocated);
-	}
-
-	list->items[list->num] = xstrdup (file);
-	list->num++;
-}
-
-void file_list_free (struct file_list *list)
-{
-	int i;
-	
-	for (i = 0; i < list->num; i++)
-		free (list->items[i]);
-	free (list->items);
-	free (list);
-}
-
 /* Read the content of the directory, make an array of absolute paths for
  * all recognized files. Put directories, playlists and sound files
  * in proper structures. Return 0 on error.*/
-int read_directory (const char *directory, struct file_list *dirs,
-		struct file_list *playlists, struct plist *plist)
+int read_directory (const char *directory, lists_t_strs *dirs,
+		lists_t_strs *playlists, struct plist *plist)
 {
 	DIR *dir;
 	struct dirent *entry;
@@ -385,9 +348,9 @@ int read_directory (const char *directory, struct file_list *dirs,
 		if (type == F_SOUND)
 			plist_add (plist, file);
 		else if (type == F_DIR)
-			file_list_add (dirs, file);
+			lists_strs_append (dirs, file);
 		else if (type == F_PLAYLIST)
-			file_list_add (playlists, file);
+			lists_strs_append (playlists, file);
 	}
 
 	closedir (dir);
