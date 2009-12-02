@@ -380,7 +380,7 @@ static void add_event (struct client *cli, const int event, void *data)
 	UNLOCK (cli->events_mutex);
 }
 
-void on_song_change()
+static void on_song_change()
 {
 	struct file_tags *curr_tags = NULL;
 	static char *last_file = NULL;
@@ -1160,88 +1160,88 @@ int req_get_mixer_channel_name (struct client *cli)
 	return status;
 }
 
-/* Handle CMD_TOGGLE_MIXER_CHANNEL. Return 0 on error. */
+/* Handle CMD_TOGGLE_MIXER_CHANNEL. */
 void req_toggle_mixer_channel ()
 {
 	audio_toggle_mixer_channel ();
 	add_event_all (EV_MIXER_CHANGE, NULL);
 }
 
-/* Handle CMD_TOGGLE_SOFTMIXER. Return 0 on error. */
+/* Handle CMD_TOGGLE_SOFTMIXER. */
 void req_toggle_softmixer ()
 {
-        softmixer_set_active(!softmixer_is_active());
+	softmixer_set_active(!softmixer_is_active());
 	add_event_all (EV_MIXER_CHANGE, NULL);
 }
 
 void update_eq_name()
 {
-        char buffer[27];
-        
-        char *n = equalizer_current_eqname();
+	char buffer[27];
 
-        int l = strlen(n);
+	char *n = equalizer_current_eqname();
 
-        /* status message can only take strings up to 25 chars
-         * (without terminating zero)
-         * The message header has 11 chars (EQ set to...)
-         */
-        if(l>14)
-        {
-          n[14] = 0;
-          n[13] = '.';
-          n[12] = '.';
-          n[11] = '.';
-        }
-        
-        sprintf(buffer, "EQ set to: %s", n);
-        
-        logit("%s", buffer);
-        
-        free(n);
+	int l = strlen(n);
 
-        status_msg(buffer);       
+	/* Status message can only take strings up to 25 chars
+	 * (Without terminating zero).
+	 * The message header has 11 chars (EQ set to...).
+	 */
+	if (l > 14)
+	{
+		n[14] = 0;
+		n[13] = '.';
+		n[12] = '.';
+		n[11] = '.';
+	}
+
+	sprintf(buffer, "EQ set to: %s", n);
+
+	logit("%s", buffer);
+
+	free(n);
+
+	status_msg(buffer);       
 }
 
 void req_toggle_equalizer ()
 {
-        equalizer_set_active(!equalizer_is_active());
+	equalizer_set_active(!equalizer_is_active());
 
-        update_eq_name();
+	update_eq_name();
 }
 
 void req_equalizer_refresh()
 {
-        equalizer_refresh();
+	equalizer_refresh();
 
-        status_msg("Equalizer refreshed");
-        
-        logit("Equalizer refreshed");
+	status_msg("Equalizer refreshed");
+
+	logit("Equalizer refreshed");
 }
 
 void req_equalizer_prev()
 {
-        equalizer_prev();
-        
-        update_eq_name();
+	equalizer_prev();
+
+	update_eq_name();
 }
 
 void req_equalizer_next()
 {
-        equalizer_next();
-        
-        update_eq_name();
+	equalizer_next();
+
+	update_eq_name();
 }
 
 void req_toggle_make_mono()
 {
-        char buffer[128];
+	char buffer[128];
 
-        softmixer_set_mono(!softmixer_is_mono());
+	softmixer_set_mono(!softmixer_is_mono());
 
-        sprintf(buffer, "Mono-Mixing set to: %s", softmixer_is_mono()?"on":"off");
+	sprintf(buffer, "Mono-Mixing set to: %s", softmixer_is_mono()?"on":"off");
 
-        status_msg(buffer);
+	status_msg(buffer);
 }
 
 /* Handle CMD_GET_FILE_TAGS. Return 0 on error. */
@@ -1249,7 +1249,7 @@ static int get_file_tags (const int cli_id)
 {
 	char *file;
 	int tags_sel;
-	
+
 	if (!(file = get_str(clients[cli_id].socket)))
 		return 0;
 	if (!get_int(clients[cli_id].socket, &tags_sel)) {
@@ -1411,7 +1411,7 @@ static void handle_command (const int client_id)
 			break;
 		case CMD_PREV:
 			audio_prev ();
-                        break;
+			break;
 		case CMD_PING:
 			if (!send_int(cli->socket, EV_PONG))
 				err = 1;
@@ -1508,21 +1508,21 @@ static void handle_command (const int client_id)
 			if (!req_list_move(cli))
 				err = 1;
 			break;
-                case CMD_TOGGLE_EQUALIZER:
-                        req_toggle_equalizer();
-                        break;
-                case CMD_EQUALIZER_REFRESH:
-                        req_equalizer_refresh();
-                        break;
-                case CMD_EQUALIZER_PREV:
-                        req_equalizer_prev();
-                        break;
-                case CMD_EQUALIZER_NEXT:
-                        req_equalizer_next();
-                        break;
-                case CMD_TOGGLE_MAKE_MONO:
-                        req_toggle_make_mono();
-                        break;
+		case CMD_TOGGLE_EQUALIZER:
+			req_toggle_equalizer();
+			break;
+		case CMD_EQUALIZER_REFRESH:
+			req_equalizer_refresh();
+			break;
+		case CMD_EQUALIZER_PREV:
+			req_equalizer_prev();
+			break;
+		case CMD_EQUALIZER_NEXT:
+			req_equalizer_next();
+			break;
+		case CMD_TOGGLE_MAKE_MONO:
+			req_toggle_make_mono();
+			break;
 		case CMD_QUEUE_ADD:
 			if (!req_queue_add(cli))
 				err = 1;

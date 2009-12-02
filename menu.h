@@ -31,7 +31,7 @@ enum menu_align
 
 struct menu_item
 {
-	char *title;		/* Titile of the item */
+	char *title;		/* Title of the item */
 	enum menu_align align;	/* Align of the title */
 	int num;		/* Position of the item starting from 0. */
 
