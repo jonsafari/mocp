@@ -2209,6 +2209,7 @@ static void main_win_handle_lyrics_key (struct main_win *w,
 
 	main_win_draw (w);
 }
+
 static void main_win_swap_plist_items (struct main_win *w, const char *file1,
 		const char *file2)
 {

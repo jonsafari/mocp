@@ -1860,7 +1860,7 @@ static void add_dir_plist ()
 		return;
 	}
 
-	iface_set_status ("reading directories...");
+	iface_set_status ("Reading directories...");
 	plist_init (&plist);
 
 	if (type == F_DIR) {

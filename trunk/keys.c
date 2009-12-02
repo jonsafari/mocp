@@ -180,7 +180,7 @@ static struct command commands[] = {
 	{
 		KEY_CMD_TOGGLE_REPEAT,
 		"toggle_repeat",
-		"Toggle repeat",
+		"Toggle Repeat",
 		CON_MENU,
 		{ 'R', -1 },
 		1
@@ -628,7 +628,7 @@ static struct command commands[] = {
  	{
  		KEY_CMD_DELETE_START,
  		"delete_to_start",
- 		"Delete to start of line",
+ 		"Delete to start of line (entry)",
  		CON_ENTRY,
  		{ CTRL('u'), -1 },
  		1
@@ -636,7 +636,7 @@ static struct command commands[] = {
  	{
  		KEY_CMD_DELETE_END,
  		"delete_to_end",
- 		"Delete to end of line",
+ 		"Delete to end of line (entry)",
  		CON_ENTRY,
  		{ CTRL('k'), -1 },
  		1
