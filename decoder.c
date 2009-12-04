@@ -26,6 +26,7 @@
 #include "log.h"
 #include "io.h"
 #include "compat.h"
+#include "options.h"
 
 static struct plugin {
 	lt_dlhandle handle;
@@ -37,14 +38,44 @@ static int plugins_num = 0;
 /* Find the index in table types for the given file. Return -1 if not found. */
 static int find_type (const char *file)
 {
-	char *ext = ext_pos (file);
-	int i;
+	int i, result;
 
-	if (ext)
-		for (i = 0; i < plugins_num; i++)
-			if (plugins[i].decoder->our_format_ext(ext))
-				return i;
-	return -1;
+	result = -1;
+
+#ifdef HAVE_LIBMAGIC
+	if (options_get_bool ("UseMimeMagic")) {
+		char *mime;
+
+		mime = xstrdup (file_mime_type (file));
+		if (mime) {
+			for (i = 0; i < plugins_num; i++) {
+				if (plugins[i].decoder->our_format_mime &&
+			    	plugins[i].decoder->our_format_mime (mime)) {
+					result = i;
+					break;
+				}
+			}
+			free (mime);
+		}
+	}
+#endif
+
+	if (result == -1) {
+		char *ext;
+
+		ext = ext_pos (file);
+		if (ext) {
+			for (i = 0; i < plugins_num; i++) {
+				if (plugins[i].decoder->our_format_ext &&
+				    plugins[i].decoder->our_format_ext (ext)) {
+					result = i;
+					break;
+				}
+			}
+		}
+	}
+
+	return result;
 }
 
 int is_sound_file (const char *name)
