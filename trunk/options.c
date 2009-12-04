@@ -440,6 +440,7 @@ void options_init ()
 	option_add_str  ("ForceTheme", NULL, CHECK_NONE); /* Used when -T is set */
 	option_add_str  ("MOCDir", "~/.moc", CHECK_NONE);
 	option_add_bool ("UseMmap", false);
+	option_add_bool ("UseMimeMagic", false);
 	option_add_bool ("Precache", true);
 	option_add_bool ("SavePlaylist", true);
 	option_add_str  ("Keymap", NULL, CHECK_NONE);
