@@ -13,6 +13,7 @@ int read_directory_recurr (const char *directory, struct plist *plist);
 void resolve_path (char *buf, const int size, const char *file);
 char *ext_pos (const char *file);
 enum file_type file_type (const char *file);
+const char *file_mime_type (const char *file);
 int is_url (const char *str);
 char *read_line (FILE *file);
 char *find_match_dir (char *dir);

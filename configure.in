@@ -210,6 +210,18 @@ AC_CHECK_FUNCS([getcwd memmove strcasecmp strdup strerror strncasecmp strrchr \
 dnl optional functions
 AC_CHECK_FUNCS([strcasestr strerror_r])
 
+dnl MIME magic
+AC_ARG_WITH(magic, AS_HELP_STRING(--without-magic,
+	[Compile without MIME magic support.]))
+COMPILE_MAGIC="no"
+if test "x$with_magic" != "xno"
+then
+	AC_CHECK_LIB(magic, magic_open,
+		[COMPILE_MAGIC="yes"
+		 AC_DEFINE([HAVE_LIBMAGIC], 1, [Define if you have libmagic.])
+		 EXTRA_LIBS="$EXTRA_LIBS -lmagic"])
+fi
+
 dnl FIXME: Support for this in the source code
 AC_HEADER_DIRENT
 
@@ -616,6 +628,7 @@ echo "DEBUG:             "$COMPILE_DEBUG
 echo "RCC:               "$COMPILE_RCC
 echo "Network streams:   "$COMPILE_CURL
 echo "Resampling:        "$COMPILE_SAMPLERATE
+echo "MIME magic:        "$COMPILE_MAGIC
 echo "----------------------------------------------------------------"
 echo
 

@@ -22,6 +22,10 @@
 #include <errno.h>
 #include <stdlib.h>
 
+#ifdef HAVE_LIBMAGIC
+#include <magic.h>
+#endif
+
 /* Include dirent for various systems */
 #ifdef HAVE_DIRENT_H
 # include <dirent.h>
@@ -90,6 +94,43 @@ enum file_type file_type (const char *file)
 	if (is_plist_file(file))
 		return F_PLAYLIST;
 	return F_OTHER;
+}
+
+/* Given a file name, return the mime type or NULL. */
+const char *file_mime_type (const char *file)
+{
+	const char *result = NULL;
+	
+	assert (file != NULL);
+
+#ifdef HAVE_LIBMAGIC
+	static _Bool initialised = false;
+	static magic_t cookie = NULL;
+
+	if (!initialised) {
+		initialised = true;
+		cookie = magic_open (MAGIC_SYMLINK | MAGIC_MIME | MAGIC_PRESERVE_ATIME |
+		                     MAGIC_ERROR | MAGIC_NO_CHECK_COMPRESS |
+		                     MAGIC_NO_CHECK_ELF | MAGIC_NO_CHECK_TAR |
+		                     MAGIC_NO_CHECK_TOKENS | MAGIC_NO_CHECK_FORTRAN |
+		                     MAGIC_NO_CHECK_TROFF);
+		if (cookie == NULL)
+			logit ("Error allocating magic cookie: %s", strerror (errno));
+		else if (magic_load (cookie, NULL) != 0) {
+			logit ("Error loading magic database: %s", magic_error (cookie));
+			magic_close (cookie);
+			cookie = NULL;
+		}
+	}
+
+	if (cookie != NULL) {
+		result = magic_file (cookie, file);
+		if (result == NULL)
+			logit ("Error interrogating file: %s", magic_error (cookie));
+	}
+#endif
+
+	return result;
 }
 
 /* Make a title from the file name for the item. If hide extension != 0, strip
