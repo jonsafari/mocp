@@ -142,6 +142,25 @@ static char *id3v1_fix (const char *str)
 	return xstrdup (str);
 }
 
+int __unique_frame (struct id3_tag *tag, struct id3_frame *frame)
+{
+    int i;
+
+    for (i = 0; i < tag->nframes; i++) {
+        if (tag->frames[i] == frame) {
+            break;
+        }
+    }
+
+    for (; i < tag->nframes; i++) {
+        if (strcmp(tag->frames[i]->id, frame->id) == 0) {
+            return 0;
+        }
+    }
+
+    return 1;
+}
+
 static char *get_tag (struct id3_tag *tag, const char *what)
 {
 	struct id3_frame *frame;
@@ -155,12 +174,13 @@ static char *get_tag (struct id3_tag *tag, const char *what)
 		if (ucs4) {
 			/* Workaround for ID3 tags v1/v1.1 where the encoding
 			 * is latin1. */
-            union id3_field *encoding_field = &frame->fields[0];
-			if ((id3_tag_options(tag, 0, 0) & ID3_TAG_OPTION_ID3V1) 
-                    || ((options_get_int ("EnforceTagsEncoding") && 
-                            (id3_field_gettextencoding((encoding_field)) 
-                             == ID3_FIELD_TEXTENCODING_ISO_8859_1))))
-            {
+			union id3_field *encoding_field = &frame->fields[0];
+			if (((id3_tag_options(tag, 0, 0) & ID3_TAG_OPTION_ID3V1) &&
+						__unique_frame(tag, frame))
+					|| ((options_get_int ("EnforceTagsEncoding") && 
+							(id3_field_gettextencoding((encoding_field)) 
+							 == ID3_FIELD_TEXTENCODING_ISO_8859_1))))
+			{
 				char *t;
 
 				comm = (char *)id3_ucs4_latin1duplicate (ucs4);
