@@ -1250,7 +1250,7 @@ static int go_to_dir (const char *dir, const int reload)
 	int going_up = 0;
 	lists_t_strs *dirs, *playlists;
 
-	iface_set_status ("reading directory...");
+	iface_set_status ("Reading directory...");
 
 	if (dir && is_subdir(dir, cwd)) {
 		strcpy (last_dir, strrchr(cwd, '/') + 1);
