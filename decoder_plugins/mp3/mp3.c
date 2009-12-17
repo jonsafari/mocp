@@ -144,7 +144,7 @@ static char *id3v1_fix (const char *str)
 
 int __unique_frame (struct id3_tag *tag, struct id3_frame *frame)
 {
-    int i;
+    unsigned int i;
 
     for (i = 0; i < tag->nframes; i++) {
         if (tag->frames[i] == frame) {
