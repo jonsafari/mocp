@@ -57,6 +57,8 @@ enum noblock_io_status
 #define EV_MIXER_CHANGE	0x10 /* the mixer channel was changed */
 #define EV_FILE_TAGS	0x11 /* tags in a response for tags request */
 #define EV_AVG_BITRATE  0x12 /* average bitrate has changed (new song) */
+#define EV_AUDIO_START	0x13 /* playing of audio has started */
+#define EV_AUDIO_STOP	0x14 /* playing of audio has stopped */
 
 /* Events caused by a client that wants to modify the playlist (see
  * CMD_CLI_PLIST* commands). */
