@@ -1,6 +1,6 @@
 /*
  * MOC - music on console
- * Copyright (C) 2008 Geraud Le Falher
+ * Copyright (C) 2008-2009 Geraud Le Falher and John Fitzgerald
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -13,100 +13,267 @@
 # include "config.h"
 #endif
 
+#include <assert.h>
+#include <errno.h>
 #include <string.h>
 
-#include "lyrics.h"
 #include "common.h"
 #include "files.h"
 #include "log.h"
+#include "options.h"
+#include "lists.h"
+#include "lyrics.h"
 
-#define LYRICS_LINE_NUMBER	128
-static char *lyrics[LYRICS_LINE_NUMBER];
+static lists_t_strs *raw_lyrics = NULL;
+static const char *lyrics_message = NULL;
 
-const unsigned short LINE_SIZE = 128;
-
-void lyrics_remove_prefix (const char *filename, char **new_name)
+/* Return the list of lyrics lines, or NULL if none are loaded. */
+lists_t_strs *lyrics_lines_get (void)
 {
-	unsigned int filelen;
-	const char *dot = strrchr(filename, '.');
-
-	filelen = strlen(filename) - (dot ? strlen(dot) : 0);
-	*new_name = xmalloc(sizeof(char) * (filelen + 1));
-	strncpy(*new_name, filename, filelen);
-	(*new_name)[filelen] = 0x00;
+	return raw_lyrics;
 }
 
-void lyrics_cleanup (const unsigned int n)
+/* Store new lyrics lines as supplied. */
+void lyrics_lines_set (lists_t_strs *lines)
 {
-	unsigned int i;
-	for (i = 0; i < n && lyrics[i] != NULL; i++)
-		free (lyrics[i]);
+	assert (!raw_lyrics);
+	assert (lines);
+
+	raw_lyrics = lines;
+	lyrics_message = NULL;
 }
 
-char **get_lyrics_text (const WINDOW *w, const char *filename, int *num)
+/* Read a complete line and return it (without trailing newline),
+ * or NULL at end of file. */
+static char *get_line (FILE *stream)
 {
-	char 			*lyrics_filename;
-	char 			*lyrics_line;
-	FILE			*lyrics_file = NULL;
-	unsigned short 	i = 0;
-	int 			x, y, space;
+	static char buffer[48];
+	char *result;
+	lists_t_strs *line;
 
-	getmaxyx(w,x,y);
-	if (y > LINE_SIZE)
-		y = LINE_SIZE;
+	line = lists_strs_new (4);
+
+	do {
+		if (!fgets (buffer, sizeof (buffer), stream))
+			break;
+		lists_strs_append (line, buffer);
+	} while (buffer[strlen (buffer) - 1] != '\n');
+
+	result = lists_strs_cat (line);
+	lists_strs_free (line);
+
+	if (result) {
+		int length;
+
+		length = strlen (result);
+		if (result[length - 1] == '\n')
+			result[length - 1] = '\0';
+	}
+
+	return result;
+}
+
+/* Return a list of lyrics lines loaded from a file, or NULL on error. */
+lists_t_strs *lyrics_load_file (const char *filename)
+{
+	FILE *lyrics_file = NULL;
+	const char *mime;
+	lists_t_strs *result;
+
+	assert (filename);
+
+	result = NULL;
+	mime = file_mime_type (filename);
+	if (mime && strncmp (mime, "text/plain", 10))
+		lyrics_message = "[No lyrics file!]";
+	else {
+
+		lyrics_message = NULL;
+		lyrics_file = fopen (filename, "r");
+		if (lyrics_file != NULL) {
+			char *line;
+
+			result = lists_strs_new (0);
+			while ((line = get_line (lyrics_file)) != NULL)
+				lists_strs_push (result, line);
+			fclose (lyrics_file);
+		}
+
+		else {
+			if (errno == ENOENT)
+				lyrics_message = "[No lyrics file!]";
+			else {
+				lyrics_message = "[Lyrics file cannot be read!]";
+				logit ("Error reading '%s': %s", filename, strerror (errno));
+			}
+		}
+
+	}
+
+	return result;
+}
+
+/* Given an audio's file name, load lyrics from the default lyrics file name. */
+void lyrics_autoload (const char *filename)
+{
+	char *lyrics_filename, *extn;
+
+	assert (!raw_lyrics);
+	assert (lyrics_message);
 
 	if (filename == NULL) {
-		lyrics[0] = xmalloc (sizeof(char) * 20); 
-		strncpy (lyrics[0], "No file reading", 20);
-		*num = 1;
-		return lyrics;
+		lyrics_message = "[No file playing!]";
+		return;
+	}
+
+	if (!options_get_bool ("AutoLoadLyrics")) {
+		lyrics_message = "[Lyrics not autoloaded!]";
+		return;
 	}
 
 	if (is_url (filename)) {
-		lyrics[0] = xmalloc (sizeof(char) * 30); 
-		strncpy (lyrics[0], "URL lyrics is not supported", 30);
-		*num = 1;
-		return lyrics;
+		lyrics_message = "[Lyrics from URL is not supported!]";
+		return;
 	}
 
-	lyrics_remove_prefix (filename, &lyrics_filename);
+	lyrics_filename = xstrdup (filename);
+	extn = ext_pos (lyrics_filename);
+	if (extn) {
+		*--extn = '\0';
+		raw_lyrics = lyrics_load_file (lyrics_filename);
+	}
+	else
+		lyrics_message = "[No lyrics file!]";
 
-	lyrics_file = fopen (lyrics_filename, "r");
-	if (lyrics_file != NULL) {
-		lyrics_line = xmalloc (sizeof(char) * LINE_SIZE);
-		while (fgets(lyrics_line, y, lyrics_file) != NULL) {
-			if (i == LYRICS_LINE_NUMBER) {
-				error ("Lyrics file exceeds maximum line limit");
-				break;
-			}
-			lyrics[i] = xmalloc (sizeof(char) * LINE_SIZE); 
-			if ((int)strlen(lyrics_line) < (y-1)) {
-				space = (y-strlen(lyrics_line))/2;
-				memset(lyrics[i], ' ', space);
-				lyrics[i][space] = '\0';
-				strcat(lyrics[i], lyrics_line);
-			}
-			else {
-				strncpy (lyrics[i], lyrics_line, y-1);
-				lyrics[i][y] = '\0';
-			}
-			i++;
-		}
-		*num = i;
-		fclose (lyrics_file);
-		free (lyrics_line);
-		free (lyrics_filename);
-		return lyrics;
-	}
-	else {
-		lyrics[0] = xmalloc (sizeof(char) * 20); 
-		strncpy (lyrics[0], "No lyrics found !", 20);
-		*num = 1;
-		free (lyrics_filename);
-		return lyrics;
-	}
 	free (lyrics_filename);
-	abort ();
-	return lyrics;
 }
 
+/* Given a line, return a centred copy of it. */
+static char *centre_line (const char* line, int max)
+{
+	char *result;
+	int len;
+
+	len = strlen (line);
+	if (len < (max - 1)) {
+		int space;
+
+		space = (max - len) / 2;
+		result = (char *) xmalloc (space + len + 2);
+		memset (result, ' ', space);
+		strcpy (&result[space], line);
+		len += space;
+	}
+	else {
+		result = (char *) xmalloc (max + 2);
+		strncpy (result, line, max);
+		len = max;
+	}
+	strcpy (&result[len], "\n");
+
+	return result;
+}
+
+/* Centre all the lines in the lyrics. */
+static lists_t_strs *centre_style (lists_t_strs *lines, int height ATTR_UNUSED,
+                                   int width, void *data ATTR_UNUSED)
+{
+	lists_t_strs *result;
+	int ix, size;
+
+	size = lists_strs_size (lines);
+	result = lists_strs_new (size);
+	for (ix = 0; ix < size; ix += 1) {
+		char *old_line, *new_line;
+
+		old_line = lists_strs_at (lines, ix);
+		new_line = centre_line (old_line, width);
+		lists_strs_push (result, new_line);
+	}
+
+	return result;
+}
+
+/* Formatting function information. */
+static lyrics_t_formatter *lyrics_formatter = centre_style;
+static lyrics_t_reaper *formatter_reaper = NULL;
+static void *formatter_data = NULL;
+
+/* Register a new function to be used for formatting.  A NULL formatter
+ * resets formatting to the default centred style. */
+void lyrics_use_formatter (lyrics_t_formatter formatter,
+                           lyrics_t_reaper reaper, void *data)
+{
+	if (formatter_reaper)
+		formatter_reaper (formatter_data);
+
+	if (formatter) {
+		lyrics_formatter = formatter;
+		formatter_reaper = reaper;
+		formatter_data = data;
+	}
+	else {
+		lyrics_formatter = centre_style;
+		formatter_reaper = NULL;
+		formatter_data = NULL;
+	}
+}
+
+/* Return a list of either the formatted lyrics if any are loaded or
+ * a centred message. */
+lists_t_strs *lyrics_format (int height, int width)
+{
+	int ix;
+	lists_t_strs *result;
+
+	assert (raw_lyrics || lyrics_message);
+
+	result = NULL;
+
+	if (raw_lyrics) {
+		result = lyrics_formatter (raw_lyrics, height, width - 1,
+			                                                 formatter_data);
+		if (!result)
+			lyrics_message = "[Error formatting lyrics!]";
+	}
+
+	if (!result) {
+		char *line;
+
+		result = lists_strs_new (1);
+		line = centre_line (lyrics_message, width - 1);
+		lists_strs_push (result, line);
+	}
+
+	for (ix = 0; ix < lists_strs_size (result); ix += 1) {
+		int len;
+		char *this_line;
+
+		this_line = lists_strs_at (result, ix);
+		len = strlen (this_line);
+		if (len > width - 1)
+			strcpy (&this_line[width - 1], "\n");
+		else if (this_line[len - 1] != '\n') {
+			char *new_line;
+
+			new_line = xmalloc (len + 2);
+			strcpy (new_line, this_line);
+			strcat (new_line, "\n");
+			lists_strs_swap (result, ix, new_line);
+			free (this_line);
+		}
+	}
+
+	return result;
+}
+
+/* Dispose of raw lyrics lines. */
+void lyrics_cleanup (void)
+{
+	if (raw_lyrics) {
+		lists_strs_free (raw_lyrics);
+		raw_lyrics = NULL;
+	}
+
+	lyrics_message = "[No lyrics loaded!]";
+}

@@ -135,8 +135,6 @@ static struct main_win
 	int help_screen_top; /* first visible line of the help screen. */
 	int in_lyrics; /* are we displaying lyrics screen? */
 	int lyrics_screen_top; /* first visible line of the lyrics screen. */
-	int lyrics_nb_lines;	/* line number of the current lyrics file. */
-	char **lyrics_array;	/* lyrics of the current song */
 
 	struct side_menu menus[3];
 	char *layout_fmt;
@@ -1004,7 +1002,6 @@ static void main_win_init (struct main_win *w, const char *layout_fmt)
 	w->too_small = 0;
 	w->help_screen_top = 0;
 	w->lyrics_screen_top = 0;
-	w->lyrics_nb_lines = 0;
 	w->layout_fmt = xstrdup (layout_fmt);
 
 	res = parse_layout (&l, layout_fmt);
@@ -1782,6 +1779,8 @@ static void main_win_draw_lyrics_screen (const struct main_win *w)
 {
 	int i;
 	int max_lines;
+	int height, width;
+	lists_t_strs *lyrics_array;
 
 	assert (w != NULL);
 	assert (w->in_lyrics);
@@ -1799,15 +1798,17 @@ static void main_win_draw_lyrics_screen (const struct main_win *w)
 	}
 	wmove (w->win, 1, 0);
 	wattrset (w->win, get_color(CLR_LEGEND));
-	for (i = w->lyrics_screen_top; i < max_lines && i < w->lyrics_nb_lines; i++) {
-		xwaddstr (w->win, w->lyrics_array[i]);
-	}
-	if (i != w->lyrics_nb_lines) {
+	getmaxyx (w->win, height, width);
+	lyrics_array = lyrics_format (height, width);
+	for (i = w->lyrics_screen_top; i < max_lines && i < lists_strs_size (lyrics_array); i++)
+		xwaddstr (w->win, lists_strs_at (lyrics_array, i));
+	if (i != lists_strs_size (lyrics_array)) {
 		wattrset (w->win, get_color(CLR_MESSAGE));
 		xmvwaddstr (w->win, LINES-5,
 				COLS/2 - (sizeof("...MORE...")-1)/2,
 				"...MORE...");
 	}
+	lists_strs_free (lyrics_array);
 }
 static void main_win_draw (struct main_win *w)
 {
@@ -2188,6 +2189,9 @@ static void main_win_handle_help_key (struct main_win *w,
 static void main_win_handle_lyrics_key (struct main_win *w,
 		const struct iface_key *k)
 {
+	int height, width;
+	lists_t_strs *lyrics_array;
+
 	assert (w != NULL);
 	assert (w->in_lyrics);
 
@@ -2195,8 +2199,11 @@ static void main_win_handle_lyrics_key (struct main_win *w,
 					k->key.func == KEY_DOWN
 					|| k->key.func == KEY_NPAGE))
 			|| (k->key.ucs == '\n')) {
-		if (w->lyrics_screen_top + LINES - 5 <= w->lyrics_nb_lines)
+		getmaxyx (w->win, height, width);
+		lyrics_array = lyrics_format (height, width);
+		if (w->lyrics_screen_top + LINES - 5 <= lists_strs_size (lyrics_array))
 			w->lyrics_screen_top++;
+		lists_strs_free (lyrics_array);
 	}
 	else {
 		if (k->type == IFACE_KEY_FUNCTION && (k->key.func == KEY_UP
@@ -3640,7 +3647,7 @@ void windows_end ()
 		putchar ('\n');
 	}
 
-	lyrics_cleanup (main_win.lyrics_nb_lines);
+	lyrics_cleanup ();
 }
 
 static void iface_refresh_screen ()
@@ -4297,12 +4304,10 @@ void iface_restore ()
 
 void iface_load_lyrics (const char *file)
 {
-	int lines;
-	lyrics_cleanup (main_win.lyrics_nb_lines);
-	main_win.lyrics_array = get_lyrics_text (main_win.win, file, &lines);
-	main_win.lyrics_nb_lines = lines;
+	lyrics_cleanup ();
+	lyrics_autoload (file);
 	main_win.lyrics_screen_top = 0;
-	main_win_draw(&main_win);
+	main_win_draw (&main_win);
 }
 
 static void update_queue_position (struct plist *playlist,

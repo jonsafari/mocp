@@ -740,6 +740,7 @@ static void update_curr_file ()
 		file_info_cleanup (&curr_file);
 		file_info_reset (&curr_file);
 		iface_set_played_file (NULL);
+		iface_load_lyrics (NULL);
 		free (file);
 	}
 	else if (file[0] &&
@@ -1767,7 +1768,6 @@ static void play_it (const char *file)
 	}
 	else
 		logit ("The server already has my playlist");
-	iface_load_lyrics (file);
 	send_int_to_srv (CMD_PLAY);
 	send_str_to_srv (file);
 
