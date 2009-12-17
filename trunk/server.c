@@ -1754,6 +1754,16 @@ void tags_response (const int client_id, const char *file,
 	}
 }
 
+void ev_audio_start ()
+{
+	add_event_all (EV_AUDIO_START, NULL);
+}
+
+void ev_audio_stop ()
+{
+	add_event_all (EV_AUDIO_STOP, NULL);
+}
+
 /* Announce to clients that first file from the queue is being played
  * and therefore needs to be removed from it */
 /* XXX: this function is called from player thread and add_event_all

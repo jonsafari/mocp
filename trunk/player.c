@@ -763,7 +763,9 @@ void player (const char *file, const char *next_file, struct out_buf *out_buf)
 		prebuffering = 0;
 
 		status_msg ("Playing...");
+		ev_audio_start ();
 		play_stream (f, out_buf);
+		ev_audio_stop ();
 	}
 	else {
 		f = get_decoder (file);
@@ -776,7 +778,9 @@ void player (const char *file, const char *next_file, struct out_buf *out_buf)
 			return;
 		}
 
+		ev_audio_start ();
 		play_file (file, f, next_file, out_buf);
+		ev_audio_stop ();
 	}
 
 	logit ("exiting");

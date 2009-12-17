@@ -1173,6 +1173,10 @@ static void server_event (const int event, void *data)
 		case EV_QUEUE_MOVE:
 			event_queue_move ((struct move_ev_data *)data);
 			break;
+		case EV_AUDIO_START:
+			break;
+		case EV_AUDIO_STOP:
+			break;
 		default:
 			interface_fatal ("Unknown event: 0x%02x", event);
 	}
