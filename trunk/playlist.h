@@ -49,10 +49,10 @@ struct plist
 {
 	int num;		/* Number of elements on the list */
 	int allocated;		/* Number of allocated elements */
-	int not_deleted;	/* Number of not deleted items */
+	int not_deleted;	/* Number of non-deleted items */
 	struct plist_item *items;
 	int serial;		/* Optional serial number of this playlist */
-	int total_time;		/* total time for files on the playlist */
+	int total_time;		/* Total time for files on the playlist */
 	int items_with_time;	/* Number of items for which the time is set. */
 
 	struct rb_tree search_tree;

@@ -75,7 +75,7 @@ static void strip_string (char *str)
 		*(last_non_white + 1) = 0;
 }
 
-/* Load M3U file into plist. Return number of items read. */
+/* Load M3U file into plist.  Return the number of items read. */
 static int plist_load_m3u (struct plist *plist, const char *fname,
 		const char *cwd, const int load_serial)
 {
@@ -209,9 +209,9 @@ static int is_blank_line (const char *l)
 	return 1;
 }
 
-/* Read a value from the given section from .INI file. file should be opened
- * and seeking will be performed on it. Return the malloc()ed value or NULL
- * if not present or error occured. */
+/* Read a value from the given section from .INI file.  File should be opened
+ * and seeking will be performed on it.  Return the malloc()ed value or NULL
+ * if not present or error occurred. */
 static char *read_ini_value (FILE *file, const char *section, const char *key)
 {
 	char *line = NULL;
@@ -259,7 +259,7 @@ static char *read_ini_value (FILE *file, const char *section, const char *key)
 				break;
 			}
 
-			/* go back to the last cha in the name */
+			/* go back to the last char in the name */
 			while (t2 >= t && (isblank(*t2) || *t2 == '='))
 				t2--;
 
@@ -301,7 +301,7 @@ static char *read_ini_value (FILE *file, const char *section, const char *key)
 	return value;
 }
 
-/* Load PLS file into plist. Return number of items read. */
+/* Load PLS file into plist. Return the number of items read. */
 static int plist_load_pls (struct plist *plist, const char *fname,
 		const char *cwd)
 {
@@ -320,7 +320,7 @@ static int plist_load_pls (struct plist *plist, const char *fname,
 	if (!line) {
 
 		/* Assume that it is a pls file version 1 - plist_load_m3u()
-		 * should handle it like m3u file without m3u extensions */
+		 * should handle it like an m3u file without the m3u extensions. */
 		fclose (file);
 		return plist_load_m3u (plist, fname, cwd, 0);
 	}
@@ -416,7 +416,7 @@ int plist_load (struct plist *plist, const char *fname, const char *cwd,
 	return num;
 }
 
-/* Save plist in m3u format. Strip pathes by strip_path bytes.
+/* Save plist in m3u format. Strip paths by strip_path bytes.
  * If save_serial is not 0, the playlist serial is saved in a
  * comment. */
 static int plist_save_m3u (struct plist *plist, const char *fname,
@@ -491,14 +491,14 @@ static int plist_save_m3u (struct plist *plist, const char *fname,
 	return 1;
 }
 
-/* Save the playlist into the file. Return 0 on error. if cwd is NULL, use
+/* Save the playlist into the file. Return 0 on error. If cwd is NULL, use
  * absolute paths. */
 int plist_save (struct plist *plist, const char *file, const char *cwd,
 		const int save_serial)
 {
 	char common_path[PATH_MAX+1];
 
-	/* FIXME: checkif it possible to just add some directories to make
+	/* FIXME: check if it possible to just add some directories to make
 	 * relative path working. */
 	return plist_save_m3u (plist, file, cwd && !strcmp(common_path, cwd) ?
 			strlen(common_path) : 0, save_serial);

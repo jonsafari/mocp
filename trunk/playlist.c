@@ -115,7 +115,7 @@ struct file_tags *tags_dup (const struct file_tags *tags)
 	return dtags;
 }
 
-/* Return the number of butes allocated for the tags structure. */
+/* Return the number of bytes allocated for the tags structure. */
 size_t tags_mem (const struct file_tags *tags)
 {
 	size_t s = sizeof(tags);
@@ -170,7 +170,7 @@ void plist_init (struct plist *plist)
 	plist->items_with_time = 0;
 }
 
-/* Create a new playlit item with empty fields. */
+/* Create a new playlist item with empty fields. */
 struct plist_item *plist_new_item ()
 {
 	struct plist_item *item;
@@ -270,7 +270,7 @@ char *plist_get_file (const struct plist *plist, int i)
 
 /* Get the number of the next item on the list (skipping deleted items).
  * If num == -1, get the first item.
- * Return -1 if there is no items left.
+ * Return -1 if there are no items left.
  */
 int plist_next (struct plist *plist, int num)
 {
@@ -287,7 +287,7 @@ int plist_next (struct plist *plist, int num)
 
 /* Get the number of the previous item on the list (skipping deleted items). 
  * If num == -1, get the first item.             
- * Return -1 if it is beginning of playlist. 
+ * Return -1 if it is the beginning of the playlist. 
  */                                                                                                                                              
 int plist_prev (struct plist *plist, int num)
 {
@@ -345,7 +345,7 @@ void plist_clear (struct plist *plist)
 	plist->items_with_time = 0;
 }
 
-/* Destroy the list freeing memory, the list can't be used after that. */
+/* Destroy the list freeing memory; the list can't be used after that. */
 void plist_free (struct plist *plist)
 {
 	assert (plist != NULL);
@@ -392,7 +392,7 @@ void plist_sort_fname (struct plist *plist)
 	free (sorted);
 }
 
-/* Find an item on the list items. Return the index or -1 if not found. */
+/* Find an item in the list.  Return the index or -1 if not found. */
 int plist_find_fname (struct plist *plist, const char *file)
 {
 	struct rb_node *x;
@@ -407,9 +407,9 @@ int plist_find_fname (struct plist *plist, const char *file)
 	return !plist_deleted(plist, (int)x->data) ? (int)x->data : -1;
 }
 
-/* Find an item on the list, also find deleted items. If there are more than one
- * items for this file, return the not deleted one, or if all are deleted,
- * return the last of them. Return the index or -1 if not found. */
+/* Find an item in the list; also find deleted items.  If there is more than
+ * one item for this file, return the non-deleted one or, if all are deleted,
+ * return the last of them.  Return the index or -1 if not found. */
 int plist_find_del_fname (const struct plist *plist, const char *file)
 {
 	int i;
@@ -473,12 +473,12 @@ static char *title_expn_subs(char fmt, const struct file_tags *tags)
 		case 't':
 			return if_not_empty (tags->title);
 		default:
-			fatal ("Error parsing format string.");
+			fatal ("Error parsing format string");
 	}
 	return NULL; /* To avoid gcc warning */
 }
 
-/* generate a title from fmt */
+/* Generate a title from fmt. */
 #define check_zero(x) if((x) == '\0') \
 		fatal ("Unexpected end of title expression")
 
@@ -512,10 +512,10 @@ static void do_title_expn (char *dest, int size, const char *fmt,
 
 				if(h) { /* true */
 
-					/* Copy the expression */
+					/* copy the expression */
 					while (escape || *fmt != separator) {
 						if (expr_pos == sizeof(expr)-2)
-							fatal ("nasted trenary expression too long");
+							fatal ("Nested ternary expression too long");
 						expr[expr_pos++] = *fmt;
 						if (*fmt == '\\')
 							escape = 1;
@@ -525,7 +525,7 @@ static void do_title_expn (char *dest, int size, const char *fmt,
 					}
 					expr[expr_pos] = '\0';
 
-                                        /* eat the rest */
+					/* eat the rest */
 					while (escape || *fmt != ')') { 
 						if (escape)
 							escape = 0;
@@ -547,10 +547,10 @@ static void do_title_expn (char *dest, int size, const char *fmt,
 
 					check_zero(*++fmt);
 
-					/* Copy the expression */
+					/* copy the expression */
 					while (escape || *fmt != ')') {
 						if (expr_pos == sizeof(expr)-2)
-							fatal ("trenary expression too long");
+							fatal ("Ternary expression too long");
 						expr[expr_pos++] = *fmt;
 						if (*fmt == '\\')
 							escape = 1;
@@ -648,7 +648,7 @@ void plist_delete (struct plist *plist, const int num)
 	}
 }
 
-/* Count not deleted items. */
+/* Count non-deleted items. */
 int plist_count (const struct plist *plist)
 {
 	assert (plist != NULL);
@@ -761,7 +761,7 @@ int get_item_time (const struct plist *plist, const int i)
 	return -1;
 }
 
-/* Return the total time of all files on the playlist that has the time tag.
+/* Return the total time of all files on the playlist having the time tag.
  * If the time information is missing for any file, all_files is set to 0,
  * otherwise 1.
  * Returned value is that counted by plist_count_time(), so may be not
@@ -833,7 +833,7 @@ int plist_get_serial (const struct plist *plist)
 	return plist->serial;
 }
 
-/* Return the index of the last not deleted item from the playlist.
+/* Return the index of the last non-deleted item from the playlist.
  * Return -1 if there are no items. */
 int plist_last (const struct plist *plist)
 {
@@ -855,7 +855,7 @@ enum file_type plist_file_type (const struct plist *plist, const int num)
 	return plist->items[num].type;
 }
 
-/* Remove items from the playlist a that are also presend on the playlist b. */
+/* Remove items from playlist 'a' that are also present on playlist 'b'. */
 void plist_remove_common_items (struct plist *a, struct plist *b)
 {
 	int i;
@@ -924,7 +924,7 @@ struct file_tags *plist_get_tags (const struct plist *plist, const int num)
 	return NULL;
 }
 
-/* Swap 2 file on the playlist. */
+/* Swap two files on the playlist. */
 void plist_swap_files (struct plist *plist, const char *file1,
 		const char *file2)
 {
@@ -948,7 +948,7 @@ void plist_swap_files (struct plist *plist, const char *file1,
 	}
 }
 
-/* Return position of file in the list, starting with 1. */
+/* Return the position of a file in the list, starting with 1. */
 int plist_get_position (const struct plist *plist, int num)
 {
 	int i, pos = 1;
