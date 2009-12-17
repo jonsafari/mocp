@@ -29,16 +29,16 @@ struct lists_s_strs {
 /* Allocate a new list of strings and return its address. */
 lists_t_strs *lists_strs_new (int reserve)
 {
-	lists_t_strs *this_list;
+	lists_t_strs *result;
 
 	assert (reserve >= 0);
 
-	this_list = (lists_t_strs *) xmalloc (sizeof (lists_t_strs));
-	this_list->size = 0;
-	this_list->capacity = (reserve ? reserve : 64);
-	this_list->strs = (char **) xcalloc (sizeof (char *), this_list->capacity);
+	result = (lists_t_strs *) xmalloc (sizeof (lists_t_strs));
+	result->size = 0;
+	result->capacity = (reserve ? reserve : 64);
+	result->strs = (char **) xcalloc (sizeof (char *), result->capacity);
 
-	return this_list;
+	return result;
 }
 
 /* Free all storage associated with a list of strings. */
@@ -62,18 +62,12 @@ int lists_strs_size (const lists_t_strs *list)
 	return list->size;
 }
 
-/* Append a string to the end of a list (and expand it if necessary). */
-void lists_strs_append (lists_t_strs *list, char *str)
+/* Return true iff the list has no members. */
+_Bool lists_strs_empty (const lists_t_strs *list)
 {
 	assert (list);
-	
-	if (list->size == list->capacity) {
-		list->capacity *= 2;
-		list->strs = (char **) xrealloc (list->strs, list->capacity * sizeof (char *));
-	}
 
-	list->strs[list->size] = xstrdup (str);
-	list->size += 1;
+	return list->size == 0 ? true : false;
 }
 
 /* Given an index, return the string at that position in a list. */
@@ -85,6 +79,30 @@ char *lists_strs_at (const lists_t_strs *list, int index)
 	return list->strs[index];
 }
 
+/* Return the concatenation of all the strings in a list, or NULL
+ * if the list is empty. */
+char *lists_strs_cat (const lists_t_strs *list)
+{
+	int len, ix;
+	char *result;
+
+	assert (list);
+
+	len = 0;
+	for (ix = 0; ix < list->size; ix += 1)
+		len += strlen (list->strs[ix]);
+
+	result = NULL;
+	if (list->size > 0) {
+		result = xmalloc (len + 1);
+		result[0] = 0x00;
+		for (ix = 0; ix < list->size; ix += 1)
+			strcat (result, list->strs[ix]);
+	}
+
+	return result;
+}
+
 /* Sort string list into an order determined by caller's comparitor. */
 void lists_strs_sort (lists_t_strs *list, lists_t_compare *compare)
 {
@@ -92,4 +110,106 @@ void lists_strs_sort (lists_t_strs *list, lists_t_compare *compare)
 	assert (compare);
 
 	qsort (list->strs, list->size, sizeof (char *), compare);
+}
+
+/* Reverse the order of entries in a list. */
+void lists_strs_reverse (lists_t_strs *list)
+{
+	int ix, iy;
+
+	assert (list);
+
+	for (ix = 0, iy = list->size - 1; ix < iy; ix += 1, iy -= 1) {
+		char *str;
+
+		str = list->strs[ix];
+		list->strs[ix] = list->strs[iy];
+		list->strs[iy] = str;
+	}
+}
+
+/* Take a string and push it onto the end of a list
+ * (expanding the list if necessary). */
+void lists_strs_push (lists_t_strs *list, char *new)
+{
+	assert (list);
+	assert (new);
+	
+	if (list->size == list->capacity) {
+		list->capacity *= 2;
+		list->strs = (char **) xrealloc (list->strs, list->capacity * sizeof (char *));
+	}
+
+	list->strs[list->size] = new;
+	list->size += 1;
+}
+
+/* Remove the last string on the list and return it, or NULL if the list
+ * is empty. */
+char *lists_strs_pop (lists_t_strs *list)
+{
+	char *result;
+
+	assert (list);
+	
+	result = NULL;
+	if (list->size > 0) {
+		list->size -= 1;
+		result = list->strs[list->size];
+	}
+
+	return result;
+}
+
+/* Replace the nominated string with a new one and return the old one. */
+char *lists_strs_swap (lists_t_strs *list, int index, char *new)
+{
+	char *result;
+
+	assert (list);
+	assert (index >= 0 && index < list->size);
+	assert (new);
+
+	result = list->strs[index];
+	list->strs[index] = new;
+
+	return result;
+}
+
+/* Copy a string and append it to the end of a list. */
+void lists_strs_append (lists_t_strs *list, char *new)
+{
+	char *str;
+
+	assert (list);
+	assert (new);
+
+	str = xstrdup (new);
+	lists_strs_push (list, str);
+}
+
+/* Remove a string from the end of the list and free it. */
+void lists_strs_remove (lists_t_strs *list)
+{
+	char *str;
+
+	assert (list);
+
+	str = lists_strs_pop (list);
+	if (str)
+		free (str);
+}
+
+/* Replace the nominated string with a copy of the new one
+ * and free the old one. */
+void lists_strs_replace (lists_t_strs *list, int index, char *new)
+{
+	char *str;
+
+	assert (list);
+	assert (index >= 0 && index < list->size);
+
+	str = xstrdup (new);
+	str = lists_strs_swap (list, index, str);
+	free (str);
 }
