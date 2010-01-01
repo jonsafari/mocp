@@ -130,17 +130,17 @@ void lists_strs_reverse (lists_t_strs *list)
 
 /* Take a string and push it onto the end of a list
  * (expanding the list if necessary). */
-void lists_strs_push (lists_t_strs *list, char *new)
+void lists_strs_push (lists_t_strs *list, char *s)
 {
 	assert (list);
-	assert (new);
+	assert (s);
 	
 	if (list->size == list->capacity) {
 		list->capacity *= 2;
 		list->strs = (char **) xrealloc (list->strs, list->capacity * sizeof (char *));
 	}
 
-	list->strs[list->size] = new;
+	list->strs[list->size] = s;
 	list->size += 1;
 }
 
@@ -162,29 +162,29 @@ char *lists_strs_pop (lists_t_strs *list)
 }
 
 /* Replace the nominated string with a new one and return the old one. */
-char *lists_strs_swap (lists_t_strs *list, int index, char *new)
+char *lists_strs_swap (lists_t_strs *list, int index, char *s)
 {
 	char *result;
 
 	assert (list);
 	assert (index >= 0 && index < list->size);
-	assert (new);
+	assert (s);
 
 	result = list->strs[index];
-	list->strs[index] = new;
+	list->strs[index] = s;
 
 	return result;
 }
 
 /* Copy a string and append it to the end of a list. */
-void lists_strs_append (lists_t_strs *list, char *new)
+void lists_strs_append (lists_t_strs *list, char *s)
 {
 	char *str;
 
 	assert (list);
-	assert (new);
+	assert (s);
 
-	str = xstrdup (new);
+	str = xstrdup (s);
 	lists_strs_push (list, str);
 }
 
@@ -202,14 +202,14 @@ void lists_strs_remove (lists_t_strs *list)
 
 /* Replace the nominated string with a copy of the new one
  * and free the old one. */
-void lists_strs_replace (lists_t_strs *list, int index, char *new)
+void lists_strs_replace (lists_t_strs *list, int index, char *s)
 {
 	char *str;
 
 	assert (list);
 	assert (index >= 0 && index < list->size);
 
-	str = xstrdup (new);
+	str = xstrdup (s);
 	str = lists_strs_swap (list, index, str);
 	free (str);
 }
