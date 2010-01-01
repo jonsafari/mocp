@@ -5,6 +5,10 @@
 #include <stdarg.h>
 #include <ctype.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define CONFIG_DIR      ".moc"
 
 /* Maximal string length sent/received. */
@@ -78,5 +82,9 @@ void set_me_server ();
 _Bool is_valid_symbol (const char *candidate);
 char *create_file_name (const char *file);
 void sec_to_min (char *buff, const int seconds);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
