@@ -40,6 +40,8 @@ case "$OS" in
 		;;
 esac
 
+AC_DEFINE([_FILE_OFFSET_BITS], 64, [Use 64bit IO])
+
 LDFLAGS="$LDFLAGS -export-dynamic"
 
 AC_HEADER_STDC
