@@ -3,6 +3,10 @@
 
 #include <stdlib.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** Sound formats.
  *
  * Sound format bits. Only one can be set in the format, the exception is
@@ -256,5 +260,9 @@ void audio_queue_delete (const char *file);
 void audio_queue_clear ();
 void audio_queue_move (const char *file1, const char *file2);
 struct plist* audio_queue_get_contents ();
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

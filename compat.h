@@ -35,10 +35,18 @@
 # define INT8_MIN	(-128)
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef HAVE_STRERROR_R
 int strerror_r(int errnum, char *buf, size_t n);
 #endif
 
 void compat_cleanup ();
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

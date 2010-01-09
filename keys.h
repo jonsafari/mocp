@@ -1,6 +1,10 @@
 #ifndef KEYS_H
 #define KEYS_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 enum key_cmd
 {
 	KEY_CMD_QUIT_CLIENT,
@@ -125,5 +129,9 @@ void keys_init ();
 void keys_cleanup ();
 char **get_keys_help (int *num);
 int key_was_redefined (const enum key_cmd cmd);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

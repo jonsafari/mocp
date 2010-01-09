@@ -16,6 +16,10 @@
 #include "files.h"
 #include "keys.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Interface's menus */
 enum iface_menu
 {
@@ -137,5 +141,9 @@ void iface_clear_queue_positions (const struct plist *queue,
 		struct plist *playlist, struct plist *dir_list);
 void iface_update_queue_position_last (const struct plist *queue,
 		struct plist *playlist, struct plist *dir_list);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

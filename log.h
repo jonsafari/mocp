@@ -3,6 +3,10 @@
 
 #include <stdio.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifdef DEBUG
 # define debug logit
 #else
@@ -34,5 +38,9 @@ void internal_logit (const char *file, const int line, const char *function,
 void fake_logit (const char *format, ...);
 void log_init_stream (FILE *f);
 void log_close ();
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

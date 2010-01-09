@@ -1,6 +1,10 @@
 #ifndef EQUALIZER_H
 #define EQUALIZER_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define TWOPI (2.0 * M_PI)
 
 #define swap_32bit_endianess(i32) \
@@ -97,5 +101,9 @@ int equalizer_set_active();
 char *equalizer_current_eqname();
 void equalizer_next();
 void equalizer_prev();
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

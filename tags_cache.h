@@ -6,6 +6,10 @@
 
 #include "playlist.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Element of a requests queue. */
 struct request_queue_node
 {
@@ -51,5 +55,9 @@ void tags_cache_clear_up_to (struct tags_cache *c, const char *file,
 		const int client_id);
 void tags_cache_save (struct tags_cache *c, const char *file_name);
 void tags_cache_load (struct tags_cache *c, const char *file_name);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

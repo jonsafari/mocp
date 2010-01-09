@@ -4,6 +4,10 @@
 #include <pthread.h>
 #include "fifo_buf.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef void (out_buf_free_callback)();
 
 struct out_buf
@@ -48,5 +52,9 @@ void out_buf_set_free_callback (struct out_buf *buf,
 int out_buf_get_free (struct out_buf *buf);
 int out_buf_get_fill (struct out_buf *buf);
 void out_buf_wait (struct out_buf *buf);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

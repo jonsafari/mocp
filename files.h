@@ -5,6 +5,10 @@
 #include "lists.h"
 #include "playlist.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define FILES_LIST_INIT_SIZE	64
 
 int read_directory (const char *directory, lists_t_strs *dirs,
@@ -29,5 +33,9 @@ void make_file_title (struct plist *plist, const int num,
 int isdir (const char *file);
 int can_read_file (const char *file);
 char *absolute_path (const char *path, const char *cwd);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
