@@ -1,6 +1,10 @@
 #ifndef RBTREE_H
 #define RBTREE_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 enum rb_color { RB_RED, RB_BLACK };
 
 struct rb_node
@@ -38,5 +42,9 @@ struct rb_node *rb_min (struct rb_tree *t);
 int rb_is_null (const struct rb_node *n);
 struct rb_node *rb_search (struct rb_tree *t, const void *key);
 void rb_insert (struct rb_tree *t, void *data);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

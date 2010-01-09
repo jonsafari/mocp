@@ -9,6 +9,10 @@
 
 #include "audio.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct audio_conversion
 {
 	struct sound_params from;
@@ -28,5 +32,9 @@ int audio_conv_new (struct audio_conversion *conv,
 char *audio_conv (struct audio_conversion *conv,
 		const char *buf, const size_t size, size_t *conv_len);
 void audio_conv_destroy (struct audio_conversion *conv);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

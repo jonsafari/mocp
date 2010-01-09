@@ -5,6 +5,10 @@
 
 #include "rbtree.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Flags for the info decoder function. */
 enum tags_select
 {
@@ -109,5 +113,9 @@ struct file_tags *plist_get_tags (const struct plist *plist, const int num);
 void plist_swap_files (struct plist *plist, const char *file1,
 		const char *file2);
 int plist_get_position (const struct plist *plist, int num);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

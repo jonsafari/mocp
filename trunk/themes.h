@@ -1,6 +1,10 @@
 #ifndef THEMES_H
 #define THEMES_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 enum color_index
 {
 	CLR_BACKGROUND,
@@ -45,5 +49,9 @@ enum color_index
 void theme_init (const int has_xterm);
 int get_color (const enum color_index);
 void themes_switch_theme (const char *file);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

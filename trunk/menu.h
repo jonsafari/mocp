@@ -10,6 +10,10 @@
 #include "files.h"
 #include "rbtree.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 enum menu_request
 {
 	REQ_UP,
@@ -137,5 +141,9 @@ int menu_is_visible (const struct menu *menu, const struct menu_item *mi);
 void menu_swap_items (struct menu *menu, const char *file1, const char *file2);
 void menu_make_visible (struct menu *menu, const char *file);
 void menu_set_cursor (const struct menu *m);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

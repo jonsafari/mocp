@@ -2,6 +2,10 @@
 #ifndef INTERFACE_H
 #define INTERFACE_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* The desired state of the client (and server). */
 enum want_quit {
 	NO_QUIT,	/* don't want to quit */
@@ -55,4 +59,9 @@ void interface_cmdline_set (int server_sock, char *arg, const int val);
 void interface_cmdline_formatted_info (const int server_sock, const char *format_str);
 void interface_cmdline_enqueue (int server_sock, char **args,
 		const int arg_num);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif

@@ -5,6 +5,10 @@
 #include "playlist.h"
 #include "io.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** Version of the decoder API.
  *
  * On every change in the decoder API this number will be changed, so MOC will
@@ -320,5 +324,9 @@ void decoder_error_copy (struct decoder_error *dst,
 void decoder_error_init (struct decoder_error *error);
 
 /*@}*/
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

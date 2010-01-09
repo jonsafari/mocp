@@ -3,6 +3,10 @@
 
 #include <unistd.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct fifo_buf
 {
 	char *buf;	/* The buffer content. */
@@ -22,5 +26,9 @@ size_t fifo_buf_get_space (const struct fifo_buf *b);
 void fifo_buf_clear (struct fifo_buf *b);
 size_t fifo_buf_get_fill (const struct fifo_buf *b);
 size_t fifo_buf_get_size (const struct fifo_buf *b);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

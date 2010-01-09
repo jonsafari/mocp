@@ -10,6 +10,10 @@
 
 #include <sys/types.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define swap_32bit_endianess(i32) \
   ( ((i32&0x000000FF)<<24) | ((i32&0x0000FF00)<<8)| \
   ((i32&0x00FF0000)>>8) | ((i32&0xFF000000)>>24) ) 
@@ -21,5 +25,9 @@ void swap_endianess_32(int32_t *buf, size_t size);
 void swap_endianess_16(int16_t *buf, size_t size);
 
 int sample_size(long sfmt);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

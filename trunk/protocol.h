@@ -3,6 +3,10 @@
 
 #include "playlist.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct event
 {
 	int type;	/* type of the event (one of EV_*) */
@@ -169,5 +173,9 @@ void free_tag_ev_data (struct tag_ev_response *d);
 void free_move_ev_data (struct move_ev_data *m);
 struct move_ev_data *move_ev_data_dup (const struct move_ev_data *m);
 struct move_ev_data *recv_move_ev_data (int sock);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

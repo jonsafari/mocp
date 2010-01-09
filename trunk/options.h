@@ -1,6 +1,10 @@
 #ifndef OPTIONS_H
 #define OPTIONS_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 enum option_type
 {
 	OPTION_FREE = 0,
@@ -28,5 +32,9 @@ int check_symb_option (const char *name, const char *val);
 int check_int_option (const char *name, const int val);
 int check_bool_option (const char *name, const _Bool val);
 enum option_type options_get_type (const char *name);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

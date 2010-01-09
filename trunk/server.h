@@ -1,6 +1,10 @@
 #ifndef SERVER_H
 #define SERVER_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "playlist.h"
 
 #define CLIENTS_MAX	10
@@ -21,5 +25,9 @@ void tags_response (const int client_id, const char *file,
 void ev_audio_start ();
 void ev_audio_stop ();
 void server_queue_pop (const char *filename);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
