@@ -379,7 +379,7 @@ static struct mp3_data *mp3_open_internal (const char *file,
 		data->stream.sync = 0;
 		data->stream.error = MAD_ERROR_NONE;
 
-		if (io_seek(data->io_stream, SEEK_SET, 0) == (off_t)-1) {
+		if (io_seek(data->io_stream, 0, SEEK_SET) == (off_t)-1) {
 			decoder_error (&data->error, ERROR_FATAL, 0,
 						"seek failed");
 			io_close (data->io_stream);
