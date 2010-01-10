@@ -308,8 +308,8 @@
 	* Going to a directory by typing the path with file-name completion
 	  (i command).
 	* Ability to use default (transparent) and grey color
-	  (Marcin Micha≥owski).
-	* Added a theme with transparent background (Marcin Micha≥owski).
+	  (Marcin Micha≈Çowski).
+	* Added a theme with transparent background (Marcin Micha≈Çowski).
 	* Added nightly_theme (Wim Speekenbrink).
 	* Added green_theme (Jacek Lehmann).
 	* Global theme directory.
