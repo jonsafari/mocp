@@ -105,7 +105,7 @@ static void *ffmpeg_open (const char *file)
 {
 	struct ffmpeg_data *data;
 	int err;
-	int i;
+	unsigned int i;
 	int audio_index = -1;
 
 	data = (struct ffmpeg_data *)xmalloc (sizeof(struct ffmpeg_data));
