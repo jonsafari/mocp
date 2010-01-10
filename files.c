@@ -52,7 +52,7 @@
 #define READ_LINE_INIT_SIZE	256
 
 
-/* Is the string an URL? */
+/* Is the string a URL? */
 inline int is_url (const char *str)
 {
 	return !strncmp(str, "http://", sizeof("http://")-1)
