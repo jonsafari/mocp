@@ -429,7 +429,7 @@ static void tags_cache_add (struct tags_cache *c, const char *file,
 
 /* Read the selected tags for this file and add it to the cache.
  * If client_id != -1, the server is notified using tags_response().
- * If client_id == -1, copy of file_tag sis returned. */
+ * If client_id == -1, copy of file_tags is returned. */
 static struct file_tags *tags_cache_read_add (struct tags_cache *c,
 		const int client_id, const char *file, int tags_sel)
 {
