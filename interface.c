@@ -561,25 +561,28 @@ static int get_tags_setting ()
 	return needed_tags;
 }
 
-/* Send requests for the given tags for every file on the playlist that
- * hasn't this tags. Return the number of requests. */
+/* For each file in the playlist, send a request for all the given tags if
+ * the file is missing any of those tags.  Return the number of requests. */
 static int ask_for_tags (const struct plist *plist, const int tags_sel)
 {
 	int i;
 	int req = 0;
 
 	assert (plist != NULL);
-	assert (tags_sel != 0);
 	
-	for (i = 0; i < plist->num; i++)
-		if (!plist_deleted(plist, i) && (!plist->items[i].tags
-					|| ~plist->items[i].tags->filled
-					& tags_sel)) {
-			char *file = plist_get_file (plist, i);
-			
-			req += send_tags_request (file, tags_sel);
-			free (file);
+	if (tags_sel != 0) {
+		for (i = 0; i < plist->num; i++) {
+			if (!plist_deleted(plist, i) &&
+			    (!plist->items[i].tags ||
+			     ~plist->items[i].tags->filled & tags_sel)) {
+				char *file;
+
+				file = plist_get_file (plist, i);
+				req += send_tags_request (file, tags_sel);
+				free (file);
+			}
 		}
+	}
 
 	return req;
 }
@@ -1294,8 +1297,7 @@ static int go_to_dir (const char *dir, const int reload)
 	lists_strs_sort (dirs, sort_dirs_func);
 	lists_strs_sort (playlists, sort_strcmp_func);
 
-	if (get_tags_setting())
-		ask_for_tags (dir_plist, get_tags_setting());
+	ask_for_tags (dir_plist, get_tags_setting());
 	
 	if (reload)
 		iface_update_dir_content (IFACE_MENU_DIR, dir_plist, dirs,
@@ -1443,8 +1445,7 @@ static int get_server_playlist (struct plist *plist)
 	iface_set_status ("Getting the playlist...");
 	debug ("Getting the playlist...");
 	if (recv_server_plist(plist)) {
-		if (get_tags_setting())
-				ask_for_tags (plist, get_tags_setting());
+		ask_for_tags (plist, get_tags_setting());
 		switch_titles_tags (plist);
 		iface_set_status ("");
 		return 1;
@@ -1542,8 +1543,7 @@ static void process_args (char **args, const int num)
 
 	if (plist_count(playlist) && !options_get_int("SyncPlaylist")) {
 		switch_titles_file (playlist);
-		if (get_tags_setting())
-			ask_for_tags (playlist, get_tags_setting());
+		ask_for_tags (playlist, get_tags_setting());
 		iface_set_dir_content (IFACE_MENU_PLIST, playlist, NULL, NULL);
 		iface_update_queue_positions (queue, playlist, NULL, NULL);
 		iface_switch_to_plist ();
@@ -1892,8 +1892,7 @@ static void add_dir_plist ()
 		int i;
 		
 		switch_titles_file (&plist);
-		if (get_tags_setting())
-			ask_for_tags (&plist, get_tags_setting());
+		ask_for_tags (&plist, get_tags_setting());
 
 		for (i = 0; i < plist.num; i++)
 			if (!plist_deleted(&plist, i))
