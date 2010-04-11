@@ -84,5 +84,4 @@ EXTRA_DIST = config.example README_equalizer mocp.1 THANKS keymap.example Doxyfi
 	     doxy_pages/sound_output_driver_api.doxy moc.spec.in \
 	     moc.spec
 
-docdir = $(datadir)/doc/$(PACKAGE)
 doc_DATA = config.example THANKS README README_equalizer keymap.example
