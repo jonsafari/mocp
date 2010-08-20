@@ -780,13 +780,20 @@ int audio_send_buf (const char *buf, const size_t size)
 	return res;
 }
 
-/* Get the current audio format bytes per second value. May return 0 if the
+/* Get the current audio format bytes per frame value.  May return 0 if the
+ * audio device is closed. */
+int audio_get_bpf ()
+{
+	return driver_sound_params.channels
+		* (driver_sound_params.fmt ? sfmt_Bps(driver_sound_params.fmt)
+				: 0);
+}
+
+/* Get the current audio format bytes per second value.  May return 0 if the
  * audio device is closed. */
 int audio_get_bps ()
 {
-	return driver_sound_params.rate * driver_sound_params.channels
-		* (driver_sound_params.fmt ? sfmt_Bps(driver_sound_params.fmt)
-				: 0);
+	return driver_sound_params.rate * audio_get_bpf ();
 }
 
 int audio_get_buf_fill ()

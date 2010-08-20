@@ -144,9 +144,14 @@ static void *read_thread (void *arg)
 		}
 			
 		if (!audio_dev_closed) {
+			int audio_bpf;
+			size_t play_buf_frames;
+
+			audio_bpf = audio_get_bpf();
+			play_buf_frames = MIN(audio_get_bps() * AUDIO_MAX_PLAY,
+			                      AUDIO_MAX_PLAY_BYTES) / audio_bpf;
 			play_buf_fill = fifo_buf_get(&buf->buf, play_buf,
-					MIN(audio_get_bps() * AUDIO_MAX_PLAY,
-						AUDIO_MAX_PLAY_BYTES));
+			                             play_buf_frames * audio_bpf);
 			UNLOCK (buf->mutex);
 
 			debug ("playing %d bytes", play_buf_fill);
