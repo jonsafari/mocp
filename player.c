@@ -282,7 +282,7 @@ static void *precache_thread (void *data)
 			/* there is no way to store sound with two different
 			 * parameters in the buffer, give up with
 			 * precacheing. (this should never happen) */
-			logit ("Sound parameters has changed when precaching.");
+			logit ("Sound parameters have changed when precaching.");
 			precache->f->close (precache->decoder_data);
 			return NULL;
 		}
@@ -501,7 +501,7 @@ static void decode_loop (const struct decoder *f, void *decoder_data,
 		}
 
 		/* Wait, if there is no space in the buffer to put the decoded
-		 * data or EOF occured and there is something in the buffer. */
+		 * data or EOF occurred and there is something in the buffer. */
 		else if (decoded > out_buf_get_free(out_buf)
 					|| (eof && out_buf_get_fill(out_buf))) {
 			debug ("waiting...");
@@ -560,7 +560,7 @@ static void decode_loop (const struct decoder *f, void *decoder_data,
 		}
 		else if (!eof && sound_params_change
 				&& out_buf_get_fill(out_buf) == 0) {
-			logit ("sound parameters has changed.");
+			logit ("Sound parameters have changed.");
 			sound_params = new_sound_params;
 			sound_params_change = 0;
 			set_info_channels (sound_params.channels);

@@ -118,13 +118,13 @@ struct decoder
 	 * true. It is prefered to decode as few bytes as possible without
 	 * loosing much performance to cause very small delays.
 	 *
-	 * \param data Decoder's provate data.
+	 * \param data Decoder's private data.
 	 * \param buf Buffer to put data in.
 	 * \param buf_len Size of the buffer in bytes.
 	 * \param sound_params Parameters of the decoded sound. This must be
 	 * always filled.
 	 *
-	 * \return Number of butes written or 0 on EOF.
+	 * \return Number of bytes written or 0 on EOF.
 	 */
 	int (*decode)(void *data, char *buf, int buf_len,
 			struct sound_params *sound_params);

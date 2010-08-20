@@ -104,10 +104,10 @@ static void *read_thread (void *arg)
 				audio_dev_closed = 1;
 			}
 			
-			debug ("waiting for someting in the buffer");
+			debug ("waiting for something in the buffer");
 			buf->read_thread_waiting = 1;
 			pthread_cond_wait (&buf->play_cond, &buf->mutex);
-			debug ("someting appeard in the buffer");
+			debug ("something appeared in the buffer");
 
 		}
 

@@ -78,7 +78,7 @@
 # define INT32_LE_TO_NE(l)	(l)
 #endif
 
-/* The byte order conversion is simetris, so this is true: */
+/* The byte order conversion is symetric, so this is true: */
 #define INT16_NE_TO_LE		INT16_LE_TO_NE (l)
 #define INT32_NE_TO_BE		INT32_BE_TO_NE (l)
 #endif
@@ -205,7 +205,7 @@ static void s32_to_float (const char *in, float *out,
 }
 
 /* Convert fixed point samples in format fmt (size in bytes) to float.
- * Size of converted sound is put in bew_size. Returned memory is malloc()ed. */
+ * Size of converted sound is put in new_size. Returned memory is malloc()ed. */
 static float *fixed_to_float (const char *buf, const size_t size,
 		const long fmt, size_t *new_size)
 {
@@ -237,7 +237,7 @@ static float *fixed_to_float (const char *buf, const size_t size,
 	return out;
 }
 
-/* Convert float samples to fixed point format fmt. Returned sames of size
+/* Convert float samples to fixed point format fmt. Returned samples of size
  * new_size bytes is malloc()ed. */
 static char *float_to_fixed (const float *buf, const size_t samples,
 		const long fmt, size_t *new_size)
@@ -294,7 +294,7 @@ static void change_sign_32 (uint32_t *buf, const size_t samples)
 		*buf++ ^= 1 << 31;
 }
 
-/* Change the signes of samples in format *fmt. Also changes fmt to the new
+/* Change the signs of samples in format *fmt.  Also changes fmt to the new
  * format. */
 static void change_sign (char *buf, const size_t size, long *fmt)
 {
@@ -349,7 +349,7 @@ static void int32_bswap_array (int32_t *buf, const size_t num)
 		buf[i] = SWAP_INT32 (buf[i]);
 }
 
-/* Swap endianes of fixed point samples. */
+/* Swap endianness of fixed point samples. */
 static void swap_endian (char *buf, const size_t size, const long fmt)
 {
 	if ((fmt & (SFMT_S8 | SFMT_U8 | SFMT_FLOAT)))
@@ -409,7 +409,7 @@ int audio_conv_new (struct audio_conversion *conv,
 		
 		conv->src_state = src_new (resample_type, to->channels, &err);
 		if (!conv->src_state) {
-			error ("Can't resammple from %dHz to %dHz: %s",
+			error ("Can't resample from %dHz to %dHz: %s",
 					from->rate, to->rate,
 					src_strerror(err));
 			return 0;
@@ -538,7 +538,6 @@ static char *mono_to_stereo (const char *mono, const size_t size,
 	}
 
 	return stereo;
-	
 }
 
 static int16_t *s32_to_s16 (int32_t *in, const size_t samples)
@@ -567,8 +566,8 @@ static uint16_t *u32_to_u16 (uint32_t *in, const size_t samples)
 	return new;
 }
 
-/* Do the sound conversion. buf of size sizse is the sample buffer to convert
- * and the size of the converted sound is put into *conv_len.
+/* Do the sound conversion.  buf of length size is the sample buffer to
+ * convert and the size of the converted sound is put into *conv_len.
  * Return the converted sound in malloc()ed memory. */
 char *audio_conv (struct audio_conversion *conv, const char *buf,
 		const size_t size, size_t *conv_len)
@@ -586,8 +585,8 @@ char *audio_conv (struct audio_conversion *conv, const char *buf,
 		curr_sfmt = sfmt_set_endian (curr_sfmt, SFMT_NE);
 	}
 
-	/* Specil case (optimization): if we only need to convert 32bit samples
-	 * to 16bit, we can do it very simple ans fast. */
+	/* Special case (optimization): if we only need to convert 32bit samples
+	 * to 16bit, we can do it very simply and quickly. */
 	if (((curr_sfmt & SFMT_MASK_FORMAT) == SFMT_S32
 				|| (curr_sfmt & SFMT_MASK_FORMAT)
 				== SFMT_U32)
