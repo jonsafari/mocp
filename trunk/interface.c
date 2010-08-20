@@ -1247,7 +1247,7 @@ static void fill_tags (struct plist *plist, const int tags_sel,
 }
 
 /* Load the directory content into dir_plist and switch the menu to it.
- * If dir is NULL, go to the cwd. if reload is not zero, we are reloading
+ * If dir is NULL, go to the cwd.  If reload is not zero, we are reloading
  * the current directory, so use iface_update_dir_content().
  * Return 1 on success, 0 on error. */
 static int go_to_dir (const char *dir, const int reload)

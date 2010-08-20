@@ -73,9 +73,9 @@ struct mp3_data
 	struct mad_frame frame;
 	struct mad_synth synth;
 
-	int skip_frames; /* how much frames to skip (after seeking) */
+	int skip_frames; /* how many frames to skip (after seeking) */
 	
-	int ok; /* was this stream successfuly opened? */
+	int ok; /* was this stream successfully opened? */
 	struct decoder_error error;
 };
 
@@ -226,7 +226,7 @@ static int count_time_internal (struct mp3_data *data)
 	  2) Variable bitrate: Xing tag. It provides the number of 
 		 frames. Each frame has the same number of samples, so
 		 just use that.
-	  3) All: Count up the frames and duration of each frames
+	  3) All: Count up the frames and duration of each frame
 		 by decoding each one. We do this if we've no other
 		 choice, i.e. if it's a VBR file with no Xing tag.
 	*/
@@ -743,9 +743,9 @@ static int mp3_can_decode (struct io_stream *stream)
 {
 	unsigned char buf[16 * 1024];
 
-	/* We must use such a sophisticated test, besause there are Shoutcast
+	/* We must use such a sophisticated test, because there are Shoutcast
 	 * servers that can start broadcasting in the middle of a frame, so we
-	 * can't use any few bytes length magic values. */
+	 * can't use any fewer bytes for magic values. */
 	if (io_peek(stream, buf, sizeof(buf)) == sizeof(buf)) {
 		struct mad_stream stream;
 		struct mad_header header;

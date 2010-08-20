@@ -717,7 +717,7 @@ void options_parse (const char *config_file)
 {
 	int ch;
 	int comm = 0; /* comment? */
-	int eq = 0; /* equal character appeard? */
+	int eq = 0; /* equal character appeared? */
 	int quote = 0; /* are we in quotes? */
 	int esc = 0;
 	char opt_name[30];

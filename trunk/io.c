@@ -534,7 +534,7 @@ int io_ok (struct io_stream *s)
 	return res;
 }
 
-/* Read data from the buffer withoud removing them, so stream position is
+/* Read data from the buffer without removing them, so stream position is
  * unchanged. You can't peek more data than the buffer size. */
 static ssize_t io_peek_internal (struct io_stream *s, void *buf, size_t count)
 {

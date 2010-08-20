@@ -72,7 +72,7 @@ struct parameters
 };
 
 
-/* Connect to the server, return fd os the socket or -1 on error */
+/* Connect to the server, return fd of the socket or -1 on error. */
 static int server_connect ()
 {
 	struct sockaddr_un sock_name;
@@ -94,7 +94,8 @@ static int server_connect ()
 	return sock;
 }
 
-/* Ping the server. return 1 if the server respond with EV_PONG, otherwise 1. */
+/* Ping the server.
+ * Return 1 if the server responds with EV_PONG, otherwise 1. */
 static int ping_server (int sock)
 {
 	int event;
@@ -250,7 +251,7 @@ static void show_version ()
 	
 }
 
-/* Show program usage and exit */
+/* Show program usage and exit. */
 static void show_usage (const char *prg_name) {
 	printf (PACKAGE_STRING"\n"
 "Usage:\n"
@@ -456,7 +457,7 @@ int main (int argc, char *argv[])
 	memset (&params, 0, sizeof(params));
 	options_init ();
 
-	/* set locale acording to the environment variables */
+	/* set locale according to the environment variables */
 	if (!setlocale(LC_ALL, ""))
 		logit ("Could not set locale!");
 
@@ -530,7 +531,7 @@ int main (int argc, char *argv[])
 				break;
 			case 'x':
 				params.exit = 1;
-                                params.dont_run_iface = 1;
+				params.dont_run_iface = 1;
 				break;
 			case 'P':
 				params.pause = 1;
