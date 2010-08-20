@@ -235,6 +235,7 @@ int audio_open (struct sound_params *sound_params);
 int audio_send_buf (const char *buf, const size_t size);
 int audio_send_pcm (const char *buf, const size_t size);
 void audio_reset ();
+int audio_get_bpf ();
 int audio_get_bps ();
 int audio_get_buf_fill ();
 void audio_close ();
