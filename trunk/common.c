@@ -127,10 +127,10 @@ char *str_repl (char *target, const char *oldstr, const char *newstr)
 
 /* Return true iff the argument would be a syntactically valid symbol.
  * (Note that the so-called "peculiar indentifiers" are disallowed here.) */
-_Bool is_valid_symbol (const char *candidate)
+bool is_valid_symbol (const char *candidate)
 {
 	size_t len;
-	_Bool result;
+	bool result;
 	const char *first = "+-.0123456789@";
 	const char *valid = "abcdefghijklmnopqrstuvwxyz"
 	                    "ABCDEFGHIJKLMNOPQRSTUVWXYZ"

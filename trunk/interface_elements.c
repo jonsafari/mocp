@@ -1071,8 +1071,8 @@ static int add_to_menu (struct menu *menu, const struct plist *plist,
 	const char *type_name;
 
 				
-    title = make_menu_title (item->title, item->title == item->title_tags, 
-            full_paths);
+	title = make_menu_title (item->title, item->title == item->title_tags, 
+	                         full_paths);
 	added = menu_add (menu, title, plist_file_type(plist, num), item->file);
 	free (title);
 

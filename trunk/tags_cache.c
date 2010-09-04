@@ -47,7 +47,7 @@
 #include "audio.h"
 
 /* Number used to create cache version tag to detect incompatibilities
- * between cache verswion stored on the disk and MOC/BerkeleyDB environment.
+ * between cache version stored on the disk and MOC/BerkeleyDB environment.
  *
  * If you modify the DB structure, increase this number.
  */
@@ -368,7 +368,7 @@ static void tags_cache_gc (struct tags_cache *c)
 	}
 
 	if (ret != DB_NOTFOUND)
-		logit ("Searching for element to remove failed (coursor): %s",
+		logit ("Searching for element to remove failed (cursor): %s",
 				db_strerror(ret));
 
 	cur->c_close (cur);
@@ -462,10 +462,10 @@ static struct file_tags *tags_cache_read_add (struct tags_cache *c,
 		got_lock = 1;
 		ret = c->db->get (c->db, NULL, &key, &serialized_cache_rec, 0);
 		if (ret && ret != DB_NOTFOUND)
-			logit ("Cache db get error: %s", db_strerror(ret));
+			logit ("Cache DB get error: %s", db_strerror(ret));
 	}
 
-	/* If this entry is already presend in the cache, we have 3 options:
+	/* If this entry is already present in the cache, we have 3 options:
 	 * we must read different tags (TAGS_*) or the tags are outdated
 	 * or this is an immediate tags read (client_id == -1) */
 	if (ret == 0) {
@@ -518,7 +518,7 @@ static struct file_tags *tags_cache_read_add (struct tags_cache *c,
 
 	tags = read_file_tags (file, tags, tags_sel);
 
-	debug ("Adding/updating cache obiect");
+	debug ("Adding/updating cache object");
 	tags_cache_add (c, file, tags);
 
 	if (client_id != -1) {
@@ -527,7 +527,7 @@ static struct file_tags *tags_cache_read_add (struct tags_cache *c,
 		tags = NULL;
 	}
 	
-	/* TODO: Removed the oldest items from the cache if we exceeded the maximum
+	/* TODO: Remove the oldest items from the cache if we exceeded the maximum
 	 * cache size */
 
 end:
@@ -549,7 +549,7 @@ static void *reader_thread (void *cache_ptr)
 	int curr_queue = 0; /* index of the queue from where we will get the
 			       next request */
 
-	logit ("tags reader thread started");
+	logit ("Tags reader thread started");
 
 	LOCK (c->mutex);
 
@@ -571,7 +571,7 @@ static void *reader_thread (void *cache_ptr)
 				i++;
 
 			if (i == curr_queue) {
-				debug ("all queues empty, waiting");
+				debug ("All queues empty, waiting");
 				pthread_cond_wait (&c->request_cond, &c->mutex);
 				continue;
 			}
@@ -592,7 +592,7 @@ static void *reader_thread (void *cache_ptr)
 
 	UNLOCK (c->mutex);
 
-	logit ("exiting tags reader thread");
+	logit ("Exiting tags reader thread");
 	
 	return NULL;
 }
@@ -709,7 +709,7 @@ void tags_cache_add_request (struct tags_cache *c, const char *file,
 				goto end;
 			}
 
-			debug ("Found outdated or not complete tags in the cache");
+			debug ("Found outdated or incomplete tags in the cache");
 		}
 	}
 
@@ -740,7 +740,7 @@ void tags_cache_clear_queue (struct tags_cache *c, const int client_id)
 	UNLOCK (c->mutex);
 }
 
-/* Remove all pending requests from the queue for the given client upo to
+/* Remove all pending requests from the queue for the given client up to
  * the request associated with the given file. */
 void tags_cache_clear_up_to (struct tags_cache *c, const char *file,
 		const int client_id)
@@ -848,8 +848,8 @@ static const char *create_version_tag (char *buf)
 	return buf;
 }
 
-/* Chcech version of the cache directory. If it was created
- * using format not handled by this version of MOCE, return 0.
+/* Check version of the cache directory. If it was created
+ * using format not handled by this version of MOC, return 0.
  */
 static int cache_version_matches (const char *cache_dir)
 {
@@ -871,7 +871,7 @@ static int cache_version_matches (const char *cache_dir)
 
 	rres = fread (disk_version_tag, 1, sizeof(disk_version_tag) - 1, f);
 	if (rres == sizeof(disk_version_tag) - 1) {
-		logit ("Too long on-disk version tag");
+		logit ("On-disk version tag too long");
 	}
 	else {
 		char cur_version_tag[64];
@@ -912,7 +912,7 @@ static void write_cache_version (const char *cache_dir)
 	fclose (f);
 }
 
-/* Make sure that the cache directory exist and clear it if necessary.
+/* Make sure that the cache directory exists and clear it if necessary.
  */
 static int prepare_cache_dir (const char *file_name)
 {
@@ -926,7 +926,7 @@ static int prepare_cache_dir (const char *file_name)
 	}
 
 	if (!cache_version_matches(file_name)) {
-		logit ("Tags cache directory is in wrong version, purging....");
+		logit ("Tags cache directory is the wrong version, purging....");
 
 		if (!purge_directory(file_name))
 			return 0;
@@ -999,7 +999,7 @@ void tags_cache_load (struct tags_cache *c, const char *file_name)
 	}
 }
 
-/* Immediatelly read tags for a file bypassing the request queue. */
+/* Immediately read tags for a file bypassing the request queue. */
 struct file_tags *tags_cache_get_immediate (struct tags_cache *c,
 		const char *file, const int tags_sel)
 {

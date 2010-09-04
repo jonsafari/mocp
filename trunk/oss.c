@@ -33,11 +33,11 @@
 #include <unistd.h>
 #include <assert.h>
 
+#include "common.h"
 #include "server.h"
 #include "audio.h"
 #include "log.h"
 #include "options.h"
-#include "common.h"
 
 #ifndef SNDCTL_DSP_GETPLAYVOL
 #define OSSv3_MIXER

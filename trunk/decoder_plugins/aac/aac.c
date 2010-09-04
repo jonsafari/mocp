@@ -410,11 +410,12 @@ static void aac_info (const char *file_name,
 	}
 }
 
-static int aac_seek (void *prv_data, int sec)
+static int aac_seek (void *prv_data ATTR_UNUSED, int sec ATTR_UNUSED)
 {
+#if 0
 	struct aac_data *data = (struct aac_data *)prv_data;
 
-	/*if ((err = av_seek_frame(data->ic, -1, sec, 0)) < 0)
+	if ((err = av_seek_frame(data->ic, -1, sec, 0)) < 0)
 		logit ("Seek error %d", err);
 	else if (data->remain_buf) {
 		free (data->remain_buf);
@@ -422,7 +423,8 @@ static int aac_seek (void *prv_data, int sec)
 		data->remain_buf_len = 0;
 	}
 
-	return err >= 0 ? sec : -1;*/
+	return err >= 0 ? sec : -1;
+#endif
 
 	return -1;
 }

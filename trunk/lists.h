@@ -15,7 +15,7 @@ typedef int lists_t_compare (const void *, const void *);
 lists_t_strs *lists_strs_new (int reserve);
 void lists_strs_free (lists_t_strs *list);
 int lists_strs_size (const lists_t_strs *list);
-_Bool lists_strs_empty (const lists_t_strs *list);
+bool lists_strs_empty (const lists_t_strs *list);
 
 /* List member access functions. */
 char *lists_strs_at (const lists_t_strs *list, int index);

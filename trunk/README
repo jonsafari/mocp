@@ -61,7 +61,7 @@ What software is required to compile it?
  - ncurses (probably already installed in your system)
  - C and C++ compilers (MOC is written in C, but libtool requires a C++
    compiler).
- - libdb version >= 3
+ - libdb version >= 4
 
 To support audio formats you need:
  - Ogg Vorbis - libvorbis (http://www.xiph.org/ogg/vorbis/download/)
@@ -110,16 +110,25 @@ contact me, I'm interested where MOC can and cannot be used.
 How to install it?
 --------------------------------------------------------------------------------
 
-Generic installation instruction is included in the INSTALL file. In short, just
-type:
+Generic installation instruction is included in the INSTALL file.
+In short, just type:
+
 	./configure
 	make
+
 And as root:
+
 	make install
 
-Under FreeBSD, NetBSD, and possibly other systems it is required to run the
-configure script this way:
-./configure LDFLAGS=-L/usr/local/lib CPPFLAGS=-I/usr/local/include
+Under FreeBSD, NetBSD, and possibly other systems it is required to run
+the configure script this way:
+
+	./configure LDFLAGS=-L/usr/local/lib CPPFLAGS=-I/usr/local/include
+
+Note that MOC and some of its supporting packages make use GNU extensions
+to the C89 and C99 language standards.  Therefore, do not set the '-std'
+option in CFLAGS to a non-GNU value; if you do, configure will fail
+unexpectedly.
 
 --------------------------------------------------------------------------------
 How to use it?
