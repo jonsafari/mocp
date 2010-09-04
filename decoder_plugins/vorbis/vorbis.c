@@ -60,7 +60,7 @@ static void get_comment_tags (OggVorbis_File *vf, struct file_tags *info)
 					"artist=", strlen ("artist=")))
 			info->artist = xstrdup (
 					comments->user_comments[i]
-					+ strlen ("artiat="));
+					+ strlen ("artist="));
 		else if (!strncasecmp(comments->user_comments[i],
 					"album=", strlen ("album=")))
 			info->album = xstrdup (

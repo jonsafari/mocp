@@ -104,7 +104,7 @@ const char *file_mime_type (const char *file)
 	assert (file != NULL);
 
 #ifdef HAVE_LIBMAGIC
-	static _Bool initialised = false;
+	static bool initialised = false;
 	static magic_t cookie = NULL;
 
 	if (!initialised) {

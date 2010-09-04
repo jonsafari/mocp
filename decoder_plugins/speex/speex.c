@@ -311,7 +311,7 @@ static void parse_comment (const char *str, struct file_tags *tags)
 	if (!strncasecmp(str, "title=", strlen ("title=")))
 		tags->title = xstrdup(str + strlen ("title="));
 	else if (!strncasecmp(str, "artist=", strlen ("artist=")))
-		tags->artist = xstrdup (str + strlen ("artiat="));
+		tags->artist = xstrdup (str + strlen ("artist="));
 	else if (!strncasecmp(str, "album=", strlen ("album=")))
 		tags->album = xstrdup (str + strlen ("album="));
 	else if (!strncasecmp(str, "tracknumber=", strlen ("tracknumber=")))

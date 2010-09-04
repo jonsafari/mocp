@@ -34,7 +34,7 @@ union option_value
 {
 	char *str;
 	int num;
-	_Bool boolean;
+	bool boolean;
 };
 
 struct option
@@ -268,7 +268,7 @@ static void option_add_int (const char *name, const int value, int (*check) (int
 
 /* Add a boolean option to the options table. This is intended to be used at
  * initialization to make a table of valid options and their default values. */
-static void option_add_bool (const char *name, const _Bool value)
+static void option_add_bool (const char *name, const bool value)
 {
 	int pos;
 
@@ -346,7 +346,7 @@ void option_set_int (const char *name, const int value)
 }
 
 /* Set a boolean option to the value. */
-void option_set_bool (const char *name, const _Bool value)
+void option_set_bool (const char *name, const bool value)
 {
 	int i = find_option(name, OPTION_BOOL);
 
@@ -572,7 +572,7 @@ int check_int_option (const char *name, const int val)
  * pointless but it provides a consistant interface, ensures the existence
  * of the option and checks the value where true booleans are emulated with
  * other types. */
-int check_bool_option (const char *name, const _Bool val)
+int check_bool_option (const char *name, const bool val)
 {
 	int opt;
 
@@ -620,7 +620,7 @@ static int set_option (const char *name, const char *value_x)
 	int i, num;
 	char *end;
 	const char *value;
-	_Bool val;
+	bool val;
 
 	i = find_option (name, OPTION_ANY);
 	if (is_deprecated_option(name)) {
@@ -860,7 +860,7 @@ int options_get_int (const char *name)
 	return options[i].value.num;
 }
 
-_Bool options_get_bool (const char *name)
+bool options_get_bool (const char *name)
 {
 	int i = find_option(name, OPTION_BOOL);
 

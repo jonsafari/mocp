@@ -246,7 +246,7 @@ static int wav_decode (void *prv_data, char *buf, int buf_len,
 	return ret * oBps ;
 }
 
-static int wav_our_mime (const char *mime)
+static int wav_our_mime (const char *mime ATTR_UNUSED)
 {
 	/* We don't support internet streams for now. */
 	/*return !strcmp(mime, "audio/x-wavpack");*/

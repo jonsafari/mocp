@@ -63,7 +63,7 @@ int lists_strs_size (const lists_t_strs *list)
 }
 
 /* Return true iff the list has no members. */
-_Bool lists_strs_empty (const lists_t_strs *list)
+bool lists_strs_empty (const lists_t_strs *list)
 {
 	assert (list);
 

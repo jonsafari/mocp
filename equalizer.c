@@ -48,10 +48,10 @@
 #include <locale.h>
 
 
+#include "common.h"
 #include "audio.h"
 #include "audio_helper.h"
 #include "options.h"
-#include "common.h"
 #include "log.h"
 
 #include "equalizer.h"
