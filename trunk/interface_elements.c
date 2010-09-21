@@ -303,7 +303,7 @@ static void entry_history_add (struct entry_history *h,	const char *text)
 				free (h->items[0]);
 				memmove (h->items, h->items + 1,
 						(HISTORY_SIZE - 1) * sizeof (char *));
-				h->items[h->num] = xstrdup (text);
+				h->items[h->num - 1] = xstrdup (text);
 			}
 		}
 	}
