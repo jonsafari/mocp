@@ -9,10 +9,9 @@
  *
  */
 
-/* This code was writen od the basis of madlld.c (C) by Bertrand Petit 
- * including code from xmms-mad (C) by Sam Clegg and winamp plugin for madlib
- * (C) by Robert Leslie.
- */
+/* This code was based on madlld.c (C) by Bertrand Petit including code
+ * from xmms-mad (C) by Sam Clegg and winamp plugin for madlib (C) by
+ * Robert Leslie. */
 
 /* FIXME: there can be a bit of silence in mp3 at the end or at the
  * beginning. If you hear gaps between files, it's the file's fault.
@@ -67,7 +66,7 @@ struct mp3_data
 				 used for seeking. */
 	off_t size; /* Size of the file */
 
-	unsigned char in_buff[INPUT_BUFFER];
+	unsigned char in_buff[INPUT_BUFFER + MAD_BUFFER_GUARD];
 
 	struct mad_stream stream;
 	struct mad_frame frame;
@@ -106,6 +105,11 @@ static size_t fill_buff (struct mp3_data *data)
 	}
 	else if (read_size == 0)
 		return 0;
+
+	if (io_eof (data->io_stream)) {
+		memset (read_start + read_size, 0, MAD_BUFFER_GUARD);
+		read_size += MAD_BUFFER_GUARD;
+	}
 
 	mad_stream_buffer(&data->stream, data->in_buff, read_size + remaining);
 	data->stream.error = 0;
@@ -560,6 +564,22 @@ static int put_output (char *buf, int buf_len, struct mad_pcm *pcm,
 	return olen;
 }
 
+/* If the current frame in the stream is an ID3 tag, then swallow it. */
+static ssize_t flush_id3_tag (struct mp3_data *data)
+{
+	size_t remaining;
+	ssize_t tag_size;
+
+	remaining = data->stream.bufend - data->stream.next_frame;
+	tag_size = id3_tag_query (data->stream.this_frame, remaining);
+	if (tag_size > 0) {
+		mad_stream_skip (&data->stream, tag_size);
+		mad_stream_sync (&data->stream);
+	}
+
+	return tag_size;
+}
+
 static int mp3_decode (void *void_data, char *buf, int buf_len,
 		struct sound_params *sound_params)
 {
@@ -577,7 +597,9 @@ static int mp3_decode (void *void_data, char *buf, int buf_len,
 		}
 		
 		if (mad_frame_decode (&data->frame, &data->stream)) {
-			if (MAD_RECOVERABLE(data->stream.error)) {
+			if (flush_id3_tag (data))
+				continue;
+			else if (MAD_RECOVERABLE(data->stream.error)) {
 
 				/* Ignore LOSTSYNC */
 				if (data->stream.error == MAD_ERROR_LOSTSYNC)
