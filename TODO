@@ -1,16 +1,17 @@
 Items marked with $ are bigger changes requiring more time.
 
 Known bugs:
-- speex plugin should be linked with libogg
+
+- speex plugin should be linked with libogg.
 - Do we assume filesystem in UTF-8? It's incorrect.
 - I have a problem with moc 2.4.0 on FreeBSD 6.1-PRERELEASE. When I build moc
   with musepack (libmpcdec) support moc allways core dumps on exit.
-- Crash on FreeBSD 5.5 http://moc.daper.net/node/148
-- When sorting by file name (directories), put files beggining with a
-  non alphanuemric character at the top.
+- Crash on FreeBSD 5.5 (http://moc.daper.net/node/148).
+- When sorting by file name (directories), put files beginning with a
+  non-alphanumeric character at the top.
 - id3tags v2.3 with UTF-16 are not properly handled by libid3tag, taglib has
   no problems. Need to use libtag here?
-  NEW: recognision of ID3 tags v1 is broken (example: small.mp3)
+  NEW: recognition of ID3 tags v1 is broken (example: small.mp3).
   Thanks for the patch. It works. Perhaps MOC can add support for the frame
   field_type to differentiate between ID3_FIELD_TYPE_LATIN1 and
   ID3_FIELD_TYPE_STRING.
@@ -18,55 +19,58 @@ Known bugs:
   http://moc.daper.net/node/240
 - MOC needs to be restarted (when switching themes) in order to understand the
   ATTRIBUTE correctly.
-- db lock timeout in tags_cache
+- db lock timeout in tags_cache.
 
 Before 2.5:
-* Move TODO to moc.daper.net/roadmap
+
+* Move TODO to moc.daper.net/roadmap .
 * A string-valued variable "TitleFormatString", similar to "FormatString".
   I'd suggest all the same %-escapes, plus:
   %F -- expands to (the expansion of) the current FormatString
   if there is a song playing or paused, and empty string if stopped.
-  %S --  expands to play/stop/pause.
+  %S -- expands to play/stop/pause.
 
 In future:
 
-* Command line option to play from a specified file/first from the last added files.
-* multiple file selection to move many files at once up and down.
+* Command line option to play from a specified file/first from the last
+  added files.
+* Multiple file selection to move many files at once up and down.
   http://moc.daper.net/node/288
 * Review strcpy()/sprintf() usage, change to strncpy()/snprintf() where
   possible.
 * More side menus: many directory/playlist views.
 * LADSPA
-* Editing the title of an item on the playlist (for internet streams).
+* Editing the title of an item on the playlist (for Internet streams).
 *$ Media library: tree-like menu for artists and albums.
-* Seek by a % value (also using keys for 10%, 20% etc.)
+* Seek by a % value (also using keys for 10%, 20%, etc).
 * Ability to play from a playlist made of items found after searching.
-* JACK: intelligent bahaviour when we get disconnected from the server
+* JACK: intelligent behaviour when we get disconnected from the server
   - detect it, try connect and exit if it fails.
 * FastGo instead of FastDir: go to a directory, URL or a playlist.
 * Read tags for sndfile formats.
 *$ http://www.peercast.org/
-* Crosfeed
-* Command to see all information about a file with all tags, also all informaton
-  about an internet stream (from IceCast headers like icy-url, icy-pub).
+* Crossfeed
+* Command to see all information about a file with all tags, also all
+  information about an internet stream (from IceCast headers like icy-url,
+  icy-pub).
 *$ Lyrics downloaded from the Internet.
-* lirc
+* lirc.
 * Don't use PATH_MAX.
 * Seek forward using the content of the output buffer.
 *$ Locales.
 *$ Song ratings or something like Q in XMMS.
 * Configurable sorting.
 * Add a key for switching sort modes.
-*$ Equalizel like in Beep Media Player
+*$ Equalizer like in Beep Media Player
 *$ Make equal volume level for every song like in http://volnorm.sourceforge.net
-*$ Replaygain
+*$ Replaygain.
 * Seek to arbitrary position (by typing a number).
-*$ VQF (like http://www.csn.ul.ie/~mel/projects/linux/vqfplugin/)
+*$ VQF (like http://www.csn.ul.ie/~mel/projects/linux/vqfplugin/).
 *$ ESD
-*$ CUE-sheet
+*$ CUE-sheet.
 * Command line option to delete the currently played item from the playlist.
-* scripting
-* APE (http://sourceforge.net/projects/mac-port/)
+* Scripting.
+* APE (http://sourceforge.net/projects/mac-port/).
 * Some options can be changed at run-time using a menu.
 * posix_fadvise() with POSIX_FADV_WILLNEED instead of the input buffer thread
   for files.
@@ -77,4 +81,4 @@ Maybe never:
 * Say about ignored options that affects server when the server is not being
   run.
 * Funny ASCII equalizer.
-* Mouse support
+* Mouse support.
