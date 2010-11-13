@@ -203,8 +203,8 @@ struct decoder *plugin_init ()
 {
   int initresult = mid_init(options_get_str("TiMidity_Config"));
 
-  // is there a better way to signal failed init ?
-  // the decoder-init-function may no return errors AFAIK...
+  // Is there a better way to signal failed init?
+  // The decoder-init-function may not return errors AFAIK...
   if(initresult < 0)
   {
     fatal("TiMidity-Plugin: Error processing TiMidity-Configuration!");

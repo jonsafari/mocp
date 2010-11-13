@@ -20,7 +20,7 @@
 
 #include "common.h"
 
-/* Various functions that some systems lack of. */
+/* Various functions which some systems lack. */
 
 #ifndef HAVE_STRERROR_R
 static pthread_mutex_t strerror_r_mutex = PTHREAD_MUTEX_INITIALIZER;

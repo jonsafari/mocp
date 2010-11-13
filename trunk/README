@@ -13,10 +13,10 @@ powerful and easy to use.
 
 You just need to select a file from some directory using the menu similar to
 Midnight Commander, and MOC will start playing all files in this directory
-beginning from the chosen file. There is no need to create playlists like in
+beginning from the chosen file. There is no need to create playlists as in
 other players.
 
-If you want to combine some files from one or few directories on one playlist,
+If you want to combine some files from one or more directories in one playlist,
 you can do this. The playlist will be remembered between runs or you can save
 it as an m3u file to load it whenever you want.
 
@@ -27,8 +27,8 @@ or you can attach one interface in the console, and another in the X terminal
 emulator, no need to switch just to play another file.
 
 MOC plays smoothly, regardless of system or I/O load because it uses the output
-buffer in a separate thread. It doesn't cause gaps between files, because the
-next file to be played is precached while playing the current file.
+buffer in a separate thread. The transition between files is gapless, because
+the next file to be played is precached while the current file is playing.
 
 Supported file formats are: mp3, Ogg Vorbis, FLAC, Musepack (mpc), Speex, WAVE,
 supported by FFmpeg (WMA, RealAudio, AAC, MP4), AIFF, AU, SVX, Sphere Nist WAV,
@@ -51,6 +51,7 @@ Documentation, how to get help.
 
 This file is only a brief description of MOC, for more information is available
 on the home page (http://moc.daper.net/documentation).
+
 You can also find a discussion forum on the MOC home page.
 
 --------------------------------------------------------------------------------
@@ -59,8 +60,8 @@ What software is required to compile it?
 
  - UNIX system with POSIX threads (e.g., Linux or FreeBSD)
  - ncurses (probably already installed in your system)
- - C and C++ compilers (MOC is written in C, but libtool requires a C++
-   compiler).
+ - C and C++ compilers (MOC is written in C, but libtool and some decoder
+   plugins require a C++ compiler).
  - libdb version >= 4
 
 To support audio formats you need:
@@ -102,7 +103,7 @@ operating systems, and I know it compiles and possibly works under:
 - NetBSD
 - OpenBSD
 
-Not every release is extensivelly tested under other systems by me, so don't
+Not every release is extensively tested under other systems by me, so don't
 expect it to run perfectly under your OS. If you have any problems, please
 contact me, I'm interested where MOC can and cannot be used.
 
@@ -134,8 +135,8 @@ unexpectedly.
 How to use it?
 --------------------------------------------------------------------------------
 
-Run program with the 'mocp' command. The usage is simple, if you need help,
-press 'h' and/or read man mocp. There is no complicated command line, nor
+Run program with the 'mocp' command. The usage is simple; if you need help,
+press 'h' and/or read man mocp. There is no complicated command line or
 cryptic commands. Using MOC is as easy as using basic functions of Midnight
 Commander.
 
@@ -148,8 +149,8 @@ Themes
 
 Yes, there are themes, because people wanted them. :)
 
-Themes can change all colors and only colors. Example theme file with a
-exhausting description is included (themes/example_theme), it is the
+Themes can change all colors and only colors. An example theme file with a
+exhaustive description is included (themes/example_theme) and is the
 default MOC appearance.
 
 Theme files should be placed in ~/.moc/themes/ or $(datadir)/moc/themes/
@@ -174,17 +175,17 @@ Want to modify MOC? You are welcome, I'd love to see patches.
 
 MOC is written in C, so you must at least know this language to make simple
 changes. It is multi-threaded program, but there are places where you don't
-need to worry about that (the interface is only a one thread process). It uses
-autoconf, automake, and libtool chain to generate configuration/compilation
-stuff, so you must know how to use it for example if you need to link to an
+need to worry about that (the interface is only a single thread process). It
+uses autoconf, automake, and libtool chain to generate configuration/compilation
+stuff, so you must know how to use it, for example, if you need to link to an
 additional library.
 
 The documentation for some parts of the internal API for creating decoder
 plugins (file format support) and sound output drivers can be generated using
-Dooxygen (http://www.doxygen.org). Just run the doxygen command from the MOC
+Doxygen (http://www.doxygen.org). Just run the doxygen command from the MOC
 source directory.
 
-Before you change anything it is a good idea to check for the latest develoment
+Before you change anything it is a good idea to check for the latest development
 version (check out from the Subversion repository is the best). Your changes
 might conflict with changes already made to the source or your feature might be
 already implemented. See also the TODO file as it is updated regularly and

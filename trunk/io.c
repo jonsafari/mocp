@@ -108,8 +108,8 @@ static ssize_t io_read_fd (struct io_stream *s, const int dont_move, void *buf,
 	return res;
 }
 
-/* Reat the data from the stream resource. If dont_move was set, the stream
- * position is unchanded. */
+/* Read the data from the stream resource.  If dont_move was set, the stream
+ * position is unchanged. */
 static ssize_t io_internal_read (struct io_stream *s, const int dont_move,
 		char *buf, size_t count)
 {
@@ -239,7 +239,7 @@ off_t io_seek (struct io_stream *s, off_t offset, int whence)
 	return res;
 }
 
-/* Wake up the IO reading thread */
+/* Wake up the IO reading thread. */
 static void io_wake_up (struct io_stream *s ATTR_UNUSED)
 {
 #ifdef HAVE_CURL
@@ -516,13 +516,13 @@ struct io_stream *io_open (const char *file, const int buffered)
 	return s;
 }
 
-/* Return != 0 if the there were no errors in the stream. */
+/* Return non-zero if the stream was free of errors. */
 static int io_ok_nolock (struct io_stream *s)
 {
 	return !s->read_error && s->errno_val == 0;
 }
 
-/* Return != 0 if the there were no errors in the stream. */
+/* Return non-zero if the stream was free of errors. */
 int io_ok (struct io_stream *s)
 {
 	int res;
@@ -562,7 +562,7 @@ static ssize_t io_peek_internal (struct io_stream *s, void *buf, size_t count)
 }
 
 /* Wait until there will be s->prebuffer bytes in the buffer or some event
- * occurs causing that the prebuffering is not possible. */
+ * occurs which prevents prebuffering. */
 void io_prebuffer (struct io_stream *s, const size_t to_fill)
 {
 	logit ("prebuffering to %lu bytes...", (unsigned long)to_fill);
@@ -628,7 +628,7 @@ static ssize_t io_read_unbuffered (struct io_stream *s, const int dont_move,
 	return res;
 }
 
-/* Read data from the string to the buffer of size count. Return the number
+/* Read data from the stream to the buffer of size count.  Return the number
  * of bytes read, 0 on EOF, < 0 on error. */
 ssize_t io_read (struct io_stream *s, void *buf, size_t count)
 {
@@ -806,9 +806,9 @@ void io_set_metadata_url (struct io_stream *s, const char *url)
 	UNLOCK (s->metadata.mutex);
 }
 
-/* Set the callback function invokedwhen the fill of the buffer changes.
- * data_ptr is a pointer passed to this function along with the pointer
- * to the stream. */
+/* Set the callback function to be invoked when the fill of the buffer
+ * changes.  data_ptr is a pointer passed to this function along with
+ * the pointer to the stream. */
 void io_set_buf_fill_callback (struct io_stream *s,
 		buf_fill_callback_t callback, void *data_ptr)
 {
