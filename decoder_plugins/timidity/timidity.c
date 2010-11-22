@@ -201,13 +201,25 @@ static struct decoder timidity_decoder =
 
 struct decoder *plugin_init ()
 {
-  int initresult = mid_init(options_get_str("TiMidity_Config"));
+  char *config;
+  int initresult;
+
+  config = options_get_str("TiMidity_Config");
+  if (config == NULL || strcasecmp(config, "yes") == 0)
+    initresult = mid_init(NULL);
+  else if (strcasecmp(config, "no") == 0)
+    initresult = mid_init_no_config();
+  else
+    initresult = mid_init(config);
 
   // Is there a better way to signal failed init?
   // The decoder-init-function may not return errors AFAIK...
   if(initresult < 0)
   {
-    fatal("TiMidity-Plugin: Error processing TiMidity-Configuration!");
+    if (config == NULL || strcasecmp(config, "yes") == 0)
+      config = "<default>";
+    fatal("TiMidity-Plugin: Error processing TiMidity-Configuration!\n"
+          "                              Configuration file is: %s", config);
     return NULL;
   }
 

@@ -401,7 +401,10 @@ CanStartInPlaylist	= yes
 # Volume-Range is 0-800.
 #TiMidity_Volume = 100
 # You can setup a TiMidity-Config-File here.
-# Leave unset to use library defaults (/etc/timidity.cfg mostly).
+# Leave it unset to use library defaults (/etc/timidity.cfg mostly).
+# Setting it to 'yes' also uses the library defaults.
+# Set it to 'no' if you don't have any configuration file.
+# Otherwise set it to the name of a specific file.
 #TiMidity_Config =
 
 

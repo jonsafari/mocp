@@ -74,7 +74,9 @@ In future:
 * Some options can be changed at run-time using a menu.
 * posix_fadvise() with POSIX_FADV_WILLNEED instead of the input buffer thread
   for files.
-* recording played sound to a file.
+* Recording played sound to a file.
+* Upgrade TiMidity decoder plug-in to TiMidity++.  This would add support
+  for soundfonts (.sf2) which are now more common.
 
 Maybe never:
 
