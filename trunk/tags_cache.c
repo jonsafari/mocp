@@ -293,7 +293,7 @@ static int cache_record_deserialize (struct cache_record *rec,
 	return 1;
 
 err:
-	logit ("Cache record deserialization error at %dB", p - serialized);
+	logit ("Cache record deserialization error at %ldB", (long) (p - serialized));
 	tags_free (rec->tags);
 	rec->tags = NULL;
 	return 0;

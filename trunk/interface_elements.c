@@ -2757,7 +2757,7 @@ static void info_win_draw_status (const struct info_win *w)
 	if (!w->in_entry && !w->too_small) {
 		wattrset (w->win, get_color(CLR_STATUS));
 		wmove (w->win, 0, 6);
-		xwprintw (w->win, "%-*s", sizeof(w->status_msg) - 1,
+		xwprintw (w->win, "%-*s", (int) sizeof(w->status_msg) - 1,
 				w->status_msg);
 		info_win_update_curs (w);
 	}
