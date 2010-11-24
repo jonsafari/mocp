@@ -75,7 +75,7 @@ static void *wav_open (const char *file)
 	
 	if ((data->wpc = WavpackOpenFileInput(file,
 				wv_error, o_flags, 0)) == NULL) {		
-		decoder_error (&data->error, ERROR_FATAL, 0, wv_error);
+		decoder_error (&data->error, ERROR_FATAL, 0, "%s", wv_error);
 		debug ("wv_open error: %s", wv_error);
 	}
 	else {	
