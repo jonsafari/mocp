@@ -260,7 +260,8 @@ extern "C" void *sidplay2_open(const char *file)
 
     if(!(*st))
     {
-      decoder_error(&s2d->error, ERROR_FATAL, 0, "Error determining length...", file);
+      decoder_error(&s2d->error, ERROR_FATAL, 0,
+                                 "Error determining length of %s", file);
       delete st;
       return s2d;
     }
