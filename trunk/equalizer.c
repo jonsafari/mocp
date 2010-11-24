@@ -53,6 +53,7 @@
 #include "audio_helper.h"
 #include "options.h"
 #include "log.h"
+#include "files.h"
 
 #include "equalizer.h"
 
@@ -304,12 +305,10 @@ void equalizer_read_config()
   char presetbuf[128];
   presetbuf[0] = 0;
 
-  size_t buffersize = -1;
-  ssize_t  readbytes=-1;
   int tmp;
   float ftmp;
 
-  while((readbytes=getline(&linebuffer, &buffersize, cf)>-1))
+  while((linebuffer=read_line(cf)))
   {
     if(
       strncasecmp
@@ -369,9 +368,8 @@ void equalizer_read_config()
           }
         }
     }
+    free(linebuffer);
   }
-
-  free(linebuffer);
 
   fclose(cf);
 
