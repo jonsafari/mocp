@@ -29,6 +29,17 @@
 #include "io.h"
 #include "audio.h"
 
+/* These merely silence compiler warnings about unused definitions in
+ * the Vorbis library header files. */
+#ifdef HAVE__ATTRIBUTE__
+static ov_callbacks *vorbis_unused[] ATTR_UNUSED = {
+	&OV_CALLBACKS_DEFAULT,
+	&OV_CALLBACKS_NOCLOSE,
+	&OV_CALLBACKS_STREAMONLY,
+	&OV_CALLBACKS_STREAMONLY_NOCLOSE
+};
+#endif
+
 struct vorbis_data
 {
 	struct io_stream *stream;
