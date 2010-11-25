@@ -25,7 +25,7 @@
 #endif
 #include <assert.h>
 
-#include <faad.h>
+#include <neaacdec.h>
 #include <id3tag.h>
 
 #define DEBUG
@@ -51,7 +51,7 @@ struct aac_data
 	char *overflow_buf;
 	int overflow_buf_len;
 
-	faacDecHandle decoder;	/* typedef void * */
+	NeAACDecHandle decoder;	/* typedef void * */
 
 	int ok; /* was this stream successfully opened? */
 	struct decoder_error error;
@@ -196,7 +196,7 @@ static int buffer_fill_frame(struct aac_data *data)
 
 static int aac_count_time (struct aac_data *data)
 {
-	faacDecFrameInfo frame_info;
+	NeAACDecFrameInfo frame_info;
 	int samples = 0, bytes = 0, frames = 0;
 	off_t file_size;
 	char *sample_buf;
@@ -213,7 +213,7 @@ static int aac_count_time (struct aac_data *data)
 		if (buffer_fill_frame(data) <= 0)
 			break;
 
-		sample_buf = faacDecDecode(data->decoder, &frame_info,
+		sample_buf = NeAACDecDecode(data->decoder, &frame_info,
 			buffer_data(data), buffer_length(data));
 		if (frame_info.error == 0 && frame_info.samples > 0) {
 			samples += frame_info.samples;
@@ -244,21 +244,21 @@ static int aac_count_time (struct aac_data *data)
 static void *aac_open_internal (struct io_stream *stream, const char *fname)
 {
 	struct aac_data *data;
-	faacDecConfigurationPtr neaac_cfg;
+	NeAACDecConfigurationPtr neaac_cfg;
 	int n;
 
 	/* init private struct */
 	data = (struct aac_data *)xmalloc (sizeof(struct aac_data));
 	memset (data, 0, sizeof(struct aac_data));
 	data->ok = 0;
-	data->decoder = faacDecOpen();
+	data->decoder = NeAACDecOpen();
 
 	/* set decoder config */
-	neaac_cfg = faacDecGetCurrentConfiguration(data->decoder);
+	neaac_cfg = NeAACDecGetCurrentConfiguration(data->decoder);
 	neaac_cfg->outputFormat = FAAD_FMT_16BIT;	/* force 16 bit audio */
 	neaac_cfg->downMatrix = 1;			/* 5.1 -> stereo */
 	neaac_cfg->dontUpSampleImplicitSBR = 0;		/* upsample, please! */
-	faacDecSetConfiguration(data->decoder, neaac_cfg);
+	NeAACDecSetConfiguration(data->decoder, neaac_cfg);
 
 	if (stream)
 		data->stream = stream;
@@ -280,7 +280,7 @@ static void *aac_open_internal (struct io_stream *stream, const char *fname)
 	}
 
 	/* in case of a bug, make sure there is at least some data
-	 * in the buffer for faacDecInit() to work with.
+	 * in the buffer for NeAACDecInit() to work with.
 	 */
 	if (buffer_fill_min(data, 256) <= 0) {
 		logit ("not enough data");
@@ -290,10 +290,10 @@ static void *aac_open_internal (struct io_stream *stream, const char *fname)
 	}
 
 	/* init decoder, returns the length of the header (if any) */
-	n = faacDecInit (data->decoder, buffer_data(data), buffer_length(data),
+	n = NeAACDecInit (data->decoder, buffer_data(data), buffer_length(data),
 		&data->sample_rate, &data->channels);
 	if (n < 0) {
-		logit ("faacDecInit failed");
+		logit ("NeAACDecInit failed");
 		decoder_error (&data->error, ERROR_FATAL, 0,
 				"libfaad can't open this stream");
 		return data;
@@ -311,7 +311,7 @@ static void *aac_open_internal (struct io_stream *stream, const char *fname)
 	logit ("skipping header (%d bytes)\n", n);
 	buffer_consume (data, n);
 
-	/*faacDecInitDRM(data->decoder, data->sample_rate, data->channels);*/
+	/*NeAACDecInitDRM(data->decoder, data->sample_rate, data->channels);*/
 
 	if (fname) {
 		data->duration = aac_count_time (data);
@@ -343,7 +343,7 @@ static void aac_close (void *prv_data)
 {
 	struct aac_data *data = (struct aac_data *)prv_data;
 
-	faacDecClose (data->decoder);
+	NeAACDecClose (data->decoder);
 	io_close (data->stream);
 	decoder_error_clear (&data->error);
 	free (data);
@@ -437,7 +437,7 @@ static int decode_one_frame (struct aac_data *data, void *buffer, int count)
 {
 	unsigned char *aac_data;
 	unsigned int aac_data_size;
-	faacDecFrameInfo frame_info;
+	NeAACDecFrameInfo frame_info;
 	char *sample_buf;
 	int bytes, rc;
 
@@ -451,17 +451,17 @@ static int decode_one_frame (struct aac_data *data, void *buffer, int count)
 	aac_data_size = buffer_length (data);
 
 	/* aac data -> raw pcm */
-	sample_buf = faacDecDecode (data->decoder, &frame_info, aac_data, aac_data_size);
+	sample_buf = NeAACDecDecode (data->decoder, &frame_info, aac_data, aac_data_size);
 
 	buffer_consume (data, frame_info.bytesconsumed);
 
 	if (!sample_buf || frame_info.bytesconsumed <= 0) {
-		logit ("fatal error: %s", faacDecGetErrorMessage(frame_info.error));
+		logit ("fatal error: %s", NeAACDecGetErrorMessage(frame_info.error));
 		return -1;
 	}
 
 	if (frame_info.error != 0) {
-		logit ("frame error: %s", faacDecGetErrorMessage(frame_info.error));
+		logit ("frame error: %s", NeAACDecGetErrorMessage(frame_info.error));
 		return -2;
 	}
 
