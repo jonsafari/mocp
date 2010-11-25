@@ -448,8 +448,13 @@ void options_init ()
 	option_add_bool ("SyncPlaylist", true);
 	option_add_int  ("InputBuffer", 512, CHECK_RANGE(1), 32, INT_MAX);
 	option_add_int  ("Prebuffering", 64, CHECK_RANGE(1), 0, INT_MAX);
+#ifdef DARWIN
+	option_add_str  ("JackOutLeft", "system:playback_1", CHECK_NONE);
+	option_add_str  ("JackOutRight", "system:playback_2", CHECK_NONE);
+#else
 	option_add_str  ("JackOutLeft", "alsa_pcm:playback_1", CHECK_NONE);
 	option_add_str  ("JackOutRight", "alsa_pcm:playback_2", CHECK_NONE);
+#endif
 	option_add_bool ("ASCIILines", false);
 	option_add_str  ("FastDir1", NULL, CHECK_NONE);
 	option_add_str  ("FastDir2", NULL, CHECK_NONE);

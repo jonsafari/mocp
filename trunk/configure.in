@@ -38,11 +38,12 @@ case "$OS" in
 	OpenBSD)
 		AC_DEFINE([OPENBSD], 1, [Define if your system is OpenBSD])
 		;;
+	Darwin)
+		AC_DEFINE([DARWIN], 1, [Define if your system is Darwin])
+		;;
 esac
 
 AC_DEFINE([_FILE_OFFSET_BITS], 64, [Use 64bit IO])
-
-LDFLAGS="$LDFLAGS -export-dynamic"
 
 AC_HEADER_STDC
 AC_HEADER_STDBOOL
@@ -173,6 +174,12 @@ then
 else
 	COMPILE_ALSA="no"
 fi
+
+AC_SUBST([ALSA_PCM])
+case "$host_os" in
+	darwin*) ALSA_PCM=system;;
+	      *) ALSA_PCM=alsa_pcm;;
+esac
 
 AC_ARG_WITH(jack, AS_HELP_STRING(--without-jack, Compile without JACK support.))
 
@@ -615,6 +622,7 @@ AC_OUTPUT([Makefile
 	  decoder_plugins/timidity/Makefile
 	  decoder_plugins/sidplay2/Makefile
 	  decoder_plugins/aac/Makefile
+	  config.example
 	  moc.spec
 	  ])
 
