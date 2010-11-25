@@ -45,8 +45,8 @@ struct aac_data
 	int rbuf_len;
 	int rbuf_pos;
 
-	uint8_t channels;
-	uint32_t sample_rate;
+	int channels;
+	int sample_rate;
 
 	char *overflow_buf;
 	int overflow_buf_len;
@@ -245,6 +245,8 @@ static void *aac_open_internal (struct io_stream *stream, const char *fname)
 {
 	struct aac_data *data;
 	NeAACDecConfigurationPtr neaac_cfg;
+	unsigned char channels;
+	unsigned long sample_rate;
 	int n;
 
 	/* init private struct */
@@ -290,8 +292,12 @@ static void *aac_open_internal (struct io_stream *stream, const char *fname)
 	}
 
 	/* init decoder, returns the length of the header (if any) */
+	channels = (unsigned char)data->channels;
+	sample_rate = data->sample_rate;
 	n = NeAACDecInit (data->decoder, buffer_data(data), buffer_length(data),
-		&data->sample_rate, &data->channels);
+		&sample_rate, &channels);
+	data->channels = channels;
+	data->sample_rate = (int)sample_rate;
 	if (n < 0) {
 		logit ("NeAACDecInit failed");
 		decoder_error (&data->error, ERROR_FATAL, 0,
@@ -468,7 +474,8 @@ static int decode_one_frame (struct aac_data *data, void *buffer, int count)
 	if (frame_info.samples <= 0)
 		return -2;
 
-	if (frame_info.channels != data->channels || frame_info.samplerate != data->sample_rate) {
+	if (frame_info.channels != (unsigned char)data->channels ||
+	    frame_info.samplerate != (unsigned long)data->sample_rate) {
 		logit ("invalid channel or sample_rate count\n");
 		return -2;
 	}
