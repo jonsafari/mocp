@@ -893,20 +893,24 @@ static void write_cache_version (const char *cache_dir)
 	char cur_version_tag[64];
 	char *fname = NULL;
 	FILE *f;
+	size_t rc;
 
 	fname = (char *)xmalloc (strlen(cache_dir) + sizeof("/moc_version_tag"));
 	sprintf (fname, "%s/moc_version_tag", cache_dir);
 
 	f = fopen (fname, "w");
 	if (!f) {
-		logit ("Error writing cache version tag: %s",
-				strerror(errno));
+		logit ("Error opening cache: %s",
+		        strerror(errno));
 		free (fname);
 		return;
 	}
 
 	create_version_tag (cur_version_tag);
-	fwrite (cur_version_tag, 1, strlen(cur_version_tag), f);
+	rc = fwrite (cur_version_tag, 1, strlen(cur_version_tag), f);
+	if (rc != 1)
+		logit ("Error writing cache version tag: %s",
+		        strerror(errno));
 
 	free (fname);
 	fclose (f);

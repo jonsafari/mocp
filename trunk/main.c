@@ -147,6 +147,7 @@ static void start_moc (const struct parameters *params, char **args,
 	if (!params->foreground && (server_sock = server_connect()) == -1) {
 		int notify_pipe[2];
 		int i = 0;
+		ssize_t rc;
 
 		printf ("Running the server...\n");
 
@@ -159,7 +160,10 @@ static void start_moc (const struct parameters *params, char **args,
 				set_me_server ();
 				list_sock = server_init (params->debug,
 						params->foreground);
-				write (notify_pipe[1], &i, sizeof(i));
+				rc = write (notify_pipe[1], &i, sizeof(i));
+				if (rc < 0)
+					fatal ("write() to notify pipe failed: %s",
+					        strerror(errno));
 				close (notify_pipe[0]);
 				close (notify_pipe[1]);
 				signal (SIGCHLD, sig_chld);

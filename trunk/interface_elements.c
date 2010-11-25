@@ -25,6 +25,7 @@
 #include <strings.h>
 #include <stdio.h>
 #include <assert.h>
+#include <errno.h>
 #include <time.h>
 #include <unistd.h>
 #include <wctype.h>
@@ -2381,6 +2382,16 @@ static void main_win_clear_plist (struct main_win *w)
 	main_win_draw (w);
 }
 
+/* Write to a file and log but otherwise ignore any error. */
+static void soft_write (int fd, const void *buf, size_t count)
+{
+	ssize_t rc;
+
+	rc = write (fd, buf, count);
+	if (rc < 0)
+		logit ("write() failed: %s", strerror(errno));
+}
+
 /* Set the has_xterm variable. */
 static void detect_term ()
 {
@@ -2398,37 +2409,37 @@ static void detect_term ()
 static void xterm_set_title (const int state, const char *title)
 {
 	if (has_xterm && options_get_int("SetXtermTitle")) {
-		write (1, "\033]0;", sizeof("\033]0;")-1);
-		write (1, "MOC ", sizeof("MOC ")-1);
+		soft_write (1, "\033]0;", sizeof("\033]0;")-1);
+		soft_write (1, "MOC ", sizeof("MOC ")-1);
 		
 		switch (state) {
 			case STATE_PLAY:
-				write (1, "[play]", sizeof("[play]")-1);
+				soft_write (1, "[play]", sizeof("[play]")-1);
 				break;
 			case STATE_STOP:
-				write (1, "[stop]", sizeof("[stop]")-1);
+				soft_write (1, "[stop]", sizeof("[stop]")-1);
 				break;
 			case STATE_PAUSE:
-				write (1, "[pause]", sizeof("[pause]")-1);
+				soft_write (1, "[pause]", sizeof("[pause]")-1);
 				break;
 		}
 
         if (title) 
         {
-            write (1, " - ", sizeof(" - ")-1);
+            soft_write (1, " - ", sizeof(" - ")-1);
             if (options_get_int ("NonUTFXterm"))
             {
                 char *iconv_title = xterm_iconv_str (title);
-                write (1, iconv_title, strlen(iconv_title));
+                soft_write (1, iconv_title, strlen(iconv_title));
                 free (iconv_title);
             }
             else
             {
-                write (1, title, strlen(title));
+                soft_write (1, title, strlen(title));
             }
         }
 
-        write (1, "\007", 1);
+        soft_write (1, "\007", 1);
     }
 }
 
@@ -2436,7 +2447,7 @@ static void xterm_set_title (const int state, const char *title)
 static void xterm_clear_title ()
 {
 	if (has_xterm && options_get_int("SetXtermTitle"))
-		write (1, "\033]2;\007", sizeof("\033]2;\007")-1);
+		soft_write (1, "\033]2;\007", sizeof("\033]2;\007")-1);
 }
 
 /* Set the has_screen variable. */
@@ -2456,27 +2467,27 @@ static void detect_screen ()
 static void screen_set_title (const int state, const char *title)
 {
 	if (has_screen && options_get_int("SetScreenTitle")) {
-		write (1, SCREEN_TITLE_START, sizeof(SCREEN_TITLE_START)-1);
-		write (1, "MOC ", sizeof("MOC ")-1);
+		soft_write (1, SCREEN_TITLE_START, sizeof(SCREEN_TITLE_START)-1);
+		soft_write (1, "MOC ", sizeof("MOC ")-1);
 		
 		switch (state) {
 			case STATE_PLAY:
-				write (1, "[play]", sizeof("[play]")-1);
+				soft_write (1, "[play]", sizeof("[play]")-1);
 				break;
 			case STATE_STOP:
-				write (1, "[stop]", sizeof("[stop]")-1);
+				soft_write (1, "[stop]", sizeof("[stop]")-1);
 				break;
 			case STATE_PAUSE:
-				write (1, "[pause]", sizeof("[pause]")-1);
+				soft_write (1, "[pause]", sizeof("[pause]")-1);
 				break;
 		}
 		
 		if (title) {
-			write (1, " - ", sizeof(" - ")-1);
-			write (1, title, strlen(title));
+			soft_write (1, " - ", sizeof(" - ")-1);
+			soft_write (1, title, strlen(title));
 		}
 
-		write (1, SCREEN_TITLE_END, sizeof(SCREEN_TITLE_END)-1);
+		soft_write (1, SCREEN_TITLE_END, sizeof(SCREEN_TITLE_END)-1);
 	}
 }
 
@@ -2484,8 +2495,8 @@ static void screen_clear_title ()
 {
 	if (has_screen && options_get_int("SetScreenTitle"))
 	{
-		write (1, SCREEN_TITLE_START, sizeof(SCREEN_TITLE_START)-1);
-		write (1, SCREEN_TITLE_END, sizeof(SCREEN_TITLE_END)-1);
+		soft_write (1, SCREEN_TITLE_START, sizeof(SCREEN_TITLE_START)-1);
+		soft_write (1, SCREEN_TITLE_END, sizeof(SCREEN_TITLE_END)-1);
 	}
 }
 
