@@ -79,7 +79,8 @@ To support audio formats you need:
  - MIDI - libtimidity (http://timidity.sourceforge.net/)
  - SID - sidplay2 (sidplay2.sourceforge.net/)
  - wavpack - libwavpack (http://www.wavpack.com/)
- - AAC - libfaad2 and libid3tag
+ - AAC - libfaad2 version 2.7 or later (http://www.audiocoding.com/), and
+         libid3tag (http://www.underbit.com/products/mad/)
 
 For network streams:
  - libcurl 7.12.0 or newer (http://curl.haxx.se)
