@@ -3817,11 +3817,18 @@ void iface_get_key (struct iface_key *k)
 	if ((ch = wgetch(main_win.win)) == (wint_t)ERR)
 		interface_fatal ("wgetch() failed");
 
-	if (ch < 32 && ch != '\n' && ch != '\t') {  /* Unprintable, generally control sequences */
+	if (ch < 32 && ch != '\n' && ch != '\t') {
+		/* Unprintable, generally control sequences */
 		k->type = IFACE_KEY_FUNCTION;
 		k->key.func = ch;
 	}
-	else if (ch < 255) { /* Regular char */
+	else if (ch == 0x7f) {
+		/* Workaround for backspace on many terminals */
+		k->type = IFACE_KEY_FUNCTION;
+		k->key.func = KEY_BACKSPACE;
+	}
+	else if (ch < 255) {
+		/* Regular char */
 		int meta;
 
 #ifdef HAVE_NCURSESW
@@ -3842,11 +3849,6 @@ void iface_get_key (struct iface_key *k)
 		}
 	}
 	else {
-	
-		/* Workaround for backspace on many terminals */
-		if (ch == 0x7f)
-			ch = KEY_BACKSPACE;
-	
 		k->type = IFACE_KEY_FUNCTION;
 		k->key.func = ch;
 	}
