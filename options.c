@@ -629,9 +629,9 @@ static int set_option (const char *name, const char *value_x)
 
 	i = find_option (name, OPTION_ANY);
 	if (is_deprecated_option(name)) {
-		fprintf (stderr, "Option '%s' was ignored, remove it "
-				"from the configuration file.\n", name);
-		sleep (1);
+		fprintf (stderr, "\n\tOption '%s' was ignored;"
+		                 "\n\tplease remove it from your configuration file.\n", name);
+		sleep (5);
 		return 1;
 	}
 
@@ -660,8 +660,8 @@ static int set_option (const char *name, const char *value_x)
 			value = "yes";
 	}
 	if (value) {
-		fprintf (stderr, "\n\tThe valid values of '%s' have changed, "
-				"\n\tplease update your configuration file.\n\n", name);
+		fprintf (stderr, "\n\tThe valid values of '%s' have changed;"
+		                 "\n\tplease update your configuration file.\n\n", name);
 		sleep (5);
 	} else {
 		value = value_x;
