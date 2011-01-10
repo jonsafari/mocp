@@ -35,6 +35,9 @@ void lists_strs_append (lists_t_strs *list, char *s);
 void lists_strs_remove (lists_t_strs *list);
 void lists_strs_replace (lists_t_strs *list, int index, char *s);
 
+/* Helper functions. */
+int lists_strs_tokenise (lists_t_strs *list, const char *s);
+
 #ifdef __cplusplus
 }
 #endif
