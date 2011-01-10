@@ -450,6 +450,13 @@ CanStartInPlaylist	= yes
 #
 #OnSongChange = "/home/jack/.moc/myscript %a %r"
 
+# RepeatSongChange.
+# If 'yes' then MOC will execute the 'OnSongChange' command every time a
+# song starts playing regardless of whether or not it is just repeating.
+# Otherwise the command will only be executed when a different song is
+# started.
+#RepeatSongChange = no
+
 # OnStop.
 # Run the following command (full path, no arguments) when MOC changes state
 # to stopped (when user stopped playing or changes a song).

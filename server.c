@@ -401,7 +401,8 @@ static void on_song_change()
 	command = xstrdup(options_get_str("OnSongChange"));
 
 	if((command)&&(curr_file) && 
-			((!last_file) || (strcmp(last_file,curr_file)))) {
+			(options_get_bool("RepeatSongChange") ||
+			(!last_file) || (strcmp(last_file,curr_file)))) {
 		while(command[i] != 0) {
 			if((command[i] == '/')&&(argc == 2))
 				bin = &command[i] + 1;
