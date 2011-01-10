@@ -213,3 +213,26 @@ void lists_strs_replace (lists_t_strs *list, int index, char *s)
 	str = lists_strs_swap (list, index, str);
 	free (str);
 }
+
+/* Tokenise a string and append the tokens to the list.
+ * Returns the number of tokens appended. */
+int lists_strs_tokenise (lists_t_strs *list, const char *s)
+{
+	int result;
+	char *str, *token;
+
+	assert (list);
+	assert (s);
+
+	result = 0;
+	str = xstrdup (s);
+	token = strtok (str, " \t");
+	while (token) {
+		result += 1;
+		lists_strs_append (list, token);
+		token = strtok (NULL, " \t");
+	}
+
+	free (str);
+	return result;
+}
