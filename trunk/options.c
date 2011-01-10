@@ -553,6 +553,7 @@ void options_init ()
 	option_add_bool ("SidPlay2_PlaySubTunes", true);
 
 	option_add_str  ("OnSongChange", NULL, CHECK_NONE);
+	option_add_bool ("RepeatSongChange", false);
 	option_add_str  ("OnStop", NULL, CHECK_NONE);
 
 	option_add_bool ("Softmixer_SaveState", true);
