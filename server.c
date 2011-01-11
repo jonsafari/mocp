@@ -380,109 +380,121 @@ static void add_event (struct client *cli, const int event, void *data)
 	UNLOCK (cli->events_mutex);
 }
 
-static void on_song_change()
+static void on_song_change ()
 {
-	struct file_tags *curr_tags = NULL;
 	static char *last_file = NULL;
+	static lists_t_strs *on_song_change = NULL;
 
-	char *curr_file = NULL;
-	char *command = NULL;
-	char *bin = NULL;
-	char **args = NULL;
-	char *save = NULL;
-	char *track = NULL;
-	char duration_sec[10] = "";
-	char duration_nice[12] = "";
+	int ix;
+	char *curr_file;
+	char **args;
+	struct file_tags *curr_tags;
+	lists_t_strs *arg_list;
 
-	int argc = 2;
-	int i = 0;
+	/* We only need to do OnSongChange tokenisation once. */
+	if (on_song_change == NULL) {
+		char *command;
 
-	curr_file = audio_get_sname();
-	command = xstrdup(options_get_str("OnSongChange"));
+		on_song_change = lists_strs_new (5);
+		command = options_get_str ("OnSongChange");
 
-	if((command)&&(curr_file) && 
-			(options_get_bool("RepeatSongChange") ||
-			(!last_file) || (strcmp(last_file,curr_file)))) {
-		while(command[i] != 0) {
-			if((command[i] == '/')&&(argc == 2))
-				bin = &command[i] + 1;
-			else if(command[i] == ' ')
-				argc++;
-			i++;
-		}
-
-		curr_tags = tags_cache_get_immediate (&tags_cache, curr_file,
-				TAGS_COMMENTS | TAGS_TIME);
-		args = xmalloc(sizeof(char *) * argc);
-		
-		args[0] = bin;
-
-		strtok_r(command, " ", &save);
-		
-		for(i=1;i<(argc - 1);i++) {
-			args[i] = strtok_r(NULL, " ", &save);
-			if((args[i][0] == '%')&&(curr_tags)) {
-				switch(args[i][1]) {
-					case 'a' :
-						args[i] = curr_tags->artist ? 
-							curr_tags->artist : 
-							"";
-						break;
-					case 'r' :
-						args[i] = curr_tags->album ?
-							curr_tags->album :
-							"";
-						break;
-					case 't' :
-						args[i] = curr_tags->title ?
-							curr_tags->title :
-							"";
-						break;
-					case 'n' :
-						if (curr_tags->track >= 0) {
-							track = xmalloc(4);
-							snprintf(track, 4, "%d",
-								curr_tags->track);
-							args[i] = track;
-						}
-						else
-							args[i] = "";
-						break;
-					case 'f' :
-						args[i] = curr_file;
-						break;
-					case 'D':
-						if (curr_tags->time >= 0)
-							sprintf (duration_sec,
-									"%d",
-									curr_tags->time);
-						args[i] = duration_sec;
-						break;
-					case 'd':
-						if (curr_tags->time >= 0)
-							sec_to_min (duration_nice,
-									curr_tags->time);
-						args[i] = duration_nice;
-						break;
-				}
-			}
-		}
-
-		args[argc - 1] = NULL;
-
-		if(!fork()) {
-			execve(command, args, environ);
-			exit(-1);
-		}
-
-		free(command);
-		if (track)
-			free(track);
-		free(args);
-		tags_free (curr_tags);
+		if (command)
+			lists_strs_tokenise (on_song_change, command);
 	}
 
-	free(last_file);
+	if (lists_strs_empty (on_song_change))
+		return;
+
+	curr_file = audio_get_sname ();
+
+	if (curr_file == NULL)
+		return;
+
+	if (!options_get_bool ("RepeatSongChange")) {
+		if (last_file && strcmp (last_file, curr_file) == 0) {
+			free (curr_file);
+			return;
+		}
+	}
+
+	curr_tags = tags_cache_get_immediate (&tags_cache, curr_file,
+	                                      TAGS_COMMENTS | TAGS_TIME);
+	arg_list = lists_strs_new (5);
+	for (ix = 0; ix < lists_strs_size (on_song_change); ix += 1) {
+		char *arg, *str;
+
+		arg = lists_strs_at (on_song_change, ix);
+		if (arg[0] != '%')
+			lists_strs_append (arg_list, arg);
+		else if (!curr_tags)
+			lists_strs_append (arg_list, "");
+		else {
+			switch (arg[1]) {
+			case 'a':
+				str = curr_tags->artist ? curr_tags->artist : "";
+				lists_strs_append (arg_list, str);
+				break;
+			case 'r':
+				str = curr_tags->album ? curr_tags->album : "";
+				lists_strs_append (arg_list, str);
+				break;
+			case 't':
+				str = curr_tags->title ? curr_tags->title : "";
+				lists_strs_append (arg_list, str);
+				break;
+			case 'n':
+				if (curr_tags->track >= 0) {
+					str = (char *) xmalloc (sizeof (char) * 4);
+					snprintf (str, 4, "%d", curr_tags->track);
+					lists_strs_push (arg_list, str);
+				}
+				else
+					lists_strs_append (arg_list, "");
+				break;
+			case 'f':
+				lists_strs_append (arg_list, curr_file);
+				break;
+			case 'D':
+				if (curr_tags->time >= 0) {
+					str = (char *) xmalloc (sizeof (char) * 10);
+					snprintf (str, 10, "%d", curr_tags->time);
+					lists_strs_push (arg_list, str);
+				}
+				else
+					lists_strs_append (arg_list, "");
+				break;
+			case 'd':
+				if (curr_tags->time >= 0) {
+					str = (char *) xmalloc (sizeof (char) * 12);
+					sec_to_min (str, curr_tags->time);
+					lists_strs_push (arg_list, str);
+				}
+				else
+					lists_strs_append (arg_list, "");
+				break;
+			default:
+				lists_strs_append (arg_list, arg);
+			}
+		}
+	}
+	tags_free (curr_tags);
+
+	debug ("Running command:");
+	args = (char **) xmalloc (sizeof (char *) * (lists_strs_size (arg_list) + 1));
+	for (ix = 0; ix < lists_strs_size (arg_list); ix += 1) {
+		args[ix] = lists_strs_at (arg_list, ix);
+		debug ("    '%s'", args[ix]);
+	}
+	args[ix] = NULL;
+
+	if (fork () == 0) {
+		execve (args[0], args, environ);
+		exit (-1);
+	}
+
+	lists_strs_free (arg_list);
+	free (args);
+	free (last_file);
 	last_file = curr_file;
 }
 

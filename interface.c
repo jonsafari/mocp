@@ -2935,156 +2935,108 @@ static char *get_title (const char *file)
 }
 
 /* Substitute arguments for custom command that begin with '%'.
- * The argument is free()ed is substituted, the new value is returned. */
-static char *custom_cmd_substitute (char *arg)
+ * The new value is returned. */
+static char *custom_cmd_substitute (const char *arg)
 {
-	if (!strcmp(arg, "%i")) {
-		char *file = iface_get_curr_file ();
+	char *result = NULL;
+	char *file = NULL;
+	struct file_tags *tags = NULL;
 
-		free (arg);
-		arg = get_title (file);
-		free (file);
-	}
-	else if (!strcmp(arg, "%t")) {
-		struct file_tags *tags;
-		char *file = iface_get_curr_file ();
-		
-		free (arg);
-
-		tags = get_tags (file);
-		arg = xstrdup (tags->title);
-		
-		free (file);
-		tags_free (tags);
-	}
-	else if (!strcmp(arg, "%a")) {
-		struct file_tags *tags;
-		char *file = iface_get_curr_file ();
-		
-		free (arg);
-
-		tags = get_tags (file);
-		arg = xstrdup (tags->album);
-		
-		free (file);
-		tags_free (tags);
-	}
-	else if (!strcmp(arg, "%r")) {
-		struct file_tags *tags;
-		char *file = iface_get_curr_file ();
-		
-		free (arg);
-
-		tags = get_tags (file);
-		arg = xstrdup (tags->artist);
-		
-		free (file);
-		tags_free (tags);
-	}
-	else if (!strcmp(arg, "%n")) {
-		struct file_tags *tags;
-		char *file = iface_get_curr_file ();
-		
-		free (arg);
-
-		tags = get_tags (file);
-		arg = (char *)xmalloc(sizeof(char) * 10);
-		snprintf (arg, 10, "%d", tags->track);
-		
-		free (file);
-		tags_free (tags);
-	}
-	else if (!strcmp(arg, "%m")) {
-		struct file_tags *tags;
-		char *file = iface_get_curr_file ();
-		
-		free (arg);
-
-		tags = get_tags (file);
-		arg = (char *)xmalloc(sizeof(char) * 10);
-		snprintf (arg, 10, "%d", tags->time);
-		
-		free (file);
-		tags_free (tags);
-	}
-	else if (!strcmp(arg, "%f")) {
-		free (arg);
-		arg = iface_get_curr_file ();
-	}
-	else if (!strcmp(arg, "%I")) {
-		free (arg);
-		arg = xstrdup (curr_file.title);
-	}
-	else if (!strcmp(arg, "%T")) {
-		free (arg);
-		if (curr_file.tags && curr_file.tags->title)
-			arg = xstrdup (curr_file.tags->title);
-		else
-			arg = NULL;
-	}
-	else if (!strcmp(arg, "%A")) {
-		free (arg);
-		if (curr_file.tags && curr_file.tags->album)
-			arg = xstrdup (curr_file.tags->album);
-		else
-			arg = NULL;
-	}
-	else if (!strcmp(arg, "%R")) {
-		free (arg);
-		if (curr_file.tags && curr_file.tags->artist)
-			arg = xstrdup (curr_file.tags->artist);
-		else
-			arg = NULL;
-	}
-	else if (!strcmp(arg, "%N")) {
-		free (arg);
-		if (curr_file.tags && curr_file.tags->track != -1) {
-			arg = (char *)xmalloc(sizeof(char) * 10);
-			snprintf (arg, 10, "%d", curr_file.tags->track);
+	if (strlen (arg) == 2 && arg[0] == '%') {
+		switch (arg[1]) {
+		case 'i':
+			file = iface_get_curr_file ();
+			result = get_title (file);
+			break;
+		case 't':
+			file = iface_get_curr_file ();
+			tags = get_tags (file);
+			result = xstrdup (tags->title);
+			break;
+		case 'a':
+			file = iface_get_curr_file ();
+			tags = get_tags (file);
+			result = xstrdup (tags->album);
+			break;
+		case 'r':
+			file = iface_get_curr_file ();
+			tags = get_tags (file);
+			result = xstrdup (tags->artist);
+			break;
+		case 'n':
+			file = iface_get_curr_file ();
+			tags = get_tags (file);
+			result = (char *) xmalloc (sizeof (char) * 10);
+			snprintf (result, 10, "%d", tags->track);
+			break;
+		case 'm':
+			file = iface_get_curr_file ();
+			tags = get_tags (file);
+			result = (char *) xmalloc (sizeof (char) * 10);
+			snprintf (result, 10, "%d", tags->time);
+			break;
+		case 'f':
+			result = iface_get_curr_file ();
+			break;
+		case 'I':
+			result = xstrdup (curr_file.title);
+			break;
+		case 'T':
+			if (curr_file.tags && curr_file.tags->title)
+				result = xstrdup (curr_file.tags->title);
+			break;
+		case 'A':
+			if (curr_file.tags && curr_file.tags->album)
+				result = xstrdup (curr_file.tags->album);
+			break;
+		case 'R':
+			if (curr_file.tags && curr_file.tags->artist)
+				result = xstrdup (curr_file.tags->artist);
+			break;
+		case 'N':
+			if (curr_file.tags && curr_file.tags->track != -1) {
+				result = (char *) xmalloc (sizeof (char) * 10);
+				snprintf (result, 10, "%d", curr_file.tags->track);
+			}
+			break;
+		case 'M':
+			if (curr_file.tags && curr_file.tags->time != -1) {
+				result = (char *) xmalloc (sizeof (char) * 10);
+				snprintf (result, 10, "%d", curr_file.tags->time);
+			}
+			break;
+		case 'F':
+			if (curr_file.file)
+				result = xstrdup (curr_file.file);
+			break;
+		case 'S':
+			if (curr_file.file && curr_file.block_file) {
+				result = (char *) xmalloc (sizeof (char) * 10);
+				snprintf (result, 10, "%d", curr_file.block_start);
+			}
+			break;
+		case 'E':
+			if (curr_file.file && curr_file.block_file) {
+				result = (char *) xmalloc (sizeof (char) * 10);
+				snprintf (result, 10, "%d", curr_file.block_end);
+			}
+			break;
+		default:
+			result = xstrdup (arg);
 		}
-		else
-			arg = NULL;
 	}
-	else if (!strcmp(arg, "%M")) {
-		free (arg);
-		if (curr_file.tags && curr_file.tags->time != -1) {
-			arg = (char *)xmalloc(sizeof(char) * 10);
-			snprintf (arg, 10, "%d", curr_file.tags->time);
-		}
-		else
-			arg = NULL;
-	}
-	else if (!strcmp(arg, "%F")) {
-		free (arg);
-		if (curr_file.file)
-			arg = xstrdup (curr_file.file);
-		else
-			arg = NULL;
-	}
-	else if (!strcmp(arg, "%S")) {
-		free (arg);
-		if (curr_file.file && curr_file.block_file) {
-			arg = (char *)xmalloc(sizeof(char) * 10);
-			snprintf (arg, 10, "%d", curr_file.block_start);
-		}
-		else
-			arg = NULL;
-	}
-	else if (!strcmp(arg, "%E")) {
-		free (arg);
-		if (curr_file.file && curr_file.block_file) {
-			arg = (char *)xmalloc(sizeof(char) * 10);
-			snprintf (arg, 10, "%d", curr_file.block_end);
-		}
-		else
-			arg = NULL;
-	}
+	else
+		result = xstrdup (arg);
 
 	/* Replace nonexisting data with an empty string. */
-	if (!arg)
-		arg = xstrdup ("");
+	if (!result)
+		result = xstrdup ("");
 
-	return arg;
+	free (file);
+	if (tags)
+		tags_free (tags);
+
+	return result;
 }
 
 static void run_external_cmd (char **args, const int arg_num)
@@ -3093,6 +3045,7 @@ static void run_external_cmd (char **args, const int arg_num)
 
 	assert (args != NULL);
 	assert (arg_num >= 1);
+	assert (args[arg_num] == NULL);
 	
 	iface_temporary_exit ();
 	
@@ -3129,60 +3082,42 @@ static void run_external_cmd (char **args, const int arg_num)
 static void exec_custom_command (const char *option)
 {
 	char *cmd;
-	char *args[20];
-	int arg_num = 1;
+	char **args;
+	int ix, arg_num;
+	lists_t_strs *arg_list;
 
 	assert (option != NULL);
-	
-	cmd = xstrdup (options_get_str(option));
-	if (!cmd || !cmd[0]) {
+
+	cmd = options_get_str (option);
+	if (!cmd || strlen (cmd) == 0) {
 		error ("%s is not set", option);
-		if (cmd)
-			free (cmd);
 		return;
 	}
 
 	/* Split into arguments */
-
-	if (!(args[0] = xstrdup(strtok(cmd, " \t")))) {
+	arg_list = lists_strs_new (5);
+	arg_num = lists_strs_tokenise (arg_list, cmd);
+	if (arg_num == 0) {
 		error ("Malformed %s option", option);
-		free (cmd);
-		return;
-	}
-	
-	while (arg_num < (int)(sizeof(args)/sizeof(args[0])) - 1
-			&& (args[arg_num] = xstrdup(strtok(NULL, " \t")))) {
-		args[arg_num] = custom_cmd_substitute (args[arg_num]);
-		arg_num++;
-	}
-	if (arg_num == (int)sizeof(args)/sizeof(args[0]) - 1) {
-		error ("Too many arguments in %s", option);
-
-		do {
-			free (args[--arg_num]);
-		} while (arg_num);
-		
-		free (cmd);
+		lists_strs_free (arg_list);
 		return;
 	}
 
-	args[arg_num] = NULL;
-
-	{
-		int i;
-		
-		logit ("Running command:");
-
-		for (i = 0; i < arg_num; i++)
-			logit ("'%s'", args[i]);
+	logit ("Running command:");
+	args = (char **) xmalloc (sizeof (char *) * (arg_num + 1));
+	for (ix = 0; ix < arg_num; ix += 1) {
+		args[ix] = custom_cmd_substitute (lists_strs_at (arg_list, ix));
+		logit (" '%s'", args[ix]);
 	}
+	args[ix] = NULL;
+	logit ("\n");
 
 	run_external_cmd (args, arg_num);
 
-	do {
+	while (arg_num > 0)
 		free (args[--arg_num]);
-	} while (arg_num);
-	free (cmd);
+	free (args);
+	lists_strs_free (arg_list);
 
 	if (iface_in_dir_menu())
 		reread_dir ();
