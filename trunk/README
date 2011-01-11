@@ -62,7 +62,7 @@ What software is required to compile it?
  - ncurses (probably already installed in your system)
  - C and C++ compilers (MOC is written in C, but libtool and some decoder
    plugins require a C++ compiler).
- - libdb version >= 4
+ - libdb version 4 or later
 
 To support audio formats you need:
  - Ogg Vorbis - libvorbis (http://www.xiph.org/ogg/vorbis/download/)
@@ -83,7 +83,7 @@ To support audio formats you need:
          libid3tag (http://www.underbit.com/products/mad/)
 
 For network streams:
- - libcurl 7.12.0 or newer (http://curl.haxx.se)
+ - libcurl 7.12.0 or later (http://curl.haxx.se)
 
 For resampling (playing files with sample rate not supported by your hardware):
  - libresamplerate 0.1.2 or newer (http://www.mega-nerd.com/SRC/index.html)

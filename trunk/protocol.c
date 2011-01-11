@@ -42,7 +42,7 @@ struct packet_buf
 	size_t len;
 };
 
-/* Create a socket name, return NULL if the name could not be created */
+/* Create a socket name, return NULL if the name could not be created. */
 char *socket_name ()
 {
 	char *socket_name = create_file_name (SOCKET_NAME);
@@ -53,11 +53,11 @@ char *socket_name ()
 	return socket_name;
 }
 
-/* Get an intiger value from the socket, return == 0 on error. */
+/* Get an integer value from the socket, return == 0 on error. */
 int get_int (int sock, int *i)
 {
 	int res;
-	
+
 	res = recv (sock, i, sizeof(int), 0);
 	if (res == -1)
 		logit ("recv() failed when getting int: %s", strerror(errno));
@@ -65,12 +65,12 @@ int get_int (int sock, int *i)
 	return res == sizeof(int) ? 1 : 0;
 }
 
-/* Get an intiger value from the socket without blocking. */
+/* Get an integer value from the socket without blocking. */
 enum noblock_io_status get_int_noblock (int sock, int *i)
 {
 	int res;
 	long flags;
-	
+
 	if ((flags = fcntl(sock, F_GETFL)) == -1)
 		fatal ("fcntl(sock, F_GETFL) failed: %s", strerror(errno));
 	flags |= O_NONBLOCK;
@@ -82,7 +82,7 @@ enum noblock_io_status get_int_noblock (int sock, int *i)
 	if (fcntl(sock, F_SETFL, flags) == -1)
 		fatal ("Restoring flags for socket failed: %s",
 				strerror(errno));
-	
+
 	if (res == sizeof(int))
 		return NB_IO_OK;
 	if (res < 0 && errno == EAGAIN)
@@ -97,7 +97,7 @@ enum noblock_io_status get_int_noblock (int sock, int *i)
 int send_int (int sock, int i)
 {
 	int res;
-	
+
 	res = send (sock, &i, sizeof(int), 0);
 	if (res == -1)
 		logit ("send() failed: %s", strerror(errno));
@@ -110,7 +110,7 @@ int send_int (int sock, int i)
 static int get_long (int sock, long *i)
 {
 	int res;
-	
+
 	res = recv (sock, i, sizeof(long), 0);
 	if (res == -1)
 		logit ("recv() failed when getting int: %s", strerror(errno));
@@ -122,7 +122,7 @@ static int get_long (int sock, long *i)
 static int send_long (int sock, long i)
 {
 	int res;
-	
+
 	res = send (sock, &i, sizeof(long), 0);
 	if (res == -1)
 		logit ("send() failed: %s", strerror(errno));
@@ -137,7 +137,7 @@ char *get_str (int sock)
 	int len;
 	int res, nread = 0;
 	char *str;
-	
+
 	if (!get_int(sock, &len))
 		return NULL;
 
@@ -170,13 +170,13 @@ char *get_str (int sock)
 int send_str (int sock, const char *str)
 {
 	int len = strlen (str);
-	
+
 	if (!send_int(sock, strlen(str)))
 		return 0;
 
 	if (send(sock, str, len, 0) != len)
 		return 0;
-	
+
 	return 1;
 }
 
@@ -184,7 +184,7 @@ int send_str (int sock, const char *str)
 int get_time (int sock, time_t *i)
 {
 	int res;
-	
+
 	res = recv (sock, i, sizeof(time_t), 0);
 	if (res == -1)
 		logit ("recv() failed when getting time_t: %s", strerror(errno));
@@ -196,7 +196,7 @@ int get_time (int sock, time_t *i)
 int send_time (int sock, time_t i)
 {
 	int res;
-	
+
 	res = send (sock, &i, sizeof(time_t), 0);
 	if (res == -1)
 		logit ("send() failed: %s", strerror(errno));
@@ -249,7 +249,7 @@ static void packet_buf_add_int (struct packet_buf *b, const int n)
 static void packet_buf_add_str (struct packet_buf *b, const char *str)
 {
 	int str_len;
-	
+
 	assert (b != NULL);
 	assert (str != NULL);
 
@@ -275,7 +275,7 @@ static void packet_buf_add_time (struct packet_buf *b, const time_t n)
 void packet_buf_add_tags (struct packet_buf *b, const struct file_tags *tags)
 {
 	assert (b != NULL);
-	
+
 	if (tags) {
 		packet_buf_add_str (b, tags->title ? tags->title : "");
 		packet_buf_add_str (b, tags->artist ? tags->artist : "");
@@ -286,7 +286,7 @@ void packet_buf_add_tags (struct packet_buf *b, const struct file_tags *tags)
 		packet_buf_add_int (b, tags->filled);
 	}
 	else {
-		
+
 		/* empty tags: */
 		packet_buf_add_str (b, ""); /* title */
 		packet_buf_add_str (b, ""); /* artist */
@@ -311,7 +311,7 @@ static int send_all (int sock, const char *buf, const size_t size)
 {
 	ssize_t sent;
 	size_t send_pos = 0;
-	
+
 	while (send_pos < size) {
 		sent = send (sock, buf + send_pos, size - send_pos, 0);
 		if (sent < 0) {
@@ -330,7 +330,7 @@ int send_item (int sock, const struct plist_item *item)
 {
 	int res = 1;
 	struct packet_buf *b;
-	
+
 	if (!item) {
 		if (!send_str(sock, "")) {
 			logit ("Error while sending empty item");
@@ -345,7 +345,7 @@ int send_item (int sock, const struct plist_item *item)
 		logit ("Error when sending item");
 		res = 0;
 	}
-		
+
 	packet_buf_free (b);
 	return res;
 }
@@ -355,29 +355,29 @@ struct file_tags *recv_tags (int sock)
 	struct file_tags *tags = tags_new ();
 
 	if (!(tags->title = get_str(sock))) {
-		logit ("Error while receiving titile");
+		logit ("Error while receiving title");
 		tags_free (tags);
 		return NULL;
 	}
-	
+
 	if (!(tags->artist = get_str(sock))) {
 		logit ("Error while receiving artist");
 		tags_free (tags);
 		return NULL;
 	}
-	
+
 	if (!(tags->album = get_str(sock))) {
 		logit ("Error while receiving album");
 		tags_free (tags);
 		return NULL;
 	}
-		
+
 	if (!get_int(sock, &tags->track)) {
-		logit ("Error while receiving ");
+		logit ("Error while receiving track");
 		tags_free (tags);
 		return NULL;
 	}
-	
+
 	if (!get_int(sock, &tags->time)) {
 		logit ("Error while receiving time");
 		tags_free (tags);
@@ -407,7 +407,7 @@ struct file_tags *recv_tags (int sock)
 	return tags;
 }
 
-/* Send tags. If tags == NULL, send empty tags. REturn 0 on error. */
+/* Send tags. If tags == NULL, send empty tags. Return 0 on error. */
 int send_tags (int sock, const struct file_tags *tags)
 {
 	int res = 1;
@@ -415,10 +415,10 @@ int send_tags (int sock, const struct file_tags *tags)
 
 	b = packet_buf_new ();
 	packet_buf_add_tags (b, tags);
-	
+
 	if (!send_all(sock, b->buf, b->len))
 		res = 0;
-	
+
 	packet_buf_free (b);
 	return res;
 }
@@ -458,7 +458,7 @@ struct plist_item *recv_item (int sock)
 				free (item->title_tags);
 			free (item);
 		}
-		
+
 		if (!get_time(sock, &item->mtime)) {
 			logit ("Error while receiving mtime");
 			if (item->title_tags)
@@ -469,14 +469,14 @@ struct plist_item *recv_item (int sock)
 		}
 
 	}
-	
+
 	return item;
 }
 
 struct move_ev_data *recv_move_ev_data (int sock)
 {
 	struct move_ev_data *d;
-	
+
 	d = (struct move_ev_data *)xmalloc (sizeof(struct move_ev_data));
 
 	if (!(d->from = get_str(sock))) {
@@ -499,7 +499,7 @@ struct move_ev_data *recv_move_ev_data (int sock)
 void event_push (struct event_queue *q, const int event, void *data)
 {
 	assert (q != NULL);
-	
+
 	if (!q->head) {
 		q->head = (struct event *)xmalloc (sizeof(struct event));
 		q->head->next = NULL;
@@ -511,7 +511,7 @@ void event_push (struct event_queue *q, const int event, void *data)
 		assert (q->head != NULL);
 		assert (q->tail != NULL);
 		assert (q->tail->next == NULL);
-		
+
 		q->tail->next = (struct event *)xmalloc (
 				sizeof(struct event));
 		q->tail = q->tail->next;
@@ -525,7 +525,7 @@ void event_push (struct event_queue *q, const int event, void *data)
 void event_pop (struct event_queue *q)
 {
 	struct event *e;
-	
+
 	assert (q != NULL);
 	assert (q->head != NULL);
 	assert (q->tail != NULL);
@@ -533,7 +533,7 @@ void event_pop (struct event_queue *q)
 	e = q->head;
 	q->head = e->next;
 	free (e);
-	
+
 	if (q->tail == e)
 		q->tail = NULL; /* the queue is empty */
 }
@@ -543,7 +543,7 @@ void event_pop (struct event_queue *q)
 struct event *event_get_first (struct event_queue *q)
 {
 	assert (q != NULL);
-	
+
 	return q->head;
 }
 
@@ -604,7 +604,7 @@ void free_event_data (const int type, void *data)
 void event_queue_free (struct event_queue *q)
 {
 	struct event *e;
-	
+
 	assert (q != NULL);
 
 	while ((e = event_get_first(q))) {
@@ -616,7 +616,7 @@ void event_queue_free (struct event_queue *q)
 void event_queue_init (struct event_queue *q)
 {
 	assert (q != NULL);
-	
+
 	q->head = NULL;
 	q->tail = NULL;
 }
@@ -627,7 +627,7 @@ void event_queue_init (struct event_queue *q)
 struct event *event_search (struct event_queue *q, const int event)
 {
 	struct event *e;
-	
+
 	assert (q != NULL);
 
 	while ((e = q->head)) {
@@ -644,7 +644,7 @@ struct event *event_search (struct event_queue *q, const int event)
 int event_queue_empty (const struct event_queue *q)
 {
 	assert (q != NULL);
-	
+
 	return q->head == NULL ? 1 : 0;
 }
 
@@ -652,7 +652,7 @@ int event_queue_empty (const struct event_queue *q)
 static struct packet_buf *make_event_packet (const struct event *e)
 {
 	struct packet_buf *b;
-	
+
 	assert (e != NULL);
 
 	b = packet_buf_new ();
@@ -671,16 +671,16 @@ static struct packet_buf *make_event_packet (const struct event *e)
 	}
 	else if (e->type == EV_FILE_TAGS) {
 		struct tag_ev_response *r;
-		
+
 		assert (e->data != NULL);
 		r = e->data;
-		
+
 		packet_buf_add_str (b, r->file);
 		packet_buf_add_tags (b, r->tags);
 	}
 	else if (e->type == EV_PLIST_MOVE || e->type == EV_QUEUE_MOVE) {
 		struct move_ev_data *m;
-		
+
 		assert (e->data != NULL);
 
 		m = (struct move_ev_data *)e->data;
@@ -700,7 +700,7 @@ enum noblock_io_status event_send_noblock (int sock, struct event_queue *q)
 {
 	ssize_t res;
 	struct packet_buf *b;
-	
+
 	assert (q != NULL);
 	assert (!event_queue_empty(q));
 
@@ -722,7 +722,7 @@ enum noblock_io_status event_send_noblock (int sock, struct event_queue *q)
 		logit ("Sending event would block");
 		return NB_IO_BLOCK;
 	}
-	
+
 	/* Error */
 	logit ("Error when sending event: %s", strerror(errno));
 	return NB_IO_ERR;
