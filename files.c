@@ -644,6 +644,11 @@ int file_exists (const char *file)
 
 	if (!stat(file, &file_stat))
 		return 1;
+
+	/* Log any error other than non-existence. */
+	if (errno != ENOENT)
+		logit ("Error : %s", strerror (errno));
+
 	return 0;
 }
 
