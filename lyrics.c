@@ -48,38 +48,31 @@ lists_t_strs *lyrics_load_file (const char *filename)
 {
 	FILE *lyrics_file = NULL;
 	const char *mime;
+	char *line;
 	lists_t_strs *result;
 
 	assert (filename);
 
-	result = NULL;
+	lyrics_message = "[No lyrics file!]";
+	if (!file_exists (filename))
+		return NULL;
 	mime = file_mime_type (filename);
 	if (mime && strncmp (mime, "text/plain", 10))
-		lyrics_message = "[No lyrics file!]";
-	else {
+		return NULL;
 
-		lyrics_message = NULL;
-		lyrics_file = fopen (filename, "r");
-		if (lyrics_file != NULL) {
-			char *line;
-
-			result = lists_strs_new (0);
-			while ((line = read_line (lyrics_file)) != NULL)
-				lists_strs_push (result, line);
-			fclose (lyrics_file);
-		}
-
-		else {
-			if (errno == ENOENT)
-				lyrics_message = "[No lyrics file!]";
-			else {
-				lyrics_message = "[Lyrics file cannot be read!]";
-				logit ("Error reading '%s': %s", filename, strerror (errno));
-			}
-		}
-
+	lyrics_file = fopen (filename, "r");
+	if (lyrics_file == NULL) {
+		lyrics_message = "[Lyrics file cannot be read!]";
+		logit ("Error reading '%s': %s", filename, strerror (errno));
+		return NULL;
 	}
 
+	result = lists_strs_new (0);
+	while ((line = read_line (lyrics_file)) != NULL)
+		lists_strs_push (result, line);
+	fclose (lyrics_file);
+
+	lyrics_message = NULL;
 	return result;
 }
 
