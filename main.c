@@ -457,6 +457,9 @@ int main (int argc, char *argv[])
 	struct parameters params;
 	char *config_file = NULL;
 	const char *jump_type;
+
+	if (get_home () == NULL)
+		fatal ("Could not determine user's home directory.");
 				
 	memset (&params, 0, sizeof(params));
 	options_init ();

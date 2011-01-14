@@ -19,6 +19,10 @@
 #include <string.h>
 #include <strings.h>
 #include <assert.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <pwd.h>
+#include <errno.h>
 
 #include "server.h"
 #include "interface.h"
@@ -149,14 +153,11 @@ bool is_valid_symbol (const char *candidate)
 /* Return path to a file in MOC config directory. NOT THREAD SAFE */
 char *create_file_name (const char *file)
 {
-	char *home_dir;
 	static char fname[PATH_MAX];
 	char *moc_dir = options_get_str ("MOCDir");
 	
 	if (moc_dir[0] == '~') {
-		if (!(home_dir = getenv("HOME")))
-			fatal ("No HOME environmential variable.");
-		if (snprintf(fname, sizeof(fname), "%s/%s/%s", home_dir,
+		if (snprintf(fname, sizeof(fname), "%s/%s/%s", get_home (),
 				(moc_dir[1] == '/') ? moc_dir + 2 : moc_dir + 1,
 				file)
 				>= (int)sizeof(fname))
@@ -190,4 +191,26 @@ void sec_to_min (char *buff, const int seconds)
 		snprintf (buff, 6, "%4dm", seconds/60);
 	else
 		strcpy (buff, "!!!!!");
+}
+
+/* Determine and return the path of the user's home directory. */
+const char *get_home ()
+{
+	static const char *home = NULL;
+	struct passwd *passwd;
+
+	if (home == NULL) {
+		home = xstrdup (getenv ("HOME"));
+		if (home == NULL) {
+			errno = 0;
+			passwd = getpwuid (geteuid ());
+			if (passwd)
+				home = xstrdup (passwd->pw_dir);
+			else
+				if (errno != 0)
+					logit ("getpwuid(%d): %s", geteuid (), strerror (errno));
+		}
+	}
+
+	return home;
 }
