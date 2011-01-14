@@ -1,7 +1,15 @@
 # This is a configuration file for the MOC player. It should be named 'config'
 # and placed in the directory ~/.moc/
+
 # Comments begin with '#'.
 # You can use quotes and escape ('\') in parameters.
+# You can have environment variable values substituted by enclosing the
+# variable name in "${...}" (e.g., "/music/${USER}/flacs").  This only
+# applies to the portion of the option following the '='.  If you need to
+# use the "${" sequence for any other purpose, write "$${" and it will be
+# replaced by "${" and not treated as a substitution.  Variable names are
+# limited to those accepted by the BASH shell; specifically, those comprising
+# the upper- and lowercase ASCII characters, digits and the underscore.
 
 
 # Show file titles (title, author, album) instead of file names.
