@@ -26,6 +26,7 @@
 #include "common.h"
 #include "log.h"
 #include "options.h"
+#include "lists.h"
 
 #define OPTIONS_MAX	181
 #define OPTION_NAME_MAX	32
@@ -620,12 +621,78 @@ static int is_deprecated_option (const char *name)
 	return 0;
 }
 
+/* Find and substitute environment variables enclosed by '${...}'.
+ * Strings of the form '$${' are reduced to '${' and not substituted.
+ * The result is returned as a new string. */
+static char *substitute_envar (const char *name, const char *value_in)
+{
+	size_t len;
+	char *dollar, *result, *ptr, *value;
+	static const char accept[] = "abcdefghijklmnopqrstuvwxyz"
+	                             "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	                             "0123456789_";
+	lists_t_strs *strs;
+
+	result = xstrdup (value_in);
+	ptr = result;
+	strs = lists_strs_new (5);
+	dollar = strstr (result, "${");
+	while (dollar) {
+
+		/* Escape "$${". */
+		if (dollar > ptr && dollar[-1] == '$') {
+			dollar[-1] = 0x00;
+			lists_strs_append (strs, ptr);
+			ptr = dollar;
+			dollar = strstr (&dollar[2], "${");
+			continue;
+		}
+
+		/* Copy up to this point verbatim. */
+		dollar[0] = 0x00;
+		lists_strs_append (strs, ptr);
+
+		/* Find closing brace. */
+		len = strspn (&dollar[2], accept);
+		if (len == 0)
+			fatal ("Error in config file option '%s': "
+			       "environment variable name is missing.",
+			       name);
+		if (dollar[len + 2] != '}')
+			fatal ("Error in config file option '%s': "
+			       "expecting '}' found '%c'.",
+			       name, dollar[len + 2]);
+
+		/* Fetch environment variable value. */
+		dollar[len + 2] = 0x00;
+		value = getenv (&dollar[2]);
+		if (value == NULL)
+			fatal ("Error in config file option '%s': "
+			       "environment variable '%s' not found.",
+		           name, &dollar[2]);
+		lists_strs_append (strs, value);
+
+		/* Go look for another substitution. */
+		ptr = &dollar[len + 3];
+		dollar = strstr (ptr, "${");
+	}
+
+	/* If anything changed copy segments to result. */
+	if (lists_strs_size (strs) > 0) {
+		lists_strs_append (strs, ptr);
+		free (result);
+		result = lists_strs_cat (strs);
+	}
+	lists_strs_free (strs);
+
+	return result;
+}
+
 /* Set an option read from the configuration file. Return 0 on error. */
-static int set_option (const char *name, const char *value_x)
+static int set_option (const char *name, const char *value_in)
 {
 	int i, num;
-	char *end;
-	const char *value;
+	char *end, *value, *value_s;
 	bool val;
 
 	i = find_option (name, OPTION_ANY);
@@ -652,21 +719,25 @@ static int set_option (const char *name, const char *value_x)
 
 	options[i].set_in_config = 1;
 
+	/* Substitute environmental variables. */
+	value_s = substitute_envar (name, value_in);
+
 	/* Handle a change of option type for QueueNextSongReturn. */
 	value = NULL;
 	if (!strcasecmp(options[i].name, "QueueNextSongReturn")) {
-		if (!strcmp(value_x, "0"))
-			value = "no";
-		else if (!strcmp(value_x, "1"))
-			value = "yes";
+		if (!strcmp (value_s, "0"))
+			value = xstrdup ("no");
+		else if (!strcmp (value_s, "1"))
+			value = xstrdup ("yes");
 	}
 	if (value) {
+		free (value_s);
 		fprintf (stderr, "\n\tThe valid values of '%s' have changed;"
 		                 "\n\tplease update your configuration file.\n\n", name);
 		sleep (5);
-	} else {
-		value = value_x;
 	}
+	else
+		value = value_s;
 
 	switch (options[i].type) {
 
@@ -674,15 +745,15 @@ static int set_option (const char *name, const char *value_x)
 			num = strtol (value, &end, 10);
 			if (*end)
 				return 0;
-			if (!check_int_option(name, num))
+			if (!check_int_option (name, num))
 				return 0;
 			option_set_int (name, num);
 			break;
 
 		case OPTION_BOOL:
-			if (!strcasecmp(value, "yes"))
+			if (!strcasecmp (value, "yes"))
 				val = true;
-			else if (!strcasecmp(value, "no"))
+			else if (!strcasecmp (value, "no"))
 				val = false;
 			else
 				return 0;
@@ -690,13 +761,13 @@ static int set_option (const char *name, const char *value_x)
 			break;
 
 		case OPTION_STR:
-			if (!check_str_option(name, value))
+			if (!check_str_option (name, value))
 				return 0;
 			option_set_str (name, value);
 			break;
 
 		case OPTION_SYMB:
-			if (!check_symb_option(name, value))
+			if (!check_symb_option (name, value))
 				return 0;
 			option_set_symb (name, value);
 			break;
@@ -706,6 +777,7 @@ static int set_option (const char *name, const char *value_x)
 			break;
 	}
 	
+	free (value);
 	return 1;
 }
 
