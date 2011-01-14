@@ -82,6 +82,7 @@ void set_me_server ();
 bool is_valid_symbol (const char *candidate);
 char *create_file_name (const char *file);
 void sec_to_min (char *buff, const int seconds);
+const char *get_home ();
 
 #ifdef __cplusplus
 }

@@ -494,14 +494,12 @@ static void set_cwd (char *path)
 /* Try to find the directory we can start and set cwd to it. */
 static void set_start_dir ()
 {
-	if (!getcwd(cwd, sizeof(cwd))) {
+	if (!getcwd(cwd, sizeof (cwd))) {
 		if (errno == ERANGE)
 			fatal ("CWD is larger than PATH_MAX!");
-		else if (!getenv("HOME"))
-			fatal ("$HOME is not set.");
-		strncpy (cwd, getenv("HOME"), sizeof(cwd));
-		if (cwd[sizeof(cwd)-1])
-			fatal ("$HOME is larger than PATH_MAX!");
+		strncpy (cwd, get_home (), sizeof (cwd));
+		if (cwd[sizeof (cwd) - 1])
+			fatal ("Home directory path is longer than PATH_MAX!");
 	}
 }
 
@@ -2164,7 +2162,7 @@ static char *make_dir (const char *str)
 		add_slash = 1;
 	
 	if (str[0] == '~') {
-		strncpy (dir, getenv("HOME"), PATH_MAX);
+		strncpy (dir, get_home (), PATH_MAX);
 		
 		if (dir[PATH_MAX]) {
 			logit ("Path too long!");
