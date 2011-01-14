@@ -10,6 +10,9 @@
 # replaced by "${" and not treated as a substitution.  Variable names are
 # limited to those accepted by the BASH shell; specifically, those comprising
 # the upper- and lowercase ASCII characters, digits and the underscore.
+# You can also use the form "${...:-...}" where the value in the second
+# position will be substituted if the variable name given in the first
+# position is unset or null (e.g., "/music/${USER:-public}/flacs").
 
 
 # Show file titles (title, author, album) instead of file names.
