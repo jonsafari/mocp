@@ -624,10 +624,10 @@ static int is_deprecated_option (const char *name)
 /* Find and substitute environment variables enclosed by '${...}'.
  * Strings of the form '$${' are reduced to '${' and not substituted.
  * The result is returned as a new string. */
-static char *substitute_envar (const char *name, const char *value_in)
+static char *substitute_envar (const char *name_in, const char *value_in)
 {
 	size_t len;
-	char *dollar, *result, *ptr, *value;
+	char *dollar, *result, *ptr, *name, *value, *dflt, *end;
 	static const char accept[] = "abcdefghijklmnopqrstuvwxyz"
 	                             "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 	                             "0123456789_";
@@ -652,28 +652,54 @@ static char *substitute_envar (const char *name, const char *value_in)
 		dollar[0] = 0x00;
 		lists_strs_append (strs, ptr);
 
-		/* Find closing brace. */
-		len = strspn (&dollar[2], accept);
+		/* Find where the environment variable name ends. */
+		name = &dollar[2];
+		len = strspn (name, accept);
 		if (len == 0)
 			fatal ("Error in config file option '%s': "
 			       "environment variable name is missing.",
-			       name);
-		if (dollar[len + 2] != '}')
+			       name_in);
+
+		/* Find default substitution or closing brace. */
+		dflt = NULL;
+		if (name[len] == '}') {
+			end = &name[len];
+			end[0] = 0x00;
+		}
+		else if (strncmp (&name[len], ":-", 2) == 0) {
+			name[len] = 0x00;
+			dflt = &name[len + 2];
+			end = index (dflt, '}');
+			if (end == NULL)
+				fatal ("Error in config file option '%s': "
+				       "unterminated '${%s:-'.",
+				       name_in, name);
+			end[0] = 0x00;
+		}
+		else if (name[len] == 0x00) {
 			fatal ("Error in config file option '%s': "
-			       "expecting '}' found '%c'.",
-			       name, dollar[len + 2]);
+			       "unterminated '${'.",
+			       name_in);
+		}
+		else {
+			fatal ("Error in config file option '%s': "
+			       "expecting  ':-' or '}' found '%c'.",
+			       name_in, name[len]);
+		}
 
 		/* Fetch environment variable value. */
-		dollar[len + 2] = 0x00;
-		value = getenv (&dollar[2]);
-		if (value == NULL)
+		value = getenv (name);
+		if (value && strlen (value))
+			lists_strs_append (strs, value);
+		else if (dflt)
+			lists_strs_append (strs, dflt);
+		else
 			fatal ("Error in config file option '%s': "
-			       "environment variable '%s' not found.",
-		           name, &dollar[2]);
-		lists_strs_append (strs, value);
+			       "environment variable '%s' not set or null.",
+		           name_in, &dollar[2]);
 
 		/* Go look for another substitution. */
-		ptr = &dollar[len + 3];
+		ptr = &end[1];
 		dollar = strstr (ptr, "${");
 	}
 
