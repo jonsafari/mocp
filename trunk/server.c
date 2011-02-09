@@ -387,7 +387,7 @@ static void on_song_change ()
 
 	int ix;
 	char *curr_file;
-	char **args;
+	char **args, *cmd;
 	struct file_tags *curr_tags;
 	lists_t_strs *arg_list;
 
@@ -395,7 +395,7 @@ static void on_song_change ()
 	if (on_song_change == NULL) {
 		char *command;
 
-		on_song_change = lists_strs_new (5);
+		on_song_change = lists_strs_new (4);
 		command = options_get_str ("OnSongChange");
 
 		if (command)
@@ -419,7 +419,7 @@ static void on_song_change ()
 
 	curr_tags = tags_cache_get_immediate (&tags_cache, curr_file,
 	                                      TAGS_COMMENTS | TAGS_TIME);
-	arg_list = lists_strs_new (5);
+	arg_list = lists_strs_new (lists_strs_size (on_song_change));
 	for (ix = 0; ix < lists_strs_size (on_song_change); ix += 1) {
 		char *arg, *str;
 
@@ -479,21 +479,20 @@ static void on_song_change ()
 	}
 	tags_free (curr_tags);
 
-	debug ("Running command:");
-	args = (char **) xmalloc (sizeof (char *) * (lists_strs_size (arg_list) + 1));
-	for (ix = 0; ix < lists_strs_size (arg_list); ix += 1) {
-		args[ix] = lists_strs_at (arg_list, ix);
-		debug ("    '%s'", args[ix]);
-	}
-	args[ix] = NULL;
+	cmd = lists_strs_fmt (arg_list, " %s");
+	debug ("Running command:%s", cmd);
+	free (cmd);
 
-	if (fork () == 0) {
+	switch (fork ()) {
+	case 0:
+		args = lists_strs_save (arg_list);
 		execve (args[0], args, environ);
 		exit (-1);
+	case -1:
+		logit ("Failed to fork(): %s", strerror (errno));
 	}
 
 	lists_strs_free (arg_list);
-	free (args);
 	free (last_file);
 	last_file = curr_file;
 }

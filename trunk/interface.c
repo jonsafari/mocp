@@ -3049,7 +3049,7 @@ static void run_external_cmd (char **args, const int arg_num)
 	
 	child = fork();
 	if (child == -1)
-		error ("fork() failed");
+		error ("fork() failed: %s", strerror (errno));
 	else {
 		int status;
 		
@@ -3079,10 +3079,10 @@ static void run_external_cmd (char **args, const int arg_num)
 /* Exec (execvp()) a custom command (ExecCommand[1-10] options). */
 static void exec_custom_command (const char *option)
 {
-	char *cmd;
+	char *cmd, *arg;
 	char **args;
 	int ix, arg_num;
-	lists_t_strs *arg_list;
+	lists_t_strs *cmd_list, *arg_list;
 
 	assert (option != NULL);
 
@@ -3093,29 +3093,29 @@ static void exec_custom_command (const char *option)
 	}
 
 	/* Split into arguments */
-	arg_list = lists_strs_new (5);
-	arg_num = lists_strs_tokenise (arg_list, cmd);
+	cmd_list = lists_strs_new (4);
+	arg_num = lists_strs_tokenise (cmd_list, cmd);
 	if (arg_num == 0) {
 		error ("Malformed %s option", option);
-		lists_strs_free (arg_list);
+		lists_strs_free (cmd_list);
 		return;
 	}
 
-	logit ("Running command:");
-	args = (char **) xmalloc (sizeof (char *) * (arg_num + 1));
+	arg_list = lists_strs_new (lists_strs_size (cmd_list));
 	for (ix = 0; ix < arg_num; ix += 1) {
-		args[ix] = custom_cmd_substitute (lists_strs_at (arg_list, ix));
-		logit (" '%s'", args[ix]);
+		arg = custom_cmd_substitute (lists_strs_at (cmd_list, ix));
+		lists_strs_push (arg_list, arg);
 	}
-	args[ix] = NULL;
-	logit ("\n");
+	lists_strs_free (cmd_list);
 
-	run_external_cmd (args, arg_num);
+	cmd = lists_strs_fmt (arg_list, " %s");
+	logit ("Running command:%s", cmd);
+	free (cmd);
 
-	while (arg_num > 0)
-		free (args[--arg_num]);
-	free (args);
+	args = lists_strs_save (arg_list);
 	lists_strs_free (arg_list);
+	run_external_cmd (args, arg_num);
+	free (args);
 
 	if (iface_in_dir_menu())
 		reread_dir ();
