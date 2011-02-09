@@ -77,6 +77,9 @@ In future:
 * Recording played sound to a file.
 * Upgrade TiMidity decoder plug-in to TiMidity++.  This would add support
   for soundfonts (.sf2) which are now more common.
+* When the new API of libavformat (in ffmpeg) stablises (maybe in version
+  53) use whatever it provides to obtain tags in ffmpeg.c ffmpeg_info().
+  (Also see the SVN log entry for r2282.)
 
 Maybe never:
 
