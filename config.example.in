@@ -175,6 +175,17 @@ UseMmap			= no
 # Use librcc to filenames and directory names encoding.
 #UseRCCForFilesystem			= yes
 
+# When this option is set the player assumes that if the encoding of ID3v2
+# is set to ISO-8859-1 then the ID3v1TagsEncoding is actually that and
+# applies appropriate conversion.
+#EnforceTagsEncoding	= no
+
+# Enable the conversion of filenames from the local encoding to UTF8.
+#FileNamesIconv		= no
+
+# Enable the conversion of the xterm title from UTF8 to the local encoding.
+#NonUTFXterm		= no
+
 # Remember the playlist after exit?
 SavePlaylist		= yes
 
