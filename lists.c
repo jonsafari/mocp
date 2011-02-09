@@ -15,6 +15,7 @@
 
 #include <assert.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 
 #include "common.h"
@@ -77,30 +78,6 @@ char *lists_strs_at (const lists_t_strs *list, int index)
 	assert (index >= 0 && index < list->size);
 
 	return list->strs[index];
-}
-
-/* Return the concatenation of all the strings in a list, or NULL
- * if the list is empty. */
-char *lists_strs_cat (const lists_t_strs *list)
-{
-	int len, ix;
-	char *result;
-
-	assert (list);
-
-	len = 0;
-	for (ix = 0; ix < list->size; ix += 1)
-		len += strlen (list->strs[ix]);
-
-	result = NULL;
-	if (list->size > 0) {
-		result = xmalloc (len + 1);
-		result[0] = 0x00;
-		for (ix = 0; ix < list->size; ix += 1)
-			strcat (result, list->strs[ix]);
-	}
-
-	return result;
 }
 
 /* Sort string list into an order determined by caller's comparitor. */
@@ -177,7 +154,7 @@ char *lists_strs_swap (lists_t_strs *list, int index, char *s)
 }
 
 /* Copy a string and append it to the end of a list. */
-void lists_strs_append (lists_t_strs *list, char *s)
+void lists_strs_append (lists_t_strs *list, const char *s)
 {
 	char *str;
 
@@ -214,25 +191,128 @@ void lists_strs_replace (lists_t_strs *list, int index, char *s)
 	free (str);
 }
 
-/* Tokenise a string and append the tokens to the list.
- * Returns the number of tokens appended. */
-int lists_strs_tokenise (lists_t_strs *list, const char *s)
+/* Split a string at any delimiter in given string.  The resulting segments
+ * are appended to the given string list.  Returns the number of tokens
+ * appended. */
+int lists_strs_split (lists_t_strs *list, const char *s, const char *delim)
 {
 	int result;
 	char *str, *token;
 
 	assert (list);
 	assert (s);
+	assert (delim);
 
 	result = 0;
 	str = xstrdup (s);
-	token = strtok (str, " \t");
+	token = strtok (str, delim);
 	while (token) {
 		result += 1;
 		lists_strs_append (list, token);
-		token = strtok (NULL, " \t");
+		token = strtok (NULL, delim);
 	}
 
 	free (str);
 	return result;
+}
+
+/* Tokenise a string and append the tokens to the list.
+ * Returns the number of tokens appended. */
+int lists_strs_tokenise (lists_t_strs *list, const char *s)
+{
+	int result;
+
+	assert (list);
+	assert (s);
+
+	result = lists_strs_split (list, s, " \t");
+
+	return result;
+}
+
+/* Return the concatenation of all the strings in a list using the
+ * given format for each, or NULL if the list is empty. */
+char *lists_strs_fmt (const lists_t_strs *list, const char *fmt)
+{
+	int len, ix, rc;
+	char *result, *ptr;
+
+	assert (list);
+	assert (strstr (fmt, "%s"));
+
+	result = NULL;
+	if (!lists_strs_empty (list)) {
+		len = 0;
+		for (ix = 0; ix < lists_strs_size (list); ix += 1)
+			len += strlen (lists_strs_at (list, ix));
+		len += ix * (strlen (fmt) - 2);
+
+		ptr = result = xmalloc (len + 1);
+		for (ix = 0; ix < lists_strs_size (list); ix += 1) {
+			rc = snprintf (ptr, len + 1, fmt, lists_strs_at (list, ix));
+			if (rc > len)
+				fatal ("Allocated string area was too small.");
+			len -= rc;
+			ptr += rc;
+		}
+	}
+
+	return result;
+}
+
+/* Return the concatenation of all the strings in a list, or NULL
+ * if the list is empty. */
+char *lists_strs_cat (const lists_t_strs *list)
+{
+	char *result;
+
+	assert (list);
+
+	result = lists_strs_fmt (list, "%s");
+
+	return result;
+}
+
+/* Return a "snapshot" of the given string list.  The returned memory is a
+ * null-terminated list of pointers to the given list's strings copied into
+ * memory allocated after the pointer list.  This list is suitable for passing
+ * to functions which take such a list as an argument (e.g., evecv()).
+ * Invoking free() on the returned pointer also frees the strings. */
+char **lists_strs_save (const lists_t_strs *list)
+{
+	int ix, size;
+	char *ptr, **result;
+
+	assert (list);
+
+	size = 0;
+	for (ix = 0; ix < lists_strs_size (list); ix += 1)
+		size += strlen (lists_strs_at (list, ix)) + 1;
+	size += sizeof (char *) * (lists_strs_size (list) + 1);
+	result = (char **) xmalloc (size);
+	ptr = (char *) (result + lists_strs_size (list) + 1);
+	for (ix = 0; ix < lists_strs_size (list); ix += 1) {
+		strcpy (ptr, lists_strs_at (list, ix));
+		result[ix] = ptr;
+		ptr += strlen (ptr) + 1;
+	}
+	result[ix] = NULL;
+
+	return result;
+}
+
+/* Reload saved strings into a list.  The reloaded strings are appended
+ * to the list.  The number of items reloaded is returned. */
+int lists_strs_load (lists_t_strs *list, char **saved)
+{
+	int size;
+
+	assert (list);
+	assert (saved);
+
+	size = lists_strs_size (list);
+	while (*saved)
+		lists_strs_append (list, *saved++);
+
+	return lists_strs_size (list) - size;
 }
