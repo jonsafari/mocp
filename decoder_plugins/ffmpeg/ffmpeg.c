@@ -28,12 +28,15 @@
 #include <ffmpeg/avformat.h>
 #endif
 
-/* FFmpeg also likes common names, without that, our common.h and log.h would
- * not be included. */
-#undef COMMON_H
-#undef LOG_H
+/* libavformat's API will be changing at version 53, but at present there
+ * appears to be no guidance on what will replace the deprecated fields. */
+#ifndef FF_API_OLD_METADATA
+#define FF_API_OLD_METADATA            (LIBAVFORMAT_VERSION_MAJOR < 53)
+#endif
 
-/* same for logging... */
+/* FFmpeg also likes common names, without that, our common.h and log.h
+ * would not be included. */
+#undef COMMON_H
 #undef LOG_H
 
 #define DEBUG
@@ -85,6 +88,7 @@ static void ffmpeg_info (const char *file_name,
 		return;
 	}
 
+#if FF_API_OLD_METADATA
 	if (tags_sel & TAGS_COMMENTS) {
 		if (ic->track != 0)
 			info->track = ic->track;
@@ -95,6 +99,7 @@ static void ffmpeg_info (const char *file_name,
 		if (ic->album[0] != 0)
 			info->album = xstrdup (ic->album);
 	}
+#endif
 
 	if (tags_sel & TAGS_TIME)
 		info->time = ic->duration >= 0 ? ic->duration / AV_TIME_BASE
@@ -183,12 +188,13 @@ static void ffmpeg_close (void *prv_data)
 	free (data);
 }
 
-static int ffmpeg_seek (void *prv_data, int sec)
+static int ffmpeg_seek (void *prv_data ATTR_UNUSED, int sec ATTR_UNUSED)
 {
+#if 0
 	struct ffmpeg_data *data = (struct ffmpeg_data *)prv_data;
 	int err;
 
-	/*if ((err = av_seek_frame(data->ic, -1, sec, 0)) < 0)
+	if ((err = av_seek_frame(data->ic, -1, sec, 0)) < 0)
 		logit ("Seek error %d", err);
 	else if (data->remain_buf) {
 		free (data->remain_buf);
@@ -196,7 +202,8 @@ static int ffmpeg_seek (void *prv_data, int sec)
 		data->remain_buf_len = 0;
 	}
 
-	return err >= 0 ? sec : -1;*/
+	return err >= 0 ? sec : -1;
+#endif
 
 	return -1;
 }
