@@ -3825,7 +3825,7 @@ static struct file_tags *get_tags_no_iface (const char *file,
 		else {
 			/* We can't handle other events, since this function
 			 * is to be invoked without the interface. */
-			logit ("Server send an event that I didn't extect!");
+			logit ("Server sent an event which I didn't expect!");
 			abort ();
 		}
 	}

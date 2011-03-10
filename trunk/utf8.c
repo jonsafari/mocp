@@ -13,7 +13,7 @@
 # include "config.h"
 #endif
 
-/* _XOPEN_SOURCE is known to break cmpilation under OpenBSD */
+/* _XOPEN_SOURCE is known to break compilation under OpenBSD. */
 #ifndef OPENBSD
 # define _XOPEN_SOURCE  500 /* for wcswidth() */
 #endif
@@ -83,7 +83,7 @@ char *iconv_rcc (char *str)
 
 
 /* Return a malloc()ed string converted using iconv().
- * if for_file_name is not 0, uses the conversion defined for file names.
+ * If for_file_name is not 0, use the conversion defined for file names.
  * For NULL returns NULL. */
 char *iconv_str (const iconv_t desc, const char *str)
 {
@@ -163,10 +163,10 @@ int xwaddstr (WINDOW *win, const char *str)
 	return res;
 }
 
-/* Convert multi byte sequence to wide characters. Change invalid UTF-8
- * sequences to '?'. dest can be NULL like in mbstowcs().
- * If invalid_char is not null it will be set to 1 if an invalid character
- * appears in the string, 0 otherwise. */
+/* Convert multi-byte sequence to wide characters.  Change invalid UTF-8
+ * sequences to '?'.  'dest' can be NULL as in mbstowcs().
+ * If 'invalid_char' is not NULL it will be set to 1 if an invalid character
+ * appears in the string, otherwise 0. */
 static size_t xmbstowcs (wchar_t *dest, const char *src, size_t len,
 		int *invalid_char)
 {
@@ -233,9 +233,9 @@ int xwaddnstr (WINDOW *win, const char *str, const int n)
 	if (using_utf8) {
 
 		/* This nasty hack is because we need to count n in chars, but
-		 * [w]addnstr() takes argument in bytes (in UTF-8 i char can be
-		 * more than 1 byte. There are also problems with [w]addnwstr()
-		 * (screen garbled). I have no better idea. */
+		 * [w]addnstr() takes arguments in bytes (in UTF-8 a char can be
+		 * longer than 1 byte).  There are also problems with [w]addnwstr()
+		 * (screen garbled).  I have no better idea. */
 		
 		wchar_t *ucs;
 		size_t size;
@@ -401,7 +401,7 @@ void utf8_cleanup ()
 	iconv_cleanup ();
 }
 
-/* Return the number of columns the string takes when displayed. */
+/* Return the number of columns the string occupies when displayed. */
 size_t strwidth (const char *s)
 {
 	wchar_t *ucs;
@@ -419,8 +419,8 @@ size_t strwidth (const char *s)
 	return width;
 }
 
-/* Return a malloc()ed string containing the tail of str maximum of len chars
- * (in columns occupied on the screen). */
+/* Return a malloc()ed string containing the tail of 'str' up to a
+ * maximum of 'len' characters (in columns occupied on the screen). */
 char *xstrtail (const char *str, const int len)
 {
 	wchar_t *ucs;

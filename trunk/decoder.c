@@ -112,7 +112,8 @@ struct decoder *get_decoder (const char *file)
 	return NULL;
 }
 
-/* Return the decoder by the mime type of the stream or NULL if not found. */
+/* Use the stream's MIME type to return a decoder for it, or NULL if no
+ * applicable decoder was found. */
 static struct decoder *get_decoder_by_mime_type (struct io_stream *stream)
 {
 	int i;
@@ -123,13 +124,13 @@ static struct decoder *get_decoder_by_mime_type (struct io_stream *stream)
 			if (plugins[i].decoder->our_format_mime
 					&& plugins[i].decoder->our_format_mime(
 						mime)) {
-				logit ("Found decoder for mime type %s",
+				logit ("Found decoder for MIME type %s",
 						mime);
 				return plugins[i].decoder;
 			}
 	}
 	else
-		logit ("No mime type.");
+		logit ("No MIME type.");
 
 	return NULL;
 }
@@ -144,9 +145,10 @@ struct decoder *get_decoder_by_content (struct io_stream *stream)
 
 	assert (stream != NULL);
 
-	/* Peek up some data to check if they are available. If not, there is
-	 * no sense to try decoders, each of them would issue an error.
-	 * This is also needed to actually get the mime type. */
+	/* Peek at the start of the stream to check if sufficient data is
+	 * available.  If not, there is no sense in trying the decoders as
+	 * each of them would issue an error.  The data is also needed to
+	 * get the MIME type. */
 	logit ("Testing the stream...");
 	res = io_peek (stream, buf, sizeof(buf));
 	if (res < 0) {
@@ -171,7 +173,7 @@ struct decoder *get_decoder_by_content (struct io_stream *stream)
 	return NULL;
 }
 
-/* Check if this handle is already presend in the plugins table.
+/* Check if this handle is already present in the plugins table.
  * Returns 1 if so. */
 static int present_handle (const lt_dlhandle h)
 {
@@ -192,7 +194,7 @@ static int lt_load_plugin (const char *file, lt_ptr debug_info_ptr)
 		printf ("Loading plugin %s...\n", name);
 	
 	if (plugins_num == sizeof(plugins)/sizeof(plugins[0])) {
-		fprintf (stderr, "Can't load plugin, besause maximum number "
+		fprintf (stderr, "Can't load plugin, because maximum number "
 				"of plugins reached!\n");
 		return 0;
 	}
@@ -265,7 +267,7 @@ void decoder_cleanup ()
 /* Fill the error structure with an error of a given type and message.
  * strerror(add_errno) is appended at the end of the message if add_errno != 0.
  * The old error message is free()ed.
- * This is thread safe, use this instead of constructions with strerror(). */
+ * This is thread safe; use this instead of constructs using strerror(). */
 void decoder_error (struct decoder_error *error,
 		const enum decoder_error_type type, const int add_errno,
 		const char *format, ...)
