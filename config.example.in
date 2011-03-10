@@ -257,7 +257,8 @@ ASCIILines		= no
 # a bug in MOC will freeze your computer.
 #UseRealtimePriority	= no
 
-# Size of the in-memory cache for file tags in KB.
+# The number of audio files for which MOC will cache tags.  When this limit
+# is reached, file tags are discarded on a least recently used basis.
 TagsCacheSize		= 256
 
 # Number items in the playlist.
