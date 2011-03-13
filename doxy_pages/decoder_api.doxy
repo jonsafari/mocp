@@ -35,17 +35,24 @@ libmyplug_decoder_la_CFLAGS = $(MYPLUG_CFLAGS) -I$(top_srcdir)
 libmyplug_decoder_la_SOURCES = myplug1.c myplug2.c
 \endcode
 
-Also, add an entry with "decoder_plugins/myplug/Makefile" to the end of
-configure.in in AC_OUTPUT command after other similar lines.
+Next you have to tell the build system to include your newly created directory
+by editting the file Makefile.am in the decoder_plugins directory.  You'll
+see plenty of examples there, but your new entry will look like this:
+
+\code
+if BUILD_myplug
+    SUBDIRS += myplug
+endif
+\endcode
 
 Almost done, now the hard part. As you may have already noticed, the code in
 Makefile.am uses two useful variables: MYPLUG_CFLAGS and MYPLUG_LIBS. They
 contain additional compiler and linker flags used to compile your plugin.
 They are set by the configure script. You must modify configure.in to detect
-libraries and compiler flags needed to build the plugin and add myplug to the
-DECODER_PLUGINS variable. As an example, let's look at the code detecting
-libFLAC which is using an autoconf macro provided by the FLAC library and is
-very simple:
+libraries and compiler flags needed to build the plugin, add myplug to the
+DECODER_PLUGINS variable and set things up so the plugin can be built. As an
+example, let's look at the code detecting libFLAC which is using an autoconf
+macro provided by the FLAC library and is very simple:
 
 \code
 AC_ARG_WITH(flac, AS_HELP_STRING(--without-flac,Compile without FLAC support.))
@@ -53,8 +60,11 @@ if test "x$with_flac" != "xno"
 then
         AM_PATH_LIBFLAC([AC_SUBST(LIBFLAC_LIBS)
 	                AC_SUBST(LIBFLAC_CFLAGS)
+	                $want_flac="yes"
 	                DECODER_PLUGINS="$DECODER_PLUGINS flac"])
 fi
+AM_CONDITIONAL([BUILD_flac], [test "$want_flac"])
+AC_CONFIG_FILES([decoder_plugins/flac/Makefile])
 \endcode					
 
 If you don't know autoconf, you can add something like the lines below after the
@@ -66,6 +76,8 @@ AC_SUBST(MYPLUG_LIBS)
 MYPLUG_CFLAGS='-I/usr/include/required_library_includes'
 AC_SUBST(MYPLUG_CFLAGS)
 DECODER_PLUGINS="$DECODER_PLUGINS myplug"
+AM_CONDITIONAL([BUILD_myplug], [true])
+AC_CONFIG_FILES([decoder_plugins/myplug/Makefile])
 \endcode
 
 Now you must recreate the configure script and all Makefile.in files: run

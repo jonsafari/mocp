@@ -83,6 +83,6 @@ mocp_LDFLAGS = @EXTRA_LIBS@ $(RCC_LIBS) -export-dynamic
 EXTRA_DIST = README_equalizer mocp.1 THANKS keymap.example Doxyfile \
 	     doxy_pages/decoder_api.doxy doxy_pages/main_page.doxy \
 	     doxy_pages/sound_output_driver_api.doxy moc.spec.in \
-	     moc.spec decoder_plugins
+	     moc.spec
 
 doc_DATA = config.example THANKS README README_equalizer keymap.example
