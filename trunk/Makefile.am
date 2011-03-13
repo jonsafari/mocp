@@ -1,3 +1,4 @@
+ACLOCAL_AMFLAGS = -I m4
 SUBDIRS = themes decoder_plugins
 AM_CPPFLAGS = -DSYSTEM_THEMES_DIR=\"$(pkgdatadir)/themes\" \
 	      -DPLUGIN_DIR=\"$(plugindir)/$(DECODER_PLUGIN_DIR)\"
