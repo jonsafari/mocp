@@ -130,7 +130,7 @@ static sidplay2_data * make_data()
           s2d->sample_format = SFMT_S32 | SFMT_LE;
           break;
         default:
-          fatal("sidplay2: Unsupported Precision %i", s2d->cfg.precision);
+          fatal("sidplay2: Unsupported precision: %i", s2d->cfg.precision);
       }
       break;
     case SID2_LITTLE_UNSIGNED:
@@ -146,7 +146,7 @@ static sidplay2_data * make_data()
           s2d->sample_format = SFMT_U32 | SFMT_LE;
           break;
         default:
-          fatal("sidplay2: Unsupported Precision %i", s2d->cfg.precision);
+          fatal("sidplay2: Unsupported precision: %i", s2d->cfg.precision);
       }
       break;
     case SID2_BIG_SIGNED:
@@ -162,7 +162,7 @@ static sidplay2_data * make_data()
           s2d->sample_format = SFMT_S32 | SFMT_BE;
           break;
         default:
-          fatal("sidplay2: Unsupported Precision %i", s2d->cfg.precision);
+          fatal("sidplay2: Unsupported precision: %i", s2d->cfg.precision);
       }
       break;
     case SID2_BIG_UNSIGNED:
@@ -178,7 +178,7 @@ static sidplay2_data * make_data()
           s2d->sample_format = SFMT_U32 | SFMT_BE;
           break;
         default:
-          fatal("sidplay2: Unsupported Precision %i", s2d->cfg.precision);
+          fatal("sidplay2: Unsupported precision: %i", s2d->cfg.precision);
       }
       break;
     default:

@@ -475,14 +475,14 @@ static char *title_expn_subs(char fmt, const struct file_tags *tags)
 		case 't':
 			return if_not_empty (tags->title);
 		default:
-			fatal ("Error parsing format string");
+			fatal ("Error parsing format string!");
 	}
 	return NULL; /* To avoid gcc warning */
 }
 
 /* Generate a title from fmt. */
 #define check_zero(x) if((x) == '\0') \
-		fatal ("Unexpected end of title expression")
+		fatal ("Unexpected end of title expression!")
 
 static void do_title_expn (char *dest, int size, const char *fmt,
 		const struct file_tags *tags)
@@ -517,7 +517,7 @@ static void do_title_expn (char *dest, int size, const char *fmt,
 					/* copy the expression */
 					while (escape || *fmt != separator) {
 						if (expr_pos == sizeof(expr)-2)
-							fatal ("Nested ternary expression too long");
+							fatal ("Nested ternary expression too long!");
 						expr[expr_pos++] = *fmt;
 						if (*fmt == '\\')
 							escape = 1;
@@ -552,7 +552,7 @@ static void do_title_expn (char *dest, int size, const char *fmt,
 					/* copy the expression */
 					while (escape || *fmt != ')') {
 						if (expr_pos == sizeof(expr)-2)
-							fatal ("Ternary expression too long");
+							fatal ("Ternary expression too long!");
 						expr[expr_pos++] = *fmt;
 						if (*fmt == '\\')
 							escape = 1;

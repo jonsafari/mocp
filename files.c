@@ -238,7 +238,7 @@ void resolve_path (char *buf, const int size, const char *file)
 
 	if (snprintf(path, sizeof(path), "%s/%s/", buf, file)
 			>= (int)sizeof(path))
-		fatal ("Path too long");
+		fatal ("Path too long!");
 
 	f = path;
 	while (*f) {
@@ -272,7 +272,7 @@ void resolve_path (char *buf, const int size, const char *file)
 			/* remove double slash */
 			f++;
 		else if (len == size - 1)
-			fatal ("Path too long");
+			fatal ("Path too long!");
 		else  {
 			buf[len++] = *(f++);
 			buf[len] = 0;

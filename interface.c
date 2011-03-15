@@ -134,19 +134,19 @@ static void clear_interrupt ()
 static void send_int_to_srv (const int num)
 {
 	if (!send_int(srv_sock, num))
-		fatal ("Can't send() int to the server.");
+		fatal ("Can't send() int to the server!");
 }
 
 static void send_str_to_srv (const char *str)
 {
 	if (!send_str(srv_sock, str))
-		fatal ("Can't send() string to the server.");
+		fatal ("Can't send() string to the server!");
 }
 
 static void send_item_to_srv (const struct plist_item *item)
 {
 	if (!send_item(srv_sock, item))
-		fatal ("Can't send() item to the server.");
+		fatal ("Can't send() item to the server!");
 }
 
 static int get_int_from_srv ()
@@ -154,7 +154,7 @@ static int get_int_from_srv ()
 	int num;
 	
 	if (!get_int(srv_sock, &num))
-		fatal ("Can't receive value from the server.");
+		fatal ("Can't receive value from the server!");
 
 	return num;
 }
@@ -165,7 +165,7 @@ static char *get_str_from_srv ()
 	char *str = get_str (srv_sock);
 	
 	if (!str)
-		fatal ("Can't receive string from the server.");
+		fatal ("Can't receive string from the server!");
 
 	return str;
 }
@@ -175,7 +175,7 @@ static struct file_tags *recv_tags_from_srv ()
 	struct file_tags *tags = recv_tags (srv_sock);
 
 	if (!tags)
-		fatal ("Can't receive tags from the server.");
+		fatal ("Can't receive tags from the server!");
 
 	return tags;
 }
@@ -186,7 +186,7 @@ static int get_int_from_srv_noblock (int *num)
 	enum noblock_io_status st;
 	
 	if ((st = get_int_noblock(srv_sock, num)) == NB_IO_ERR)
-		fatal ("Can't receive value from the server.");
+		fatal ("Can't receive value from the server!");
 
 	return st == NB_IO_OK ? 1 : 0;
 }
@@ -196,7 +196,7 @@ static struct plist_item *recv_item_from_srv ()
 	struct plist_item *item;
 
 	if (!(item = recv_item(srv_sock)))
-		fatal ("Can't receive item from the server.");
+		fatal ("Can't receive item from the server!");
 
 	return item;
 }
@@ -209,7 +209,7 @@ static struct tag_ev_response *recv_tags_data_from_srv ()
 
 	r->file = get_str_from_srv ();
 	if (!(r->tags = recv_tags(srv_sock)))
-		fatal ("Can't receive tags event's data from the server.");
+		fatal ("Can't receive tags event's data from the server!");
 
 	return r;
 }
@@ -219,7 +219,7 @@ static struct move_ev_data *recv_move_ev_data_from_srv ()
 	struct move_ev_data *d;
 	
 	if (!(d = recv_move_ev_data(srv_sock)))
-		fatal ("Can't receive move data from the server");
+		fatal ("Can't receive move data from the server!");
 
 	return d;
 }
@@ -1101,8 +1101,8 @@ static void server_event (const int event, void *data)
 
 	switch (event) {
 		case EV_BUSY:
-			interface_fatal ("The server is busy, another client "
-					"is connected.");
+			interface_fatal ("The server is busy; "
+			                 "another client is connected!");
 			break;
 		case EV_CTIME:
 			update_ctime ();
@@ -1111,7 +1111,7 @@ static void server_event (const int event, void *data)
 			update_state ();
 			break;
 		case EV_EXIT:
-			interface_fatal ("The server exited.");
+			interface_fatal ("The server exited!");
 			break;
 		case EV_BITRATE:
 			update_bitrate ();
@@ -1179,7 +1179,7 @@ static void server_event (const int event, void *data)
 		case EV_AUDIO_STOP:
 			break;
 		default:
-			interface_fatal ("Unknown event: 0x%02x", event);
+			interface_fatal ("Unknown event: 0x%02x!", event);
 	}
 
 	free_event_data (event, data);
@@ -1430,7 +1430,7 @@ static void enter_first_dir ()
 	if (!(read_last_dir() && go_to_dir(NULL, 0))) {
 		set_start_dir ();
 		if (!go_to_dir(NULL, 0))
-			interface_fatal ("Can't enter any directory.");
+			interface_fatal ("Can't enter any directory!");
 	}
 
 	first_run = 0;
@@ -1511,7 +1511,7 @@ static void process_args (char **args, const int num)
 		char this_cwd[PATH_MAX];
 		
 		if (!getcwd(this_cwd, sizeof(cwd)))
-			interface_fatal ("Can't get CWD: %s.", strerror(errno));
+			interface_fatal ("Can't get CWD: %s", strerror(errno));
 
 		for (i = 0; i < num; i++) {
 			char path[2*PATH_MAX];
@@ -3706,7 +3706,7 @@ void interface_cmdline_append (int server_sock, char **args,
 		plist_init (&new);
 		
 		if (!getcwd(cwd, sizeof(cwd)))
-			fatal ("Can't get CWD: %s.", strerror(errno));
+			fatal ("Can't get CWD: %s", strerror(errno));
 		
 		if (recv_server_plist(&clients_plist)) {
 			add_recursively (&new, args, arg_num);
@@ -3772,7 +3772,7 @@ void interface_cmdline_play_first (int server_sock)
 				   here */
 
 	if (!getcwd(cwd, sizeof(cwd)))
-		fatal ("Can't get CWD: %s.", strerror(errno));
+		fatal ("Can't get CWD: %s", strerror(errno));
 	plist_init (&plist);
 	
 	send_int_to_srv (CMD_GET_SERIAL);
@@ -3954,7 +3954,7 @@ void interface_cmdline_enqueue (int server_sock, char **args,
 				   here */
 
 	if (!getcwd(cwd, sizeof(cwd)))
-		fatal ("Can't get CWD: %s.", strerror(errno));
+		fatal ("Can't get CWD: %s", strerror(errno));
 
 	for (i = 0; i < arg_num; i++)
 		if (is_sound_file(args[i]) || is_url(args[i])) {
@@ -3974,7 +3974,7 @@ void interface_cmdline_playit (int server_sock, char **args, const int arg_num)
 				   here */
 
 	if (!getcwd(cwd, sizeof(cwd)))
-		fatal ("Can't get CWD: %s.", strerror(errno));
+		fatal ("Can't get CWD: %s", strerror(errno));
 
 	plist_init (&plist);
 
@@ -4003,7 +4003,7 @@ void interface_cmdline_playit (int server_sock, char **args, const int arg_num)
 		send_str_to_srv ("");
 	}
 	else
-		fatal ("No files added - no sound files on command line.");
+		fatal ("No files added - no sound files on command line!");
 
 	plist_free (&plist);
 }

@@ -48,7 +48,7 @@ char *socket_name ()
 	char *socket_name = create_file_name (SOCKET_NAME);
 
 	if (strlen(socket_name) > UNIX_PATH_MAX)
-		fatal ("Can't create socket name.");
+		fatal ("Can't create socket name!");
 
 	return socket_name;
 }

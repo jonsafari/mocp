@@ -1115,7 +1115,7 @@ static void compare_keys (struct command *cmd1, struct command *cmd2)
 		while (cmd2->keys[j] != -1 && cmd2->keys[j] != cmd1->keys[i])
 			j++;
 		if (cmd2->keys[j] != -1)
-			fatal ("Key %s is defined for %s and %s",
+			fatal ("Key %s is defined for %s and %s!",
 					get_key_name(cmd2->keys[j]),
 					cmd1->name, cmd2->name);
 		i++;

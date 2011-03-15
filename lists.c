@@ -251,7 +251,7 @@ char *lists_strs_fmt (const lists_t_strs *list, const char *fmt)
 		for (ix = 0; ix < lists_strs_size (list); ix += 1) {
 			rc = snprintf (ptr, len + 1, fmt, lists_strs_at (list, ix));
 			if (rc > len)
-				fatal ("Allocated string area was too small.");
+				fatal ("Allocated string area was too small!");
 			len -= rc;
 			ptr += rc;
 		}
