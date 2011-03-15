@@ -2,12 +2,13 @@ Preamble
 ---
 This document is meant to give you an overview on the idea of having a
 parametric equalizer for sound enhancement and how you can create your
-own presets. Also the interaction with the equalizer in MOC is
-described.
+own presets.  Also the interaction with the equalizer in MOC is described.
+
 I would like to improve this document to make it more usable; so if you
 have any comments and/or ideas feel free to contact me.
 
 - Hendrik Iben (hiben<at>tzi(dot)de)
+
 
 Content
 ---
@@ -23,133 +24,152 @@ Content
 0. Document History
 ---
 07.09.2008 - Initial version
+15.03.2011 - Reformatted
 
 
-1. Nuts and Bolts / Motivation for implementing the equalizer
+1. Nuts and Bolts / Motivation for Implementing the Equalizer
 ---
 The equalizer is an implementation of a biquadratic peaking equalizer
 filter looked up from the Audio EQ Cookbook[1].
-It happens to be a parametric equalizer and this means that different to
-other equalizer implementations the number of bands* is not fixed.
-When I started the idea of implementing the equalizer I looked around in
-the source of other audio playback software and found that a lot of them
-are recycling the code used by the famous XMMS[2] audio player. I would
-have liked to also recycle the code but I decided against it for two
-reasons:
-The first reason is that there is almost no documentation on the
-algorithm used. Maybe the signal processing folks have fun finding out
-what makes this thing work but I was totally lost. So I decided that I
-wanted to *know* what I am doing if I do it.
-As for the second reason, the code used by XMMS is totally optimized to
-integer arithmetics. There is no problem with this in general but I had
-the goal of implementing something as accurate as I could and I wanted
-to use floating point arithmetics.
-So I am no signals processing guy but I have - I think - a solid
-understanding of the matter. I sat down and started to read about
-equalizing, audio processing and signal theory in general. After some
+
+It happens to be a parametric equalizer and this means that, different
+from other equalizer implementations, the number of bands* is not fixed.
+When I started the idea of implementing the equalizer I looked around
+in the source of other audio playback software and found that a lot of
+them are recycling the code used by the famous XMMS[2] audio player.
+I also would have liked to recycle the code but I decided against it
+for two reasons:
+
+The first reason is that there is almost no documentation on the algorithm
+used.  Maybe the signal processing folks have fun finding out what makes
+this thing work but I was totally lost.  So I decided that I wanted to
+*know* what I am doing if I do it.
+
+As for the second reason, the code used by XMMS is totally optimized for
+integer arithmetic.  There is no problem with this in general but I had
+the goal of implementing something that was as accurate as I could and
+I wanted to use floating point arithmetic.
+
+So I am no signals processing guy, but I have -- I think -- a solid
+understanding of the matter.  I sat down and started to read about
+equalizing, audio processing and signal theory in general.  After some
 time I found a mathematical description and a C implementation of
-biquadratic filters in the Audio Cookbook. I made an implementation of
+biquadratic filters in the Audio Cookbook.  I made an implementation of
 the XMMS equalizer and the biquadratic filter using Octave[3] to compare
-the outcome of both filters. I was a bit surprised how different filters
+the outcome of both filters.  I was a bit surprised how different filters
 can be but in the end succeeded (?) in finding a quite good biquadratic
 filter set that would produce results not unlike the XMMS equalizer.
+
 Although I did not use the XMMS-code I think that people will be more
 happy to accept this equalizer if they can use their presets with it.
-There is some conversion needed, but it's a straightforward process.  I
-converted all presets provided by XMMS into presets for this mixer. They
-should be available at [4].
-
-
-2. Using the equalizer
----
-The default keys for the equalizer are:
-'e' - Refresh equalizer
-'E' - Toggle equalizer (on/off)
-'k' - Select next preset
-'K' - Select previous preset
-
-Each of these actions results in a message displayed in the message area.
-This message will be overriden by the next action.
-
-
-3. Preset format
----
-Presets for the equalizer are to be placed in a directory called
-'eqsets' in MOCs home directory (e.g. $HOME/.moc/eqsets). There is no
-convention for the filename, but the filename will serve as the name in
-the selection process.
-File format in pseudo EBNF:
-EQSET
-((<CF> <BW> <AMP>)|(0 <PREAMP>))*
-
-CF:     Center frequency (sane values are from ~20 to ~20000)
-BW:     Bandwith in Octaves. This defines how fast the bands influence
-        vanishes over the frequencies
-PREAMP: Specifies an amplification factor applied before equalizing
-
-So a valid equalizer set would be:
-  # this is a comment
-  EQSET
-  # amplify audio by 1.4dB
-  0 1.4
-  # damp frequencies at 100Hz by -4dB, filter bandwidth 1.5 octaves
-  100   1.5 -4
-  # amplifiy frequencies at 4000Hz by 2dB, filter bandwidth 1.5 octaves
-  4000  1.5 2
-
-There is no order to stick to when specifying frequencies.
+There is some conversion needed, but it's a straightforward process.
+I converted all presets provided by XMMS into presets for this mixer.
+They should be available at [4].
 
 * A band is a chosen center frequency where a filter has most impact.
   If you look at WinAmp / XMMS / Beep Media Player you will find that
   they settled on a common set of 10 bands.
 
 
-4. Creating your own presets
+2. Using the Equalizer
 ---
-For a start you should have a look at the converted presets[4]. The
-bandwidths used in the conversion have been extracted by taking a look
-at the filters signal response (implementation and analysis in octave).
-I tried to do this as accurate as possible but I don't know if I made a
-mistake. They sound correct though... :-)
-You might note that there is never a positive amplification factor in
-the presets although there are in the original preset. The reason for
-this is that I used the maximum amplification in the preset as zero
-amplification and adjusted the other values accordingly. 
-In general, when creating a preset get used to the following idea:
-Do not amplify the frequencies you want but damp those that are of no
-interest.  This has the same effect but avoids clipping and this
-equalizer type seems to be very prone to clipping...
-Also be very careful with pre-amplifying the audio for the same reason.
-With this said, the next confusing thing is the bandwidth definition.
-Every band needs a defined bandwidth in octaves where the bandwidth
-defines where the filters effect has been reduced by 3dB*. This means
-that if you define a band at 1000Hz with a bandwidth of 1.5 octaves and
-an amplification of -10dB, at 353.6Hz* and at 2828.4Hz the amplification
-will be reduced to -7dB.
-If unsure, stay in between 1.0 and 2.0. Just keep in mind that if two
-bands overlap you might get an undesired amplification.
-When designing presets, just save the preset and select it in MOC. After
-each change press the refresh key (default 'e'). This will re-create the
-equalizer reflecting your changes.
-If your preset is not found, have a look at the output of MOC's server
-thread. Parsing errors are emitted there.
+The default keys for the equalizer are:
 
-* 3dB is commonly used for bandwidth. -3dB equals about 70.7% of
-  original amplification.
-* 353.6 =~ 1000*(2^-1.5), 2828.4 =~ 1000*(2^1.5)
+'e' - Refresh equalizer
+'E' - Toggle equalizer (on/off)
+'k' - Select next preset
+'K' - Select previous preset
+
+Each of these actions results in a message displayed in the message area.
+This message will be overridden by the next action.
+
+
+3. Preset Format
+---
+Presets for the equalizer are to be placed in a directory called 'eqsets'
+in MOC's home directory (e.g., $HOME/.moc/eqsets).  There is no convention
+for the filename, but it will serve as the name in the selection process.
+
+File format in pseudo EBNF:
+
+  EQSET
+  ((<CF> <BW> <AMP>)|(0 <PREAMP>))*
+
+  CF:     Center frequency (sane values are from ~20 to ~20000).
+  BW:     Bandwith in Octaves.  This defines how fast the bands
+          influence vanishes over the frequencies.
+  AMP:    Amplification factor (in dB) to apply to the band.
+  PREAMP: Specifies an amplification factor applied before equalizing.
+
+So a valid equalizer set would be:
+
+  # this is a comment
+  EQSET
+  # amplify audio by 1.4dB
+  0 1.4
+  # damp frequencies at 100Hz by -4dB, filter bandwidth 1.5 octaves
+  100   1.5 -4
+  # amplify frequencies at 4000Hz by 2dB, filter bandwidth 1.5 octaves
+  4000  1.5 2
+
+There is no order to stick to when specifying frequencies.
+
+
+4. Creating Your Own Presets
+---
+For a start you should have a look at the converted presets[4].  The
+bandwidths used in the conversion have been extracted by taking a look
+at the filters signal response (implementation and analysis in Octave).
+I tried to do this as accurately as possible but I don't know if I made
+a mistake.  They sound correct though... :-)
+
+You might note that there is never a positive amplification factor in
+the presets although there are in the original preset.  The reason for
+this is that I used the maximum amplification in the preset as zero
+amplification and adjusted the other values accordingly.
+
+In general, when creating a preset get used to the following idea: Do not
+amplify the frequencies you want but damp those that are of no interest.
+This has the same effect but avoids clipping and this equalizer type seems
+to be very prone to clipping.  Also be very careful with pre-amplifying
+the audio for the same reason.
+
+With that said, the next confusing thing is the bandwidth definition.
+Every band needs a defined bandwidth in octaves where the bandwidth
+defines where the filter's effect has been reduced by 3dB*.  This means
+that if you define a band at 1000Hz with a bandwidth of 1.5 octaves and
+an amplification of -10dB, at 353.6Hz** and at 2828.4Hz the amplification
+will be reduced to -7dB.
+
+If unsure, stay in between 1.0 and 2.0.  Just keep in mind that if two
+bands overlap you might get an undesired amplification.
+
+When designing presets, just save the preset and select it in MOC.  After
+each change press the refresh key (default 'e').  This will re-create the
+equalizer reflecting your changes.
+
+If your preset is not found, have a look at the output of MOC's server
+thread.  Parsing errors are emitted there.
+
+*  3dB is commonly used for bandwidth.  -3dB equals about 70.7% of
+   original amplification.
+** 353.6 =~ 1000*(2^-1.5), 2828.4 =~ 1000*(2^1.5)
 
 
 5. TODO
 ---
 - The equalizer is currently not optimized in any way.
+
 - It converts all sound data into floating point values to perform the
-  equalization and converts them back afterwards.
-  A better approach would be to either provide algorithms for integer
-  equalizing or to leave the audio data in floating point format.
-- There is no sorting for the presets, their order is defined by reading
+  equalization and converts them back afterwards.  A better approach
+  would be either to provide integer algorithms for equalization or to
+  leave the audio data in floating point format.
+
+- There is no sorting for the presets; their order is defined by reading
   the directory content.
-- Maybe it would be nice to add a name to the preset different than the
-  file.
+
+- Maybe it would be nice to add a name to the preset different from the
+  filename.
 
 
 6. References
@@ -157,7 +177,7 @@ thread. Parsing errors are emitted there.
 [1] Cookbook formulae for audio EQ biquad filter coefficients
     http://www.musicdsp.org/files/Audio-EQ-Cookbook.txt
 [2] X Multimedia System
-    http://xmms.org
+    http://www.xmms.org/
 [3] GNU Octave
     http://www.gnu.org/software/octave/
 [4] Converted WinAmp / XMMS Equalizer sets
