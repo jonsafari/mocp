@@ -104,7 +104,7 @@ static int ping_server (int sock)
 				     already closed the connection and sent
 				     EV_BUSY */
 	if (!get_int(sock, &event))
-		fatal ("Error when receiving pong response.");
+		fatal ("Error when receiving pong response!");
 	return event == EV_PONG ? 1 : 0;
 }
 
@@ -120,7 +120,7 @@ static void check_moc_dir ()
 	if (stat(dir_name, &file_stat) == -1) {
 		if (errno == ENOENT) {
 			if (mkdir(dir_name, 0700) == -1)
-				fatal ("Can't create directory %s, %s",
+				fatal ("Can't create directory %s: %s",
 						dir_name, strerror(errno));
 		}
 		else
@@ -176,16 +176,16 @@ static void start_moc (const struct parameters *params, char **args,
 				close (notify_pipe[1]);
 				if (read(notify_pipe[0], &i, sizeof(i))
 						!= sizeof(i))
-					fatal ("Server exited");
+					fatal ("Server exited!");
 				close (notify_pipe[0]);
 				if ((server_sock = server_connect()) == -1) {
 					perror ("server_connect()");
-					fatal ("Can't connect to the server");
+					fatal ("Can't connect to the server!");
 				}
 		}
 	}
 	else if (!params->foreground && params->only_server)
-		fatal ("Server is already running");
+		fatal ("Server is already running!");
 	else if (params->foreground && params->only_server) {
 		set_me_server ();
 		list_sock = server_init (params->debug, params->foreground);
@@ -204,7 +204,7 @@ static void start_moc (const struct parameters *params, char **args,
 			}
 		}
 		else
-			fatal ("Can't connect to the server.");
+			fatal ("Can't connect to the server!");
 	}
 
 	if (params->only_server)
@@ -308,7 +308,7 @@ static void server_command (struct parameters *params, char **args, int arg_num)
 	int sock;
 
 	if ((sock = server_connect()) == -1)
-		fatal ("The server is not running");
+		fatal ("The server is not running!");
 
 	signal (SIGPIPE, SIG_IGN);
 	if (ping_server(sock)) {
@@ -343,32 +343,32 @@ static void server_command (struct parameters *params, char **args, int arg_num)
 			interface_cmdline_set (sock, params->off, 0);
 		if (params->exit) {
 			if (!send_int(sock, CMD_QUIT))
-				fatal ("Can't send command");
+				fatal ("Can't send command!");
 		}
 		else if (params->stop) {
 			if (!send_int(sock, CMD_STOP)
 					|| !send_int(sock, CMD_DISCONNECT))
-				fatal ("Can't send commands");
+				fatal ("Can't send commands!");
 		}
 		else if (params->pause) {
 			if (!send_int(sock, CMD_PAUSE)
 					|| !send_int(sock, CMD_DISCONNECT))
-				fatal ("Can't send commands");
+				fatal ("Can't send commands!");
 		}
 		else if (params->next) {
 			if (!send_int(sock, CMD_NEXT)
 					|| !send_int(sock, CMD_DISCONNECT))
-				fatal ("Can't send commands");
+				fatal ("Can't send commands!");
 		}
 		else if (params->previous) {
 			if (!send_int(sock, CMD_PREV)
 					|| !send_int(sock, CMD_DISCONNECT))
-				fatal ("Can't send commands");
+				fatal ("Can't send commands!");
 		}
 		else if (params->unpause) {
 			if (!send_int(sock, CMD_UNPAUSE)
 					|| !send_int(sock, CMD_DISCONNECT))
-				fatal ("Can't send commands");
+				fatal ("Can't send commands!");
 		}
 		else if (params->toggle_pause) {
 			int state;
@@ -376,10 +376,10 @@ static void server_command (struct parameters *params, char **args, int arg_num)
 			int cmd = -1;
 			
 			if (!send_int(sock, CMD_GET_STATE))
-				fatal ("Can't send commands");
+				fatal ("Can't send commands!");
 			if (!get_int(sock, &ev) || ev != EV_DATA
 					|| !get_int(sock, &state))
-				fatal ("Can't get data from the server");
+				fatal ("Can't get data from the server!");
 
 			if (state == STATE_PAUSE)
 				cmd = CMD_UNPAUSE;
@@ -387,13 +387,13 @@ static void server_command (struct parameters *params, char **args, int arg_num)
 				cmd = CMD_PAUSE;
 
 			if (cmd != -1 && !send_int(sock, cmd))
-				fatal ("Can't send commands");
+				fatal ("Can't send commands!");
 			if (!send_int(sock, CMD_DISCONNECT))
-				fatal ("Can't send commands");
+				fatal ("Can't send commands!");
 		}
 	}
 	else
-		fatal ("Can't connect to the server.");
+		fatal ("Can't connect to the server!");
 
 	close (sock);
 }
@@ -405,7 +405,7 @@ static long get_num_param (const char *p,const char ** last)
 
 	val = strtol (p, &e, 10);
 	if ((*e&&last==NULL)||e==p)
-		fatal ("The parameter should be a number.");
+		fatal ("The parameter should be a number!");
 
 	if (last)
 		*last=e;
@@ -459,7 +459,7 @@ int main (int argc, char *argv[])
 	const char *jump_type;
 
 	if (get_home () == NULL)
-		fatal ("Could not determine user's home directory.");
+		fatal ("Could not determine user's home directory!");
 				
 	memset (&params, 0, sizeof(params));
 	options_init ();
@@ -618,7 +618,7 @@ int main (int argc, char *argv[])
 	}
 	
 	if (params.dont_run_iface && params.only_server)
-		fatal ("-c, -a and -p options can't be used with --server");
+		fatal ("-c, -a and -p options can't be used with --server!");
 
 	options_parse (config_file ? config_file
 			: create_file_name("config"));

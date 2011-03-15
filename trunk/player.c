@@ -324,10 +324,14 @@ static void start_precache (struct precache *precache, const char *file)
 
 static void precache_wait (struct precache *precache)
 {
+	int rc;
+
 	if (precache->running) {
 		debug ("Waiting for precache thread...");
-		if (pthread_join(precache->tid, NULL))
-			fatal ("pthread_join() for precache thread failed");
+		rc = pthread_join(precache->tid, NULL);
+		if (rc != 0)
+			fatal ("pthread_join() for precache thread failed: %s",
+			        strerror(rc));
 		precache->running = 0;
 		debug ("done");
 	}

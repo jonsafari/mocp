@@ -323,13 +323,13 @@ static void option_add_symb (const char *name, const char *value, const int coun
 	for (ix = 0; ix < count; ix += 1) {
 		char *val = va_arg (va, char *);
 		if (!is_valid_symbol (val))
-			fatal ("Invalid symbol in '%s' constraint list.", name);
+			fatal ("Invalid symbol in '%s' constraint list!", name);
 		((char **) options[pos].constraints)[ix] = xstrdup (val);
 		if (!strcasecmp (val, value))
 			options[pos].value.str = ((char **) options[pos].constraints)[ix];
 	}
 	if (!options[pos].value.str)
-		fatal ("Invalid default value symbol in '%s'.", name);
+		fatal ("Invalid default value symbol in '%s'!", name);
 	va_end (va);
 }
 
@@ -371,7 +371,7 @@ void option_set_symb (const char *name, const char *value)
 			options[opt].value.str = ((char **) options[opt].constraints)[ix];
 	}
 	if (!options[opt].value.str)
-		fatal ("Tried to set option '%s' to unknown symbol '%s'.", name, value);
+		fatal ("Tried to set option '%s' to unknown symbol '%s'!", name, value);
 }
 
 /* Set a string option to the value. The string is duplicated. */
@@ -657,7 +657,7 @@ static char *substitute_envar (const char *name_in, const char *value_in)
 		len = strspn (name, accept);
 		if (len == 0)
 			fatal ("Error in config file option '%s': "
-			       "environment variable name is missing.",
+			       "environment variable name is missing!",
 			       name_in);
 
 		/* Find default substitution or closing brace. */
@@ -672,18 +672,18 @@ static char *substitute_envar (const char *name_in, const char *value_in)
 			end = index (dflt, '}');
 			if (end == NULL)
 				fatal ("Error in config file option '%s': "
-				       "unterminated '${%s:-'.",
+				       "unterminated '${%s:-'!",
 				       name_in, name);
 			end[0] = 0x00;
 		}
 		else if (name[len] == 0x00) {
 			fatal ("Error in config file option '%s': "
-			       "unterminated '${'.",
+			       "unterminated '${'!",
 			       name_in);
 		}
 		else {
 			fatal ("Error in config file option '%s': "
-			       "expecting  ':-' or '}' found '%c'.",
+			       "expecting  ':-' or '}' found '%c'!",
 			       name_in, name[len]);
 		}
 
@@ -695,7 +695,7 @@ static char *substitute_envar (const char *name_in, const char *value_in)
 			lists_strs_append (strs, dflt);
 		else
 			fatal ("Error in config file option '%s': "
-			       "environment variable '%s' not set or null.",
+			       "environment variable '%s' not set or null!",
 		           name_in, &dollar[2]);
 
 		/* Go look for another substitution. */
@@ -813,7 +813,7 @@ static void options_sanity_check ()
 {
 	if (options_get_int("Prebuffering") > options_get_int("InputBuffer"))
 		fatal ("Prebuffering is set to a value greater than "
-				"InputBuffer.");
+				"InputBuffer!");
 }
 
 /* Parse the configuration file. */
@@ -853,7 +853,7 @@ void options_parse (const char *config_file)
 				if (value_pos == 0
 						|| !set_option(opt_name,
 							opt_value))
-					fatal ("Error in config file, line %d.",
+					fatal ("Error in config file, line %d!",
 							line);
 			}
 
@@ -882,10 +882,10 @@ void options_parse (const char *config_file)
 
 		else if (ch == '=' && !quote) {
 			if (eq)
-				fatal ("Error in config file, line %d.",
+				fatal ("Error in config file, line %d!",
 						line);
 			if (!opt_name[0])
-				fatal ("Error in config file, line %d.",
+				fatal ("Error in config file, line %d!",
 						line);
 			eq = 1;
 			opt_value[0] = 0;
@@ -900,13 +900,13 @@ void options_parse (const char *config_file)
 			if (esc && ch != '"') {
 				if (sizeof(opt_value) == value_pos)
 					fatal ("Error in config file, line %d "
-							"is too long.", line);
+							"is too long!", line);
 				opt_value[value_pos++] = '\\';
 			}
 			
 			if (sizeof(opt_value) == value_pos)
 				fatal ("Error in config file, line %d is "
-						"too long.", line);
+						"too long!", line);
 			opt_value[value_pos++] = ch;
 			esc = 0;
 		}
@@ -915,7 +915,7 @@ void options_parse (const char *config_file)
 		else if (!isblank(ch) || quote) {
 			if (sizeof(opt_name) == name_pos)
 				fatal ("Error in config file, line %d is "
-						"too long.", line);
+						"too long!", line);
 			opt_name[name_pos++] = ch;
 			esc = 0;
 		}
@@ -923,7 +923,7 @@ void options_parse (const char *config_file)
 
 	if (opt_name[0] || opt_value[0])
 		fatal ("Parse error at the end of the config file (need end of "
-				"line?).");
+				"line?)!");
 
 	options_sanity_check ();
 

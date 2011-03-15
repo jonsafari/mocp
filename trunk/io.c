@@ -126,7 +126,7 @@ static ssize_t io_internal_read (struct io_stream *s, const int dont_move,
 #ifdef HAVE_CURL
 	if (s->source == IO_SOURCE_CURL) {
 		if (dont_move)
-			fatal ("You can't peek data directly from curl");
+			fatal ("You can't peek data directly from CURL!");
 		res = io_curl_read (s, buf, count);
 	}
 	else

@@ -161,11 +161,11 @@ char *create_file_name (const char *file)
 				(moc_dir[1] == '/') ? moc_dir + 2 : moc_dir + 1,
 				file)
 				>= (int)sizeof(fname))
-			fatal ("Path too long.");
+			fatal ("Path too long!");
 	}
 	else if (snprintf(fname, sizeof(fname), "%s/%s", moc_dir, file)
 			>= (int)sizeof(fname))
-		fatal ("Path too long.");
+		fatal ("Path too long!");
 
 	return fname;
 }

@@ -185,6 +185,8 @@ static void *read_thread (void *arg)
 /* Initialize the buf structure, size is the buffer size. */
 void out_buf_init (struct out_buf *buf, int size)
 {
+	int rc;
+
 	assert (buf != NULL);
 	assert (size > 0);
 	
@@ -204,9 +206,10 @@ void out_buf_init (struct out_buf *buf, int size)
 
 	/*fd = open ("out_test", O_CREAT | O_TRUNC | O_WRONLY, 0600);*/
 
-	if (pthread_create(&buf->tid, NULL, read_thread, buf)) {
-		logit ("Can't create buffer thread: %s", strerror(errno));
-		fatal ("Can't create buffer thread");
+	rc = pthread_create(&buf->tid, NULL, read_thread, buf);
+	if (rc != 0) {
+		logit ("Can't create buffer thread: %s", strerror(rc));
+		fatal ("Can't create buffer thread: %s", strerror(rc));
 	}
 }
 

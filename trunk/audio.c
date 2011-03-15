@@ -843,7 +843,7 @@ int audio_send_pcm (const char *buf, const size_t size)
 	played = hw.play (buf, size);
 
 	if (played == 0)
-		fatal ("Audio output error.");
+		fatal ("Audio output error!");
 
 	if(softmixed && !equalized)
 		free(softmixed);
@@ -887,7 +887,7 @@ static void find_working_driver (const char *drivers, struct hw_funcs *funcs)
 		char name[32];
 		
 		if (!(t = strcspn(pos, " \t,")) || t >= sizeof(name))
-			fatal ("Invalid sound driver list");
+			fatal ("Invalid sound driver list!");
 
 		strncpy (name, pos, t);
 		name[t] = 0;
@@ -932,7 +932,7 @@ static void find_working_driver (const char *drivers, struct hw_funcs *funcs)
 #endif
 	}
 
-	fatal ("No valid sound driver");
+	fatal ("No valid sound driver!");
 }
 
 static void print_output_capabilities (const struct output_driver_caps *caps)

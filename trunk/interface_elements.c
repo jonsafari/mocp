@@ -2260,15 +2260,15 @@ static void validate_layouts ()
 	const char *layout_fmt;
 
 	if (!parse_layout(&l, options_get_str("Layout1")))
-		interface_fatal ("Layout1 is malformed");
+		interface_fatal ("Layout1 is malformed!");
 
 	layout_fmt = options_get_str("Layout2");
 	if (layout_fmt && layout_fmt[0] && !parse_layout(&l, layout_fmt))
-		interface_fatal ("Layout2 is malformed");
+		interface_fatal ("Layout2 is malformed!");
 	
 	layout_fmt = options_get_str("Layout3");
 	if (layout_fmt && layout_fmt[0] && !parse_layout(&l, layout_fmt))
-		interface_fatal ("Layout3 is malformed");
+		interface_fatal ("Layout3 is malformed!");
 }
 
 /* Handle terminal size change. */
@@ -3616,7 +3616,7 @@ void windows_init ()
 {
 	utf8_init ();
 	if (!initscr())
-		fatal ("Can't initialize terminal.");
+		fatal ("Can't initialize terminal!");
 	screen_initialized = 1;
 	validate_layouts ();
 	cbreak ();
@@ -3827,7 +3827,7 @@ void iface_get_key (struct iface_key *k)
 	wint_t ch;
 	
 	if ((ch = wgetch(main_win.win)) == (wint_t)ERR)
-		interface_fatal ("wgetch() failed");
+		interface_fatal ("wgetch() failed!");
 
 	if (ch < 32 && ch != '\n' && ch != '\t') {
 		/* Unprintable, generally control sequences */
@@ -3846,7 +3846,7 @@ void iface_get_key (struct iface_key *k)
 #ifdef HAVE_NCURSESW
 		ungetch (ch);
 		if (wget_wch(main_win.win, &ch) == ERR)
-			interface_fatal ("wget_wch() failed");
+			interface_fatal ("wget_wch() failed!");
 #endif
 		/* Recognize meta sequences */
 		if (ch == KEY_ESCAPE) {

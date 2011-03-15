@@ -301,7 +301,7 @@ int server_init (int debug, int foreground)
 		fprintf (stderr, "If it is not true, remove the pid file (%s)"
 				" and try again.\n",
 				create_file_name(PID_FILE));
-		fatal ("Exiting.");
+		fatal ("Exiting!");
 	}
 
 	if (foreground)
@@ -320,7 +320,7 @@ int server_init (int debug, int foreground)
 
 	/* Create a socket */
 	if ((server_sock = socket (PF_LOCAL, SOCK_STREAM, 0)) == -1)
-		fatal ("Can't create socket: %s.", strerror(errno));
+		fatal ("Can't create socket: %s", strerror(errno));
 	sock_name.sun_family = AF_LOCAL;
 	strcpy (sock_name.sun_path, socket_name());
 
