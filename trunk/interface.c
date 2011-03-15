@@ -1572,7 +1572,7 @@ void init_interface (const int sock, const int logging, char **args,
 		FILE *logfp;
 
 		if (!(logfp = fopen(INTERFACE_LOG, "a")))
-			fatal ("Can't open log file for the interface");
+			fatal ("Can't open client log file: %s", strerror (errno));
 		log_init_stream (logfp);
 	}
 
@@ -3509,14 +3509,13 @@ void interface_loop ()
 
 		dequeue_events ();
 		ret = select (srv_sock + 1, &fds, NULL, NULL, &timeout);
+		if (ret == -1 && !want_quit && errno != EINTR)
+			interface_fatal ("select() failed: %s", strerror(errno));
 
 		iface_tick ();
 		
 		if (ret == 0)
 			do_silent_seek ();
-		else if (ret == -1 && !want_quit && errno != EINTR)
-			interface_fatal ("select() failed: %s",
-					strerror(errno));
 
 #ifdef SIGWINCH
 		if (want_resize)

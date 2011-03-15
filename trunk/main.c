@@ -171,7 +171,7 @@ static void start_moc (const struct parameters *params, char **args,
 				options_free ();
 				exit (0);
 			case -1:
-				fatal ("fork() failed");
+				fatal ("fork() failed: %s", strerror(errno));
 			default:
 				close (notify_pipe[1]);
 				if (read(notify_pipe[0], &i, sizeof(i))
@@ -491,7 +491,7 @@ int main (int argc, char *argv[])
 				break;
 			case 'R':
 				if (!check_str_option("SoundDriver", optarg))
-					fatal ("No such sound driver");
+					fatal ("No such sound driver: %s", optarg);
 				option_set_str ("SoundDriver", optarg);
 				option_ignore_config ("SoundDriver");
 				break;
