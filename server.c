@@ -100,7 +100,7 @@ static void write_pid_file ()
 	FILE *file;
 
 	if ((file = fopen(fname, "w")) == NULL)
-		fatal ("Can't write pid file.");
+		fatal ("Can't open pid file for writing: %s", strerror(errno));
 	fprintf (file, "%d\n", getpid());
 	fclose (file);
 }
@@ -309,7 +309,7 @@ int server_init (int debug, int foreground)
 	else if (debug) {
 		FILE *logf;
 		if (!(logf = fopen(SERVER_LOG, "a")))
-			fatal ("Can't open log file.");
+			fatal ("Can't open server log file: %s", strerror(errno));
 		log_init_stream (logf);
 	}
 
@@ -1656,8 +1656,10 @@ void server_loop (int list_sock)
 			res = 0;
 
 		if (res == -1 && errno != EINTR && !server_quit) {
-			logit ("select() failed: %s", strerror(errno));
-			fatal ("select() failed");
+			int err = errno;
+
+			logit ("select() failed: %s", strerror(err));
+			fatal ("select() failed: %s", strerror(err));
 		}
 		else if (!server_quit && res >= 0) {
 			if (FD_ISSET(list_sock, &fds_read)) {

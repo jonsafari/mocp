@@ -405,7 +405,7 @@ int audio_conv_new (struct audio_conversion *conv,
 		else if (!strcasecmp(method, "Linear"))
 			resample_type = SRC_LINEAR;
 		else
-			fatal ("Bad ResampleMethod option");
+			fatal ("Bad ResampleMethod option: %s", method);
 		
 		conv->src_state = src_new (resample_type, to->channels, &err);
 		if (!conv->src_state) {
