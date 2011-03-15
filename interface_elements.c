@@ -2395,15 +2395,27 @@ static void soft_write (int fd, const void *buf, size_t count)
 /* Set the has_xterm variable. */
 static void detect_term ()
 {
+	static const char *xterm_list[] = {
+		"xterm",
+		"rxvt",
+		"xterm-color",
+		"rxvt-unicode",
+		"eterm",
+		"Eterm",
+		NULL
+	};
+	int ix;
 	char *term;
 
-	if ((((term = getenv("TERM")) && !strcmp(term, "xterm"))
-				|| !strcmp(term, "rxvt")
-				|| !strcmp(term, "xterm-color")
-				|| !strcmp(term, "rxvt-unicode")
-				|| !strcmp(term, "eterm")
-				|| !strcmp(term, "Eterm")))
-		has_xterm = 1;
+	term = getenv ("TERM");
+	if (term) {
+		for (ix = 0; xterm_list[ix]; ix += 1) {
+			if (strcmp (term, xterm_list[ix]))
+				continue;
+			has_xterm = 1;
+			break;
+		}
+	}
 }
 
 static void xterm_set_title (const int state, const char *title)
