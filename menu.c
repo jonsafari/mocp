@@ -27,42 +27,14 @@
 
 #include <assert.h>
 #include <ctype.h>
+
 #include "common.h"
+#include "compat.h"
 #include "options.h"
 #include "menu.h"
 #include "files.h"
 #include "rbtree.h"
 #include "utf8.h"
-
-#ifndef HAVE_STRCASESTR
-/* Case insensitive version od strstr(). */
-static char *strcasestr (const char *haystack, const char *needle)
-{
-	char *haystack_i, *needle_i;
-	char *c;
-	char *res;
-
-	haystack_i = xstrdup (haystack);
-	needle_i = xstrdup (needle);
-
-	c = haystack_i;
-	while (*c) {
-		*c = tolower (*c);
-		c++;
-	}
-		
-	c = needle_i;
-	while (*c) {
-		*c = tolower (*c);
-		c++;
-	}
-
-	res = strstr (haystack_i, needle_i);
-	free (haystack_i);
-	free (needle_i);
-	return res ? res - haystack_i + (char *)haystack : NULL;
-}
-#endif
 
 /* Draw menu item on a given position from the top of the menu. */
 static void draw_item (const struct menu *menu, const struct menu_item *mi,
