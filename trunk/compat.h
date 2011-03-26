@@ -39,8 +39,12 @@
 extern "C" {
 #endif
 
+#ifndef HAVE_STRCASESTR
+char *strcasestr (const char *haystack, const char *needle);
+#endif
+
 #ifndef HAVE_STRERROR_R
-int strerror_r(int errnum, char *buf, size_t n);
+int strerror_r (int errnum, char *buf, size_t n);
 #endif
 
 void compat_cleanup ();
