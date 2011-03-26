@@ -3661,8 +3661,8 @@ void windows_end ()
 
 	if (screen_initialized) {
 	
-		/* endwin() sometimes fails on x terminals when we get SIGCHLD
-		 * at this moment. Double invokation seems to solve this. */
+		/* endwin() sometimes fails on X-terminals when we get SIGCHLD
+		 * at this moment.  Double invocation seems to solve this. */
 		if (endwin() == ERR && endwin() == ERR)
 			logit ("endwin() failed!");
 

@@ -221,7 +221,7 @@ static void vorbis_open_stream_internal (struct vorbis_data *data)
 					callbacks)) < 0) {
 		char *vorbis_err = vorbis_strerror (res);
 		
-		decoder_error (&data->error, ERROR_FATAL, 0,"%s",
+		decoder_error (&data->error, ERROR_FATAL, 0, "%s",
 				vorbis_err);
 		debug ("ov_open error: %s", vorbis_err);
 		free (vorbis_err);

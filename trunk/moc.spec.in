@@ -6,7 +6,7 @@ Version: @VERSION@
 Release: 2
 License: GPL
 Group: Applications/Multimedia
-URL: http://moc.draper.net
+URL: http://moc.daper.net/
 Source: ftp://ftp.daper.net/pub/soft/moc/stable/moc-%{version}.tar.bz2
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
 Requires: ncurses alsa-lib
@@ -51,7 +51,7 @@ powerful and easy to use. You just need to select a file from some directory
 using the menu similar to Midnight Commander, and MOC will start playing all
 files in this directory beginning from the chosen file.
 
-This package contains the MP3 decoder
+This package contains the MP3 decoder.
 %endif
 
 %if %{!?_without_musepack:1}0
@@ -67,7 +67,7 @@ powerful and easy to use. You just need to select a file from some directory
 using the menu similar to Midnight Commander, and MOC will start playing all
 files in this directory beginning from the chosen file.
 
-This package contains the Musepack (MPC) decoder
+This package contains the Musepack (MPC) decoder.
 %endif
 
 %if %{!?_without_vorbis:1}0
@@ -84,7 +84,7 @@ powerful and easy to use. You just need to select a file from some directory
 using the menu similar to Midnight Commander, and MOC will start playing all
 files in this directory beginning from the chosen file.
 
-This package contains the Ogg Vorbis decoder
+This package contains the Ogg Vorbis decoder.
 %endif
 
 %if %{!?_without_flac:1}0
@@ -100,7 +100,7 @@ powerful and easy to use. You just need to select a file from some directory
 using the menu similar to Midnight Commander, and MOC will start playing all
 files in this directory beginning from the chosen file.
 
-This package contains the FLAC decoder
+This package contains the FLAC decoder.
 %endif
 
 %if %{!?_without_sndfile:1}0
@@ -116,7 +116,7 @@ powerful and easy to use. You just need to select a file from some directory
 using the menu similar to Midnight Commander, and MOC will start playing all
 files in this directory beginning from the chosen file.
 
-This package contains the decoders of sndfile
+This package contains the decoders of sndfile.
 %endif
 
 %if %{!?_without_speex:1}0
@@ -132,7 +132,7 @@ powerful and easy to use. You just need to select a file from some directory
 using the menu similar to Midnight Commander, and MOC will start playing all
 files in this directory beginning from the chosen file.
 
-This package contains the Speex decoder
+This package contains the Speex decoder.
 %endif
 
 %if %{!?_without_ffmpeg:1}0
@@ -148,7 +148,7 @@ powerful and easy to use. You just need to select a file from some directory
 using the menu similar to Midnight Commander, and MOC will start playing all
 files in this directory beginning from the chosen file.
 
-This package contains the FFMPEG (WMA, Real etc.) decoder
+This package contains the FFMPEG (WMA, Real etc.) decoder.
 %endif
 
 %prep

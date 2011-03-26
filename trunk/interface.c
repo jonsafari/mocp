@@ -2567,6 +2567,7 @@ static void seek (const int sec)
 	send_int_to_srv (CMD_SEEK);
 	send_int_to_srv (sec);
 }
+
 static void jump_to (const int sec)
 {
 	send_int_to_srv (CMD_JUMP_TO);

@@ -711,6 +711,7 @@ static int req_seek (struct client *cli)
 
 	return 1;
 }
+
 /* Handle CMD_JUMP_TO, return 1 if ok or 0 on error */
 static int req_jump_to (struct client *cli)
 {

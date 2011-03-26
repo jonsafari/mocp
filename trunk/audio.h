@@ -105,8 +105,8 @@ struct hw_funcs
 
 	/** Clean up at exit.
 	 *
-	 * This dunction is invoked only once when the MOC server exits. The
-	 * audio device is not in use at this moment. The function shoul close
+	 * This function is invoked only once when the MOC server exits. The
+	 * audio device is not in use at this moment. The function should close
 	 * any opened devices and free any resources the driver allocated.
 	 * After this function was used, no other functions will be invoked.
 	 */
@@ -118,7 +118,7 @@ struct hw_funcs
 	 * parameters. The function should return 1 on success and 0 otherwise.
 	 * After returning 1 functions like play(), get_buff_fill() can be used.
 	 *
-	 * The sample rate of the driver can differ from the requestet rate.
+	 * The sample rate of the driver can differ from the requested rate.
 	 * If so, get_rate() should return the actual rate.
 	 * 
 	 * \param sound_params Pointer to the sound_params structure holding
@@ -169,7 +169,7 @@ struct hw_funcs
 	 *
 	 * The function should return the number of bytes of any
 	 * hardware or internal buffers are filled. For example: if we play()
-	 * 4KB, but only 1KB was really played (could be heared by the user),
+	 * 4KB, but only 1KB was really played (could be heard by the user),
 	 * the function should return 3072 (3KB).
 	 *
 	 * \return Current hardware/internal buffer fill in bytes.
@@ -188,7 +188,7 @@ struct hw_funcs
 
 	/** Get the current sample rate setting.
 	 *
-	 * Get the actual sample rate setting of the autio driver.
+	 * Get the actual sample rate setting of the audio driver.
 	 *
 	 * \return Sample rate in Hz.
 	 */
@@ -209,7 +209,7 @@ struct hw_funcs
 	char * (*get_mixer_channel_name) ();
 };
 
-/* Does the parameters p1 and p2 are equal? */
+/* Are the parameters p1 and p2 equal? */
 #define sound_params_eq(p1, p2) ((p1).fmt == (p2).fmt \
 		&& (p1).channels == (p2).channels && (p1).rate == (p2).rate)
 
