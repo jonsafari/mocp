@@ -3044,6 +3044,7 @@ static void run_external_cmd (char **args, const int arg_num)
 
 	assert (args != NULL);
 	assert (arg_num >= 1);
+	assert (args[0] != NULL);
 	assert (args[arg_num] == NULL);
 	
 	iface_temporary_exit ();
