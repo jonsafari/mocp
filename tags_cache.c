@@ -762,7 +762,7 @@ void tags_cache_clear_up_to (struct tags_cache *c, const char *file,
 	UNLOCK (c->mutex);
 }
 
-void tags_cache_save (struct tags_cache *c, const char *file_name)
+void tags_cache_save (struct tags_cache *c ATTR_UNUSED, const char *file_name ATTR_UNUSED)
 {
 	//TODO: to remove
 
