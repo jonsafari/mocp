@@ -145,14 +145,13 @@ static void clients_init ()
 
 static void clients_cleanup ()
 {
-	int i;
+	int i, rc;
 
 	for (i = 0; i < CLIENTS_MAX; i++) {
 		clients[i].socket = -1;
-		if (pthread_mutex_destroy(&clients[i].events_mutex))
-			logit ("Can't destroy events mutex: %s",
-					strerror(errno));
-
+		rc = pthread_mutex_destroy (&clients[i].events_mutex);
+		if (rc != 0)
+			logit ("Can't destroy events mutex: %s", strerror (rc));
 	}
 }
 

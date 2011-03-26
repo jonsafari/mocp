@@ -498,15 +498,18 @@ void audio_reset ()
 
 void audio_stop ()
 {
+	int rc;
+
 	if (play_thread_running) {
 		logit ("audio_stop()");
 		LOCK (request_mut);
 		stop_playing = 1;
 		UNLOCK (request_mut);
 		player_stop ();
-		logit ("pthread_join(playing_thread, NULL)");
-		if (pthread_join(playing_thread, NULL))
-			logit ("pthread_join() failed: %s", strerror(errno));
+		logit ("pthread_join (playing_thread, NULL)");
+		rc = pthread_join (playing_thread, NULL);
+		if (rc != 0)
+			logit ("pthread_join() failed: %s", strerror (rc));
 		playing_thread = 0;
 		play_thread_running = 0;
 		stop_playing = 0;
@@ -529,6 +532,8 @@ void audio_stop ()
  * start playing from the first file on the list. */
 void audio_play (const char *fname)
 {
+	int rc;
+
 	audio_stop ();
 	player_reset ();
 	
@@ -575,9 +580,10 @@ void audio_play (const char *fname)
 			curr_playing = -1;
 	}
 	
-	if (pthread_create(&playing_thread, NULL, play_thread,
-				curr_playing != -1 ? NULL : (void *)fname))
-		error ("can't create thread");
+	rc = pthread_create (&playing_thread, NULL, play_thread,
+	                     curr_playing != -1 ? NULL : (void *)fname);
+	if (rc != 0)
+		error ("Can't create thread: %s", strerror (rc));
 	play_thread_running = 1;
 	
 	UNLOCK (plist_mut);
@@ -972,6 +978,8 @@ void audio_initialize ()
 
 void audio_exit ()
 {
+	int rc;
+
 	audio_stop ();
 	if (hw.shutdown)
 		hw.shutdown ();
@@ -980,12 +988,15 @@ void audio_exit ()
 	plist_free (&shuffled_plist);
 	plist_free (&queue);
 	player_cleanup ();
-	if (pthread_mutex_destroy(&curr_playing_mut))
-		logit ("Can't destroy curr_playing_mut: %s", strerror(errno));
-	if (pthread_mutex_destroy(&plist_mut))
-		logit ("Can't destroy plist_mut: %s", strerror(errno));
-	if (pthread_mutex_destroy(&request_mut))
-		logit ("Can't destroy request_mut: %s", strerror(errno));
+	rc = pthread_mutex_destroy (&curr_playing_mut);
+	if (rc != 0)
+		logit ("Can't destroy curr_playing_mut: %s", strerror (rc));
+	rc = pthread_mutex_destroy (&plist_mut);
+	if (rc != 0)
+		logit ("Can't destroy plist_mut: %s", strerror (rc));
+	rc = pthread_mutex_destroy (&request_mut);
+	if (rc != 0)
+		logit ("Can't destroy request_mut: %s", strerror (rc));
 
 	if (last_stream_url)
 		free (last_stream_url);

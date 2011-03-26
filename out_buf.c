@@ -43,13 +43,15 @@
 static void set_realtime_prio ()
 {
 #ifdef HAVE_SCHED_GET_PRIORITY_MAX
+	int rc;
+
 	if (options_get_int("UseRealtimePriority")) {
 		struct sched_param param;
 
 		param.sched_priority = sched_get_priority_max(SCHED_RR);
-		if (pthread_setschedparam(pthread_self(), SCHED_RR, &param))
-			logit ("Can't set realtime priority: %s",
-					strerror(errno));
+		rc = pthread_setschedparam (pthread_self (), SCHED_RR, &param);
+		if (rc != 0)
+			logit ("Can't set realtime priority: %s", strerror (rc));
 	}
 #else
 	logit ("No sched_get_priority_max() function: realtime priority not "
@@ -206,10 +208,10 @@ void out_buf_init (struct out_buf *buf, int size)
 
 	/*fd = open ("out_test", O_CREAT | O_TRUNC | O_WRONLY, 0600);*/
 
-	rc = pthread_create(&buf->tid, NULL, read_thread, buf);
+	rc = pthread_create (&buf->tid, NULL, read_thread, buf);
 	if (rc != 0) {
-		logit ("Can't create buffer thread: %s", strerror(rc));
-		fatal ("Can't create buffer thread: %s", strerror(rc));
+		logit ("Can't create buffer thread: %s", strerror (rc));
+		fatal ("Can't create buffer thread: %s", strerror (rc));
 	}
 }
 
@@ -217,6 +219,8 @@ void out_buf_init (struct out_buf *buf, int size)
  * structure.  Can be used only if nothing is played. */
 void out_buf_destroy (struct out_buf *buf)
 {
+	int rc;
+
 	assert (buf != NULL);
 
 	LOCK (buf->mutex);
@@ -234,14 +238,17 @@ void out_buf_destroy (struct out_buf *buf)
 	UNLOCK (buf->mutex);
 
 	fifo_buf_destroy (&buf->buf);
-	if (pthread_mutex_destroy(&buf->mutex))
-		logit ("Destroying buffer mutex failed: %s", strerror(errno));
-	if (pthread_cond_destroy(&buf->play_cond))
+	rc = pthread_mutex_destroy (&buf->mutex);
+	if (rc != 0)
+		logit ("Destroying buffer mutex failed: %s", strerror (rc));
+	rc = pthread_cond_destroy (&buf->play_cond);
+	if (rc != 0)
 		logit ("Destroying buffer play condition failed: %s",
-				strerror(errno));
-	if (pthread_cond_destroy(&buf->ready_cond))
+				strerror (rc));
+	rc = pthread_cond_destroy (&buf->ready_cond);
+	if (rc != 0)
 		logit ("Destroying buffer ready condition failed: %s",
-				strerror(errno));
+				strerror (rc));
 
 	logit ("buffer destroyed");
 

@@ -51,8 +51,10 @@ int strerror_r(int errnum, char *buf, size_t n)
 void compat_cleanup ()
 {
 #ifndef HAVE_STRERROR_R
-	if (pthread_mutex_destroy(&strerror_r_mutex))
-		logit ("Can't destroy strerror_r_mutex: %s", strerror(errno));
-#endif
+	int rc;
 
+	rc = pthread_mutex_destroy (&strerror_r_mutex);
+	if (rc != 0)
+		logit ("Can't destroy strerror_r_mutex: %s", strerror (rc));
+#endif
 }

@@ -599,7 +599,7 @@ static void *reader_thread (void *cache_ptr)
 
 void tags_cache_init (struct tags_cache *c, const size_t max_size)
 {
-	int i;
+	int i, rc;
 	
 	assert (c != NULL);
 
@@ -613,16 +613,18 @@ void tags_cache_init (struct tags_cache *c, const size_t max_size)
 	c->stop_reader_thread = 0;
 	pthread_mutex_init (&c->mutex, NULL);
 	
-	if (pthread_cond_init(&c->request_cond, NULL))
-		fatal ("Can't create request_cond");
+	rc = pthread_cond_init (&c->request_cond, NULL);
+	if (rc != 0)
+		fatal ("Can't create request_cond: %s", strerror (rc));
 
-	if (pthread_create(&c->reader_thread, NULL, reader_thread, c))
-		fatal ("Can't create tags cache thread.");
+	rc = pthread_create (&c->reader_thread, NULL, reader_thread, c);
+	if (rc != 0)
+		fatal ("Can't create tags cache thread: %s", strerror (rc));
 }
 
 void tags_cache_destroy (struct tags_cache *c)
 {
-	int i;
+	int i, rc;
 
 	assert (c != NULL);
 
@@ -643,16 +645,20 @@ void tags_cache_destroy (struct tags_cache *c)
 		c->db_env = NULL;
 	}
 
-	if (pthread_join(c->reader_thread, NULL))
-		fatal ("pthread_join() on cache reader thread failed.");
+	rc = pthread_join (c->reader_thread, NULL);
+	if (rc != 0)
+		fatal ("pthread_join() on cache reader thread failed: %s",
+		        strerror (rc));
 
 	for (i = 0; i < CLIENTS_MAX; i++)
 		request_queue_clear (&c->queues[i]);
 
-	if (pthread_mutex_destroy(&c->mutex))
-		logit ("Can't destroy mutex");
-	if (pthread_cond_destroy(&c->request_cond))
-		logit ("Can't destroy request_cond");
+	rc = pthread_mutex_destroy (&c->mutex);
+	if (rc != 0)
+		logit ("Can't destroy mutex: %s", strerror (rc));
+	rc = pthread_cond_destroy (&c->request_cond);
+	if (rc != 0)
+		logit ("Can't destroy request_cond: %s", strerror (rc));
 }
 
 void tags_cache_add_request (struct tags_cache *c, const char *file,
