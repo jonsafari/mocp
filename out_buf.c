@@ -214,7 +214,7 @@ void out_buf_init (struct out_buf *buf, int size)
 }
 
 /* Wait for empty buffer, end playing, free resources allocated for the buf
- * structure. Can be used only if nothing is played */
+ * structure.  Can be used only if nothing is played. */
 void out_buf_destroy (struct out_buf *buf)
 {
 	assert (buf != NULL);
@@ -226,8 +226,8 @@ void out_buf_destroy (struct out_buf *buf)
 
 	pthread_join (buf->tid, NULL);
 	
-	/* Let know other threads using this buffer that the state of the
-	 * buffer is different. */
+	/* Let other threads using this buffer know that the state of the
+	 * buffer has changed. */
 	LOCK (buf->mutex);
 	fifo_buf_clear (&buf->buf);
 	pthread_cond_broadcast (&buf->ready_cond);

@@ -139,7 +139,7 @@ AX_PATH_BDB([4], [
 	       LDFLAGS="$BDB_LDFLAGS $LDFLAGS"
 	       CPPFLAGS="$CPPFLAGS $BDB_CPPFLAGS"
 	       ],
-	       AC_MSG_ERROR([BerkeleyDB (libdb) not found]))
+	       AC_MSG_ERROR([BerkeleyDB (libdb) not found.]))
 
 AC_ARG_WITH(oss, AS_HELP_STRING(--without-oss, Compile without OSS support.))
 
@@ -233,7 +233,7 @@ AC_FUNC_MMAP
 
 if test "$acx_pthread_ok" != "yes"
 then
-	AC_MSG_ERROR([[I don't know how to compile pthread code on this system]])
+	AC_MSG_ERROR([[I don't know how to compile pthreads code on this system.]])
 fi
 
 CC="$PTHREAD_CC"
@@ -260,7 +260,7 @@ fi
 
 dnl getopt
 AC_CHECK_FUNC(getopt_long,
-	      [AC_CHECK_HEADERS([getopt.h],,[AC_MSG_ERROR([You need getopt.h])])],
+	      [AC_CHECK_HEADERS([getopt.h],,[AC_MSG_ERROR([You need getopt.h.])])],
 	      [#FreeBSD has it there
 	       AC_CHECK_LIB(gnugetopt,getopt_long,,
 			    [AC_LIBOBJ(getopt)

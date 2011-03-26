@@ -94,7 +94,7 @@ struct decoder
 	 * stream. This is used to find the proper decoder for an internet
 	 * stream when searching by the MIME type failed. The decoder must not
 	 * read from this stream (io_read()), but can peek data (io_peek()).
-	 * The decoder is expected to peek a few bytes to recognize it's format.
+	 * The decoder is expected to peek a few bytes to recognize its format.
 	 * Optional.
 	 * 
 	 * \param stream Opened stream.
@@ -115,8 +115,8 @@ struct decoder
 	 *
 	 * Decode a piece of input and write it to the buffer. The buffer size
 	 * is at least 32KB, but don't make any assumptions that it is always
-	 * true. It is prefered to decode as few bytes as possible without
-	 * loosing much performance to cause very small delays.
+	 * true. It is preferred that as few bytes as possible be decoded
+	 * without loss of performance to minimise delays.
 	 *
 	 * \param data Decoder's private data.
 	 * \param buf Buffer to put data in.
@@ -143,11 +143,11 @@ struct decoder
 
 	/** Get tags for a file.
 	 *
-	 * Get requested file's tags. Is some tags are not available, the
+	 * Get requested file's tags. If some tags are not available, the
 	 * decoder can just not fill the field. The function can even not
 	 * fill any field.
 	 *
-	 * \param file File to get tags for.
+	 * \param file File for which to get tags.
 	 * \param tags Pointer to the tags structure where we must put
 	 * the tags. All strings must be malloc()ed.
 	 * \param tags_sel OR'ed list of requested tags (values of
@@ -178,15 +178,15 @@ struct decoder
 	 */
 	int (*get_duration)(void *data);
 
-	/** Get error for the last decode() invokation.
+	/** Get error for the last decode() invocation.
 	 *
-	 * Get the error for the last decode() invokation. If there was no
+	 * Get the error for the last decode() invocation. If there was no
 	 * error the type of the error must be ERROR_OK. Don't access the
 	 * error object's fields directly, there are proper functions for
 	 * that.
 	 *
 	 * \param data Decoder's private data.
-	 * \param error Pointer to the decoder_error opiect to fill.
+	 * \param error Pointer to the decoder_error object to fill.
 	 */
 	void (*get_error)(void *data, struct decoder_error *error);
 	
@@ -205,7 +205,7 @@ struct decoder
 	 *
 	 * \param mime_type MIME type.
 	 *
-	 * \return Value other than 0 if a stream with this mime type is
+	 * \return Value other than 0 if a stream with this MIME type is
 	 * supported.
 	 */
 	int (*our_format_mime)(const char *mime_type);
@@ -274,7 +274,8 @@ char *file_type_name (const char *file);
 
 /** @defgroup decoder_error_funcs Decoder error functions
  *
- * Those functions can be used to modify variables of type struct decoder_error.
+ * These functions can be used to modify variables of the decoder_error
+ * structure.
  */
 /*@{*/
 

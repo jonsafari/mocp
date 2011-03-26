@@ -374,9 +374,8 @@ static int oss_get_buff_fill ()
 		error ("SNDCTL_DSP_GETOSPACE failed");
 		return 0;
 	}
-	else
-		return (buff_info.fragstotal * buff_info.fragsize)
-			- buff_info.bytes;
+
+	return (buff_info.fragstotal * buff_info.fragsize) - buff_info.bytes;
 }
 
 /* Reset device buffer, stop playing immediately, return 0 on error */

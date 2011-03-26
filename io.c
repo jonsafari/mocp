@@ -362,7 +362,7 @@ static void *io_read_thread (void *data)
 
 			s->errno_val = errno;
 			s->read_error = 1;
-			logit ("Exiting due tu read error.");
+			logit ("Exiting due to read error.");
 			pthread_cond_broadcast (&s->buf_fill_cond);
 			UNLOCK (s->buf_mutex);
 			break;
