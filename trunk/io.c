@@ -268,6 +268,8 @@ void io_abort (struct io_stream *s)
 /* Close the stream and free all resources associated with it. */
 void io_close (struct io_stream *s)
 {
+	int rc;
+
 	assert (s != NULL);
 
 	logit ("Closing stream...");
@@ -300,12 +302,14 @@ void io_close (struct io_stream *s)
 
 		if (s->buffered) {
 			fifo_buf_destroy (&s->buf);
-			if (pthread_cond_destroy(&s->buf_free_cond))
-				logit ("Destroying buf_free_cond faild: %s",
-						strerror(errno));
-			if (pthread_cond_destroy(&s->buf_fill_cond))
-				logit ("Destroying buf_fill_cond faild: %s",
-						strerror(errno));
+			rc = pthread_cond_destroy (&s->buf_free_cond);
+			if (rc != 0)
+				logit ("Destroying buf_free_cond failed: %s",
+						strerror (rc));
+			rc = pthread_cond_destroy (&s->buf_fill_cond);
+			if (rc != 0)
+				logit ("Destroying buf_fill_cond failed: %s",
+						strerror (rc));
 		}
 
 		if (s->metadata.title)
@@ -314,12 +318,15 @@ void io_close (struct io_stream *s)
 			free (s->metadata.url);
 	}
 
-	if (pthread_mutex_destroy(&s->buf_mutex))
-		logit ("Destroying buf_mutex failed: %s", strerror(errno));
-	if (pthread_mutex_destroy(&s->io_mutex))
-		logit ("Destroying io_mutex failed: %s", strerror(errno));
-	if (pthread_mutex_destroy(&s->metadata.mutex))
-		logit ("Destroying metadata mutex failed: %s", strerror(errno));
+	rc = pthread_mutex_destroy (&s->buf_mutex);
+	if (rc != 0)
+		logit ("Destroying buf_mutex failed: %s", strerror (rc));
+	rc = pthread_mutex_destroy (&s->io_mutex);
+	if (rc != 0)
+		logit ("Destroying io_mutex failed: %s", strerror (rc));
+	rc = pthread_mutex_destroy (&s->metadata.mutex);
+	if (rc != 0)
+		logit ("Destroying metadata mutex failed: %s", strerror (rc));
 
 	if (s->strerror)
 		free (s->strerror);
@@ -468,6 +475,7 @@ static void io_open_file (struct io_stream *s, const char *file)
 /* Open the file. Return NULL on error. */
 struct io_stream *io_open (const char *file, const int buffered)
 {
+	int rc;
 	struct io_stream *s;
 
 	assert (file != NULL);
@@ -509,8 +517,9 @@ struct io_stream *io_open (const char *file, const int buffered)
 		pthread_cond_init (&s->buf_free_cond, NULL);
 		pthread_cond_init (&s->buf_fill_cond, NULL);
 
-		if (pthread_create(&s->read_thread, NULL, io_read_thread, s))
-			fatal ("Can't create read thread: %s", strerror(errno));
+		rc = pthread_create (&s->read_thread, NULL, io_read_thread, s);
+		if (rc != 0)
+			fatal ("Can't create read thread: %s", strerror (rc));
 	}
 
 	return s;
