@@ -1,10 +1,45 @@
-AC_INIT([moc],[2.5.0-alpha4],[daper@daper.net])
+dnl This can be moved into AC_INIT when AC_PREREQ reaches 2.64.
+m4_define([AC_PACKAGE_URL],[http://moc.daper.net/])
+
+AC_INIT([Music On Console],[2.5.0-alpha4],[daper@daper.net],[moc])
 AC_CONFIG_SRCDIR([main.c])
 AC_CONFIG_HEADERS([config.h])
 
 AM_INIT_AUTOMAKE
 
 AC_PREREQ(2.60)
+
+dnl This can be removed when AC_PREREQ reaches 2.64.
+if test -z "$PACKAGE_URL"
+then
+	AC_SUBST([PACKAGE_URL],['AC_PACKAGE_URL'])
+	AC_DEFINE_UNQUOTED([PACKAGE_URL], ["$PACKAGE_URL"],
+	                   [Define to the home page for this package.])
+fi
+
+dnl Capture SVN revision number for this build.
+AC_PATH_PROG(SVNVERSION, [svnversion])
+if test -n "$SVNVERSION"
+then
+	SVNREVN=`$SVNVERSION -n $srcdir | sed 's/:.*//'`
+	if test "x$SVNREVN" = "xexported"
+	then
+		unset SVNREVN
+	else
+		echo -n $SVNREVN > REVISION
+		EXTRA_DISTS="$EXTRA_DISTS REVISION"
+	fi
+fi
+if test -z "$SVNREVN" && test -f $srcdir/REVISION
+then
+	SVNREVN=`cat $srcdir/REVISION`
+	EXTRA_DISTS="$EXTRA_DISTS REVISION"
+fi
+if test -n "$SVNREVN"
+then
+	AC_DEFINE_UNQUOTED([PACKAGE_REVISION], ["$SVNREVN"],
+	                   [The SVN revision of this build.])
+fi
 
 AC_CANONICAL_HOST
 AC_PROG_CC
@@ -631,6 +666,7 @@ fi
 
 EXTRA_LIBS="$EXTRA_LIBS $CURSES_LIB"
 AC_SUBST(EXTRA_LIBS)
+AC_SUBST(EXTRA_DISTS)
 		
 AC_OUTPUT([Makefile
 	  themes/Makefile

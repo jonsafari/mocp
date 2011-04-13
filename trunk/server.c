@@ -312,6 +312,12 @@ int server_init (int debug, int foreground)
 		log_init_stream (logf);
 	}
 
+#ifdef PACKAGE_REVISION
+	logit ("Starting MOC server (revision %s)...", PACKAGE_REVISION);
+#else
+	logit ("Starting MOC server (version %s)...", PACKAGE_VERSION);
+#endif
+
 	if (pipe(wake_up_pipe) < 0)
 		fatal ("pipe() failed: %s", strerror(errno));
 

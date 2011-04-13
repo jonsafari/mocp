@@ -218,20 +218,25 @@ static void start_moc (const struct parameters *params, char **args,
 
 static void show_version ()
 {
-	printf (PACKAGE_STRING" ");
+	putchar ('\n');
+	printf ("          This is : %s\n", PACKAGE_NAME);
+	printf ("          Version : %s\n", PACKAGE_VERSION);
+
+#ifdef PACKAGE_REVISION
+	printf ("         Revision : %s\n", PACKAGE_REVISION);
+#endif
 
 	/* Show build time */
 #ifdef __DATE__
-	printf ("Build: "__DATE__" ");
+	printf ("            Built : %s", __DATE__);
 # ifdef __TIME__
-	printf (__TIME__);
+	printf (" %s", __TIME__);
 # endif
-#endif
-	
 	putchar ('\n');
+#endif
 
 	/* Show compiled-in components */
-	printf ("Compiled with:");
+	printf ("    Compiled with :");
 #ifdef HAVE_OSS
 	printf (" OSS");
 #endif
@@ -250,14 +255,23 @@ static void show_version ()
 #ifdef HAVE_SAMPLERATE
 	printf (" resample");
 #endif
-	
 	putchar ('\n');
-	
+
+	printf ("           Author : Damian Pietras\n");
+	printf ("         Homepage : %s\n", PACKAGE_URL);
+	printf ("           E-Mail : %s\n", PACKAGE_BUGREPORT);
+	printf ("        Copyright : (C) 2003-2011 Damian Pietras and others\n");
+	printf ("          License : GNU General Public License, version 2 or later\n");
+	putchar ('\n');
 }
 
 /* Show program usage and exit. */
 static void show_usage (const char *prg_name) {
-	printf (PACKAGE_STRING"\n"
+	printf ("%s (version %s", PACKAGE_NAME, PACKAGE_VERSION);
+#ifdef PACKAGE_REVISION
+	printf (", revision %s", PACKAGE_REVISION);
+#endif
+	printf (")\n"
 "Usage:\n"
 "%s [OPTIONS]... [FILE]...\n"
 "-V --version           Print program version and exit.\n"

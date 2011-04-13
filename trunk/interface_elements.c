@@ -60,7 +60,14 @@
 #include "utf8.h"
 #include "lyrics.h"
 
-#define STARTUP_MESSAGE	"Welcome to " PACKAGE_STRING "!"
+#ifndef PACKAGE_REVISION
+#define STARTUP_MESSAGE "Welcome to " PACKAGE_NAME \
+                        " (version " PACKAGE_VERSION ")!"
+#else
+#define STARTUP_MESSAGE "Welcome to " PACKAGE_NAME \
+                        " (version " PACKAGE_VERSION \
+                        ", revision " PACKAGE_REVISION ")!"
+#endif
 #define HISTORY_SIZE	50
 
 
@@ -2648,17 +2655,6 @@ static void bar_resize (struct bar *b, const int width)
 	}	
 }
 
-static char *get_startup_message ()
-{
-	char buf[256];
-
-	strcpy (buf, STARTUP_MESSAGE);
-	if (!key_was_redefined(KEY_CMD_HELP))
-		strcat (buf, " Press h for the list of commands");
-
-	return xstrdup (buf);
-}
-
 static struct queued_message *queued_message_create (enum message_type type)
 {
 	struct queued_message *result;
@@ -2686,6 +2682,28 @@ static void queued_message_destroy (struct queued_message *msg)
 
 	free (msg);
 };
+
+static void set_startup_message (struct info_win *w) 
+{
+	assert (w != NULL);
+
+	w->current_message = queued_message_create (NORMAL_MSG);
+	w->current_message->msg = xstrdup (STARTUP_MESSAGE);
+	w->current_message->timeout = time (NULL);
+	w->current_message->timeout += options_get_int ("MessageLingerTime");
+
+	if (!key_was_redefined (KEY_CMD_HELP)) {
+		struct queued_message *msg;
+
+		msg = queued_message_create (NORMAL_MSG);
+		msg->msg = xstrdup ("Press 'h' for the list of commands.");
+		msg->timeout = options_get_int ("MessageLingerTime");
+
+		w->queued_message_head = msg;
+		w->queued_message_tail = msg;
+		w->queued_message_total = 1;
+	}
+}
 
 static void info_win_init (struct info_win *w)
 {
@@ -2726,9 +2744,7 @@ static void info_win_init (struct info_win *w)
 	entry_history_init (&w->dirs_history);
 	entry_history_init (&w->user_history);
 
-	w->current_message = queued_message_create (NORMAL_MSG);
-	w->current_message->msg = get_startup_message ();
-	w->current_message->timeout = time (NULL) + options_get_int ("MessageLingerTime");
+	set_startup_message (w);
 
 	bar_init (&w->mixer_bar, 20, "", 1, 1, get_color(CLR_MIXER_BAR_FILL),
 			get_color(CLR_MIXER_BAR_EMPTY));

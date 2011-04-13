@@ -1576,7 +1576,11 @@ void init_interface (const int sock, const int logging, char **args,
 		log_init_stream (logfp);
 	}
 
-	logit ("Starting MOC interface...");
+#ifdef PACKAGE_REVISION
+	logit ("Starting MOC interface (revision %s)...", PACKAGE_REVISION);
+#else
+	logit ("Starting MOC interface (version %s)...", PACKAGE_VERSION);
+#endif
 
 	/* set locale acording to the environment variables */
 	if (!setlocale(LC_CTYPE, ""))
