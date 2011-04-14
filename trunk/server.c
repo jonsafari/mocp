@@ -287,7 +287,7 @@ static void redirect_output (int out_fd)
 }
 
 /* Initialize the server - return fd of the listening socket or -1 on error */
-int server_init (int debug, int foreground)
+int server_init (int debugging, int foreground)
 {
 	struct sockaddr_un sock_name;
 	int server_sock;
@@ -305,7 +305,7 @@ int server_init (int debug, int foreground)
 
 	if (foreground)
 		log_init_stream (stdout);	
-	else if (debug) {
+	else if (debugging) {
 		FILE *logf;
 		if (!(logf = fopen(SERVER_LOG, "a")))
 			fatal ("Can't open server log file: %s", strerror(errno));
