@@ -3040,7 +3040,7 @@ static char *custom_cmd_substitute (const char *arg)
 	return result;
 }
 
-static void run_external_cmd (char **args, const int arg_num)
+static void run_external_cmd (char **args, const int arg_num ATTR_UNUSED)
 {
 	pid_t child;
 
