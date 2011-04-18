@@ -283,29 +283,29 @@ void softmixer_process_buffer(char *buf, size_t size, const struct sound_params 
 
   int do_softmix = mixer_real != 100;
 
-  long sound_endianess = sound_params->fmt & SFMT_MASK_ENDIANES;
+  long sound_endianness = sound_params->fmt & SFMT_MASK_ENDIANNESS;
   long sound_format = sound_params->fmt & SFMT_MASK_FORMAT;
 
   int samplesize = sample_size(sound_format);
   int is_float = (sound_params->fmt & SFMT_MASK_FORMAT) == SFMT_FLOAT;
 
-  int need_endianess_swap = 0;
+  int need_endianness_swap = 0;
 
-  if((sound_endianess != SFMT_NE) && (samplesize > 1) && (!is_float))
+  if((sound_endianness != SFMT_NE) && (samplesize > 1) && (!is_float))
   {
-    need_endianess_swap = 1;
+    need_endianness_swap = 1;
   }
 
   /* setup samples to perform arithmetic */
-  if(need_endianess_swap)
+  if(need_endianness_swap)
   {
 #ifdef DEBUG
-    logit("Converting endianess before mixing");
+    logit("Converting endianness before mixing");
 #endif
     if(samplesize == 4)
-      swap_endianess_32((int32_t *)buf, size / sizeof(int32_t));
+      swap_endianness_32((int32_t *)buf, size / sizeof(int32_t));
     else
-      swap_endianess_16((int16_t *)buf, size / sizeof(int16_t));
+      swap_endianness_16((int16_t *)buf, size / sizeof(int16_t));
   }
 
   switch(sound_format)
@@ -354,16 +354,16 @@ void softmixer_process_buffer(char *buf, size_t size, const struct sound_params 
       break;
   }
   
-  /* restore sample-endianess */
-  if(need_endianess_swap)
+  /* restore sample-endianness */
+  if(need_endianness_swap)
   {
 #ifdef DEBUG
-    logit("Restoring endianess after mixing");
+    logit("Restoring endianness after mixing");
 #endif
     if(samplesize == 4)
-      swap_endianess_32((int32_t *)buf, size / sizeof(int32_t));
+      swap_endianness_32((int32_t *)buf, size / sizeof(int32_t));
     else
-      swap_endianess_16((int16_t *)buf, size / sizeof(int16_t));
+      swap_endianness_16((int16_t *)buf, size / sizeof(int16_t));
   }
 }
 

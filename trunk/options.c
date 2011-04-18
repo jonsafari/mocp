@@ -225,7 +225,7 @@ int option_check_true (int opt ATTR_UNUSED, ...)
 
 /* Initializes a position on the options table. This is intended to be used at
  * initialization to make a table of valid options and its default values. */
-static int option_init(const char *name, enum option_type type)
+static int option_init (const char *name, enum option_type type)
 {
 	unsigned int h=hash(name);
 	int pos=find_free(h);

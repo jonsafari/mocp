@@ -667,11 +667,11 @@ char *audio_conv (struct audio_conversion *conv, const char *buf,
 		}
 	}
 
-	if ((curr_sfmt & SFMT_MASK_ENDIANES)
-			!= (conv->to.fmt & SFMT_MASK_ENDIANES)) {
+	if ((curr_sfmt & SFMT_MASK_ENDIANNESS)
+			!= (conv->to.fmt & SFMT_MASK_ENDIANNESS)) {
 		swap_endian (curr_sound, *conv_len, curr_sfmt);
 		curr_sfmt = sfmt_set_endian (curr_sfmt,
-				conv->to.fmt & SFMT_MASK_ENDIANES);
+				conv->to.fmt & SFMT_MASK_ENDIANNESS);
 	}
 
 	if (conv->from.channels == 1 && conv->to.channels == 2) {

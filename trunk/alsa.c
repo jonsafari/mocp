@@ -686,12 +686,12 @@ static int alsa_reset ()
 		
 		if ((err = snd_pcm_drop(handle)) < 0) {
 			error ("Can't reset the device: %s",
-					snd_strerror(err));
+			        snd_strerror(err));
 			return 0;
 		}
 		if ((err = snd_pcm_prepare(handle)) < 0) {
-			error ("Can't prepare anfter reset: %s",
-					snd_strerror(err));
+			error ("Can't prepare after reset: %s",
+			        snd_strerror(err));
 			return 0;
 		}
 

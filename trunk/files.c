@@ -232,7 +232,7 @@ void resolve_path (char *buf, const int size, const char *file)
 {
 	char *f; /* points to the char in *file we process */
 	char path[2*PATH_MAX]; /* temporary path */
-	int len = 0; /* number of vharacters in the buffer */
+	int len = 0; /* number of characters in the buffer */
 
 	assert (buf[0] == '/');
 
