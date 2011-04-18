@@ -1582,7 +1582,7 @@ void init_interface (const int sock, const int logging, char **args,
 	logit ("Starting MOC interface (version %s)...", PACKAGE_VERSION);
 #endif
 
-	/* set locale acording to the environment variables */
+	/* Set locale according to the environment variables. */
 	if (!setlocale(LC_CTYPE, ""))
 		logit ("Could not set locale!");
 
@@ -1645,9 +1645,7 @@ void init_interface (const int sock, const int logging, char **args,
 			/* Now enter_first_dir() should not go to the music
 			 * directory. */
 			option_set_int ("StartInMusicDir", 0);
-
 		}
-
 	}
 	else {
 		send_int_to_srv (CMD_SEND_EVENTS);
@@ -1672,7 +1670,7 @@ void init_interface (const int sock, const int logging, char **args,
 }
 
 #ifdef SIGWINCH
-/* Handle resizeing xterm */
+/* Handle resizing xterm */
 static void do_resize ()
 {
 	iface_resize ();

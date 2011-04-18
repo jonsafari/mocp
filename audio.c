@@ -246,7 +246,7 @@ static long sfmt_best_matching (const long formats_with_endian,
 				&& (formats_with_endian & SFMT_BE))
 			best |= SFMT_NE;
 		else
-			best |= formats_with_endian & SFMT_MASK_ENDIANES;
+			best |= formats_with_endian & SFMT_MASK_ENDIANNESS;
 	}
 
 	debug ("Chose %s as the best matching %s",
@@ -688,7 +688,7 @@ int audio_open (struct sound_params *sound_params)
 			logit ("Reopening device due to low bps.");
 			
 			/* Not closing the device would cause that much
-			 * sound from the previuous file stays in the buffer
+			 * sound from the previous file stays in the buffer
 			 * and the user will see old data, so close it. */
 			audio_close ();
 		}
