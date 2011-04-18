@@ -1,18 +1,39 @@
 # This is a configuration file for the MOC player. It should be named 'config'
 # and placed in the directory ~/.moc/
 
+#
 # Comments begin with '#'.
 # You can use quotes and escape ('\') in parameters.
-# You can have environment variable values substituted by enclosing the
-# variable name in "${...}" (e.g., "/music/${USER}/flacs").  This only
-# applies to the portion of the option following the '='.  If you need to
-# use the "${" sequence for any other purpose, write "$${" and it will be
-# replaced by "${" and not treated as a substitution.  Variable names are
-# limited to those accepted by the BASH shell; specifically, those comprising
-# the upper- and lowercase ASCII characters, digits and the underscore.
+#
+# You can have variable values substituted by enclosing the variable name
+# as "${...}".  (This only applies to the portion of the option following
+# the '='.)  Variables are substituted first from the environment then,
+# if not found, from the configuration options.  (Note that the value of
+# a configuration option substituted is that which it has at the time the
+# substitution variable is encountered.)  If there is a naming conflict
+# between an environment and configuration variable, you may be able to
+# resolve it by using lowercase as the environment variable matches are
+# case-sensitive whereas the configuration variables are not.
+#
 # You can also use the form "${...:-...}" where the value in the second
 # position will be substituted if the variable name given in the first
-# position is unset or null (e.g., "/music/${USER:-public}/flacs").
+# position is unset or null.
+#
+# So, for example:
+#
+#     MusicDir = /music/${USER:-public}
+#     Fastdir1 = ${MusicDir}/mp3/rock
+#     Fastdir2 = ${MusicDir}/mp3/electronic
+#     Fastdir3 = ${MusicDir}/mp3/rap
+#     Fastdir4 = ${MusicDir}/mp3/etc
+#
+# Variable names are limited to those accepted by the BASH shell; that
+# is, those comprising the upper- and lowercase ASCII characters, digits
+# and the underscore.
+#
+# If you need to use the "${" sequence for any other purpose, write "$${"
+# and it will be replaced by "${" and not treated as a substitution.
+#
 
 
 # Show file titles (title, author, album) instead of file names.

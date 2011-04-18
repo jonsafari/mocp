@@ -621,10 +621,11 @@ static int is_deprecated_option (const char *name)
 	return 0;
 }
 
-/* Find and substitute environment variables enclosed by '${...}'.
- * Strings of the form '$${' are reduced to '${' and not substituted.
- * The result is returned as a new string. */
-static char *substitute_envar (const char *name_in, const char *value_in)
+/* Find and substitute variables enclosed by '${...}'.  Variables are
+ * substituted first from the environment then, if not found, from
+ * the configuration options.  Strings of the form '$${' are reduced to
+ * '${' and not substituted.  The result is returned as a new string. */
+static char *substitute_variable (const char *name_in, const char *value_in)
 {
 	size_t len;
 	char *dollar, *result, *ptr, *name, *value, *dflt, *end;
@@ -652,12 +653,12 @@ static char *substitute_envar (const char *name_in, const char *value_in)
 		dollar[0] = 0x00;
 		lists_strs_append (strs, ptr);
 
-		/* Find where the environment variable name ends. */
+		/* Find where the substitution variable name ends. */
 		name = &dollar[2];
 		len = strspn (name, accept);
 		if (len == 0)
 			fatal ("Error in config file option '%s': "
-			       "environment variable name is missing!",
+			       "substitution variable name is missing!",
 			       name_in);
 
 		/* Find default substitution or closing brace. */
@@ -687,16 +688,40 @@ static char *substitute_envar (const char *name_in, const char *value_in)
 			       name_in, name[len]);
 		}
 
-		/* Fetch environment variable value. */
-		value = getenv (name);
+		/* Fetch environment variable or configuration option value. */
+		value = xstrdup (getenv (name));
+		if (value == NULL) {
+			char buf[16];
+
+			if (find_option (name, OPTION_ANY) != -1) {
+				switch (options_get_type (name)) {
+				case OPTION_INT:
+					snprintf (buf, sizeof (buf), "%d", options_get_int (name));
+					value = xstrdup (buf);
+					break;
+				case OPTION_BOOL:
+					value = xstrdup (options_get_bool (name) ? "yes" : "no");
+					break;
+				case OPTION_STR:
+					value = xstrdup (options_get_str (name));
+					break;
+				case OPTION_SYMB:
+					value = xstrdup (options_get_symb (name));
+					break;
+				default:
+					break;
+				}
+			}
+		}
 		if (value && strlen (value))
 			lists_strs_append (strs, value);
 		else if (dflt)
 			lists_strs_append (strs, dflt);
 		else
 			fatal ("Error in config file option '%s': "
-			       "environment variable '%s' not set or null!",
+			       "substitution variable '%s' not set or null!",
 		           name_in, &dollar[2]);
+		free (value);
 
 		/* Go look for another substitution. */
 		ptr = &end[1];
@@ -746,7 +771,7 @@ static int set_option (const char *name, const char *value_in)
 	options[i].set_in_config = 1;
 
 	/* Substitute environmental variables. */
-	value_s = substitute_envar (name, value_in);
+	value_s = substitute_variable (name, value_in);
 
 	/* Handle a change of option type for QueueNextSongReturn. */
 	value = NULL;
@@ -825,7 +850,7 @@ void options_parse (const char *config_file)
 	int quote = 0; /* are we in quotes? */
 	int esc = 0;
 	char opt_name[30];
-	char opt_value[100];
+	char opt_value[512];
 	int line = 1;
 	int name_pos = 0;
 	int value_pos = 0;
