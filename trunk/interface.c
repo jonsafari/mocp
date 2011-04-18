@@ -828,7 +828,7 @@ static void update_state ()
 		silent_seek_pos = -1;
 
 	update_curr_file ();
-	
+
 	update_channels ();
 	update_bitrate ();
 	update_rate ();
@@ -1561,112 +1561,6 @@ static void load_playlist ()
 		/* We don't want to swith to the playlist after loading. */
 		waiting_for_plist_load = 0;
 	}
-}
-
-void init_interface (const int sock, const int logging, char **args,
-		const int arg_num)
-{
-	srv_sock = sock;
-
-	if (logging) {
-		FILE *logfp;
-
-		if (!(logfp = fopen(INTERFACE_LOG, "a")))
-			fatal ("Can't open client log file: %s", strerror (errno));
-		log_init_stream (logfp);
-	}
-
-#ifdef PACKAGE_REVISION
-	logit ("Starting MOC interface (revision %s)...", PACKAGE_REVISION);
-#else
-	logit ("Starting MOC interface (version %s)...", PACKAGE_VERSION);
-#endif
-
-	/* Set locale according to the environment variables. */
-	if (!setlocale(LC_CTYPE, ""))
-		logit ("Could not set locale!");
-
-	file_info_reset (&curr_file);
-	file_info_block_init (&curr_file);
-	init_playlists ();
-	event_queue_init (&events);
-	keys_init ();
-	windows_init ();
-	get_server_options ();
-	update_mixer_name ();
-
-	signal (SIGQUIT, sig_quit);
-	signal (SIGTERM, sig_quit);
-	signal (SIGHUP, sig_quit);
-	signal (SIGINT, sig_interrupt);
-	
-#ifdef SIGWINCH
-	signal (SIGWINCH, sig_winch);
-#endif
-
-	if (arg_num) {
-		process_args (args, arg_num);
-	
-		if (plist_count(playlist) == 0) {
-			if (!options_get_int("SyncPlaylist")
-					|| !use_server_playlist())
-				load_playlist ();
-			send_int_to_srv (CMD_SEND_EVENTS);
-		}
-		else if (options_get_int("SyncPlaylist")) {
-			struct plist tmp_plist;
-			
-			/* We have made the playlist from command line. */
-			
-			/* the playlist should be now clear, but this will give
-			 * us the serial number of the playlist used by other
-			 * clients. */
-			plist_init (&tmp_plist);
-			get_server_playlist (&tmp_plist);
-
-			send_int_to_srv (CMD_SEND_EVENTS);
-
-			send_int_to_srv (CMD_LOCK);
-			send_int_to_srv (CMD_CLI_PLIST_CLEAR);
-
-			plist_set_serial (playlist,
-					plist_get_serial(&tmp_plist));
-			plist_free (&tmp_plist);
-
-			change_srv_plist_serial ();
-		
-			iface_set_status ("Notifying clients...");
-			send_items_to_clients (playlist);
-			iface_set_status ("");
-			plist_clear (playlist);
-			waiting_for_plist_load = 1;
-			send_int_to_srv (CMD_UNLOCK);
-
-			/* Now enter_first_dir() should not go to the music
-			 * directory. */
-			option_set_int ("StartInMusicDir", 0);
-		}
-	}
-	else {
-		send_int_to_srv (CMD_SEND_EVENTS);
-		if (!options_get_int("SyncPlaylist")
-				|| !use_server_playlist())
-			load_playlist ();
-		enter_first_dir ();
-	}
-
-	/* Ask the server for queue. */
-	use_server_queue ();
-
-	if (options_get_int("SyncPlaylist"))
-		send_int_to_srv (CMD_CAN_SEND_PLIST);
-
-	update_state ();
-	
-	if (options_get_int("CanStartInPlaylist")
-			&& curr_file.file
-			&& plist_find_fname(playlist, curr_file.file) != -1)
-		iface_switch_to_plist ();
 }
 
 #ifdef SIGWINCH
@@ -3498,6 +3392,112 @@ static void handle_interrupt ()
 {
 	if (iface_in_entry())
 		iface_entry_disable ();
+}
+
+void init_interface (const int sock, const int logging, char **args,
+		const int arg_num)
+{
+	srv_sock = sock;
+
+	if (logging) {
+		FILE *logfp;
+
+		if (!(logfp = fopen(INTERFACE_LOG, "a")))
+			fatal ("Can't open client log file: %s", strerror (errno));
+		log_init_stream (logfp);
+	}
+
+#ifdef PACKAGE_REVISION
+	logit ("Starting MOC interface (revision %s)...", PACKAGE_REVISION);
+#else
+	logit ("Starting MOC interface (version %s)...", PACKAGE_VERSION);
+#endif
+
+	/* Set locale according to the environment variables. */
+	if (!setlocale(LC_CTYPE, ""))
+		logit ("Could not set locale!");
+
+	file_info_reset (&curr_file);
+	file_info_block_init (&curr_file);
+	init_playlists ();
+	event_queue_init (&events);
+	keys_init ();
+	windows_init ();
+	get_server_options ();
+	update_mixer_name ();
+
+	signal (SIGQUIT, sig_quit);
+	signal (SIGTERM, sig_quit);
+	signal (SIGHUP, sig_quit);
+	signal (SIGINT, sig_interrupt);
+	
+#ifdef SIGWINCH
+	signal (SIGWINCH, sig_winch);
+#endif
+
+	if (arg_num) {
+		process_args (args, arg_num);
+	
+		if (plist_count(playlist) == 0) {
+			if (!options_get_int("SyncPlaylist")
+					|| !use_server_playlist())
+				load_playlist ();
+			send_int_to_srv (CMD_SEND_EVENTS);
+		}
+		else if (options_get_int("SyncPlaylist")) {
+			struct plist tmp_plist;
+			
+			/* We have made the playlist from command line. */
+			
+			/* the playlist should be now clear, but this will give
+			 * us the serial number of the playlist used by other
+			 * clients. */
+			plist_init (&tmp_plist);
+			get_server_playlist (&tmp_plist);
+
+			send_int_to_srv (CMD_SEND_EVENTS);
+
+			send_int_to_srv (CMD_LOCK);
+			send_int_to_srv (CMD_CLI_PLIST_CLEAR);
+
+			plist_set_serial (playlist,
+					plist_get_serial(&tmp_plist));
+			plist_free (&tmp_plist);
+
+			change_srv_plist_serial ();
+		
+			iface_set_status ("Notifying clients...");
+			send_items_to_clients (playlist);
+			iface_set_status ("");
+			plist_clear (playlist);
+			waiting_for_plist_load = 1;
+			send_int_to_srv (CMD_UNLOCK);
+
+			/* Now enter_first_dir() should not go to the music
+			 * directory. */
+			option_set_int ("StartInMusicDir", 0);
+		}
+	}
+	else {
+		send_int_to_srv (CMD_SEND_EVENTS);
+		if (!options_get_int("SyncPlaylist")
+				|| !use_server_playlist())
+			load_playlist ();
+		enter_first_dir ();
+	}
+
+	/* Ask the server for queue. */
+	use_server_queue ();
+
+	if (options_get_int("SyncPlaylist"))
+		send_int_to_srv (CMD_CAN_SEND_PLIST);
+
+	update_state ();
+	
+	if (options_get_int("CanStartInPlaylist")
+			&& curr_file.file
+			&& plist_find_fname(playlist, curr_file.file) != -1)
+		iface_switch_to_plist ();
 }
 
 void interface_loop ()
