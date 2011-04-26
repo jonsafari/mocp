@@ -3655,8 +3655,9 @@ void windows_init ()
 	main_win_draw (&main_win);
 	info_win_draw (&info_win);
 	
-	wrefresh (main_win.win);
-	wrefresh (info_win.win);
+	wnoutrefresh (main_win.win);
+	wnoutrefresh (info_win.win);
+	doupdate ();
 
 	iface_initialized = 1;
 }
@@ -3692,14 +3693,15 @@ void windows_end ()
 static void iface_refresh_screen ()
 {
 	/* We must do it in proper order to get the right cursor position. */
-	if (iface_in_entry()) {
-		wrefresh (main_win.win);
-		wrefresh (info_win.win);
+	if (iface_in_entry ()) {
+		wnoutrefresh (main_win.win);
+		wnoutrefresh (info_win.win);
 	}
 	else {
-		wrefresh (info_win.win);
-		wrefresh (main_win.win);
+		wnoutrefresh (info_win.win);
+		wnoutrefresh (main_win.win);
 	}
+	doupdate ();
 }
 
 /* Set state of the options displayed in the information window. */
