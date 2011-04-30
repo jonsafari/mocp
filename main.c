@@ -472,9 +472,15 @@ int main (int argc, char *argv[])
 	char *config_file = NULL;
 	const char *jump_type;
 
+#ifdef PACKAGE_REVISION
+	logit ("This is Music On Console (revision %s)", PACKAGE_REVISION);
+#else
+	logit ("This is Music On Console (version %s)", PACKAGE_VERSION);
+#endif
+
 	if (get_home () == NULL)
 		fatal ("Could not determine user's home directory!");
-				
+
 	memset (&params, 0, sizeof(params));
 	options_init ();
 
