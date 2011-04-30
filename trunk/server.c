@@ -304,12 +304,17 @@ int server_init (int debugging, int foreground)
 	}
 
 	if (foreground)
-		log_init_stream (stdout);	
-	else if (debugging) {
-		FILE *logf;
-		if (!(logf = fopen(SERVER_LOG, "a")))
-			fatal ("Can't open server log file: %s", strerror(errno));
-		log_init_stream (logf);
+		log_init_stream (stdout, "stdout");	
+	else {
+		FILE *logfp;
+
+		logfp = NULL;
+		if (debugging) {
+			logfp = fopen (SERVER_LOG, "a");
+			if (!logfp)
+				fatal ("Can't open server log file: %s", strerror (errno));
+		}
+		log_init_stream (logfp, SERVER_LOG);
 	}
 
 #ifdef PACKAGE_REVISION

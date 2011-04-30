@@ -3397,15 +3397,15 @@ static void handle_interrupt ()
 void init_interface (const int sock, const int logging, char **args,
 		const int arg_num)
 {
-	srv_sock = sock;
+	FILE *logfp;
 
+	logfp = NULL;
 	if (logging) {
-		FILE *logfp;
-
-		if (!(logfp = fopen(INTERFACE_LOG, "a")))
+		logfp = fopen (INTERFACE_LOG, "a");
+		if (!logfp)
 			fatal ("Can't open client log file: %s", strerror (errno));
-		log_init_stream (logfp);
 	}
+	log_init_stream (logfp, INTERFACE_LOG);
 
 #ifdef PACKAGE_REVISION
 	logit ("Starting MOC interface (revision %s)...", PACKAGE_REVISION);
@@ -3416,6 +3416,8 @@ void init_interface (const int sock, const int logging, char **args,
 	/* Set locale according to the environment variables. */
 	if (!setlocale(LC_CTYPE, ""))
 		logit ("Could not set locale!");
+
+	srv_sock = sock;
 
 	file_info_reset (&curr_file);
 	file_info_block_init (&curr_file);
