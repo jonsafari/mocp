@@ -30,6 +30,7 @@
 #include <unistd.h>
 #include <time.h>
 #include <locale.h>
+#include <assert.h>
 
 #include "server.h"
 #include "common.h"
@@ -40,6 +41,7 @@
 #include "compat.h"
 #include "common.h"
 #include "decoder.h"
+#include "lists.h"
 
 struct parameters
 {
@@ -426,6 +428,25 @@ static long get_num_param (const char *p,const char ** last)
 	return val;
 }
 
+/* Log the command line which launched MOC. */
+static void log_command_line (int argc, char *argv[])
+{
+	lists_t_strs *cmdline;
+	char *str;
+
+	assert (argv != NULL);
+	assert (argv[argc] == NULL);
+
+	cmdline = lists_strs_new (argc);
+	if (lists_strs_load (cmdline, argv) > 0)
+		str = lists_strs_fmt (cmdline, "%s ");
+	else
+		str = xstrdup ("No command line available");
+	logit ("%s", str);
+	free (str);
+	lists_strs_free (cmdline);
+}
+
 int main (int argc, char *argv[])
 {
 	struct option long_options[] = {
@@ -477,6 +498,8 @@ int main (int argc, char *argv[])
 #else
 	logit ("This is Music On Console (version %s)", PACKAGE_VERSION);
 #endif
+
+	log_command_line (argc, argv);
 
 	if (get_home () == NULL)
 		fatal ("Could not determine user's home directory!");
