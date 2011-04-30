@@ -3399,6 +3399,8 @@ void init_interface (const int sock, const int logging, char **args,
 {
 	FILE *logfp;
 
+	logit ("Starting MOC Interface");
+
 	logfp = NULL;
 	if (logging) {
 		logfp = fopen (INTERFACE_LOG, "a");
@@ -3406,12 +3408,6 @@ void init_interface (const int sock, const int logging, char **args,
 			fatal ("Can't open client log file: %s", strerror (errno));
 	}
 	log_init_stream (logfp, INTERFACE_LOG);
-
-#ifdef PACKAGE_REVISION
-	logit ("Starting MOC interface (revision %s)...", PACKAGE_REVISION);
-#else
-	logit ("Starting MOC interface (version %s)...", PACKAGE_VERSION);
-#endif
 
 	/* Set locale according to the environment variables. */
 	if (!setlocale(LC_CTYPE, ""))
