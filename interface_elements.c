@@ -763,17 +763,10 @@ static int side_menu_get_menu_height (const struct side_menu *m)
 
 static void side_menu_init_menu (struct side_menu *m)
 {
-	int height;
-	
 	assert (m != NULL);
 
-	if (m->posy + m->height == LINES - 4)
-		height = m->height - 1;
-	else
-		height = m->height - 2;
-
 	m->menu.list.main = menu_new (m->win, m->posx + 1, m->posy + 1,
-			m->width - 2, side_menu_get_menu_height(m));
+			m->width - 2, side_menu_get_menu_height (m));
 }
 
 static void side_menu_init (struct side_menu *m, const enum side_menu_type type,
