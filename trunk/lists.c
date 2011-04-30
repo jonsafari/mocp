@@ -63,6 +63,14 @@ int lists_strs_size (const lists_t_strs *list)
 	return list->size;
 }
 
+/* Return the total number of strings which could be held without growing. */
+int lists_strs_capacity (const lists_t_strs *list)
+{
+	assert (list);
+
+	return list->capacity;
+}
+
 /* Return true iff the list has no members. */
 bool lists_strs_empty (const lists_t_strs *list)
 {
