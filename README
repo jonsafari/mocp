@@ -71,10 +71,11 @@ To support audio formats you need:
  - WAVE, AU, AIFF, SVX, SPH, IRC, VOC - libsndfile
      (http://www.mega-nerd.com/libsndfile/)
  - Speex - libspeex (http://www.speex.org/)
- - Musepack (mpc) - libmpcdec (http://www.musepack.net/) and taglib
+ - Musepack (mpc) - libmpcdec and taglib
+     (http://www.musepack.net/)
      (http://developer.kde.org/~wheeler/taglib.html)
- - WMA, ReadAudio, (.ra), MP4 - FFmpeg
- 	(http://ffmpeg.sourceforge.net/index.php)
+ - WMA, ReadAudio, (.ra), MP4 - FFmpeg version 0.5 or later
+     (http://www.ffmpeg.org/)
  - modplug - libmodplug (http://modplug-xmms.sourceforge.net)
  - MIDI - libtimidity (http://timidity.sourceforge.net/)
  - SID - sidplay2 (sidplay2.sourceforge.net/)
