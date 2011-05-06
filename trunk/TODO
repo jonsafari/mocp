@@ -79,6 +79,7 @@ In future:
 * When the new API of libavformat (in ffmpeg) stablises (maybe in version
   53) use whatever it provides to obtain tags in ffmpeg.c ffmpeg_info().
   (Also see the SVN log entry for r2282.)
+* Remove deprecated ffmpeg-config support.
 
 Maybe never:
 
