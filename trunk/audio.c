@@ -249,10 +249,12 @@ static long sfmt_best_matching (const long formats_with_endian,
 			best |= formats_with_endian & SFMT_MASK_ENDIANNESS;
 	}
 
+#ifdef DEBUG
 	debug ("Chose %s as the best matching %s",
 			sfmt_str(best, fmt_name1, sizeof(fmt_name1)),
 			sfmt_str(req_with_endian, fmt_name2,
 				sizeof(fmt_name2)));
+#endif
 	
 	return best;
 }
