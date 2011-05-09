@@ -60,14 +60,14 @@
 static pthread_t playing_thread = 0;  /* tid of play thread */
 static int play_thread_running = 0;
 
-/* currentlu played file */
+/* currently played file */
 static int curr_playing = -1;
 /* file we played before playing songs from queue */
 static char *before_queue_fname = NULL;
 static char *curr_playing_fname = NULL;
 /* This flag is set 1 if audio_play() was called with nonempty queue,
  * so we know that when the queue is empty, we should play the regular
- * playlist from the beginning */
+ * playlist from the beginning. */
 static int started_playing_in_queue = 0;
 static pthread_mutex_t curr_playing_mut = PTHREAD_MUTEX_INITIALIZER;
 
@@ -76,7 +76,7 @@ static struct hw_funcs hw;
 static struct output_driver_caps hw_caps; /* capabilities of the output
 					     driver */
 
-/* Player state */
+/* Player state. */
 static int state = STATE_STOP;
 
 /* requests for playing thread */
@@ -92,13 +92,13 @@ static struct plist queue;
 static struct plist *curr_plist; /* currently used playlist */
 static pthread_mutex_t plist_mut = PTHREAD_MUTEX_INITIALIZER;
 
-/* Is the audio deice opened? */
+/* Is the audio device opened? */
 static int audio_opened = 0;
 
-/* Current sound parameters (which the device is opened with). */
+/* Current sound parameters (with which the device is opened). */
 static struct sound_params driver_sound_params = { 0, 0, 0};
 
-/* Sound parameters requestet by the decoder. */
+/* Sound parameters requested by the decoder. */
 static struct sound_params req_sound_params = { 0, 0, 0 };
 
 static struct audio_conversion sound_conv;
@@ -110,7 +110,7 @@ static char *last_stream_url = NULL;
 
 static int current_mixer = 0;
 
-/* Check if the two sample rates don't differ as much that we can't play. */
+/* Check if the two sample rates don't differ so much that we can't play. */
 #define sample_rate_compat(sound, device) ((device) * 1.05 >= sound \
 		&& (device) * 0.95 <= sound)
 
@@ -285,20 +285,20 @@ int sfmt_Bps (const long format)
 	return Bps;
 }
 
-/* Move to the next file depending on set options, the user request and
- * whether there are files in queue or not. */
+/* Move to the next file depending on the options set, the user
+ * request and whether or not there are files in the queue. */
 static void go_to_another_file ()
 {
 	int shuffle = options_get_int ("Shuffle");
 	int go_next = (play_next || options_get_int("AutoNext"));
 	int curr_playing_curr_pos;
-	/* shouldn't play_next be protected by mutex? */
+	/* XXX: Shouldn't play_next be protected by mutex? */
 
 	LOCK (curr_playing_mut);
 	LOCK (plist_mut);
 
 	/* If we move forward in the playlist and there are some songs in
-	 * the queue, play them */
+	 * the queue, then play them. */
 	if (plist_count(&queue) && go_next) {
 		logit ("Playing file from queue");
 
@@ -315,8 +315,7 @@ static void go_to_another_file ()
 	else {
 		/* If we just finished playing files from the queue and the
 		 * appropriate option is set, continue with the file played
-		 * before playing queue.
-		 * */
+		 * before playing the queue. */
 		if (before_queue_fname && options_get_int("QueueNextSongReturn")) {
 			free (curr_playing_fname);
 			curr_playing_fname = before_queue_fname;
@@ -414,7 +413,7 @@ static void go_to_another_file ()
 
 static void *play_thread (void *unused ATTR_UNUSED)
 {
-	logit ("entering playing thread");
+	logit ("Entering playing thread");
 
 	while (curr_playing != -1) {
 		char *file;
@@ -485,7 +484,7 @@ static void *play_thread (void *unused ATTR_UNUSED)
 	}
 
 	audio_close ();
-	logit ("exiting");
+	logit ("Exiting");
 
 	return NULL;
 }
@@ -541,7 +540,7 @@ void audio_play (const char *fname)
 	LOCK (plist_mut);
 
 	/* If we have songs in the queue and fname is empty string, start
-	 * playing file from the queue */
+	 * playing file from the queue. */
 	if (plist_count(&queue) && !(*fname)) {
 		curr_plist = &queue;
 		curr_playing = plist_next (&queue, -1);
@@ -669,8 +668,8 @@ static void reset_sound_params (struct sound_params *params)
 	params->fmt = 0;
 }
 
-/* Return 0 on error. If sound params == NULL, open the device with the last
- * parameters. */
+/* Return 0 on error. If sound params == NULL, open the device using
+ * the previous parameters. */
 int audio_open (struct sound_params *sound_params)
 {
 	int res;
@@ -688,8 +687,8 @@ int audio_open (struct sound_params *sound_params)
 			logit ("Reopening device due to low bps.");
 			
 			/* Not closing the device would cause that much
-			 * sound from the previous file stays in the buffer
-			 * and the user will see old data, so close it. */
+			 * sound from the previous file to stay in the buffer
+			 * and the user will hear old data, so close it. */
 			audio_close ();
 		}
 		else {
@@ -705,7 +704,7 @@ int audio_open (struct sound_params *sound_params)
 	req_sound_params = *sound_params;
 
 	/* Set driver_sound_params to parameters supported by the driver that
-	 * are nearly the requested parameters */
+	 * are nearly the requested parameters. */
 	
 	if (options_get_int("ForceSampleRate")) {
 		driver_sound_params.rate = options_get_int("ForceSampleRate");
@@ -786,8 +785,8 @@ int audio_send_buf (const char *buf, const size_t size)
 	return res;
 }
 
-/* Get the current audio format bytes per frame value.  May return 0 if the
- * audio device is closed. */
+/* Get the current audio format bytes per frame value.
+ * May return 0 if the audio device is closed. */
 int audio_get_bpf ()
 {
 	return driver_sound_params.channels
@@ -795,8 +794,8 @@ int audio_get_bpf ()
 				: 0);
 }
 
-/* Get the current audio format bytes per second value.  May return 0 if the
- * audio device is closed. */
+/* Get the current audio format bytes per second value.
+ * May return 0 if the audio device is closed. */
 int audio_get_bps ()
 {
 	return driver_sound_params.rate * audio_get_bpf ();
@@ -880,8 +879,8 @@ void audio_close ()
 	}
 }
 
-/* Try to initialize drivers from the list and fill the funcs with the
- * funtions of the first working driver. */
+/* Try to initialize drivers from the list and fill funcs with
+ * those of the first working driver. */
 static void find_working_driver (const char *drivers, struct hw_funcs *funcs)
 {
 	const char *pos = drivers;
@@ -1135,7 +1134,8 @@ void audio_queue_delete (const char *file)
 	UNLOCK (plist_mut);
 }
 
-/* Get the time of a file if it is on the playlist and the time is avilable. */
+/* Get the time of a file if the file is on the playlist and
+ * the time is available. */
 int audio_get_ftime (const char *file)
 {
 	int i;
@@ -1175,7 +1175,7 @@ void audio_plist_set_time (const char *file, const int time)
 	UNLOCK (plist_mut);
 }
 
-/* Notify about changing the state (unsed by the player). */
+/* Notify that the state was changed (used by the player). */
 void audio_state_started_playing ()
 {
 	state = STATE_PLAY;
@@ -1200,7 +1200,7 @@ void audio_plist_set_serial (const int serial)
 	UNLOCK (plist_mut);
 }
 
-/* Swap 2 file on the playlist. */
+/* Swap 2 files on the playlist. */
 void audio_plist_move (const char *file1, const char *file2)
 {
 	LOCK (plist_mut);
@@ -1215,8 +1215,8 @@ void audio_queue_move (const char *file1, const char *file2)
 	UNLOCK (plist_mut);
 }
 
-/* Return copy of the song queue. We cannot just return constant
- * pointer, because it will be used in different thread.
+/* Return a copy of the song queue.  We cannot just return constant
+ * pointer, because it will be used in a different thread.
  * It obviously needs to be freed after use. */
 struct plist* audio_queue_get_contents ()
 {
