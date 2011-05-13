@@ -35,6 +35,9 @@
 #ifdef HAVE_OSS
 # include "oss.h"
 #endif
+#ifdef HAVE_SNDIO
+# include "sndio_out.h"
+#endif
 #ifdef HAVE_ALSA
 # include "alsa.h"
 #endif
@@ -901,6 +904,15 @@ static void find_working_driver (const char *drivers, struct hw_funcs *funcs)
 		
 		pos += t;
 		pos += strspn (pos, " \t,");
+
+#ifdef HAVE_SNDIO
+		if (!strcasecmp(name, "sndio")) {
+			sndio_funcs (funcs);
+			printf ("Trying SNDIO...\n");
+			if (funcs->init(&hw_caps))
+				return;
+		}
+#endif
 
 #ifdef HAVE_OSS
 		if (!strcasecmp(name, "oss")) {

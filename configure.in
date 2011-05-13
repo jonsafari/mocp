@@ -192,6 +192,21 @@ then
 	fi
 fi
 
+AC_ARG_WITH(sndio, AS_HELP_STRING(--without-sndio, Compile without SNDIO support.))
+
+if test "x$with_sndio" != "xno"
+then
+	AC_CHECK_HEADERS([sndio.h])
+	if test "$ac_cv_header_sndio_h" = "yes"
+	then
+		AC_DEFINE([HAVE_SNDIO], 1, [Define if you have SNDIO.])
+		EXTRA_OBJS="$EXTRA_OBJS sndio_out.o"
+		SOUND_DRIVERS="$SOUND_DRIVERS SNDIO"
+		AC_CHECK_LIB([sndio], [sio_open],
+		             [EXTRA_LIBS="$EXTRA_LIBS -lsndio"])
+	fi
+fi
+
 AC_ARG_WITH(alsa, AS_HELP_STRING(--without-alsa, Compile without ALSA support.))
 
 if test "x$with_alsa" != "xno"
@@ -223,6 +238,12 @@ then
 			   CFLAGS="$CFLAGS $JACK_CFLAGS"],
 			  [true])
 fi
+
+AC_SUBST([SOUNDDRIVER])
+case "$host_os" in
+	openbsd*) SOUNDDRIVER="SNDIO, JACK, OSS";;
+	       *) SOUNDDRIVER="JACK, ALSA, OSS";;
+esac
 
 AC_ARG_ENABLE(debug, AS_HELP_STRING(--disable-debug,Disable debugging code))
 

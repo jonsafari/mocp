@@ -68,6 +68,8 @@ EXTRA_mocp_SOURCES = gnugetopt.h \
 		     getopt1.c \
 		     null_out.c \
 		     null_out.h \
+		     sndio_out.c \
+		     sndio_out.h \
 		     oss.c \
 		     oss.h \
 		     alsa.c \

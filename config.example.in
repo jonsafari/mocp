@@ -90,10 +90,11 @@ Prebuffering		= 64
 # environment variables http_proxy and ALL_PROXY will be used if present.
 #HTTPProxy		= my_proxy:port
 
-# Sound driver - OSS, ALSA, JACK, or null (only for debugging).
+# Sound driver - OSS, ALSA, JACK, SNDIO (on OpenBSD) or null (only for
+# debugging).
 # You can enter more than one driver separated by a comma. The first working
 # driver will be used.
-SoundDriver		= JACK, ALSA, OSS
+SoundDriver		= @SOUNDDRIVER@
 
 # Jack output settings.
 JackOutLeft		= "@ALSA_PCM@:playback_1"

@@ -17,3 +17,4 @@ Alex Norman <alex@neisis.net> - JACK output, FastDir option, other improvements.
 Adam Kowalski - Many bug reports (also tests).
 Joseph Dunn - Bug reports. He gave me access to his FreeBSD box that allowed
 	me to fix a bug.
+Alexander Polakov - For the OpenBSD SNDIO sound driver.
