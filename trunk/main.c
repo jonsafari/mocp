@@ -242,6 +242,9 @@ static void show_version ()
 #ifdef HAVE_OSS
 	printf (" OSS");
 #endif
+#ifdef HAVE_SNDIO
+	printf (" SNDIO");
+#endif
 #ifdef HAVE_ALSA
 	printf (" ALSA");
 #endif
