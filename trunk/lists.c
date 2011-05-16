@@ -42,8 +42,8 @@ lists_t_strs *lists_strs_new (int reserve)
 	return result;
 }
 
-/* Free all storage associated with a list of strings. */
-void lists_strs_free (lists_t_strs *list)
+/* Clear a list to an empty state. */
+void lists_strs_clear (lists_t_strs *list)
 {
 	int ix;
 	
@@ -51,6 +51,15 @@ void lists_strs_free (lists_t_strs *list)
 
 	for (ix = 0; ix < list->size; ix += 1)
 		free ((void *) list->strs[ix]);
+	list->size = 0;
+}
+
+/* Free all storage associated with a list of strings. */
+void lists_strs_free (lists_t_strs *list)
+{
+	assert (list);
+
+	lists_strs_clear (list);
 	free (list->strs);
 	free (list);
 }
@@ -323,4 +332,22 @@ int lists_strs_load (lists_t_strs *list, char **saved)
 		lists_strs_append (list, *saved++);
 
 	return lists_strs_size (list) - size;
+}
+
+/* Given a string, return the index of the first list entry which matches
+ * it.  If not found, return the total number of entries.
+ * The comparison is case-insensitive. */
+int lists_strs_find (lists_t_strs *list, const char *sought)
+{
+	int result;
+
+	assert (list);
+	assert (sought);
+
+	for (result = 0; result < lists_strs_size (list); result += 1) {
+		if (!strcasecmp (lists_strs_at (list, result), sought))
+			break;
+	}
+
+	return result;
 }

@@ -13,6 +13,7 @@ typedef int lists_t_compare (const void *, const void *);
 
 /* List administration functions. */
 lists_t_strs *lists_strs_new (int reserve);
+void lists_strs_clear (lists_t_strs *list);
 void lists_strs_free (lists_t_strs *list);
 int lists_strs_size (const lists_t_strs *list);
 int lists_strs_capacity (const lists_t_strs *list);
@@ -42,6 +43,7 @@ char *lists_strs_fmt (const lists_t_strs *list, const char *fmt);
 char *lists_strs_cat (const lists_t_strs *list);
 char **lists_strs_save (const lists_t_strs *list);
 int lists_strs_load (lists_t_strs *list, char **saved);
+int lists_strs_find (lists_t_strs *list, const char *sought);
 
 #ifdef __cplusplus
 }
