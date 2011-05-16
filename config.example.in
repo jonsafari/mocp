@@ -36,7 +36,8 @@
 #
 # Some options take lists of strings as their values.  The strings are
 # separated by colons.  Additional strings can be appended to the list
-# using "+=" in place of a plain "=" to assign the value.
+# using "+=" in place of a plain "=" to assign the value.  For an example,
+# see the XTerms option.
 #
 
 
@@ -165,6 +166,14 @@ ShowFormat		= yes
 # Show file time in menu. Possible options: yes, no, IfAvailable - show the
 # time only when it was read before (often works faster).
 ShowTime		= IfAvailable
+
+# Values of the TERM environment variable which are deemed to be xterms.
+XTerms = xterm
+XTerms += xterm-colour:xterm-color
+XTerms += xterm-256colour:xterm-256color
+XTerms += rxvt:rxvt-unicode
+XTerms += rxvt-unicode-256colour:rxvt-unicode-256color
+XTerms += eterm
 
 # Theme file. This can be absolute path or relative to
 # /usr/share/moc/themes/ (depends on installation prefix) or ~/.moc/themes/

@@ -483,6 +483,12 @@ void options_init ()
 	option_add_bool ("ShowFormat", true);
 	option_add_symb ("ShowTime", "IfAvailable",
 	                 CHECK_SYMBOL(3), "yes", "no", "IfAvailable");
+	option_add_list ("XTerms", "xterm:"
+	                           "xterm-colour:xterm-color:"
+	                           "xterm-256colour:xterm-256color:"
+	                           "rxvt:rxvt-unicode:"
+	                           "rxvt-unicode-256colour:rxvt-unicode-256color:"
+	                           "eterm", CHECK_NONE);
 	option_add_str  ("Theme", NULL, CHECK_NONE);
 	option_add_str  ("XTermTheme", NULL, CHECK_NONE);
 	option_add_str  ("ForceTheme", NULL, CHECK_NONE); /* Used when -T is set */
