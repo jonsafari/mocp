@@ -119,7 +119,7 @@ char *str_repl (char *target, const char *oldstr, const char *newstr)
 		target_len += newstr_len - oldstr_len;
 		p = needle - target;
 		if (target_len + 1 > target_max) {
-			target_max = (target_len + 1 > target_max * 2) ? target_len + 1 : target_max * 2;
+			target_max = MAX(target_len + 1, target_max * 2);
 			target = xrealloc(target, target_max);
 		}
 		memmove(target + p + newstr_len, target + p + oldstr_len, target_len - p - newstr_len + 1);

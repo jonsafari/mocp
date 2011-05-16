@@ -674,7 +674,7 @@ static int alsa_get_buff_fill ()
 		}
 
 		/* delay can be negative when underrun occur */
-		return delay >= 0 ? delay * bytes_per_frame : 0;
+		return MAX(delay, 0) * bytes_per_frame;
 	}
 	return 0;
 }

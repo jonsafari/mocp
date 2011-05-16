@@ -460,7 +460,7 @@ static void update_mixer_value ()
 {
 	int val = get_mixer_value ();
 	
-	iface_set_mixer_value (val >= 0 ? val : 0);
+	iface_set_mixer_value MAX(val, 0);
 }
 
 static void update_mixer_name ()
@@ -3899,7 +3899,7 @@ void interface_cmdline_file_info (const int server_sock)
 				sec_to_min (curr_time_str, curr_file.curr_time);
 				left = curr_file.tags->time -
 					curr_file.curr_time;
-				sec_to_min (time_left_str, left > 0 ? left : 0);
+				sec_to_min (time_left_str, MAX(left, 0));
 			}
 		}
 		else {
@@ -3931,11 +3931,8 @@ void interface_cmdline_file_info (const int server_sock)
 		printf ("CurrentTime: %s\n", curr_time_str);
 		printf ("CurrentSec: %d\n", curr_file.curr_time);
 
-		printf ("Bitrate: %dkbps\n",
-				curr_file.bitrate > 0 ? curr_file.bitrate : 0);
-		printf ("AvgBitrate: %dkbps\n", 
-				curr_file.avg_bitrate > 0
-				? curr_file.avg_bitrate : 0);
+		printf ("Bitrate: %dkbps\n", MAX(curr_file.bitrate, 0));
+		printf ("AvgBitrate: %dkbps\n", MAX(curr_file.avg_bitrate, 0));
 		printf ("Rate: %dkHz\n", curr_file.rate);
 		
 		file_info_cleanup (&curr_file);
@@ -4221,7 +4218,7 @@ void interface_cmdline_formatted_info (const int server_sock,
 				sec_to_min (curr_time_str, curr_file.curr_time);
 				left = curr_file.tags->time -
 					curr_file.curr_time;
-				sec_to_min (time_left_str, left > 0 ? left : 0);
+				sec_to_min (time_left_str, MAX(left, 0));
 			}
 		}
 		else {
@@ -4244,8 +4241,7 @@ void interface_cmdline_formatted_info (const int server_sock,
 			snprintf(time_sec_str, 5, "%d", curr_file.tags->time);
 
 		snprintf(curr_time_sec_str, 5, "%d", curr_file.curr_time);
-		snprintf(file_bitrate_str, 4, "%d",
-				curr_file.bitrate > 0 ? curr_file.bitrate : 0);
+		snprintf(file_bitrate_str, 4, "%d", MAX(curr_file.bitrate, 0));
 		snprintf(file_rate_str, 3, "%d", curr_file.rate);
 	}
 

@@ -587,7 +587,7 @@ static void do_title_expn (char *dest, int size, const char *fmt,
 		fmt++;
 	}
 
-	free = free < 0 ? 0 : free; /* Possible integer overflow? */
+	free = MAX(free, 0); /* Possible integer overflow? */
 	dest[size - free] = '\0';
 }
 

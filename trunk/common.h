@@ -34,6 +34,10 @@ extern "C" {
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #endif
 
+#ifndef MAX
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
+#endif
+
 #ifdef HAVE__ATTRIBUTE__
 # define ATTR_UNUSED __attribute__((unused))
 #else
