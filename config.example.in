@@ -34,6 +34,10 @@
 # If you need to use the "${" sequence for any other purpose, write "$${"
 # and it will be replaced by "${" and not treated as a substitution.
 #
+# Some options take lists of strings as their values.  The strings are
+# separated by colons.  Additional strings can be appended to the list
+# using "+=" in place of a plain "=" to assign the value.
+#
 
 
 # Show file titles (title, author, album) instead of file names.

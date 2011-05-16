@@ -36,6 +36,7 @@ union option_value
 	char *str;
 	int num;
 	bool boolean;
+	lists_t_strs *list;
 };
 
 struct option
@@ -70,8 +71,7 @@ static unsigned int hash(const char * str)
 static int find_option (const char *name, enum option_type type)
 {
 	unsigned int h=hash(name),i,init_pos=h%OPTIONS_MAX;
-	
-	
+
 	for(i=init_pos;i<OPTIONS_MAX;i++)
 		if(options[i].type==OPTION_FREE)
 			return -1;
@@ -142,6 +142,7 @@ int option_check_range (int opt, ...)
 			}
 			break;
 
+		case OPTION_LIST:
 		case OPTION_BOOL:
 		case OPTION_SYMB:
 		case OPTION_ANY:
@@ -183,6 +184,7 @@ int option_check_discrete (int opt, ...)
 			}
 			break;
 
+		case OPTION_LIST:
 		case OPTION_BOOL:
 		case OPTION_STR:
 		case OPTION_ANY:
@@ -202,7 +204,7 @@ int option_check_length (int opt, ...)
 
 	assert (opt != -1);
 	assert (options[opt].count % 2 == 0);
-	assert (options[opt].type == OPTION_STR);
+	assert (options[opt].type & (OPTION_STR | OPTION_LIST));
 
 	rc = 0;
 	va_start (va, opt);
@@ -229,11 +231,11 @@ static int option_init (const char *name, enum option_type type)
 {
 	unsigned int h=hash(name);
 	int pos=find_free(h);
-	
+
 	assert (strlen(name) < OPTION_NAME_MAX);
 	assert (is_valid_symbol (name));
 	assert(pos>=0);
-	
+
 	strcpy (options[pos].name, name);
 	options[pos].hash=h;
 	options[pos].type = type;
@@ -333,6 +335,33 @@ static void option_add_symb (const char *name, const char *value, const int coun
 	va_end (va);
 }
 
+/* Add a list option to the options table. This is intended to be used at
+ * initialization to make a table of valid options and their default values. */
+static void option_add_list (const char *name, const char *value, int (*check) (int, ...), const int count, ...)
+{
+	int ix, pos;
+	va_list va;
+
+	pos = option_init (name, OPTION_LIST);
+	options[pos].value.list = lists_strs_new (8);
+	lists_strs_split (options[pos].value.list, value, ":");
+	options[pos].check = check;
+	options[pos].count = count;
+	if (count > 0) {
+		va_start (va, count);
+		if (check == option_check_length) {
+			options[pos].constraints = xcalloc (count, sizeof (int));
+			for (ix = 0; ix < count; ix += 1)
+				((int *) options[pos].constraints)[ix] = va_arg (va, int);
+		} else {
+			options[pos].constraints = xcalloc (count, sizeof (char *));
+			for (ix = 0; ix < count; ix += 1)
+				((char **) options[pos].constraints)[ix] = xstrdup (va_arg (va, char *));
+		}
+		va_end (va);
+	}
+}
+
 /* Set an integer option to the value. */
 void option_set_int (const char *name, const int value)
 {
@@ -364,7 +393,7 @@ void option_set_symb (const char *name, const char *value)
 	opt = find_option(name, OPTION_SYMB);
 	if (opt == -1)
 		fatal ("Tried to set wrong option '%s'!", name);
-	
+
 	options[opt].value.str = NULL;
 	for (ix = 0; ix < options[opt].count; ix += 1) {
 		if (!strcasecmp(value, (((char **) options[opt].constraints)[ix])))
@@ -381,7 +410,7 @@ void option_set_str (const char *name, const char *value)
 
 	if (opt == -1)
 		fatal ("Tried to set wrong option '%s'!", name);
-	
+
 	if (options[opt].type == OPTION_SYMB) {
 		option_set_symb (name, value);
 	} else {
@@ -389,6 +418,20 @@ void option_set_str (const char *name, const char *value)
 			free (options[opt].value.str);
 		options[opt].value.str = xstrdup (value);
 	}
+}
+
+/* Set list option values to the colon separated value. */
+void option_set_list (const char *name, const char *value, bool append)
+{
+	int opt;
+
+	opt = find_option(name, OPTION_LIST);
+	if (opt == -1)
+		fatal ("Tried to set wrong option '%s'!", name);
+
+	if (!append && !lists_strs_empty (options[opt].value.list))
+		lists_strs_clear (options[opt].value.list);
+	lists_strs_split (options[opt].value.list, value, ":");
 }
 
 void option_ignore_config (const char *name)
@@ -617,6 +660,17 @@ int check_symb_option (const char *name, const char *val)
 	return option_check_discrete (opt, val);
 }
 
+/* Return 1 if a parameter to a list option is valid. */
+int check_list_option (const char *name, const char *val)
+{
+	int opt;
+
+	opt = find_option (name, OPTION_LIST);
+	if (opt == -1)
+		return 0;
+	return options[opt].check (opt, val);
+}
+
 static int is_deprecated_option (const char *name)
 {
 	if (!strcmp(name, "TagsIconv"))
@@ -744,7 +798,7 @@ static char *substitute_variable (const char *name_in, const char *value_in)
 }
 
 /* Set an option read from the configuration file. Return 0 on error. */
-static int set_option (const char *name, const char *value_in)
+static int set_option (const char *name, const char *value_in, bool append)
 {
 	int i, num;
 	char *end, *value, *value_s;
@@ -766,7 +820,14 @@ static int set_option (const char *name, const char *value_in)
 	if (options[i].ignore_in_config) 
 		return 1;
 
-	if (options[i].set_in_config) {
+	if (append && options[i].type != OPTION_LIST) {
+		fprintf (stderr,
+		         "Only list valued options can be appended to ('%s').",
+		         name);
+		return 0;
+	}
+
+	if (!append && options[i].set_in_config) {
 		fprintf (stderr, "Tried to set an option that has been already "
 				"set in the config file ('%s').", name);
 		return 0;
@@ -827,11 +888,17 @@ static int set_option (const char *name, const char *value_in)
 			option_set_symb (name, value);
 			break;
 
+		case OPTION_LIST:
+			if (!check_list_option (name, value))
+				return 0;
+			option_set_list (name, value, append);
+			break;
+
 		case OPTION_FREE:
 		case OPTION_ANY:
 			break;
 	}
-	
+
 	free (value);
 	return 1;
 }
@@ -853,6 +920,8 @@ void options_parse (const char *config_file)
 	int eq = 0; /* equal character appeared? */
 	int quote = 0; /* are we in quotes? */
 	int esc = 0;
+	bool plus = false; /* plus character appeared? */
+	bool append = false; /* += (list append) appeared */
 	char opt_name[30];
 	char opt_value[512];
 	int line = 1;
@@ -870,7 +939,11 @@ void options_parse (const char *config_file)
 		/* Skip comment */
 		if (comm && ch != '\n')
 			continue;
-		
+
+		/* Check for "+=" (list append) */
+		if (ch != '=' && plus)
+			fatal ("Error in config file, line %d!", line);
+
 		/* Interpret parameter */
 		if (ch == '\n') {
 			comm = 0;
@@ -879,9 +952,8 @@ void options_parse (const char *config_file)
 			opt_value[value_pos] = 0;
 
 			if (name_pos) {
-				if (value_pos == 0
-						|| !set_option(opt_name,
-							opt_value))
+				if (value_pos == 0 ||
+				    !set_option(opt_name, opt_value, append))
 					fatal ("Error in config file, line %d!",
 							line);
 			}
@@ -893,6 +965,7 @@ void options_parse (const char *config_file)
 			eq = 0;
 			quote = 0;
 			esc = 0;
+			append = false;
 
 			line++;
 		}
@@ -909,6 +982,9 @@ void options_parse (const char *config_file)
 		else if (!esc && quote && ch == '"')
 			quote = 0;
 
+		else if (!esc && !eq && ch == '+')
+			plus = true;
+
 		else if (ch == '=' && !quote) {
 			if (eq)
 				fatal ("Error in config file, line %d!",
@@ -916,6 +992,8 @@ void options_parse (const char *config_file)
 			if (!opt_name[0])
 				fatal ("Error in config file, line %d!",
 						line);
+			append = plus;
+			plus = false;
 			eq = 1;
 			opt_value[0] = 0;
 		}
@@ -932,7 +1010,7 @@ void options_parse (const char *config_file)
 							"is too long!", line);
 				opt_value[value_pos++] = '\\';
 			}
-			
+
 			if (sizeof(opt_value) == value_pos)
 				fatal ("Error in config file, line %d is "
 						"too long!", line);
@@ -962,11 +1040,18 @@ void options_parse (const char *config_file)
 void options_free ()
 {
 	int i, ix;
-	
+
 	for (i = 0; i < options_num; i++) {
-		if (options[i].type == OPTION_STR && options[i].value.str)
+		if (options[i].type == OPTION_STR && options[i].value.str) {
 			free (options[i].value.str);
-		options[i].value.str = NULL;
+			options[i].value.str = NULL;
+		}
+		else if (options[i].type == OPTION_LIST) {
+			lists_strs_free (options[i].value.list);
+			options[i].value.list = NULL;
+		}
+		else if (options[i].type == OPTION_SYMB)
+			options[i].value.str = NULL;
 		if (options[i].type & (OPTION_STR | OPTION_SYMB)) {
 			if (options[i].check != option_check_length) {
 				for (ix = 0; ix < options[i].count; ix += 1)
@@ -987,7 +1072,7 @@ int options_get_int (const char *name)
 
 	if (i == -1)
 		fatal ("Tried to get wrong option '%s'!", name);
-	
+
 	if (options[i].type == OPTION_BOOL)
 		return options[i].value.boolean ? 1 : 0;
 	return options[i].value.num;
@@ -999,7 +1084,7 @@ bool options_get_bool (const char *name)
 
 	if (i == -1)
 		fatal ("Tried to get wrong option '%s'!", name);
-	
+
 	return options[i].value.boolean;
 }
 
@@ -1021,6 +1106,16 @@ char *options_get_symb (const char *name)
 		fatal ("Tried to get wrong option '%s'!", name);
 
 	return options[i].value.str;
+}
+
+struct lists_s_strs *options_get_list (const char *name)
+{
+	int i = find_option(name, OPTION_LIST);
+
+	if (i == -1)
+		fatal ("Tried to get wrong option '%s'!", name);
+
+	return options[i].value.list;
 }
 
 enum option_type options_get_type (const char *name)
