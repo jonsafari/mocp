@@ -2611,7 +2611,7 @@ static void bar_set_fill (struct bar *b, const double fill)
 	assert (b != NULL);
 	assert (fill >= 0.0);
 	
-	b->filled = fill <= 100.0 ? fill : 100.0;
+	b->filled = MIN(fill, 100.0);
 
 	if (b->show_val)
 		bar_update_title (b);
@@ -3052,7 +3052,7 @@ static void info_win_draw_bitrate (const struct info_win *w)
 		wattrset (w->win, get_color(CLR_SOUND_PARAMS));
 		wmove (w->win, 2, 29);
 		if (w->bitrate != -1)
-			xwprintw (w->win, "%4d", w->bitrate < 9999 ? w->bitrate : 9999);
+			xwprintw (w->win, "%4d", MIN(w->bitrate, 9999));
 		else
 			xwaddstr (w->win, "    ");
 	}

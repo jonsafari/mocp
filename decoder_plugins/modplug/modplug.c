@@ -202,7 +202,8 @@ static int modplug_seek (void *void_data, int sec)
 
   int ms = sec*1000;
 
-  ms = (ms>data->length)?data->length:((ms<0)?0:ms);
+  ms = MAX(ms,0);
+  ms = MIN(ms,data->length);
 
   ModPlug_Seek(data->modplugfile, ms);
 

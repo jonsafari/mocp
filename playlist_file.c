@@ -21,6 +21,7 @@
 #include <strings.h>
 #include <errno.h>
 #include <assert.h>
+
 #include "playlist.h"
 #include "playlist_file.h"
 #include "log.h"
@@ -29,8 +30,6 @@
 #include "options.h"
 #include "interface.h"
 #include "decoder.h"
-
-#define MAX(a,b)	((a) > (b) ? (a) : (b))
 
 int is_plist_file (const char *name)
 {

@@ -528,7 +528,7 @@ static int aac_decode (void *prv_data, char *buf, int buf_len,
 		rc = decode_one_frame (data, buf, buf_len);
 	} while (rc == -2);
 
-	return rc > 0 ? rc : 0;
+	return MAX(rc, 0);
 }
 
 static int aac_get_bitrate (void *prv_data)
