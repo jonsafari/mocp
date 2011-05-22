@@ -204,15 +204,12 @@ static int alsa_read_mixer_raw (snd_mixer_elem_t *elem)
 		handle_mixer_events (mixer_handle);
 
 		for (i = 0; i < SND_MIXER_SCHN_LAST; i++)
-			if (snd_mixer_selem_has_playback_channel(elem,
-						1 << i)) {
+			if (snd_mixer_selem_has_playback_channel (elem, i)) {
 				long vol;
 				
 				nchannels++;
-				if ((err = snd_mixer_selem_get_playback_volume(
-								elem,
-								1 << i,
-								&vol)) < 0) {
+				err = snd_mixer_selem_get_playback_volume (elem, i, &vol);
+				if (err < 0) {
 					error ("Can't read mixer: %s",
 							snd_strerror(err));
 					return -1;
