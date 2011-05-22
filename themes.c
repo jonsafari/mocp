@@ -431,11 +431,10 @@ static int parse_theme_colordef (const int line_num,
 		return 0;
 	}
 	
-	if ((red = parse_rgb_color_value(line_num, errors_are_fatal) == -1)
-			|| (green = parse_rgb_color_value(line_num,
-					errors_are_fatal)) == -1
-			|| (blue = parse_rgb_color_value(line_num,
-					errors_are_fatal)) == -1)
+	red = parse_rgb_color_value (line_num, errors_are_fatal);
+	green = parse_rgb_color_value (line_num, errors_are_fatal);
+	blue = parse_rgb_color_value (line_num, errors_are_fatal);
+	if (red == -1 || green == -1 || blue == -1)
 		return 0;
 
 	if (!new_colordef(line_num, name, red, green, blue, errors_are_fatal))
