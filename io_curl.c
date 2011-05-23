@@ -336,8 +336,9 @@ static int curl_read_internal (struct io_stream *s)
 				|| s->curl.multi_status == CURLM_OK)) {
 		if (s->curl.multi_status != CURLM_CALL_MULTI_PERFORM) {
 			fd_set read_fds, write_fds, exc_fds;
-			int max_fd;
-			int ret;
+			int max_fd, ret;
+			long milliseconds;
+			struct timeval timeout;
 
 			logit ("Doing select()...");
 
@@ -356,8 +357,14 @@ static int curl_read_internal (struct io_stream *s)
 			if (s->curl.wake_up_pipe[0] > max_fd)
 				max_fd = s->curl.wake_up_pipe[0];
 
+			curl_multi_timeout (s->curl.multi_handle, &milliseconds);
+			if (milliseconds <= 0)
+				milliseconds = 1000;
+			timeout.tv_sec = milliseconds / 1000;
+			timeout.tv_usec = (milliseconds % 1000) * 1000;
+
 			ret = select (max_fd + 1, &read_fds, &write_fds,
-					&exc_fds, NULL);
+					&exc_fds, &timeout);
 
 			if (ret < 0 && errno == EINTR) {
 				logit ("Interrupted");
