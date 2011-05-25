@@ -754,27 +754,34 @@ static char *substitute_variable (const char *name_in, const char *value_in)
 
 		/* Fetch environment variable or configuration option value. */
 		value = xstrdup (getenv (name));
-		if (value == NULL) {
+		if (value == NULL && find_option (name, OPTION_ANY) != -1) {
 			char buf[16];
+			lists_t_strs *list;
 
-			if (find_option (name, OPTION_ANY) != -1) {
-				switch (options_get_type (name)) {
-				case OPTION_INT:
-					snprintf (buf, sizeof (buf), "%d", options_get_int (name));
-					value = xstrdup (buf);
-					break;
-				case OPTION_BOOL:
-					value = xstrdup (options_get_bool (name) ? "yes" : "no");
-					break;
-				case OPTION_STR:
-					value = xstrdup (options_get_str (name));
-					break;
-				case OPTION_SYMB:
-					value = xstrdup (options_get_symb (name));
-					break;
-				default:
-					break;
+			switch (options_get_type (name)) {
+			case OPTION_INT:
+				snprintf (buf, sizeof (buf), "%d", options_get_int (name));
+				value = xstrdup (buf);
+				break;
+			case OPTION_BOOL:
+				value = xstrdup (options_get_bool (name) ? "yes" : "no");
+				break;
+			case OPTION_STR:
+				value = xstrdup (options_get_str (name));
+				break;
+			case OPTION_SYMB:
+				value = xstrdup (options_get_symb (name));
+				break;
+			case OPTION_LIST:
+				list = options_get_list (name);
+				if (!lists_strs_empty (list)) {
+					value = lists_strs_fmt (list, "%s:");
+					value[strlen (value) - 1] = 0x00;
 				}
+				break;
+			case OPTION_FREE:
+			case OPTION_ANY:
+				break;
 			}
 		}
 		if (value && strlen (value))
