@@ -400,7 +400,7 @@ void option_set_symb (const char *name, const char *value)
 			options[opt].value.str = ((char **) options[opt].constraints)[ix];
 	}
 	if (!options[opt].value.str)
-		fatal ("Tried to set option '%s' to unknown symbol '%s'!", name, value);
+		fatal ("Tried to set '%s' to unknown symbol '%s'!", name, value);
 }
 
 /* Set a string option to the value. The string is duplicated. */
@@ -721,8 +721,8 @@ static char *substitute_variable (const char *name_in, const char *value_in)
 		name = &dollar[2];
 		len = strspn (name, accept);
 		if (len == 0)
-			fatal ("Error in config file option '%s': "
-			       "substitution variable name is missing!",
+			fatal ("Error in config file option '%s':\n"
+			       "             substitution variable name is missing!",
 			       name_in);
 
 		/* Find default substitution or closing brace. */
@@ -747,8 +747,8 @@ static char *substitute_variable (const char *name_in, const char *value_in)
 			       name_in);
 		}
 		else {
-			fatal ("Error in config file option '%s': "
-			       "expecting  ':-' or '}' found '%c'!",
+			fatal ("Error in config file option '%s':\n"
+			       "             expecting  ':-' or '}' found '%c'!",
 			       name_in, name[len]);
 		}
 
@@ -789,8 +789,8 @@ static char *substitute_variable (const char *name_in, const char *value_in)
 		else if (dflt)
 			lists_strs_append (strs, dflt);
 		else
-			fatal ("Error in config file option '%s': "
-			       "substitution variable '%s' not set or null!",
+			fatal ("Error in config file option '%s':\n"
+			       "             substitution variable '%s' not set or null!",
 		           name_in, &dollar[2]);
 		free (value);
 
@@ -967,8 +967,7 @@ void options_parse (const char *config_file)
 			if (name_pos) {
 				if (value_pos == 0 ||
 				    !set_option(opt_name, opt_value, append))
-					fatal ("Error in config file, line %d!",
-							line);
+					fatal ("Error in config file, line %d!", line);
 			}
 
 			opt_name[0] = 0;
@@ -1000,11 +999,9 @@ void options_parse (const char *config_file)
 
 		else if (ch == '=' && !quote) {
 			if (eq)
-				fatal ("Error in config file, line %d!",
-						line);
+				fatal ("Error in config file, line %d!", line);
 			if (!opt_name[0])
-				fatal ("Error in config file, line %d!",
-						line);
+				fatal ("Error in config file, line %d!", line);
 			append = plus;
 			plus = false;
 			eq = 1;
@@ -1025,8 +1022,7 @@ void options_parse (const char *config_file)
 			}
 
 			if (sizeof(opt_value) == value_pos)
-				fatal ("Error in config file, line %d is "
-						"too long!", line);
+				fatal ("Error in config file, line %d is too long!", line);
 			opt_value[value_pos++] = ch;
 			esc = 0;
 		}
@@ -1034,8 +1030,7 @@ void options_parse (const char *config_file)
 		/* Add char to parameter name */
 		else if (!isblank(ch) || quote) {
 			if (sizeof(opt_name) == name_pos)
-				fatal ("Error in config file, line %d is "
-						"too long!", line);
+				fatal ("Error in config file, line %d is too long!", line);
 			opt_name[name_pos++] = ch;
 			esc = 0;
 		}
