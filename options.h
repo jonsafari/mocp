@@ -28,6 +28,7 @@ void option_set_bool (const char *name, const bool value);
 void option_set_str (const char *name, const char *value);
 void option_set_symb (const char *name, const char *value);
 void option_set_list (const char *name, const char *value, bool append);
+bool option_set_pair (const char *name, const char *value, bool append);
 void options_init ();
 void options_parse (const char *config_file);
 void options_free ();

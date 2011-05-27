@@ -105,6 +105,17 @@ for in \fB/usr/share/moc/themes/\fP (depends on installation prefix),
 Use the specified configuration file instead of the default.
 .LP
 .TP
+.B -O \fINAME\fP=\fIVALUE\fP \fR|\fP --set-option \fINAME\fR[\fB+\fR]\fB=\fIVALUE\fP
+Override configuration option NAME with VALUE.  This option can be
+repeated as many times as needed and the option name is not case sensitive.
+(Note that MOC does not perform variable substitution as it does for values
+read from the configuration file.)  Most option values are set before the
+configuration file is processed (which allows the new values to be picked
+up by substitutions), however list-valued options are overridden afterwards
+(which gives the choice of whether the configured values are replaced or
+added to).
+.LP
+.TP
 .B -M \fIDIR\fP \fR|\fP --moc-dir \fIDIR\fP
 Use the specified MOC directory instead of the default.  This also causes
 the configuration file from that directory to be used.  This can also be
