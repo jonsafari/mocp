@@ -45,6 +45,7 @@
 
 struct parameters
 {
+	char *config_file;
 	int debug;
 	int only_server;
 	int foreground;
@@ -140,8 +141,7 @@ static void sig_chld (int sig ATTR_UNUSED)
 }
 
 /* Run client and the server if needed. */
-static void start_moc (const struct parameters *params, char **args,
-		const int arg_num)
+static void start_moc (const struct parameters *params, lists_t_strs *args)
 {
 	int list_sock;
 	int server_sock = -1;
@@ -199,8 +199,7 @@ static void start_moc (const struct parameters *params, char **args,
 		signal (SIGPIPE, SIG_IGN);
 		if (ping_server(server_sock)) {
 			if (!params->dont_run_iface) {
-				init_interface (server_sock, params->debug,
-						args, arg_num);
+				init_interface (server_sock, params->debug, args);
 				interface_loop ();
 				interface_end ();
 			}
@@ -270,7 +269,7 @@ static void show_version ()
 	putchar ('\n');
 }
 
-/* Show program usage and exit. */
+/* Show program usage. */
 static void show_usage (const char *prg_name) {
 	printf ("%s (version %s", PACKAGE_NAME, PACKAGE_VERSION);
 #ifdef PACKAGE_REVISION
@@ -322,7 +321,7 @@ static void show_usage (const char *prg_name) {
 }
 
 /* Send commands requested in params to the server. */
-static void server_command (struct parameters *params, char **args, int arg_num)
+static void server_command (struct parameters *params, lists_t_strs *args)
 {
 	int sock;
 
@@ -332,13 +331,13 @@ static void server_command (struct parameters *params, char **args, int arg_num)
 	signal (SIGPIPE, SIG_IGN);
 	if (ping_server(sock)) {
 		if (params->playit)
-			interface_cmdline_playit (sock, args, arg_num);
+			interface_cmdline_playit (sock, args);
 		if (params->clear)
 			interface_cmdline_clear_plist (sock);
 		if (params->append)
-			interface_cmdline_append (sock, args, arg_num);
+			interface_cmdline_append (sock, args);
 		if (params->enqueue)
-			interface_cmdline_enqueue (sock, args, arg_num);
+			interface_cmdline_enqueue (sock, args);
 		if (params->play)
 			interface_cmdline_play_first (sock);
 		if (params->get_file_info)
@@ -437,6 +436,7 @@ static void log_command_line (int argc, char *argv[])
 	lists_t_strs *cmdline;
 	char *str;
 
+	assert (argc >= 0);
 	assert (argv != NULL);
 	assert (argv[argc] == NULL);
 
@@ -450,8 +450,12 @@ static void log_command_line (int argc, char *argv[])
 	lists_strs_free (cmdline);
 }
 
-int main (int argc, char *argv[])
+/* Process the command line options and arguments. */
+static lists_t_strs *process_command_line (int argc, char *argv[], struct parameters *params)
 {
+	int ret, opt_index = 0;
+	const char *jump_type;
+	lists_t_strs *result;
 	struct option long_options[] = {
 		{ "version",		0, NULL, 'V' },
 		{ "help",		0, NULL, 'h' },
@@ -491,10 +495,171 @@ int main (int argc, char *argv[])
 		{ "off",		1, NULL, 'u' },
 		{ 0, 0, 0, 0 }
 	};
-	int ret, opt_index = 0;
+
+	assert (argc >= 0);
+	assert (argv != NULL);
+	assert (argv[argc] == NULL);
+	assert (params != NULL);
+
+	while ((ret = getopt_long (argc, argv,
+					"VhDSFR:macpsxT:C:M:PUynArfiGelk:j:v:t:o:u:Q:q",
+					long_options, &opt_index)) != -1) {
+		switch (ret) {
+			case 'V':
+				show_version ();
+				exit (0);
+			case 'h':
+				show_usage (argv[0]);
+				exit (0);
+#ifndef NDEBUG
+			case 'D':
+				params->debug = 1;
+				break;
+#endif
+			case 'S':
+				params->only_server = 1;
+				break;
+			case 'F':
+				params->foreground = 1;
+				break;
+			case 'R':
+				if (!check_str_option ("SoundDriver", optarg))
+					fatal ("No such sound driver: %s", optarg);
+				option_set_str ("SoundDriver", optarg);
+				option_ignore_config ("SoundDriver");
+				break;
+			case 'm':
+				option_set_int ("StartInMusicDir", 1);
+				option_ignore_config ("StartInMusicDir");
+				break;
+			case 'a':
+			case 'e':
+				params->append = 1;
+				params->dont_run_iface = 1;
+				break;
+			case 'q':
+				params->enqueue = 1;
+				params->dont_run_iface = 1;
+				break;
+			case 'c':
+				params->clear = 1;
+				params->dont_run_iface = 1;
+				break;
+			case 'i':
+				params->get_file_info = 1;
+				params->dont_run_iface = 1;
+				break;
+			case 'p':
+				params->play = 1;
+				params->dont_run_iface = 1;
+				break;
+			case 'l':
+				params->playit = 1;
+				params->dont_run_iface = 1;
+				break;
+			case 's':
+				params->stop = 1;
+				params->dont_run_iface = 1;
+				break;
+			case 'f':
+				params->next = 1;
+				params->dont_run_iface = 1;
+				break;
+			case 'r':
+				params->previous = 1;
+				params->dont_run_iface = 1;
+				break;
+			case 'x':
+				params->exit = 1;
+				params->dont_run_iface = 1;
+				break;
+			case 'P':
+				params->pause = 1;
+				params->dont_run_iface = 1;
+				break;
+			case 'U':
+				params->unpause = 1;
+				params->dont_run_iface = 1;
+				break;
+			case 'T':
+				option_set_str ("ForceTheme", optarg);
+				break;
+			case 'C':
+				params->config_file = xstrdup (optarg);
+				break;
+			case 'M':
+				option_set_str ("MOCDir", optarg);
+				option_ignore_config ("MOCDir");
+				break;
+			case 'y':
+				option_set_int ("SyncPlaylist", 1);
+				option_ignore_config ("SyncPlaylist");
+				break;
+			case 'n':
+				option_set_int ("SyncPlaylist", 0);
+				option_ignore_config ("SyncPlaylist");
+				break;
+			case 'A':
+				option_set_int ("ASCIILines", 1);
+				option_ignore_config ("ASCIILines");
+				break;
+			case 'G':
+				params->toggle_pause = 1;
+				params->dont_run_iface = 1;
+				break;
+			case 'k':
+				params->seek_by = get_num_param (optarg, NULL);
+				params->dont_run_iface = 1;
+				break;
+			case 'j':
+				params->jump_to = get_num_param (optarg, &jump_type);
+				if (*jump_type)
+					if (!jump_type[1])
+						if (*jump_type == '%' || tolower (*jump_type) == 's') {
+							params->jump_type = tolower (*jump_type);
+							params->dont_run_iface = 1;
+							break;
+						}
+				//TODO: Add message explaining the error
+				show_usage (argv[0]);
+				exit (1);
+			case 'v' :
+				params->adj_volume = optarg;
+				params->dont_run_iface = 1;
+				break;
+			case 't' :
+				params->toggle = optarg;
+				params->dont_run_iface = 1;
+				break;
+			case 'o' :
+				params->on = optarg;
+				params->dont_run_iface = 1;
+				break;
+			case 'u' :
+				params->off = optarg;
+				params->dont_run_iface = 1;
+				break;
+			case 'Q':
+				params->formatted_into_param = optarg;
+				params->get_formatted_info = 1;
+				params->dont_run_iface = 1;
+				break;
+			default:
+				show_usage (argv[0]);
+				exit (1);
+		}
+	}
+
+	result = lists_strs_new (argc - optind);
+	lists_strs_load (result, argv + optind);
+
+	return result;
+}
+
+int main (int argc, char *argv[])
+{
 	struct parameters params;
-	char *config_file = NULL;
-	const char *jump_type;
+	lists_t_strs *args;
 
 #ifdef PACKAGE_REVISION
 	logit ("This is Music On Console (revision %s)", PACKAGE_REVISION);
@@ -514,171 +679,27 @@ int main (int argc, char *argv[])
 	if (!setlocale(LC_ALL, ""))
 		logit ("Could not set locale!");
 
-	while ((ret = getopt_long(argc, argv,
-					"VhDSFR:macpsxT:C:M:PUynArfiGelk:j:v:t:o:u:Q:q",
-					long_options, &opt_index)) != -1) {
-		switch (ret) {
-			case 'V':
-				show_version ();
-				return 0;
-			case 'h':
-				show_usage (argv[0]);
-				return 0;
-#ifndef NDEBUG
-			case 'D':
-				params.debug = 1;
-				break;
-#endif
-			case 'S':
-				params.only_server = 1;
-				break;
-			case 'F':
-				params.foreground = 1;
-				break;
-			case 'R':
-				if (!check_str_option("SoundDriver", optarg))
-					fatal ("No such sound driver: %s", optarg);
-				option_set_str ("SoundDriver", optarg);
-				option_ignore_config ("SoundDriver");
-				break;
-			case 'm':
-				option_set_int ("StartInMusicDir", 1);
-				option_ignore_config ("StartInMusicDir");
-				break;
-			case 'a':
-			case 'e':
-				params.append = 1;
-				params.dont_run_iface = 1;
-				break;
-			case 'q':
-				params.enqueue = 1;
-				params.dont_run_iface = 1;
-				break;
-			case 'c':
-				params.clear = 1;
-				params.dont_run_iface = 1;
-				break;
-			case 'i':
-				params.get_file_info = 1;
-				params.dont_run_iface = 1;
-				break;
-			case 'p':
-				params.play = 1;
-				params.dont_run_iface = 1;
-				break;
-			case 'l':
-				params.playit = 1;
-				params.dont_run_iface = 1;
-				break;
-			case 's':
-				params.stop = 1;
-				params.dont_run_iface = 1;
-				break;
-			case 'f':
-				params.next = 1;
-				params.dont_run_iface = 1;
-				break;
-			case 'r':
-				params.previous = 1;
-				params.dont_run_iface = 1;
-				break;
-			case 'x':
-				params.exit = 1;
-				params.dont_run_iface = 1;
-				break;
-			case 'P':
-				params.pause = 1;
-				params.dont_run_iface = 1;
-				break;
-			case 'U':
-				params.unpause = 1;
-				params.dont_run_iface = 1;
-				break;
-			case 'T':
-				option_set_str ("ForceTheme", optarg);
-				break;
-			case 'C':
-				config_file = xstrdup (optarg);
-				break;
-			case 'M':
-				option_set_str ("MOCDir", optarg);
-				option_ignore_config ("MOCDir");
-				break;
-			case 'y':
-				option_set_int ("SyncPlaylist", 1);
-				option_ignore_config ("SyncPlaylist");
-				break;
-			case 'n':
-				option_set_int ("SyncPlaylist", 0);
-				option_ignore_config ("SyncPlaylist");
-				break;
-			case 'A':
-				option_set_int ("ASCIILines", 1);
-				option_ignore_config ("ASCIILines");
-				break;
-			case 'G':
-				params.toggle_pause = 1;
-				params.dont_run_iface = 1;
-				break;
-			case 'k':
-				params.seek_by = get_num_param (optarg,NULL);
-				params.dont_run_iface = 1;
-				break;
-			case 'j':
-				params.jump_to=get_num_param (optarg,&jump_type);
-				if(*jump_type)
-					if(!jump_type[1])
-						if(*jump_type=='%'||tolower(*jump_type)=='s'){
-							params.jump_type=tolower(*jump_type);
-							params.dont_run_iface = 1;
-							break;
-						}
-				//TODO: Add message explaining the error
-				show_usage (argv[0]);
-				return 1;
-			case 'v' :
-				params.adj_volume = optarg;
-				params.dont_run_iface = 1;
-				break;
-			case 't' :
-				params.toggle = optarg;
-				params.dont_run_iface = 1;
-				break;
-			case 'o' :
-				params.on = optarg;
-				params.dont_run_iface = 1;
-				break;
-			case 'u' :
-				params.off = optarg;
-				params.dont_run_iface = 1;
-				break;
-			case 'Q':
-				params.formatted_into_param = optarg;
-				params.get_formatted_info = 1;
-				params.dont_run_iface = 1;
-				break;
-			default:
-				show_usage (argv[0]);
-				return 1;
-		}
-	}
-	
+	args = process_command_line (argc, argv, &params);
+
 	if (params.dont_run_iface && params.only_server)
 		fatal ("-c, -a and -p options can't be used with --server!");
 
-	options_parse (config_file ? config_file
-			: create_file_name("config"));
-	if (config_file)
-		free (config_file);
+	if (!params.config_file)
+		params.config_file = xstrdup (create_file_name ("config"));
+	options_parse (params.config_file);
+	if (params.config_file)
+		free (params.config_file);
+	params.config_file = NULL;
+
 	check_moc_dir ();
 
 	decoder_init (params.debug);
 	srand (time(NULL));
 
 	if (!params.only_server && params.dont_run_iface)
-		server_command (&params, argv + optind, argc - optind);
+		server_command (&params, args);
 	else
-		start_moc (&params, argv + optind, argc - optind);
+		start_moc (&params, args);
 
 	return 0;
 }

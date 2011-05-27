@@ -479,7 +479,7 @@ static void update_mixer_name ()
 }
 
 /* Make new cwd path from CWD and this path */
-static void set_cwd (char *path)
+static void set_cwd (const char *path)
 {
 	if (path[0] == '/')
 		strcpy (cwd, "/"); /* for absolute path */
@@ -1479,69 +1479,77 @@ static void use_server_queue ()
 }
 
 /* Process file names passwd as arguments. */
-static void process_args (char **args, const int num)
+static void process_args (lists_t_strs *args)
 {
-	if (num == 1 && !is_url(args[0]) && isdir(args[0]) == 1) {
-		set_cwd (args[0]);
-		if (!go_to_dir(NULL, 0))
+	int size;
+	const char *arg;
+
+	size = lists_strs_size (args);
+	arg = lists_strs_at (args, 0);
+
+	if (size == 1 && !is_url (arg) && isdir (arg) == 1) {
+		set_cwd (arg);
+		if (!go_to_dir (NULL, 0))
 			enter_first_dir ();
 		return;
 	}
 	
-	if (num == 1 && is_plist_file(args[0])) {
-		char path[PATH_MAX+1]; /* the directory where the playlist is */
+	if (size == 1 && is_plist_file (arg)) {
+		char path[PATH_MAX + 1]; /* the directory where the playlist is */
 		char *slash;
 
-		if (args[0][0] == '/')
+		if (arg[0] == '/')
 			strcpy (path, "/");
-		else if (!getcwd(path, sizeof(path)))
-			interface_fatal ("Can't get CWD: %s", strerror(errno));
+		else if (!getcwd (path, sizeof (path)))
+			interface_fatal ("Can't get CWD: %s", strerror (errno));
 
-		resolve_path (path, sizeof(path), args[0]);
+		resolve_path (path, sizeof (path), arg);
 		slash = strrchr (path, '/');
 		assert (slash != NULL);
 		*slash = 0;
 		
 		iface_set_status ("Loading playlist...");
-		plist_load (playlist, args[0], path, 0);
+		plist_load (playlist, arg, path, 0);
 		iface_set_status ("");
 	}
 	else {
-		int i;
+		int ix;
 		char this_cwd[PATH_MAX];
 		
-		if (!getcwd(this_cwd, sizeof(cwd)))
-			interface_fatal ("Can't get CWD: %s", strerror(errno));
+		if (!getcwd (this_cwd, sizeof (cwd)))
+			interface_fatal ("Can't get CWD: %s", strerror (errno));
 
-		for (i = 0; i < num; i++) {
-			char path[2*PATH_MAX];
-			int dir = !is_url(args[i]) && isdir(args[i]);
+		for (ix = 0; ix < size; ix += 1) {
+			int dir;
+			char path[2 * PATH_MAX];
 
-			if (is_url(args[i])) {
-				strncpy(path, args[i], sizeof(path));
+			arg = lists_strs_at (args, ix);
+			dir = !is_url (arg) && isdir (arg);
+
+			if (is_url (arg)) {
+				strncpy (path, arg, sizeof (path));
 				path[sizeof(path) - 1] = 0;
 			}
 			else {
-				if (args[i][0] == '/')
+				if (arg[0] == '/')
 					strcpy (path, "/");
 				else
 					strcpy (path, this_cwd);
-				resolve_path (path, sizeof(path), args[i]);
+				resolve_path (path, sizeof (path), arg);
 			}
 
 			if (dir == 1)
 				read_directory_recurr (path, playlist);
-			else if (!dir && (is_sound_file(path)
-						|| is_url(path)))
+			else if (!dir && (is_sound_file (path) || is_url (path)))
 				plist_add (playlist, path);
-			else if (is_plist_file(path))
+			else if (is_plist_file (path))
 				plist_load (playlist, path, NULL, 0);
 		}
 	}
 
-	if (plist_count(playlist) && !options_get_int("SyncPlaylist")) {
+	if (plist_count (playlist) && !options_get_int ("SyncPlaylist")) {
 		switch_titles_file (playlist);
-		ask_for_tags (playlist, get_tags_setting());
+		ask_for_tags (playlist, get_tags_setting ());
 		iface_set_dir_content (IFACE_MENU_PLIST, playlist, NULL, NULL);
 		iface_update_queue_positions (queue, playlist, NULL, NULL);
 		iface_switch_to_plist ();
@@ -3394,8 +3402,7 @@ static void handle_interrupt ()
 		iface_entry_disable ();
 }
 
-void init_interface (const int sock, const int logging, char **args,
-		const int arg_num)
+void init_interface (const int sock, const int logging, lists_t_strs *args)
 {
 	FILE *logfp;
 
@@ -3433,8 +3440,8 @@ void init_interface (const int sock, const int logging, char **args,
 	signal (SIGWINCH, sig_winch);
 #endif
 
-	if (arg_num) {
-		process_args (args, arg_num);
+	if (!lists_strs_empty (args)) {
+		process_args (args);
 	
 		if (plist_count(playlist) == 0) {
 			if (!options_get_int("SyncPlaylist")
@@ -3649,53 +3656,53 @@ void interface_cmdline_clear_plist (int server_sock)
 	plist_free (&plist);
 }
 
-static void add_recursively (struct plist *plist, char **args,
-		const int arg_num)
+static void add_recursively (struct plist *plist, lists_t_strs *args)
 {
-	int i;
+	int ix;
 
-	for (i = 0; i < arg_num; i++) {
+	for (ix = 0; ix < lists_strs_size (args); ix += 1) {
 		int dir;
-		char path[PATH_MAX+1];
+		char path[PATH_MAX + 1];
+		const char *arg;
 
-		if (!is_url(args[i]) && args[i][0] != '/') {
-			if (args[0][0] == '/')
+		arg = lists_strs_at (args, ix);
+
+		if (!is_url (arg) && arg[0] != '/') {
+			if (arg[0] == '/')
 				strcpy (path, "/");
 			else {
-				strncpy (path, cwd, sizeof(path));
-				path[sizeof(path)-1] = 0;
+				strncpy (path, cwd, sizeof (path));
+				path[sizeof (path) - 1] = 0;
 			}
-			resolve_path (path, sizeof(path), args[i]);
+			resolve_path (path, sizeof (path), arg);
 		}
 		else {
-			strncpy (path, args[i], sizeof(path));
-			path[sizeof(path)-1] = 0;
+			strncpy (path, arg, sizeof (path));
+			path[sizeof (path) - 1] = 0;
 
-			if (!is_url(args[i]))
-				resolve_path (path, sizeof(path), "");
+			if (!is_url (arg))
+				resolve_path (path, sizeof (path), "");
 		}
 			
-		dir = !is_url(path) && isdir(path);
+		dir = !is_url (path) && isdir (path);
 
 		if (dir == 1)
 			read_directory_recurr (path, plist);
-		else if (is_plist_file(args[i]))
-			plist_load (plist, args[i], cwd, 0);
-		else if ((is_url(path) || is_sound_file(path))
-				&& plist_find_fname(plist, path) == -1) {
+		else if (is_plist_file (arg))
+			plist_load (plist, arg, cwd, 0);
+		else if ((is_url (path) || is_sound_file (path))
+				&& plist_find_fname (plist, path) == -1) {
 			int added = plist_add (plist, path);
 			
-			if (is_url(path)) {
+			if (is_url (path)) {
 				make_file_title (plist, added, 0);
-				plist->items[added].title =
-					plist->items[added].title_file;
+				plist->items[added].title = plist->items[added].title_file;
 			}
 		}
 	}
 }
 
-void interface_cmdline_append (int server_sock, char **args,
-		const int arg_num)
+void interface_cmdline_append (int server_sock, lists_t_strs *args)
 {
 	srv_sock = server_sock; /* the interface is not initialized, so set it
 				   here */
@@ -3711,7 +3718,7 @@ void interface_cmdline_append (int server_sock, char **args,
 			fatal ("Can't get CWD: %s", strerror(errno));
 		
 		if (recv_server_plist(&clients_plist)) {
-			add_recursively (&new, args, arg_num);
+			add_recursively (&new, args);
 			plist_sort_fname (&new);
 			
 			send_int_to_srv (CMD_LOCK);
@@ -3736,7 +3743,7 @@ void interface_cmdline_append (int server_sock, char **args,
 						create_file_name(
 							"playlist.m3u"),
 						cwd, 1);
-			add_recursively (&new, args, arg_num);
+			add_recursively (&new, args);
 			plist_sort_fname (&new);
 
 			send_int_to_srv (CMD_LOCK);
@@ -3944,30 +3951,33 @@ void interface_cmdline_file_info (const int server_sock)
 	plist_free (queue);
 }
 
-void interface_cmdline_enqueue (int server_sock, char **args,
-		const int arg_num)
+void interface_cmdline_enqueue (int server_sock, lists_t_strs *args)
 {
-	int i;
+	int ix;
 
-	srv_sock = server_sock; /* the interface is not initialized, so set it
-				   here */
+	/* the interface is not initialized, so set it here */
+	srv_sock = server_sock;
 
-	if (!getcwd(cwd, sizeof(cwd)))
+	if (!getcwd (cwd, sizeof (cwd)))
 		fatal ("Can't get CWD: %s", strerror(errno));
 
-	for (i = 0; i < arg_num; i++)
-		if (is_sound_file(args[i]) || is_url(args[i])) {
-			char *path = absolute_path (args[i], cwd);
+	for (ix = 0; ix < lists_strs_size (args); ix += 1) {
+		const char *arg;
+
+		arg = lists_strs_at (args, ix);
+		if (is_sound_file (arg) || is_url (arg)) {
+			char *path = absolute_path (arg, cwd);
 			send_int_to_srv (CMD_QUEUE_ADD);
 			send_str_to_srv (path);
 			free (path);
 		}
+	}
 }
 
-void interface_cmdline_playit (int server_sock, char **args, const int arg_num)
+void interface_cmdline_playit (int server_sock, lists_t_strs *args)
 {
 	struct plist plist;
-	int i;
+	int ix;
 
 	srv_sock = server_sock; /* the interface is not initialized, so set it
 				   here */
@@ -3977,12 +3987,16 @@ void interface_cmdline_playit (int server_sock, char **args, const int arg_num)
 
 	plist_init (&plist);
 
-	for (i = 0; i < arg_num; i++)
-		if (is_url(args[i]) || is_sound_file(args[i])) {
-			char *path = absolute_path (args[i], cwd);
+	for (ix = 0; ix < lists_strs_size (args); ix += 1) {
+		const char *arg;
+
+		arg = lists_strs_at (args, ix);
+		if (is_url(arg) || is_sound_file(arg)) {
+			char *path = absolute_path (arg, cwd);
 			plist_add (&plist, path);
 			free (path);
 		}
+	}
 
 	if (plist_count(&plist)) {
 		int serial;
