@@ -301,6 +301,8 @@ static void show_usage (const char *prg_name) {
 "-T --theme theme       Use selected theme file (read from ~/.moc/themes if\n"
 "                       the path is not absolute.\n"
 "-C --config FILE       Use the specified config file instead of the default.\n"
+"-O --set-option NAME=VALUE\n"
+"                       Override configuration option NAME with VALUE.\n"
 "-M --moc-dir DIR       Use the specified MOC directory instead of the default.\n"
 "-P --pause             Pause.\n"
 "-U --unpause           Unpause.\n"
@@ -450,12 +452,104 @@ static void log_command_line (int argc, char *argv[])
 	lists_strs_free (cmdline);
 }
 
+/* Extract a substring starting at 'src' for length 'len' and remove
+ * any leading and trailing blanks.  Return NULL if unable.  */
+static char *extract_trimmed_token (const char *src, size_t len)
+{
+	size_t first, last;
+	char *result;
+
+	first = strspn (src, " ");
+	if (first > len)
+		return NULL;
+
+	for (last = len; last > 0; len -= 1) {
+		if (src[last - 1] != ' ')
+			break;
+	}
+	if (last == 0)
+		return NULL;
+
+	result = xcalloc (last - first + 1, sizeof (char));
+	strncpy (result, &src[first], last - first);
+	result[last] = 0x00;
+
+	return result;
+}
+
+static void override_config_option (const char *optarg, lists_t_strs *deferred)
+{
+	int len;
+	bool append;
+	char *ptr, *name, *value;
+	enum option_type type;
+
+	assert (optarg != NULL);
+
+	ptr = index (optarg, '=');
+	if (ptr == NULL)
+		goto error;
+
+	/* Allow for list append operator ("+="). */
+	append = (ptr > optarg && *(ptr - 1) == '+');
+
+	name = extract_trimmed_token (optarg, ptr - optarg - (append ? 1 : 0));
+	if (!name || strlen (name) == 0)
+		goto error;
+	type = options_get_type (name);
+
+	if (type == OPTION_LIST) {
+		if (deferred) {
+			lists_strs_append (deferred, optarg);
+			return;
+		}
+	}
+	else if (append)
+		goto error;
+
+	value = extract_trimmed_token (ptr + 1, strlen (ptr + 1));
+	if (!value || strlen (value) == 0)
+		goto error;
+
+	if (value[0] == '\'' || value[0] == '"') {
+		len = strlen (value);
+		if (value[0] != value[len - 1])
+			goto error;
+		if (strlen (value) < 2)
+			goto error;
+		memmove (value, value + 1, len - 2);
+		value[len - 2] = 0x00;
+	}
+
+	if (!option_set_pair (name, value, append))
+		goto error;
+	option_ignore_config (name);
+
+	free (name);
+	free (value);
+	return;
+
+error:
+	fatal ("Malformed override option: %s", optarg);
+}
+
+static void process_deferred_overrides (lists_t_strs *deferred)
+{
+	int ix;
+
+	for (ix = 0; ix < lists_strs_size (deferred); ix += 1)
+		override_config_option (lists_strs_at (deferred, ix), NULL);
+}
+
 /* Process the command line options and arguments. */
-static lists_t_strs *process_command_line (int argc, char *argv[], struct parameters *params)
+static lists_t_strs *process_command_line (int argc, char *argv[],
+                                           struct parameters *params,
+                                           lists_t_strs *deferred)
 {
 	int ret, opt_index = 0;
 	const char *jump_type;
 	lists_t_strs *result;
+
 	struct option long_options[] = {
 		{ "version",		0, NULL, 'V' },
 		{ "help",		0, NULL, 'h' },
@@ -477,6 +571,7 @@ static lists_t_strs *process_command_line (int argc, char *argv[], struct parame
 		{ "exit",		0, NULL, 'x' },
 		{ "theme",		1, NULL, 'T' },
 		{ "config",		1, NULL, 'C' },
+		{ "set-option",		1, NULL, 'O' },
 		{ "moc-dir",		1, NULL, 'M' },
 		{ "pause",		0, NULL, 'P' },
 		{ "unpause",		0, NULL, 'U' },
@@ -500,9 +595,10 @@ static lists_t_strs *process_command_line (int argc, char *argv[], struct parame
 	assert (argv != NULL);
 	assert (argv[argc] == NULL);
 	assert (params != NULL);
+	assert (deferred != NULL);
 
-	while ((ret = getopt_long (argc, argv,
-					"VhDSFR:macpsxT:C:M:PUynArfiGelk:j:v:t:o:u:Q:q",
+	while ((ret = getopt_long(argc, argv,
+					"VhDSFR:macpsxT:C:O:M:PUynArfiGelk:j:v:t:o:u:Q:q",
 					long_options, &opt_index)) != -1) {
 		switch (ret) {
 			case 'V':
@@ -587,6 +683,9 @@ static lists_t_strs *process_command_line (int argc, char *argv[], struct parame
 			case 'C':
 				params->config_file = xstrdup (optarg);
 				break;
+			case 'O':
+				override_config_option (optarg, deferred);
+				break;
 			case 'M':
 				option_set_str ("MOCDir", optarg);
 				option_ignore_config ("MOCDir");
@@ -659,6 +758,7 @@ static lists_t_strs *process_command_line (int argc, char *argv[], struct parame
 int main (int argc, char *argv[])
 {
 	struct parameters params;
+	lists_t_strs *deferred_overrides;
 	lists_t_strs *args;
 
 #ifdef PACKAGE_REVISION
@@ -674,12 +774,13 @@ int main (int argc, char *argv[])
 
 	memset (&params, 0, sizeof(params));
 	options_init ();
+	deferred_overrides = lists_strs_new (4);
 
 	/* set locale according to the environment variables */
 	if (!setlocale(LC_ALL, ""))
 		logit ("Could not set locale!");
 
-	args = process_command_line (argc, argv, &params);
+	args = process_command_line (argc, argv, &params, deferred_overrides);
 
 	if (params.dont_run_iface && params.only_server)
 		fatal ("-c, -a and -p options can't be used with --server!");
@@ -690,6 +791,10 @@ int main (int argc, char *argv[])
 	if (params.config_file)
 		free (params.config_file);
 	params.config_file = NULL;
+
+	process_deferred_overrides (deferred_overrides);
+	lists_strs_free (deferred_overrides);
+	deferred_overrides = NULL;
 
 	check_moc_dir ();
 

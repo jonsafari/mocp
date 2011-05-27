@@ -434,6 +434,61 @@ void option_set_list (const char *name, const char *value, bool append)
 	lists_strs_split (options[opt].value.list, value, ":");
 }
 
+/* Given a type, a name and a value, set that option's value.
+ * Return false on error. */
+bool option_set_pair (const char *name, const char *value, bool append)
+{
+	int num;
+	char *end;
+	bool val;
+
+	switch (options_get_type (name)) {
+
+		case OPTION_INT:
+			num = strtol (value, &end, 10);
+			if (*end)
+				return false;
+			if (!check_int_option (name, num))
+				return false;
+			option_set_int (name, num);
+			break;
+
+		case OPTION_BOOL:
+			if (!strcasecmp (value, "yes"))
+				val = true;
+			else if (!strcasecmp (value, "no"))
+				val = false;
+			else
+				return false;
+			option_set_bool (name, val);
+			break;
+
+		case OPTION_STR:
+			if (!check_str_option (name, value))
+				return false;
+			option_set_str (name, value);
+			break;
+
+		case OPTION_SYMB:
+			if (!check_symb_option (name, value))
+				return false;
+			option_set_symb (name, value);
+			break;
+
+		case OPTION_LIST:
+			if (!check_list_option (name, value))
+				return false;
+			option_set_list (name, value, append);
+			break;
+
+		case OPTION_FREE:
+		case OPTION_ANY:
+			return false;
+	}
+	
+	return true;
+}
+
 void option_ignore_config (const char *name)
 {
 	int opt = find_option(name, OPTION_ANY);
@@ -810,28 +865,27 @@ static char *substitute_variable (const char *name_in, const char *value_in)
 	return result;
 }
 
-/* Set an option read from the configuration file. Return 0 on error. */
-static int set_option (const char *name, const char *value_in, bool append)
+/* Set an option read from the configuration file. Return false on error. */
+static bool set_option (const char *name, const char *value_in, bool append)
 {
-	int i, num;
-	char *end, *value, *value_s;
-	bool val;
+	int i;
+	char *value, *value_s;
 
 	i = find_option (name, OPTION_ANY);
 	if (is_deprecated_option(name)) {
 		fprintf (stderr, "\n\tOption '%s' was ignored;"
 		                 "\n\tplease remove it from your configuration file.\n", name);
 		sleep (5);
-		return 1;
+		return true;
 	}
 
 	if (i == -1) {
 		fprintf (stderr, "Wrong option name: '%s'.", name);
-		return 0;
+		return false;
 	}
 
 	if (options[i].ignore_in_config) 
-		return 1;
+		return true;
 
 	if (append && options[i].type != OPTION_LIST) {
 		fprintf (stderr,
@@ -843,7 +897,7 @@ static int set_option (const char *name, const char *value_in, bool append)
 	if (!append && options[i].set_in_config) {
 		fprintf (stderr, "Tried to set an option that has been already "
 				"set in the config file ('%s').", name);
-		return 0;
+		return false;
 	}
 
 	options[i].set_in_config = 1;
@@ -868,52 +922,11 @@ static int set_option (const char *name, const char *value_in, bool append)
 	else
 		value = value_s;
 
-	switch (options[i].type) {
-
-		case OPTION_INT:
-			num = strtol (value, &end, 10);
-			if (*end)
-				return 0;
-			if (!check_int_option (name, num))
-				return 0;
-			option_set_int (name, num);
-			break;
-
-		case OPTION_BOOL:
-			if (!strcasecmp (value, "yes"))
-				val = true;
-			else if (!strcasecmp (value, "no"))
-				val = false;
-			else
-				return 0;
-			option_set_bool (name, val);
-			break;
-
-		case OPTION_STR:
-			if (!check_str_option (name, value))
-				return 0;
-			option_set_str (name, value);
-			break;
-
-		case OPTION_SYMB:
-			if (!check_symb_option (name, value))
-				return 0;
-			option_set_symb (name, value);
-			break;
-
-		case OPTION_LIST:
-			if (!check_list_option (name, value))
-				return 0;
-			option_set_list (name, value, append);
-			break;
-
-		case OPTION_FREE:
-		case OPTION_ANY:
-			break;
-	}
-
+	if (!option_set_pair (name, value, append))
+		return false;
+	
 	free (value);
-	return 1;
+	return true;
 }
 
 /* Check if values of options make sense. This only checks options that can't

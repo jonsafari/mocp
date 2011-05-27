@@ -39,6 +39,20 @@
 # using "+=" in place of a plain "=" to assign the value.  For an example,
 # see the XTerms option.
 #
+# You can override any configuration option when you run MOC using the
+# '-O' command line option:
+#
+#     mocp -O AutoNext=no -O messagelingertime=1 -O XTerms+=xxt:xwt
+#
+# This command line option can be repeated as many times as needed and
+# the configuration option name is not case sensitive.  (Note that MOC
+# does not perform variable substitution on the value of such overridden
+# configuration options.)  Most option values are set before the
+# configuration file is processed (which allows the new values to be
+# picked up by substitutions), however list-valued options are overridden
+# afterwards (which gives the choice of whether the configured values are
+# replaced or added to).
+#
 
 
 # Show file titles (title, author, album) instead of file names.
