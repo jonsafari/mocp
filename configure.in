@@ -715,9 +715,16 @@ then
 	echo
 fi
 
+if test "x$DECODER_PLUGINS" = "x"
+then
+	echo "WARNING: No decoder plugins are to be compiled;"
+	echo "         you will have to provide them separately."
+	echo
+fi
+
 if test "x$SOUND_DRIVERS" = "x"
 then
-	echo "WARNING: No sound output method is to be compiled;"
+	echo "WARNING: No sound output methods are to be compiled;"
 	echo "         you will not hear any sound!"
 	echo
 fi
