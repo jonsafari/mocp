@@ -538,6 +538,7 @@ void options_init ()
 	option_add_bool ("ShowFormat", true);
 	option_add_symb ("ShowTime", "IfAvailable",
 	                 CHECK_SYMBOL(3), "yes", "no", "IfAvailable");
+	option_add_bool ("ShowTimePercent", false);
 	option_add_list ("XTerms", "xterm:"
 	                           "xterm-colour:xterm-color:"
 	                           "xterm-256colour:xterm-256color:"

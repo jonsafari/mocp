@@ -210,6 +210,14 @@ static struct command commands[] = {
 		1
 	},
 	{
+		KEY_CMD_TOGGLE_PERCENT,
+		"toggle_percent",
+		"Switch on/off play time percentage",
+		CON_MENU,
+		{ -1 },
+		1
+	},
+	{
 		KEY_CMD_PLIST_ADD_FILE,
 		"add_file",
 		"Add a file/directory to the playlist",

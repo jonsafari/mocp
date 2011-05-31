@@ -3313,6 +3313,9 @@ static void menu_key (const struct iface_key *k)
 			case KEY_CMD_TOGGLE_LAYOUT:
 				iface_toggle_layout ();
 				break;
+			case KEY_CMD_TOGGLE_PERCENT:
+				iface_toggle_percent ();
+				break;
 			case KEY_CMD_PLIST_MOVE_UP:
 				move_item (1);
 				break;

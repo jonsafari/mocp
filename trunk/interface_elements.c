@@ -2734,10 +2734,13 @@ static void info_win_init (struct info_win *w)
 
 	set_startup_message (w);
 
-	bar_init (&w->mixer_bar, 20, "", 1, 1, get_color(CLR_MIXER_BAR_FILL),
-			get_color(CLR_MIXER_BAR_EMPTY));
-	bar_init (&w->time_bar, COLS - 4, "", 1, 0, get_color(CLR_TIME_BAR_FILL),
-			get_color(CLR_TIME_BAR_EMPTY));
+	bar_init (&w->mixer_bar, 20, "", 1, 1,
+	          get_color(CLR_MIXER_BAR_FILL),
+	          get_color(CLR_MIXER_BAR_EMPTY));
+	bar_init (&w->time_bar, COLS - 4, "", 1,
+	          options_get_bool("ShowTimePercent") ? 1 : 0,
+	          get_color(CLR_TIME_BAR_FILL),
+	          get_color(CLR_TIME_BAR_EMPTY));
 }
 
 static void info_win_destroy (struct info_win *w)
@@ -4281,6 +4284,14 @@ void iface_toggle_layout ()
 	}
 	
 	main_win_use_layout (&main_win, layout_fmt);
+	iface_refresh_screen ();
+}
+
+void iface_toggle_percent ()
+{
+	info_win.time_bar.show_pct = !info_win.time_bar.show_pct;
+	bar_update_title (&info_win.time_bar);
+	info_win_draw_block (&info_win);
 	iface_refresh_screen ();
 }
 
