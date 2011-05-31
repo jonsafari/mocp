@@ -126,6 +126,7 @@ int iface_in_lyrics ();
 void iface_switch_to_lyrics ();
 void iface_handle_lyrics_key (const struct iface_key *k);
 void iface_toggle_layout ();
+void iface_toggle_percent ();
 void iface_swap_plist_items (const char *file1, const char *file2);
 void iface_make_visible (const enum iface_menu menu, const char *file);
 void iface_switch_to_theme_menu ();

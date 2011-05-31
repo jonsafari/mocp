@@ -181,6 +181,9 @@ ShowFormat		= yes
 # time only when it was read before (often works faster).
 ShowTime		= IfAvailable
 
+# Show time played as a percentage in the time progress bar.
+#ShowTimePercent	= no
+
 # Values of the TERM environment variable which are deemed to be xterms.
 XTerms = xterm
 XTerms += xterm-colour:xterm-color
