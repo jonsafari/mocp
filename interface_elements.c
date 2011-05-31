@@ -2538,16 +2538,20 @@ static void check_term_size (struct main_win *mw, struct info_win *iw)
 /* Update the title with the current fill. */
 static void bar_update_title (struct bar *b)
 {
+	char pct[8];
+
 	assert (b != NULL);
 	assert (b->show_val);
 	
 	if (!b->show_pct)
 		sprintf (b->title, "%*s", b->width, b->orig_title);
-	else if (b->filled < 99.99)
-		sprintf (b->title, "%*s  %02.0f%%  ", b->width - 7, b->orig_title,
-				b->filled);
-	else
-		sprintf (b->title, "%*s 100%%  ", b->width - 7, b->orig_title);
+	else {
+		sprintf (b->title, "%*s", b->width - 7, b->orig_title);
+		strcpy (pct, " 100%  ");
+		if (b->filled < 99.99)
+			snprintf (pct, sizeof (pct), "  %02.0f%%  ", b->filled);
+		strncpy (&b->title[b->width - 7], pct, strlen (pct));
+	}
 }
 
 static void bar_set_title (struct bar *b, const char *title)
