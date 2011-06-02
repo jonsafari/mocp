@@ -48,7 +48,7 @@ static sidplay2_data * make_data()
   s2d->player = players[playerIndex];
 
   s2d->cfg = s2d->player->config();
-  
+
   s2d->cfg.frequency = options_get_int(OPT_FREQ);
 
   s2d->cfg.precision = options_get_int(OPT_PREC);
@@ -96,15 +96,15 @@ static sidplay2_data * make_data()
   }
 
   s2d->cfg.sidEmulation = s2d->builder;
-  
+
   s2d->player->config(s2d->cfg);
-  
+
   s2d->cfg = s2d->player->config();
 
   s2d->channels = s2d->player->info().channels;
-  
+
   s2d->frequency = s2d->cfg.frequency;
-  
+
 #ifdef WORDS_BIGENDIAN
   s2d->cfg.sampleFormat = SID2_BIG_SIGNED;
 #else
@@ -114,7 +114,7 @@ static sidplay2_data * make_data()
   s2d->player->config(s2d->cfg);
 
   s2d->cfg = s2d->player->config();
-  
+
   switch(s2d->cfg.sampleFormat)
   {
     case SID2_LITTLE_SIGNED:
@@ -185,7 +185,7 @@ static sidplay2_data * make_data()
       fatal("sidplay2: Unknown Audio-Format!");
   }
 
-  return s2d;  
+  return s2d;
 }
 
 static void init_database()
@@ -203,7 +203,7 @@ static void init_database()
 
   if(cancel)
     return;
-  
+
   char * dbfile = options_get_str(OPT_DATABASE);
 
   if(dbfile!=NULL && dbfile[0]!='\0')
@@ -222,13 +222,13 @@ extern "C" void *sidplay2_open(const char *file)
 {
   if(init_db)
     init_database();
-  
+
   struct sidplay2_data *s2d = make_data();
 
   decoder_error_init(&s2d->error);
   s2d->tune=NULL;
   s2d->length = 0;
-  
+
   SidTuneMod *st = new SidTuneMod(file);
 
   if(!(*st))
@@ -237,7 +237,7 @@ extern "C" void *sidplay2_open(const char *file)
     delete st;
     return s2d;
   }
-  
+
   s2d->songs = st->getInfo().songs;
 
   s2d->sublengths = new int [s2d->songs];
@@ -252,7 +252,7 @@ extern "C" void *sidplay2_open(const char *file)
     s2d->timeStart = s2d->startSong;
 
   if(!playSubTunes)
-    s2d->timeEnd = s2d->timeStart;    
+    s2d->timeEnd = s2d->timeStart;
 
   for(int s=s2d->timeStart; s <= s2d->timeEnd; s++)
   {
@@ -272,10 +272,10 @@ extern "C" void *sidplay2_open(const char *file)
 
       if(dl<1)
         dl = defaultLength;
-      
+
       if(dl<minLength)
         dl = minLength;
-      
+
       s2d->length += dl;
       s2d->sublengths[s-1] = dl;
     }
@@ -289,29 +289,29 @@ extern "C" void *sidplay2_open(const char *file)
   // this should not happen normally...
   if(s2d->length==0)
     s2d->length = defaultLength;
- 
+
   s2d->currentSong = s2d->timeStart;
 
   st->selectSong(s2d->currentSong);
-  
+
   if(!(*st))
   {
     decoder_error(&s2d->error, ERROR_FATAL, 0, "Cannot select first song in %s", file);
     delete st;
     return s2d;
   }
-  
+
   s2d->tune = st;
-  
+
   s2d->player->load(st);
- 
+
   if(!(*s2d->player))
   {
     decoder_error(&s2d->error, ERROR_FATAL, 0, "%s", s2d->player->error());
   }
 
   s2d->player->fastForward(100);
-  
+
   return ((void *)s2d);
 }
 
@@ -334,7 +334,7 @@ extern "C" void sidplay2_close(void *void_data)
 extern "C" void sidplay2_get_error (void *prv_data, struct decoder_error *error)
 {
   struct sidplay2_data *data = (struct sidplay2_data *)prv_data;
-  
+
   decoder_error_copy (error, &data->error);
 }
 
@@ -364,7 +364,7 @@ extern "C" void sidplay2_info (const char *file_name, struct file_tags *info,
     info->title = xstrdup(sti.infoString[STITLE]);
     info->filled |= TAGS_COMMENTS;
   }
-  
+
   if
   (
     sti.numberOfInfoStrings>1
@@ -375,12 +375,12 @@ extern "C" void sidplay2_info (const char *file_name, struct file_tags *info,
     info->artist = xstrdup(sti.infoString[SAUTHOR]);
     info->filled |= TAGS_COMMENTS;
   }
-  
+
   // Not really album - but close...
   if
   (
     sti.numberOfInfoStrings>2
-    && sti.infoString[SCOPY]!=NULL 
+    && sti.infoString[SCOPY]!=NULL
     && strlen(sti.infoString[SCOPY])>0
   )
   {
@@ -400,7 +400,7 @@ extern "C" void sidplay2_info (const char *file_name, struct file_tags *info,
     countStart = st->getInfo().startSong;
 
   if(!playSubTunes)
-    countEnd = countStart;    
+    countEnd = countStart;
 
   for(int s=countStart; s <= countEnd; s++)
   {
@@ -415,7 +415,7 @@ extern "C" void sidplay2_info (const char *file_name, struct file_tags *info,
 
       if(dl<minLength)
         dl = minLength;
-      
+
       info->time += dl;
     }
     else
@@ -429,7 +429,7 @@ extern "C" void sidplay2_info (const char *file_name, struct file_tags *info,
   delete st;
 }
 
-/* Seeking is not reliable because I don't know how to 
+/* Seeking is not reliable because I don't know how to
  * keep track of the difference between what time moc is
  * at playing and how many has been precached... :-|
  *
@@ -454,16 +454,16 @@ extern "C" int sidplay2_decode (void *void_data, char *buf, int buf_len,
   {
     if(data->currentSong >= data->timeEnd)
       return 0;
-  
+
     data->player->stop();
     data->currentSong++;
     data->tune->selectSong(data->currentSong);
     data->player->load(data->tune);
-  
+
     currentLength = data->sublengths[data->currentSong-1];
     seconds = 0;
   }
-    
+
   sound_params->channels = data->channels;
   sound_params->rate = data->frequency;
   sound_params->fmt = data->sample_format;
@@ -506,9 +506,9 @@ extern "C" void init()
   defaultLength = options_get_int(OPT_DEFLEN);
 
   minLength = options_get_int(OPT_MINLEN);
-  
+
   startAtStart = options_get_int(OPT_START);
-  
+
   playSubTunes = options_get_int(OPT_SUBTUNES);
 
   database = NULL;
@@ -520,7 +520,7 @@ extern "C" void init()
 extern "C" void destroy()
 {
   pthread_mutex_destroy(&dbmutex);
-  
+
   pthread_mutex_destroy(&player_select_mutex);
 
   if(database!=NULL)

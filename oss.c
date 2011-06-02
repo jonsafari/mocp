@@ -8,7 +8,7 @@
  * (at your option) any later version.
  *
  */
- 
+
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
@@ -70,7 +70,7 @@ static int open_dev ()
 	}
 
 	logit ("Audio device opened");
-	
+
 	return 1;
 }
 
@@ -96,7 +96,7 @@ static int set_capabilities (struct output_driver_caps *caps)
 		caps->formats |= SFMT_S8;
 	if (format_mask & AFMT_U8)
 		caps->formats |= SFMT_U8;
-	
+
 	if (format_mask & AFMT_S16_LE)
 		caps->formats |= SFMT_S16 | SFMT_LE;
 	if (format_mask & AFMT_S16_BE)
@@ -201,7 +201,7 @@ static int oss_init (struct output_driver_caps *caps)
 			fatal ("Bad first OSS mixer channel!");
 		if (mixer_channel2 == -1)
 			fatal ("Bad second OSS mixer channel!");
-		
+
 		/* test mixer channels */
 		mixer_channel_current = mixer_channel1;
 		if (oss_read_mixer() == -1)
@@ -269,7 +269,7 @@ static int oss_set_params ()
 					sizeof(fmt_name)));
 			return 0;
 	}
-		
+
 	if (ioctl(dsp_fd, SNDCTL_DSP_SETFMT, &req_format) == -1) {
 		error ("Can't set audio format: %s", strerror(errno));
 		oss_close ();
@@ -310,10 +310,10 @@ static int oss_set_params ()
 static int oss_open (struct sound_params *sound_params)
 {
 	params = *sound_params;
-	
+
 	if (!open_dev())
 		return 0;
-	
+
 	if (!oss_set_params()) {
 		oss_close ();
 		return 0;
@@ -330,7 +330,7 @@ static int oss_play (const char *buff, const size_t size)
 		error ("Can't play, audio device isn't opened!");
 
 	res = write(dsp_fd, buff, size);
-	
+
 	if (res == -1)
 		error ("Error writing pcm sound: %s", strerror(errno));
 
@@ -349,7 +349,7 @@ static void oss_set_mixer (int vol)
 			vol = 100;
 		else if (vol < 0)
 			vol = 0;
-		
+
 		vol = vol | (vol << 8);
 #ifdef OSSv3_MIXER
 		if (ioctl(mixer_fd, MIXER_WRITE(mixer_channel_current), &vol)
@@ -395,7 +395,7 @@ static int oss_reset ()
 		error ("Failed to open audio device after reseting");
 		return 0;
 	}
-	
+
 	return 1;
 }
 

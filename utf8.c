@@ -73,7 +73,7 @@ char *iconv_rcc (char *str)
 		    free(rccstring);
 		    return reencoded;
 		}
-		
+
 		free (rccstring);
 	}
 	return str;
@@ -104,7 +104,7 @@ char *iconv_str (const iconv_t desc, const char *str)
 	outbytesleft = sizeof(buf) - 1;
 
 	iconv (desc, NULL, NULL, NULL, NULL);
-	
+
 	while (inbytesleft) {
 		if (iconv(desc, &inbuf, &inbytesleft, &outbuf,
 					&outbytesleft)
@@ -133,7 +133,7 @@ char *iconv_str (const iconv_t desc, const char *str)
 	*outbuf = 0;
 	converted = xstrdup (buf);
 	free (str_copy);
-	
+
 	return converted;
 }
 
@@ -150,7 +150,7 @@ char *xterm_iconv_str (const char *str)
 int xwaddstr (WINDOW *win, const char *str)
 {
 	int res;
-	
+
 	if (using_utf8)
 		res = waddstr (win, str);
 	else {
@@ -194,7 +194,7 @@ static size_t xmbstowcs (wchar_t *dest, const char *src, size_t len,
 		}
 		else {
 			size_t converted;
-			
+
 			src++;
 			if (dest) {
 				converted = wcslen (dest);
@@ -229,14 +229,14 @@ int xwaddnstr (WINDOW *win, const char *str, const int n)
 
 	assert (n > 0);
 	assert (str != NULL);
-	
+
 	if (using_utf8) {
 
 		/* This nasty hack is because we need to count n in chars, but
 		 * [w]addnstr() takes arguments in bytes (in UTF-8 a char can be
 		 * longer than 1 byte).  There are also problems with [w]addnwstr()
 		 * (screen garbled).  I have no better idea. */
-		
+
 		wchar_t *ucs;
 		size_t size;
 		size_t utf_num_chars;
@@ -272,7 +272,7 @@ int xwaddnstr (WINDOW *win, const char *str, const int n)
 int xmvwaddstr (WINDOW *win, const int y, const int x, const char *str)
 {
 	int res;
-	
+
 	if (using_utf8)
 		res = mvwaddstr (win, y, x, str);
 	else {
@@ -289,7 +289,7 @@ int xmvwaddnstr (WINDOW *win, const int y, const int x, const char *str,
 		const int n)
 {
 	int res;
-	
+
 	if (using_utf8)
 		res = mvwaddnstr (win, y, x, str, n);
 	else {
@@ -436,7 +436,7 @@ char *xstrtail (const char *str, const int len)
 	ucs = (wchar_t *)xmalloc (sizeof(wchar_t) * size);
 	xmbstowcs (ucs, str, size, NULL);
 	ucs_tail = ucs;
-	
+
 	width = wcswidth (ucs, WIDTH_MAX);
 	assert (width >= 0);
 
@@ -446,7 +446,7 @@ char *xstrtail (const char *str, const int len)
 	size = wcstombs (NULL, ucs_tail, 0) + 1;
 	tail = (char *)xmalloc (size);
 	wcstombs (tail, ucs_tail, size);
-	
+
 	free (ucs);
 
 	return tail;

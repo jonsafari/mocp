@@ -56,7 +56,7 @@ static void set_realtime_prio ()
 #else
 	logit ("No sched_get_priority_max() function: realtime priority not "
 			"used.");
-#endif	
+#endif
 }
 
 /* Reading thread of the buffer. */
@@ -76,7 +76,7 @@ static void *read_thread (void *arg)
 		char play_buf[AUDIO_MAX_PLAY_BYTES];
 		int play_buf_fill;
 		int play_buf_pos = 0;
-		
+
 		if (buf->reset_dev && !audio_dev_closed) {
 			audio_reset ();
 			buf->reset_dev = 0;
@@ -93,10 +93,10 @@ static void *read_thread (void *arg)
 			buf->free_callback ();
 			LOCK (buf->mutex);
 		}
-		
+
 		debug ("sending the signal");
 		pthread_cond_broadcast (&buf->ready_cond);
-		
+
 		if ((fifo_buf_get_fill(&buf->buf) == 0 || buf->pause
 					|| buf->stop)
 				&& !buf->exit) {
@@ -105,7 +105,7 @@ static void *read_thread (void *arg)
 				audio_close ();
 				audio_dev_closed = 1;
 			}
-			
+
 			debug ("waiting for something in the buffer");
 			buf->read_thread_waiting = 1;
 			pthread_cond_wait (&buf->play_cond, &buf->mutex);
@@ -114,7 +114,7 @@ static void *read_thread (void *arg)
 		}
 
 		buf->read_thread_waiting = 0;
-		
+
 		if (audio_dev_closed && !buf->pause) {
 			logit ("Opening the device again after pause");
 			if (!audio_open(NULL)) {
@@ -124,7 +124,7 @@ static void *read_thread (void *arg)
 			else
 				audio_dev_closed = 0;
 		}
-		
+
 		if (fifo_buf_get_fill(&buf->buf) == 0) {
 			if (buf->exit) {
 				logit ("exit");
@@ -144,7 +144,7 @@ static void *read_thread (void *arg)
 			logit ("stopped");
 			continue;
 		}
-			
+
 		if (!audio_dev_closed) {
 			int audio_bpf;
 			size_t play_buf_frames;
@@ -169,18 +169,18 @@ static void *read_thread (void *arg)
 			/*write (fd, buf->buf + buf->pos, to_play);*/
 
 			LOCK (buf->mutex);
-		
+
 			/* Update time */
 			if (played && audio_get_bps())
 				buf->time += played / (float)audio_get_bps();
 			buf->hardware_buf_fill = audio_get_buf_fill();
-		}	
+		}
 	}
 
 	UNLOCK (buf->mutex);
-	
+
 	logit ("exiting");
-	
+
 	return NULL;
 }
 
@@ -191,7 +191,7 @@ void out_buf_init (struct out_buf *buf, int size)
 
 	assert (buf != NULL);
 	assert (size > 0);
-	
+
 	fifo_buf_init (&buf->buf, size);
 	buf->exit = 0;
 	buf->pause = 0;
@@ -201,7 +201,7 @@ void out_buf_init (struct out_buf *buf, int size)
 	buf->hardware_buf_fill = 0;
 	buf->read_thread_waiting = 0;
 	buf->free_callback = NULL;
-	
+
 	pthread_mutex_init (&buf->mutex, NULL);
 	pthread_cond_init (&buf->play_cond, NULL);
 	pthread_cond_init (&buf->ready_cond, NULL);
@@ -229,7 +229,7 @@ void out_buf_destroy (struct out_buf *buf)
 	UNLOCK (buf->mutex);
 
 	pthread_join (buf->tid, NULL);
-	
+
 	/* Let other threads using this buffer know that the state of the
 	 * buffer has changed. */
 	LOCK (buf->mutex);
@@ -259,14 +259,14 @@ void out_buf_destroy (struct out_buf *buf)
 int out_buf_put (struct out_buf *buf, const char *data, int size)
 {
 	int pos = 0;
-	
+
 	/*logit ("got %d bytes to play", size);*/
 
 	while (size) {
 		int written;
-		
+
 		LOCK (buf->mutex);
-		
+
 		if (fifo_buf_get_space(&buf->buf) == 0 && !buf->stop) {
 			/*logit ("buffer full, waiting for the signal");*/
 			pthread_cond_wait (&buf->ready_cond, &buf->mutex);
@@ -280,7 +280,7 @@ int out_buf_put (struct out_buf *buf, const char *data, int size)
 		}
 
 		written = fifo_buf_put (&buf->buf, data + pos, size);
-		
+
 		if (written) {
 			pthread_cond_signal (&buf->play_cond);
 			size -= written;
@@ -332,14 +332,14 @@ void out_buf_stop (struct out_buf *buf)
 void out_buf_reset (struct out_buf *buf)
 {
 	logit ("resetting the buffer");
-	
+
 	LOCK (buf->mutex);
 	fifo_buf_clear (&buf->buf);
 	buf->stop = 0;
 	buf->pause = 0;
 	buf->reset_dev = 0;
 	buf->hardware_buf_fill = 0;
-	
+
 	UNLOCK (buf->mutex);
 }
 
@@ -354,7 +354,7 @@ int out_buf_time_get (struct out_buf *buf)
 {
 	int time;
 	int bps = audio_get_bps ();
-	
+
 	LOCK (buf->mutex);
 	time = buf->time - (bps ? buf->hardware_buf_fill / (float)bps : 0);
 	UNLOCK (buf->mutex);
@@ -368,7 +368,7 @@ void out_buf_set_free_callback (struct out_buf *buf,
 		out_buf_free_callback callback)
 {
 	assert (buf != NULL);
-	
+
 	LOCK (buf->mutex);
 	buf->free_callback = callback;
 	UNLOCK (buf->mutex);
@@ -377,7 +377,7 @@ void out_buf_set_free_callback (struct out_buf *buf,
 int out_buf_get_free (struct out_buf *buf)
 {
 	int space;
-	
+
 	assert (buf != NULL);
 
 	LOCK (buf->mutex);
@@ -390,7 +390,7 @@ int out_buf_get_free (struct out_buf *buf)
 int out_buf_get_fill (struct out_buf *buf)
 {
 	int fill;
-	
+
 	assert (buf != NULL);
 
 	LOCK (buf->mutex);

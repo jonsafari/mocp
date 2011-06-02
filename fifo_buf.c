@@ -44,7 +44,7 @@ void fifo_buf_destroy (struct fifo_buf *b)
 size_t fifo_buf_put (struct fifo_buf *b, const char *data, size_t size)
 {
 	size_t written = 0;
-	
+
 	assert (b != NULL);
 	assert (b->buf != NULL);
 
@@ -80,7 +80,7 @@ size_t fifo_buf_peek (struct fifo_buf *b, char *user_buf,
 	size_t user_buf_pos = 0, written = 0;
 	ssize_t left = b->fill;
 	ssize_t pos = b->pos;
-	
+
 	assert (b != NULL);
 	assert (b->buf != NULL);
 
@@ -94,7 +94,7 @@ size_t fifo_buf_peek (struct fifo_buf *b, char *user_buf,
 		memcpy (user_buf + user_buf_pos, b->buf + pos, to_copy);
 		user_buf_pos += to_copy;
 		written += to_copy;
-		
+
 		left -= to_copy;
 		pos += to_copy;
 		if (pos == b->size)
@@ -108,7 +108,7 @@ size_t fifo_buf_get (struct fifo_buf *b, char *user_buf,
 		size_t user_buf_size)
 {
 	size_t user_buf_pos = 0, written = 0;
-	
+
 	assert (b != NULL);
 	assert (b->buf != NULL);
 
@@ -122,7 +122,7 @@ size_t fifo_buf_get (struct fifo_buf *b, char *user_buf,
 		memcpy (user_buf + user_buf_pos, b->buf + b->pos, to_copy);
 		user_buf_pos += to_copy;
 		written += to_copy;
-		
+
 		b->fill -= to_copy;
 		b->pos += to_copy;
 		if (b->pos == b->size)

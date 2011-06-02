@@ -105,7 +105,7 @@ char *file_type_name (const char *file)
 struct decoder *get_decoder (const char *file)
 {
 	int i;
-	
+
 	if ((i = find_type(file)) != -1)
 		return plugins[i].decoder;
 
@@ -160,7 +160,7 @@ struct decoder *get_decoder_by_content (struct io_stream *stream)
 		logit ("Stream too short");
 		return NULL;
 	}
-	
+
 	if ((decoder_by_mime_type = get_decoder_by_mime_type(stream)))
 		return decoder_by_mime_type;
 
@@ -192,7 +192,7 @@ static int lt_load_plugin (const char *file, lt_ptr debug_info_ptr)
 
 	if (debug_info)
 		printf ("Loading plugin %s...\n", name);
-	
+
 	if (plugins_num == sizeof(plugins)/sizeof(plugins[0])) {
 		fprintf (stderr, "Can't load plugin, because maximum number "
 				"of plugins reached!\n");
@@ -234,7 +234,7 @@ static int lt_load_plugin (const char *file, lt_ptr debug_info_ptr)
 	}
 	else if (debug_info)
 		printf ("Already loaded\n");
-	
+
 	return 0;
 }
 
@@ -255,7 +255,7 @@ void decoder_init (int debug_info)
 void decoder_cleanup ()
 {
 	int i;
-	
+
 	for (i = 0; i < plugins_num; i++)
 		if (plugins[i].decoder->destroy)
 			plugins[i].decoder->destroy ();
@@ -278,7 +278,7 @@ void decoder_error (struct decoder_error *error,
 
 	if (error->err)
 		free (error->err);
-	
+
 	error->type = type;
 
 	va_start (va, format);

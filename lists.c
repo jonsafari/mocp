@@ -46,7 +46,7 @@ lists_t_strs *lists_strs_new (int reserve)
 void lists_strs_clear (lists_t_strs *list)
 {
 	int ix;
-	
+
 	assert (list);
 
 	for (ix = 0; ix < list->size; ix += 1)
@@ -128,7 +128,7 @@ void lists_strs_push (lists_t_strs *list, char *s)
 {
 	assert (list);
 	assert (s);
-	
+
 	if (list->size == list->capacity) {
 		list->capacity *= 2;
 		list->strs = (char **) xrealloc (list->strs, list->capacity * sizeof (char *));
@@ -145,7 +145,7 @@ char *lists_strs_pop (lists_t_strs *list)
 	char *result;
 
 	assert (list);
-	
+
 	result = NULL;
 	if (list->size > 0) {
 		list->size -= 1;

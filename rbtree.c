@@ -78,7 +78,7 @@ static void rb_insert_fixup (struct rb_node **root, struct rb_node *z)
 	while (z->parent->color == RB_RED)
 		if (z->parent == z->parent->parent->left) {
 			struct rb_node *y = z->parent->parent->right;
-			
+
 			if (y->color == RB_RED) {
 				z->parent->color = RB_BLACK;
 				y->color = RB_BLACK;
@@ -98,7 +98,7 @@ static void rb_insert_fixup (struct rb_node **root, struct rb_node *z)
 		}
 		else {
 			struct rb_node *y = z->parent->parent->left;
-			
+
 			if (y->color == RB_RED) {
 				z->parent->color = RB_BLACK;
 				y->color = RB_BLACK;
@@ -110,13 +110,13 @@ static void rb_insert_fixup (struct rb_node **root, struct rb_node *z)
 					z = z->parent;
 					rb_right_rotate (root, z);
 				}
-				
+
 				z->parent->color = RB_BLACK;
 				z->parent->parent->color = RB_RED;
 				rb_left_rotate (root, z->parent->parent);
 			}
 		}
-	
+
 	(*root)->color = RB_BLACK;
 }
 
@@ -124,7 +124,7 @@ static void rb_delete_fixup (struct rb_node **root, struct rb_node *x,
 		struct rb_node *parent)
 {
 	struct rb_node *w;
-	
+
 	while (x != *root && x->color == RB_BLACK) {
 		if (x == parent->left) {
 			w = parent->right;
@@ -149,7 +149,7 @@ static void rb_delete_fixup (struct rb_node **root, struct rb_node *x,
 					rb_right_rotate (root, w);
 					w = parent->right;
 				}
-				
+
 				w->color = parent->color;
 				parent->color = RB_BLACK;
 				w->right->color = RB_BLACK;
@@ -206,10 +206,10 @@ void rb_insert (struct rb_tree *t, void *data)
 	z = (struct rb_node *)xmalloc (sizeof(struct rb_node));
 
 	z->data = data;
-	
+
 	while (x != &rb_null) {
 		int cmp = t->cmp_func(z->data, x->data, t->adata);
-	
+
 		y = x;
 		if (cmp < 0)
 			x = x->left;
@@ -228,7 +228,7 @@ void rb_insert (struct rb_tree *t, void *data)
 		else
 			y->right = z;
 	}
-	
+
 	z->left = &rb_null;
 	z->right = &rb_null;
 	z->color = RB_RED;
@@ -243,12 +243,12 @@ struct rb_node *rb_search (struct rb_tree *t, const void *key)
 	assert (t != NULL);
 	assert (t->root != NULL);
 	assert (key != NULL);
-	
+
 	x = t->root;
 
 	while (x != &rb_null) {
 		int cmp = t->cmp_key_func (key, x->data, t->adata);
-		
+
 		if (cmp < 0)
 			x = x->left;
 		else if (cmp > 0)
@@ -290,7 +290,7 @@ struct rb_node *rb_next (struct rb_node *x)
 
 	if (x->right != &rb_null)
 		return rb_min_internal (x->right);
-	
+
 	y = x->parent;
 	while (y != &rb_null && x == y->right) {
 		x = y;
@@ -309,11 +309,11 @@ void rb_delete (struct rb_tree *t, const void *key)
 	assert (key != NULL);
 
 	z = rb_search (t, key);
-	
+
 	if (z != &rb_null) {
 		struct rb_node *x, *y, *parent;
-		
-		if (z->left == &rb_null || z->right == &rb_null) 
+
+		if (z->left == &rb_null || z->right == &rb_null)
 			y = z;
 		else
 			y = rb_next (z);
@@ -326,7 +326,7 @@ void rb_delete (struct rb_tree *t, const void *key)
 		parent = y->parent;
 		if (x != &rb_null)
 			x->parent = parent;
-		
+
 		if (y->parent == &rb_null)
 			t->root = x;
 		else {
@@ -355,7 +355,7 @@ void rb_init_tree (struct rb_tree *t,
 	assert (t != NULL);
 	assert (cmp_func != NULL);
 	assert (cmp_key_func != NULL);
-	
+
 	t->root = &rb_null;
 	t->cmp_func = cmp_func;
 	t->cmp_key_func = cmp_key_func;
@@ -376,7 +376,7 @@ void rb_clear (struct rb_tree *t)
 	assert (t != NULL);
 	assert (t->root != NULL);
 
-	if (t->root != &rb_null) {	
+	if (t->root != &rb_null) {
 		rb_destroy (t->root->left);
 		rb_destroy (t->root->right);
 		free (t->root);

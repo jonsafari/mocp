@@ -54,21 +54,20 @@ struct decoder
 	 * This function is called once at MOC startup (once for the client and
 	 * once for the server). Optional. */
 	void (*init) ();
-	
+
 	/** Cleanup the plugin.
 	 *
 	 * This function is called once at exit (once for the client and
 	 * once for the server). Optional. */
 	void (*destroy) ();
-	
-	
+
 	/** Open the resource.
 	 *
 	 * Open the given resource (file).
 	 *
 	 * \param uri URL to the resource that can be used as the file parameter and return pointer
 	 * to io_open().
-	 * 
+	 *
 	 * \return Private decoder data. This pointer will be passed to every
 	 * other function that operates on the stream.
 	 */
@@ -96,7 +95,7 @@ struct decoder
 	 * read from this stream (io_read()), but can peek data (io_peek()).
 	 * The decoder is expected to peek a few bytes to recognize its format.
 	 * Optional.
-	 * 
+	 *
 	 * \param stream Opened stream.
 	 *
 	 * \return 1 if the decoder is able to decode data from this stream.
@@ -128,7 +127,7 @@ struct decoder
 	 */
 	int (*decode)(void *data, char *buf, int buf_len,
 			struct sound_params *sound_params);
-	
+
 	/** Seek in the stream.
 	 *
 	 * Seek to the given position.
@@ -136,7 +135,7 @@ struct decoder
 	 * \param data Decoder's private data.
 	 * \param sec Where to seek in seconds.
 	 *
-	 * \return The position that we actually seek to or -1 on error. 
+	 * \return The position that we actually seek to or -1 on error.
 	 * -1 is not a fatal error and further decoding will be performed.
 	 */
 	int (*seek)(void *data, int sec);
@@ -155,13 +154,13 @@ struct decoder
 	 */
 	void (*info)(const char *file, struct file_tags *tags,
 			const int tags_sel);
-	
+
 	/** Get the current bitrate.
 	 *
 	 * Get the bitrate of the last decoded piece of sound.
 	 *
 	 * \param data Decoder's private data.
-	 * 
+	 *
 	 * \return Current bitrate in kbps or -1 if not available.
 	 */
 	int (*get_bitrate)(void *data);
@@ -189,7 +188,7 @@ struct decoder
 	 * \param error Pointer to the decoder_error object to fill.
 	 */
 	void (*get_error)(void *data, struct decoder_error *error);
-	
+
 	/** Check if the file extension is for a file that this decoder
 	 * supports.
 	 *
@@ -228,7 +227,7 @@ struct decoder
 	 * optional.
 	 *
 	 * \param data Decoder's private data.
-	 * 
+	 *
 	 * \return 1 if the tags were changed from the last call of this
 	 * function or 0 if not.
 	 */
@@ -251,7 +250,7 @@ struct decoder
 	 * Get the bitrate of the whole file.
 	 *
 	 * \param data Decoder's private data.
-	 * 
+	 *
 	 * \return Average bitrate in kbps or -1 if not available.
 	 */
 	int (*get_avg_bitrate)(void *data);

@@ -76,7 +76,7 @@ static size_t header_callback (void *data, size_t size, size_t nmemb,
 
 	if (size * nmemb <= 2)
 		return size * nmemb;
-		
+
 	/* we dont need '\r\n', so cut it. */
 	header_size = sizeof(char) * (size * nmemb + 1 - 2);
 
@@ -93,7 +93,7 @@ static size_t header_callback (void *data, size_t size, size_t nmemb,
 
 			while (isblank(value[0]))
 				value++;
-			
+
 			s->curl.mime_type = xstrdup (value);
 			debug ("Mime type: '%s'", s->curl.mime_type);
 		}
@@ -102,7 +102,7 @@ static size_t header_callback (void *data, size_t size, size_t nmemb,
 			|| !strncasecmp(header, "x-audiocast-name",
 				sizeof("x-audiocast-name")-1)) {
 		char *value = strchr (header, ':') + 1;
-		
+
 		while (isblank(value[0]))
 			value++;
 
@@ -110,7 +110,7 @@ static size_t header_callback (void *data, size_t size, size_t nmemb,
 	}
 	else if (!strncasecmp(header, "icy-url:", sizeof("icy-url:")-1)) {
 		char *value = strchr (header, ':') + 1;
-		
+
 		while (isblank(value[0]))
 			value++;
 
@@ -120,7 +120,7 @@ static size_t header_callback (void *data, size_t size, size_t nmemb,
 				sizeof("icy-metaint:")-1)) {
 		char *end;
 		char *value = strchr (header, ':') + 1;
-		
+
 		while (isblank(value[0]))
 			value++;
 
@@ -135,7 +135,7 @@ static size_t header_callback (void *data, size_t size, size_t nmemb,
 	}
 
 	free (header);
-	
+
 	return size * nmemb;
 }
 
@@ -160,7 +160,7 @@ static int debug_callback (CURL *curl ATTR_UNUSED, curl_infotype i, char *msg,
 			default:
 				type = "";
 		}
-		
+
 		strncpy (log, msg, size);
 		if (size > 0 && log[size-1] == '\n')
 			log[size-1] = 0;
@@ -169,7 +169,7 @@ static int debug_callback (CURL *curl ATTR_UNUSED, curl_infotype i, char *msg,
 		debug ("CURL: [%s] %s", type, log);
 		free (log);
 	}
-	
+
 	return 0;
 }
 
@@ -179,7 +179,7 @@ static int check_curl_stream (struct io_stream *s)
 	CURLMsg *msg;
 	int msg_queue_num;
 	int res = 1;
-	
+
 	while ((msg = curl_multi_info_read(s->curl.multi_handle,
 					&msg_queue_num)))
 		if (msg->msg == CURLMSG_DONE) {
@@ -216,7 +216,7 @@ void io_curl_open (struct io_stream *s, const char *url)
 		s->errno_val = EINVAL;
 		return;
 	}
-	
+
 	if (!(s->curl.handle = curl_easy_init())) {
 		logit ("curl_easy_init() returned NULL");
 		s->errno_val = EINVAL;
@@ -260,7 +260,6 @@ void io_curl_open (struct io_stream *s, const char *url)
 	curl_easy_setopt (s->curl.handle, CURLOPT_DEBUGFUNCTION,
 			debug_callback);
 #endif
-	
 
 	if ((s->curl.multi_status = curl_multi_add_handle(s->curl.multi_handle,
 					s->curl.handle)) != CURLM_OK) {
@@ -323,7 +322,7 @@ static int curl_read_internal (struct io_stream *s)
 			s->curl.multi_status = curl_multi_perform (
 					s->curl.multi_handle, &running);
 		} while (s->curl.multi_status == CURLM_CALL_MULTI_PERFORM);
-		
+
 		if (!check_curl_stream(s))
 			return 0;
 
@@ -370,7 +369,7 @@ static int curl_read_internal (struct io_stream *s)
 				logit ("Interrupted");
 				return 0;
 			}
-			
+
 			if (ret < 0) {
 				s->errno_val = errno;
 				logit ("select() failed");
@@ -389,7 +388,7 @@ static int curl_read_internal (struct io_stream *s)
 
 		s->curl.multi_status = curl_multi_perform (s->curl.multi_handle,
 			&running);
-		
+
 		if (!check_curl_stream(s))
 			return 0;
 	}
@@ -422,7 +421,7 @@ static size_t read_from_buffer (struct io_stream *s, char *buf, size_t count)
 
 		return to_copy;
 	}
-	
+
 	return 0;
 }
 
@@ -448,7 +447,7 @@ static void parse_icy_string (struct io_stream *s, const char *str)
 		}
 		strncpy (name, t, c - t);
 		name[c - t] = 0;
-		
+
 		/* move to a char after ' */
 		c++;
 		if (*c != '\'') {
@@ -468,10 +467,10 @@ static void parse_icy_string (struct io_stream *s, const char *str)
 			logit ("malformed metadata");
 			return;
 		}
-		
+
 		strncpy (value, t, MIN(c - t, (int)sizeof(value) - 1));
 		value[MIN(c - t, (int)sizeof(value) - 1)] = 0;
-		
+
 		/* eat ' */
 		c++;
 
@@ -498,12 +497,12 @@ static void parse_icy_metadata (struct io_stream *s, const char *packet,
 
 	while (c - packet < size) {
 		const char *p = c;
-		
+
 		while (*c && c - packet < size)
 			c++;
 		if (c - packet < size && !*c)
 			parse_icy_string (s, p);
-		
+
 		/* pass the padding */
 		while (c - packet < size && !*c)
 			c++;
@@ -531,7 +530,7 @@ static int read_icy_metadata (struct io_stream *s)
 		debug ("Got empty metadata packet");
 		return 1;
 	}
-	
+
 	size = size_packet * 16;
 
 	/* make sure that the whole packet is in the buffer */
@@ -557,7 +556,7 @@ static int read_icy_metadata (struct io_stream *s)
 ssize_t io_curl_read (struct io_stream *s, char *buf, size_t count)
 {
 	size_t nread = 0;
-	
+
 	assert (s != NULL);
 	assert (s->source == IO_SOURCE_CURL);
 	assert (s->curl.multi_handle != NULL);
@@ -565,7 +564,7 @@ ssize_t io_curl_read (struct io_stream *s, char *buf, size_t count)
 	do {
 		size_t to_read;
 		size_t res;
-		
+
 		if (s->curl.icy_meta_int && s->curl.icy_meta_count
 				== s->curl.icy_meta_int) {
 			s->curl.icy_meta_count = 0;
@@ -578,7 +577,7 @@ ssize_t io_curl_read (struct io_stream *s, char *buf, size_t count)
 					s->curl.icy_meta_count);
 		else
 			to_read = count - nread;
-				
+
 		res = read_from_buffer (s, buf + nread, to_read);
 		if (s->curl.icy_meta_int)
 			s->curl.icy_meta_count += res;
@@ -598,7 +597,7 @@ ssize_t io_curl_read (struct io_stream *s, char *buf, size_t count)
 void io_curl_strerror (struct io_stream *s)
 {
 	const char *err = "OK";
-	
+
 	assert (s != NULL);
 	assert (s->source == IO_SOURCE_CURL);
 

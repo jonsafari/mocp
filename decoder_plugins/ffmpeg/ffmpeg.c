@@ -55,7 +55,7 @@ struct ffmpeg_data
 
 	char *remain_buf;
 	int remain_buf_len;
-	
+
 	int ok; /* was this stream successfully opened? */
 	struct decoder_error error;
 	int bitrate;
@@ -76,7 +76,7 @@ static void ffmpeg_info (const char *file_name,
 	AVFormatParameters ap;
 	AVFormatContext *ic;
 	int err;
-	
+
 	memset (&ap, 0, sizeof(ap));
 
 	if ((err = av_open_input_file(&ic, file_name, NULL, 0, &ap)) < 0) {
@@ -152,7 +152,7 @@ static void *ffmpeg_open (const char *file)
 	/* hack for AC3 */
 	if (data->enc->channels > 2)
 		data->enc->channels = 2;
-	
+
 	data->codec = avcodec_find_decoder (data->enc->codec_id);
 	if (!data->codec || avcodec_open(data->enc, data->codec) < 0) {
 		decoder_error (&data->error, ERROR_FATAL, 0,
@@ -165,7 +165,7 @@ static void *ffmpeg_open (const char *file)
 	data->remain_buf_len = 0;
 
 	data->ok = 1;
-	data->avg_bitrate = (int) (data->ic->file_size / 
+	data->avg_bitrate = (int) (data->ic->file_size /
 			(data->ic->duration / 1000000) * 8);
 	data->bitrate = data->ic->bit_rate / 1000;
 
@@ -212,7 +212,7 @@ static void put_in_remain_buf (struct ffmpeg_data *data, const char *buf,
 		const int len)
 {
 	debug ("Remain: %dB", len);
-	
+
 	data->remain_buf_len = len;
 	data->remain_buf = (char *)xmalloc (len);
 	memcpy (data->remain_buf, buf, len);
@@ -244,7 +244,7 @@ static int ffmpeg_decode (void *prv_data, char *buf, int buf_len,
 
 	/* The sample buffer should be 16 byte aligned (because SSE), a segmentation
 	 * fault may occur otherwise.
-	 * 
+	 *
 	 * See: avcodec.h in ffmpeg
 	 */
 	char avbuf[(AVCODEC_MAX_AUDIO_FRAME_SIZE * 3) / 2] __attribute__((aligned(16)));
@@ -254,14 +254,14 @@ static int ffmpeg_decode (void *prv_data, char *buf, int buf_len,
 	sound_params->channels = data->enc->channels;
 	sound_params->rate = data->enc->sample_rate;
 	sound_params->fmt = SFMT_S16 | SFMT_NE;
-	
+
 	if (data->remain_buf) {
 		int to_copy = MIN (buf_len, data->remain_buf_len);
-		
+
 		debug ("Copying %d bytes from the remain buf", to_copy);
-		
+
 		memcpy (buf, data->remain_buf, to_copy);
-		
+
 		if (to_copy < data->remain_buf_len) {
 			memmove (data->remain_buf, data->remain_buf + to_copy,
 					data->remain_buf_len - to_copy);
@@ -286,7 +286,7 @@ static int ffmpeg_decode (void *prv_data, char *buf, int buf_len,
 		pkt_data = pkt.data;
 		pkt_size = pkt.size;
 		debug ("Got %dB packet", pkt_size);
-		
+
 		while (pkt_size) {
 			int len;
 
@@ -317,7 +317,7 @@ static int ffmpeg_decode (void *prv_data, char *buf, int buf_len,
 
 			if (buf_len) {
 				int to_copy = MIN (data_size, buf_len);
-			
+
 				memcpy (buf, avbuf, to_copy);
 
 				buf += to_copy;
@@ -334,16 +334,16 @@ static int ffmpeg_decode (void *prv_data, char *buf, int buf_len,
 			}
 			else if (data_size)
 				add_to_remain_buf (data, avbuf, data_size);
-			
+
 		}
 	} while (!filled);
-	
+
 	/* 2.0 - 16bit/sample*/
 	data->bitrate = pkt.size * 8 / ((filled + data->remain_buf_len) / 2.0 /
 			sound_params->channels / sound_params->rate) / 1000;
 
 	av_free_packet (&pkt_tmp);
-	
+
 	return filled;
 }
 
@@ -358,7 +358,7 @@ static int ffmpeg_get_avg_bitrate (void *prv_data)
 {
 	struct ffmpeg_data *data = (struct ffmpeg_data *)prv_data;
 
-	return data->avg_bitrate / 1000;	
+	return data->avg_bitrate / 1000;
 }
 
 static int ffmpeg_get_duration (void *prv_data)

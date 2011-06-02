@@ -139,7 +139,7 @@ int sidplay2_our_format_ext(const char *ext);
 #endif
 void destroy();
 
-#ifdef __cplusplus 
+#ifdef __cplusplus
   extern "C"
 #endif
 void init();

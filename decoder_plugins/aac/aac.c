@@ -382,7 +382,7 @@ static void aac_info (const char *file_name,
 		struct id3_tag *tag;
 		struct id3_file *id3file;
 		char *track = NULL;
-		
+
 		id3file = id3_file_open (file_name, ID3_FILE_MODE_READONLY);
 		if (!id3file)
 			return;
@@ -392,10 +392,10 @@ static void aac_info (const char *file_name,
 			info->title = get_tag (tag, ID3_FRAME_TITLE);
 			info->album = get_tag (tag, ID3_FRAME_ALBUM);
 			track = get_tag (tag, ID3_FRAME_TRACK);
-			
+
 			if (track) {
 				char *end;
-				
+
 				info->track = strtol (track, &end, 10);
 				if (end == track)
 					info->track = -1;
@@ -494,7 +494,7 @@ static int decode_one_frame (struct aac_data *data, void *buffer, int count)
 	}
 
 	data->bitrate = frame_info.bytesconsumed * 8 / (bytes / 2.0 /
-			data->channels / data->sample_rate) / 1000; 
+			data->channels / data->sample_rate) / 1000;
 
 	return bytes;
 }

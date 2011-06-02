@@ -9,7 +9,7 @@
  *
  * Contributors:
  *  - Kamil Tarkowski <kamilt@interia.pl> - "porevious" request
- *  
+ *
  */
 
 #ifdef HAVE_CONFIG_H
@@ -155,7 +155,7 @@ char *sfmt_str (const long format, char *msg, const size_t buf_size)
 	/* skip first ", " */
 	if (msg[0])
 		memmove (msg, msg + 2, strlen(msg) + 1);
-	
+
 	return msg;
 }
 
@@ -185,12 +185,12 @@ static long sfmt_best_matching (const long formats_with_endian,
 	long formats = formats_with_endian & SFMT_MASK_FORMAT;
 	long req = req_with_endian & SFMT_MASK_FORMAT;
 	long best = 0;
-	
+
 #ifdef DEBUG
 	char fmt_name1[SFMT_STR_MAX];
 	char fmt_name2[SFMT_STR_MAX];
 #endif
-	
+
 	if (formats & req)
 		best = req;
 	else if (req == SFMT_S8 || req == SFMT_U8) {
@@ -258,7 +258,7 @@ static long sfmt_best_matching (const long formats_with_endian,
 			sfmt_str(req_with_endian, fmt_name2,
 				sizeof(fmt_name2)));
 #endif
-	
+
 	return best;
 }
 
@@ -266,7 +266,7 @@ static long sfmt_best_matching (const long formats_with_endian,
 int sfmt_Bps (const long format)
 {
 	int Bps = -1;
-	
+
 	switch (format & SFMT_MASK_FORMAT) {
 		case SFMT_S8:
 		case SFMT_U8:
@@ -433,7 +433,7 @@ static void *play_thread (void *unused ATTR_UNUSED)
 		if (file) {
 			int next;
 			char *next_file;
-				
+
 			LOCK (curr_playing_mut);
 			LOCK (plist_mut);
 			logit ("Playing item %d: %s", curr_playing, file);
@@ -441,15 +441,15 @@ static void *play_thread (void *unused ATTR_UNUSED)
 			if (curr_playing_fname)
 				free (curr_playing_fname);
 			curr_playing_fname = xstrdup (file);
-				
+
 			out_buf_time_set (&out_buf, 0.0);
-				
+
 			next = plist_next (curr_plist, curr_playing);
 			next_file = next != -1
 				? plist_get_file(curr_plist, next) : NULL;
 			UNLOCK (plist_mut);
 			UNLOCK (curr_playing_mut);
-				
+
 			player (file, next_file, &out_buf);
 			if (next_file)
 				free (next_file);
@@ -520,7 +520,7 @@ void audio_stop ()
 		logit ("done stopping");
 	}
 	else if (state == STATE_PAUSE) {
-		
+
 		/* Paused internet stream - we are in fact stopped already. */
 		if (curr_playing_fname) {
 			free (curr_playing_fname);
@@ -540,7 +540,7 @@ void audio_play (const char *fname)
 
 	audio_stop ();
 	player_reset ();
-	
+
 	LOCK (curr_playing_mut);
 	LOCK (plist_mut);
 
@@ -570,26 +570,26 @@ void audio_play (const char *fname)
 		else if (plist_count(curr_plist)) {
 			curr_playing = plist_next (curr_plist, -1);
 		}
-		else 
+		else
 			curr_playing = -1;
 	}
 	else {
 		curr_plist = &playlist;
-		
+
 		if (*fname)
 			curr_playing = plist_find_fname (curr_plist, fname);
 		else if (plist_count(curr_plist))
 			curr_playing = plist_next (curr_plist, -1);
-		else 
+		else
 			curr_playing = -1;
 	}
-	
+
 	rc = pthread_create (&playing_thread, NULL, play_thread,
 	                     curr_playing != -1 ? NULL : (void *)fname);
 	if (rc != 0)
 		error ("Can't create thread: %s", strerror (rc));
 	play_thread_running = 1;
-	
+
 	UNLOCK (plist_mut);
 	UNLOCK (curr_playing_mut);
 }
@@ -614,11 +614,10 @@ void audio_pause ()
 {
 	LOCK (curr_playing_mut);
 	LOCK (plist_mut);
-	
+
 	if (curr_playing != -1) {
 		char *sname = plist_get_file (curr_plist, curr_playing);
-		
-	
+
 		if (file_type(sname) == F_URL) {
 			UNLOCK (curr_playing_mut);
 			UNLOCK (plist_mut);
@@ -635,10 +634,10 @@ void audio_pause ()
 		}
 		else
 			out_buf_pause (&out_buf);
-		
+
 		state = STATE_PAUSE;
 		state_change ();
-		
+
 		free (sname);
 	}
 
@@ -690,7 +689,7 @@ int audio_open (struct sound_params *sound_params)
 	if (audio_opened && sound_params_eq(req_sound_params, *sound_params)) {
 		if (audio_get_bps() < 88200) {
 			logit ("Reopening device due to low bps.");
-			
+
 			/* Not closing the device would cause that much
 			 * sound from the previous file to stay in the buffer
 			 * and the user will hear old data, so close it. */
@@ -701,7 +700,7 @@ int audio_open (struct sound_params *sound_params)
 					"parameters.");
 
 			return 1;
-		}	
+		}
 	}
 	else if (audio_opened)
 		audio_close ();
@@ -710,7 +709,7 @@ int audio_open (struct sound_params *sound_params)
 
 	/* Set driver_sound_params to parameters supported by the driver that
 	 * are nearly the requested parameters. */
-	
+
 	if (options_get_int("ForceSampleRate")) {
 		driver_sound_params.rate = options_get_int("ForceSampleRate");
 		logit ("Setting forced driver sample rate to %dHz",
@@ -718,10 +717,10 @@ int audio_open (struct sound_params *sound_params)
 	}
 	else
 		driver_sound_params.rate = req_sound_params.rate;
-	
+
 	driver_sound_params.fmt = sfmt_best_matching (hw_caps.formats,
 			req_sound_params.fmt);
-	
+
 	/* number of channels */
 	if (req_sound_params.channels > hw_caps.max_channels)
 		driver_sound_params.channels = hw_caps.max_channels;
@@ -735,7 +734,7 @@ int audio_open (struct sound_params *sound_params)
 
 	if (res) {
 		char fmt_name[SFMT_STR_MAX];
-		
+
 		if (driver_sound_params.fmt != req_sound_params.fmt
 				|| driver_sound_params.channels
 				!= req_sound_params.channels
@@ -764,7 +763,7 @@ int audio_open (struct sound_params *sound_params)
 				driver_sound_params.channels,
 				driver_sound_params.rate);
 	}
-	
+
 	return res;
 }
 
@@ -776,7 +775,7 @@ int audio_send_buf (const char *buf, const size_t size)
 
 	if (need_audio_conversion)
 		converted = audio_conv (&sound_conv, buf, size, &out_data_len);
-	
+
 	if (need_audio_conversion && converted)
 		res = out_buf_put (&out_buf, converted,	out_data_len);
 	else if (!need_audio_conversion)
@@ -849,7 +848,7 @@ int audio_send_pcm (const char *buf, const size_t size)
 	}
 
 	int played;
-	
+
 	played = hw.play (buf, size);
 
 	if (played == 0)
@@ -889,19 +888,19 @@ void audio_close ()
 static void find_working_driver (const char *drivers, struct hw_funcs *funcs)
 {
 	const char *pos = drivers;
-	
+
 	memset (funcs, 0, sizeof(funcs));
 
 	while (pos[0]) {
 		size_t t;
 		char name[32];
-		
+
 		if (!(t = strcspn(pos, " \t,")) || t >= sizeof(name))
 			fatal ("Invalid sound driver list!");
 
 		strncpy (name, pos, t);
 		name[t] = 0;
-		
+
 		pos += t;
 		pos += strspn (pos, " \t,");
 
@@ -940,7 +939,7 @@ static void find_working_driver (const char *drivers, struct hw_funcs *funcs)
 				return;
 		}
 #endif
-	
+
 #ifndef NDEBUG
 		if (!strcasecmp(name, "null")) {
 			null_funcs (funcs);
@@ -957,7 +956,7 @@ static void find_working_driver (const char *drivers, struct hw_funcs *funcs)
 static void print_output_capabilities (const struct output_driver_caps *caps)
 {
 	char fmt_name[SFMT_STR_MAX];
-	
+
 	logit ("Sound driver capabilities: channels %d - %d, formats: %s",
 			caps->min_channels, caps->max_channels,
 			sfmt_str(caps->formats, fmt_name, sizeof(fmt_name)));
@@ -977,7 +976,7 @@ void audio_initialize ()
 				"to no.");
 		hw_caps.formats &= ~(SFMT_S32 | SFMT_U32);
 	}
-	
+
 	out_buf_init (&out_buf, options_get_int("OutputBuffer") * 1024);
 
         softmixer_init();
@@ -1025,7 +1024,7 @@ void audio_seek (const int sec)
 	LOCK (curr_playing_mut);
 	playing = curr_playing;
 	UNLOCK (curr_playing_mut);
-	
+
 	if (playing != -1 && state == STATE_PLAY)
 		player_seek (sec);
 	else
@@ -1039,7 +1038,7 @@ void audio_jump_to (const int sec)
 	LOCK (curr_playing_mut);
 	playing = curr_playing;
 	UNLOCK (curr_playing_mut);
-	
+
 	if (playing != -1 && state == STATE_PLAY)
 		player_jump_to (sec);
 	else
@@ -1105,7 +1104,7 @@ int audio_get_mixer ()
 {
         if(current_mixer==2)
           return softmixer_get_value();
-	
+
         return hw.read_mixer ();
 }
 
@@ -1125,12 +1124,12 @@ void audio_set_mixer (const int val)
 void audio_plist_delete (const char *file)
 {
 	int num;
-	
+
 	LOCK (plist_mut);
 	num = plist_find_fname (&playlist, file);
 	if (num != -1)
 		plist_delete (&playlist, num);
-	
+
 	num = plist_find_fname (&shuffled_plist, file);
 	if (num != -1)
 		plist_delete (&shuffled_plist, num);
@@ -1203,7 +1202,7 @@ int audio_plist_get_serial ()
 	LOCK (plist_mut);
 	serial = plist_get_serial (&playlist);
 	UNLOCK (plist_mut);
-	
+
 	return serial;
 }
 
@@ -1253,7 +1252,7 @@ char *audio_get_mixer_channel_name ()
 {
         if(current_mixer==2)
           return softmixer_name();
-	
+
         return hw.get_mixer_channel_name ();
 }
 

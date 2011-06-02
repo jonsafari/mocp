@@ -80,7 +80,7 @@ int can_read_file (const char *file)
 enum file_type file_type (const char *file)
 {
 	struct stat file_stat;
-	
+
 	assert (file != NULL);
 
 	if (is_url(file))
@@ -100,7 +100,7 @@ enum file_type file_type (const char *file)
 const char *file_mime_type (const char *file)
 {
 	const char *result = NULL;
-	
+
 	assert (file != NULL);
 
 #ifdef HAVE_LIBMAGIC
@@ -138,14 +138,13 @@ const char *file_mime_type (const char *file)
 void make_file_title (struct plist *plist, const int num,
 		const int hide_extension)
 {
-	
 	assert (plist != NULL);
 	assert (num >= 0 && num < plist->num);
 	assert (!plist_deleted(plist, num));
 
 	if (file_type(plist->items[num].file) != F_URL) {
 		char *file = xstrdup (plist->items[num].file);
-		
+
 		if (hide_extension) {
 			char *dot = strrchr (file, '.');
 
@@ -153,7 +152,7 @@ void make_file_title (struct plist *plist, const int num,
 				*dot = 0;
 		}
 
-		if (options_get_int ("FileNamesIconv")) 
+		if (options_get_int ("FileNamesIconv"))
 		{
 			char *old_title = file;
 			file = files_iconv_str (file);
@@ -196,7 +195,7 @@ void switch_titles_file (struct plist *plist)
 {
 	int i;
 	int hide_extension = options_get_int("HideFileExtension");
-		
+
 	for (i = 0; i < plist->num; i++)
 		if (!plist_deleted(plist, i)) {
 			if (!plist->items[i].title_file)
@@ -268,7 +267,7 @@ void resolve_path (char *buf, const int size, const char *file)
 			/* skip '/.' */
 			f += 2;
 		else if (!strncmp(f, "//", 2))
-			
+
 			/* remove double slash */
 			f++;
 		else if (len == size - 1)
@@ -278,7 +277,7 @@ void resolve_path (char *buf, const int size, const char *file)
 			buf[len] = 0;
 		}
 	}
-	
+
 	/* remove dot from '/dir/.' */
 	if (len >= 2 && buf[len-1] == '.' && buf[len-2] == '/')
 		buf[--len] = 0;
@@ -334,7 +333,7 @@ struct file_tags *read_file_tags (const char *file,
 	}
 	else
 		debug ("No need to read any tags");
-	
+
 	return tags;
 }
 
@@ -348,7 +347,7 @@ int read_directory (const char *directory, lists_t_strs *dirs,
 	struct dirent *entry;
 	int show_hidden = options_get_int ("ShowHiddenFiles");
 	int dir_is_root;
-	
+
 	assert (directory != NULL);
 	assert (*directory == '/');
 	assert (dirs != NULL);
@@ -374,7 +373,7 @@ int read_directory (const char *directory, lists_t_strs *dirs,
 			error ("Interrupted! Not all files read!");
 			break;
 		}
-		
+
 		if (!strcmp(entry->d_name, ".") || !strcmp(entry->d_name, ".."))
 			continue;
 		if (!show_hidden && entry->d_name[0] == '.')
@@ -411,7 +410,7 @@ static int dir_symlink_loop (const ino_t inode_no, const ino_t *dir_stack,
 	return 0;
 }
 
-/* Recursively add files from the directory to the playlist. 
+/* Recursively add files from the directory to the playlist.
  * Return 1 if OK (and even some errors), 0 if the user interrupted. */
 static int read_directory_recurr_internal (const char *directory, struct plist *plist,
 		ino_t **dir_stack, int *depth)
@@ -442,16 +441,15 @@ static int read_directory_recurr_internal (const char *directory, struct plist *
 	*dir_stack = (ino_t *)xrealloc (*dir_stack, sizeof(ino_t) * (*depth));
 	(*dir_stack)[*depth - 1] = st.st_ino;
 
-	
 	while ((entry = readdir(dir))) {
 		char file[PATH_MAX];
 		enum file_type type;
-		
+
 		if (user_wants_interrupt()) {
 			error ("Interrupted! Not all files read!");
 			break;
 		}
-			
+
 		if (!strcmp(entry->d_name, ".") || !strcmp(entry->d_name, ".."))
 			continue;
 		if (snprintf(file, sizeof(file), "%s/%s", directory,
@@ -520,7 +518,7 @@ char *read_line (FILE *file)
 
 		if (line[len-1] == '\n')
 			break;
-		
+
 		/* If we are here, it means that line is longer than the
 		 * buffer. */
 		line_alloc *= 2;
@@ -549,7 +547,7 @@ static char *add_dir_file (const char *base, const char *name)
 	base_is_root = !strcmp (base, "/") ? 1 : 0;
 	path = (char *)xmalloc (sizeof(char) *
 			(strlen(base) + strlen(name) + 2));
-	
+
 	sprintf (path, "%s/%s", base_is_root ? "" : base, name);
 
 	return path;
@@ -581,7 +579,7 @@ char *find_match_dir (char *pattern)
 	if (!slash)
 		return NULL;
 	if (slash == pattern) {
-		
+
 		/* only '/dir' */
 		search_dir = xstrdup ("/");
 	}
@@ -624,7 +622,7 @@ char *find_match_dir (char *pattern)
 				free (path);
 		}
 	}
-	
+
 	closedir (dir);
 	free (search_dir);
 
@@ -659,7 +657,7 @@ time_t get_mtime (const char *file)
 
 	if (stat(file, &stat_buf) != -1)
 		return stat_buf.st_mtime;
-	
+
 	return (time_t)-1;
 }
 

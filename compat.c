@@ -38,7 +38,7 @@ char *strcasestr (const char *haystack, const char *needle)
 		*c = tolower (*c);
 		c++;
 	}
-		
+
 	c = needle_i;
 	while (*c) {
 		*c = tolower (*c);
@@ -61,9 +61,9 @@ int strerror_r (int errnum, char *buf, size_t n)
 {
 	char *err_str;
 	int ret_val = 0;
-	
+
 	LOCK (strerror_r_mutex);
-	
+
 	err_str = strerror (errnum);
 	if (strlen (err_str) >= n) {
 		errno = ERANGE;
@@ -71,7 +71,7 @@ int strerror_r (int errnum, char *buf, size_t n)
 	}
 	else
 		strcpy (buf, err_str);
-	
+
 	UNLOCK (strerror_r_mutex);
 
 	return ret_val;

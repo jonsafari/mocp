@@ -48,12 +48,12 @@ static struct timidity_data *make_timidity_data(const char *file) {
   decoder_error_init (&data->error);
 
   MidIStream *midistream = mid_istream_open_file(file);
-  
+
   if(midistream==NULL) {
     decoder_error(&data->error, ERROR_FATAL, 0, "Can't open midifile: %s", file);
     return data;
   }
-  
+
   data->midisong = mid_song_load(midistream, &midioptions);
   mid_istream_close(midistream);
 
@@ -70,13 +70,13 @@ static void *timidity_open (const char *file)
   struct timidity_data *data = make_timidity_data(file);
 
   if(data->midisong) {
-    data->length = mid_song_get_total_time(data->midisong); 
+    data->length = mid_song_get_total_time(data->midisong);
   }
 
 
   if(data->midisong) {
     debug ("Opened file %s", file);
-  
+
     mid_song_set_volume(data->midisong, options_get_int("TiMidity_Volume"));
     mid_song_start(data->midisong);
   }
@@ -106,7 +106,7 @@ static void timidity_info (const char *file_name, struct file_tags *info,
     info->filled |= TAGS_TIME;
   }
 
-  timidity_close(data);  
+  timidity_close(data);
 }
 
 static int timidity_seek (void *void_data, int sec)
@@ -127,7 +127,7 @@ static int timidity_decode (void *void_data, char *buf, int buf_len,
 		struct sound_params *sound_params)
 {
   struct timidity_data *data = (struct timidity_data *)void_data;
-  
+
   sound_params->channels = midioptions.channels;
   sound_params->rate = midioptions.rate;
   sound_params->fmt = (midioptions.format==MID_AUDIO_S16LSB)?(SFMT_S16 | SFMT_LE):SFMT_S8;
@@ -168,7 +168,7 @@ static int timidity_our_format_ext(const char *ext)
 static void timidity_get_error (void *prv_data, struct decoder_error *error)
 {
   struct timidity_data *data = (struct timidity_data *)prv_data;
-  
+
   decoder_error_copy (error, &data->error);
 }
 

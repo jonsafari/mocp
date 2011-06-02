@@ -1,4 +1,4 @@
-/* 
+/*
  * MOC - music on console
  *
  * SNDIO sound driver for MOC by Alexander Polakov.

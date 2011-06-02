@@ -353,7 +353,7 @@ void softmixer_process_buffer(char *buf, size_t size, const struct sound_params 
         mix_mono_float((float *)buf, sound_params->channels, size / sizeof(float));
       break;
   }
-  
+
   /* restore sample-endianness */
   if(need_endianness_swap)
   {

@@ -44,7 +44,7 @@ struct menu_item
 	int attr_sel;
 	int attr_marked;
 	int attr_sel_marked;
-	
+
 	/* Associated file: */
 	char *file;
 	enum file_type type;
@@ -71,7 +71,7 @@ struct menu
 	int posy;
 	int width;
 	int height;
-	
+
 	struct menu_item *selected;	/* selected item */
 	struct menu_item *marked;	/* index of the marked item or -1 */
 

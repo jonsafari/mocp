@@ -899,7 +899,7 @@ enum key_cmd get_key_cmd (const enum key_context context, const struct iface_key
 {
 	int k;
 	unsigned int i;
-	
+
 	k = (key->type == IFACE_KEY_CHAR) ? key->key.ucs : key->key.func;
 
 	for (i = 0; i < sizeof(commands)/sizeof(commands[0]); i++)
@@ -910,7 +910,7 @@ enum key_cmd get_key_cmd (const enum key_context context, const struct iface_key
 				if (commands[i].keys[j++] == k)
 					return commands[i].cmd;
 		}
-	
+
 	return KEY_CMD_WRONG;
 }
 
@@ -919,7 +919,7 @@ static char *find_keymap_file ()
 {
 	char *file;
 	static char path[PATH_MAX];
-	
+
 	if ((file = options_get_str("Keymap"))) {
 		if (file[0] == '/') {
 
@@ -950,9 +950,9 @@ static void keymap_parse_error (const int line, const char *msg)
 static int parse_key (const char *symbol)
 {
 	unsigned int i;
-	
+
 	if (strlen(symbol) == 1)
-		
+
 		/* Just a regular char */
 		return symbol[0];
 
@@ -1039,11 +1039,11 @@ static void load_key_map (const char *file_name)
 	FILE *file;
 	char *line;
 	int line_num = 0;
-	
+
 	if (!(file = fopen(file_name, "r")))
 		fatal ("Can't open keymap file: %s", strerror(errno));
 
-	/* Read lines in format: 
+	/* Read lines in format:
 	 * COMMAND = KEY [KEY ...]
 	 * Blank lines and beginning with # are ignored, see example_keymap. */
 	while ((line = read_line(file))) {
@@ -1171,7 +1171,7 @@ static void make_help ()
 	unsigned int i;
 
 	for (i = 0; i < COMMANDS_NUM; i++) {
-		help[i] = xmalloc (sizeof(char) * 
+		help[i] = xmalloc (sizeof(char) *
 				(HELP_INDENT + strlen(commands[i].help) + 1));
 		strncpy (help[i], get_command_keys(i), HELP_INDENT);
 		if (strlen(help[i]) < HELP_INDENT)
