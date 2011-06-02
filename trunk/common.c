@@ -36,12 +36,12 @@ void error (const char *format, ...)
 {
 	va_list va;
 	char msg[256];
-	
+
 	va_start (va, format);
 	vsnprintf (msg, sizeof(msg), format, va);
 	msg[sizeof(msg) - 1] = 0;
 	va_end (va);
-	
+
 	if (im_server)
 		server_error (msg);
 	else
@@ -53,7 +53,7 @@ void fatal (const char *format, ...)
 {
 	va_list va;
 	char msg[256];
-	
+
 	va_start (va, format);
 	vsnprintf (msg, sizeof(msg), format, va);
 	msg[sizeof(msg) - 1] = 0;
@@ -155,7 +155,7 @@ char *create_file_name (const char *file)
 {
 	static char fname[PATH_MAX];
 	char *moc_dir = options_get_str ("MOCDir");
-	
+
 	if (moc_dir[0] == '~') {
 		if (snprintf(fname, sizeof(fname), "%s/%s/%s", get_home (),
 				(moc_dir[1] == '/') ? moc_dir + 2 : moc_dir + 1,
@@ -179,13 +179,13 @@ void sec_to_min (char *buff, const int seconds)
 
 		/* the time is less than 99:59 */
 		int min, sec;
-		
+
 		min = seconds / 60;
 		sec = seconds % 60;
 
 		snprintf (buff, 6, "%02d:%02d", min, sec);
 	}
-	else if (seconds < 10000 * 60) 
+	else if (seconds < 10000 * 60)
 
 		/* the time is less than 9999 minutes */
 		snprintf (buff, 6, "%4dm", seconds/60);

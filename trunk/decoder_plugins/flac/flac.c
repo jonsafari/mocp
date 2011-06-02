@@ -51,13 +51,13 @@ struct flac_data
 	int bitrate;
 	int avg_bitrate;
 	int abort; /* abort playing (due to an error) */
-	
+
 	unsigned length;
 	unsigned total_samples;
-	
+
 	FLAC__byte sample_buffer[SAMPLE_BUFFER_SIZE];
 	unsigned sample_buffer_fill;
-	
+
 	/* sound parameters */
 	unsigned bits_per_sample;
 	unsigned sample_rate;
@@ -154,7 +154,7 @@ static void metadata_callback (
 
 	if (metadata->type == FLAC__METADATA_TYPE_STREAMINFO) {
 		debug ("Got metadata info");
-		
+
 		data->total_samples =
 			(unsigned)(metadata->data.stream_info.total_samples
 				   & 0xffffffff);
@@ -175,7 +175,7 @@ static void error_callback (
 		FLAC__StreamDecoderErrorStatus status, void *client_data)
 {
 	struct flac_data *data = (struct flac_data *)client_data;
-	
+
 	if (status != FLAC__STREAM_DECODER_ERROR_STATUS_LOST_SYNC) {
 		debug ("Aborting due to error");
 		data->abort = 1;
@@ -196,7 +196,7 @@ static FLAC__StreamDecoderReadStatus read_callback (
 {
 	struct flac_data *data = (struct flac_data *)client_data;
 	ssize_t res;
-	
+
 	res = io_read (data->stream, buffer, *bytes);
 
 	if (res > 0) {
@@ -207,7 +207,7 @@ static FLAC__StreamDecoderReadStatus read_callback (
 		return FLAC__STREAM_DECODER_READ_STATUS_CONTINUE;
 #endif
 	}
-	
+
 	if (res == 0) {
 		*bytes = 0;
 		/* not sure why this works, but if it ain't broke... */
@@ -234,7 +234,7 @@ static FLAC__StreamDecoderSeekStatus seek_callback (
 #endif
 {
 	struct flac_data *data = (struct flac_data *)client_data;
-	
+
 #ifdef LEGACY_FLAC
 	return io_seek(data->stream, absolute_byte_offset, SEEK_SET) >= 0
 		? FLAC__SEEKABLE_STREAM_DECODER_SEEK_STATUS_OK
@@ -305,7 +305,7 @@ static void *flac_open_internal (const char *file, const int buffered)
 
 	data = (struct flac_data *)xmalloc (sizeof(struct flac_data));
 	decoder_error_init (&data->error);
-	
+
 	data->decoder = NULL;
 	data->bitrate = -1;
 	data->avg_bitrate = -1;
@@ -333,7 +333,7 @@ static void *flac_open_internal (const char *file, const int buffered)
 	}
 
 	FLAC__seekable_stream_decoder_set_md5_checking (data->decoder, false);
-	
+
 	FLAC__seekable_stream_decoder_set_metadata_ignore_all (data->decoder);
 	FLAC__seekable_stream_decoder_set_metadata_respond (data->decoder,
 			FLAC__METADATA_TYPE_STREAMINFO);
@@ -380,7 +380,7 @@ static void *flac_open_internal (const char *file, const int buffered)
 	}
 
 	FLAC__stream_decoder_set_md5_checking (data->decoder, false);
-	
+
 	FLAC__stream_decoder_set_metadata_ignore_all (data->decoder);
 	FLAC__stream_decoder_set_metadata_respond (data->decoder,
 			FLAC__METADATA_TYPE_STREAMINFO);
@@ -446,7 +446,7 @@ static void fill_tag (FLAC__StreamMetadata_VorbisComment_Entry *comm,
 	strncpy (name, (char *)comm->entry, eq - comm->entry);
 	name[eq - comm->entry] = 0;
 	value_length = comm->length - (eq - comm->entry + 1);
-	
+
 	if (value_length == 0) {
 		free (name);
 		return;
@@ -480,7 +480,7 @@ static void get_vorbiscomments (const char *filename, struct file_tags *tags)
 	FLAC__bool got_vorbis_comments = false;
 
 	debug ("Reading comments for %s", filename);
-	
+
 	if (!iterator) {
 		logit ("FLAC__metadata_simple_iterator_new() failed.");
 		return;
@@ -497,7 +497,7 @@ static void get_vorbiscomments (const char *filename, struct file_tags *tags)
 		if (FLAC__metadata_simple_iterator_get_block_type(iterator)
 				== FLAC__METADATA_TYPE_VORBIS_COMMENT) {
 			FLAC__StreamMetadata *block;
-			
+
 			block = FLAC__metadata_simple_iterator_get_block (
 					iterator);
 			if (block) {
@@ -514,7 +514,7 @@ static void get_vorbiscomments (const char *filename, struct file_tags *tags)
 		}
 	} while (!got_vorbis_comments
 			&& FLAC__metadata_simple_iterator_next(iterator));
-	
+
 	FLAC__metadata_simple_iterator_delete(iterator);
 }
 
@@ -523,7 +523,7 @@ static void flac_info (const char *file_name, struct file_tags *info,
 {
 	if (tags_sel & TAGS_TIME) {
 		struct flac_data *data;
-		
+
 		if ((data = flac_open_internal(file_name, 0))) {
 			info->time = data->length;
 			flac_close (data);
@@ -546,7 +546,7 @@ static int flac_seek (void *void_data, int sec)
 
 	target_sample = (FLAC__uint64)((sec/(double)data->length) *
 			(double)data->total_samples);
-	
+
 #ifdef LEGACY_FLAC
 	if (FLAC__seekable_stream_decoder_seek_absolute(data->decoder,
 				target_sample))
@@ -590,10 +590,10 @@ static int flac_decode (void *void_data, char *buf, int buf_len,
 	sound_params->channels = data->channels;
 
 	decoder_error_clear (&data->error);
-	
+
 	if (!data->sample_buffer_fill) {
 		debug ("decoding...");
-		
+
 #ifdef LEGACY_FLAC
 		if (FLAC__seekable_stream_decoder_get_state(data->decoder) == FLAC__SEEKABLE_STREAM_DECODER_END_OF_STREAM)
 #else
@@ -626,7 +626,7 @@ static int flac_decode (void *void_data, char *buf, int buf_len,
 		if (decode_position > data->last_decode_position) {
 			int bytes_per_sec = bytes_per_sample * data->sample_rate
 				* data->channels;
-		 
+
 			data->bitrate = (decode_position
 				- data->last_decode_position) * 8.0
 				/ (data->sample_buffer_fill

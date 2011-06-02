@@ -89,7 +89,7 @@ static void request_queue_clear_up_to (struct request_queue *q,
 		const char *file)
 {
 	int stop = 0;
-	
+
 	assert (q != NULL);
 
 	while (q->head && !stop) {
@@ -112,7 +112,7 @@ static void request_queue_add (struct request_queue *q, const char *file,
 		const int tags_sel)
 {
 	assert (q != NULL);
-	
+
 	if (!q->head) {
 		q->head = (struct request_queue_node *)xmalloc (
 				sizeof(struct request_queue_node));
@@ -121,12 +121,12 @@ static void request_queue_add (struct request_queue *q, const char *file,
 	else {
 		assert (q->tail != NULL);
 		assert (q->tail->next == NULL);
-		
+
 		q->tail->next = (struct request_queue_node *)xmalloc (
 				sizeof(struct request_queue_node));
 		q->tail = q->tail->next;
 	}
-	
+
 	q->tail->file = xstrdup (file);
 	q->tail->tags_sel = tags_sel;
 	q->tail->next = NULL;
@@ -135,17 +135,17 @@ static void request_queue_add (struct request_queue *q, const char *file,
 static int request_queue_empty (const struct request_queue *q)
 {
 	assert (q != NULL);
-	
+
 	return q->head == NULL;
 }
 
 /* Get the file name of the first element in the queue or NULL if the queue is
- * empty. Put tags to be read in *tags_sel. Returned memory is malloc()ed. */ 
+ * empty. Put tags to be read in *tags_sel. Returned memory is malloc()ed. */
 static char *request_queue_pop (struct request_queue *q, int *tags_sel)
 {
 	struct request_queue_node *n;
 	char *file;
-	
+
 	assert (q != NULL);
 
 	if (q->head == NULL)
@@ -289,7 +289,7 @@ static int cache_record_deserialize (struct cache_record *rec,
 		if (rec->tags->time >= 0)
 			rec->tags->filled |= TAGS_TIME;
 	}
-	
+
 	return 1;
 
 err:
@@ -407,7 +407,7 @@ static void tags_cache_add (struct tags_cache *c, const char *file,
 	serialized_cache_rec = cache_record_serialize (&rec, &serial_len);
 	if (!serialized_cache_rec)
 		return;
-	
+
 	memset (&key, 0, sizeof(key));
 	memset (&data, 0, sizeof(data));
 
@@ -439,7 +439,7 @@ static struct file_tags *tags_cache_read_add (struct tags_cache *c,
 	DB_LOCK lock;
 	int got_lock = 0;
 	int ret;
-		
+
 	assert (c != NULL);
 	assert (c->db != NULL);
 	assert (file != NULL);
@@ -526,7 +526,7 @@ static struct file_tags *tags_cache_read_add (struct tags_cache *c,
 		tags_free (tags);
 		tags = NULL;
 	}
-	
+
 	/* TODO: Remove the oldest items from the cache if we exceeded the maximum
 	 * cache size */
 
@@ -557,7 +557,7 @@ static void *reader_thread (void *cache_ptr)
 		int i;
 		char *request_file;
 		int tags_sel = 0;
-		
+
 		/* find the queue with a request waiting, begin searching at
 		 * curr_queue: we want to get one request from each queue,
 		 * and then move to the next non-empty queue */
@@ -581,10 +581,10 @@ static void *reader_thread (void *cache_ptr)
 		request_file = request_queue_pop (&c->queues[curr_queue],
 				&tags_sel);
 		UNLOCK (c->mutex);
-		
+
 		tags_cache_read_add (c, curr_queue, request_file, tags_sel);
 		free (request_file);
-		
+
 		LOCK (c->mutex);
 		if (++curr_queue == CLIENTS_MAX)
 			curr_queue = 0;
@@ -593,14 +593,14 @@ static void *reader_thread (void *cache_ptr)
 	UNLOCK (c->mutex);
 
 	logit ("Exiting tags reader thread");
-	
+
 	return NULL;
 }
 
 void tags_cache_init (struct tags_cache *c, const size_t max_size)
 {
 	int i, rc;
-	
+
 	assert (c != NULL);
 
 	c->db_env = NULL;
@@ -612,7 +612,7 @@ void tags_cache_init (struct tags_cache *c, const size_t max_size)
 	c->max_items = max_size;
 	c->stop_reader_thread = 0;
 	pthread_mutex_init (&c->mutex, NULL);
-	
+
 	rc = pthread_cond_init (&c->request_cond, NULL);
 	if (rc != 0)
 		fatal ("Can't create request_cond: %s", strerror (rc));
@@ -669,13 +669,13 @@ void tags_cache_add_request (struct tags_cache *c, const char *file,
 	int db_ret;
 	int got_lock;
 	DB_LOCK lock;
-	
+
 	assert (c != NULL);
 	assert (file != NULL);
 	assert (client_id >= 0 && client_id < CLIENTS_MAX);
 
 	debug ("Request for tags for %s from client %d", file, client_id);
-	
+
 	memset (&key, 0, sizeof(key));
 	key.data = (void *)file;
 	key.size = strlen(file);
@@ -754,7 +754,7 @@ void tags_cache_clear_up_to (struct tags_cache *c, const char *file,
 	assert (c != NULL);
 	assert (client_id >= 0 && client_id < CLIENTS_MAX);
 	assert (file != NULL);
-	
+
 	LOCK (c->mutex);
 	request_queue_clear_up_to (&c->queues[client_id], file);
 	debug ("Removing requests for client %d up to file %s", client_id,
@@ -789,10 +789,10 @@ static int purge_directory (const char *dir_path)
 		struct stat st;
 		char *fpath;
 		int len;
-		
+
 		if (!strcmp(d->d_name, ".") || !strcmp(d->d_name, ".."))
 			continue;
-		
+
 		len = strlen(dir_path) + strlen(d->d_name) + 2;
 		fpath = (char *)xmalloc (len);
 		snprintf (fpath, len, "%s/%s", dir_path, d->d_name);

@@ -37,7 +37,7 @@ int is_plist_file (const char *name)
 
 	if (ext && (!strcasecmp(ext, "m3u") || !strcasecmp(ext, "pls")))
 		return 1;
-	
+
 	return 0;
 }
 
@@ -49,7 +49,7 @@ static void make_path (char *buf, const int buf_size,
 		buf[buf_size-1] = 0;
 		return;
 	}
-	
+
 	if (path[0] != '/')
 		strcpy (buf, cwd);
 	else
@@ -107,7 +107,7 @@ static int plist_load_m3u (struct plist *plist, const char *fname,
 				plist_delete (plist, last_added);
 				return added;
 			}
-			
+
 			/* Find the comma */
 			comma = strchr (line + (sizeof("#EXTINF:") - 1), ',');
 			if (!comma) {
@@ -116,7 +116,7 @@ static int plist_load_m3u (struct plist *plist, const char *fname,
 				free (line);
 				return added;
 			}
-	
+
 			/* Get the time string */
 			time_text[sizeof(time_text)-1] = 0;
 			strncpy (time_text, line + sizeof("#EXTINF:") - 1,
@@ -141,7 +141,7 @@ static int plist_load_m3u (struct plist *plist, const char *fname,
 			after_extinf = 1;
 			last_added = plist_add (plist, NULL);
 			plist_set_title_tags (plist, last_added, comma + 1);
-			
+
 			if (*time_text)
 				plist_set_item_time (plist, last_added,
 						time_sec);
@@ -188,7 +188,7 @@ static int plist_load_m3u (struct plist *plist, const char *fname,
 		}
 		free (line);
 	}
-	
+
 	if (flock(fileno(file), LOCK_UN) == -1)
 		logit ("Can't flock() (unlock) the playlist file: %s",
 				strerror(errno));
@@ -202,7 +202,7 @@ static int is_blank_line (const char *l)
 {
 	while (*l && isblank(*l))
 		l++;
-	
+
 	if (*l)
 		return 0;
 	return 1;
@@ -217,7 +217,7 @@ static char *read_ini_value (FILE *file, const char *section, const char *key)
 	int in_section = 0;
 	char *value = NULL;
 	int key_len;
-	
+
 	if (fseek(file, 0, SEEK_SET)) {
 		error ("File fseek() error: %s", strerror(errno));
 		return NULL;
@@ -249,7 +249,7 @@ static char *read_ini_value (FILE *file, const char *section, const char *key)
 		}
 		else if (in_section && line[0] != '#' && !is_blank_line(line)) {
 			char *t, *t2;
-			
+
 			t2 = t = strchr (line, '=');
 
 			if (!t) {
@@ -287,7 +287,7 @@ static char *read_ini_value (FILE *file, const char *section, const char *key)
 
 					*q = 0;
 				}
-				
+
 				value = xstrdup (value);
 				free (line);
 				break;
@@ -323,7 +323,7 @@ static int plist_load_pls (struct plist *plist, const char *fname,
 		fclose (file);
 		return plist_load_m3u (plist, fname, cwd, 0);
 	}
-	
+
 	nitems = strtol (line, &e, 10);
 	if (*e) {
 		error ("Broken PLS file");
@@ -344,7 +344,7 @@ static int plist_load_pls (struct plist *plist, const char *fname,
 			error ("Broken PLS file");
 			break;
 		}
-		
+
 		sprintf (key, "Title%ld", i);
 		pls_title = read_ini_value(file, "playlist", key);
 
@@ -358,7 +358,7 @@ static int plist_load_pls (struct plist *plist, const char *fname,
 		}
 		else
 			time = -1;
-		
+
 		if (strlen(pls_file) <= PATH_MAX) {
 			make_path (path, sizeof(path), cwd, pls_file);
 			if (plist_find_fname(plist, path) == -1) {
@@ -367,7 +367,7 @@ static int plist_load_pls (struct plist *plist, const char *fname,
 				if (pls_title && pls_title[0])
 					plist_set_title_tags (plist, last_added,
 							pls_title);
-				
+
 				if (time > 0) {
 					plist->items[last_added].tags
 						= tags_new ();
@@ -378,7 +378,7 @@ static int plist_load_pls (struct plist *plist, const char *fname,
 				}
 			}
 		}
-	
+
 		free (pls_file);
 		if (pls_title)
 			free (pls_title);
@@ -433,7 +433,7 @@ static int plist_save_m3u (struct plist *plist, const char *fname,
 
 	if (flock(fileno(file), LOCK_EX) == -1)
 		logit ("Can't flock() the playlist file: %s", strerror(errno));
-	
+
 	if (fprintf(file, "#EXTM3U\r\n") < 0) {
 		error ("Error writing playlist: %s", strerror(errno));
 		fclose (file);
@@ -447,7 +447,6 @@ static int plist_save_m3u (struct plist *plist, const char *fname,
 		return 0;
 	}
 
-	
 	for (i = 0; i < plist->num; i++)
 		if (!plist_deleted(plist, i)) {
 			int ret;
@@ -462,7 +461,7 @@ static int plist_save_m3u (struct plist *plist, const char *fname,
 			else
 				ret = fprintf (file, "#EXTINF:%d,%s\r\n", 0,
 						plist->items[i].title_file);
-			
+
 			if (ret < 0) {
 				error ("Error writing playlist: %s",
 						strerror(errno));
@@ -479,7 +478,7 @@ static int plist_save_m3u (struct plist *plist, const char *fname,
 				return 0;
 			}
 		}
-				
+
 	if (flock(fileno(file), LOCK_UN) == -1)
 		logit ("Can't flock() (unlock) the playlist file: %s",
 				strerror(errno));

@@ -12,7 +12,7 @@ dnl force the use of ncurses or nothing at all.
 dnl
 dnl @version $Id: mp_with_curses.m4,v 1.2 2002/09/12 21:48:39 guidod Exp $
 dnl @author Mark Pulford <mark@kyne.com.au>
-dnl 
+dnl
 dnl Modified by Damian Pietras <daper@daper.net> to detect ncursesw.
 dnl
 AC_DEFUN([MP_WITH_CURSES],
@@ -41,7 +41,7 @@ AC_DEFUN([MP_WITH_CURSES],
 	     CURSES_LIB="-lncursesw"
 	   fi
    fi
- 
+
    if test ! "$CURSES_LIB" -a "$with_ncurses" != yes
    then
      AC_CACHE_CHECK([for working curses], mp_cv_curses,

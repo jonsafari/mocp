@@ -68,7 +68,7 @@ static int real_volume2 = -1;
 static void alsa_shutdown ()
 {
 	int err;
-	
+
 	if (mixer_handle && (err = snd_mixer_close(mixer_handle)) < 0)
 		logit ("Can't close mixer: %s", snd_strerror(err));
 }
@@ -111,7 +111,7 @@ static int fill_capabilities (struct output_driver_caps *caps)
 		return 0;
 	}
 	caps->min_channels = val;
-	
+
 	if ((err = snd_pcm_hw_params_get_channels_max (hw_params, &val)) < 0) {
 		error ("Can't get the maximum number of channels: %s",
 				snd_strerror(err));
@@ -206,14 +206,14 @@ static int alsa_read_mixer_raw (snd_mixer_elem_t *elem)
 		for (i = 0; i < SND_MIXER_SCHN_LAST; i++)
 			if (snd_mixer_selem_has_playback_channel (elem, i)) {
 				long vol;
-				
+
 				nchannels++;
 				err = snd_mixer_selem_get_playback_volume (elem, i, &vol);
 				if (err < 0) {
 					error ("Can't read mixer: %s",
 							snd_strerror(err));
 					return -1;
-						
+
 				}
 				/*logit ("Vol %d: %ld", i, vol);*/
 				volume += vol;
@@ -239,7 +239,7 @@ static snd_mixer_elem_t *alsa_init_mixer_channel (const char *name,
 {
 	snd_mixer_selem_id_t *sid;
 	snd_mixer_elem_t *elem = NULL;
-	
+
 	snd_mixer_selem_id_malloc (&sid);
 	snd_mixer_selem_id_set_index (sid, 0);
 	snd_mixer_selem_id_set_name (sid, name);
@@ -308,7 +308,7 @@ static int alsa_init (struct output_driver_caps *caps)
 			mixer_elem1 = NULL;
 			mixer_elem_curr = mixer_elem2;
 		}
-		
+
 		if (mixer_elem2 && (real_volume2
 					= alsa_read_mixer_raw(mixer_elem2))
 				!= -1)
@@ -410,7 +410,7 @@ static int alsa_open (struct sound_params *sound_params)
 	}
 
 	logit ("Set rate to %d", params.rate);
-	
+
 	if ((err = snd_pcm_hw_params_set_channels (handle, hw_params,
 					sound_params->channels)) < 0) {
 		error ("Can't set number of channels: %s", snd_strerror(err));
@@ -429,14 +429,14 @@ static int alsa_open (struct sound_params *sound_params)
 		buffer_time = BUFFER_MAX_USEC;
 	period_time = buffer_time / 4;
 
-	if ((err = snd_pcm_hw_params_set_period_time_near(handle, hw_params, 
+	if ((err = snd_pcm_hw_params_set_period_time_near(handle, hw_params,
 					&period_time, 0)) < 0) {
 		error ("Can't set period time: %s", snd_strerror(err));
 		snd_pcm_hw_params_free (hw_params);
 		return 0;
 	}
 
-	if ((err = snd_pcm_hw_params_set_buffer_time_near(handle, hw_params, 
+	if ((err = snd_pcm_hw_params_set_buffer_time_near(handle, hw_params,
 					&buffer_time, 0)) < 0) {
 		error ("Can't set buffer time: %s", snd_strerror(err));
 		snd_pcm_hw_params_free (hw_params);
@@ -467,9 +467,9 @@ static int alsa_open (struct sound_params *sound_params)
 	chunk_size = chunk_frames * bytes_per_frame;
 
 	debug ("Chunk size: %d", chunk_size);
-	
+
 	snd_pcm_hw_params_free (hw_params);
-	
+
 	if ((err = snd_pcm_prepare(handle)) < 0) {
 		error ("Can't prepare audio interface for use: %s",
 				snd_strerror(err));
@@ -477,7 +477,7 @@ static int alsa_open (struct sound_params *sound_params)
 	}
 
 	debug ("ALSA device initialized");
-	
+
 	params.channels = sound_params->channels;
 	alsa_buf_fill = 0;
 	return 1;
@@ -489,10 +489,10 @@ static int alsa_open (struct sound_params *sound_params)
 static int play_buf_chunks ()
 {
 	int written = 0;
-	
+
 	while (alsa_buf_fill >= chunk_size) {
 		int err;
-		
+
 		err = snd_pcm_writei (handle, alsa_buf + written,
 				chunk_size / bytes_per_frame);
 		if (err == -EAGAIN) {
@@ -561,7 +561,7 @@ static void alsa_close ()
 				* params.channels);
 		play_buf_chunks ();
 	}
-	
+
 	params.format = 0;
 	params.rate = 0;
 	params.channels = 0;
@@ -582,7 +582,7 @@ static int alsa_play (const char *buff, const size_t size)
 	while (to_write) {
 		int to_copy = MIN((size_t)to_write,
 				sizeof(alsa_buf) - (size_t)alsa_buf_fill);
-		
+
 		memcpy (alsa_buf + alsa_buf_fill, buff + buf_pos, to_copy);
 		to_write -= to_copy;
 		buf_pos += to_copy;
@@ -590,7 +590,7 @@ static int alsa_play (const char *buff, const size_t size)
 
 		debug ("Copied %d bytes to alsa_buf (now is filled with %d "
 				"bytes)", to_copy, alsa_buf_fill);
-		
+
 		if (play_buf_chunks() < 0)
 			return -1;
 	}
@@ -605,7 +605,7 @@ static int alsa_read_mixer ()
 	int curr_real_vol = alsa_read_mixer_raw (mixer_elem_curr);
 	int *real_vol;
 	int *vol;
-	
+
 	if (mixer_elem_curr == mixer_elem1) {
 		real_vol = &real_volume1;
 		vol = &volume1;
@@ -645,8 +645,7 @@ static void alsa_set_mixer (int vol)
 			mixer_min = mixer2_min;
 			real_vol = &real_volume2;
 		}
-			
-		
+
 		vol_alsa = vol * (mixer_max - mixer_min) / 100;
 
 		debug ("Setting vol to %ld", vol_alsa);
@@ -664,7 +663,7 @@ static int alsa_get_buff_fill ()
 	if (handle) {
 		int err;
 		snd_pcm_sframes_t delay;
-		
+
 		if ((err = snd_pcm_delay(handle, &delay)) < 0) {
 			logit ("snd_pcm_delay() failed: %s", snd_strerror(err));
 			return 0;
@@ -680,7 +679,7 @@ static int alsa_reset ()
 {
 	if (handle) {
 		int err;
-		
+
 		if ((err = snd_pcm_drop(handle)) < 0) {
 			error ("Can't reset the device: %s",
 			        snd_strerror(err));

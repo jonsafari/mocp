@@ -1,6 +1,6 @@
 # Author: Wim Speekenbrink <w.speek@wanadoo.nl>
 
-background          = blue      black   
+background          = blue      black
 frame               = blue      black   bold
 window_title        = blue      black   bold
 directory           = blue      black   bold

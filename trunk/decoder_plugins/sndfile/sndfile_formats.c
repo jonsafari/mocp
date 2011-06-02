@@ -39,12 +39,12 @@ struct sndfile_data
 static void *sndfile_open (const char *file)
 {
 	struct sndfile_data *data;
-	
+
 	data = (struct sndfile_data *)xmalloc (sizeof(struct sndfile_data));
-	
+
 	decoder_error_init (&data->error);
 	memset (&data->snd_info, 0, sizeof(data->snd_info));
-	
+
 	if (!(data->sndfile = sf_open(file, SFM_READ,
 					&data->snd_info))) {
 
@@ -76,9 +76,9 @@ static void sndfile_info (const char *file_name, struct file_tags *info,
 {
 	if (tags_sel & TAGS_TIME) {
 		struct sndfile_data *data = sndfile_open (file_name);
-		
+
 		if (data->sndfile) {
-			
+
 			/* I don't know why, but this condition is in the
 			 * examples. */
 			if (data->snd_info.frames <= 0x7FFFFFFF) {
@@ -113,7 +113,7 @@ static int sndfile_decode (void *void_data, char *buf, int buf_len,
 	sound_params->channels = data->snd_info.channels;
 	sound_params->rate = data->snd_info.samplerate;
 	sound_params->fmt = SFMT_FLOAT;
-	
+
 	return sf_readf_float (data->sndfile, (float *)buf,
 			buf_len / sizeof(float) / data->snd_info.channels)
 		* sizeof(float) * data->snd_info.channels;
@@ -136,7 +136,7 @@ static int sndfile_get_duration (void *void_data)
 static void sndfile_get_name (const char *file, char buf[4])
 {
 	char *ext = ext_pos (file);
-	
+
 	if (!strcasecmp(ext, "au") || !strcasecmp(ext, "snd"))
 		strcpy (buf, "AU");
 	else if (!strcasecmp(ext, "wav"))

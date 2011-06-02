@@ -120,7 +120,7 @@ struct hw_funcs
 	 *
 	 * The sample rate of the driver can differ from the requested rate.
 	 * If so, get_rate() should return the actual rate.
-	 * 
+	 *
 	 * \param sound_params Pointer to the sound_params structure holding
 	 * the required poarameters.
 	 * \return 1 on success and 0 otherwise.
@@ -138,10 +138,10 @@ struct hw_funcs
 	 * Play sound provided in the buffer. The sound is in the format
 	 * requested when the open() function was invoked. The function should
 	 * play all sound in the buffer.
-	 * 
+	 *
 	 * \param buff Pointer to the buffer with the sound.
 	 * \param size Size (in bytes) of the buffer.
-	 * 
+	 *
 	 * \return The number of bytes played or a value less than zero on
 	 * error.
 	 */

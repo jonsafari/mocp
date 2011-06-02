@@ -89,7 +89,7 @@ AutoNext		= yes
 # %A - Album
 # %t - Title
 # %(X:TRUE:FALSE) - ternary expression - if X exists, do TRUE, otherwise
-#                   FALSE. '\' - escape character (must be double, because of 
+#                   FALSE. '\' - escape character (must be double, because of
 #                   config interpreter). man zshmisc for more info.
 FormatString		= "%(n:%n :)%(a:%a - :)%(t:%t:)%(A: \(%A\):)"
 
@@ -142,7 +142,7 @@ AlsaDevice		= default
 
 # Save software mixer state?
 # If enabled, a file 'softmixer' will
-# be created in '~/.moc/' storing the 
+# be created in '~/.moc/' storing the
 # mixersetting set when the server is shut-down.
 # Note that there is a 'hidden' 'Amplification'
 # setting in that file.
@@ -259,11 +259,11 @@ ASCIILines		= no
 #Fastdir2 = /mp3/electronic
 #Fastdir3 = /mp3/rap
 #Fastdir4 = /mp3/etc
-#Fastdir5 = 
-#Fastdir6 = 
-#Fastdir7 = 
-#Fastdir8 = 
-#Fastdir9 = 
+#Fastdir5 =
+#Fastdir6 =
+#Fastdir7 =
+#Fastdir8 =
+#Fastdir9 =
 #Fastdir10 =
 
 # How fast to seek? Number of seconds per key stroke.
@@ -448,7 +448,7 @@ CanStartInPlaylist	= yes
 # Number of channles (1 or 2).
 #ModPlug_Channels = 2
 # Bits per sample (8,16,32). 32 Bits seems to be buggy...
-#ModPlug_Bits = 16 
+#ModPlug_Bits = 16
 # Sampling rate (11025, 22050, 44100, 48000).
 #ModPlug_Frequency = 44100
 # Reverb level 0(quiet)-100(loud).

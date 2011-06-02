@@ -65,7 +65,7 @@ then
 fi
 AM_CONDITIONAL([BUILD_flac], [test "$want_flac"])
 AC_CONFIG_FILES([decoder_plugins/flac/Makefile])
-\endcode					
+\endcode
 
 If you don't know autoconf, you can add something like the lines below after the
 line with AC_OUTPUT:

@@ -108,7 +108,7 @@ static struct bitrate_list bitrate_list;
 static void bitrate_list_init (struct bitrate_list *b)
 {
 	assert (b != NULL);
-	
+
 	b->head = NULL;
 	b->tail = NULL;
 	pthread_mutex_init (&b->mutex, NULL);
@@ -122,7 +122,7 @@ static void bitrate_list_empty (struct bitrate_list *b)
 	if (b->head) {
 		while (b->head) {
 			struct bitrate_list_node *t = b->head->next;
-			
+
 			free (b->head);
 			b->head = t;
 		}
@@ -131,7 +131,7 @@ static void bitrate_list_empty (struct bitrate_list *b)
 	}
 
 	debug ("Bitrate list elements removed.");
-	
+
 	UNLOCK (b->mutex);
 }
 
@@ -152,7 +152,7 @@ static void bitrate_list_add (struct bitrate_list *b, const int time,
 		const int bitrate)
 {
 	assert (b != NULL);
-	
+
 	LOCK (b->mutex);
 	if (!b->tail) {
 		b->head = b->tail = (struct bitrate_list_node *)xmalloc (
@@ -165,7 +165,7 @@ static void bitrate_list_add (struct bitrate_list *b, const int time,
 	}
 	else if (b->tail->bitrate != bitrate && b->tail->time != time) {
 		assert (b->tail->time < time);
-		
+
 		b->tail->next = (struct bitrate_list_node *)xmalloc (
 				sizeof(struct bitrate_list_node));
 		b->tail = b->tail->next;
@@ -188,14 +188,14 @@ static void bitrate_list_add (struct bitrate_list *b, const int time,
 static int bitrate_list_get (struct bitrate_list *b, const int time)
 {
 	int bitrate = -1;
-	
+
 	assert (b != NULL);
 
 	LOCK (b->mutex);
 	if (b->head) {
 		while (b->head->next && b->head->next->time <= time) {
 			struct bitrate_list_node *o = b->head;
-		
+
 			b->head = o->next;
 			debug ("Removing old bitrate %d for time %d",
 					o->bitrate, o->time);
@@ -262,7 +262,7 @@ static void *precache_thread (void *data)
 				PCM_BUF_SIZE, &new_sound_params);
 
 		if (!decoded) {
-			
+
 			/* EOF so fast? we can't pass this information
 			 * in precache, so give up */
 			logit ("EOF when precaching.");
@@ -271,12 +271,12 @@ static void *precache_thread (void *data)
 		}
 
 		precache->f->get_error (precache->decoder_data, &err);
-		
+
 		if (err.type == ERROR_FATAL) {
 			precache->f->close (precache->decoder_data);
 			return NULL;
 		}
-		
+
 		if (!precache->sound_params.channels)
 			precache->sound_params = new_sound_params;
 		else if (!sound_params_eq(precache->sound_params,
@@ -304,7 +304,7 @@ static void *precache_thread (void *data)
 		if (err.type != ERROR_OK)
 			break; /* Don't lose the error message */
 	}
-	
+
 	precache->ok = 1;
 	logit ("Successfully precached file (%d bytes)", precache->buf_fill);
 	return NULL;
@@ -365,7 +365,6 @@ void player_init ()
 
 static void show_tags (const struct file_tags *tags)
 {
-	
 	debug ("TAG[title]: %s", tags->title ? tags->title : "N/A");
 	debug ("TAG[album]: %s", tags->album ? tags->album : "N/A");
 	debug ("TAG[artist]: %s", tags->artist ? tags->artist : "N/A");
@@ -412,7 +411,7 @@ static void update_tags (const struct decoder *f, void *decoder_data,
 		tags_change ();
 
 	tags_free (new_tags);
-	
+
 	UNLOCK (curr_tags_mut);
 }
 
@@ -442,7 +441,7 @@ static void decode_loop (const struct decoder *f, void *decoder_data,
 						    (in seconds) */
 
 	out_buf_set_free_callback (out_buf, buf_free_callback);
-	
+
 	LOCK (curr_tags_mut);
 	curr_tags = tags_new ();
 	UNLOCK (curr_tags_mut);
@@ -459,11 +458,11 @@ static void decode_loop (const struct decoder *f, void *decoder_data,
 
 	while (1) {
 		debug ("loop...");
-		
+
 		LOCK (request_cond_mutex);
 		if (!eof && !decoded) {
 			struct decoder_error err;
-			
+
 			UNLOCK (request_cond_mutex);
 
 			if (decoder_stream && out_buf_get_fill(out_buf)
@@ -475,7 +474,7 @@ static void decode_loop (const struct decoder *f, void *decoder_data,
 				prebuffering = 0;
 				status_msg ("Playing...");
 			}
-			
+
 			decoded = f->decode (decoder_data, buf, sizeof(buf),
 					&new_sound_params);
 
@@ -484,7 +483,7 @@ static void decode_loop (const struct decoder *f, void *decoder_data,
 							new_sound_params.fmt) *
 						new_sound_params.rate *
 						new_sound_params.channels);
-			
+
 			f->get_error (decoder_data, &err);
 			if (err.type != ERROR_OK) {
 				if (err.type != ERROR_STREAM
@@ -493,7 +492,7 @@ static void decode_loop (const struct decoder *f, void *decoder_data,
 					error ("%s", err.err);
 				decoder_error_clear (&err);
 			}
-			
+
 			if (!decoded) {
 				eof = 1;
 				logit ("EOF from decoder");
@@ -531,17 +530,17 @@ static void decode_loop (const struct decoder *f, void *decoder_data,
 		if (request == REQ_STOP) {
 			logit ("stop");
 			out_buf_stop (out_buf);
-			
+
 			LOCK (request_cond_mutex);
 			if (request == REQ_STOP)
 				request = REQ_NOTHING;
 			UNLOCK (request_cond_mutex);
-			
+
 			break;
 		}
 		else if (request == REQ_SEEK) {
 			int decoder_seek;
-			
+
 			logit ("seeking");
 			if ((decoder_seek = f->seek(decoder_data, req_seek))
 					== -1)
@@ -611,9 +610,9 @@ static void play_file (const char *file, const struct decoder *f,
 	void *decoder_data;
 	struct sound_params sound_params = { 0, 0, 0 };
 	float already_decoded_time;
-	
+
 	out_buf_reset (out_buf);
-	
+
 	precache_wait (&precache);
 
 	if (precache.ok && strcmp(precache.file, file)) {
@@ -628,7 +627,7 @@ static void play_file (const char *file, const struct decoder *f,
 		logit ("Using precached file");
 
 		assert (f == precache.f);
-		
+
 		sound_params = precache.sound_params;
 		decoder_data = precache.decoder_data;
 		set_info_channels (sound_params.channels);
@@ -698,7 +697,7 @@ static void play_stream (const struct decoder *f, struct out_buf *out_buf)
 	struct decoder_error err;
 
 	out_buf_reset (out_buf);
-	
+
 	assert (f->open_stream != NULL);
 
 	decoder_data = f->open_stream (decoder_stream);
@@ -742,7 +741,7 @@ void player (const char *file, const char *next_file, struct out_buf *out_buf)
 
 	if (file_type(file) == F_URL) {
 		status_msg ("Connecting...");
-		
+
 		LOCK (decoder_stream_mut);
 		decoder_stream = io_open (file, 1);
 		if (!io_ok(decoder_stream)) {
@@ -764,7 +763,7 @@ void player (const char *file, const char *next_file, struct out_buf *out_buf)
 			UNLOCK (decoder_stream_mut);
 			return;
 		}
-		
+
 		status_msg ("Prebuffering...");
 		prebuffering = 1;
 		io_set_buf_fill_callback (decoder_stream, fill_callback, NULL);
@@ -826,7 +825,7 @@ void player_stop ()
 {
 	logit ("requesting stop");
 	request = REQ_STOP;
-	
+
 	LOCK (decoder_stream_mut);
 	if (decoder_stream) {
 		logit ("decoder_stream present, aborting...");

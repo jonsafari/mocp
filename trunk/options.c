@@ -485,7 +485,7 @@ bool option_set_pair (const char *name, const char *value, bool append)
 		case OPTION_ANY:
 			return false;
 	}
-	
+
 	return true;
 }
 
@@ -885,7 +885,7 @@ static bool set_option (const char *name, const char *value_in, bool append)
 		return false;
 	}
 
-	if (options[i].ignore_in_config) 
+	if (options[i].ignore_in_config)
 		return true;
 
 	if (append && options[i].type != OPTION_LIST) {
@@ -925,7 +925,7 @@ static bool set_option (const char *name, const char *value_in, bool append)
 
 	if (!option_set_pair (name, value, append))
 		return false;
-	
+
 	free (value);
 	return true;
 }

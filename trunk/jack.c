@@ -61,7 +61,7 @@ static int moc_jack_process(jack_nframes_t nframes, void *arg ATTR_UNUSED)
 
 	if (play) {
 		size_t i;
-		
+
 		/* ringbuffer[1] is filled later, so we only need to check
 		 * it's space. */
 		size_t avail_data = jack_ringbuffer_read_space(ringbuffer[1]);
@@ -73,7 +73,7 @@ static int moc_jack_process(jack_nframes_t nframes, void *arg ATTR_UNUSED)
 			avail_data = nframes
 				* sizeof(jack_default_audio_sample_t);
 		}
-		
+
 		jack_ringbuffer_read (ringbuffer[0], (char *)out[0],
 				avail_data);
 		jack_ringbuffer_read (ringbuffer[1], (char *)out[1],
@@ -92,7 +92,7 @@ static int moc_jack_process(jack_nframes_t nframes, void *arg ATTR_UNUSED)
 	else {
 		size_t i;
 		size_t size;
-		
+
 		/* consume the input */
 		size = jack_ringbuffer_read_space(ringbuffer[1]);
 		jack_ringbuffer_read_advance (ringbuffer[0], size);
@@ -129,21 +129,21 @@ static void shutdown_callback (void *arg ATTR_UNUSED)
 static int moc_jack_init (struct output_driver_caps *caps)
 {
 	jack_set_error_function (error_callback);
-	
+
 	/* try to become a client of the JACK server */
 	if ((client = jack_client_new ("moc")) == 0) {
 		error ("cannot create client jack server not running?");
 		return 0;
 	}
-	
+
 	jack_shutdown = 0;
 	jack_on_shutdown (client, shutdown_callback, NULL);
-	
+
 	/* allocate memory for an array of 2 output ports */
 	output_port = xmalloc(2 * sizeof(jack_port_t *));
 	output_port[0] = jack_port_register (client, "output0", JACK_DEFAULT_AUDIO_TYPE, JackPortIsOutput, 0);
 	output_port[1] = jack_port_register (client, "output1", JACK_DEFAULT_AUDIO_TYPE, JackPortIsOutput, 0);
-	
+
 	/* create the ring buffers */
 	ringbuffer[0] = jack_ringbuffer_create(RINGBUF_SZ);
 	ringbuffer[1] = jack_ringbuffer_create(RINGBUF_SZ);
@@ -156,7 +156,7 @@ static int moc_jack_init (struct output_driver_caps *caps)
 		return 0;
 	}
 
-	/* connect ports 
+	/* connect ports
 	 * a value of NULL in JackOut* gives no connection
 	 * */
 	if(strcmp(options_get_str("JackOutLeft"),"NULL")){
@@ -171,7 +171,7 @@ static int moc_jack_init (struct output_driver_caps *caps)
 	caps->formats = SFMT_FLOAT;
 	rate = jack_get_sample_rate (client);
 	caps->max_channels = caps->min_channels = 2;
-	
+
 	logit ("jack init");
 
 	return 1;
@@ -191,7 +191,7 @@ static int moc_jack_open (struct sound_params *sound_params)
 		error ("Unsupported number of channels");
 		return 0;
 	}
-	
+
 	logit ("jack open");
 	play = 1;
 
@@ -229,7 +229,7 @@ static int moc_jack_play (const char *buff, const size_t size)
 		if ((space = jack_ringbuffer_write_space(ringbuffer[1]))
 				> sizeof(jack_default_audio_sample_t)) {
 			size_t to_write;
-			
+
 			space *= 2; /* we have 2 channels */
 			debug ("Space in the ringbuffer: %luB",
 					(unsigned long)space);
@@ -304,7 +304,7 @@ static void moc_jack_shutdown(){
 }
 
 static int moc_jack_get_rate ()
-{	
+{
 	return rate;
 }
 

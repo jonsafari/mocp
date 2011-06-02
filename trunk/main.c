@@ -64,7 +64,7 @@ struct parameters
 	int toggle_pause;
 	int playit;
 	int seek_by;
-	char jump_type; 
+	char jump_type;
 	int jump_to;
 	char *formatted_into_param;
 	int get_formatted_info;
@@ -80,11 +80,11 @@ static int server_connect ()
 {
 	struct sockaddr_un sock_name;
 	int sock;
-	
+
 	/* Create a socket */
 	if ((sock = socket (PF_LOCAL, SOCK_STREAM, 0)) == -1)
 		 return -1;
-	
+
 	sock_name.sun_family = AF_LOCAL;
 	strcpy (sock_name.sun_path, socket_name());
 
@@ -102,7 +102,7 @@ static int server_connect ()
 static int ping_server (int sock)
 {
 	int event;
-	
+
 	send_int(sock, CMD_PING); /* ignore errors - the server could have
 				     already closed the connection and sent
 				     EV_BUSY */
@@ -211,7 +211,6 @@ static void start_moc (const struct parameters *params, lists_t_strs *args)
 	if (params->only_server)
 		send_int (server_sock, CMD_DISCONNECT);
 
-	
 	options_free ();
 	decoder_cleanup ();
 	compat_cleanup ();
@@ -394,7 +393,7 @@ static void server_command (struct parameters *params, lists_t_strs *args)
 			int state;
 			int ev;
 			int cmd = -1;
-			
+
 			if (!send_int(sock, CMD_GET_STATE))
 				fatal ("Can't send commands!");
 			if (!get_int(sock, &ev) || ev != EV_DATA

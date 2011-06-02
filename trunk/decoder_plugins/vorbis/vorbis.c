@@ -93,7 +93,7 @@ static void get_comment_tags (OggVorbis_File *vf, struct file_tags *info)
 static char *vorbis_strerror (const int code)
 {
 	char *err;
-	
+
 	switch (code) {
 		case OV_EREAD:
 			err = "read error";
@@ -136,22 +136,22 @@ static void vorbis_tags (const char *file_name, struct file_tags *info,
 	if (tags_sel & TAGS_TIME) {
 		if ((err_code = ov_open(file, &vf, NULL, 0)) < 0) {
 			char *vorbis_err = vorbis_strerror (err_code);
-			
+
 			logit ("Can't open %s: %s", file_name, vorbis_err);
 			free (vorbis_err);
 			fclose (file);
-			
+
 			return;
 		}
 	}
 	else {
 		if ((err_code = ov_test(file, &vf, NULL, 0)) < 0) {
 			char *vorbis_err = vorbis_strerror (err_code);
-			
+
 			logit ("Can't open %s: %s", file_name, vorbis_err);
 			free (vorbis_err);
 			fclose (file);
-			
+
 			return;
 		}
 	}
@@ -172,7 +172,7 @@ static size_t read_callback (void *ptr, size_t size, size_t nmemb,
 	ssize_t res;
 
 	res = io_read (datasource, ptr, size * nmemb);
-	
+
 	/* libvorbisfile expects the read callback to return >= 0 with errno
 	 * set to non zero on error. */
 	if (res < 0) {
@@ -181,7 +181,7 @@ static size_t read_callback (void *ptr, size_t size, size_t nmemb,
 			errno = 0xffff;
 		res = 0;
 	}
-	else 
+	else
 		res /= size;
 
 	return res;
@@ -216,11 +216,11 @@ static void vorbis_open_stream_internal (struct vorbis_data *data)
 	};
 
 	data->tags = tags_new ();
-	
+
 	if ((res = ov_open_callbacks(data->stream, &data->vf, NULL, 0,
 					callbacks)) < 0) {
 		char *vorbis_err = vorbis_strerror (res);
-		
+
 		decoder_error (&data->error, ERROR_FATAL, 0, "%s",
 				vorbis_err);
 		debug ("ov_open error: %s", vorbis_err);
@@ -259,7 +259,7 @@ static void *vorbis_open (const char *file)
 	}
 	else
 		vorbis_open_stream_internal (data);
-	
+
 	return data;
 }
 
@@ -284,7 +284,7 @@ static void *vorbis_open_stream (struct io_stream *stream)
 	decoder_error_init (&data->error);
 	data->stream = stream;
 	vorbis_open_stream_internal (data);
-	
+
 	return data;
 }
 
@@ -334,10 +334,10 @@ static int vorbis_decode (void *prv_data, char *buf, int buf_len,
 					"Error in the stream!");
 			continue;
 		}
-		
+
 		if (current_section != data->last_section) {
 			logit ("section change or first section");
-			
+
 			data->last_section = current_section;
 			data->tags_change = 1;
 			tags_free (data->tags);
@@ -386,7 +386,7 @@ static int vorbis_get_bitrate (void *prv_data)
 static int vorbis_get_avg_bitrate (void *prv_data)
 {
 	struct vorbis_data *data = (struct vorbis_data *)prv_data;
-	
+
 	return data->avg_bitrate;
 }
 
