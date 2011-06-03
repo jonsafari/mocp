@@ -541,7 +541,7 @@ static int play_buf_chunks ()
 	debug ("%d bytes remain in alsa_buf", alsa_buf_fill);
 	memmove (alsa_buf, alsa_buf + written, alsa_buf_fill);
 
-	return written * bytes_per_frame;
+	return written;
 }
 
 static void alsa_close ()
