@@ -553,8 +553,6 @@ static void alsa_close ()
 	if (alsa_buf_fill) {
 		assert (alsa_buf_fill < chunk_size);
 
-		/* FIXME: why the last argument is multiplied by number of
-		 * channels? */
 		snd_pcm_format_set_silence (params.format,
 				alsa_buf + alsa_buf_fill,
 				(chunk_size - alsa_buf_fill) / bytes_per_frame
