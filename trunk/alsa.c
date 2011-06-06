@@ -557,6 +557,7 @@ static void alsa_close ()
 				alsa_buf + alsa_buf_fill,
 				(chunk_size - alsa_buf_fill) / bytes_per_frame
 				* params.channels);
+		alsa_buf_fill = chunk_size;
 		play_buf_chunks ();
 	}
 
