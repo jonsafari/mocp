@@ -949,6 +949,7 @@ void options_parse (const char *config_file)
 	int esc = 0;
 	bool plus = false; /* plus character appeared? */
 	bool append = false; /* += (list append) appeared */
+	bool sp = false; /* first post-name space detected */
 	char opt_name[30];
 	char opt_value[512];
 	int line = 1;
@@ -992,6 +993,7 @@ void options_parse (const char *config_file)
 			quote = 0;
 			esc = 0;
 			append = false;
+			sp = false;
 
 			line++;
 		}
@@ -1025,6 +1027,13 @@ void options_parse (const char *config_file)
 		/* Turn on escape */
 		else if (ch == '\\' && !esc)
 			esc = 1;
+
+		/* Embedded blank detection */
+		else if (!eq && name_pos && isblank(ch))
+			sp = true;
+		else if (!eq && sp && !isblank(ch))
+			fatal ("Error in config file: "
+			       "embedded blank in option name on line %d!", line);
 
 		/* Add char to parameter value */
 		else if ((!isblank(ch) || quote) && eq) {
