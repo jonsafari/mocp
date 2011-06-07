@@ -984,8 +984,6 @@ void options_parse (const char *config_file)
 					fatal ("Error in config file, line %d!", line);
 			}
 
-			opt_name[0] = 0;
-			opt_value[0] = 0;
 			name_pos = 0;
 			value_pos = 0;
 			eq = 0;
@@ -1014,12 +1012,11 @@ void options_parse (const char *config_file)
 		else if (ch == '=' && !quote) {
 			if (eq)
 				fatal ("Error in config file, line %d!", line);
-			if (!opt_name[0])
+			if (name_pos == 0)
 				fatal ("Error in config file, line %d!", line);
 			append = plus;
 			plus = false;
 			eq = 1;
-			opt_value[0] = 0;
 		}
 
 		/* Turn on escape */
@@ -1050,7 +1047,7 @@ void options_parse (const char *config_file)
 		}
 	}
 
-	if (opt_name[0] || opt_value[0])
+	if (name_pos || value_pos)
 		fatal ("Parse error at the end of the config file (need end of "
 				"line?)!");
 
