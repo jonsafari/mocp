@@ -969,7 +969,7 @@ void options_parse (const char *config_file)
 
 		/* Check for "+=" (list append) */
 		if (ch != '=' && plus)
-			fatal ("Error in config file, line %d!", line);
+			fatal ("Error in config file: stray '+' on line %d!", line);
 
 		/* Interpret parameter */
 		if (ch == '\n') {
@@ -979,9 +979,11 @@ void options_parse (const char *config_file)
 			opt_value[value_pos] = 0;
 
 			if (name_pos) {
-				if (value_pos == 0 ||
-				    !set_option(opt_name, opt_value, append))
-					fatal ("Error in config file, line %d!", line);
+				if (value_pos == 0)
+					fatal ("Error in config file: "
+					       "missing option value on line %d!", line);
+				if (!set_option(opt_name, opt_value, append))
+					fatal ("Error in config file on line %d!", line);
 			}
 
 			name_pos = 0;
@@ -1011,9 +1013,10 @@ void options_parse (const char *config_file)
 
 		else if (ch == '=' && !quote) {
 			if (eq)
-				fatal ("Error in config file, line %d!", line);
+				fatal ("Error in config file: stray '=' on line %d!", line);
 			if (name_pos == 0)
-				fatal ("Error in config file, line %d!", line);
+				fatal ("Error in config file: "
+				       "missing option name on line %d!", line);
 			append = plus;
 			plus = false;
 			eq = 1;
@@ -1027,13 +1030,14 @@ void options_parse (const char *config_file)
 		else if ((!isblank(ch) || quote) && eq) {
 			if (esc && ch != '"') {
 				if (sizeof(opt_value) == value_pos)
-					fatal ("Error in config file, line %d "
-							"is too long!", line);
+					fatal ("Error in config file: "
+					       "option value on line %d is too long!", line);
 				opt_value[value_pos++] = '\\';
 			}
 
 			if (sizeof(opt_value) == value_pos)
-				fatal ("Error in config file, line %d is too long!", line);
+				fatal ("Error in config file: "
+				       "option value on line %d is too long!", line);
 			opt_value[value_pos++] = ch;
 			esc = 0;
 		}
@@ -1041,7 +1045,8 @@ void options_parse (const char *config_file)
 		/* Add char to parameter name */
 		else if (!isblank(ch) || quote) {
 			if (sizeof(opt_name) == name_pos)
-				fatal ("Error in config file, line %d is too long!", line);
+				fatal ("Error in config file: "
+				       "option name on line %d is too long!", line);
 			opt_name[name_pos++] = ch;
 			esc = 0;
 		}
