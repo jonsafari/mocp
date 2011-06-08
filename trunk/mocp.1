@@ -53,8 +53,9 @@ Run only the server and exit.
 Implies \fB\-S\fP.  Run the server in foreground and log everything to stdout.
 .LP
 .TP
-\fB\-R\fP \fINAME\fP, \fB\-\-sound\-driver\fP \fINAME\fP
-Use the specified sound driver.  This can be \fBOSS\fP, \fBALSA\fP,
+\fB\-R\fP \fINAME\fP[\fB:\fP...], \
+\fB\-\-sound\-driver\fP \fINAME\fP[\fB:\fP...]
+Use the specified sound driver(s).  They can be \fBOSS\fP, \fBALSA\fP,
 \fBSNDIO\fP or \fBnull\fP (for debugging).  Some of the drivers may not
 have been compiled in.  This option is called \fBSoundDriver\fP in the
 configuration file.

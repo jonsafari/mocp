@@ -618,9 +618,9 @@ static lists_t_strs *process_command_line (int argc, char *argv[],
 				params->foreground = 1;
 				break;
 			case 'R':
-				if (!check_str_option ("SoundDriver", optarg))
+				if (!check_list_option ("SoundDriver", optarg))
 					fatal ("No such sound driver: %s", optarg);
-				option_set_str ("SoundDriver", optarg);
+				option_set_list ("SoundDriver", optarg, false);
 				option_ignore_config ("SoundDriver");
 				break;
 			case 'm':
