@@ -526,9 +526,9 @@ void options_init ()
 	option_add_str  ("OSSMixerChannel", "pcm", CHECK_NONE);
 	option_add_str  ("OSSMixerChannel2", "master", CHECK_NONE);
 #ifdef OPENBSD
-	option_add_str  ("SoundDriver", "SNDIO, JACK, OSS", CHECK_NONE);
+	option_add_list  ("SoundDriver", "SNDIO:JACK:OSS", CHECK_NONE);
 #else
-	option_add_str  ("SoundDriver", "Jack, ALSA, OSS", CHECK_NONE);
+	option_add_list  ("SoundDriver", "Jack:ALSA:OSS", CHECK_NONE);
 #endif
 	option_add_bool ("ShowHiddenFiles", true);
 	option_add_str  ("AlsaDevice", "default", CHECK_NONE);
@@ -866,20 +866,37 @@ static char *substitute_variable (const char *name_in, const char *value_in)
 	return result;
 }
 
+/* Rewrite comma-separated strings as a list value. */
+static char *rewrite_as_list (const char *str)
+{
+	char *result, *ptr;
+
+	ptr = result = xmalloc (strlen (str) + 1);
+
+	do {
+		if (*str == ',')
+			*ptr++ = ':';
+		else if (*ptr != ' ')
+			*ptr++ = *str;
+	} while (*str++);
+
+	return result;
+}
+
 /* Set an option read from the configuration file. Return false on error. */
 static bool set_option (const char *name, const char *value_in, bool append)
 {
 	int i;
 	char *value, *value_s;
 
-	i = find_option (name, OPTION_ANY);
-	if (is_deprecated_option(name)) {
+	if (is_deprecated_option (name)) {
 		fprintf (stderr, "\n\tOption '%s' was ignored;"
 		                 "\n\tplease remove it from your configuration file.\n", name);
 		sleep (5);
 		return true;
 	}
 
+	i = find_option (name, OPTION_ANY);
 	if (i == -1) {
 		fprintf (stderr, "Wrong option name: '%s'.", name);
 		return false;
@@ -905,15 +922,23 @@ static bool set_option (const char *name, const char *value_in, bool append)
 
 	/* Substitute environmental variables. */
 	value_s = substitute_variable (name, value_in);
+	value = NULL;
 
 	/* Handle a change of option type for QueueNextSongReturn. */
-	value = NULL;
 	if (!strcasecmp(options[i].name, "QueueNextSongReturn")) {
 		if (!strcmp (value_s, "0"))
 			value = xstrdup ("no");
 		else if (!strcmp (value_s, "1"))
 			value = xstrdup ("yes");
 	}
+
+	/* Handle a change of option type for SoundDriver. */
+	if (!strcasecmp(options[i].name, "SoundDriver")) {
+		if (index (value_s, ','))
+			value = rewrite_as_list (value_s);
+	}
+
+	/* Warn if configuration file needs updating. */
 	if (value) {
 		free (value_s);
 		fprintf (stderr, "\n\tThe valid values of '%s' have changed;"

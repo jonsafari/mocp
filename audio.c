@@ -31,6 +31,7 @@
 #include "decoder.h"
 #include "playlist.h"
 #include "log.h"
+#include "lists.h"
 
 #ifdef HAVE_OSS
 # include "oss.h"
@@ -885,24 +886,16 @@ void audio_close ()
 
 /* Try to initialize drivers from the list and fill funcs with
  * those of the first working driver. */
-static void find_working_driver (const char *drivers, struct hw_funcs *funcs)
+static void find_working_driver (lists_t_strs *drivers, struct hw_funcs *funcs)
 {
-	const char *pos = drivers;
+	int ix;
 
 	memset (funcs, 0, sizeof(funcs));
 
-	while (pos[0]) {
-		size_t t;
-		char name[32];
+	for (ix = 0; ix < lists_strs_size (drivers); ix += 1) {
+		const char *name;
 
-		if (!(t = strcspn(pos, " \t,")) || t >= sizeof(name))
-			fatal ("Invalid sound driver list!");
-
-		strncpy (name, pos, t);
-		name[t] = 0;
-
-		pos += t;
-		pos += strspn (pos, " \t,");
+		name = lists_strs_at (drivers, ix);
 
 #ifdef HAVE_SNDIO
 		if (!strcasecmp(name, "sndio")) {
@@ -964,7 +957,7 @@ static void print_output_capabilities (const struct output_driver_caps *caps)
 
 void audio_initialize ()
 {
-	find_working_driver (options_get_str("SoundDriver"), &hw);
+	find_working_driver (options_get_list ("SoundDriver"), &hw);
 
 	assert (hw_caps.max_channels >= hw_caps.min_channels);
 	assert (sound_format_ok(hw_caps.formats));

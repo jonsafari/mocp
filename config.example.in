@@ -111,8 +111,8 @@ Prebuffering		= 64
 
 # Sound driver - OSS, ALSA, JACK, SNDIO (on OpenBSD) or null (only for
 # debugging).
-# You can enter more than one driver separated by a comma. The first working
-# driver will be used.
+# You can enter more than one driver as a colon-separated list.  The first
+# working driver will be used.
 SoundDriver		= @SOUNDDRIVER@
 
 # Jack output settings.
