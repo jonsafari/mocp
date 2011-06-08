@@ -1,10 +1,25 @@
+.\" Start example.
+.de EX
+.  nr mE \\n(.f
+.  nf
+.  nh
+.  ft CW
+..
+.
+.\" End example.
+.de EE
+.  ft \\n(mE
+.  fi
+.  hy \\n(HY
+..
+.
 .TH MOC 1 "25 December 2005" "Version 2.4.0" "Music On Console"
 .ad l
 .SH NAME
-MOC \- Console audio player.
+MOC \- Console audio player
 .LP
 .SH SYNOPSIS
-\fBmocp\fP [\fIOPTIONS\fP] [\fIFILE|DIR ...\fP]
+\fBmocp\fR [\fIOPTIONS\fR] [\fIFILE\fR|\fIDIR\fR ...]
 .LP
 .SH DESCRIPTION
 MOC is a console audio player with simple ncurses interface.  It supports
@@ -13,240 +28,251 @@ using the menu and press enter to start playing the file.  The program will
 automatically play the rest of the files in the directory.
 .LP
 With no options and no file arguments the program begins in current
-directory or in \fBMusicDir\fP if the \fBStartInMusicDir\fP option is set.
-If you give a directory on the command line, MOC will try to go there.
-With multiple files or directories, everything will be added to the playlist
-recursively.
+directory, or in \fBMusicDir\fP if the \fBStartInMusicDir\fP option is set
+in the configuration file.  If you give a directory on the command line,
+MOC will try to go there.  With multiple files or directories, everything
+will be added to the playlist recursively.
 .LP
 .SH OPTIONS
-If an option can also be set in the configuration file, the command line
-overrides it.
+If an option can also be set in the configuration file the command line
+overrides it (but see the \fB\-O\fP option for the list-valued
+configuration options exception).
 .LP
 .TP
-.B -D \fR|\fP --debug
+\fB\-D\fP, \fB\-\-debug\fP
 Run MOC in debug mode.  The client and server log a lot of information
 to debug files.  Don't use this; the server log is large.  This is only
-available if MOC was compiled without \fI--disable-debug\fP.
+available if MOC was compiled without \fB\-\-disable\-debug\fP.
 .LP
 .TP
-.B -S \fR|\fP --server
+\fB\-S\fP, \fB\-\-server\fP
 Run only the server and exit.
 .LP
 .TP
-.B -F \fR|\fP --foreground
-Implies \fB-S\fP.  Run the server in foreground and log everything to stdout.
+\fB\-F\fP, \fB\-\-foreground\fP
+Implies \fB\-S\fP.  Run the server in foreground and log everything to stdout.
 .LP
 .TP
-.B -R \fINAME\fP \fR|\fP --sound-driver \fINAME\fP
+\fB\-R\fP \fINAME\fP, \fB\-\-sound\-driver\fP \fINAME\fP
 Use the specified sound driver.  This can be \fBOSS\fP, \fBALSA\fP,
 \fBSNDIO\fP or \fBnull\fP (for debugging).  Some of the drivers may not
 have been compiled in.  This option is called \fBSoundDriver\fP in the
 configuration file.
 .LP
 .TP
-.B -m \fR|\fP --music-dir
+\fB\-m\fP, \fB\-\-music\-dir\fP
 Start in \fBMusicDir\fP (set in the configuration file).  This can be also
 set in the configuration file as \fBStartInMusicDir\fP.
 .LP
 .TP
-.B -a \fR|\fP --append
+\fB\-a\fP, \fB\-\-append\fP
 Append files, directories (recursively) and playlists given after command
 line options to the playlist.  Don't start the interface.
 .LP
 .TP
-.B -c \fR|\fP --clear
+\fB\-c\fP, \fB\-\-clear\fP
 Clear the playlist.
 .LP
 .TP
-.B -p \fR|\fP --play
+\fB\-p\fP, \fB\-\-play\fP
 Start playing from the first item on the playlist.
 .LP
 .TP
-.B -f \fR|\fP --next
+\fB\-f\fP, \fB\-\-next\fP
 Request playing the next song from the server's playlist.
 .LP
 .TP
-.B -r \fR|\fP --previous
+\fB\-r\fP, \fB\-\-previous\fP
 Request playing the previous song from the server's playlist.
 .LP
 .TP
-.B -s \fR|\fP --stop
+\fB\-s\fP, \fB\-\-stop\fP
 Request the server to stop playing.
 .LP
 .TP
-.B -x \fR|\fP --exit
+\fB\-x\fP, \fB\-\-exit\fP
 Bring down the server.
 .LP
 .TP
-.B -P \fR|\fP --pause
+\fB\-P\fP, \fB\-\-pause\fP
 Request the server to pause playing.
 .LP
 .TP
-.B -U \fR|\fP --unpause
+\fB\-U\fP, \fB\-\-unpause\fP
 Request the server to resume playing when paused.
 .LP
 .TP
-.B -G \fR|\fP --toggle-pause
+\fB\-G\fP, \fB\-\-toggle\-pause\fP
 Toggle between play and pause.
 .LP
 .TP
-.B -k \fI[+|-]N\fP \fR|\fP --seek \fI[+|-]N\fP
+\fB\-k\fP [\fB+\fP|\fB\-\fP]\fIN\fP, \
+\fB\-\-seek \fP[\fB+\fP|\fB\-\fP]\fIN\fP
 Seek forward (positive) or backward (negative) by \fIN\fP seconds in the
 file currently being played.
 .LP
 .TP
-.B -T \fITHEME\fP \fR|\fP --theme \fITHEME\fP
+\fB\-T\fP \fITHEME\fP, \fB\-\-theme\fP \fITHEME\fP
 Use a theme file.  If the path is not absolute, the file will be searched
 for in \fB/usr/share/moc/themes/\fP (depends on installation prefix),
 \fB~/.moc/themes/\fP and the current directory.
 .LP
 .TP
-.B -C \fIFILE\fP \fR|\fP --config \fIFILE\fP
+\fB\-C\fP \fIFILE\fP, \fB\-\-config\fP \fIFILE\fP
 Use the specified configuration file instead of the default.
 .LP
 .TP
-.B -O \fINAME\fP=\fIVALUE\fP \fR|\fP --set-option \fINAME\fR[\fB+\fR]\fB=\fIVALUE\fP
+\fB\-O\fP \fINAME\fP[\fB+\fP]\fB=\fP\fIVALUE\fP, \
+\fB\-\-set\-option\fP \fINAME\fP[\fB+\fP]\fB=\fP\fIVALUE\fP
 Override configuration option NAME with VALUE.  This option can be
 repeated as many times as needed and the option name is not case sensitive.
-(Note that MOC does not perform variable substitution as it does for values
-read from the configuration file.)  Most option values are set before the
-configuration file is processed (which allows the new values to be picked
-up by substitutions), however list-valued options are overridden afterwards
-(which gives the choice of whether the configured values are replaced or
-added to).
+Most option values are set before the configuration file is processed (which
+allows the new values to be picked up by substitutions); however, list-valued
+options are overridden afterwards (which gives the choice of whether the
+configured values are replaced or added to).
+.IP
+See the example configuration file (\fBconfig.example\fP) for a description
+of the options available.
+.LP
+.RS
+.EX
+Examples: \fB\-O AutoNext=no\fP
+          \fB\-O messagelingertime=1 \-O XTerms+=xxt:xwt\fP
+.EE
+.RE
+.IP
+Note that MOC does not perform variable substitution as it does for values
+read from the configuration file.
 .LP
 .TP
-.B -M \fIDIR\fP \fR|\fP --moc-dir \fIDIR\fP
+\fB\-M\fP \fIDIR\fP, \fB\-\-moc\-dir\fP \fIDIR\fP
 Use the specified MOC directory instead of the default.  This also causes
 the configuration file from that directory to be used.  This can also be
 specified in the configuration file using the \fBMOCDir\fP option.
 .LP
 .TP
-.B -y \fR|\fP --sync
+\fB\-y\fP, \fB\-\-sync\fP
 This copy of the interface will synchronize its playlist with other clients.
 This option is called \fBSyncPlaylist\fP in the configuration file.
 .LP
 .TP
-.B -n \fR|\fP --nosync
+\fB\-n\fP, \fB\-\-nosync\fP
 This copy of the interface will not synchronize its playlist with other
 clients (see above).
 .LP
 .TP
-.B -A \fR|\fP --ascii
+\fB\-A\fP, \fB\-\-ascii\fP
 Use ASCII characters to draw lines.  (This helps on some terminals.)
 .LP
 .TP
-.B -i \fR|\fP --info
+\fB\-i\fP, \fB\-\-info\fP
 Print the information about the file currently being played.
 .LP
 .TP
-.B -Q \fIFORMAT_STRING\fP \fR|\fP --format \fIFORMAT_STRING\fP
+\fB\-Q\fP \fIFORMAT_STRING\fP, \fB\-\-format\fP \fIFORMAT_STRING\fP
 Print information about the file currently being played using a format
 string.  Replace string sequences with the actual information:
-.RS 12
-.IP \fB%state\fP 12
-State
-.IP \fB%file\fP
-File
-.IP \fB%title\fP
-Title
-.IP \fB%artist\fP
-Artist
-.IP \fB%song\fP
-SongTitle
-.IP \fB%album\fP
-Album
-.IP \fB%tt\fP
-TotalTime
-.IP \fB%tl\fP
-TimeLeft
-.IP \fB%ts\fP
-TotalSec
-.IP \fB%ct\fP
-CurrentTime
-.IP \fB%cs\fP
-CurrentSec
-.IP \fB%b\fP
-Bitrate
-.IP \fB%r\fP
-Rate
+.IP
+.RS 16
+.EX
+\fB%state\fP     State
+\fB%file\fP      File
+\fB%title\fP     Title
+\fB%artist\fP    Artist
+\fB%song\fP      SongTitle
+\fB%album\fP     Album
+\fB%tt\fP        TotalTime
+\fB%tl\fP        TimeLeft
+\fB%ts\fP        TotalSec
+\fB%ct\fP        CurrentTime
+\fB%cs\fP        CurrentSec
+\fB%b\fP         Bitrate
+\fB%r\fP         Rate
+.EE
 .RE
 .IP
 It is also possible to use variables from the \fBFormatString\fP
 configuration file option.
 .LP
 .TP
-.B -e \fR|\fP --recursively
-Alias of \fB-a\fP for backward compatibility.
+\fB\-e\fP, \fB\-\-recursively\fP
+Alias of \fB\-a\fP for backward compatibility.
 .LP
 .TP
-.B -h \fR|\fP --help
+\fB\-h\fP, \fB\-\-help\fP
 Print a list of options with short descriptions and exit.
 .LP
 .TP
-.B -V \fR|\fP --version
+\fB\-V\fP, \fB\-\-version\fP
 Print the program version and exit.
 .LP
 .TP
-.B -v \fIN\fP \fR|\fP --volume \fIN\fP
-Adjust the mixer volume.  You can set (\fB-v 50\fP) or adjust
-(\fB-v +10\fP, \fB-v -10\fP).
+\fB\-v\fP [\fB+\fP|\fB\-\fP]\fIN\fP, \
+\fB\-\-volume\fP [\fB+\fP|\fB\-\fP]\fIN\fP
+Adjust the mixer volume.  You can set (\fB\-v 50\fP) or adjust
+(\fB\-v +10\fP, \fB\-v \-10\fP).
 .LP
 .TP
-.B -t \fILIST\fP \fR|\fP --toggle \fILIST\fP
+\fB\-t\fP \fIOPTION\fP[\fB,\fP...], \fB\-\-toggle\fP \fIOPTION\fP[\fB,\fP...]
 .TQ
-.B -o \fILIST\fP \fR|\fP --on \fILIST\fP
+\fB\-o\fP \fIOPTION\fP[\fB,\fP...], \fB\-\-on\fP \fIOPTION\fP[\fB,\fP...]
 .TQ
-.B -u \fILIST\fP \fR|\fP --off \fILIST\fP
+\fB\-u\fP \fIOPTION\fP[\fB,\fP...], \fB\-\-off\fP \fIOPTION\fP[\fB,\fP...]
 Followed by a list of identifiers, these will control MOC's playlist
-options.  Valid identifiers: \fBshuffle\fP, \fBrepeat\fP and \fBautonext\fP.
+options.  Valid identifiers are \fBshuffle\fP, \fBrepeat\fP and \fBautonext\fP.
 They can be shortened to '\fBs\fP', '\fBr\fP' and '\fBn\fP' respectively.
 .LP
 .RS
-.IP "Example: \fB-t shuffle,r,n\fP" 9
-would toggle shuffle repeat and autonext all at once.
+.EX
+Example: \fB\-t shuffle,r,n\fP
+.EE
+         would toggle shuffle, repeat and autonext all at once.
 .RE
 .LP
 .TP
-.B -j \fIN\fP \fR|\fP --jump \fIN\fP
-Jump to some position in the current file.  \fIN\fP is number of seconds
-followed by '\fBs\fP' or percent of total file time followed by '\fB%\fP'.
+\fB\-j\fP \fIN\fP{\fBs\fP|\fB%\fP}, \fB\-\-jump\fP \fIN\fP{\fBs\fP|\fB%\fP}
+Jump to some position in the current file.  \fIN\fP is the number of seconds
+(when followed by an '\fBs\fP') or the percent of total file time (when
+followed by a '\fB%\fP').
 .LP
 .RS
-Examples: \fB-j 10s\fP, \fB-j 50%\fP
+.EX
+Examples: \fB\-j 10s\fP, \fB\-j 50%\fP
+.EE
 .RE
 .LP
 .SH FILES
 .TP
 .B ~/.moc
-MOC directory for the configuration file, socket, pid file and other data.
+MOC directory for the configuration file, socket, the pid file and other data.
 .LP
 .TP
 .B ~/.moc/config
 Configuration file for MOC.  The format is very simple; to see how to use
 it look at the example configuration file (\fBconfig.example\fP) distributed
-with the program.
+with the program.  The example file fully describes all the configuration
+options, and so is a useful reference when using the \fB\-O\fP option.
 .LP
 .TP
 .B ~/.moc/themes
 .TQ
 .B /usr/share/moc/themes
-Default directories for theme files.
+Default directories for the theme files.
 .LP
 .TP
 .B /usr/share/moc/decoder_plugins
-Default directories for audio decoder plugins.
+Default directories for the audio decoder plugins.
 .LP
 .TP
 .B mocp_client_log
 .TQ
 .B mocp_server_log
 Client and server log files.  These files are created in the directory in
-which the client and server are started.  (Also see the \fB-D\fP option.)
+which the client and server are started.  (Also see the \fB\-D\fP option.)
 .LP
 .SH BUGS
 Command line options that affect the server behaviour (like
-\fB--sound-driver\fP) are ignored if the server is already running at
+\fB\-\-sound\-driver\fP) are ignored if the server is already running at
 the time of executing \fBmocp\fP.  The user is not warned about this.
 .LP
 .SH HOMEPAGE
