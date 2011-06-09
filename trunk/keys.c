@@ -68,7 +68,7 @@ static struct command commands[] = {
 	{
 		KEY_CMD_GO,
 		"go",
-		"Start playing files (from this file) or go to directory",
+		"Start playing at this file or go to this directory",
 		CON_MENU,
 		{ '\n',	-1 },
 		1
@@ -188,7 +188,7 @@ static struct command commands[] = {
 	{
 		KEY_CMD_TOGGLE_AUTO_NEXT,
 		"toggle_auto_next",
-		"Toggle AutoNext option",
+		"Toggle AutoNext",
 		CON_MENU,
 		{ 'X', -1 },
 		1
@@ -244,7 +244,7 @@ static struct command commands[] = {
 	{
 		KEY_CMD_PLIST_REMOVE_DEAD_ENTRIES,
 		"remove_dead_entries",
-		"Remove all playlist entries that point to non-existent files",
+		"Remove playlist entries for non-existent files",
 		CON_MENU,
 		{ 'Y', -1 },
 		1
@@ -356,7 +356,7 @@ static struct command commands[] = {
 	{
 		KEY_CMD_MENU_SEARCH,
 		"search_menu",
-		"Search the menu.",
+		"Search the menu",
 		CON_MENU,
 		{ 'g', '/', -1 },
 		1
@@ -396,7 +396,7 @@ static struct command commands[] = {
 	{
 		KEY_CMD_GO_TO_PLAYING_FILE,
 		"go_to_playing_file",
-		"Go to a directory where the currently played file is",
+		"Go to the directory containing the currently played file",
 		CON_MENU,
 		{ 'G', -1 },
 		1

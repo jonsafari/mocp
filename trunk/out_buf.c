@@ -33,8 +33,8 @@
 #include "out_buf.h"
 #include "options.h"
 
-/* Don't play more than that value (in seconds) in one audio_play().
- * This prevent locking. */
+/* Don't play more than this value (in seconds) in one audio_play().
+ * This prevents locking. */
 #define AUDIO_MAX_PLAY		0.1
 #define AUDIO_MAX_PLAY_BYTES	32768
 
