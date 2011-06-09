@@ -322,7 +322,7 @@ static int oss_open (struct sound_params *sound_params)
 	return 1;
 }
 
-/* Return -errno on error, number of bytes played when ok */
+/* Return -errno on error, number of bytes played when okay. */
 static int oss_play (const char *buff, const size_t size)
 {
 	int res;

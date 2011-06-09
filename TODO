@@ -35,8 +35,8 @@ In future:
   added files.
 * Multiple file selection to move many files at once up and down.
   http://moc.daper.net/node/288
-* Review strcpy()/sprintf() usage, change to strncpy()/snprintf() where
-  possible.
+* Review strcat()/strcpy()/sprintf() usage, change to
+  strncat()/strncpy()/snprintf() where possible.
 * More side menus: many directory/playlist views.
 * LADSPA
 * Editing the title of an item on the playlist (for Internet streams).

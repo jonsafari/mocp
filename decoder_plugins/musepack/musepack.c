@@ -9,7 +9,7 @@
  *
  */
 
-/* FIXME: mpc_decoder_docede() can give fixed point values, do we have to
+/* FIXME: mpc_decoder_decode() can give fixed point values, do we have to
  * handle this case? */
 
 #ifdef HAVE_CONFIG_H

@@ -3456,7 +3456,7 @@ void init_interface (const int sock, const int logging, lists_t_strs *args)
 
 			/* We have made the playlist from command line. */
 
-			/* the playlist should be now clear, but this will give
+			/* The playlist should be now clear, but this will give
 			 * us the serial number of the playlist used by other
 			 * clients. */
 			plist_init (&tmp_plist);
