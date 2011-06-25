@@ -216,7 +216,7 @@ rm -f $RPM_BUILD_ROOT%_libdir/*.la
 %if %{!?_without_sndfile:1}0
 %files sndfile
 %defattr(-, root, root)
-%_libdir/moc/decoder_plugins/libsndfile_formats_decoder.*
+%_libdir/moc/decoder_plugins/libsndfile_decoder.*
 %endif
 
 %if %{!?_without_speex:1}0
