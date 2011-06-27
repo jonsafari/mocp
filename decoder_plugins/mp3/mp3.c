@@ -728,7 +728,7 @@ static void mp3_get_name (const char *file, char buf[4])
 		strcpy (buf, "MP3");
 	else if (!strcasecmp(ext, "mp2"))
 		strcpy (buf, "MP2");
-	else if (!strcasecmp(ext, "mp2"))
+	else if (!strcasecmp(ext, "mp1"))
 		strcpy (buf, "MP1");
 	else if (!strcasecmp(ext, "mpga"))
 		strcpy (buf, "MPG");
