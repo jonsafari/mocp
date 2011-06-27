@@ -144,7 +144,7 @@ bool is_valid_symbol (const char *candidate)
 	result = false;
 	len = strlen (candidate);
 	if (len > 0 && len == strspn (candidate, valid) &&
-	               index (first, candidate[0]) == NULL)
+	               strchr (first, candidate[0]) == NULL)
 		result = true;
 
 	return result;
