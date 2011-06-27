@@ -128,8 +128,10 @@ int option_check_range (int opt, ...)
 			int_val = va_arg (va, int);
 			for (ix = 0; ix < options[opt].count; ix += 2) {
 				if (int_val >= ((int *) options[opt].constraints)[ix] &&
-		    		int_val <= ((int *) options[opt].constraints)[ix + 1])
+		    		int_val <= ((int *) options[opt].constraints)[ix + 1]) {
 					rc = 1;
+					break;
+				}
 			}
 			break;
 
@@ -137,8 +139,10 @@ int option_check_range (int opt, ...)
 			str_val = va_arg (va, char *);
 			for (ix = 0; ix < options[opt].count; ix += 2) {
 				if (strcasecmp (str_val, (((char **) options[opt].constraints)[ix])) >= 0 &&
-				    strcasecmp (str_val, (((char **) options[opt].constraints)[ix + 1])) <= 0)
+				    strcasecmp (str_val, (((char **) options[opt].constraints)[ix + 1])) <= 0) {
 					rc = 1;
+					break;
+				}
 			}
 			break;
 
@@ -171,16 +175,20 @@ int option_check_discrete (int opt, ...)
 		case OPTION_INT:
 			int_val = va_arg (va, int);
 			for (ix = 0; ix < options[opt].count; ix += 1) {
-				if (int_val == ((int *) options[opt].constraints)[ix])
+				if (int_val == ((int *) options[opt].constraints)[ix]) {
 					rc = 1;
+					break;
+				}
 			}
 			break;
 
 		case OPTION_SYMB:
 			str_val = va_arg (va, char *);
 			for (ix = 0; ix < options[opt].count; ix += 1) {
-				if (!strcasecmp(str_val, (((char **) options[opt].constraints)[ix])))
+				if (!strcasecmp(str_val, (((char **) options[opt].constraints)[ix]))) {
 					rc = 1;
+					break;
+				}
 			}
 			break;
 
@@ -209,10 +217,12 @@ int option_check_length (int opt, ...)
 	rc = 0;
 	va_start (va, opt);
 	str_len = strlen (va_arg (va, char *));
-	for (ix = 0; ix < options[opt].count; ix += 1) {
+	for (ix = 0; ix < options[opt].count; ix += 2) {
 		if (str_len >= ((int *) options[opt].constraints)[ix] &&
-    		str_len <= ((int *) options[opt].constraints)[ix + 1])
+    		str_len <= ((int *) options[opt].constraints)[ix + 1]) {
 			rc = 1;
+			break;
+		}
 	}
 	va_end (va);
 
@@ -344,7 +354,8 @@ static void option_add_list (const char *name, const char *value, int (*check) (
 
 	pos = option_init (name, OPTION_LIST);
 	options[pos].value.list = lists_strs_new (8);
-	lists_strs_split (options[pos].value.list, value, ":");
+	if (value)
+		lists_strs_split (options[pos].value.list, value, ":");
 	options[pos].check = check;
 	options[pos].count = count;
 	if (count > 0) {
