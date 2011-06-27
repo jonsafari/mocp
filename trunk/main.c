@@ -485,7 +485,7 @@ static void override_config_option (const char *optarg, lists_t_strs *deferred)
 
 	assert (optarg != NULL);
 
-	ptr = index (optarg, '=');
+	ptr = strchr (optarg, '=');
 	if (ptr == NULL)
 		goto error;
 

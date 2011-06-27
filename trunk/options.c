@@ -790,7 +790,7 @@ static char *substitute_variable (const char *name_in, const char *value_in)
 		else if (strncmp (&name[len], ":-", 2) == 0) {
 			name[len] = 0x00;
 			dflt = &name[len + 2];
-			end = index (dflt, '}');
+			end = strchr (dflt, '}');
 			if (end == NULL)
 				fatal ("Error in config file option '%s': "
 				       "unterminated '${%s:-'!",
@@ -934,7 +934,7 @@ static bool set_option (const char *name, const char *value_in, bool append)
 
 	/* Handle a change of option type for SoundDriver. */
 	if (!strcasecmp(options[i].name, "SoundDriver")) {
-		if (index (value_s, ','))
+		if (strchr (value_s, ','))
 			value = rewrite_as_list (value_s);
 	}
 

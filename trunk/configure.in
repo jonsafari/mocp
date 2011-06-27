@@ -269,10 +269,10 @@ fi
 
 AC_FUNC_MALLOC
 AC_FUNC_STAT
-AC_CHECK_FUNCS([getcwd memmove strcasecmp strdup strerror strncasecmp strrchr \
-		socket gettimeofday getenv fork setsid kill bind listen \
+AC_CHECK_FUNCS([getcwd memmove strcasecmp strdup strerror strncasecmp strchr \
+		strrchr socket gettimeofday getenv fork setsid kill bind listen \
 		accept time connect unlink send recv select strftime \
-		localtime_r mbsrtowcs mbstowcs execvp wcswidth strspn index],,
+		localtime_r mbsrtowcs mbstowcs execvp wcswidth strspn],,
 	       AC_MSG_ERROR([Required standard C/UNIX functions are not present.]))
 
 dnl optional functions
