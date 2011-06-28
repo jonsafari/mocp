@@ -520,9 +520,9 @@ static void override_config_option (const char *optarg, lists_t_strs *deferred)
 		value[len - 2] = 0x00;
 	}
 
-	if (!option_set_pair (name, value, append))
+	if (!options_set_pair (name, value, append))
 		goto error;
-	option_ignore_config (name);
+	options_ignore_config (name);
 
 	free (name);
 	free (value);
@@ -618,14 +618,14 @@ static lists_t_strs *process_command_line (int argc, char *argv[],
 				params->foreground = 1;
 				break;
 			case 'R':
-				if (!check_list_option ("SoundDriver", optarg))
+				if (!options_check_list ("SoundDriver", optarg))
 					fatal ("No such sound driver: %s", optarg);
-				option_set_list ("SoundDriver", optarg, false);
-				option_ignore_config ("SoundDriver");
+				options_set_list ("SoundDriver", optarg, false);
+				options_ignore_config ("SoundDriver");
 				break;
 			case 'm':
-				option_set_int ("StartInMusicDir", 1);
-				option_ignore_config ("StartInMusicDir");
+				options_set_int ("StartInMusicDir", 1);
+				options_ignore_config ("StartInMusicDir");
 				break;
 			case 'a':
 			case 'e':
@@ -677,7 +677,7 @@ static lists_t_strs *process_command_line (int argc, char *argv[],
 				params->dont_run_iface = 1;
 				break;
 			case 'T':
-				option_set_str ("ForceTheme", optarg);
+				options_set_str ("ForceTheme", optarg);
 				break;
 			case 'C':
 				params->config_file = xstrdup (optarg);
@@ -686,20 +686,20 @@ static lists_t_strs *process_command_line (int argc, char *argv[],
 				override_config_option (optarg, deferred);
 				break;
 			case 'M':
-				option_set_str ("MOCDir", optarg);
-				option_ignore_config ("MOCDir");
+				options_set_str ("MOCDir", optarg);
+				options_ignore_config ("MOCDir");
 				break;
 			case 'y':
-				option_set_int ("SyncPlaylist", 1);
-				option_ignore_config ("SyncPlaylist");
+				options_set_int ("SyncPlaylist", 1);
+				options_ignore_config ("SyncPlaylist");
 				break;
 			case 'n':
-				option_set_int ("SyncPlaylist", 0);
-				option_ignore_config ("SyncPlaylist");
+				options_set_int ("SyncPlaylist", 0);
+				options_ignore_config ("SyncPlaylist");
 				break;
 			case 'A':
-				option_set_int ("ASCIILines", 1);
-				option_ignore_config ("ASCIILines");
+				options_set_int ("ASCIILines", 1);
+				options_ignore_config ("ASCIILines");
 				break;
 			case 'G':
 				params->toggle_pause = 1;

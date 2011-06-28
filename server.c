@@ -804,7 +804,7 @@ static int get_set_option (struct client *cli)
 		return 0;
 	}
 
-	option_set_int (name, val);
+	options_set_int (name, val);
 	free (name);
 
 	add_event_all (EV_OPTIONS, NULL);
