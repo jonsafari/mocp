@@ -61,7 +61,7 @@ void softmixer_init()
   mixer_amp = 100;
   softmixer_set_value(100);
   softmixer_read_config();
-  logit("Softmixer initialized");
+  logit ("Softmixer initialized");
 }
 
 void softmixer_write_config();
@@ -70,7 +70,7 @@ void softmixer_shutdown()
 {
   if(options_get_int(SOFTMIXER_SAVE_OPTION))
     softmixer_write_config();
-  logit("Softmixer stopped");
+  logit ("Softmixer stopped");
 }
 
 void softmixer_set_value(const int val)
@@ -197,7 +197,7 @@ void softmixer_read_config()
           }
           else
           {
-            logit("Tried to set softmixer amplification out of range.");
+            logit ("Tried to set softmixer amplification out of range.");
           }
         }
     }
@@ -218,7 +218,7 @@ void softmixer_read_config()
           }
           else
           {
-            logit("Tried to set softmixer value out of range.");
+            logit ("Tried to set softmixer value out of range.");
           }
         }
     }
@@ -270,14 +270,13 @@ void softmixer_write_config()
 
   fclose(cf);
 
-  logit("Softmixer configuration written");
+  logit ("Softmixer configuration written");
 }
 
 void softmixer_process_buffer(char *buf, size_t size, const struct sound_params *sound_params)
 {
-#ifdef DEBUG
-  logit("Processing %u bytes...", size);
-#endif
+  debug ("Processing %u bytes...", size);
+
   if(mixer_real==100 && !mix_mono)
     return;
 
@@ -299,9 +298,8 @@ void softmixer_process_buffer(char *buf, size_t size, const struct sound_params 
   /* setup samples to perform arithmetic */
   if(need_endianness_swap)
   {
-#ifdef DEBUG
-    logit("Converting endianness before mixing");
-#endif
+    debug ("Converting endianness before mixing");
+
     if(samplesize == 4)
       swap_endianness_32((int32_t *)buf, size / sizeof(int32_t));
     else
@@ -357,9 +355,8 @@ void softmixer_process_buffer(char *buf, size_t size, const struct sound_params 
   /* restore sample-endianness */
   if(need_endianness_swap)
   {
-#ifdef DEBUG
-    logit("Restoring endianness after mixing");
-#endif
+    debug ("Restoring endianness after mixing");
+
     if(samplesize == 4)
       swap_endianness_32((int32_t *)buf, size / sizeof(int32_t));
     else
@@ -369,10 +366,10 @@ void softmixer_process_buffer(char *buf, size_t size, const struct sound_params 
 
 void process_buffer_u8(uint8_t *buf, size_t size)
 {
-#ifdef DEBUG
-  logit("mixing");
-#endif
   size_t i;
+
+  debug ("mixing");
+
   for(i=0; i<size; i++)
   {
     int16_t tmp = buf[i];
@@ -390,10 +387,10 @@ void process_buffer_u8(uint8_t *buf, size_t size)
 
 void process_buffer_s8(int8_t *buf, size_t size)
 {
-#ifdef DEBUG
-  logit("mixing");
-#endif
   size_t i;
+
+  debug ("mixing");
+
   for(i=0; i<size; i++)
   {
     int16_t tmp = buf[i];
@@ -410,10 +407,10 @@ void process_buffer_s8(int8_t *buf, size_t size)
 
 void process_buffer_u16(uint16_t *buf, size_t size)
 {
-#ifdef DEBUG
-  logit("mixing");
-#endif
   size_t i;
+
+  debug ("mixing");
+
   for(i=0; i<size; i++)
   {
     int32_t tmp = buf[i];
@@ -431,10 +428,10 @@ void process_buffer_u16(uint16_t *buf, size_t size)
 
 void process_buffer_s16(int16_t *buf, size_t size)
 {
-#ifdef DEBUG
-  logit("mixing");
-#endif
   size_t i;
+
+  debug ("mixing");
+
   for(i=0; i<size; i++)
   {
     int32_t tmp = buf[i];
@@ -451,10 +448,10 @@ void process_buffer_s16(int16_t *buf, size_t size)
 
 void process_buffer_u32(uint32_t *buf, size_t size)
 {
-#ifdef DEBUG
-  logit("mixing");
-#endif
   size_t i;
+
+  debug ("mixing");
+
   for(i=0; i<size; i++)
   {
     int64_t tmp = buf[i];
@@ -473,10 +470,10 @@ void process_buffer_u32(uint32_t *buf, size_t size)
 
 void process_buffer_s32(int32_t *buf, size_t size)
 {
-#ifdef DEBUG
-  logit("mixing");
-#endif
   size_t i;
+
+  debug ("mixing");
+
   for(i=0; i<size; i++)
   {
     int64_t tmp = buf[i];
@@ -493,10 +490,10 @@ void process_buffer_s32(int32_t *buf, size_t size)
 
 void process_buffer_float(float *buf, size_t size)
 {
-#ifdef DEBUG
-  logit("mixing");
-#endif
   size_t i;
+
+  debug ("mixing");
+
   for(i=0; i<size; i++)
   {
     float tmp = buf[i];
@@ -513,11 +510,10 @@ void process_buffer_float(float *buf, size_t size)
 // Mono-Mixing
 void mix_mono_u8(uint8_t *buf, int channels, size_t size)
 {
-#ifdef DEBUG
-  logit("making mono");
-#endif
   int c;
   size_t i = 0;
+
+  debug ("making mono");
 
   if(channels < 2)
     return;
@@ -546,11 +542,10 @@ void mix_mono_u8(uint8_t *buf, int channels, size_t size)
 
 void mix_mono_s8(int8_t *buf, int channels, size_t size)
 {
-#ifdef DEBUG
-  logit("making mono");
-#endif
   int c;
   size_t i = 0;
+
+  debug ("making mono");
 
   if(channels < 2)
     return;
@@ -581,11 +576,10 @@ void mix_mono_s8(int8_t *buf, int channels, size_t size)
 
 void mix_mono_u16(uint16_t *buf, int channels, size_t size)
 {
-#ifdef DEBUG
-  logit("making mono");
-#endif
   int c;
   size_t i = 0;
+
+  debug ("making mono");
 
   if(channels < 2)
     return;
@@ -614,11 +608,10 @@ void mix_mono_u16(uint16_t *buf, int channels, size_t size)
 
 void mix_mono_s16(int16_t *buf, int channels, size_t size)
 {
-#ifdef DEBUG
-  logit("making mono");
-#endif
   int c;
   size_t i = 0;
+
+  debug ("making mono");
 
   if(channels < 2)
     return;
@@ -649,11 +642,10 @@ void mix_mono_s16(int16_t *buf, int channels, size_t size)
 
 void mix_mono_u32(uint32_t *buf, int channels, size_t size)
 {
-#ifdef DEBUG
-  logit("making mono");
-#endif
   int c;
   size_t i = 0;
+
+  debug ("making mono");
 
   if(channels < 2)
     return;
@@ -682,11 +674,10 @@ void mix_mono_u32(uint32_t *buf, int channels, size_t size)
 
 void mix_mono_s32(int32_t *buf, int channels, size_t size)
 {
-#ifdef DEBUG
-  logit("making mono");
-#endif
   int c;
   size_t i = 0;
+
+  debug ("making mono");
 
   if(channels < 2)
     return;
@@ -717,11 +708,10 @@ void mix_mono_s32(int32_t *buf, int channels, size_t size)
 
 void mix_mono_float(float *buf, int channels, size_t size)
 {
-#ifdef DEBUG
-  logit("making mono");
-#endif
   int c;
   size_t i = 0;
+
+  debug ("making mono");
 
   if(channels < 2)
     return;

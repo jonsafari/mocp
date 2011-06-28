@@ -61,6 +61,7 @@
 #include "utf8.h"
 
 #define INTERFACE_LOG	"mocp_client_log"
+#define PLAYLIST_FILE	"playlist.m3u"
 
 #define QUEUE_CLEAR_THRESH 128
 
@@ -1560,7 +1561,7 @@ static void process_args (lists_t_strs *args)
 /* Load the playlist from .moc directory. */
 static void load_playlist ()
 {
-	char *plist_file = create_file_name ("playlist.m3u");
+	char *plist_file = create_file_name (PLAYLIST_FILE);
 
 	if (file_type(plist_file) == F_PLAYLIST) {
 		go_to_playlist (plist_file, 1);
@@ -1971,12 +1972,12 @@ static void toggle_option (const char *name)
 
 static void toggle_show_time ()
 {
-	if (!strcasecmp(options_get_str("ShowTime"), "yes")) {
-		options_set_str("ShowTime", "IfAvailable");
+	if (!strcasecmp (options_get_str ("ShowTime"), "yes")) {
+		options_set_str ("ShowTime", "IfAvailable");
 		iface_set_status ("ShowTime: IfAvailable");
 	}
-	else if (!strcasecmp(options_get_str("ShowTime"), "no")) {
-		options_set_str("ShowTime", "yes");
+	else if (!strcasecmp (options_get_str ("ShowTime"), "no")) {
+		options_set_str ("ShowTime", "yes");
 		iface_update_show_time ();
 		ask_for_tags (dir_plist, TAGS_TIME);
 		ask_for_tags (playlist, TAGS_TIME);
@@ -1984,7 +1985,7 @@ static void toggle_show_time ()
 
 	}
 	else { /* IfAvailable */
-		options_set_str("ShowTime", "no");
+		options_set_str ("ShowTime", "no");
 		iface_update_show_time ();
 		iface_set_status ("ShowTime: no");
 	}
@@ -2446,14 +2447,14 @@ static void update_iface_menu (const enum iface_menu menu,
 /* Switch ReadTags options and update the menu. */
 static void switch_read_tags ()
 {
-	if (options_get_int("ReadTags")) {
-		options_set_int("ReadTags", 0);
+	if (options_get_int ("ReadTags")) {
+		options_set_int ("ReadTags", 0);
 		switch_titles_file (dir_plist);
 		switch_titles_file (playlist);
 		iface_set_status ("ReadTags: no");
 	}
 	else {
-		options_set_int("ReadTags", 1);
+		options_set_int ("ReadTags", 1);
 		ask_for_tags (dir_plist, TAGS_COMMENTS);
 		ask_for_tags (playlist, TAGS_COMMENTS);
 		switch_titles_tags (dir_plist);
@@ -3046,7 +3047,7 @@ static void go_to_fast_dir (const int num)
 
 static void toggle_playlist_full_paths (void)
 {
-	int new_val = !options_get_int("PlaylistFullPaths");
+	int new_val = !options_get_int ("PlaylistFullPaths");
 
 	options_set_int ("PlaylistFullPaths", new_val);
 
@@ -3061,15 +3062,15 @@ static void toggle_playlist_full_paths (void)
 /* Handle key */
 static void menu_key (const struct iface_key *k)
 {
-	if (iface_in_help())
+	if (iface_in_help ())
 		iface_handle_help_key (k);
-	else if (iface_in_lyrics())
+	else if (iface_in_lyrics ())
 		iface_handle_lyrics_key (k);
-	else if (iface_in_entry())
+	else if (iface_in_entry ())
 		entry_key (k);
-	else if (iface_in_theme_menu())
+	else if (iface_in_theme_menu ())
 		theme_menu_key (k);
-	else if (!iface_key_is_resize(k)) {
+	else if (!iface_key_is_resize (k)) {
 		enum key_cmd cmd = get_key_cmd (CON_MENU, k);
 
 		switch (cmd) {
@@ -3146,10 +3147,10 @@ static void menu_key (const struct iface_key *k)
 				adjust_mixer (+1);
 				break;
 			case KEY_CMD_SEEK_BACKWARD:
-				seek (-options_get_int("SeekTime"));
+				seek (-options_get_int ("SeekTime"));
 				break;
 			case KEY_CMD_SEEK_FORWARD:
-				seek (options_get_int("SeekTime"));
+				seek (options_get_int ("SeekTime"));
 				break;
 			case KEY_CMD_HELP:
 				iface_switch_to_help ();
@@ -3164,14 +3165,13 @@ static void menu_key (const struct iface_key *k)
 				iface_refresh ();
 				break;
 			case KEY_CMD_RELOAD:
-				if (iface_in_dir_menu())
+				if (iface_in_dir_menu ())
 					reread_dir ();
 				break;
 			case KEY_CMD_TOGGLE_SHOW_HIDDEN_FILES:
 				options_set_int ("ShowHiddenFiles",
-						!options_get_int(
-							"ShowHiddenFiles"));
-				if (iface_in_dir_menu())
+				                 !options_get_int ("ShowHiddenFiles"));
+				if (iface_in_dir_menu ())
 					reread_dir ();
 				break;
 			case KEY_CMD_GO_MUSIC_DIR:
@@ -3184,11 +3184,10 @@ static void menu_key (const struct iface_key *k)
 				iface_make_entry (ENTRY_SEARCH);
 				break;
 			case KEY_CMD_PLIST_SAVE:
-				if (plist_count(playlist))
+				if (plist_count (playlist))
 					iface_make_entry (ENTRY_PLIST_SAVE);
 				else
-					error ("The playlist is "
-							"empty.");
+					error ("The playlist is empty.");
 				break;
 			case KEY_CMD_TOGGLE_SHOW_TIME:
 				toggle_show_time ();
@@ -3215,8 +3214,7 @@ static void menu_key (const struct iface_key *k)
 				seek_silent (options_get_int("SilentSeekTime"));
 				break;
 			case KEY_CMD_SEEK_BACKWARD_5:
-				seek_silent (-options_get_int(
-							"SilentSeekTime"));
+				seek_silent (-options_get_int ("SilentSeekTime"));
 				break;
 			case KEY_CMD_VOLUME_10:
 				set_mixer (10);
@@ -3576,7 +3574,7 @@ static void save_curr_dir ()
  * playlist is empty. */
 static void save_playlist_in_moc ()
 {
-	char *plist_file = create_file_name("playlist.m3u");
+	char *plist_file = create_file_name (PLAYLIST_FILE);
 
 	if (plist_count(playlist) && options_get_int("SavePlaylist"))
 		save_playlist (plist_file, NULL, 1);
@@ -3653,7 +3651,7 @@ void interface_cmdline_clear_plist (int server_sock)
 		send_int_to_srv (CMD_UNLOCK);
 	}
 
-	unlink (create_file_name("playlist.m3u"));
+	unlink (create_file_name (PLAYLIST_FILE));
 
 	plist_free (&plist);
 }
@@ -3739,11 +3737,10 @@ void interface_cmdline_append (int server_sock, lists_t_strs *args)
 			plist_init (&saved_plist);
 
 			/* this checks if the file exists */
-			if (file_type(create_file_name("playlist.m3u"))
+			if (file_type (create_file_name (PLAYLIST_FILE))
 						== F_PLAYLIST)
 					plist_load (&saved_plist,
-						create_file_name(
-							"playlist.m3u"),
+						create_file_name (PLAYLIST_FILE),
 						cwd, 1);
 			add_recursively (&new, args);
 			plist_sort_fname (&new);
@@ -3762,8 +3759,7 @@ void interface_cmdline_append (int server_sock, lists_t_strs *args)
 				fill_tags (&saved_plist, TAGS_COMMENTS
 						| TAGS_TIME, 1);
 				plist_save (&saved_plist,
-						create_file_name(
-							"playlist.m3u"),
+						create_file_name (PLAYLIST_FILE),
 						NULL, 1);
 			}
 
@@ -3791,9 +3787,9 @@ void interface_cmdline_play_first (int server_sock)
 
 	/* the second condition will checks if the file exists */
 	if (!recv_server_plist(&plist)
-			&& file_type(create_file_name("playlist.m3u"))
+			&& file_type (create_file_name (PLAYLIST_FILE))
 			== F_PLAYLIST)
-		plist_load (&plist, create_file_name("playlist.m3u"), cwd, 1);
+		plist_load (&plist, create_file_name (PLAYLIST_FILE), cwd, 1);
 
 	send_int_to_srv (CMD_LOCK);
 	if (get_server_plist_serial() != plist_get_serial(&plist)) {
@@ -4085,11 +4081,11 @@ void interface_cmdline_set (int server_sock, char *arg, const int val)
 
 	while(tok) {
 
-		if(!strncmp(tok, "shuffle", 8) || !strncmp(tok,"s",2))
+		if(!strncmp (tok, "shuffle", 8) || !strncmp (tok,"s",2))
 			tok = "Shuffle";
-		else if(!strncmp(tok, "autonext", 9) || !strncmp(tok, "n",2))
+		else if(!strncmp (tok, "autonext", 9) || !strncmp (tok, "n",2))
 			tok = "AutoNext";
-		else if(!strncmp(tok, "repeat", 7) || !strncmp(tok, "r", 2))
+		else if(!strncmp (tok, "repeat", 7) || !strncmp (tok, "r", 2))
 			tok = "Repeat";
 		else {
 			fprintf (stderr, "Unknown option '%s'\n", tok);
@@ -4097,20 +4093,20 @@ void interface_cmdline_set (int server_sock, char *arg, const int val)
 		}
 
 		if(val == 2) {
-			send_int_to_srv(CMD_GET_OPTION);
-			send_str_to_srv(tok);
-			options_set_int(tok, get_data_int());
+			send_int_to_srv (CMD_GET_OPTION);
+			send_str_to_srv (tok);
+			options_set_int (tok, get_data_int());
 		}
 
-		send_int_to_srv(CMD_SET_OPTION);
-		send_str_to_srv(tok);
+		send_int_to_srv (CMD_SET_OPTION);
+		send_str_to_srv (tok);
 
 		if(val == 2)
-			send_int_to_srv(!options_get_int(tok));
+			send_int_to_srv (!options_get_int(tok));
 		else
-			send_int_to_srv(val);
+			send_int_to_srv (val);
 
-		tok = strtok_r(NULL, ",", &last);
+		tok = strtok_r (NULL, ",", &last);
 	}
 }
 

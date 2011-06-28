@@ -266,6 +266,8 @@ static int alsa_init (struct output_driver_caps *caps)
 {
 	int err;
 
+	logit ("Initialising ALSA device");
+
 	if ((err = snd_mixer_open(&mixer_handle, 0)) < 0) {
 		error ("Can't open ALSA mixer: %s", snd_strerror(err));
 		mixer_handle = NULL;
@@ -476,7 +478,7 @@ static int alsa_open (struct sound_params *sound_params)
 		return 0;
 	}
 
-	debug ("ALSA device initialized");
+	logit ("ALSA device opened");
 
 	params.channels = sound_params->channels;
 	alsa_buf_fill = 0;

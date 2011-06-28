@@ -793,13 +793,13 @@ static int get_set_option (struct client *cli)
 	char *name;
 	int val;
 
-	if (!(name = get_str(cli->socket)))
+	if (!(name = get_str (cli->socket)))
 		return 0;
-	if (!valid_sync_option(name)) {
+	if (!valid_sync_option (name)) {
 		logit ("Client requested setting invalid option '%s'", name);
 		return 0;
 	}
-	if (!get_int(cli->socket, &val)) {
+	if (!get_int (cli->socket, &val)) {
 		free (name);
 		return 0;
 	}

@@ -231,4 +231,3 @@ struct decoder *plugin_init ()
 
   return &timidity_decoder;
 }
-
