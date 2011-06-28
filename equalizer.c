@@ -295,7 +295,7 @@ void equalizer_read_config()
 
   if(cf==NULL)
   {
-    logit("Unable to read equalizer configuration");
+    logit ("Unable to read equalizer configuration");
     if (curloc)
 	    free (curloc);
     return;
@@ -408,7 +408,7 @@ void equalizer_write_config()
 	  free (curloc);
   }
 
-  logit("Equalizer configuration written");
+  logit ("Equalizer configuration written");
 }
 
 void equalizer_init()
@@ -439,7 +439,7 @@ void equalizer_init()
 
   equalizer_refresh();
 
-  logit("Equalizer initialized");
+  logit ("Equalizer initialized");
 }
 
 void equalizer_shutdown()
@@ -449,7 +449,7 @@ void equalizer_shutdown()
 
   clear_eq_set(&equ_list);
 
-  logit("Equalizer stopped");
+  logit ("Equalizer stopped");
 }
 
 void equalizer_refresh()
@@ -554,19 +554,19 @@ void equalizer_refresh()
           switch(r)
           {
             case 0:
-              logit("This should not happen: No error but no EQSET was parsed: %s", filename);
+              logit ("This should not happen: No error but no EQSET was parsed: %s", filename);
               break;
             case -1:
-              logit("Not an EQSET (empty file): %s", filename);
+              logit ("Not an EQSET (empty file): %s", filename);
               break;
             case -2:
-              logit("Not an EQSET (invalid header): %s", filename);
+              logit ("Not an EQSET (invalid header): %s", filename);
               break;
             case -3:
-              logit("Error while parsing settings from EQSET: %s", filename);
+              logit ("Error while parsing settings from EQSET: %s", filename);
               break;
             default:
-              logit("Unknown error while parsing EQSET: %s", filename);
+              logit ("Unknown error while parsing EQSET: %s", filename);
               break;
           }
         }
@@ -613,15 +613,14 @@ void equalizer_refresh()
 /* sound processing code */
 void equalizer_process_buffer(char *buf, size_t size, const struct sound_params *sound_params)
 {
-#ifdef DEBUG
-  logit("EQ Processing %u bytes...", size);
-#endif
+  debug ("EQ Processing %u bytes...", size);
+
   if(!equ_active || !current_equ || !current_equ->set)
     return;
 
   if(sound_params->rate != current_equ->set->b->israte || sound_params->channels != equ_channels)
   {
-    logit("Recreating filters due to sound parameter changes...");
+    logit ("Recreating filters due to sound parameter changes...");
     sample_rate = sound_params->rate;
     equ_channels = sound_params->channels;
 
@@ -644,9 +643,7 @@ void equalizer_process_buffer(char *buf, size_t size, const struct sound_params 
   /* setup samples to perform arithmetic */
   if(need_endianness_swap)
   {
-#ifdef DEBUG
-    logit("Converting endianness before mixing");
-#endif
+    debug ("Converting endianness before mixing");
     if(samplesize == 4)
       swap_endianness_32((int32_t *)buf, size / sizeof(int32_t));
     else
@@ -681,9 +678,7 @@ void equalizer_process_buffer(char *buf, size_t size, const struct sound_params 
   /* restore sample-endianness */
   if(need_endianness_swap)
   {
-#ifdef DEBUG
-    logit("Restoring endianness after mixing");
-#endif
+    debug ("Restoring endianness after mixing");
     if(samplesize == 4)
       swap_endianness_32((int32_t *)buf, size / sizeof(int32_t));
     else
@@ -693,12 +688,12 @@ void equalizer_process_buffer(char *buf, size_t size, const struct sound_params 
 
 void equ_process_buffer_u8(uint8_t *buf, size_t size)
 {
-#ifdef DEBUG
-  logit("equalizing");
-#endif
-  float *tmp = (float *)xmalloc(size * sizeof(float));
-
   size_t i;
+  float *tmp;
+
+  debug ("equalizing");
+
+  tmp = (float *)xmalloc (size * sizeof (float));
 
   for(i=0; i<size; i++)
     tmp[i] = preampf * (float)buf[i];
@@ -723,12 +718,12 @@ void equ_process_buffer_u8(uint8_t *buf, size_t size)
 
 void equ_process_buffer_s8(int8_t *buf, size_t size)
 {
-#ifdef DEBUG
-  logit("equalizing");
-#endif
-  float *tmp = (float *)xmalloc(size * sizeof(float));
-
   size_t i;
+  float *tmp;
+
+  debug ("equalizing");
+
+  tmp = (float *)xmalloc (size * sizeof (float));
 
   for(i=0; i<size; i++)
     tmp[i] = preampf * (float)buf[i];
@@ -753,12 +748,12 @@ void equ_process_buffer_s8(int8_t *buf, size_t size)
 
 void equ_process_buffer_u16(uint16_t *buf, size_t size)
 {
-#ifdef DEBUG
-  logit("equalizing");
-#endif
-  float *tmp = (float *)xmalloc(size * sizeof(float));
-
   size_t i;
+  float *tmp;
+
+  debug ("equalizing");
+
+  tmp = (float *)xmalloc (size * sizeof (float));
 
   for(i=0; i<size; i++)
     tmp[i] = preampf * (float)buf[i];
@@ -783,12 +778,12 @@ void equ_process_buffer_u16(uint16_t *buf, size_t size)
 
 void equ_process_buffer_s16(int16_t *buf, size_t size)
 {
-#ifdef DEBUG
-  logit("equalizing");
-#endif
-  float *tmp = (float *)xmalloc(size * sizeof(float));
-
   size_t i;
+  float *tmp;
+
+  debug ("equalizing");
+
+  tmp = (float *)xmalloc (size * sizeof (float));
 
   for(i=0; i<size; i++)
     tmp[i] = preampf * (float)buf[i];
@@ -813,12 +808,12 @@ void equ_process_buffer_s16(int16_t *buf, size_t size)
 
 void equ_process_buffer_u32(uint32_t *buf, size_t size)
 {
-#ifdef DEBUG
-  logit("equalizing");
-#endif
-  float *tmp = (float *)xmalloc(size * sizeof(float));
-
   size_t i;
+  float *tmp;
+
+  debug ("equalizing");
+
+  tmp = (float *)xmalloc (size * sizeof (float));
 
   for(i=0; i<size; i++)
     tmp[i] = preampf * (float)buf[i];
@@ -843,12 +838,12 @@ void equ_process_buffer_u32(uint32_t *buf, size_t size)
 
 void equ_process_buffer_s32(int32_t *buf, size_t size)
 {
-#ifdef DEBUG
-  logit("equalizing");
-#endif
-  float *tmp = (float *)xmalloc(size * sizeof(float));
-
   size_t i;
+  float *tmp;
+
+  debug ("equalizing");
+
+  tmp = (float *)xmalloc (size * sizeof (float));
 
   for(i=0; i<size; i++)
     tmp[i] = preampf * (float)buf[i];
@@ -873,12 +868,12 @@ void equ_process_buffer_s32(int32_t *buf, size_t size)
 
 void equ_process_buffer_float(float *buf, size_t size)
 {
-#ifdef DEBUG
-  logit("equalizing");
-#endif
-  float *tmp = (float *)xmalloc(size * sizeof(float));
-
   size_t i;
+  float *tmp;
+
+  debug ("equalizing");
+
+  tmp = (float *)xmalloc (size * sizeof (float));
 
   for(i=0; i<size; i++)
     tmp[i] = preampf * (float)buf[i];

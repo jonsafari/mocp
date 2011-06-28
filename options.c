@@ -31,6 +31,8 @@
 #define OPTIONS_MAX	181
 #define OPTION_NAME_MAX	32
 
+typedef int options_t_check (int, ...);
+
 union option_value
 {
 	char *str;
@@ -47,7 +49,7 @@ struct option
 	int ignore_in_config;
 	int set_in_config;
 	unsigned int hash;
-	int (*check) (int, ...);
+	options_t_check *check;
 	int count;
 	void *constraints;
 };
@@ -261,7 +263,7 @@ static int init_option (const char *name, enum option_type type)
 
 /* Add an integer option to the options table. This is intended to be used at
  * initialization to make a table of valid options and their default values. */
-static void add_int (const char *name, const int value, int (*check) (int, ...), const int count, ...)
+static void add_int (const char *name, const int value, options_t_check *check, const int count, ...)
 {
 	int ix, pos;
 	va_list va;
@@ -291,7 +293,7 @@ static void add_bool (const char *name, const bool value)
 
 /* Add a string option to the options table. This is intended to be used at
  * initialization to make a table of valid options and their default values. */
-static void add_str (const char *name, const char *value, int (*check) (int, ...), const int count, ...)
+static void add_str (const char *name, const char *value, options_t_check *check, const int count, ...)
 {
 	int ix, pos;
 	va_list va;
@@ -347,7 +349,7 @@ static void add_symb (const char *name, const char *value, const int count, ...)
 
 /* Add a list option to the options table. This is intended to be used at
  * initialization to make a table of valid options and their default values. */
-static void add_list (const char *name, const char *value, int (*check) (int, ...), const int count, ...)
+static void add_list (const char *name, const char *value, options_t_check *check, const int count, ...)
 {
 	int ix, pos;
 	va_list va;
@@ -376,7 +378,7 @@ static void add_list (const char *name, const char *value, int (*check) (int, ..
 /* Set an integer option to the value. */
 void options_set_int (const char *name, const int value)
 {
-	int i = find_option(name, OPTION_INT | OPTION_BOOL);
+	int i = find_option (name, OPTION_INT | OPTION_BOOL);
 
 	if (i == -1)
 		fatal ("Tried to set wrong option '%s'!", name);
@@ -389,7 +391,7 @@ void options_set_int (const char *name, const int value)
 /* Set a boolean option to the value. */
 void options_set_bool (const char *name, const bool value)
 {
-	int i = find_option(name, OPTION_BOOL);
+	int i = find_option (name, OPTION_BOOL);
 
 	if (i == -1)
 		fatal ("Tried to set wrong option '%s'!", name);
@@ -401,7 +403,7 @@ void options_set_symb (const char *name, const char *value)
 {
 	int opt, ix;
 
-	opt = find_option(name, OPTION_SYMB);
+	opt = find_option (name, OPTION_SYMB);
 	if (opt == -1)
 		fatal ("Tried to set wrong option '%s'!", name);
 
@@ -417,7 +419,7 @@ void options_set_symb (const char *name, const char *value)
 /* Set a string option to the value. The string is duplicated. */
 void options_set_str (const char *name, const char *value)
 {
-	int opt = find_option(name, OPTION_STR | OPTION_SYMB);
+	int opt = find_option (name, OPTION_STR | OPTION_SYMB);
 
 	if (opt == -1)
 		fatal ("Tried to set wrong option '%s'!", name);
@@ -436,7 +438,7 @@ void options_set_list (const char *name, const char *value, bool append)
 {
 	int opt;
 
-	opt = find_option(name, OPTION_LIST);
+	opt = find_option (name, OPTION_LIST);
 	if (opt == -1)
 		fatal ("Tried to set wrong option '%s'!", name);
 
@@ -502,7 +504,7 @@ bool options_set_pair (const char *name, const char *value, bool append)
 
 void options_ignore_config (const char *name)
 {
-	int opt = find_option(name, OPTION_ANY);
+	int opt = find_option (name, OPTION_ANY);
 
 	if (opt == -1)
 		fatal ("Tried to set wrong option '%s'!", name);
@@ -867,7 +869,7 @@ static char *substitute_variable (const char *name_in, const char *value_in)
 	}
 
 	/* If anything changed copy segments to result. */
-	if (lists_strs_size (strs) > 0) {
+	if (!lists_strs_empty (strs)) {
 		lists_strs_append (strs, ptr);
 		free (result);
 		result = lists_strs_cat (strs);
@@ -920,7 +922,7 @@ static bool set_option (const char *name, const char *value_in, bool append)
 		fprintf (stderr,
 		         "Only list valued options can be appended to ('%s').",
 		         name);
-		return 0;
+		return false;
 	}
 
 	if (!append && options[i].set_in_config) {
@@ -936,7 +938,7 @@ static bool set_option (const char *name, const char *value_in, bool append)
 	value = NULL;
 
 	/* Handle a change of option type for QueueNextSongReturn. */
-	if (!strcasecmp(options[i].name, "QueueNextSongReturn")) {
+	if (!strcasecmp (options[i].name, "QueueNextSongReturn")) {
 		if (!strcmp (value_s, "0"))
 			value = xstrdup ("no");
 		else if (!strcmp (value_s, "1"))
@@ -944,7 +946,7 @@ static bool set_option (const char *name, const char *value_in, bool append)
 	}
 
 	/* Handle a change of option type for SoundDriver. */
-	if (!strcasecmp(options[i].name, "SoundDriver")) {
+	if (!strcasecmp (options[i].name, "SoundDriver")) {
 		if (strchr (value_s, ','))
 			value = rewrite_as_list (value_s);
 	}
@@ -1137,7 +1139,7 @@ void options_free ()
 
 int options_get_int (const char *name)
 {
-	int i = find_option(name, OPTION_INT | OPTION_BOOL);
+	int i = find_option (name, OPTION_INT | OPTION_BOOL);
 
 	if (i == -1)
 		fatal ("Tried to get wrong option '%s'!", name);
@@ -1149,7 +1151,7 @@ int options_get_int (const char *name)
 
 bool options_get_bool (const char *name)
 {
-	int i = find_option(name, OPTION_BOOL);
+	int i = find_option (name, OPTION_BOOL);
 
 	if (i == -1)
 		fatal ("Tried to get wrong option '%s'!", name);
@@ -1159,7 +1161,7 @@ bool options_get_bool (const char *name)
 
 char *options_get_str (const char *name)
 {
-	int i = find_option(name, OPTION_STR | OPTION_SYMB);
+	int i = find_option (name, OPTION_STR | OPTION_SYMB);
 
 	if (i == -1)
 		fatal ("Tried to get wrong option '%s'!", name);
@@ -1169,7 +1171,7 @@ char *options_get_str (const char *name)
 
 char *options_get_symb (const char *name)
 {
-	int i = find_option(name, OPTION_SYMB);
+	int i = find_option (name, OPTION_SYMB);
 
 	if (i == -1)
 		fatal ("Tried to get wrong option '%s'!", name);
@@ -1179,7 +1181,7 @@ char *options_get_symb (const char *name)
 
 struct lists_s_strs *options_get_list (const char *name)
 {
-	int i = find_option(name, OPTION_LIST);
+	int i = find_option (name, OPTION_LIST);
 
 	if (i == -1)
 		fatal ("Tried to get wrong option '%s'!", name);
@@ -1189,7 +1191,7 @@ struct lists_s_strs *options_get_list (const char *name)
 
 enum option_type options_get_type (const char *name)
 {
-	int i = find_option(name, OPTION_ANY);
+	int i = find_option (name, OPTION_ANY);
 
 	if (i == -1)
 		return OPTION_FREE;

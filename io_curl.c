@@ -143,33 +143,31 @@ static size_t header_callback (void *data, size_t size, size_t nmemb,
 static int debug_callback (CURL *curl ATTR_UNUSED, curl_infotype i, char *msg,
 		size_t size, void *d ATTR_UNUSED)
 {
-	if (i == CURLINFO_TEXT || i == CURLINFO_HEADER_IN
-			|| i == CURLINFO_HEADER_OUT) {
-		char *type;
-		char *log = (char *)xmalloc (size + 1);
+	char *log;
+	const char *type;
 
-		switch (i) {
-			case CURLINFO_TEXT:
-				type = "INFO";
-				break;
-			case CURLINFO_HEADER_IN:
-				type = "RECV HEADER";
-				break;
-			case CURLINFO_HEADER_OUT:
-				type = "SEND HEADER";
-				break;
-			default:
-				type = "";
-		}
-
-		strncpy (log, msg, size);
-		if (size > 0 && log[size-1] == '\n')
-			log[size-1] = 0;
-		else
-			log[size] = 0;
-		debug ("CURL: [%s] %s", type, log);
-		free (log);
+	switch (i) {
+	case CURLINFO_TEXT:
+		type = "INFO";
+		break;
+	case CURLINFO_HEADER_IN:
+		type = "RECV HEADER";
+		break;
+	case CURLINFO_HEADER_OUT:
+		type = "SEND HEADER";
+		break;
+	default:
+		return 0;
 	}
+
+	log = (char *)xmalloc (size + 1);
+	strncpy (log, msg, size);
+	if (size > 0 && log[size-1] == '\n')
+		log[size-1] = 0;
+	else
+		log[size] = 0;
+	debug ("CURL: [%s] %s", type, log);
+	free (log);
 
 	return 0;
 }
@@ -182,8 +180,8 @@ static int check_curl_stream (struct io_stream *s)
 	int msg_queue_num;
 	int res = 1;
 
-	while ((msg = curl_multi_info_read(s->curl.multi_handle,
-					&msg_queue_num)))
+	while ((msg = curl_multi_info_read (s->curl.multi_handle,
+	                                    &msg_queue_num))) {
 		if (msg->msg == CURLMSG_DONE) {
 			s->curl.status = msg->data.result;
 			if (s->curl.status != CURLE_OK) {
@@ -197,6 +195,7 @@ static int check_curl_stream (struct io_stream *s)
 			debug ("EOF");
 			break;
 		}
+	}
 
 	return res;
 }

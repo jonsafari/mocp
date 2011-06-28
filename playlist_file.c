@@ -447,7 +447,7 @@ static int plist_save_m3u (struct plist *plist, const char *fname,
 		return 0;
 	}
 
-	for (i = 0; i < plist->num; i++)
+	for (i = 0; i < plist->num; i++) {
 		if (!plist_deleted(plist, i)) {
 			int ret;
 
@@ -478,6 +478,7 @@ static int plist_save_m3u (struct plist *plist, const char *fname,
 				return 0;
 			}
 		}
+	}
 
 	if (flock(fileno(file), LOCK_UN) == -1)
 		logit ("Can't flock() (unlock) the playlist file: %s",

@@ -29,6 +29,11 @@ Before 2.5:
   if there is a song playing or paused, and empty string if stopped.
   %S -- expands to play/stop/pause.
 
+Transitional code removal (after 2.5);
+
+* Remove changed option type for QueueNextSongReturn.
+* Remove deprecated ffmpeg-config support.
+
 In future:
 
 * Command line option to play from a specified file/first from the last
@@ -79,7 +84,6 @@ In future:
 * When the new API of libavformat (in ffmpeg) stablises (maybe in version
   53) use whatever it provides to obtain tags in ffmpeg.c ffmpeg_info().
   (Also see the SVN log entry for r2282.)
-* Remove deprecated ffmpeg-config support.
 
 Maybe never:
 
