@@ -110,7 +110,7 @@ static int find_free (unsigned int h)
 }
 
 /* Check that a value falls within the specified range(s). */
-int option_check_range (int opt, ...)
+static int check_range (int opt, ...)
 {
 	int rc, ix, int_val;
 	char *str_val;
@@ -159,7 +159,7 @@ int option_check_range (int opt, ...)
 }
 
 /* Check that a value is one of the specified values. */
-int option_check_discrete (int opt, ...)
+static int check_discrete (int opt, ...)
 {
 	int rc, ix, int_val;
 	char *str_val;
@@ -205,7 +205,7 @@ int option_check_discrete (int opt, ...)
 }
 
 /* Check that a string length falls within the specified range(s). */
-int option_check_length (int opt, ...)
+static int check_length (int opt, ...)
 {
 	int rc, ix, str_len;
 	va_list va;
@@ -230,14 +230,14 @@ int option_check_length (int opt, ...)
 }
 
 /* Always pass a value as valid. */
-int option_check_true (int opt ATTR_UNUSED, ...)
+static int check_true (int opt ATTR_UNUSED, ...)
 {
 	return 1;
 }
 
 /* Initializes a position on the options table. This is intended to be used at
  * initialization to make a table of valid options and its default values. */
-static int option_init (const char *name, enum option_type type)
+static int init_option (const char *name, enum option_type type)
 {
 	unsigned int h=hash(name);
 	int pos=find_free(h);
@@ -251,7 +251,7 @@ static int option_init (const char *name, enum option_type type)
 	options[pos].type = type;
 	options[pos].ignore_in_config = 0;
 	options[pos].set_in_config = 0;
-	options[pos].check = option_check_true;
+	options[pos].check = check_true;
 	options[pos].count = 0;
 	options[pos].constraints = NULL;
 
@@ -261,12 +261,12 @@ static int option_init (const char *name, enum option_type type)
 
 /* Add an integer option to the options table. This is intended to be used at
  * initialization to make a table of valid options and their default values. */
-static void option_add_int (const char *name, const int value, int (*check) (int, ...), const int count, ...)
+static void add_int (const char *name, const int value, int (*check) (int, ...), const int count, ...)
 {
 	int ix, pos;
 	va_list va;
 
-	pos = option_init (name, OPTION_INT);
+	pos = init_option (name, OPTION_INT);
 	options[pos].value.num = value;
 	options[pos].check = check;
 	options[pos].count = count;
@@ -281,28 +281,28 @@ static void option_add_int (const char *name, const int value, int (*check) (int
 
 /* Add a boolean option to the options table. This is intended to be used at
  * initialization to make a table of valid options and their default values. */
-static void option_add_bool (const char *name, const bool value)
+static void add_bool (const char *name, const bool value)
 {
 	int pos;
 
-	pos = option_init (name, OPTION_BOOL);
+	pos = init_option (name, OPTION_BOOL);
 	options[pos].value.boolean = value;
 }
 
 /* Add a string option to the options table. This is intended to be used at
  * initialization to make a table of valid options and their default values. */
-static void option_add_str (const char *name, const char *value, int (*check) (int, ...), const int count, ...)
+static void add_str (const char *name, const char *value, int (*check) (int, ...), const int count, ...)
 {
 	int ix, pos;
 	va_list va;
 
-	pos = option_init (name, OPTION_STR);
+	pos = init_option (name, OPTION_STR);
 	options[pos].value.str = xstrdup (value);
 	options[pos].check = check;
 	options[pos].count = count;
 	if (count > 0) {
 		va_start (va, count);
-		if (check == option_check_length) {
+		if (check == check_length) {
 			options[pos].constraints = xcalloc (count, sizeof (int));
 			for (ix = 0; ix < count; ix += 1)
 				((int *) options[pos].constraints)[ix] = va_arg (va, int);
@@ -317,7 +317,7 @@ static void option_add_str (const char *name, const char *value, int (*check) (i
 
 /* Add a symbol option to the options table. This is intended to be used at
  * initialization to make a table of valid options and their default values. */
-static void option_add_symb (const char *name, const char *value, const int count, ...)
+static void add_symb (const char *name, const char *value, const int count, ...)
 {
 	int ix, pos;
 	va_list va;
@@ -326,9 +326,9 @@ static void option_add_symb (const char *name, const char *value, const int coun
 	assert (value != NULL);
 	assert (count > 0);
 
-	pos = option_init (name, OPTION_SYMB);
+	pos = init_option (name, OPTION_SYMB);
 	options[pos].value.str = NULL;
-	options[pos].check = option_check_discrete;
+	options[pos].check = check_discrete;
 	options[pos].count = count;
 	va_start (va, count);
 	options[pos].constraints = xcalloc (count, sizeof (char *));
@@ -347,12 +347,12 @@ static void option_add_symb (const char *name, const char *value, const int coun
 
 /* Add a list option to the options table. This is intended to be used at
  * initialization to make a table of valid options and their default values. */
-static void option_add_list (const char *name, const char *value, int (*check) (int, ...), const int count, ...)
+static void add_list (const char *name, const char *value, int (*check) (int, ...), const int count, ...)
 {
 	int ix, pos;
 	va_list va;
 
-	pos = option_init (name, OPTION_LIST);
+	pos = init_option (name, OPTION_LIST);
 	options[pos].value.list = lists_strs_new (8);
 	if (value)
 		lists_strs_split (options[pos].value.list, value, ":");
@@ -360,7 +360,7 @@ static void option_add_list (const char *name, const char *value, int (*check) (
 	options[pos].count = count;
 	if (count > 0) {
 		va_start (va, count);
-		if (check == option_check_length) {
+		if (check == check_length) {
 			options[pos].constraints = xcalloc (count, sizeof (int));
 			for (ix = 0; ix < count; ix += 1)
 				((int *) options[pos].constraints)[ix] = va_arg (va, int);
@@ -374,7 +374,7 @@ static void option_add_list (const char *name, const char *value, int (*check) (
 }
 
 /* Set an integer option to the value. */
-void option_set_int (const char *name, const int value)
+void options_set_int (const char *name, const int value)
 {
 	int i = find_option(name, OPTION_INT | OPTION_BOOL);
 
@@ -387,7 +387,7 @@ void option_set_int (const char *name, const int value)
 }
 
 /* Set a boolean option to the value. */
-void option_set_bool (const char *name, const bool value)
+void options_set_bool (const char *name, const bool value)
 {
 	int i = find_option(name, OPTION_BOOL);
 
@@ -397,7 +397,7 @@ void option_set_bool (const char *name, const bool value)
 }
 
 /* Set a symbol option to the value. */
-void option_set_symb (const char *name, const char *value)
+void options_set_symb (const char *name, const char *value)
 {
 	int opt, ix;
 
@@ -415,7 +415,7 @@ void option_set_symb (const char *name, const char *value)
 }
 
 /* Set a string option to the value. The string is duplicated. */
-void option_set_str (const char *name, const char *value)
+void options_set_str (const char *name, const char *value)
 {
 	int opt = find_option(name, OPTION_STR | OPTION_SYMB);
 
@@ -423,7 +423,7 @@ void option_set_str (const char *name, const char *value)
 		fatal ("Tried to set wrong option '%s'!", name);
 
 	if (options[opt].type == OPTION_SYMB) {
-		option_set_symb (name, value);
+		options_set_symb (name, value);
 	} else {
 		if (options[opt].value.str)
 			free (options[opt].value.str);
@@ -432,7 +432,7 @@ void option_set_str (const char *name, const char *value)
 }
 
 /* Set list option values to the colon separated value. */
-void option_set_list (const char *name, const char *value, bool append)
+void options_set_list (const char *name, const char *value, bool append)
 {
 	int opt;
 
@@ -447,7 +447,7 @@ void option_set_list (const char *name, const char *value, bool append)
 
 /* Given a type, a name and a value, set that option's value.
  * Return false on error. */
-bool option_set_pair (const char *name, const char *value, bool append)
+bool options_set_pair (const char *name, const char *value, bool append)
 {
 	int num;
 	char *end;
@@ -459,9 +459,9 @@ bool option_set_pair (const char *name, const char *value, bool append)
 			num = strtol (value, &end, 10);
 			if (*end)
 				return false;
-			if (!check_int_option (name, num))
+			if (!options_check_int (name, num))
 				return false;
-			option_set_int (name, num);
+			options_set_int (name, num);
 			break;
 
 		case OPTION_BOOL:
@@ -471,25 +471,25 @@ bool option_set_pair (const char *name, const char *value, bool append)
 				val = false;
 			else
 				return false;
-			option_set_bool (name, val);
+			options_set_bool (name, val);
 			break;
 
 		case OPTION_STR:
-			if (!check_str_option (name, value))
+			if (!options_check_str (name, value))
 				return false;
-			option_set_str (name, value);
+			options_set_str (name, value);
 			break;
 
 		case OPTION_SYMB:
-			if (!check_symb_option (name, value))
+			if (!options_check_symb (name, value))
 				return false;
-			option_set_symb (name, value);
+			options_set_symb (name, value);
 			break;
 
 		case OPTION_LIST:
-			if (!check_list_option (name, value))
+			if (!options_check_list (name, value))
 				return false;
-			option_set_list (name, value, append);
+			options_set_list (name, value, append);
 			break;
 
 		case OPTION_FREE:
@@ -500,7 +500,7 @@ bool option_set_pair (const char *name, const char *value, bool append)
 	return true;
 }
 
-void option_ignore_config (const char *name)
+void options_ignore_config (const char *name)
 {
 	int opt = find_option(name, OPTION_ANY);
 
@@ -510,182 +510,182 @@ void option_ignore_config (const char *name)
 	options[opt].ignore_in_config = 1;
 }
 
-#define CHECK_DISCRETE(c)   option_check_discrete, (c)
-#define CHECK_RANGE(c)      option_check_range, (2 * (c))
-#define CHECK_LENGTH(c)     option_check_length, (2 * (c))
+#define CHECK_DISCRETE(c)   check_discrete, (c)
+#define CHECK_RANGE(c)      check_range, (2 * (c))
+#define CHECK_LENGTH(c)     check_length, (2 * (c))
 #define CHECK_SYMBOL(c)     (c)
-#define CHECK_NONE          option_check_true, 0
+#define CHECK_NONE          check_true, 0
 
 /* Make a table of options and its default values. */
 void options_init ()
 {
 	memset (options, 0, sizeof(options));
 
-	option_add_bool ("ReadTags", true);
-	option_add_str  ("MusicDir", NULL, CHECK_NONE);
-	option_add_bool ("StartInMusicDir", false);
-	option_add_bool ("ShowStreamErrors", false);
-	option_add_bool ("Repeat", false);
-	option_add_bool ("Shuffle", false);
-	option_add_bool ("AutoNext", true);
-	option_add_symb ("Sort", "FileName", CHECK_SYMBOL(1), "FileName");
-	option_add_str  ("FormatString",
+	add_bool ("ReadTags", true);
+	add_str  ("MusicDir", NULL, CHECK_NONE);
+	add_bool ("StartInMusicDir", false);
+	add_bool ("ShowStreamErrors", false);
+	add_bool ("Repeat", false);
+	add_bool ("Shuffle", false);
+	add_bool ("AutoNext", true);
+	add_symb ("Sort", "FileName", CHECK_SYMBOL(1), "FileName");
+	add_str  ("FormatString",
 			"%(n:%n :)%(a:%a - :)%(t:%t:)%(A: \\(%A\\):)", CHECK_NONE);
-	option_add_int  ("OutputBuffer", 512, CHECK_RANGE(1), 128, INT_MAX);
-	option_add_str  ("OSSDevice", "/dev/dsp", CHECK_NONE);
-	option_add_str  ("OSSMixerDevice", "/dev/mixer", CHECK_NONE);
-	option_add_str  ("OSSMixerChannel", "pcm", CHECK_NONE);
-	option_add_str  ("OSSMixerChannel2", "master", CHECK_NONE);
+	add_int  ("OutputBuffer", 512, CHECK_RANGE(1), 128, INT_MAX);
+	add_str  ("OSSDevice", "/dev/dsp", CHECK_NONE);
+	add_str  ("OSSMixerDevice", "/dev/mixer", CHECK_NONE);
+	add_str  ("OSSMixerChannel", "pcm", CHECK_NONE);
+	add_str  ("OSSMixerChannel2", "master", CHECK_NONE);
 #ifdef OPENBSD
-	option_add_list  ("SoundDriver", "SNDIO:JACK:OSS", CHECK_NONE);
+	add_list ("SoundDriver", "SNDIO:JACK:OSS", CHECK_NONE);
 #else
-	option_add_list  ("SoundDriver", "Jack:ALSA:OSS", CHECK_NONE);
+	add_list ("SoundDriver", "Jack:ALSA:OSS", CHECK_NONE);
 #endif
-	option_add_bool ("ShowHiddenFiles", true);
-	option_add_str  ("AlsaDevice", "default", CHECK_NONE);
-	option_add_str  ("AlsaMixer", "PCM", CHECK_NONE);
-	option_add_str  ("AlsaMixer2", "Master", CHECK_NONE);
-	option_add_bool ("HideFileExtension", false);
-	option_add_bool ("ShowFormat", true);
-	option_add_symb ("ShowTime", "IfAvailable",
+	add_bool ("ShowHiddenFiles", true);
+	add_str  ("AlsaDevice", "default", CHECK_NONE);
+	add_str  ("AlsaMixer", "PCM", CHECK_NONE);
+	add_str  ("AlsaMixer2", "Master", CHECK_NONE);
+	add_bool ("HideFileExtension", false);
+	add_bool ("ShowFormat", true);
+	add_symb ("ShowTime", "IfAvailable",
 	                 CHECK_SYMBOL(3), "yes", "no", "IfAvailable");
-	option_add_bool ("ShowTimePercent", false);
-	option_add_list ("XTerms", "xterm:"
-	                           "xterm-colour:xterm-color:"
-	                           "xterm-256colour:xterm-256color:"
-	                           "rxvt:rxvt-unicode:"
-	                           "rxvt-unicode-256colour:rxvt-unicode-256color:"
-	                           "eterm", CHECK_NONE);
-	option_add_str  ("Theme", NULL, CHECK_NONE);
-	option_add_str  ("XTermTheme", NULL, CHECK_NONE);
-	option_add_str  ("ForceTheme", NULL, CHECK_NONE); /* Used when -T is set */
-	option_add_bool ("AutoLoadLyrics", true);
-	option_add_str  ("MOCDir", "~/.moc", CHECK_NONE);
-	option_add_bool ("UseMmap", false);
-	option_add_bool ("UseMimeMagic", false);
-	option_add_bool ("Precache", true);
-	option_add_bool ("SavePlaylist", true);
-	option_add_str  ("Keymap", NULL, CHECK_NONE);
-	option_add_bool ("SyncPlaylist", true);
-	option_add_int  ("InputBuffer", 512, CHECK_RANGE(1), 32, INT_MAX);
-	option_add_int  ("Prebuffering", 64, CHECK_RANGE(1), 0, INT_MAX);
+	add_bool ("ShowTimePercent", false);
+	add_list ("XTerms", "xterm:"
+	                    "xterm-colour:xterm-color:"
+	                    "xterm-256colour:xterm-256color:"
+	                    "rxvt:rxvt-unicode:"
+	                    "rxvt-unicode-256colour:rxvt-unicode-256color:"
+	                    "eterm", CHECK_NONE);
+	add_str  ("Theme", NULL, CHECK_NONE);
+	add_str  ("XTermTheme", NULL, CHECK_NONE);
+	add_str  ("ForceTheme", NULL, CHECK_NONE); /* Used when -T is set */
+	add_bool ("AutoLoadLyrics", true);
+	add_str  ("MOCDir", "~/.moc", CHECK_NONE);
+	add_bool ("UseMmap", false);
+	add_bool ("UseMimeMagic", false);
+	add_bool ("Precache", true);
+	add_bool ("SavePlaylist", true);
+	add_str  ("Keymap", NULL, CHECK_NONE);
+	add_bool ("SyncPlaylist", true);
+	add_int  ("InputBuffer", 512, CHECK_RANGE(1), 32, INT_MAX);
+	add_int  ("Prebuffering", 64, CHECK_RANGE(1), 0, INT_MAX);
 #ifdef DARWIN
-	option_add_str  ("JackOutLeft", "system:playback_1", CHECK_NONE);
-	option_add_str  ("JackOutRight", "system:playback_2", CHECK_NONE);
+	add_str  ("JackOutLeft", "system:playback_1", CHECK_NONE);
+	add_str  ("JackOutRight", "system:playback_2", CHECK_NONE);
 #else
-	option_add_str  ("JackOutLeft", "alsa_pcm:playback_1", CHECK_NONE);
-	option_add_str  ("JackOutRight", "alsa_pcm:playback_2", CHECK_NONE);
+	add_str  ("JackOutLeft", "alsa_pcm:playback_1", CHECK_NONE);
+	add_str  ("JackOutRight", "alsa_pcm:playback_2", CHECK_NONE);
 #endif
-	option_add_bool ("ASCIILines", false);
-	option_add_str  ("FastDir1", NULL, CHECK_NONE);
-	option_add_str  ("FastDir2", NULL, CHECK_NONE);
-	option_add_str  ("FastDir3", NULL, CHECK_NONE);
-	option_add_str  ("FastDir4", NULL, CHECK_NONE);
-	option_add_str  ("FastDir5", NULL, CHECK_NONE);
-	option_add_str  ("FastDir6", NULL, CHECK_NONE);
-	option_add_str  ("FastDir7", NULL, CHECK_NONE);
-	option_add_str  ("FastDir8", NULL, CHECK_NONE);
-	option_add_str  ("FastDir9", NULL, CHECK_NONE);
-	option_add_str  ("FastDir10", NULL, CHECK_NONE);
-	option_add_str  ("ExecCommand1", NULL, CHECK_NONE);
-	option_add_str  ("ExecCommand2", NULL, CHECK_NONE);
-	option_add_str  ("ExecCommand3", NULL, CHECK_NONE);
-	option_add_str  ("ExecCommand4", NULL, CHECK_NONE);
-	option_add_str  ("ExecCommand5", NULL, CHECK_NONE);
-	option_add_str  ("ExecCommand6", NULL, CHECK_NONE);
-	option_add_str  ("ExecCommand7", NULL, CHECK_NONE);
-	option_add_str  ("ExecCommand8", NULL, CHECK_NONE);
-	option_add_str  ("ExecCommand9", NULL, CHECK_NONE);
-	option_add_str  ("ExecCommand10", NULL, CHECK_NONE);
-	option_add_bool ("Mp3IgnoreCRCErrors", true);
-	option_add_int  ("SeekTime", 1, CHECK_RANGE(1), 1, INT_MAX);
-	option_add_int  ("SilentSeekTime", 5, CHECK_RANGE(1), 1, INT_MAX);
-	option_add_symb ("ResampleMethod", "Linear",
+	add_bool ("ASCIILines", false);
+	add_str  ("FastDir1", NULL, CHECK_NONE);
+	add_str  ("FastDir2", NULL, CHECK_NONE);
+	add_str  ("FastDir3", NULL, CHECK_NONE);
+	add_str  ("FastDir4", NULL, CHECK_NONE);
+	add_str  ("FastDir5", NULL, CHECK_NONE);
+	add_str  ("FastDir6", NULL, CHECK_NONE);
+	add_str  ("FastDir7", NULL, CHECK_NONE);
+	add_str  ("FastDir8", NULL, CHECK_NONE);
+	add_str  ("FastDir9", NULL, CHECK_NONE);
+	add_str  ("FastDir10", NULL, CHECK_NONE);
+	add_str  ("ExecCommand1", NULL, CHECK_NONE);
+	add_str  ("ExecCommand2", NULL, CHECK_NONE);
+	add_str  ("ExecCommand3", NULL, CHECK_NONE);
+	add_str  ("ExecCommand4", NULL, CHECK_NONE);
+	add_str  ("ExecCommand5", NULL, CHECK_NONE);
+	add_str  ("ExecCommand6", NULL, CHECK_NONE);
+	add_str  ("ExecCommand7", NULL, CHECK_NONE);
+	add_str  ("ExecCommand8", NULL, CHECK_NONE);
+	add_str  ("ExecCommand9", NULL, CHECK_NONE);
+	add_str  ("ExecCommand10", NULL, CHECK_NONE);
+	add_bool ("Mp3IgnoreCRCErrors", true);
+	add_int  ("SeekTime", 1, CHECK_RANGE(1), 1, INT_MAX);
+	add_int  ("SilentSeekTime", 5, CHECK_RANGE(1), 1, INT_MAX);
+	add_symb ("ResampleMethod", "Linear",
 	                 CHECK_SYMBOL(5), "SincBestQuality", "SincMediumQuality",
 	                                  "SincFastest", "ZeroOrderHold", "Linear");
-	option_add_int  ("ForceSampleRate", 0, CHECK_RANGE(1), 0, 500000);
-	option_add_str  ("HTTPProxy", NULL, CHECK_NONE);
-	option_add_bool ("UseRealtimePriority", false);
-	option_add_int  ("TagsCacheSize", 256, CHECK_RANGE(1), 0, INT_MAX);
-	option_add_bool ("PlaylistNumbering", true);
-	option_add_str  ("Layout1",
+	add_int  ("ForceSampleRate", 0, CHECK_RANGE(1), 0, 500000);
+	add_str  ("HTTPProxy", NULL, CHECK_NONE);
+	add_bool ("UseRealtimePriority", false);
+	add_int  ("TagsCacheSize", 256, CHECK_RANGE(1), 0, INT_MAX);
+	add_bool ("PlaylistNumbering", true);
+	add_str  ("Layout1",
 			"directory:0,0,50%,100% playlist:50%,0,FILL,100%", CHECK_NONE);
-	option_add_str  ("Layout2",
+	add_str  ("Layout2",
 			"directory:0,0,100%,100% playlist:0,0,100%,100%", CHECK_NONE);
-	option_add_str  ("Layout3", NULL, CHECK_NONE);
-	option_add_bool ("FollowPlayedFile", true);
-	option_add_bool ("CanStartInPlaylist", true);
-	option_add_bool ("UseCursorSelection", false);
-	option_add_str  ("ID3v1TagsEncoding", "WINDOWS-1250", CHECK_NONE);
-	option_add_bool ("UseRCC", true);
-	option_add_bool ("UseRCCForFilesystem", true);
-	option_add_bool ("EnforceTagsEncoding", false);
-	option_add_bool ("FileNamesIconv", false);
-	option_add_bool ("NonUTFXterm", false);
-	option_add_bool ("SetXtermTitle", true);
-	option_add_bool ("SetScreenTitle", true);
-	option_add_bool ("PlaylistFullPaths", true);
-	option_add_str  ("BlockDecorators", "`\"'", CHECK_LENGTH(1), 3, 3);
-	option_add_int  ("MessageLingerTime", 3, CHECK_RANGE(1), 0, INT_MAX);
-	option_add_bool ("PrefixQueuedMessages", true);
-	option_add_str  ("ErrorMessagesQueued", "!", CHECK_NONE);
-	option_add_bool ("Allow24bitOutput", false);
+	add_str  ("Layout3", NULL, CHECK_NONE);
+	add_bool ("FollowPlayedFile", true);
+	add_bool ("CanStartInPlaylist", true);
+	add_bool ("UseCursorSelection", false);
+	add_str  ("ID3v1TagsEncoding", "WINDOWS-1250", CHECK_NONE);
+	add_bool ("UseRCC", true);
+	add_bool ("UseRCCForFilesystem", true);
+	add_bool ("EnforceTagsEncoding", false);
+	add_bool ("FileNamesIconv", false);
+	add_bool ("NonUTFXterm", false);
+	add_bool ("SetXtermTitle", true);
+	add_bool ("SetScreenTitle", true);
+	add_bool ("PlaylistFullPaths", true);
+	add_str  ("BlockDecorators", "`\"'", CHECK_LENGTH(1), 3, 3);
+	add_int  ("MessageLingerTime", 3, CHECK_RANGE(1), 0, INT_MAX);
+	add_bool ("PrefixQueuedMessages", true);
+	add_str  ("ErrorMessagesQueued", "!", CHECK_NONE);
+	add_bool ("Allow24bitOutput", false);
 
-	option_add_int  ("ModPlug_Channels", 2, CHECK_DISCRETE(2), 1, 2);
-	option_add_int  ("ModPlug_Frequency", 44100,
+	add_int  ("ModPlug_Channels", 2, CHECK_DISCRETE(2), 1, 2);
+	add_int  ("ModPlug_Frequency", 44100,
 	                 CHECK_DISCRETE(4), 11025, 22050, 44100, 48000);
-	option_add_int  ("ModPlug_Bits", 16, CHECK_DISCRETE(3), 8, 16, 32);
+	add_int  ("ModPlug_Bits", 16, CHECK_DISCRETE(3), 8, 16, 32);
 
-	option_add_bool ("ModPlug_Oversampling", true);
-	option_add_bool ("ModPlug_NoiseReduction", true);
-	option_add_bool ("ModPlug_Reverb", false);
-	option_add_bool ("ModPlug_MegaBass", false);
-	option_add_bool ("ModPlug_Surround", false);
+	add_bool ("ModPlug_Oversampling", true);
+	add_bool ("ModPlug_NoiseReduction", true);
+	add_bool ("ModPlug_Reverb", false);
+	add_bool ("ModPlug_MegaBass", false);
+	add_bool ("ModPlug_Surround", false);
 
-	option_add_symb ("ModPlug_ResamplingMode", "FIR",
+	add_symb ("ModPlug_ResamplingMode", "FIR",
 	                 CHECK_SYMBOL(4), "FIR", "SPLINE", "LINEAR", "NEAREST");
 
-	option_add_int  ("ModPlug_ReverbDepth", 0, CHECK_RANGE(1), 0, 100);
-	option_add_int  ("ModPlug_ReverbDelay", 0, CHECK_RANGE(1), 0, INT_MAX);
-	option_add_int  ("ModPlug_BassAmount", 0, CHECK_RANGE(1), 0, 100);
-	option_add_int  ("ModPlug_BassRange", 10, CHECK_RANGE(1), 10, 100);
-	option_add_int  ("ModPlug_SurroundDepth", 0, CHECK_RANGE(1), 0, 100);
-	option_add_int  ("ModPlug_SurroundDelay", 0, CHECK_RANGE(1), 0, INT_MAX);
-	option_add_int  ("ModPlug_LoopCount", 0, CHECK_RANGE(1), -1, INT_MAX);
+	add_int  ("ModPlug_ReverbDepth", 0, CHECK_RANGE(1), 0, 100);
+	add_int  ("ModPlug_ReverbDelay", 0, CHECK_RANGE(1), 0, INT_MAX);
+	add_int  ("ModPlug_BassAmount", 0, CHECK_RANGE(1), 0, 100);
+	add_int  ("ModPlug_BassRange", 10, CHECK_RANGE(1), 10, 100);
+	add_int  ("ModPlug_SurroundDepth", 0, CHECK_RANGE(1), 0, 100);
+	add_int  ("ModPlug_SurroundDelay", 0, CHECK_RANGE(1), 0, INT_MAX);
+	add_int  ("ModPlug_LoopCount", 0, CHECK_RANGE(1), -1, INT_MAX);
 
-	option_add_int  ("TiMidity_Volume", 100, CHECK_RANGE(1), 0, 800);
-	option_add_int  ("TiMidity_Rate", 44100, CHECK_RANGE(1), 8000, 48000);
+	add_int  ("TiMidity_Volume", 100, CHECK_RANGE(1), 0, 800);
+	add_int  ("TiMidity_Rate", 44100, CHECK_RANGE(1), 8000, 48000);
 		// not sure about the limits... I like 44100
-	option_add_int  ("TiMidity_Bits", 16, CHECK_DISCRETE(2), 8, 16);
-	option_add_int  ("TiMidity_Channels", 2, CHECK_DISCRETE(2), 1, 2);
-	option_add_str  ("TiMidity_Config", NULL, CHECK_NONE);
+	add_int  ("TiMidity_Bits", 16, CHECK_DISCRETE(2), 8, 16);
+	add_int  ("TiMidity_Channels", 2, CHECK_DISCRETE(2), 1, 2);
+	add_str  ("TiMidity_Config", NULL, CHECK_NONE);
 
-	option_add_int  ("SidPlay2_DefaultSongLength", 180,
+	add_int  ("SidPlay2_DefaultSongLength", 180,
 	                 CHECK_RANGE(1), 0, INT_MAX);
-	option_add_int  ("SidPlay2_MinimumSongLength", 0,
+	add_int  ("SidPlay2_MinimumSongLength", 0,
 	                 CHECK_RANGE(1), 0, INT_MAX);
-	option_add_str  ("SidPlay2_Database", NULL, CHECK_NONE);
-	option_add_int  ("SidPlay2_Frequency", 44100, CHECK_RANGE(1), 4000, 48000);
-	option_add_int  ("SidPlay2_Bits", 16, CHECK_DISCRETE(2), 8, 16);
-	option_add_symb ("SidPlay2_PlayMode", "M",
+	add_str  ("SidPlay2_Database", NULL, CHECK_NONE);
+	add_int  ("SidPlay2_Frequency", 44100, CHECK_RANGE(1), 4000, 48000);
+	add_int  ("SidPlay2_Bits", 16, CHECK_DISCRETE(2), 8, 16);
+	add_symb ("SidPlay2_PlayMode", "M",
 	                 CHECK_SYMBOL(4), "M", "S", "L", "R");
-	option_add_int  ("SidPlay2_Optimisation", 0, CHECK_RANGE(1), 0, 2);
-	option_add_bool ("SidPlay2_StartAtStart", true);
-	option_add_bool ("SidPlay2_PlaySubTunes", true);
+	add_int  ("SidPlay2_Optimisation", 0, CHECK_RANGE(1), 0, 2);
+	add_bool ("SidPlay2_StartAtStart", true);
+	add_bool ("SidPlay2_PlaySubTunes", true);
 
-	option_add_str  ("OnSongChange", NULL, CHECK_NONE);
-	option_add_bool ("RepeatSongChange", false);
-	option_add_str  ("OnStop", NULL, CHECK_NONE);
+	add_str  ("OnSongChange", NULL, CHECK_NONE);
+	add_bool ("RepeatSongChange", false);
+	add_str  ("OnStop", NULL, CHECK_NONE);
 
-	option_add_bool ("Softmixer_SaveState", true);
+	add_bool ("Softmixer_SaveState", true);
 
-	option_add_bool ("Equalizer_SaveState", true);
+	add_bool ("Equalizer_SaveState", true);
 
-	option_add_bool ("QueueNextSongReturn", false);
+	add_bool ("QueueNextSongReturn", false);
 }
 
 /* Return 1 if a parameter to an integer option is valid. */
-int check_int_option (const char *name, const int val)
+int options_check_int (const char *name, const int val)
 {
 	int opt;
 
@@ -699,7 +699,7 @@ int check_int_option (const char *name, const int val)
  * pointless but it provides a consistant interface, ensures the existence
  * of the option and checks the value where true booleans are emulated with
  * other types. */
-int check_bool_option (const char *name, const bool val)
+int options_check_bool (const char *name, const bool val)
 {
 	int opt;
 
@@ -712,7 +712,7 @@ int check_bool_option (const char *name, const bool val)
 }
 
 /* Return 1 if a parameter to a string option is valid. */
-int check_str_option (const char *name, const char *val)
+int options_check_str (const char *name, const char *val)
 {
 	int opt;
 
@@ -723,18 +723,18 @@ int check_str_option (const char *name, const char *val)
 }
 
 /* Return 1 if a parameter to a symbol option is valid. */
-int check_symb_option (const char *name, const char *val)
+int options_check_symb (const char *name, const char *val)
 {
 	int opt;
 
 	opt = find_option (name, OPTION_SYMB);
 	if (opt == -1)
 		return 0;
-	return option_check_discrete (opt, val);
+	return check_discrete (opt, val);
 }
 
 /* Return 1 if a parameter to a list option is valid. */
-int check_list_option (const char *name, const char *val)
+int options_check_list (const char *name, const char *val)
 {
 	int opt;
 
@@ -959,7 +959,7 @@ static bool set_option (const char *name, const char *value_in, bool append)
 	else
 		value = value_s;
 
-	if (!option_set_pair (name, value, append))
+	if (!options_set_pair (name, value, append))
 		return false;
 
 	free (value);
@@ -968,7 +968,7 @@ static bool set_option (const char *name, const char *value_in, bool append)
 
 /* Check if values of options make sense. This only checks options that can't
  * be checked without parsing the whole file. */
-static void options_sanity_check ()
+static void sanity_check ()
 {
 	if (options_get_int("Prebuffering") > options_get_int("InputBuffer"))
 		fatal ("Prebuffering is set to a value greater than "
@@ -1101,7 +1101,7 @@ void options_parse (const char *config_file)
 		fatal ("Parse error at the end of the config file (need end of "
 				"line?)!");
 
-	options_sanity_check ();
+	sanity_check ();
 
 	fclose (file);
 }
@@ -1122,12 +1122,12 @@ void options_free ()
 		else if (options[i].type == OPTION_SYMB)
 			options[i].value.str = NULL;
 		if (options[i].type & (OPTION_STR | OPTION_SYMB)) {
-			if (options[i].check != option_check_length) {
+			if (options[i].check != check_length) {
 				for (ix = 0; ix < options[i].count; ix += 1)
 					free (((char **) options[i].constraints)[ix]);
 			}
 		}
-		options[i].check = option_check_true;
+		options[i].check = check_true;
 		options[i].count = 0;
 		if (options[i].constraints)
 			free (options[i].constraints);

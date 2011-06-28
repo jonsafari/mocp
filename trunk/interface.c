@@ -390,7 +390,7 @@ static void sync_int_option (const char *name)
 	send_int_to_srv (CMD_GET_OPTION);
 	send_str_to_srv (name);
 	value = get_data_int ();
-	option_set_int (name, value);
+	options_set_int (name, value);
 	iface_set_option_state (name, value);
 }
 
@@ -1972,11 +1972,11 @@ static void toggle_option (const char *name)
 static void toggle_show_time ()
 {
 	if (!strcasecmp(options_get_str("ShowTime"), "yes")) {
-		option_set_str("ShowTime", "IfAvailable");
+		options_set_str("ShowTime", "IfAvailable");
 		iface_set_status ("ShowTime: IfAvailable");
 	}
 	else if (!strcasecmp(options_get_str("ShowTime"), "no")) {
-		option_set_str("ShowTime", "yes");
+		options_set_str("ShowTime", "yes");
 		iface_update_show_time ();
 		ask_for_tags (dir_plist, TAGS_TIME);
 		ask_for_tags (playlist, TAGS_TIME);
@@ -1984,7 +1984,7 @@ static void toggle_show_time ()
 
 	}
 	else { /* IfAvailable */
-		option_set_str("ShowTime", "no");
+		options_set_str("ShowTime", "no");
 		iface_update_show_time ();
 		iface_set_status ("ShowTime: no");
 	}
@@ -1994,7 +1994,7 @@ static void toggle_show_format ()
 {
 	int show_format = !options_get_int("ShowFormat");
 
-	option_set_int ("ShowFormat", show_format);
+	options_set_int ("ShowFormat", show_format);
 	if (show_format)
 		iface_set_status ("ShowFormat: yes");
 	else
@@ -2447,13 +2447,13 @@ static void update_iface_menu (const enum iface_menu menu,
 static void switch_read_tags ()
 {
 	if (options_get_int("ReadTags")) {
-		option_set_int("ReadTags", 0);
+		options_set_int("ReadTags", 0);
 		switch_titles_file (dir_plist);
 		switch_titles_file (playlist);
 		iface_set_status ("ReadTags: no");
 	}
 	else {
-		option_set_int("ReadTags", 1);
+		options_set_int("ReadTags", 1);
 		ask_for_tags (dir_plist, TAGS_COMMENTS);
 		ask_for_tags (playlist, TAGS_COMMENTS);
 		switch_titles_tags (dir_plist);
@@ -3048,7 +3048,7 @@ static void toggle_playlist_full_paths (void)
 {
 	int new_val = !options_get_int("PlaylistFullPaths");
 
-	option_set_int ("PlaylistFullPaths", new_val);
+	options_set_int ("PlaylistFullPaths", new_val);
 
 	if (new_val)
 		iface_set_status ("PlaylistFullPaths: on");
@@ -3168,7 +3168,7 @@ static void menu_key (const struct iface_key *k)
 					reread_dir ();
 				break;
 			case KEY_CMD_TOGGLE_SHOW_HIDDEN_FILES:
-				option_set_int ("ShowHiddenFiles",
+				options_set_int ("ShowHiddenFiles",
 						!options_get_int(
 							"ShowHiddenFiles"));
 				if (iface_in_dir_menu())
@@ -3482,7 +3482,7 @@ void init_interface (const int sock, const int logging, lists_t_strs *args)
 
 			/* Now enter_first_dir() should not go to the music
 			 * directory. */
-			option_set_int ("StartInMusicDir", 0);
+			options_set_int ("StartInMusicDir", 0);
 		}
 	}
 	else {
@@ -4099,7 +4099,7 @@ void interface_cmdline_set (int server_sock, char *arg, const int val)
 		if(val == 2) {
 			send_int_to_srv(CMD_GET_OPTION);
 			send_str_to_srv(tok);
-			option_set_int(tok, get_data_int());
+			options_set_int(tok, get_data_int());
 		}
 
 		send_int_to_srv(CMD_SET_OPTION);
