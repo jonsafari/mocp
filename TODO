@@ -33,6 +33,7 @@ Transitional code removal (after 2.5);
 
 * Remove changed option type for QueueNextSongReturn.
 * Remove deprecated ffmpeg-config support.
+* Remove changed option type for SoundDriver.
 
 In future:
 
