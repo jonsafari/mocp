@@ -120,7 +120,7 @@ static int check_range (int opt, ...)
 
 	assert (opt != -1);
 	assert (options[opt].count % 2 == 0);
-	assert (options[opt].type & (OPTION_INT | OPTION_STR));
+	assert (options[opt].type & (OPTION_INT | OPTION_STR | OPTION_LIST));
 
 	rc = 0;
 	va_start (va, opt);
@@ -138,6 +138,7 @@ static int check_range (int opt, ...)
 			break;
 
 		case OPTION_STR:
+		case OPTION_LIST:
 			str_val = va_arg (va, char *);
 			for (ix = 0; ix < options[opt].count; ix += 2) {
 				if (strcasecmp (str_val, (((char **) options[opt].constraints)[ix])) >= 0 &&
@@ -148,7 +149,6 @@ static int check_range (int opt, ...)
 			}
 			break;
 
-		case OPTION_LIST:
 		case OPTION_BOOL:
 		case OPTION_SYMB:
 		case OPTION_ANY:
@@ -168,7 +168,7 @@ static int check_discrete (int opt, ...)
 	va_list va;
 
 	assert (opt != -1);
-	assert (options[opt].type & (OPTION_INT | OPTION_SYMB));
+	assert (options[opt].type & (OPTION_INT | OPTION_SYMB | OPTION_LIST));
 
 	rc = 0;
 	va_start (va, opt);
@@ -185,6 +185,7 @@ static int check_discrete (int opt, ...)
 			break;
 
 		case OPTION_SYMB:
+		case OPTION_LIST:
 			str_val = va_arg (va, char *);
 			for (ix = 0; ix < options[opt].count; ix += 1) {
 				if (!strcasecmp(str_val, (((char **) options[opt].constraints)[ix]))) {
@@ -194,7 +195,6 @@ static int check_discrete (int opt, ...)
 			}
 			break;
 
-		case OPTION_LIST:
 		case OPTION_BOOL:
 		case OPTION_STR:
 		case OPTION_ANY:
@@ -738,12 +738,29 @@ int options_check_symb (const char *name, const char *val)
 /* Return 1 if a parameter to a list option is valid. */
 int options_check_list (const char *name, const char *val)
 {
-	int opt;
+	int opt, size, ix, result;
+	lists_t_strs *list;
+
+	assert (name);
+	assert (val);
 
 	opt = find_option (name, OPTION_LIST);
 	if (opt == -1)
 		return 0;
-	return options[opt].check (opt, val);
+
+	list = lists_strs_new (8);
+	size = lists_strs_split (list, val, ":");
+	result = 1;
+	for (ix = 0; ix < size; ix += 1) {
+		if (!options[opt].check (opt, lists_strs_at (list, ix))) {
+			result = 0;
+			break;
+		}
+	}
+
+	lists_strs_free (list);
+
+	return result;
 }
 
 static int is_deprecated_option (const char *name)
