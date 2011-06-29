@@ -539,9 +539,11 @@ void options_init ()
 	add_str  ("OSSMixerChannel", "pcm", CHECK_NONE);
 	add_str  ("OSSMixerChannel2", "master", CHECK_NONE);
 #ifdef OPENBSD
-	add_list ("SoundDriver", "SNDIO:JACK:OSS", CHECK_NONE);
+	add_list ("SoundDriver", "SNDIO:JACK:OSS",
+	                  CHECK_DISCRETE(4), "SNDIO", "Jack", "ALSA", "OSS");
 #else
-	add_list ("SoundDriver", "Jack:ALSA:OSS", CHECK_NONE);
+	add_list ("SoundDriver", "Jack:ALSA:OSS",
+	                  CHECK_DISCRETE(4), "SNDIO", "Jack", "ALSA", "OSS");
 #endif
 	add_bool ("ShowHiddenFiles", true);
 	add_str  ("AlsaDevice", "default", CHECK_NONE);
