@@ -578,7 +578,9 @@ static void aac_get_error (void *prv_data, struct decoder_error *error)
 static int aac_our_mime (const char *mime)
 {
 	return !strcasecmp (mime, "audio/aac")
-		|| !strcasecmp (mime, "audio/aacp");
+		|| !strncasecmp (mime, "audio/aac;", 10)
+		|| !strcasecmp (mime, "audio/aacp")
+		|| !strncasecmp (mime, "audio/aacp;", 11);
 }
 
 static struct decoder aac_decoder = {
