@@ -18,17 +18,18 @@
 #include "config.h"
 #endif
 
-#define DEBUG
-
 #include <ctype.h> // for toupper
 #include <string.h>
+#include <timidity.h>
+
+#define DEBUG
+
 #include "io.h"
 #include "decoder.h"
 #include "log.h"
 #include "files.h"
 #include "common.h"
 #include "options.h"
-#include <timidity.h>
 
 MidSongOptions midioptions;
 
@@ -146,13 +147,11 @@ static int timidity_get_duration (void *void_data)
   return data->length/1000;
 }
 
-
-
 static void timidity_get_name (const char *file, char buf[4])
 {
   char *ext = ext_pos (file);
 
-  strncpy(buf, ext, 3);
+  strncpy (buf, ext, 3);
 
   unsigned int i;
 
@@ -162,7 +161,7 @@ static void timidity_get_name (const char *file, char buf[4])
 
 static int timidity_our_format_ext(const char *ext)
 {
-  return !strcasecmp(ext, "MID");
+  return !strcasecmp (ext, "MID");
 }
 
 static void timidity_get_error (void *prv_data, struct decoder_error *error)

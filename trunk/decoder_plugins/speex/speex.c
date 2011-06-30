@@ -670,7 +670,7 @@ static void spx_get_name (const char *file ATTR_UNUSED, char buf[4])
 
 static int spx_our_format_ext (const char *ext)
 {
-	return !strcasecmp(ext, "spx");
+	return !strcasecmp (ext, "spx");
 }
 
 static void spx_get_error (void *prv_data, struct decoder_error *error)
@@ -682,8 +682,8 @@ static void spx_get_error (void *prv_data, struct decoder_error *error)
 
 static int spx_our_mime (const char *mime)
 {
-	return !strcmp(mime, "audio/x-speex")
-		|| !strcmp(mime, "audio/speex");
+	return !strcmp (mime, "audio/x-speex")
+		|| !strcmp (mime, "audio/speex");
 }
 
 static struct decoder spx_decoder = {

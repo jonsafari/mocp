@@ -3211,7 +3211,7 @@ static void menu_key (const struct iface_key *k)
 				error ("Bad command");
 				break;
 			case KEY_CMD_SEEK_FORWARD_5:
-				seek_silent (options_get_int("SilentSeekTime"));
+				seek_silent (options_get_int ("SilentSeekTime"));
 				break;
 			case KEY_CMD_SEEK_BACKWARD_5:
 				seek_silent (-options_get_int ("SilentSeekTime"));

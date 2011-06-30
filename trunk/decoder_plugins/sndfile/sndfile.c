@@ -13,10 +13,11 @@
 # include "config.h"
 #endif
 
-#define DEBUG
-
 #include <string.h>
 #include <sndfile.h>
+
+#define DEBUG
+
 #include "decoder.h"
 #include "common.h"
 #include "server.h"
@@ -136,33 +137,33 @@ static void sndfile_get_name (const char *file, char buf[4])
 {
 	char *ext = ext_pos (file);
 
-	if (!strcasecmp(ext, "au") || !strcasecmp(ext, "snd"))
+	if (!strcasecmp (ext, "au") || !strcasecmp (ext, "snd"))
 		strcpy (buf, "AU");
-	else if (!strcasecmp(ext, "wav"))
+	else if (!strcasecmp (ext, "wav"))
 		strcpy (buf, "WAV");
-	else if (!strcasecmp(ext, "aif") || !strcasecmp(ext, "aiff"))
+	else if (!strcasecmp (ext, "aif") || !strcasecmp (ext, "aiff"))
 		strcpy (buf, "AIF");
-	else if (!strcasecmp(ext, "8svx"))
+	else if (!strcasecmp (ext, "8svx"))
 		strcpy (buf, "SVX");
-	else if (!strcasecmp(ext, "sph"))
+	else if (!strcasecmp (ext, "sph"))
 		strcpy (buf, "SPH");
-	else if (!strcasecmp(ext, "sf"))
+	else if (!strcasecmp (ext, "sf"))
 		strcpy (buf, "IRC");
-	else if (!strcasecmp(ext, "voc"))
+	else if (!strcasecmp (ext, "voc"))
 		strcpy (buf, "VOC");
 }
 
 static int sndfile_our_format_ext (const char *ext)
 {
-	return !strcasecmp(ext, "au")
-		|| !strcasecmp(ext, "snd")
-		|| !strcasecmp(ext, "wav")
-		|| !strcasecmp(ext, "aif")
-		|| !strcasecmp(ext, "aiff")
-		|| !strcasecmp(ext, "8svx")
-		|| !strcasecmp(ext, "sph")
-		|| !strcasecmp(ext, "sf")
-		|| !strcasecmp(ext, "voc");
+	return !strcasecmp (ext, "au")
+		|| !strcasecmp (ext, "snd")
+		|| !strcasecmp (ext, "wav")
+		|| !strcasecmp (ext, "aif")
+		|| !strcasecmp (ext, "aiff")
+		|| !strcasecmp (ext, "8svx")
+		|| !strcasecmp (ext, "sph")
+		|| !strcasecmp (ext, "sf")
+		|| !strcasecmp (ext, "voc");
 }
 
 static void sndfile_get_error (void *prv_data, struct decoder_error *error)

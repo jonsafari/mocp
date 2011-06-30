@@ -558,14 +558,14 @@ static void aac_get_name (const char *file, char buf[4])
 {
 	char *ext = ext_pos (file);
 
-	if (!strcasecmp(ext, "aac"))
+	if (!strcasecmp (ext, "aac"))
 		strcpy (buf, "AAC");
 }
 
 static int aac_our_format_ext (const char *ext)
 {
-	return !strcasecmp(ext, "m4a")
-		|| !strcasecmp(ext, "aac");
+	return !strcasecmp (ext, "m4a")
+		|| !strcasecmp (ext, "aac");
 }
 
 static void aac_get_error (void *prv_data, struct decoder_error *error)
@@ -577,8 +577,8 @@ static void aac_get_error (void *prv_data, struct decoder_error *error)
 
 static int aac_our_mime (const char *mime)
 {
-	return !strcmp(mime, "audio/aac")
-		|| !strcmp(mime, "audio/aacp");
+	return !strcmp (mime, "audio/aac")
+		|| !strcmp (mime, "audio/aacp");
 }
 
 static struct decoder aac_decoder = {

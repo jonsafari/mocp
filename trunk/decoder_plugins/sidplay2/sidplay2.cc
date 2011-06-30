@@ -11,8 +11,9 @@
  * (at your option) any later version.
  *
  */
-#include "sidplay2.h"
 #include <pthread.h>
+
+#include "sidplay2.h"
 
 static SID_EXTERN::sidplay2 *players [POOL_SIZE];
 
@@ -485,11 +486,10 @@ extern "C" int sidplay2_get_duration (void *void_data)
 
 extern "C" void sidplay2_get_name (const char *file, char buf[4])
 {
+  unsigned int i;
   char *ext = ext_pos (file);
 
-  strncpy(buf, ext, 3);
-
-  unsigned int i;
+  strncpy (buf, ext, 3);
 
   for(i=0;i<strlen(ext);i++)
     buf[i]=toupper(buf[i]);
@@ -498,7 +498,7 @@ extern "C" void sidplay2_get_name (const char *file, char buf[4])
 extern "C" int sidplay2_our_format_ext(const char *ext)
 {
   return
-    !strcasecmp(ext, "SID");
+    !strcasecmp (ext, "SID");
 }
 
 extern "C" void init()

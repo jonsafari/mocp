@@ -724,22 +724,22 @@ static void mp3_get_name (const char *file, char buf[4])
 {
 	char *ext = ext_pos (file);
 
-	if (!strcasecmp(ext, "mp3"))
+	if (!strcasecmp (ext, "mp3"))
 		strcpy (buf, "MP3");
-	else if (!strcasecmp(ext, "mp2"))
+	else if (!strcasecmp (ext, "mp2"))
 		strcpy (buf, "MP2");
-	else if (!strcasecmp(ext, "mp1"))
+	else if (!strcasecmp (ext, "mp1"))
 		strcpy (buf, "MP1");
-	else if (!strcasecmp(ext, "mpga"))
+	else if (!strcasecmp (ext, "mpga"))
 		strcpy (buf, "MPG");
 }
 
 static int mp3_our_format_ext (const char *ext)
 {
-	return !strcasecmp(ext, "mp3")
-		|| !strcasecmp(ext, "mpga")
-		|| !strcasecmp(ext, "mp2")
-		|| !strcasecmp(ext, "mp1");
+	return !strcasecmp (ext, "mp3")
+		|| !strcasecmp (ext, "mpga")
+		|| !strcasecmp (ext, "mp2")
+		|| !strcasecmp (ext, "mp1");
 }
 
 static void mp3_get_error (void *prv_data, struct decoder_error *error)
@@ -758,7 +758,7 @@ static struct io_stream *mp3_get_stream (void *prv_data)
 
 static int mp3_our_mime (const char *mime)
 {
-	return !strcmp(mime, "audio/mpeg");
+	return !strcmp (mime, "audio/mpeg");
 }
 
 static int mp3_can_decode (struct io_stream *stream)
