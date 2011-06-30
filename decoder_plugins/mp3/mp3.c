@@ -758,7 +758,7 @@ static struct io_stream *mp3_get_stream (void *prv_data)
 
 static int mp3_our_mime (const char *mime)
 {
-	return !strcmp (mime, "audio/mpeg");
+	return !strcasecmp (mime, "audio/mpeg");
 }
 
 static int mp3_can_decode (struct io_stream *stream)

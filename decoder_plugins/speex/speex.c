@@ -682,8 +682,8 @@ static void spx_get_error (void *prv_data, struct decoder_error *error)
 
 static int spx_our_mime (const char *mime)
 {
-	return !strcmp (mime, "audio/x-speex")
-		|| !strcmp (mime, "audio/speex");
+	return !strcasecmp (mime, "audio/x-speex")
+		|| !strcasecmp (mime, "audio/speex");
 }
 
 static struct decoder spx_decoder = {
