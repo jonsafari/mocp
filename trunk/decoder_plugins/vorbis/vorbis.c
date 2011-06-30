@@ -425,7 +425,9 @@ static void vorbis_get_error (void *prv_data, struct decoder_error *error)
 static int vorbis_our_mime (const char *mime)
 {
 	return !strcasecmp (mime, "application/ogg")
-		|| !strcasecmp (mime, "application/x-ogg");
+		|| !strncasecmp (mime, "application/ogg;", 16)
+		|| !strcasecmp (mime, "application/x-ogg")
+		|| !strncasecmp (mime, "application/x-ogg;", 18);
 }
 
 static struct decoder vorbis_decoder = {

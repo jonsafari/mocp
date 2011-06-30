@@ -19,6 +19,9 @@ Known bugs:
 - MOC needs to be restarted (when switching themes) in order to understand the
   ATTRIBUTE correctly.
 - db lock timeout in tags_cache.
+- Speex files which are identified by MIME media type will be assigned to
+  the Vorbis decoder which will report "not a vorbis file".  Use the
+  command line option "-O UseMIMEMagic=no" in the interim.
 
 Before 2.5:
 

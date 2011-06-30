@@ -684,7 +684,10 @@ static int flac_our_format_ext (const char *ext)
 
 static int flac_our_format_mime (const char *mime)
 {
-	return !strcasecmp (mime, "audio/flac") || !strcasecmp (mime, "audio/x-flac");
+	return !strcasecmp (mime, "audio/flac") ||
+	       !strncasecmp (mime, "audio/flac;", 11) ||
+	       !strcasecmp (mime, "audio/x-flac") ||
+	       !strncasecmp (mime, "audio/x-flac;", 13);
 }
 
 static void flac_get_error (void *prv_data, struct decoder_error *error)
