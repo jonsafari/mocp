@@ -29,6 +29,7 @@
 #include "options.h"
 
 static struct plugin {
+	char *name;
 	lt_dlhandle handle;
 	struct decoder *decoder;
 } plugins[16];
@@ -148,7 +149,7 @@ static struct decoder *get_decoder_by_mime_type (struct io_stream *stream)
 	if (mime) {
 		i = find_mime_decoder (mime);
 		if (i != -1) {
-			logit ("Found decoder for MIME type %s", mime);
+			logit ("Found decoder for MIME type %s: %s", mime, plugins[i].name);
 			result = plugins[i].decoder;
 		}
 	}
@@ -190,12 +191,69 @@ struct decoder *get_decoder_by_content (struct io_stream *stream)
 
 	for (i = 0; i < plugins_num; i++) {
 		if (plugins[i].decoder->can_decode
-				&& plugins[i].decoder->can_decode (stream))
+				&& plugins[i].decoder->can_decode (stream)) {
+			logit ("Found decoder for stream: %s", plugins[i].name);
 			return plugins[i].decoder;
+		}
 	}
 
 	error ("Format not supported");
 	return NULL;
+}
+
+/* Extract decoder name from file name. */
+static char *extract_decoder_name (const char *filename)
+{
+	int len;
+	const char *ptr;
+	char *result;
+
+	if (!strncmp (filename, "lib", 3))
+		filename += 3;
+	len = strlen (filename);
+	ptr = strpbrk (filename, "_.-");
+	if (ptr)
+		len = ptr - filename;
+	result = xmalloc (len + 1);
+	strncpy (result, filename, len);
+	result[len] = 0x00;
+
+	return result;
+}
+
+/* Return the index for a decoder of the given name, or plugins_num if
+ * not found. */
+static int lookup_decoder_by_name (const char *name) ATTR_UNUSED;
+static int lookup_decoder_by_name (const char *name)
+{
+	int result;
+
+	assert (name && name[0]);
+
+	result = 0;
+	while (result < plugins_num) {
+		if (!strcasecmp (plugins[result].name, name))
+			break;
+		result += 1;
+	}
+
+	return result;
+}
+
+/* Return a string of concatenated driver names. */
+static char *list_decoder_names ()
+{
+	int ix;
+	char *result;
+	lists_t_strs *names;
+
+	names = lists_strs_new (plugins_num);
+	for (ix = 0; ix < plugins_num; ix += 1)
+		lists_strs_append (names, plugins[ix].name);
+	result = lists_strs_fmt (names, " %s");
+	lists_strs_free (names);
+
+	return result;
 }
 
 /* Check if this handle is already present in the plugins table.
@@ -261,6 +319,10 @@ static int lt_load_plugin (const char *file, lt_ptr debug_info_ptr)
 		return 0;
 	}
 
+	plugins[plugins_num].name = extract_decoder_name (name);
+
+	debug ("loaded %s decoder", plugins[plugins_num].name);
+
 	if (plugins[plugins_num].decoder->init)
 		plugins[plugins_num].decoder->init ();
 	plugins_num += 1;
@@ -273,6 +335,8 @@ static int lt_load_plugin (const char *file, lt_ptr debug_info_ptr)
 
 void decoder_init (int debug_info)
 {
+	char *names;
+
 	if (debug_info)
 		printf ("Loading plugins from %s...\n", PLUGIN_DIR);
 	if (lt_dlinit())
@@ -283,6 +347,10 @@ void decoder_init (int debug_info)
 
 	if (plugins_num == 0)
 		fatal ("No decoder plugins have been loaded!");
+
+	names = list_decoder_names();
+	logit ("decoders loaded:%s", names);
+	free (names);
 }
 
 void decoder_cleanup ()
@@ -292,6 +360,7 @@ void decoder_cleanup ()
 	for (i = 0; i < plugins_num; i++) {
 		if (plugins[i].decoder->destroy)
 			plugins[i].decoder->destroy ();
+		free (plugins[plugins_num].name);
 	}
 
 	if (lt_dlexit())
