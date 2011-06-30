@@ -249,7 +249,7 @@ static int wav_decode (void *prv_data, char *buf, int buf_len,
 static int wav_our_mime (const char *mime ATTR_UNUSED)
 {
 	/* We don't support internet streams for now. */
-	/*return !strcmp (mime, "audio/x-wavpack");*/
+	/*return !strcasecmp (mime, "audio/x-wavpack");*/
 
 	return 0;
 }
