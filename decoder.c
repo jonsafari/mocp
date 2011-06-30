@@ -33,14 +33,44 @@ static struct plugin {
 	struct decoder *decoder;
 } plugins[16];
 
+#define PLUGINS_NUM			(sizeof(plugins)/sizeof(plugins[0]))
+
 static int plugins_num = 0;
+
+static int find_extn_decoder (const char *extn)
+{
+	int i;
+
+	assert (extn);
+
+	for (i = 0; i < plugins_num; i++) {
+		if (plugins[i].decoder->our_format_ext &&
+		    plugins[i].decoder->our_format_ext (extn))
+			return i;
+	}
+
+	return -1;
+}
+
+static int find_mime_decoder (const char *mime)
+{
+	int i;
+
+	assert (mime);
+
+	for (i = 0; i < plugins_num; i++) {
+		if (plugins[i].decoder->our_format_mime &&
+	    	plugins[i].decoder->our_format_mime (mime))
+			return i;
+	}
+
+	return -1;
+}
 
 /* Find the index in table types for the given file. Return -1 if not found. */
 static int find_type (const char *file)
 {
-	int i, result;
-
-	result = -1;
+	int result = -1;
 
 #ifdef HAVE_LIBMAGIC
 	if (options_get_bool ("UseMimeMagic")) {
@@ -48,13 +78,7 @@ static int find_type (const char *file)
 
 		mime = xstrdup (file_mime_type (file));
 		if (mime) {
-			for (i = 0; i < plugins_num; i++) {
-				if (plugins[i].decoder->our_format_mime &&
-			    	plugins[i].decoder->our_format_mime (mime)) {
-					result = i;
-					break;
-				}
-			}
+			result = find_mime_decoder (mime);
 			free (mime);
 		}
 	}
@@ -64,15 +88,8 @@ static int find_type (const char *file)
 		char *ext;
 
 		ext = ext_pos (file);
-		if (ext) {
-			for (i = 0; i < plugins_num; i++) {
-				if (plugins[i].decoder->our_format_ext &&
-				    plugins[i].decoder->our_format_ext (ext)) {
-					result = i;
-					break;
-				}
-			}
-		}
+		if (ext)
+			result = find_extn_decoder (ext);
 	}
 
 	return result;
@@ -90,23 +107,29 @@ char *file_type_name (const char *file)
 	int i;
 	static char buf[4];
 
-	if (file_type(file) == F_URL) {
+	if (file_type (file) == F_URL) {
 		strcpy (buf, "NET");
 		return buf;
 	}
-	else if ((i = find_type(file)) != -1) {
-		plugins[i].decoder->get_name(file, buf);
-		return buf;
-	}
 
-	return NULL;
+	i = find_type (file);
+	if (i == -1)
+		return NULL;
+
+	buf[0] = 0x00;
+	plugins[i].decoder->get_name (file, buf);
+
+	assert (buf[0]);
+
+	return buf;
 }
 
 struct decoder *get_decoder (const char *file)
 {
 	int i;
 
-	if ((i = find_type(file)) != -1)
+	i = find_type (file);
+	if (i != -1)
 		return plugins[i].decoder;
 
 	return NULL;
@@ -117,22 +140,22 @@ struct decoder *get_decoder (const char *file)
 static struct decoder *get_decoder_by_mime_type (struct io_stream *stream)
 {
 	int i;
-	char *mime = io_get_mime_type (stream);
+	char *mime;
+	struct decoder *result;
 
+	result = NULL;
+	mime = io_get_mime_type (stream);
 	if (mime) {
-		for (i = 0; i < plugins_num; i++)
-			if (plugins[i].decoder->our_format_mime
-					&& plugins[i].decoder->our_format_mime(
-						mime)) {
-				logit ("Found decoder for MIME type %s",
-						mime);
-				return plugins[i].decoder;
-			}
+		i = find_mime_decoder (mime);
+		if (i != -1) {
+			logit ("Found decoder for MIME type %s", mime);
+			result = plugins[i].decoder;
+		}
 	}
 	else
 		logit ("No MIME type.");
 
-	return NULL;
+	return result;
 }
 
 /* Return the decoder for this stream. */
@@ -150,9 +173,9 @@ struct decoder *get_decoder_by_content (struct io_stream *stream)
 	 * each of them would issue an error.  The data is also needed to
 	 * get the MIME type. */
 	logit ("Testing the stream...");
-	res = io_peek (stream, buf, sizeof(buf));
+	res = io_peek (stream, buf, sizeof (buf));
 	if (res < 0) {
-		error ("Stream error: %s", io_strerror(stream));
+		error ("Stream error: %s", io_strerror (stream));
 		return NULL;
 	}
 
@@ -161,13 +184,15 @@ struct decoder *get_decoder_by_content (struct io_stream *stream)
 		return NULL;
 	}
 
-	if ((decoder_by_mime_type = get_decoder_by_mime_type(stream)))
+	decoder_by_mime_type = get_decoder_by_mime_type (stream);
+	if (decoder_by_mime_type)
 		return decoder_by_mime_type;
 
-	for (i = 0; i < plugins_num; i++)
+	for (i = 0; i < plugins_num; i++) {
 		if (plugins[i].decoder->can_decode
-				&& plugins[i].decoder->can_decode(stream))
+				&& plugins[i].decoder->can_decode (stream))
 			return plugins[i].decoder;
+	}
 
 	error ("Format not supported");
 	return NULL;
@@ -179,61 +204,69 @@ static int present_handle (const lt_dlhandle h)
 {
 	int i;
 
-	for (i = 0; i < plugins_num; i++)
+	for (i = 0; i < plugins_num; i++) {
 		if (plugins[i].handle == h)
 			return 1;
+	}
+
 	return 0;
 }
 
 static int lt_load_plugin (const char *file, lt_ptr debug_info_ptr)
 {
-	const char *name = strrchr (file, '/') ? strrchr(file, '/') + 1 : file;
-	int debug_info = *(int *)debug_info_ptr;
+	int debug_info;
+	const char *name;
+	plugin_init_func init_func;
 
+	debug_info = *(int *)debug_info_ptr;
+	name = strrchr (file, '/');
+	name = name ? (name + 1) : file;
 	if (debug_info)
 		printf ("Loading plugin %s...\n", name);
 
-	if (plugins_num == sizeof(plugins)/sizeof(plugins[0])) {
+	if (plugins_num == PLUGINS_NUM) {
 		fprintf (stderr, "Can't load plugin, because maximum number "
-				"of plugins reached!\n");
+		                                    "of plugins reached!\n");
 		return 0;
 	}
 
-	if (!(plugins[plugins_num].handle = lt_dlopenext(file))) {
-		fprintf (stderr, "Can't load plugin %s: %s\n", name,
-				lt_dlerror());
+	plugins[plugins_num].handle = lt_dlopenext (file);
+	if (!plugins[plugins_num].handle) {
+		fprintf (stderr, "Can't load plugin %s: %s\n", name, lt_dlerror ());
+		return 0;
 	}
-	else if (!present_handle(plugins[plugins_num].handle)) {
-		plugin_init_func init_func;
 
-		if (!(init_func = lt_dlsym(plugins[plugins_num].handle,
-						"plugin_init")))
-			fprintf (stderr, "No init function in the "
-					"plugin!\n");
-		else {
-			plugins[plugins_num].decoder = init_func ();
-			if (!plugins[plugins_num].decoder)
-				fprintf (stderr, "NULL decoder!\n");
-			else if (plugins[plugins_num].decoder->api_version
-					!= DECODER_API_VERSION) {
-				fprintf (stderr, "Plugin uses different API "
-						"version\n");
-				if (lt_dlclose(plugins[plugins_num].handle))
-					fprintf (stderr, "Error unloading "
-							"plugin: %s\n",
-							lt_dlerror());
-			}
-			else {
-				if (plugins[plugins_num].decoder->init)
-					plugins[plugins_num].decoder->init ();
-				plugins_num++;
-				if (debug_info)
-					printf ("OK\n");
-			}
-		}
+	if (present_handle (plugins[plugins_num].handle)) {
+		if (debug_info)
+			printf ("Already loaded\n");
+		return 0;
 	}
-	else if (debug_info)
-		printf ("Already loaded\n");
+
+	init_func = lt_dlsym (plugins[plugins_num].handle, "plugin_init");
+	if (!init_func) {
+		fprintf (stderr, "No init function in the plugin!\n");
+		return 0;
+	}
+
+	plugins[plugins_num].decoder = init_func ();
+	if (!plugins[plugins_num].decoder) {
+		fprintf (stderr, "NULL decoder!\n");
+		return 0;
+	}
+
+	if (plugins[plugins_num].decoder->api_version != DECODER_API_VERSION) {
+		fprintf (stderr, "Plugin uses different API version\n");
+		if (lt_dlclose(plugins[plugins_num].handle))
+			fprintf (stderr, "Error unloading plugin: %s\n", lt_dlerror());
+		return 0;
+	}
+
+	if (plugins[plugins_num].decoder->init)
+		plugins[plugins_num].decoder->init ();
+	plugins_num += 1;
+
+	if (debug_info)
+		printf ("OK\n");
 
 	return 0;
 }
@@ -256,9 +289,10 @@ void decoder_cleanup ()
 {
 	int i;
 
-	for (i = 0; i < plugins_num; i++)
+	for (i = 0; i < plugins_num; i++) {
 		if (plugins[i].decoder->destroy)
 			plugins[i].decoder->destroy ();
+	}
 
 	if (lt_dlexit())
 		logit ("lt_exit() failed: %s", lt_dlerror());

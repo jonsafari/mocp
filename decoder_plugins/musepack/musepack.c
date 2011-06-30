@@ -454,7 +454,7 @@ static void musepack_get_name (const char *file ATTR_UNUSED, char buf[4])
 
 static int musepack_our_format_ext (const char *ext)
 {
-	return !strcasecmp(ext, "mpc");
+	return !strcasecmp (ext, "mpc");
 }
 
 static void musepack_get_error (void *prv_data, struct decoder_error *error)

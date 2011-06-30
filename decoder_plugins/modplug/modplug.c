@@ -22,17 +22,18 @@
 #include "config.h"
 #endif
 
-#define DEBUG
-
 #include <ctype.h> // for toupper
 #include <string.h>
+#include <libmodplug/modplug.h>
+
+#define DEBUG
+
 #include "io.h"
 #include "decoder.h"
 #include "log.h"
 #include "files.h"
 #include "common.h"
 #include "options.h"
-#include <libmodplug/modplug.h>
 
 // Limiting maximum size for loading a module was suggested by Damian.
 // I've never seen such a large module so this should be a safe limit...
@@ -248,34 +249,34 @@ static void modplug_get_name (const char *file, char buf[4])
 static int modplug_our_format_ext(const char *ext)
 {
   return
-    !strcasecmp(ext, "NONE") ||
-    !strcasecmp(ext, "MOD") ||
-    !strcasecmp(ext, "S3M") ||
-    !strcasecmp(ext, "XM") ||
-    !strcasecmp(ext, "MED") ||
-    !strcasecmp(ext, "MTM") ||
-    !strcasecmp(ext, "IT") ||
-    !strcasecmp(ext, "669") ||
-    !strcasecmp(ext, "ULT") ||
-    !strcasecmp(ext, "STM") ||
-    !strcasecmp(ext, "FAR") ||
+    !strcasecmp (ext, "NONE") ||
+    !strcasecmp (ext, "MOD") ||
+    !strcasecmp (ext, "S3M") ||
+    !strcasecmp (ext, "XM") ||
+    !strcasecmp (ext, "MED") ||
+    !strcasecmp (ext, "MTM") ||
+    !strcasecmp (ext, "IT") ||
+    !strcasecmp (ext, "669") ||
+    !strcasecmp (ext, "ULT") ||
+    !strcasecmp (ext, "STM") ||
+    !strcasecmp (ext, "FAR") ||
     // WAVs should be processed by libsndfile
-    //!strcasecmp(ext, "WAV") ||
-    !strcasecmp(ext, "AMF") ||
-    !strcasecmp(ext, "AMS") ||
-    !strcasecmp(ext, "DSM") ||
-    !strcasecmp(ext, "MDL") ||
-    !strcasecmp(ext, "OKT") ||
+    //!strcasecmp (ext, "WAV") ||
+    !strcasecmp (ext, "AMF") ||
+    !strcasecmp (ext, "AMS") ||
+    !strcasecmp (ext, "DSM") ||
+    !strcasecmp (ext, "MDL") ||
+    !strcasecmp (ext, "OKT") ||
     // modplug can do MIDI but not in this form...
-    //!strcasecmp(ext, "MID") ||
-    !strcasecmp(ext, "DMF") ||
-    !strcasecmp(ext, "PTM") ||
-    !strcasecmp(ext, "DBM") ||
-    !strcasecmp(ext, "MT2") ||
-    !strcasecmp(ext, "AMF0") ||
-    !strcasecmp(ext, "PSM") ||
-    !strcasecmp(ext, "J2B") ||
-    !strcasecmp(ext, "UMX");
+    //!strcasecmp (ext, "MID") ||
+    !strcasecmp (ext, "DMF") ||
+    !strcasecmp (ext, "PTM") ||
+    !strcasecmp (ext, "DBM") ||
+    !strcasecmp (ext, "MT2") ||
+    !strcasecmp (ext, "AMF0") ||
+    !strcasecmp (ext, "PSM") ||
+    !strcasecmp (ext, "J2B") ||
+    !strcasecmp (ext, "UMX");
 }
 
 static void modplug_get_error (void *prv_data, struct decoder_error *error)

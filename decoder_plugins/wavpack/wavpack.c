@@ -21,6 +21,9 @@
 #include "config.h"
 #endif
 
+#include <string.h>
+#include <wavpack/wavpack.h>
+
 #define DEBUG
 
 #include "common.h" /* for xmalloc(), xstrdup() etc. */
@@ -28,9 +31,6 @@
 #include "decoder.h" /* required: provides decoder structure definition */
 #include "io.h" /* if you use io_*() functions to access files. */
 #include "audio.h" /* for sound_params structure */
-#include <string.h>
-#include <wavpack/wavpack.h>
-
 
 struct wavpack_data
 {
@@ -249,7 +249,7 @@ static int wav_decode (void *prv_data, char *buf, int buf_len,
 static int wav_our_mime (const char *mime ATTR_UNUSED)
 {
 	/* We don't support internet streams for now. */
-	/*return !strcmp(mime, "audio/x-wavpack");*/
+	/*return !strcmp (mime, "audio/x-wavpack");*/
 
 	return 0;
 }
@@ -262,7 +262,7 @@ static void wav_get_name (const char *file ATTR_UNUSED, char buf[4])
 static int wav_our_format_ext(const char *ext)
 {
   return
-    !strcasecmp(ext, "WV");
+    !strcasecmp (ext, "WV");
 }
 
 static struct decoder wv_decoder = {

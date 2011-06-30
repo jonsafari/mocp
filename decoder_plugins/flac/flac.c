@@ -15,12 +15,13 @@
 #include "config.h"
 #endif
 
-/*#define DEBUG*/
-
 #include <string.h>
 #include <FLAC/all.h>
 #include <stdlib.h>
 #include <strings.h>
+
+/*#define DEBUG*/
+
 #include "audio.h"
 #include "decoder.h"
 #include "server.h"
@@ -678,7 +679,7 @@ static void flac_get_name (const char *file ATTR_UNUSED, char buf[4])
 
 static int flac_our_format_ext (const char *ext)
 {
-	return !strcasecmp(ext, "flac") || !strcasecmp(ext, "fla");
+	return !strcasecmp (ext, "flac") || !strcasecmp (ext, "fla");
 }
 
 static int flac_our_format_mime (const char *mime)

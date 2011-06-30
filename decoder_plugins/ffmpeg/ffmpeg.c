@@ -373,22 +373,22 @@ static void ffmpeg_get_name (const char *file, char buf[4])
 {
 	char *ext = ext_pos (file);
 
-	if (!strcasecmp(ext, "ra"))
+	if (!strcasecmp (ext, "ra"))
 		strcpy (buf, "RA");
-	else if (!strcasecmp(ext, "wma"))
+	else if (!strcasecmp (ext, "wma"))
 		strcpy (buf, "WMA");
-	else if (!strcasecmp(ext, "mp4"))
+	else if (!strcasecmp (ext, "mp4"))
 		strcpy (buf, "MP4");
-	else if (!strcasecmp(ext, "m4a"))
+	else if (!strcasecmp (ext, "m4a"))
 		strcpy (buf, "M4A");
 }
 
 static int ffmpeg_our_format_ext (const char *ext)
 {
-	return !strcasecmp(ext, "wma")
-		|| !strcasecmp(ext, "ra")
-		|| !strcasecmp(ext, "m4a")
-		|| !strcasecmp(ext, "mp4");
+	return !strcasecmp (ext, "wma")
+		|| !strcasecmp (ext, "ra")
+		|| !strcasecmp (ext, "m4a")
+		|| !strcasecmp (ext, "mp4");
 }
 
 static void ffmpeg_get_error (void *prv_data, struct decoder_error *error)
