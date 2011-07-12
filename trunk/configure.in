@@ -17,6 +17,10 @@ then
 	                   [Define to the home page for this package.])
 fi
 
+dnl Capture configuration options for this build.
+AC_DEFINE_UNQUOTED([CONFIGURATION], ["$ac_configure_args"],
+                   [Define to the configuration used to build MOC.])
+
 dnl Capture SVN revision number for this build.
 AC_PATH_PROG(SVNVERSION, [svnversion])
 if test -n "$SVNVERSION"

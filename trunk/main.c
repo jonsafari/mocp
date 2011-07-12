@@ -766,6 +766,10 @@ int main (int argc, char *argv[])
 	logit ("This is Music On Console (version %s)", PACKAGE_VERSION);
 #endif
 
+#ifdef CONFIGURATION
+	logit ("Configured:%s", CONFIGURATION);
+#endif
+
 	log_command_line (argc, argv);
 
 	if (get_home () == NULL)
