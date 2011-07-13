@@ -72,33 +72,44 @@ static char *clean_mime_subtype (char *subtype)
 /* Find a preference entry matching the given filename extension and/or
  * MIME media type, or NULL. */
 static decoder_t_preference *lookup_preference (const char *extn,
-                                                const char *mime)
+                                                const char *file,
+                                                char **mime)
 {
 	char *type, *subtype;
 	decoder_t_preference *result;
 
-	assert ((extn && extn[0]) || (mime && mime[0]));
+	assert ((extn && extn[0]) || (file && file[0])
+	                          || (mime && *mime && *mime[0]));
 
-	if (mime && !strchr (mime, '/'))
-		mime = NULL;
-
-	type = xstrdup (mime);
-	subtype = NULL;
-	if (type) {
-		subtype = strchr (type, '/');
-		*subtype++ = 0x00;
-		subtype = clean_mime_subtype (subtype);
-	}
-
+	type = NULL;
 	for (result = preferences; result; result = result->next) {
 		if (!result->subtype) {
 			if (extn && !strcasecmp (result->type, extn))
 				break;
 		}
-		else if (type) {
-			if (!strcasecmp (result->type, type) &&
-			    !strcasecmp (result->subtype, subtype))
-				break;
+		else {
+
+			if (!type) {
+				if (mime && *mime == NULL && file && file[0]) {
+					if (options_get_bool ("UseMimeMagic"))
+						*mime = xstrdup (file_mime_type (file));
+				}
+				if (mime && *mime && strchr (*mime, '/'))
+					type = xstrdup (*mime);
+				subtype = NULL;
+				if (type) {
+					subtype = strchr (type, '/');
+					*subtype++ = 0x00;
+					subtype = clean_mime_subtype (subtype);
+				}
+			}
+
+			if (type) {
+				if (!strcasecmp (result->type, type) &&
+			    	!strcasecmp (result->subtype, subtype))
+					break;
+			}
+
 		}
 	}
 
@@ -146,24 +157,24 @@ static int find_mime_decoder (int *decoder_list, int count, const char *mime)
 
 /* Return the index of the first decoder able to handle audio with the
  * given filename extension and/or MIME media type, or -1 if none can. */
-static int find_decoder (char *extn, char *mime)
+static int find_decoder (const char *extn, const char *file, char **mime)
 {
 	int result;
 	decoder_t_preference *pref;
 
-	assert ((extn && extn[0]) || (mime && mime[0]));
+	assert ((extn && extn[0]) || (file && file[0]) || (mime && *mime));
 
-	pref = lookup_preference (extn, mime);
+	pref = lookup_preference (extn, file, mime);
 	if (pref) {
 		if (pref->subtype)
-			return find_mime_decoder (pref->decoder_list, pref->decoders, mime);
+			return find_mime_decoder (pref->decoder_list, pref->decoders, *mime);
 		else
 			return find_extn_decoder (pref->decoder_list, pref->decoders, extn);
 	}
 
 	result = -1;
-	if (mime)
-		result = find_mime_decoder (default_decoder_list, plugins_num, mime);
+	if (mime && *mime)
+		result = find_mime_decoder (default_decoder_list, plugins_num, *mime);
 	if (result == -1 && extn)
 		result = find_extn_decoder (default_decoder_list, plugins_num, extn);
 
@@ -179,13 +190,8 @@ static int find_type (const char *file)
 
 	extn = ext_pos (file);
 	mime = NULL;
-#ifdef HAVE_LIBMAGIC
-	if (options_get_bool ("UseMimeMagic"))
-		mime = xstrdup (file_mime_type (file));
-#endif
 
-	if (extn || mime)
-		result = find_decoder (extn, mime);
+	result = find_decoder (extn, file, &mime);
 
 	free (mime);
 	return result;
@@ -242,7 +248,7 @@ static struct decoder *get_decoder_by_mime_type (struct io_stream *stream)
 	result = NULL;
 	mime = xstrdup (io_get_mime_type (stream));
 	if (mime) {
-		i = find_decoder (NULL, mime);
+		i = find_decoder (NULL, NULL, &mime);
 		if (i != -1) {
 			logit ("Found decoder for MIME type %s: %s", mime, plugins[i].name);
 			result = plugins[i].decoder;

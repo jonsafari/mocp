@@ -638,8 +638,8 @@ void options_init ()
 	                 CHECK_SYMBOL(5), "SincBestQuality", "SincMediumQuality",
 	                                  "SincFastest", "ZeroOrderHold", "Linear");
 	add_list ("PreferredDecoders",
-	                 "aac(aac,*):audio/aac(aac,*):audio/aacp(acc,*):"
-	                 "m4a(ffmpeg,aac):audio/m4a(ffmpeg,aac)",
+	                 "aac(aac,*):m4a(ffmpeg,aac):"
+	                 "audio/aac(aac,*):audio/aacp(acc,*):audio/m4a(ffmpeg,aac)",
 	                 CHECK_FUNCTION);
 	add_int  ("ForceSampleRate", 0, CHECK_RANGE(1), 0, 500000);
 	add_str  ("HTTPProxy", NULL, CHECK_NONE);
