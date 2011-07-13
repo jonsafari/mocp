@@ -22,6 +22,8 @@
 #include <unistd.h>
 #include <limits.h>
 #include <stdarg.h>
+#include <sys/types.h>
+#include <regex.h>
 
 #include "common.h"
 #include "log.h"
@@ -229,6 +231,34 @@ static int check_length (int opt, ...)
 	va_end (va);
 
 	return rc;
+}
+
+/* Check that a string has a function-like syntax. */
+static int check_function (int opt, ...) ATTR_UNUSED;
+static int check_function (int opt, ...)
+{
+	int rc;
+	const char *str;
+	const char regex[] = "^[a-z0-9/-]+\\([^,) ]*(,[^,) ]*)*\\)$";
+	static regex_t *preg = NULL;
+	va_list va;
+
+	assert (opt != -1);
+	assert (options[opt].count == 0);
+	assert (options[opt].type & (OPTION_STR | OPTION_LIST));
+
+	if (preg == NULL) {
+		preg = (regex_t *)xmalloc (sizeof (regex_t));
+		rc = regcomp (preg, regex, REG_EXTENDED | REG_ICASE | REG_NOSUB);
+		assert (rc == 0);
+	}
+
+	va_start (va, opt);
+	str = va_arg (va, const char *);
+	rc = regexec (preg, str, 0, NULL, 0);
+	va_end (va);
+
+	return (rc == 0) ? 1 : 0;
 }
 
 /* Always pass a value as valid. */
@@ -516,6 +546,7 @@ void options_ignore_config (const char *name)
 #define CHECK_RANGE(c)      check_range, (2 * (c))
 #define CHECK_LENGTH(c)     check_length, (2 * (c))
 #define CHECK_SYMBOL(c)     (c)
+#define CHECK_FUNCTION      check_function, 0
 #define CHECK_NONE          check_true, 0
 
 /* Make a table of options and its default values. */
