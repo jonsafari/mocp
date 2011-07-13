@@ -260,8 +260,7 @@ static int modplug_our_format_ext(const char *ext)
     !strcasecmp (ext, "ULT") ||
     !strcasecmp (ext, "STM") ||
     !strcasecmp (ext, "FAR") ||
-    // WAVs should be processed by libsndfile
-    //!strcasecmp (ext, "WAV") ||
+    !strcasecmp (ext, "WAV") ||
     !strcasecmp (ext, "AMF") ||
     !strcasecmp (ext, "AMS") ||
     !strcasecmp (ext, "DSM") ||
