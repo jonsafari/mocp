@@ -22,6 +22,9 @@ Known bugs:
 - Speex files which are identified by MIME media type will be assigned to
   the Vorbis decoder which will report "not a vorbis file".  Use the
   command line option "-O UseMIMEMagic=no" in the interim.
+- When a driver for a file is identified by MIME media type but the file
+  has an extension which is not as expected, then the get_name() function
+  of some drivers will not return a valid three character name.
 
 Before 2.5:
 
