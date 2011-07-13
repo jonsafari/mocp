@@ -164,6 +164,12 @@ static int timidity_our_format_ext(const char *ext)
   return !strcasecmp (ext, "MID");
 }
 
+static int timidity_our_format_mime (const char *mime)
+{
+  return !strcasecmp(mime, "audio/midi")
+      || !strncasecmp(mime, "audio/midi;", 10);
+}
+
 static void timidity_get_error (void *prv_data, struct decoder_error *error)
 {
   struct timidity_data *data = (struct timidity_data *)prv_data;
@@ -192,7 +198,7 @@ static struct decoder timidity_decoder =
   timidity_get_duration,
   timidity_get_error,
   timidity_our_format_ext,
-  NULL,
+  timidity_our_format_mime,
   timidity_get_name,
   NULL,
   NULL,

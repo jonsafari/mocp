@@ -325,10 +325,24 @@ ASCIILines		= no
 # Any unspecified audio formats default to trying all decoders.
 # Any unknown (or misspelt) drivers are ignored.
 # All names are case insensitive.
-# The default setting reflects the historical situation.
+# The default setting reflects the historical situation modified by
+# the experience of users.
 #
 #PreferredDecoders	= aac(aac,*):m4a(ffmpeg,aac)
+#PreferredDecoders	+= mpc(musepack,*)
+#PreferredDecoders	+= wav(sndfile,*,modplug)
+#PreferredDecoders	+= wv(wavpack,*)
 #PreferredDecoders	+= audio/aac(aac,*):audio/aacp(acc,*):audio/m4a(ffmpeg,aac)
+#PreferredDecoders	+= audio/wav(sndfile,*,modplug)
+
+# The following PreferredDecoders attempt to handle the ambiguity surrounding
+# container types such as OGG for files.  The first two entries will force
+# a local file to the correct decoder (assuming the .ogg file contains Vorbis
+# audio), while the MIME media types will cause Internet audio streams to
+# be assessed on content (which may be either Vorbis or Speex).
+#
+#PreferredDecoders	+= ogg(vorbis):oga(vorbis):spx(speex)
+#PreferredDecoders	+= application/ogg():audio/ogg()
 
 # Resample method to use. There are a few methods of resampling sound supported
 # by libresamplerate. The default is the fastest (linear). Better description

@@ -639,7 +639,13 @@ void options_init ()
 	                                  "SincFastest", "ZeroOrderHold", "Linear");
 	add_list ("PreferredDecoders",
 	                 "aac(aac,*):m4a(ffmpeg,aac):"
-	                 "audio/aac(aac,*):audio/aacp(acc,*):audio/m4a(ffmpeg,aac)",
+	                 "mpc(musepack,*):"
+	                 "wav(sndfile,*,modplug):"
+	                 "wv(wavpack,*):"
+	                 "audio/aac(aac,*):audio/aacp(acc,*):audio/m4a(ffmpeg,aac):"
+	                 "audio/wav(sndfile,*,modplug):"
+	                 "ogg(vorbis):oga(vorbis):spx(speex):"
+	                 "application/ogg():audio/ogg()",
 	                 CHECK_FUNCTION);
 	add_int  ("ForceSampleRate", 0, CHECK_RANGE(1), 0, 500000);
 	add_str  ("HTTPProxy", NULL, CHECK_NONE);
