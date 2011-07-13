@@ -273,6 +273,48 @@ ASCIILines		= no
 # stroke.
 #SilentSeekTime		= 5
 
+# PreferredDecoders allows you to specify which decoder should be used
+# for any given audio format.  It is a colon-separated list in which
+# each entry is of the general form 'code(decoders)', where 'code'
+# identifies the audio format and 'decoders' is a comma-separated list
+# of decoders in order of preference.
+#
+# The audio format identifier may be either a filename extension or a
+# MIME media type.  If the latter, the format is 'type/subtype' (e.g.,
+# 'audio/flac').  Because different systems may give different MIME
+# media types, any 'x-' prefix of the subtype is ignored both here and
+# in the actual file MIME type (so all combinations of 'audio/flac' and
+# 'audio/x-flac' match each other).
+#
+# For Internet streams the matching is done on MIME media type and on
+# actual content.  For files the matches are made on MIME media type
+# (if the 'UseMimeMagic' option is set) and on filename extension.
+# The matching is done in the order of appearance in the list with any
+# entries added from the command line being matched before those listed
+# here.
+#
+# The decoder list may be empty, in which case no decoders will be used
+# for files (and files with that audio format ignored) while Internet
+# streams will be assessed on the actual content.  Any decoder position
+# may contain an asterisk, in which case any decoder not otherwise listed
+# which can handle the audio format will be used.  It is not an error to
+# list the same decoder twice, but neither does it make sense to do so.
+#
+# Examples: aac(aac,ffmpeg)             first try FAAD2 for AACs then FFmpeg
+#           mp3()                       ignore MP3 files
+#           wav(*,sndfile)              use sndfile for WAV as a last resort
+#           ogg(vorbis,*):flac(flac,*)  try Xiph decoders first
+#           ogg():audio/ogg()           ignore OGG files, and
+#                                       force Internet selection by content
+#
+# Any unspecified audio formats default to trying all decoders.
+# Any unknown (or misspelt) drivers are ignored.
+# All names are case insensitive.
+# The default setting reflects the historical situation.
+#
+#PreferredDecoders	= aac(aac,*):audio/aac(aac,*):audio/aacp(acc,*)
+#PreferredDecoders	+= m4a(ffmpeg,aac):audio/m4a(ffmpeg,aac)
+
 # Resample method to use. There are a few methods of resampling sound supported
 # by libresamplerate. The default is the fastest (linear). Better description
 # is here: http://www.mega-nerd.com/libsamplerate/api_misc.html#Converters

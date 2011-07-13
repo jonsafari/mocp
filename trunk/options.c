@@ -234,7 +234,6 @@ static int check_length (int opt, ...)
 }
 
 /* Check that a string has a function-like syntax. */
-static int check_function (int opt, ...) ATTR_UNUSED;
 static int check_function (int opt, ...)
 {
 	int rc;
@@ -638,6 +637,10 @@ void options_init ()
 	add_symb ("ResampleMethod", "Linear",
 	                 CHECK_SYMBOL(5), "SincBestQuality", "SincMediumQuality",
 	                                  "SincFastest", "ZeroOrderHold", "Linear");
+	add_list ("PreferredDecoders",
+	                 "aac(aac,*):audio/aac(aac,*):audio/aacp(acc,*):"
+	                 "m4a(ffmpeg,aac):audio/m4a(ffmpeg,aac)",
+	                 CHECK_FUNCTION);
 	add_int  ("ForceSampleRate", 0, CHECK_RANGE(1), 0, 500000);
 	add_str  ("HTTPProxy", NULL, CHECK_NONE);
 	add_bool ("UseRealtimePriority", false);

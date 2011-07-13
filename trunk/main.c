@@ -535,9 +535,37 @@ error:
 static void process_deferred_overrides (lists_t_strs *deferred)
 {
 	int ix;
+	bool cleared;
+	const char marker[] = "*Marker*";
+	char **config_decoders;
+	lists_t_strs *decoders_option;
+
+	/* We need to shuffle the PreferredDecoders list into the
+	 * right order as we load any deferred overriding options. */
+
+	decoders_option = options_get_list ("PreferredDecoders");
+	lists_strs_reverse (decoders_option);
+	config_decoders = lists_strs_save (decoders_option);
+	lists_strs_clear (decoders_option);
+	lists_strs_append (decoders_option, marker);
 
 	for (ix = 0; ix < lists_strs_size (deferred); ix += 1)
 		override_config_option (lists_strs_at (deferred, ix), NULL);
+
+	cleared = lists_strs_empty (decoders_option) ||
+	          strcmp (lists_strs_at (decoders_option, 0), marker) != 0;
+	lists_strs_reverse (decoders_option);
+	if (!cleared) {
+		char **override_decoders;
+
+		free (lists_strs_pop (decoders_option));
+		override_decoders = lists_strs_save (decoders_option);
+		lists_strs_clear (decoders_option);
+		lists_strs_load (decoders_option, config_decoders);
+		lists_strs_load (decoders_option, override_decoders);
+		free (override_decoders);
+	}
+	free (config_decoders);
 }
 
 /* Process the command line options and arguments. */

@@ -38,61 +38,156 @@ static struct plugin {
 
 static int plugins_num = 0;
 
-static int find_extn_decoder (const char *extn)
+/* This structure holds the user's decoder preferences for audio formats. */
+struct decoder_s_preference {
+	struct decoder_s_preference *next;    /* chain pointer */
+#ifdef DEBUG
+	const char *source;                   /* entry in PreferredDecoders */
+#endif
+	int decoders;                         /* number of decoders */
+	int decoder_list[PLUGINS_NUM];        /* decoder indices */
+	char *subtype;                        /* MIME subtype or NULL */
+	char type[0];                         /* MIME type or filename extn */
+};
+typedef struct decoder_s_preference decoder_t_preference;
+static decoder_t_preference *preferences = NULL;
+static int default_decoder_list[PLUGINS_NUM];
+
+static char *clean_mime_subtype (char *subtype)
 {
-	int i;
+	char *ptr;
 
-	assert (extn);
+	assert (subtype && subtype[0]);
 
-	for (i = 0; i < plugins_num; i++) {
-		if (plugins[i].decoder->our_format_ext &&
-		    plugins[i].decoder->our_format_ext (extn))
-			return i;
+	if (!strncasecmp (subtype, "x-", 2))
+		subtype += 2;
+
+	ptr = strchr (subtype, ';');
+	if (ptr)
+		*ptr = 0x00;
+
+	return subtype;
+}
+
+/* Find a preference entry matching the given filename extension and/or
+ * MIME media type, or NULL. */
+static decoder_t_preference *lookup_preference (const char *extn,
+                                                const char *mime)
+{
+	char *type, *subtype;
+	decoder_t_preference *result;
+
+	assert ((extn && extn[0]) || (mime && mime[0]));
+
+	if (mime && !strchr (mime, '/'))
+		mime = NULL;
+
+	type = xstrdup (mime);
+	subtype = NULL;
+	if (type) {
+		subtype = strchr (type, '/');
+		*subtype++ = 0x00;
+		subtype = clean_mime_subtype (subtype);
+	}
+
+	for (result = preferences; result; result = result->next) {
+		if (!result->subtype) {
+			if (extn && !strcasecmp (result->type, extn))
+				break;
+		}
+		else if (type) {
+			if (!strcasecmp (result->type, type) &&
+			    !strcasecmp (result->subtype, subtype))
+				break;
+		}
+	}
+
+	free (type);
+	return result;
+}
+
+/* Return the index of the first decoder able to handle files with the
+ * given filename extension, or -1 if none can. */
+static int find_extn_decoder (int *decoder_list, int count, const char *extn)
+{
+	int ix;
+
+	assert (decoder_list);
+	assert (count >= 0 && count <= plugins_num);
+	assert (extn && extn[0]);
+
+	for (ix = 0; ix < count; ix += 1) {
+		if (plugins[decoder_list[ix]].decoder->our_format_ext &&
+		    plugins[decoder_list[ix]].decoder->our_format_ext (extn))
+			return decoder_list[ix];
 	}
 
 	return -1;
 }
 
-static int find_mime_decoder (const char *mime)
+/* Return the index of the first decoder able to handle audio with the
+ * given MIME media type, or -1 if none can. */
+static int find_mime_decoder (int *decoder_list, int count, const char *mime)
 {
-	int i;
+	int ix;
 
-	assert (mime);
+	assert (decoder_list);
+	assert (count >= 0 && count <= plugins_num);
+	assert (mime && mime[0]);
 
-	for (i = 0; i < plugins_num; i++) {
-		if (plugins[i].decoder->our_format_mime &&
-	    	plugins[i].decoder->our_format_mime (mime))
-			return i;
+	for (ix = 0; ix < count; ix += 1) {
+		if (plugins[decoder_list[ix]].decoder->our_format_mime &&
+	    	plugins[decoder_list[ix]].decoder->our_format_mime (mime))
+			return decoder_list[ix];
 	}
 
 	return -1;
 }
 
-/* Find the index in table types for the given file. Return -1 if not found. */
+/* Return the index of the first decoder able to handle audio with the
+ * given filename extension and/or MIME media type, or -1 if none can. */
+static int find_decoder (char *extn, char *mime)
+{
+	int result;
+	decoder_t_preference *pref;
+
+	assert ((extn && extn[0]) || (mime && mime[0]));
+
+	pref = lookup_preference (extn, mime);
+	if (pref) {
+		if (pref->subtype)
+			return find_mime_decoder (pref->decoder_list, pref->decoders, mime);
+		else
+			return find_extn_decoder (pref->decoder_list, pref->decoders, extn);
+	}
+
+	result = -1;
+	if (mime)
+		result = find_mime_decoder (default_decoder_list, plugins_num, mime);
+	if (result == -1 && extn)
+		result = find_extn_decoder (default_decoder_list, plugins_num, extn);
+
+	return result;
+}
+
+/* Find the index in plugins table for the given file.
+ * Return -1 if not found. */
 static int find_type (const char *file)
 {
 	int result = -1;
+	char *extn, *mime;
 
+	extn = ext_pos (file);
+	mime = NULL;
 #ifdef HAVE_LIBMAGIC
-	if (options_get_bool ("UseMimeMagic")) {
-		char *mime;
-
+	if (options_get_bool ("UseMimeMagic"))
 		mime = xstrdup (file_mime_type (file));
-		if (mime) {
-			result = find_mime_decoder (mime);
-			free (mime);
-		}
-	}
 #endif
 
-	if (result == -1) {
-		char *ext;
+	if (extn || mime)
+		result = find_decoder (extn, mime);
 
-		ext = ext_pos (file);
-		if (ext)
-			result = find_extn_decoder (ext);
-	}
-
+	free (mime);
 	return result;
 }
 
@@ -145,13 +240,14 @@ static struct decoder *get_decoder_by_mime_type (struct io_stream *stream)
 	struct decoder *result;
 
 	result = NULL;
-	mime = io_get_mime_type (stream);
+	mime = xstrdup (io_get_mime_type (stream));
 	if (mime) {
-		i = find_mime_decoder (mime);
+		i = find_decoder (NULL, mime);
 		if (i != -1) {
 			logit ("Found decoder for MIME type %s: %s", mime, plugins[i].name);
 			result = plugins[i].decoder;
 		}
+		free (mime);
 	}
 	else
 		logit ("No MIME type.");
@@ -223,7 +319,6 @@ static char *extract_decoder_name (const char *filename)
 
 /* Return the index for a decoder of the given name, or plugins_num if
  * not found. */
-static int lookup_decoder_by_name (const char *name) ATTR_UNUSED;
 static int lookup_decoder_by_name (const char *name)
 {
 	int result;
@@ -241,15 +336,18 @@ static int lookup_decoder_by_name (const char *name)
 }
 
 /* Return a string of concatenated driver names. */
-static char *list_decoder_names ()
+static char *list_decoder_names (int *decoder_list, int count)
 {
 	int ix;
 	char *result;
 	lists_t_strs *names;
 
-	names = lists_strs_new (plugins_num);
-	for (ix = 0; ix < plugins_num; ix += 1)
-		lists_strs_append (names, plugins[ix].name);
+	if (count == 0)
+		return xstrdup ("");
+
+	names = lists_strs_new (count);
+	for (ix = 0; ix < count; ix += 1)
+		lists_strs_append (names, plugins[decoder_list[ix]].name);
 	result = lists_strs_fmt (names, " %s");
 	lists_strs_free (names);
 
@@ -333,29 +431,197 @@ static int lt_load_plugin (const char *file, lt_ptr debug_info_ptr)
 	return 0;
 }
 
-void decoder_init (int debug_info)
+/* Create a new preferences entry and initialise it. */
+static decoder_t_preference *make_preference (const char *prefix)
 {
+	decoder_t_preference *result;
+
+	assert (prefix && prefix[0]);
+
+	result = (decoder_t_preference *)xmalloc (sizeof (decoder_t_preference) +
+	                                          strlen (prefix) + 1);
+	result->next = NULL;
+	result->decoders = 0;
+	strcpy (result->type, prefix);
+	result->subtype = strchr (result->type, '/');
+	if (result->subtype) {
+		*result->subtype++ = 0x00;
+		result->subtype = clean_mime_subtype (result->subtype);
+	}
+
+	return result;
+}
+
+/* Is the given decoder (by index) already in the decoder list for 'pref'? */
+static bool is_listed_decoder (decoder_t_preference *pref, int d)
+{
+	int ix;
+	bool result;
+
+	assert (pref);
+	assert (d >= 0);
+
+	result = false;
+	for (ix = 0; ix < pref->decoders; ix += 1) {
+		if (d == pref->decoder_list[ix]) {
+			result = true;
+			break;
+		}
+	}
+
+	return result;
+}
+
+/* Add the named decoder (if valid) to a preferences decoder list. */
+static void load_each_decoder (decoder_t_preference *pref, const char *name)
+{
+	int d;
+
+	assert (pref);
+	assert (name && name[0]);
+
+	d = lookup_decoder_by_name (name);
+
+	/* Drop unknown decoders. */
+	if (d == plugins_num)
+		return;
+
+	/* Drop duplicate decoders. */
+	if (is_listed_decoder (pref, d))
+		return;
+
+	pref->decoder_list[pref->decoders++] = d;
+
+	return;
+}
+
+/* Build a preference's decoder list. */
+static void load_decoders (decoder_t_preference *pref, lists_t_strs *tokens)
+{
+	int ix, dx, asterisk_at;
+	int decoder[PLUGINS_NUM];
+	const char *name;
+
+	assert (pref);
+	assert (tokens);
+
+	asterisk_at = -1;
+
+	/* Add the index of each known decoder to the decoders list.
+	 * Note the position following the first asterisk. */
+	for (ix = 1; ix < lists_strs_size (tokens); ix += 1) {
+		name = lists_strs_at (tokens, ix);
+		if (strcmp (name, "*"))
+			load_each_decoder (pref, name);
+		else if (asterisk_at == -1)
+			asterisk_at = pref->decoders;
+	}
+
+	if (asterisk_at == -1)
+		return;
+
+	dx = 0;
+
+	/* Find decoders not already listed. */
+	for (ix = 0; ix < plugins_num; ix += 1) {
+		if (!is_listed_decoder (pref, ix))
+			decoder[dx++] = ix;
+	}
+
+	/* Splice asterisk decoders into the decoder list. */
+	for (ix = 0; ix < dx; ix += 1) {
+		pref->decoder_list[pref->decoders++] =
+		      pref->decoder_list[asterisk_at + ix];
+		pref->decoder_list[asterisk_at + ix] = decoder[ix];
+	}
+
+	assert (pref->decoders >= 0 && pref->decoders <= plugins_num);
+}
+
+/* Add a new preference for an audio format. */
+static void load_each_preference (const char *preference)
+{
+	const char *prefix;
+	lists_t_strs *tokens;
+	decoder_t_preference *pref;
+
+	assert (preference && preference[0]);
+
+	tokens = lists_strs_new (4);
+	lists_strs_split (tokens, preference, "(,)");
+	prefix = lists_strs_at (tokens, 0);
+	pref = make_preference (prefix);
+#ifdef DEBUG
+	pref->source = preference;
+#endif
+	load_decoders (pref, tokens);
+	pref->next = preferences;
+	preferences = pref;
+	lists_strs_free (tokens);
+}
+
+/* Load all preferences given by the user in PreferredDecoders. */
+static void load_preferences ()
+{
+	int ix;
+	const char *preference;
+	lists_t_strs *list;
+
+	list = options_get_list ("PreferredDecoders");
+
+	for (ix = 0; ix < lists_strs_size (list); ix += 1) {
+		preference = lists_strs_at (list, ix);
+		load_each_preference (preference);
+	}
+
+#ifdef DEBUG
+	{
+		char *names;
+		decoder_t_preference *pref;
+
+		for (pref = preferences; pref; pref = pref->next) {
+			names = list_decoder_names (pref->decoder_list, pref->decoders);
+			debug ("%s:%s", pref->source, names);
+			free (names);
+		}
+	}
+#endif
+}
+
+static void load_plugins (int debug_info)
+{
+	int ix;
 	char *names;
 
 	if (debug_info)
 		printf ("Loading plugins from %s...\n", PLUGIN_DIR);
-	if (lt_dlinit())
-		fatal ("lt_dlinit() failed: %s", lt_dlerror());
+	if (lt_dlinit ())
+		fatal ("lt_dlinit() failed: %s", lt_dlerror ());
 
-	if (lt_dlforeachfile(PLUGIN_DIR, &lt_load_plugin, &debug_info))
-		fatal ("Can't load plugins: %s", lt_dlerror());
+	if (lt_dlforeachfile (PLUGIN_DIR, &lt_load_plugin, &debug_info))
+		fatal ("Can't load plugins: %s", lt_dlerror ());
 
 	if (plugins_num == 0)
 		fatal ("No decoder plugins have been loaded!");
 
-	names = list_decoder_names();
-	logit ("decoders loaded:%s", names);
+	for (ix = 0; ix < plugins_num; ix += 1)
+		default_decoder_list[ix] = ix;
+
+	names = list_decoder_names (default_decoder_list, plugins_num);
+	logit ("loaded %d decoders:%s", plugins_num, names);
 	free (names);
+}
+
+void decoder_init (int debug_info)
+{
+	load_plugins (debug_info);
+	load_preferences ();
 }
 
 void decoder_cleanup ()
 {
 	int i;
+	decoder_t_preference *pref, *next;
 
 	for (i = 0; i < plugins_num; i++) {
 		if (plugins[i].decoder->destroy)
@@ -363,8 +629,15 @@ void decoder_cleanup ()
 		free (plugins[plugins_num].name);
 	}
 
-	if (lt_dlexit())
-		logit ("lt_exit() failed: %s", lt_dlerror());
+	if (lt_dlexit ())
+		logit ("lt_exit() failed: %s", lt_dlerror ());
+
+	pref = preferences;
+	for (pref = preferences; pref; pref = next) {
+		next = pref->next;
+		free (pref);
+	}
+	preferences = NULL;
 }
 
 /* Fill the error structure with an error of a given type and message.
