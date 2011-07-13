@@ -97,7 +97,7 @@ enum file_type file_type (const char *file)
 }
 
 /* Given a file name, return the mime type or NULL. */
-const char *file_mime_type (const char *file)
+const char *file_mime_type (const char *file ATTR_UNUSED)
 {
 	const char *result = NULL;
 
@@ -106,6 +106,8 @@ const char *file_mime_type (const char *file)
 #ifdef HAVE_LIBMAGIC
 	static bool initialised = false;
 	static magic_t cookie = NULL;
+	static char *cached_file = NULL;
+	static char *cached_result = NULL;
 
 	if (!initialised) {
 		initialised = true;
@@ -124,9 +126,20 @@ const char *file_mime_type (const char *file)
 	}
 
 	if (cookie != NULL) {
-		result = magic_file (cookie, file);
-		if (result == NULL)
-			logit ("Error interrogating file: %s", magic_error (cookie));
+		if (cached_file && !strcmp (cached_file, file))
+			result = cached_result;
+		else {
+			free (cached_file);
+			free (cached_result);
+			cached_file = cached_result = NULL;
+			result = magic_file (cookie, file);
+			if (result == NULL)
+				logit ("Error interrogating file: %s", magic_error (cookie));
+			else {
+				cached_file = xstrdup (file);
+				cached_result = xstrdup (result);
+			}
+		}
 	}
 #endif
 

@@ -288,10 +288,15 @@ ASCIILines		= no
 #
 # For Internet streams the matching is done on MIME media type and on
 # actual content.  For files the matches are made on MIME media type
-# (if the 'UseMimeMagic' option is set) and on filename extension.
+# (if the 'UseMimeMagic' option is set) and on filename extension.  The
+# MIME media type of a file is not determined until the first entry for
+# MIME is encountered in the list.
+#
 # The matching is done in the order of appearance in the list with any
 # entries added from the command line being matched before those listed
-# here.
+# here.  Therefore, if you place all filename extension entries before
+# all MIME entries you will speed up MOC's processing of directories
+# (which could be significant for remote file systems).
 #
 # The decoder list may be empty, in which case no decoders will be used
 # for files (and files with that audio format ignored) while Internet
@@ -300,20 +305,30 @@ ASCIILines		= no
 # which can handle the audio format will be used.  It is not an error to
 # list the same decoder twice, but neither does it make sense to do so.
 #
+# If you have a mix of audio and non-audio files in your directories, you
+# may wish to include entries at top of the list which ignore non-audio
+# files by extension.
+#
+# In summary, the PreferredDecoders option provides fine control over the
+# type of matching which is performed (filename extension, MIME media
+# type and streamed media content) and which decoder(s) (if any) are used
+# based on the option's list entries and their ordering.
+#
 # Examples: aac(aac,ffmpeg)             first try FAAD2 for AACs then FFmpeg
 #           mp3()                       ignore MP3 files
 #           wav(*,sndfile)              use sndfile for WAV as a last resort
 #           ogg(vorbis,*):flac(flac,*)  try Xiph decoders first
 #           ogg():audio/ogg()           ignore OGG files, and
 #                                       force Internet selection by content
+#           gz():html()                 ignore some non-audio files
 #
 # Any unspecified audio formats default to trying all decoders.
 # Any unknown (or misspelt) drivers are ignored.
 # All names are case insensitive.
 # The default setting reflects the historical situation.
 #
-#PreferredDecoders	= aac(aac,*):audio/aac(aac,*):audio/aacp(acc,*)
-#PreferredDecoders	+= m4a(ffmpeg,aac):audio/m4a(ffmpeg,aac)
+#PreferredDecoders	= aac(aac,*):m4a(ffmpeg,aac)
+#PreferredDecoders	+= audio/aac(aac,*):audio/aacp(acc,*):audio/m4a(ffmpeg,aac)
 
 # Resample method to use. There are a few methods of resampling sound supported
 # by libresamplerate. The default is the fastest (linear). Better description
