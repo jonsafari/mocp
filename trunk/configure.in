@@ -87,7 +87,7 @@ AC_HEADER_STDC
 AC_HEADER_STDBOOL
 AC_CHECK_HEADERS([fcntl.h string.h strings.h sys/param.h unistd.h sys/un.h \
 		  sys/socket.h sys/types.h signal.h sys/time.h \
-		  sys/wait.h sys/ioctl.h pwd.h \
+		  sys/wait.h sys/ioctl.h pwd.h regex.h \
 		  time.h errno.h sys/stat.h assert.h locale.h wchar.h],,
 		 AC_MSG_ERROR([Can't find required header files.]))
 AC_CHECK_HEADERS([sys/select.h inttypes.h limits.h stdint.h])
