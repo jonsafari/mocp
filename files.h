@@ -33,6 +33,7 @@ void make_file_title (struct plist *plist, const int num,
 int isdir (const char *file);
 int can_read_file (const char *file);
 char *absolute_path (const char *path, const char *cwd);
+bool is_secure (const char *file);
 
 #ifdef __cplusplus
 }

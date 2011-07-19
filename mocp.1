@@ -120,7 +120,10 @@ for in \fB/usr/share/moc/themes/\fP (depends on installation prefix),
 .LP
 .TP
 \fB\-C\fP \fIFILE\fP, \fB\-\-config\fP \fIFILE\fP
-Use the specified configuration file instead of the default.
+Use the specified configuration file instead of the default.  As this
+file can specify commands which invoke other applications MOC will refuse
+to start if it is not owned by either root or the current user, or if it is
+writable by anyone other than it's owner.
 .LP
 .TP
 \fB\-O\fP \fINAME\fP[\fB+\fP]\fB=\fP\fIVALUE\fP, \
@@ -252,7 +255,10 @@ MOC directory for the configuration file, socket, the pid file and other data.
 Configuration file for MOC.  The format is very simple; to see how to use
 it look at the example configuration file (\fBconfig.example\fP) distributed
 with the program.  The example file fully describes all the configuration
-options, and so is a useful reference when using the \fB\-O\fP option.
+options, and so is a useful reference when using the \fB\-O\fP option.  As
+this file can specify commands which invoke other applications MOC will
+refuse to start if it is not owned by either root or the current user, or if
+it is writable by anyone other than it's owner.
 .LP
 .TP
 .B ~/.moc/themes

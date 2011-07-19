@@ -1,5 +1,8 @@
-# This is a configuration file for the MOC player. It should be named 'config'
-# and placed in the directory ~/.moc/
+# This is a configuration file for the MOC player.  It should be named
+# 'config' and placed in the ~/.moc directory.  As this file can specify
+# commands which invoke other applications, MOC will refuse to start if it
+# is not owned by either root or the current user, or if it is writable by
+# anyone other than it's owner.
 
 #
 # Comments begin with '#'.
