@@ -700,3 +700,23 @@ char *absolute_path (const char *path, const char *cwd)
 
 	return result;
 }
+
+/* Check that a file which may cause other applications to be invoked
+ * is secure against tampering. */
+bool is_secure (const char *file)
+{
+    struct stat sb;
+
+	assert (file && file[0]);
+
+	if (stat (file, &sb) == -1)
+		return true;
+	if (!S_ISREG(sb.st_mode))
+		return false;
+	if (sb.st_mode & (S_IWGRP|S_IWOTH))
+		return false;
+	if (sb.st_uid != 0 && sb.st_uid != geteuid ())
+		return false;
+
+	return true;
+}

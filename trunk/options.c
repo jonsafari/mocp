@@ -26,6 +26,7 @@
 #include <regex.h>
 
 #include "common.h"
+#include "files.h"
 #include "log.h"
 #include "options.h"
 #include "lists.h"
@@ -1092,8 +1093,11 @@ void options_parse (const char *config_file)
 	int value_pos = 0;
 	FILE *file;
 
+	if (!is_secure (config_file))
+		fatal ("Configuration file is not secure: %s", config_file);
+
 	if (!(file = fopen(config_file, "r"))) {
-		logit ("Can't open config file: %s", strerror(errno));
+		logit ("Can't open config file: %s", strerror (errno));
 		return;
 	}
 
