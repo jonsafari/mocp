@@ -652,11 +652,11 @@ void options_init ()
 	add_bool ("UseRealtimePriority", false);
 	add_int  ("TagsCacheSize", 256, CHECK_RANGE(1), 0, INT_MAX);
 	add_bool ("PlaylistNumbering", true);
-	add_str  ("Layout1",
-			"directory:0,0,50%,100% playlist:50%,0,FILL,100%", CHECK_NONE);
-	add_str  ("Layout2",
-			"directory:0,0,100%,100% playlist:0,0,100%,100%", CHECK_NONE);
-	add_str  ("Layout3", NULL, CHECK_NONE);
+	add_list ("Layout1", "directory(0,0,50%,100%):playlist(50%,0,FILL,100%)",
+	                     CHECK_FUNCTION);
+	add_list ("Layout2", "directory(0,0,100%,100%):playlist(0,0,100%,100%)",
+	                     CHECK_FUNCTION);
+	add_list ("Layout3", NULL, CHECK_FUNCTION);
 	add_bool ("FollowPlayedFile", true);
 	add_bool ("CanStartInPlaylist", true);
 	add_bool ("UseCursorSelection", false);
@@ -938,8 +938,8 @@ static char *substitute_variable (const char *name_in, const char *value_in)
 	return result;
 }
 
-/* Rewrite comma-separated strings as a list value. */
-static char *rewrite_as_list (const char *str)
+/* Rewrite comma-separated SoundDriver value as a list value. */
+static char *rewrite_sounddriver_as_list (const char *str)
 {
 	char *result, *ptr;
 
@@ -951,6 +951,35 @@ static char *rewrite_as_list (const char *str)
 		else if (*ptr != ' ')
 			*ptr++ = *str;
 	} while (*str++);
+
+	return result;
+}
+
+/* Rewrite Layout string value as a function-valued list. */
+static char *rewrite_layout_as_list (const char *str)
+{
+	int len, size, ix;
+	char *result, *work;
+	lists_t_strs *layouts;
+
+	layouts = lists_strs_new (4);
+	work = xstrdup (str);
+	size = lists_strs_split (layouts, str, " ");
+	free (work);
+
+	for (ix = 0; ix < size; ix += 1) {
+		char *ptr;
+
+		ptr = strchr (lists_strs_at (layouts, ix), ':');
+		if (!ptr)
+			fatal ("Malformed layout option: %s", str);
+		*ptr = '(';
+	}
+
+	result = lists_strs_fmt (layouts, "%s):");
+	len = strlen (result);
+	result[len - 1] = 0x00;
+	lists_strs_free (layouts);
 
 	return result;
 }
@@ -986,7 +1015,7 @@ static bool set_option (const char *name, const char *value_in, bool append)
 
 	if (!append && options[i].set_in_config) {
 		fprintf (stderr, "Tried to set an option that has been already "
-				"set in the config file ('%s').", name);
+		                 "set in the config file ('%s').", name);
 		return false;
 	}
 
@@ -1007,14 +1036,23 @@ static bool set_option (const char *name, const char *value_in, bool append)
 	/* Handle a change of option type for SoundDriver. */
 	if (!strcasecmp (options[i].name, "SoundDriver")) {
 		if (strchr (value_s, ','))
-			value = rewrite_as_list (value_s);
+			value = rewrite_sounddriver_as_list (value_s);
+	}
+
+	/* Handle a change of option type for Layouts. */
+	if (!strncasecmp (options[i].name, "Layout", 6)) {
+		if (value_s[0] && !strchr (value_s, '('))
+			value = rewrite_layout_as_list (value_s);
 	}
 
 	/* Warn if configuration file needs updating. */
 	if (value) {
 		free (value_s);
 		fprintf (stderr, "\n\tThe valid values of '%s' have changed;"
-		                 "\n\tplease update your configuration file.\n\n", name);
+		                 "\n\tplease read the comments for this option in"
+		                 "\n\tthe supplied config.example file and update"
+		                 "\n\tyour own configuration file accordingly.\n\n",
+		                 name);
 		sleep (5);
 	}
 	else
@@ -1077,10 +1115,10 @@ void options_parse (const char *config_file)
 			opt_value[value_pos] = 0;
 
 			if (name_pos) {
-				if (value_pos == 0)
+				if (value_pos == 0 && strncasecmp (opt_name, "Layout", 6))
 					fatal ("Error in config file: "
 					       "missing option value on line %d!", line);
-				if (!set_option(opt_name, opt_value, append))
+				if (!set_option (opt_name, opt_value, append))
 					fatal ("Error in config file on line %d!", line);
 			}
 

@@ -145,7 +145,7 @@ static struct main_win
 	int lyrics_screen_top; /* first visible line of the lyrics screen. */
 
 	struct side_menu menus[3];
-	char *layout_fmt;
+	lists_t_strs *layout_fmt;
 	int selected_menu; /* which menu is currently selected by the user */
 } main_win;
 
@@ -889,16 +889,16 @@ static const char *parse_layout_coordinate (const char *fmt, int *val,
 		}
 	}
 
-	if (*e == ',')
+	if (*e == ',' || *e == ')')
 		e++;
 
 	return e;
 }
 
 /* Parse the layout string. Return 0 on error. */
-static int parse_layout (struct main_win_layout *l, const char *fmt)
+static int parse_layout (struct main_win_layout *l, lists_t_strs *fmt)
 {
-	const char *c = fmt;
+	int ix;
 
 	assert (l != NULL);
 	assert (fmt != NULL);
@@ -911,81 +911,83 @@ static int parse_layout (struct main_win_layout *l, const char *fmt)
 	l->menus[1] = l->menus[0];
 	l->menus[2] = l->menus[0];
 
-	while (*c) {
-		char name[20];
-		struct window_params p;
-		const char *b;
+	for (ix = 0; ix < lists_strs_size (fmt); ix += 1) {
+		const char *c;
 
-		/* get the name */
-		b = c;
-		c = strchr (c, ':');
-		if (!c)
-			return 0;
-		if (c - b >= (int)sizeof(name))
-			return 0;
-		strncpy (name, b, c - b);
-		name[c - b] = 0;
+		c = lists_strs_at (fmt, ix);
+		while (*c) {
+			char name[20];
+			struct window_params p;
+			const char *b;
 
-		if (!*++c)
-			return 0;
+			/* get the name */
+			b = c;
+			c = strchr (c, '(');
+			if (!c)
+				return 0;
+			if (c - b >= (int)sizeof(name))
+				return 0;
+			strncpy (name, b, c - b);
+			name[c - b] = 0;
 
-		if (!(c = parse_layout_coordinate(c, &p.x, COLS))) {
-			logit ("Coordinate parse error when parsing X");
-			return 0;
-		}
-		if (!(c = parse_layout_coordinate(c, &p.y, LINES - 4))) {
-			logit ("Coordinate parse error when parsing Y");
-			return 0;
-		}
-		if (!(c = parse_layout_coordinate(c, &p.width, COLS))) {
-			logit ("Coordinate parse error when parsing width");
-			return 0;
-		}
-		if (!(c = parse_layout_coordinate(c, &p.height, LINES - 4))) {
-			logit ("Coordinate parse error when parsing height");
-			return 0;
-		}
+			if (!*++c)
+				return 0;
 
-		if (p.width == LAYOUT_SIZE_FILL)
-			p.width = COLS - p.x;
-		if (p.height == LAYOUT_SIZE_FILL)
-			p.height = LINES - 4 - p.y;
+			if (!(c = parse_layout_coordinate (c, &p.x, COLS))) {
+				logit ("Coordinate parse error when parsing X");
+				return 0;
+			}
+			if (!(c = parse_layout_coordinate (c, &p.y, LINES - 4))) {
+				logit ("Coordinate parse error when parsing Y");
+				return 0;
+			}
+			if (!(c = parse_layout_coordinate (c, &p.width, COLS))) {
+				logit ("Coordinate parse error when parsing width");
+				return 0;
+			}
+			if (!(c = parse_layout_coordinate (c, &p.height, LINES - 4))) {
+				logit ("Coordinate parse error when parsing height");
+				return 0;
+			}
 
-		if (p.width < 15) {
-			logit ("Width is less than 15");
-			return 0;
-		}
-		if (p.height < 2) {
-			logit ("Height is less than 2");
-			return 0;
-		}
-		if (p.x + p.width > COLS) {
-			logit ("X + width is more than COLS (%d)", COLS);
-			return 0;
-		}
-		if (p.y + p.height > LINES - 4) {
-			logit ("Y + height is more than LINES - 4 (%d)",
-					LINES - 4);
-			return 0;
-		}
+			if (p.width == LAYOUT_SIZE_FILL)
+				p.width = COLS - p.x;
+			if (p.height == LAYOUT_SIZE_FILL)
+				p.height = LINES - 4 - p.y;
 
-		if (!strcmp(name, "directory"))
-			l->menus[MENU_DIR] = p;
-		else if (!strcmp(name, "playlist"))
-			l->menus[MENU_PLAYLIST] = p;
-		else {
-			logit ("Bad subwindow name '%s'", name);
-			return 0;
-		}
+			if (p.width < 15) {
+				logit ("Width is less than 15");
+				return 0;
+			}
+			if (p.height < 2) {
+				logit ("Height is less than 2");
+				return 0;
+			}
+			if (p.x + p.width > COLS) {
+				logit ("X + width is more than COLS (%d)", COLS);
+				return 0;
+			}
+			if (p.y + p.height > LINES - 4) {
+				logit ("Y + height is more than LINES - 4 (%d)",
+						LINES - 4);
+				return 0;
+			}
 
-		while (isblank(*c))
-			c++;
+			if (!strcmp(name, "directory"))
+				l->menus[MENU_DIR] = p;
+			else if (!strcmp(name, "playlist"))
+				l->menus[MENU_PLAYLIST] = p;
+			else {
+				logit ("Bad subwindow name '%s'", name);
+				return 0;
+			}
+		}
 	}
 
 	return 1;
 }
 
-static void main_win_init (struct main_win *w, const char *layout_fmt)
+static void main_win_init (struct main_win *w, lists_t_strs *layout_fmt)
 {
 	struct main_win_layout l;
 	int res;
@@ -1003,7 +1005,7 @@ static void main_win_init (struct main_win *w, const char *layout_fmt)
 	w->too_small = 0;
 	w->help_screen_top = 0;
 	w->lyrics_screen_top = 0;
-	w->layout_fmt = xstrdup (layout_fmt);
+	w->layout_fmt = layout_fmt;
 
 	res = parse_layout (&l, layout_fmt);
 	assert (res != 0);
@@ -1028,8 +1030,6 @@ static void main_win_destroy (struct main_win *w)
 		delwin (w->win);
 	if (w->curr_file)
 		free (w->curr_file);
-	if (w->layout_fmt)
-		free (w->layout_fmt);
 }
 
 /* Make a title suitable to display in a menu from the title of a playlist item.
@@ -2232,7 +2232,7 @@ static void main_win_swap_plist_items (struct main_win *w, const char *file1,
 	main_win_draw (w);
 }
 
-static void main_win_use_layout (struct main_win *w, const char *layout_fmt)
+static void main_win_use_layout (struct main_win *w, lists_t_strs *layout_fmt)
 {
 	struct main_win_layout l;
 	int res;
@@ -2240,9 +2240,7 @@ static void main_win_use_layout (struct main_win *w, const char *layout_fmt)
 	assert (w != NULL);
 	assert (layout_fmt != NULL);
 
-	if (w->layout_fmt)
-		free (w->layout_fmt);
-	w->layout_fmt = xstrdup (layout_fmt);
+	w->layout_fmt = layout_fmt;
 
 	res = parse_layout (&l, layout_fmt);
 	assert (res != 0);
@@ -2256,17 +2254,18 @@ static void main_win_use_layout (struct main_win *w, const char *layout_fmt)
 static void validate_layouts ()
 {
 	struct main_win_layout l;
-	const char *layout_fmt;
+	lists_t_strs *layout_fmt;
 
-	if (!parse_layout(&l, options_get_str("Layout1")))
+	layout_fmt = options_get_list ("Layout1");
+	if (lists_strs_empty (layout_fmt) || !parse_layout(&l, layout_fmt))
 		interface_fatal ("Layout1 is malformed!");
 
-	layout_fmt = options_get_str("Layout2");
-	if (layout_fmt && layout_fmt[0] && !parse_layout(&l, layout_fmt))
+	layout_fmt = options_get_list ("Layout2");
+	if (!lists_strs_empty (layout_fmt) && !parse_layout(&l, layout_fmt))
 		interface_fatal ("Layout2 is malformed!");
 
-	layout_fmt = options_get_str("Layout3");
-	if (layout_fmt && layout_fmt[0] && !parse_layout(&l, layout_fmt))
+	layout_fmt = options_get_list ("Layout3");
+	if (!lists_strs_empty (layout_fmt) && !parse_layout(&l, layout_fmt))
 		interface_fatal ("Layout3 is malformed!");
 }
 
@@ -3621,13 +3620,13 @@ static void info_win_resize (struct info_win *w)
 void windows_init ()
 {
 	utf8_init ();
-	if (!initscr())
+	if (!initscr ())
 		fatal ("Can't initialize terminal!");
 	screen_initialized = 1;
 	validate_layouts ();
 	cbreak ();
 	noecho ();
-	if (!options_get_int("UseCursorSelection"))
+	if (!options_get_int ("UseCursorSelection"))
 		curs_set (0);
 	use_default_colors ();
 
@@ -3637,7 +3636,7 @@ void windows_init ()
 	theme_init (has_xterm);
 	init_lines ();
 
-	main_win_init (&main_win, options_get_str("Layout1"));
+	main_win_init (&main_win, options_get_list ("Layout1"));
 	info_win_init (&info_win);
 
 	check_term_size (&main_win, &info_win);
@@ -4270,16 +4269,16 @@ void iface_toggle_layout ()
 {
 	static int curr_layout = 1;
 	char layout_option[10];
-	const char *layout_fmt;
+	lists_t_strs *layout_fmt;
 
 	if (++curr_layout > 3)
 		curr_layout = 1;
 
 	sprintf (layout_option, "Layout%d", curr_layout);
-	layout_fmt = options_get_str (layout_option);
-	if (!layout_fmt || !layout_fmt[0]) {
+	layout_fmt = options_get_list (layout_option);
+	if (lists_strs_empty (layout_fmt)) {
 		curr_layout = 1;
-		layout_fmt = options_get_str ("Layout1");
+		layout_fmt = options_get_list ("Layout1");
 	}
 
 	main_win_use_layout (&main_win, layout_fmt);
