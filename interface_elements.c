@@ -857,48 +857,42 @@ static int xround (const float f)
 }
 
 /* Parse one layout coordinate from "0,2,54%,1" and put it in val.
- * Max is the maximum value of the field. It's also used when processing
+ * Max is the maximum value of the field.  It's also used when processing
  * percent values.
- * Return position of the next coordinate or NULL on error. */
-static const char *parse_layout_coordinate (const char *fmt, int *val,
-		const int max)
+ * Return false on error. */
+static bool parse_layout_coordinate (const char *fmt, int *val, const int max)
 {
 	long v;
 	const char *e = fmt;
 
-	if (!strncasecmp(fmt, "FILL", sizeof("FILL") - 1)) {
+	if (!strcasecmp (fmt, "FILL")) {
 		*val = LAYOUT_SIZE_FILL;
-		e += sizeof("FILL") - 1;
-	}
-	else {
-		v = strtol (fmt, (char **)&e, 10);
-		if (e == fmt)
-			return NULL;
-
-		if (*e == '%') {
-			*val = xround (max * v / 100.0);
-			e++;
-		}
-		else
-			*val = v;
-
-		if (*val < 0 || *val > max) {
-			logit ("Coordinate out of range - %d is not in (0, %d)",
-					*val, max);
-			return NULL;
-		}
+		return true;
 	}
 
-	if (*e == ',' || *e == ')')
-		e++;
+	v = strtol (fmt, (char **)&e, 10);
+	if (e == fmt)
+		return false;
 
-	return e;
+	if (*e == '%')
+		*val = xround (max * v / 100.0);
+	else
+		*val = v;
+
+	if (*val < 0 || *val > max) {
+		logit ("Coordinate out of range - %d is not in (0, %d)", *val, max);
+		return false;
+	}
+
+	return true;
 }
 
-/* Parse the layout string. Return 0 on error. */
-static int parse_layout (struct main_win_layout *l, lists_t_strs *fmt)
+/* Parse the layout string. Return false on error. */
+static bool parse_layout (struct main_win_layout *l, lists_t_strs *fmt)
 {
 	int ix;
+	bool result;
+	lists_t_strs *format;
 
 	assert (l != NULL);
 	assert (fmt != NULL);
@@ -911,80 +905,74 @@ static int parse_layout (struct main_win_layout *l, lists_t_strs *fmt)
 	l->menus[1] = l->menus[0];
 	l->menus[2] = l->menus[0];
 
+	result = false;
+	format = lists_strs_new (6);
 	for (ix = 0; ix < lists_strs_size (fmt); ix += 1) {
-		const char *c;
+		const char *menu, *name;
+		struct window_params p;
 
-		c = lists_strs_at (fmt, ix);
-		while (*c) {
-			char name[20];
-			struct window_params p;
-			const char *b;
+		lists_strs_clear (format);
+		menu = lists_strs_at (fmt, ix);
+		if (lists_strs_split (format, menu, "(,)") != 5)
+			goto err;
 
-			/* get the name */
-			b = c;
-			c = strchr (c, '(');
-			if (!c)
-				return 0;
-			if (c - b >= (int)sizeof(name))
-				return 0;
-			strncpy (name, b, c - b);
-			name[c - b] = 0;
+		name = lists_strs_at (format, 0);
 
-			if (!*++c)
-				return 0;
+		if (!parse_layout_coordinate (lists_strs_at (format, 1), &p.x, COLS)) {
+			logit ("Coordinate parse error when parsing X");
+			goto err;
+		}
+		if (!parse_layout_coordinate (lists_strs_at (format, 2), &p.y, LINES - 4)) {
+			logit ("Coordinate parse error when parsing Y");
+			goto err;
+		}
+		if (!parse_layout_coordinate (lists_strs_at (format, 3), &p.width, COLS)) {
+			logit ("Coordinate parse error when parsing width");
+			goto err;
+		}
+		if (!parse_layout_coordinate (lists_strs_at (format, 4), &p.height, LINES - 4)) {
+			logit ("Coordinate parse error when parsing height");
+			goto err;
+		}
 
-			if (!(c = parse_layout_coordinate (c, &p.x, COLS))) {
-				logit ("Coordinate parse error when parsing X");
-				return 0;
-			}
-			if (!(c = parse_layout_coordinate (c, &p.y, LINES - 4))) {
-				logit ("Coordinate parse error when parsing Y");
-				return 0;
-			}
-			if (!(c = parse_layout_coordinate (c, &p.width, COLS))) {
-				logit ("Coordinate parse error when parsing width");
-				return 0;
-			}
-			if (!(c = parse_layout_coordinate (c, &p.height, LINES - 4))) {
-				logit ("Coordinate parse error when parsing height");
-				return 0;
-			}
+		if (p.width == LAYOUT_SIZE_FILL)
+			p.width = COLS - p.x;
+		if (p.height == LAYOUT_SIZE_FILL)
+			p.height = LINES - 4 - p.y;
 
-			if (p.width == LAYOUT_SIZE_FILL)
-				p.width = COLS - p.x;
-			if (p.height == LAYOUT_SIZE_FILL)
-				p.height = LINES - 4 - p.y;
+		if (p.width < 15) {
+			logit ("Width is less than 15");
+			goto err;
+		}
+		if (p.height < 2) {
+			logit ("Height is less than 2");
+			goto err;
+		}
+		if (p.x + p.width > COLS) {
+			logit ("X + width is more than COLS (%d)", COLS);
+			goto err;
+		}
+		if (p.y + p.height > LINES - 4) {
+			logit ("Y + height is more than LINES - 4 (%d)",
+					LINES - 4);
+			goto err;
+		}
 
-			if (p.width < 15) {
-				logit ("Width is less than 15");
-				return 0;
-			}
-			if (p.height < 2) {
-				logit ("Height is less than 2");
-				return 0;
-			}
-			if (p.x + p.width > COLS) {
-				logit ("X + width is more than COLS (%d)", COLS);
-				return 0;
-			}
-			if (p.y + p.height > LINES - 4) {
-				logit ("Y + height is more than LINES - 4 (%d)",
-						LINES - 4);
-				return 0;
-			}
-
-			if (!strcmp(name, "directory"))
-				l->menus[MENU_DIR] = p;
-			else if (!strcmp(name, "playlist"))
-				l->menus[MENU_PLAYLIST] = p;
-			else {
-				logit ("Bad subwindow name '%s'", name);
-				return 0;
-			}
+		if (!strcmp(name, "directory"))
+			l->menus[MENU_DIR] = p;
+		else if (!strcmp(name, "playlist"))
+			l->menus[MENU_PLAYLIST] = p;
+		else {
+			logit ("Bad subwindow name '%s'", name);
+			goto err;
 		}
 	}
 
-	return 1;
+	result = true;
+
+err:
+	lists_strs_free (format);
+	return result;
 }
 
 static void main_win_init (struct main_win *w, lists_t_strs *layout_fmt)
@@ -1008,7 +996,7 @@ static void main_win_init (struct main_win *w, lists_t_strs *layout_fmt)
 	w->layout_fmt = layout_fmt;
 
 	res = parse_layout (&l, layout_fmt);
-	assert (res != 0);
+	assert (res);
 
 	side_menu_init (&w->menus[0], MENU_DIR, w->win, &l.menus[0]);
 	side_menu_init (&w->menus[1], MENU_PLAYLIST, w->win, &l.menus[1]);
@@ -2243,7 +2231,7 @@ static void main_win_use_layout (struct main_win *w, lists_t_strs *layout_fmt)
 	w->layout_fmt = layout_fmt;
 
 	res = parse_layout (&l, layout_fmt);
-	assert (res != 0);
+	assert (res);
 
 	side_menu_resize (&w->menus[0], &l.menus[0]);
 	side_menu_resize (&w->menus[1], &l.menus[1]);
@@ -2282,7 +2270,7 @@ static void main_win_resize (struct main_win *w)
 	werase (w->win);
 
 	res = parse_layout (&l, w->layout_fmt);
-	assert (res != 0);
+	assert (res);
 
 	side_menu_resize (&w->menus[0], &l.menus[0]);
 	side_menu_resize (&w->menus[1], &l.menus[1]);
