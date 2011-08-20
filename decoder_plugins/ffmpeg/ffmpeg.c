@@ -33,6 +33,9 @@
 #ifndef FF_API_OLD_METADATA
 #define FF_API_OLD_METADATA            (LIBAVFORMAT_VERSION_MAJOR < 53)
 #endif
+#ifndef CODEC_TYPE_AUDIO
+#define CODEC_TYPE_AUDIO AVMEDIA_TYPE_AUDIO
+#endif
 
 /* FFmpeg also likes common names, without that, our common.h and log.h
  * would not be included. */
