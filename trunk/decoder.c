@@ -632,7 +632,7 @@ void decoder_cleanup ()
 	for (i = 0; i < plugins_num; i++) {
 		if (plugins[i].decoder->destroy)
 			plugins[i].decoder->destroy ();
-		free (plugins[plugins_num].name);
+		free (plugins[i].name);
 	}
 
 	if (lt_dlexit ())
