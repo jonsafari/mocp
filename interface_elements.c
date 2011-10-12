@@ -3397,6 +3397,7 @@ static void info_win_draw_static_elements (const struct info_win *w)
 		mvwaddch (w->win, 2, 19, ']');
 
 		/* time bar frame */
+		wattrset (w->win, get_color(CLR_FRAME));
 		mvwaddch (w->win, 3, COLS - 2, lines.ltee);
 		mvwaddch (w->win, 3, 1, lines.rtee);
 
