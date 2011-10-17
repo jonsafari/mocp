@@ -241,6 +241,7 @@ int audio_get_buf_fill ();
 void audio_close ();
 int audio_get_time ();
 int audio_get_state ();
+int audio_get_prev_state ();
 void audio_plist_add (const char *file);
 void audio_plist_clear ();
 char *audio_get_sname ();
