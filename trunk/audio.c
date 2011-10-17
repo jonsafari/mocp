@@ -82,6 +82,7 @@ static struct output_driver_caps hw_caps; /* capabilities of the output
 
 /* Player state. */
 static int state = STATE_STOP;
+static int prev_state = STATE_STOP;
 
 /* requests for playing thread */
 static int stop_playing = 0;
@@ -480,7 +481,7 @@ static void *play_thread (void *unused ATTR_UNUSED)
 
 	}
 
-
+	prev_state = state;
 	state = STATE_STOP;
 	state_change ();
 
@@ -528,6 +529,7 @@ void audio_stop ()
 			curr_playing_fname = NULL;
 		}
 
+		prev_state = state;
 		state = STATE_STOP;
 		state_change ();
 	}
@@ -636,6 +638,7 @@ void audio_pause ()
 		else
 			out_buf_pause (&out_buf);
 
+		prev_state = state;
 		state = STATE_PAUSE;
 		state_change ();
 
@@ -658,6 +661,7 @@ void audio_unpause ()
 	}
 	else if (curr_playing != -1) {
 		out_buf_unpause (&out_buf);
+		prev_state = state;
 		state = STATE_PLAY;
 		UNLOCK (curr_playing_mut);
 		state_change ();
@@ -1043,6 +1047,11 @@ int audio_get_state ()
 	return state;
 }
 
+int audio_get_prev_state ()
+{
+	return prev_state;
+}
+
 void audio_plist_add (const char *file)
 {
 	LOCK (plist_mut);
@@ -1184,6 +1193,7 @@ void audio_plist_set_time (const char *file, const int time)
 /* Notify that the state was changed (used by the player). */
 void audio_state_started_playing ()
 {
+	prev_state = state;
 	state = STATE_PLAY;
 	state_change ();
 }

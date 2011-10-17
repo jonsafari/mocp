@@ -392,6 +392,7 @@ static void on_song_change ()
 	static lists_t_strs *on_song_change = NULL;
 
 	int ix;
+	bool same_file, unpaused;
 	char *curr_file;
 	char **args, *cmd;
 	struct file_tags *curr_tags;
@@ -416,11 +417,11 @@ static void on_song_change ()
 	if (curr_file == NULL)
 		return;
 
-	if (!options_get_bool ("RepeatSongChange")) {
-		if (last_file && strcmp (last_file, curr_file) == 0) {
-			free (curr_file);
-			return;
-		}
+	same_file = (last_file && !strcmp (last_file, curr_file));
+	unpaused = (audio_get_prev_state () == STATE_PAUSE);
+	if (same_file && (unpaused || !options_get_bool ("RepeatSongChange"))) {
+		free (curr_file);
+		return;
 	}
 
 	curr_tags = tags_cache_get_immediate (&tags_cache, curr_file,
