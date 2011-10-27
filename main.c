@@ -284,7 +284,8 @@ static void show_usage (const char *prg_name) {
 #endif
 "-S --server            Run only the server.\n"
 "-F --foreground        Run server in foreground, log to stdout.\n"
-"-R --sound-driver NAME Use the specified sound driver (oss, alsa, jack, null).\n"
+"-R --sound-driver LIST Use the first valid sound driver from LIST\n"
+"                       (sndio, oss, alsa, jack, null).\n"
 "-m --music-dir         Start in MusicDir.\n"
 "-a --append            Append the files/directories/playlists passed in\n"
 "                       the command line to playlist and exit.\n"
