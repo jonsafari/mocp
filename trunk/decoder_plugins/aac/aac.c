@@ -558,7 +558,9 @@ static void aac_get_name (const char *file, char buf[4])
 {
 	char *ext = ext_pos (file);
 
-	if (!strcasecmp (ext, "aac"))
+	if (!strcasecmp (ext, "m4a"))
+		strcpy (buf, "M4A");
+	else if (!strcasecmp (ext, "aac"))
 		strcpy (buf, "AAC");
 }
 
