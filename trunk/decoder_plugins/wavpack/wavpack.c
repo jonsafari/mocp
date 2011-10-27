@@ -76,7 +76,7 @@ static void *wav_open (const char *file)
 	if ((data->wpc = WavpackOpenFileInput(file,
 				wv_error, o_flags, 0)) == NULL) {
 		decoder_error (&data->error, ERROR_FATAL, 0, "%s", wv_error);
-		debug ("wv_open error: %s", wv_error);
+		logit ("wv_open error: %s", wv_error);
 	}
 	else {
 		wav_data_init (data);
@@ -151,6 +151,11 @@ static void wav_info (const char *file_name, struct file_tags *info,
 
 	wpc = WavpackOpenFileInput (file_name, wv_error, OPEN_TAGS, 0);
 
+	if (wpc == NULL) {
+		logit ("wv_open error: %s", wv_error);
+		return;
+	}
+
 	int duration = WavpackGetNumSamples (wpc) / WavpackGetSampleRate (wpc);
 
 	if(tags_sel & TAGS_TIME) {
@@ -184,7 +189,7 @@ static void wav_info (const char *file_name, struct file_tags *info,
 		info->filled |= TAGS_COMMENTS;
 	}
 
-	WavpackCloseFile ( wpc);
+	WavpackCloseFile (wpc);
 }
 
 
