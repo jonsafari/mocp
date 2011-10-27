@@ -88,6 +88,7 @@ static void ffmpeg_info (const char *file_name,
 	}
 	if ((err = av_find_stream_info(ic)) < 0) {
 		logit ("av_find_stream_info() failed (%d)", err);
+		av_close_input_file (ic);
 		return;
 	}
 
@@ -107,6 +108,8 @@ static void ffmpeg_info (const char *file_name,
 	if (tags_sel & TAGS_TIME)
 		info->time = ic->duration >= 0 ? ic->duration / AV_TIME_BASE
 			: -1;
+
+	av_close_input_file (ic);
 }
 
 static void *ffmpeg_open (const char *file)
