@@ -156,13 +156,6 @@ AC_C99_FUNC_LRINTF
 AX_CFLAGS_GCC_OPTION(-Wall)
 AX_CFLAGS_GCC_OPTION(-W)
 
-if test "$ac_cv_c99_lrintf" = "yes"
-then
-	AC_CHECK_FUNC([sin], ,
-		      [AC_CHECK_LIB([m], [sin], , AC_MSG_ERROR([]))
-		      EXTRA_LIBS="$EXTRA_LIBS -lm"])
-fi
-
 PKG_PROG_PKG_CONFIG([0.20])
 
 if test "x$PKG_CONFIG" == "x"
@@ -275,6 +268,11 @@ AC_CHECK_FUNCS([getcwd memmove strcasecmp strdup strerror strncasecmp strchr \
 		accept time connect unlink send recv select strftime \
 		localtime_r mbsrtowcs mbstowcs execvp wcswidth strspn geteuid],,
 	       AC_MSG_ERROR([Required standard C/UNIX functions are not present.]))
+
+AC_CHECK_FUNC([sin], ,
+              [AC_CHECK_LIB([m], [sin], ,
+               AC_MSG_ERROR([No sin() function found.]))
+               EXTRA_LIBS="$EXTRA_LIBS -lm"])
 
 dnl optional functions
 AC_CHECK_FUNCS([strcasestr strerror_r])
