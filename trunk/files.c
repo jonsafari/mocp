@@ -111,11 +111,10 @@ const char *file_mime_type (const char *file ATTR_UNUSED)
 
 	if (!initialised) {
 		initialised = true;
-		cookie = magic_open (MAGIC_SYMLINK | MAGIC_MIME | MAGIC_PRESERVE_ATIME |
-		                     MAGIC_ERROR | MAGIC_NO_CHECK_COMPRESS |
-		                     MAGIC_NO_CHECK_ELF | MAGIC_NO_CHECK_TAR |
-		                     MAGIC_NO_CHECK_TOKENS | MAGIC_NO_CHECK_FORTRAN |
-		                     MAGIC_NO_CHECK_TROFF);
+		cookie = magic_open (MAGIC_SYMLINK | MAGIC_MIME | MAGIC_ERROR |
+		                     MAGIC_NO_CHECK_COMPRESS | MAGIC_NO_CHECK_ELF |
+		                     MAGIC_NO_CHECK_TAR | MAGIC_NO_CHECK_TOKENS |
+		                     MAGIC_NO_CHECK_FORTRAN | MAGIC_NO_CHECK_TROFF);
 		if (cookie == NULL)
 			logit ("Error allocating magic cookie: %s", strerror (errno));
 		else if (magic_load (cookie, NULL) != 0) {
