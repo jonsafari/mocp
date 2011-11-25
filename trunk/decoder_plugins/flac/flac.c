@@ -313,6 +313,7 @@ static void *flac_open_internal (const char *file, const int buffered)
 	data->abort = 0;
 	data->sample_buffer_fill = 0;
 	data->last_decode_position = 0;
+	data->ok = 0;
 
 	data->stream = io_open (file, buffered);
 	if (!io_ok(data->stream)) {
