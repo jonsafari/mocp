@@ -1,7 +1,7 @@
-dnl ffmpeg
+dnl ffmpeg/libav
 
 AC_ARG_WITH(ffmpeg, AS_HELP_STRING([--without-ffmpeg],
-                                   [Compile without ffmpeg]))
+                                   [Compile without ffmpeg/libav]))
 
 if test "x$with_ffmpeg" != "xno"
 then
@@ -9,7 +9,7 @@ then
 		[AC_SUBST(libavformat_CFLAGS)
 		 AC_SUBST(libavformat_LIBS)
 		 want_ffmpeg="yes"
-		 DECODER_PLUGINS="$DECODER_PLUGINS ffmpeg"],
+		 DECODER_PLUGINS="$DECODER_PLUGINS ffmpeg/libav"],
 		[AC_CHECK_PROG([FFMPEG_CONFIG], [ffmpeg-config], [yes])
 		 if test "x$FFMPEG_CONFIG" = "xyes"
 		 then
@@ -18,7 +18,7 @@ then
 			 AC_SUBST(libavformat_CFLAGS)
 			 AC_SUBST(libavformat_LIBS)
 			 want_ffmpeg="yes"
-			 DECODER_PLUGINS="$DECODER_PLUGINS ffmpeg"
+			 DECODER_PLUGINS="$DECODER_PLUGINS ffmpeg/libav"
 		 fi])
 	AC_CHECK_HEADERS(ffmpeg/avformat.h libavformat/avformat.h)
 	save_LIBS="$LIBS"
