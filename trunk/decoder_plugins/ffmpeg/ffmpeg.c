@@ -15,6 +15,7 @@
 # include "config.h"
 #endif
 
+#include <stdlib.h>
 #include <string.h>
 #ifdef HAVE_STDINT_H
 # include <stdint.h>
@@ -26,15 +27,6 @@
 #include <libavformat/avformat.h>
 #else
 #include <ffmpeg/avformat.h>
-#endif
-
-/* libavformat's API will be changing at version 53, but at present there
- * appears to be no guidance on what will replace the deprecated fields. */
-#ifndef FF_API_OLD_METADATA
-#define FF_API_OLD_METADATA            (LIBAVFORMAT_VERSION_MAJOR < 53)
-#endif
-#ifndef CODEC_TYPE_AUDIO
-#define CODEC_TYPE_AUDIO AVMEDIA_TYPE_AUDIO
 #endif
 
 /* FFmpeg also likes common names, without that, our common.h and log.h
@@ -51,7 +43,6 @@
 
 struct ffmpeg_data
 {
-	AVFormatParameters ap;
 	AVFormatContext *ic;
 	AVCodecContext *enc;
 	AVCodec *codec;
@@ -76,24 +67,68 @@ static void ffmpeg_info (const char *file_name,
 		struct file_tags *info,
 		const int tags_sel)
 {
-	AVFormatParameters ap;
-	AVFormatContext *ic;
+	AVFormatContext *ic = NULL;
 	int err;
 
-	memset (&ap, 0, sizeof(ap));
-
-	if ((err = av_open_input_file(&ic, file_name, NULL, 0, &ap)) < 0) {
+#ifdef HAVE_AVFORMAT_OPEN_INPUT
+	err = avformat_open_input (&ic, file_name, NULL, NULL);
+	if (err < 0) {
+		logit ("avformat_open_input() failed (%d)", err);
+		return;
+	}
+#else
+	err = av_open_input_file (&ic, file_name, NULL, 0, NULL);
+	if (err < 0) {
 		logit ("av_open_input_file() failed (%d)", err);
 		return;
 	}
-	if ((err = av_find_stream_info(ic)) < 0) {
+#endif
+
+	err = av_find_stream_info (ic);
+	if (err < 0) {
 		logit ("av_find_stream_info() failed (%d)", err);
 		av_close_input_file (ic);
 		return;
 	}
 
-#if FF_API_OLD_METADATA
 	if (tags_sel & TAGS_COMMENTS) {
+#if defined(HAVE_AV_DICT_GET)
+		AVDictionaryEntry *entry;
+
+		entry = av_dict_get (ic->metadata, "track", NULL, 0);
+		if (entry && entry->value && entry->value[0])
+			info->track = atoi (entry->value);
+		entry = av_dict_get (ic->metadata, "title", NULL, 0);
+		if (entry && entry->value && entry->value[0])
+			info->title = xstrdup (entry->value);
+		entry = av_dict_get (ic->metadata, "artist", NULL, 0);
+		if (entry && entry->value && entry->value[0])
+			info->artist = xstrdup (entry->value);
+		entry = av_dict_get (ic->metadata, "album", NULL, 0);
+		if (entry && entry->value && entry->value[0])
+			info->album = xstrdup (entry->value);
+#elif defined(HAVE_AV_METADATA_GET)
+		AVMetadataTag *tag;
+ 
+		av_metadata_conv (ic, NULL, ic->iformat->metadata_conv);
+
+		tag = av_metadata_get (ic->metadata, "track", NULL, 0);
+		if (tag && tag->value && tag->value[0])
+			info->track = atoi (tag->value);
+		tag = av_metadata_get (ic->metadata, "title", NULL, 0);
+		if (tag && tag->value && tag->value[0])
+			info->title = xstrdup (tag->value);
+#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(52,50,0)
+		tag = av_metadata_get (ic->metadata, "author", NULL, 0);
+#else
+		tag = av_metadata_get (ic->metadata, "artist", NULL, 0);
+#endif
+		if (tag && tag->value && tag->value[0])
+			info->artist = xstrdup (tag->value);
+		tag = av_metadata_get (ic->metadata, "album", NULL, 0);
+		if (tag && tag->value && tag->value[0])
+			info->album = xstrdup (tag->value);
+#else
 		if (ic->track != 0)
 			info->track = ic->track;
 		if (ic->title[0] != 0)
@@ -102,8 +137,8 @@ static void ffmpeg_info (const char *file_name,
 			info->artist = xstrdup (ic->author);
 		if (ic->album[0] != 0)
 			info->album = xstrdup (ic->album);
-	}
 #endif
+	}
 
 	if (tags_sel & TAGS_TIME)
 		info->time = ic->duration >= 0 ? ic->duration / AV_TIME_BASE
@@ -121,15 +156,23 @@ static void *ffmpeg_open (const char *file)
 
 	data = (struct ffmpeg_data *)xmalloc (sizeof(struct ffmpeg_data));
 	data->ok = 0;
+	data->ic = NULL;
 
 	decoder_error_init (&data->error);
-	memset (&data->ap, 0, sizeof(data->ap));
 
-	err = av_open_input_file (&data->ic, file, NULL, 0, &data->ap);
+#ifdef HAVE_AVFORMAT_OPEN_INPUT
+	err = avformat_open_input (&data->ic, file, NULL, NULL);
 	if (err < 0) {
 		decoder_error (&data->error, ERROR_FATAL, 0, "Can't open file");
 		return data;
 	}
+#else
+	err = av_open_input_file (&data->ic, file, NULL, 0, NULL);
+	if (err < 0) {
+		decoder_error (&data->error, ERROR_FATAL, 0, "Can't open file");
+		return data;
+	}
+#endif
 
 	err = av_find_stream_info (data->ic);
 	if (err < 0) {
@@ -143,7 +186,12 @@ static void *ffmpeg_open (const char *file)
 	av_read_play (data->ic);
 	for (i = 0; i < data->ic->nb_streams; i++) {
 		data->enc = data->ic->streams[i]->codec;
-		if (data->enc->codec_type == CODEC_TYPE_AUDIO) {
+#if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(50,15,1)
+		if (data->enc->codec_type == CODEC_TYPE_AUDIO)
+#else
+		if (data->enc->codec_type == AVMEDIA_TYPE_AUDIO)
+#endif
+		{
 			audio_index = i;
 			break;
 		}
@@ -296,11 +344,11 @@ static int ffmpeg_decode (void *prv_data, char *buf, int buf_len,
 		while (pkt_size) {
 			int len;
 
-#if LIBAVCODEC_VERSION_INT >= ((52<<16)+(26<<8)+0)
+#if defined(HAVE_AVCODEC_DECODE_AUDIO3)
 			data_size = sizeof (avbuf);
 			len = avcodec_decode_audio3 (data->enc, (int16_t *)avbuf,
 					&data_size, &pkt);
-#elif LIBAVCODEC_VERSION_INT >= ((51<<16)+(50<<8)+0)
+#elif defined(HAVE_AVCODEC_DECODE_AUDIO2)
 			data_size = sizeof (avbuf);
 			len = avcodec_decode_audio2 (data->enc, (int16_t *)avbuf,
 					&data_size, pkt_data, pkt_size);
