@@ -199,7 +199,6 @@ static int aac_count_time (struct aac_data *data)
 	NeAACDecFrameInfo frame_info;
 	int samples = 0, bytes = 0, frames = 0;
 	off_t file_size;
-	char *sample_buf;
 	long saved_pos;
 
 	file_size = io_file_size (data->stream);
@@ -213,8 +212,8 @@ static int aac_count_time (struct aac_data *data)
 		if (buffer_fill_frame(data) <= 0)
 			break;
 
-		sample_buf = NeAACDecDecode(data->decoder, &frame_info,
-			buffer_data(data), buffer_length(data));
+		NeAACDecDecode (data->decoder, &frame_info,
+		                buffer_data (data), buffer_length (data));
 		if (frame_info.error == 0 && frame_info.samples > 0) {
 			samples += frame_info.samples;
 			bytes += frame_info.bytesconsumed;
