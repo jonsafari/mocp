@@ -1,5 +1,20 @@
 #!/bin/sh
 
+# Deprecate the use of this script in favour of autoreconf.
+echo
+echo Use of this script is now deprecated -- use autoreconf instead.
+echo
+echo You will need to append the '-i' option to autoreconf on its first
+echo use in a directory tree checked out or exported from the MOC SVN.
+echo
+echo If there is a reason why autoreconf does not work for you, please
+echo post a message on the MOC forum so the problem can be rectified.
+echo
+echo "    Press ENTER now to continue with this script, or"
+echo "          CTRL-C to abort and then use autoreconf instead."
+echo
+read
+
 # Try to find where GNU libtool is hiding.
 LIBTOOL_AKA="glibtoolize"
 if test -z "$LIBTOOLIZE"; then
