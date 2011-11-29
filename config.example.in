@@ -335,7 +335,7 @@ ASCIILines		= no
 #PreferredDecoders	+= mpc(musepack,*)
 #PreferredDecoders	+= wav(sndfile,*,modplug)
 #PreferredDecoders	+= wv(wavpack,*)
-#PreferredDecoders	+= audio/aac(aac,*):audio/aacp(acc,*):audio/m4a(ffmpeg,aac)
+#PreferredDecoders	+= audio/aac(aac,*):audio/aacp(aac,*):audio/m4a(ffmpeg,aac)
 #PreferredDecoders	+= audio/wav(sndfile,*,modplug)
 
 # The following PreferredDecoders attempt to handle the ambiguity surrounding
@@ -561,7 +561,6 @@ CanStartInPlaylist	= yes
 # Set it to 'no' if you don't have any configuration file.
 # Otherwise set it to the name of a specific file.
 #TiMidity_Config =
-
 
 # SidPlay2-Options.
 # Default length of a song if not in database (seconds).

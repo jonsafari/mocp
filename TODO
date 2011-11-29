@@ -2,16 +2,16 @@ Items marked with $ are bigger changes requiring more time.
 
 Known bugs:
 
-- Do we assume filesystem in UTF-8? It's incorrect.
-- I have a problem with moc 2.4.0 on FreeBSD 6.1-PRERELEASE. When I build moc
-  with musepack (libmpcdec) support moc allways core dumps on exit.
+- Do we assume filesystem in UTF-8?  It's incorrect.
+- I have a problem with MOC 2.4.0 on FreeBSD 6.1-PRERELEASE.  When I build
+  MOC with musepack (libmpcdec) support MOC always core dumps on exit.
 - Crash on FreeBSD 5.5 (http://moc.daper.net/node/148).
 - When sorting by file name (directories), put files beginning with a
   non-alphanumeric character at the top.
 - id3tags v2.3 with UTF-16 are not properly handled by libid3tag, taglib has
-  no problems. Need to use libtag here?
+  no problems.  Need to use libtag here?
   NEW: recognition of ID3 tags v1 is broken (example: small.mp3).
-  Thanks for the patch. It works. Perhaps MOC can add support for the frame
+  Thanks for the patch.  It works.  Perhaps MOC can add support for the frame
   field_type to differentiate between ID3_FIELD_TYPE_LATIN1 and
   ID3_FIELD_TYPE_STRING.
 - mocp -a playlist.pls should not sort added files.
@@ -58,7 +58,7 @@ In future:
 * FastGo instead of FastDir: go to a directory, URL or a playlist.
 * Read tags for sndfile formats.
 *$ http://www.peercast.org/
-* Crossfeed
+* Crossfeed.
 * Command to see all information about a file with all tags, also all
   information about an internet stream (from IceCast headers like icy-url,
   icy-pub).
@@ -75,7 +75,7 @@ In future:
 *$ Replaygain.
 * Seek to arbitrary position (by typing a number).
 *$ VQF (like http://www.csn.ul.ie/~mel/projects/linux/vqfplugin/).
-*$ ESD
+*$ ESD.
 *$ CUE-sheet.
 * Command line option to delete the currently played item from the playlist.
 * Scripting.

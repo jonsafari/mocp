@@ -643,7 +643,7 @@ void options_init ()
 	                 "mpc(musepack,*):"
 	                 "wav(sndfile,*,modplug):"
 	                 "wv(wavpack,*):"
-	                 "audio/aac(aac,*):audio/aacp(acc,*):audio/m4a(ffmpeg,aac):"
+	                 "audio/aac(aac,*):audio/aacp(aac,*):audio/m4a(ffmpeg,aac):"
 	                 "audio/wav(sndfile,*,modplug):"
 	                 "ogg(vorbis):oga(vorbis):spx(speex):"
 	                 "application/ogg():audio/ogg()",

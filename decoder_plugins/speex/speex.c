@@ -392,7 +392,7 @@ static int count_time (struct spx_data *data)
 {
 	unsigned long last_granulepos = 0;
 
-	/* Seek to somewhere neer the last page */
+	/* Seek to somewhere near the last page */
 	if (io_file_size(data->stream) > 10000) {
 		debug ("Seeking near the end");
 		if (io_seek(data->stream, -10000, SEEK_END) == -1)
