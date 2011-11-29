@@ -21,6 +21,23 @@ then
 			 DECODER_PLUGINS="$DECODER_PLUGINS ffmpeg"
 		 fi])
 	AC_CHECK_HEADERS(ffmpeg/avformat.h libavformat/avformat.h)
+	save_LIBS="$LIBS"
+	AC_SEARCH_LIBS(avcodec_decode_audio2, avcodec,
+		[AC_DEFINE([HAVE_AVCODEC_DECODE_AUDIO2], 1,
+			[Define to 1 if you have the `avcodec_decode_audio2' function.])])
+	AC_SEARCH_LIBS(avcodec_decode_audio3, avcodec,
+		[AC_DEFINE([HAVE_AVCODEC_DECODE_AUDIO3], 1,
+			[Define to 1 if you have the `avcodec_decode_audio3' function.])])
+	AC_SEARCH_LIBS(avformat_open_input, avformat,
+		[AC_DEFINE([HAVE_AVFORMAT_OPEN_INPUT], 1,
+			[Define to 1 if you have the `avformat_open_input' function.])])
+	AC_SEARCH_LIBS(av_metadata_get, avformat,
+		[AC_DEFINE([HAVE_AV_METADATA_GET], 1,
+			[Define to 1 if you have the `av_metadata_get' function.])])
+	AC_SEARCH_LIBS(av_dict_get, avutil,
+		[AC_DEFINE([HAVE_AV_DICT_GET], 1,
+			[Define to 1 if you have the `av_dict_get' function.])])
+	LIBS="$save_LIBS"
 fi
 
 AM_CONDITIONAL([BUILD_ffmpeg], [test "$want_ffmpeg"])
