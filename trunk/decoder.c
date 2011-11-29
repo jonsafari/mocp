@@ -82,6 +82,7 @@ static decoder_t_preference *lookup_preference (const char *extn,
 	                          || (mime && *mime && *mime[0]));
 
 	type = NULL;
+	subtype = NULL;
 	for (result = preferences; result; result = result->next) {
 		if (!result->subtype) {
 			if (extn && !strcasecmp (result->type, extn))
@@ -96,7 +97,6 @@ static decoder_t_preference *lookup_preference (const char *extn,
 				}
 				if (mime && *mime && strchr (*mime, '/'))
 					type = xstrdup (*mime);
-				subtype = NULL;
 				if (type) {
 					subtype = strchr (type, '/');
 					*subtype++ = 0x00;
