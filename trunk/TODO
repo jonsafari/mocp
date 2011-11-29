@@ -38,6 +38,7 @@ Transitional code removal (after 2.5);
 * Remove deprecated ffmpeg-config support.
 * Remove changed option type for SoundDriver.
 * Remove changed option format for Layouts.
+* Remove deprecated autogen.sh file.
 
 In future:
 
