@@ -5,15 +5,15 @@
 \section introduction Introduction
 
 This document describes the part of the internal API that can be used to add
-support for a new file format or sound output method. Everything that is
-required or may be usefull is documented, the rest changes too often.
+support for a new file format or sound output method.  Everything that is
+required or may be useful is documented, the rest changes too often.
 
-I hope this documentation is up-to-date and the amount of errors is small enough
-to use it...
+I hope this documentation is up-to-date enough and contains sufficiently few
+errors to make it useful... .
 
 \section documented_parts Documented parts of the API
 
-There are two main parts of the API you can be interested:
+There are two main parts of the API you in which you could be interested:
 
 \li \ref decoder_api
 \li \ref sound_output_driver_api

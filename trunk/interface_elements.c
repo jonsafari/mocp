@@ -102,10 +102,10 @@ struct side_menu
 	union
 	{
 		struct {
-			struct menu *main;	/* visible menu */
-			struct menu *copy;	/* copy of the menu when we
-						   display matching items
-						   when searching */
+			struct menu *main;    /* visible menu */
+			struct menu *copy;    /* copy of the menu when we
+			                         display matching items
+			                         when searching */
 		} list;
 		/* struct menu_tree *tree;*/
 	} menu;

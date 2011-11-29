@@ -2,8 +2,8 @@
 
 \section sound_output_driver_api_introduction Introduction
 
-This is the sound output driver API. Sorry, no introduction here, you must
-see hw_funcs description and some examples (null_out.c does nothing, but it's
-the simples driver and can be used as a template).
+This is the sound output driver API.  Sorry, no introduction here, you must
+see hw_funcs description and some examples.  (null_out.c does nothing, but
+it's the simplest driver and can be used as a template.)
 
 */

@@ -8,7 +8,7 @@
  * (at your option) any later version.
  *
  * Contributors:
- *  - Kamil Tarkowski <kamilt@interia.pl> - "porevious" request
+ *  - Kamil Tarkowski <kamilt@interia.pl> - "previous" request
  *
  */
 

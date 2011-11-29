@@ -48,7 +48,7 @@
 struct command
 {
 	enum key_cmd cmd;	/* the command */
-	char *name;		/* name of the command (in config file) */
+	char *name;		/* name of the command (in keymap file) */
 	char *help;		/* help string for the command */
 	enum key_context context; /* context - where the command isused */
 	int keys[6];		/* array of keys ended with -1 */

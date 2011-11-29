@@ -137,7 +137,7 @@ static int sndio_get_buff_fill ()
 	return 0;
 }
 
-static int sndio_reset()
+static int sndio_reset ()
 {
 	assert (hdl != NULL);
 

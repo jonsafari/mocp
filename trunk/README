@@ -31,17 +31,18 @@ buffer in a separate thread. The transition between files is gapless, because
 the next file to be played is precached while the current file is playing.
 
 Supported file formats are: mp3, Ogg Vorbis, FLAC, Musepack (mpc), Speex, WAVE,
-supported by FFmpeg (WMA, RealAudio, AAC, MP4), AIFF, AU, SVX, Sphere Nist WAV,
-IRCAM SF, Creative VOC, SID, wavpack, MIDI, modplug.
+those supported by FFmpeg (e.g., WMA, RealAudio, AAC, MP4), AIFF, AU, SVX,
+Sphere Nist WAV, IRCAM SF, Creative VOC, SID, wavpack, MIDI and modplug.
 
 Other features:
+
  - Simple mixer.
  - Color themes.
  - Searching the menu (the playlist or a directory) like M-s in Midnight
    Commander.
  - The way MOC creates titles from tags is configurable.
  - Optional character set conversion for file tags using iconv().
- - OSS, ALSA, and JACK output.
+ - OSS, ALSA, SNDIO and JACK output.
  - User defined keys.
  - Cache for files' tags.
 
@@ -74,7 +75,7 @@ To support audio formats you need:
  - Musepack (mpc) - libmpcdec and taglib
      (http://www.musepack.net/)
      (http://developer.kde.org/~wheeler/taglib.html)
- - WMA, ReadAudio, (.ra), MP4 - FFmpeg version 0.5 or later
+ - WMA, RealAudio (.ra), MP4 - FFmpeg version 0.5 or later
      (http://www.ffmpeg.org/)
  - modplug - libmodplug (http://modplug-xmms.sourceforge.net)
  - MIDI - libtimidity (http://timidity.sourceforge.net/)

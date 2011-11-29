@@ -148,7 +148,7 @@ static int find_mime_decoder (int *decoder_list, int count, const char *mime)
 
 	for (ix = 0; ix < count; ix += 1) {
 		if (plugins[decoder_list[ix]].decoder->our_format_mime &&
-	    	plugins[decoder_list[ix]].decoder->our_format_mime (mime))
+		    plugins[decoder_list[ix]].decoder->our_format_mime (mime))
 			return decoder_list[ix];
 	}
 
