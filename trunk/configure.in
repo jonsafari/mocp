@@ -25,7 +25,8 @@ dnl Capture SVN revision number for this build.
 AC_PATH_PROG(SVNVERSION, [svnversion])
 if test -n "$SVNVERSION"
 then
-	SVNREVN=`$SVNVERSION -n $srcdir | sed 's/:.*//'`
+	SVNREVN=`$SVNVERSION -n $srcdir`
+	SVNREVN=`expr "$SVNREVN" : '\([[^:]]*\)'`
 	if test "x$SVNREVN" = "xexported"
 	then
 		unset SVNREVN
