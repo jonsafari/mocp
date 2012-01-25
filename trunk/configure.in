@@ -402,16 +402,29 @@ AC_OUTPUT([Makefile
 	  ])
 
 echo
-echo "----------------------------------------------------------------"
+echo "----------------------------------------------------------------------"
 echo "MOC will be compiled with:"
-echo "Decoder plugins:  "$DECODER_PLUGINS
+echo
+DECODERS_LEN=`expr length "$DECODER_PLUGINS"`
+if test $DECODERS_LEN -lt 48
+then
+	echo "Decoder plugins:  "$DECODER_PLUGINS
+else
+	DECODERS_2=`expr substr "$DECODER_PLUGINS" 48 999`
+	DECODERS_IX=`expr index "$DECODERS_2" ' '`
+	DECODERS_2=`expr substr "$DECODERS_2" $DECODERS_IX 999`
+	DECODERS_IX=`expr $DECODERS_IX + 46`
+	DECODERS_1=`expr substr "$DECODER_PLUGINS" 1 $DECODERS_IX`
+	echo "Decoder plugins:  $DECODERS_1"
+	echo "                  $DECODERS_2"
+fi
 echo "Sound Drivers:    "$SOUND_DRIVERS
 echo "DEBUG:             "$COMPILE_DEBUG
 echo "RCC:               "$COMPILE_RCC
 echo "Network streams:   "$COMPILE_CURL
 echo "Resampling:        "$COMPILE_SAMPLERATE
 echo "MIME magic:        "$COMPILE_MAGIC
-echo "----------------------------------------------------------------"
+echo "----------------------------------------------------------------------"
 echo
 
 if test "x$FFMPEG_CONFIG" = "xyes"
