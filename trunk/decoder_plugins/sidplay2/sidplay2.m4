@@ -17,7 +17,7 @@ dnl as libsidplay2 works fine without it but the
 dnl decoder uses it...
 	if test "x$sidplay2_OK" = "xyes"; then
 		if test "x$sidutils_OK" = "xyes"; then
-			s2lib=`dirname $sidplay2_LIBS`
+			s2lib=`$PKG_CONFIG --variable=libdir libsidplay2 2>/dev/null`
 			resid_OK="no"
 			AC_CHECK_FILE([$s2lib/libresid-builder.la],
 			              [resid_lib="$s2lib/libresid-builder.la"
