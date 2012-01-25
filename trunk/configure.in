@@ -250,6 +250,7 @@ else
 	if test "x$enable_debug" = "xgdb"
 	then
 		AX_CFLAGS_GCC_OPTION([-ggdb])
+		AX_CFLAGS_GCC_OPTION([-O0])
 		COMPILE_DEBUG='gdb'
 	fi
 	if test "x$ac_cv_cflags_gcc_option__ggdb" = "x"
@@ -257,7 +258,6 @@ else
 		AX_CFLAGS_GCC_OPTION([-g])
 		COMPILE_DEBUG='yes'
 	fi
-	AX_CFLAGS_GCC_OPTION([-O1])
 	EXTRA_OBJS="$EXTRA_OBJS null_out.o"
 fi
 
