@@ -432,7 +432,14 @@ if test "x$FFMPEG_CONFIG" = "xyes"
 then
 	echo "WARNING: Use of Debian's ffmpeg-config is deprecated;"
 	echo "         please upgrade FFmpeg or it's libraries to a version"
-	echo "         using pkg-config (FFmpeg version 0.5 or later)."
+	echo "         using pkg-config (FFmpeg release 0.5 or later)."
+	echo
+fi
+
+if test "x$FFMPEG_DEPRECATED" = "xyes"
+then
+	echo "WARNING: After release 2.5 MOC will require FFmpeg/LibAV release"
+	echo "         0.7 or later.  Plan to upgrade your libraries soon."
 	echo
 fi
 

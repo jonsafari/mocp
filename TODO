@@ -37,10 +37,15 @@ Before 2.5:
 Transitional code removal (after 2.5):
 
 * Remove changed option type for QueueNextSongReturn.
-* Remove deprecated ffmpeg-config support.
 * Remove changed option type for SoundDriver.
 * Remove changed option format for Layouts.
 * Remove deprecated autogen.sh file.
+
+FFmpeg/LibAV support changes (after 2.5):
+
+* Remove deprecated ffmpeg-config support.
+* Raise minimum FFmpeg/LibAV requirement to release 0.7.
+* Remove supporting code for previous releases.
 
 In future:
 

@@ -22,6 +22,10 @@ then
 		 fi])
 	if test "x$want_ffmpeg" = "xyes"
 	then
+		if ! $PKG_CONFIG --atleast-version 52.110.0 libavformat
+		then
+			FFMPEG_DEPRECATED="yes"
+		fi
 		AC_CHECK_HEADERS(ffmpeg/avformat.h libavformat/avformat.h)
 		if test "x$ac_cv_header_ffmpeg_avformat_h" = "xyes"
 		then
