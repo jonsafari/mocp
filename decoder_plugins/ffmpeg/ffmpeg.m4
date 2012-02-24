@@ -48,6 +48,8 @@ then
 		AC_SEARCH_LIBS(avio_size, avformat,
 			[AC_DEFINE([HAVE_AVIO_SIZE], 1,
 				[Define to 1 if you have the `avio_size' function.])])
+		AC_CHECK_MEMBERS([AVIOContext.seekable], , ,
+		                 [#include <libavformat/avformat.h>])
 		AC_SEARCH_LIBS(av_metadata_get, avformat,
 			[AC_DEFINE([HAVE_AV_METADATA_GET], 1,
 				[Define to 1 if you have the `av_metadata_get' function.])])

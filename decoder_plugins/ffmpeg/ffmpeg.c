@@ -57,6 +57,12 @@
 #include "log.h"
 #include "files.h"
 
+/* Set SEEK_IN_DECODER to 1 if you'd prefer seeking to be delay until
+ * the next time ffmpeg_decode() is called.  This will provide seeking
+ * in formats for which FFmpeg falsely reports seek errors, but could
+ * result erroneous current time values. */
+#define SEEK_IN_DECODER 0
+
 #if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(52,94,1)
 #define AV_SAMPLE_FMT_U8   SAMPLE_FMT_U8
 #define AV_SAMPLE_FMT_S16  SAMPLE_FMT_S16
@@ -82,6 +88,14 @@ struct ffmpeg_data
 	long fmt;
 	int bitrate;            /* in bits per second */
 	int avg_bitrate;        /* in bits per second */
+#if SEEK_IN_DECODER
+	bool seek_req;          /* seek requested */
+	int seek_sec;           /* second to which to seek */
+#endif
+	bool seek_broken;       /* FFmpeg seeking is broken */
+#if SEEK_IN_DECODER && defined(DEBUG)
+	pthread_t thread_id;
+#endif
 };
 
 static void ffmpeg_log_repeats (char *msg)
@@ -394,6 +408,43 @@ static long fmt_from_sample_fmt (struct ffmpeg_data *data)
 	return result;
 }
 
+/* Try to figure out if seeking is broken for this format.
+ * The aim here is to try and ensure that seeking either works
+ * properly or (because of FFmpeg breakages) is disabled. */
+static bool is_seek_broken (struct ffmpeg_data *data)
+{
+#ifdef HAVE_AVIOCONTEXT_SEEKABLE
+	/* How much do we trust this? */
+	if (!data->ic->pb->seekable) {
+		debug ("Seek broken by AVIOContext.seekable");
+		return true;
+	}
+#endif
+
+	/* ASF/MP2 (.wma): Seeking ends playing. */
+	if (!strcmp (data->ic->iformat->name, "asf") &&
+	    data->codec->id == CODEC_ID_MP2)
+		return true;
+
+	/* FLAC (.flac): Seeking results in a loop.  We don't know exactly
+	 * when this was fixed, but it was working by ffmpeg-0.7.1. */
+	if (avformat_version () < AV_VERSION_INT(52,110,0)) {
+		if (!strcmp (data->ic->iformat->name, "flac"))
+			return true;
+	}
+
+#if !SEEK_IN_DECODER
+	/* FLV (.flv): av_seek_frame always returns an error (even on success).
+	 *             Seeking from the decoder works for false errors (but
+	 *             probably not for real ones) because the player doesn't
+	 *             get to see them. */
+	if (!strcmp (data->ic->iformat->name, "flv"))
+		return true;
+#endif
+
+	return false;
+}
+
 static void *ffmpeg_open (const char *file)
 {
 	struct ffmpeg_data *data;
@@ -413,6 +464,11 @@ static void *ffmpeg_open (const char *file)
 	data->delay = false;
 	data->eof = false;
 	data->eos = false;
+#if SEEK_IN_DECODER
+	data->seek_req = false;
+	data->seek_sec = 0;
+#endif
+	data->seek_broken = false;
 
 	decoder_error_init (&data->error);
 
@@ -480,6 +536,7 @@ static void *ffmpeg_open (const char *file)
 	}
 	if (data->codec->capabilities & CODEC_CAP_DELAY)
 		data->delay = true;
+	data->seek_broken = is_seek_broken (data);
 
 	data->okay = true;
 
@@ -508,25 +565,6 @@ end:
 #endif
 	ffmpeg_log_repeats (NULL);
 	return data;
-}
-
-static int ffmpeg_seek (void *prv_data ATTR_UNUSED, int sec ATTR_UNUSED)
-{
-	assert (sec >= 0);
-
-#if 0
-	struct ffmpeg_data *data = (struct ffmpeg_data *)prv_data;
-	int err;
-
-	if ((err = av_seek_frame(data->ic, -1, sec, 0)) < 0)
-		logit ("Seek error %d", err);
-	else
-		free_remain_buf (data);
-
-	return err >= 0 ? sec : -1;
-#endif
-
-	return -1;
 }
 
 static void put_in_remain_buf (struct ffmpeg_data *data, const char *buf,
@@ -788,6 +826,53 @@ static int decode_packet (struct ffmpeg_data *data, AVPacket *pkt,
 }
 #endif
 
+#if SEEK_IN_DECODER
+static bool seek_in_stream (struct ffmpeg_data *data)
+#else
+static bool seek_in_stream (struct ffmpeg_data *data, int sec)
+#endif
+{
+	int rc, flags = AVSEEK_FLAG_ANY;
+	int64_t seek_ts;
+
+#if SEEK_IN_DECODER
+	int sec = data->seek_sec;
+
+#ifdef DEBUG
+	assert (pthread_equal (data->thread_id, pthread_self ()));
+#endif
+#endif
+
+	/* FFmpeg can't seek if the file has already reached EOF. */
+	if (data->eof)
+		return false;
+
+	seek_ts = av_rescale (sec, data->stream->time_base.den,
+	                           data->stream->time_base.num);
+
+	if ((uint64_t)data->stream->start_time != AV_NOPTS_VALUE) {
+		if (seek_ts > INT64_MAX - data->stream->start_time) {
+			logit ("Seek value too large");
+			return false;
+		}
+		seek_ts += data->stream->start_time;
+	}
+
+	if (data->stream->cur_dts > seek_ts)
+		flags |= AVSEEK_FLAG_BACKWARD;
+
+	rc = av_seek_frame (data->ic, data->stream->index, seek_ts, flags);
+	if (rc < 0) {
+		ffmpeg_log_repeats (NULL);
+		logit ("Seek error %d", rc);
+		return false;
+	}
+
+	avcodec_flush_buffers (data->stream->codec);
+
+	return true;
+}
+
 static inline int compute_bitrate (struct sound_params *sound_params,
                                    int bytes_used, int bytes_produced,
                                    int bitrate)
@@ -818,6 +903,14 @@ static int ffmpeg_decode (void *prv_data, char *buf, int buf_len,
 	sound_params->channels = data->enc->channels;
 	sound_params->rate = data->enc->sample_rate;
 	sound_params->fmt = data->fmt | SFMT_NE;
+
+#if SEEK_IN_DECODER
+	if (data->seek_req) {
+		data->seek_req = false;
+		if (seek_in_stream (data))
+			free_remain_buf (data);
+	}
+#endif
 
 	if (data->remain_buf)
 		return take_from_remain_buf (data, buf, buf_len);
@@ -861,6 +954,35 @@ static int ffmpeg_decode (void *prv_data, char *buf, int buf_len,
 	                                 data->bitrate);
 
 	return bytes_produced;
+}
+
+static int ffmpeg_seek (void *prv_data, int sec)
+{
+	struct ffmpeg_data *data = (struct ffmpeg_data *)prv_data;
+
+	assert (sec >= 0);
+
+	if (data->seek_broken)
+		return -1;
+
+#if SEEK_IN_DECODER
+
+	data->seek_sec = sec;
+	data->seek_req = true;
+#ifdef DEBUG
+	data->thread_id = pthread_self ();
+#endif
+
+#else
+
+	if (!seek_in_stream (data, sec))
+		return -1;
+
+	free_remain_buf (data);
+
+#endif
+
+	return sec;
 }
 
 static void ffmpeg_close (void *prv_data)
