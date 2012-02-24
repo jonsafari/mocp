@@ -237,6 +237,26 @@ struct decoder *get_decoder (const char *file)
 	return NULL;
 }
 
+/* Given a decoder pointer, return its name. */
+const char *get_decoder_name (const struct decoder *decoder)
+{
+	int ix;
+	const char *result = NULL;
+
+	assert (decoder);
+
+	for (ix = 0; ix < plugins_num; ix += 1) {
+		if (plugins[ix].decoder == decoder) {
+			result = plugins[ix].name;
+			break;
+		}
+	}
+
+	assert (result);
+
+	return result;
+}
+
 /* Use the stream's MIME type to return a decoder for it, or NULL if no
  * applicable decoder was found. */
 static struct decoder *get_decoder_by_mime_type (struct io_stream *stream)

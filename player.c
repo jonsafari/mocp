@@ -30,6 +30,7 @@
 #include "player.h"
 #include "files.h"
 #include "playlist.h"
+#include "md5.h"
 
 #define PCM_BUF_SIZE		(32 * 1024)
 #define PREBUFFER_THRESHOLD	(16 * 1024)
@@ -58,6 +59,12 @@ struct bitrate_list
 	struct bitrate_list_node *head;
 	struct bitrate_list_node *tail;
 	pthread_mutex_t mutex;
+};
+
+struct md5_data {
+	bool okay;
+	long len;
+	struct md5_ctx ctx;
 };
 
 struct precache
@@ -429,7 +436,7 @@ static void buf_free_callback ()
  * next_file will be precached at eof. */
 static void decode_loop (const struct decoder *f, void *decoder_data,
 		const char *next_file, struct out_buf *out_buf,
-		struct sound_params sound_params,
+		struct sound_params *sound_params, struct md5_data *md5,
 		const float already_decoded_sec)
 {
 	bool eof = false;
@@ -486,6 +493,7 @@ static void decode_loop (const struct decoder *f, void *decoder_data,
 
 			f->get_error (decoder_data, &err);
 			if (err.type != ERROR_OK) {
+				md5->okay = false;
 				if (err.type != ERROR_STREAM
 						|| options_get_int(
 							"ShowStreamErrors"))
@@ -499,8 +507,7 @@ static void decode_loop (const struct decoder *f, void *decoder_data,
 			}
 			else {
 				debug ("decoded %d bytes", decoded);
-				if (!sound_params_eq(new_sound_params,
-							sound_params))
+				if (!sound_params_eq(new_sound_params, *sound_params))
 					sound_params_change = true;
 
 				bitrate_list_add (&bitrate_list, decode_time,
@@ -529,6 +536,7 @@ static void decode_loop (const struct decoder *f, void *decoder_data,
 		 * the request has changed. */
 		if (request == REQ_STOP) {
 			logit ("stop");
+			md5->okay = false;
 			out_buf_stop (out_buf);
 
 			LOCK (request_cond_mutex);
@@ -542,6 +550,7 @@ static void decode_loop (const struct decoder *f, void *decoder_data,
 			int decoder_seek;
 
 			logit ("seeking");
+			md5->okay = false;
 			req_seek = MAX(0, req_seek);
 			if ((decoder_seek = f->seek(decoder_data, req_seek))
 					== -1)
@@ -565,19 +574,27 @@ static void decode_loop (const struct decoder *f, void *decoder_data,
 		else if (!eof && decoded <= out_buf_get_free(out_buf)
 				&& !sound_params_change) {
 			debug ("putting into the buffer %d bytes", decoded);
+#if !defined(NDEBUG) && defined(DEBUG)
+			if (md5->okay) {
+				md5->len += decoded;
+				md5_process_bytes (buf, decoded, &md5->ctx);
+			}
+#endif
 			audio_send_buf (buf, decoded);
 			decoded = 0;
 		}
 		else if (!eof && sound_params_change
 				&& out_buf_get_fill(out_buf) == 0) {
 			logit ("Sound parameters have changed.");
-			sound_params = new_sound_params;
+			*sound_params = new_sound_params;
 			sound_params_change = false;
-			set_info_channels (sound_params.channels);
-			set_info_rate (sound_params.rate / 1000);
+			set_info_channels (sound_params->channels);
+			set_info_rate (sound_params->rate / 1000);
 			out_buf_wait (out_buf);
-			if (!audio_open(&sound_params))
+			if (!audio_open(sound_params)) {
+				md5->okay = false;
 				break;
+			}
 		}
 		else if (eof && out_buf_get_fill(out_buf) == 0) {
 			logit ("played everything");
@@ -604,6 +621,56 @@ static void decode_loop (const struct decoder *f, void *decoder_data,
 	out_buf_wait (out_buf);
 }
 
+#if !defined(NDEBUG) && defined(DEBUG)
+static void log_md5_sum (const char *file, struct sound_params sound_params,
+                         const struct decoder *f, uint8_t *md5, long md5_len)
+{
+	unsigned int ix, bps;
+	char md5sum[MD5_DIGEST_SIZE * 2 + 1], format;
+	const char *fn, *endian;
+
+	for (ix = 0; ix < MD5_DIGEST_SIZE; ix += 1)
+		sprintf (&md5sum[ix * 2], "%02x", md5[ix]);
+	md5sum[MD5_DIGEST_SIZE * 2] = 0x00;
+
+	switch (sound_params.fmt & SFMT_MASK_FORMAT) {
+	case SFMT_S8:
+	case SFMT_S16:
+	case SFMT_S32:
+		format = 's';
+		break;
+	case SFMT_U8:
+	case SFMT_U16:
+	case SFMT_U32:
+		format = 'u';
+		break;
+	case SFMT_FLOAT:
+		format = 'f';
+		break;
+	default:
+		debug ("Unknown sound format: 0x%04lx", sound_params.fmt);
+		return;
+	}
+
+	bps = sfmt_Bps (sound_params.fmt) * 8;
+
+	endian = "";
+	if (format != 'f' && bps != 8) {
+		if (sound_params.fmt & SFMT_LE)
+			endian = "le";
+		else if (sound_params.fmt & SFMT_BE)
+			endian = "be";
+	}
+
+	fn = strrchr (file, '/');
+	fn = fn ? fn + 1 : file;
+	debug ("MD5(%s) = %s %ld %s %c%u%s %d %d",
+	        fn, md5sum, md5_len, get_decoder_name (f),
+	        format, bps, endian,
+	        sound_params.channels, sound_params.rate);
+}
+#endif
+
 /* Play a file (disk file) using the given decoder. next_file is precached. */
 static void play_file (const char *file, const struct decoder *f,
 		const char *next_file, struct out_buf *out_buf)
@@ -611,6 +678,13 @@ static void play_file (const char *file, const struct decoder *f,
 	void *decoder_data;
 	struct sound_params sound_params = { 0, 0, 0 };
 	float already_decoded_time;
+	struct md5_data md5;
+
+#if !defined(NDEBUG) && defined(DEBUG)
+	md5.okay = true;
+	md5.len = 0;
+	md5_init_ctx (&md5.ctx);
+#endif
 
 	out_buf_reset (out_buf);
 
@@ -636,10 +710,17 @@ static void play_file (const char *file, const struct decoder *f,
 
 		if (!audio_open(&sound_params))
 			return;
+
+#if !defined(NDEBUG) && defined(DEBUG)
+		md5.len += precache.buf_fill;
+		md5_process_bytes (precache.buf, precache.buf_fill, &md5.ctx);
+#endif
+
 		audio_send_buf (precache.buf, precache.buf_fill);
 
 		precache.f->get_error (precache.decoder_data, &err);
 		if (err.type != ERROR_OK) {
+			md5.okay = false;
 			if (err.type != ERROR_STREAM
 					|| options_get_int(
 						"ShowStreamErrors"))
@@ -686,8 +767,17 @@ static void play_file (const char *file, const struct decoder *f,
 	audio_state_started_playing ();
 	precache_reset (&precache);
 
-	decode_loop (f, decoder_data, next_file, out_buf, sound_params,
-			already_decoded_time);
+	decode_loop (f, decoder_data, next_file, out_buf, &sound_params,
+			&md5, already_decoded_time);
+
+#if !defined(NDEBUG) && defined(DEBUG)
+	if (md5.okay) {
+		uint8_t buf[MD5_DIGEST_SIZE];
+
+		md5_finish_ctx (&md5.ctx, buf);
+		log_md5_sum (file, sound_params, f, buf, md5.len);
+	}
+#endif
 }
 
 /* Play the stream (global decoder_stream) using the given decoder. */
@@ -696,7 +786,9 @@ static void play_stream (const struct decoder *f, struct out_buf *out_buf)
 	void *decoder_data;
 	struct sound_params sound_params = { 0, 0, 0 };
 	struct decoder_error err;
+	struct md5_data null_md5;
 
+	null_md5.okay = false;
 	out_buf_reset (out_buf);
 
 	assert (f->open_stream != NULL);
@@ -716,8 +808,8 @@ static void play_stream (const struct decoder *f, struct out_buf *out_buf)
 	else {
 		audio_state_started_playing ();
 		bitrate_list_init (&bitrate_list);
-		decode_loop (f, decoder_data, NULL, out_buf, sound_params,
-				0.0);
+		decode_loop (f, decoder_data, NULL, out_buf, &sound_params,
+				&null_md5, 0.0);
 	}
 }
 

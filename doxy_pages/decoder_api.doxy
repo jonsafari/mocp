@@ -215,4 +215,23 @@ It is also preferred that you use xmalloc(), xrealloc(), xstrdup() functions
 from common.h instead of those without x.  They check if allocation of memory
 succeeds, so you don't need to do that.
 
+\section decoder_plugin_useful_api Testing and Debugging
+
+There is a script in the 'tools' subdirectory which will help you to test
+your decoder.  It checks that the samples which arrive at MOC's player
+code are the same as those produced by the library the decoder is using.
+It does this by having MOC compute the MD5 sum of the audio file as it is
+playing it and writing the result to the server's log file.  The log file
+is then read by the 'md5check.sh' tool and the MD5 sum checked against one
+computed from the audio file using the library's native decoding program.
+
+You will need to add a new function and case item to call it to the script
+so it can recognise your new decoder's library.  It is important to use
+the program associated with the decoder library if one exists because
+other programs may not produce exactly the same samples, particularly
+for lossy formats.  It is also possible that bugs in the library mean
+the samples produced are not correct, but the tool is intended to test
+the passage of the samples through the driver and not the fidelity of
+the library used.
+
 */
