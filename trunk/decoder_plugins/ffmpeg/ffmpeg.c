@@ -60,6 +60,9 @@ struct ffmpeg_data
 
 	char *remain_buf;
 	int remain_buf_len;
+	bool delay;             /* FFmpeg may buffer samples */
+	bool eof;               /* end of file seen */
+	bool eos;               /* end of sound seen */
 
 	bool okay; /* was this stream successfully opened? */
 	struct decoder_error error;
@@ -379,6 +382,9 @@ static void *ffmpeg_open (const char *file)
 	data->avg_bitrate = 0;
 	data->remain_buf = NULL;
 	data->remain_buf_len = 0;
+	data->delay = false;
+	data->eof = false;
+	data->eos = false;
 
 	decoder_error_init (&data->error);
 
@@ -426,6 +432,8 @@ static void *ffmpeg_open (const char *file)
 		               "Unsupported sample size!");
 		goto end;
 	}
+	if (data->codec->capabilities & CODEC_CAP_DELAY)
+		data->delay = true;
 
 	data->okay = true;
 
@@ -570,22 +578,45 @@ static inline void free_packet (AVPacket *pkt)
 	free (pkt);
 }
 
-/* Read a packet from the file. */
+/* Read a packet from the file or empty packet if flushing delayed
+ * samples. */
 static AVPacket *get_packet (struct ffmpeg_data *data)
 {
 	int rc;
 	AVPacket *pkt;
 
+	assert (data);
+	assert (!data->eos);
+
 	pkt = new_packet (data);
+
+	if (data->eof)
+		return pkt;
+
 	rc = av_read_frame (data->ic, pkt);
-	if (rc < 0) {
-		free_packet (pkt);
+	if (rc >= 0) {
+		debug ("Got %dB packet", pkt->size);
+		return pkt;
+	}
+
+	free_packet (pkt);
+
+	/* FFmpeg has (at least) two ways of indicating EOF.  (Awesome!) */
+	if (rc == (int)AVERROR_EOF)
+		data->eof = true;
+	if (data->ic->pb && data->ic->pb->eof_reached)
+		data->eof = true;
+
+	if (!data->eof && rc < 0) {
+		decoder_error (&data->error, ERROR_FATAL, 0, "Error in the stream!");
 		return NULL;
 	}
 
-	debug ("Got %dB packet", pkt->size);
+	if (data->delay)
+		return new_packet (data);
 
-	return pkt;
+	data->eos = true;
+	return NULL;
 }
 
 /* Decode samples from packet data. */
@@ -601,7 +632,7 @@ static int decode_packet (struct ffmpeg_data *data, AVPacket *pkt,
 	 */
 	char avbuf[(AVCODEC_MAX_AUDIO_FRAME_SIZE * 3) / 2] __attribute__((aligned(16)));
 
-	while (pkt->size > 0) {
+	do {
 		data_size = sizeof (avbuf);
 
 #if defined(HAVE_AVCODEC_DECODE_AUDIO3)
@@ -623,6 +654,11 @@ static int decode_packet (struct ffmpeg_data *data, AVPacket *pkt,
 			break;
 		}
 
+		if (data->eof && data_size == 0) {
+			data->eos = true;
+			break;
+		}
+
 		pkt->data += len;
 		pkt->size -= len;
 
@@ -633,7 +669,7 @@ static int decode_packet (struct ffmpeg_data *data, AVPacket *pkt,
 		buf_len -= copied;
 
 		debug ("Copying %dB (%dB filled)", copied, filled);
-	}
+	} while (pkt->size > 0);
 
 	return filled;
 }
@@ -660,6 +696,9 @@ static int ffmpeg_decode (void *prv_data, char *buf, int buf_len,
 	int bytes_used = 0, bytes_produced = 0;
 
 	decoder_error_clear (&data->error);
+
+	if (data->eos)
+		return 0;
 
 	/* FFmpeg claims to always return native endian. */
 	sound_params->channels = data->enc->channels;
@@ -701,7 +740,7 @@ static int ffmpeg_decode (void *prv_data, char *buf, int buf_len,
 		/* FFmpeg will segfault if the data pointer is not restored. */
 		pkt->data = saved_pkt_data_ptr;
 		free_packet (pkt);
-	} while (!bytes_produced);
+	} while (!bytes_produced && !data->eos);
 
 	data->bitrate = compute_bitrate (sound_params, bytes_used,
 	                                 bytes_produced + data->remain_buf_len,
