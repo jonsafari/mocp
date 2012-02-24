@@ -531,7 +531,8 @@ int audio_conv_new (struct audio_conversion *conv,
 
 		/* the only conversion we can do */
 		if (!(from->channels == 1 && to->channels == 2)) {
-			error ("Can't change number of channels!");
+			error ("Can't change number of channels (%d to %d)!",
+			        from->channels, to->channels);
 			return 0;
 		}
 	}

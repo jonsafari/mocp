@@ -23,6 +23,14 @@ then
 	if test "x$want_ffmpeg" = "xyes"
 	then
 		AC_CHECK_HEADERS(ffmpeg/avformat.h libavformat/avformat.h)
+		if test "x$ac_cv_header_ffmpeg_avformat_h" = "xyes"
+		then
+			AC_CHECK_MEMBERS([struct AVCodecContext.request_channels], [], [],
+		                     [#include <ffmpeg/avcodec.h>])
+		else
+			AC_CHECK_MEMBERS([struct AVCodecContext.request_channels], [], [],
+		                     [#include <libavcodec/avcodec.h>])
+		fi
 		save_LIBS="$LIBS"
 		AC_SEARCH_LIBS(avcodec_open2, avcodec,
 			[AC_DEFINE([HAVE_AVCODEC_OPEN2], 1,
@@ -56,6 +64,9 @@ then
 		AC_SEARCH_LIBS(av_dict_get, avutil,
 			[AC_DEFINE([HAVE_AV_DICT_GET], 1,
 				[Define to 1 if you have the `av_dict_get' function.])])
+		AC_SEARCH_LIBS(av_get_channel_layout_nb_channels, avutil,
+			[AC_DEFINE([HAVE_AV_GET_CHANNEL_LAYOUT_NB_CHANNELS], 1,
+				[Define to 1 if you have the `av_get_channel_layout_nb_channels' function.])])
 		LIBS="$save_LIBS"
 	fi
 fi
