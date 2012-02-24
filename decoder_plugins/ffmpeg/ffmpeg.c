@@ -56,6 +56,7 @@
 #include "decoder.h"
 #include "log.h"
 #include "files.h"
+#include "lists.h"
 
 /* Set SEEK_IN_DECODER to 1 if you'd prefer seeking to be delay until
  * the next time ffmpeg_decode() is called.  This will provide seeking
@@ -97,6 +98,13 @@ struct ffmpeg_data
 	pthread_t thread_id;
 #endif
 };
+
+struct extn_list {
+	const char *extn;
+	const char *format;
+};
+
+static lists_t_strs *supported_extns = NULL;
 
 static void ffmpeg_log_repeats (char *msg)
 {
@@ -182,6 +190,79 @@ static unsigned int find_first_audio (AVFormatContext *ic)
 	return result;
 }
 
+static void load_audio_extns (lists_t_strs *list)
+{
+	int ix;
+	const struct extn_list audio_extns[] = {
+		{"aac", "aac"},
+		{"ac3", "ac3"},
+		{"ape", "ape"},
+		{"au", "au"},
+		{"dts", "dts"},
+		{"eac3", "eac3"},
+		{"fla", "flac"},
+		{"flac", "flac"},
+		{"mka", "matroska"},
+		{"mp2", "mpeg"},
+		{"mp3", "mp3"},
+		{"mpc", "mpc"},
+		{"mpc8", "mpc8"},
+		{"m4a", "m4a"},
+		{"ra", "rm"},
+		{"wav", "wav"},
+		{"wma", "asf"},
+		{"wv", "wv"},
+		{NULL, NULL}
+	};
+
+	for (ix = 0; audio_extns[ix].extn; ix += 1) {
+		if (av_find_input_format (audio_extns[ix].format))
+			lists_strs_append (list, audio_extns[ix].extn);
+	}
+
+	/* Support Ogg only when FFmpeg/LibAV supports Vorbis (for now). */
+	if (av_find_input_format ("ogg")) {
+		if (avcodec_find_decoder (CODEC_ID_VORBIS)) {
+			lists_strs_append (list, "oga");
+			lists_strs_append (list, "ogg");
+		}
+	}
+
+	/* In theory, FFmpeg supports Speex if built with libspeex enabled.
+	 * In practice, it breaks badly. */
+#if 0
+	if (avcodec_find_decoder (CODEC_ID_SPEEX))
+		lists_strs_append (list, "spx");
+#endif
+}
+
+static void load_video_extns (lists_t_strs *list)
+{
+	int ix;
+	const struct extn_list video_extns[] = {
+		{"flv", "flv"},
+		{"mkv", "matroska"},
+		{"mp4", "mp4"},
+		{"rec", "mpegts"},
+		{"vob", "mpeg"},
+		{NULL, NULL}
+	};
+
+	for (ix = 0; video_extns[ix].extn; ix += 1) {
+		if (av_find_input_format (video_extns[ix].format))
+			lists_strs_append (list, video_extns[ix].extn);
+	}
+
+	/* AVI works from FFmpeg/LibAV release 0.6 onwards.  However, given
+	 * their inconsistant version numbering, it's impossible to determine
+	 * which version is 0.6 for both libraries.  So we simply go with the
+	 * highest. */
+	if (avformat_version () >= AV_VERSION_INT(52,64,2)) {
+		if (av_find_input_format ("avi"))
+			lists_strs_append (list, "avi");
+	}
+}
+
 static void ffmpeg_init ()
 {
 #ifdef DEBUG
@@ -192,12 +273,18 @@ static void ffmpeg_init ()
 	av_log_set_callback (ffmpeg_log_cb);
 	avcodec_register_all ();
 	av_register_all ();
+
+	supported_extns = lists_strs_new (16);
+	load_audio_extns (supported_extns);
+	load_video_extns (supported_extns);
 }
 
 static void ffmpeg_destroy ()
 {
 	av_log_set_level (AV_LOG_QUIET);
 	ffmpeg_log_repeats (NULL);
+
+	lists_strs_free (supported_extns);
 }
 
 /* Fill info structure with data from ffmpeg comments. */
@@ -449,7 +536,7 @@ static void *ffmpeg_open (const char *file)
 {
 	struct ffmpeg_data *data;
 	int err;
-	const char *fn;
+	const char *fn, *extn;
 	unsigned int audio_ix;
 
 	data = (struct ffmpeg_data *)xmalloc (sizeof (struct ffmpeg_data));
@@ -482,6 +569,17 @@ static void *ffmpeg_open (const char *file)
 		ffmpeg_log_repeats (NULL);
 		decoder_error (&data->error, ERROR_FATAL, 0, "Can't open file");
 		return data;
+	}
+
+	/* When FFmpeg and LibAV misidentify a file's codec (and they do)
+	 * then hopefully this will save MOC from wanton destruction. */
+	extn = ext_pos (file);
+	if (extn && !strcmp (extn, "wav")
+	         && strcmp (data->ic->iformat->name, "wav")) {
+		decoder_error (&data->error, ERROR_FATAL, 0,
+		               "Format possibly misidentified as '%s' by FFmpeg/LibAV",
+		               data->ic->iformat->name);
+		goto end;
 	}
 
 #ifdef HAVE_AVFORMAT_FIND_STREAM_INFO
@@ -1043,25 +1141,18 @@ static int ffmpeg_get_duration (void *prv_data)
 
 static void ffmpeg_get_name (const char *file, char buf[4])
 {
+	unsigned int ix;
 	char *ext;
 
 	ext = ext_pos (file);
-	if (!strcasecmp (ext, "ra"))
-		strcpy (buf, "RA");
-	else if (!strcasecmp (ext, "wma"))
-		strcpy (buf, "WMA");
-	else if (!strcasecmp (ext, "mp4"))
-		strcpy (buf, "MP4");
-	else if (!strcasecmp (ext, "m4a"))
-		strcpy (buf, "M4A");
+	strncpy (buf, ext, 3);
+	for (ix = 0; ix < strlen (buf); ix += 1)
+		buf[ix] = toupper (buf[ix]);
 }
 
 static int ffmpeg_our_format_ext (const char *ext)
 {
-	return !strcasecmp (ext, "wma")
-		|| !strcasecmp (ext, "ra")
-		|| !strcasecmp (ext, "m4a")
-		|| !strcasecmp (ext, "mp4");
+	return (lists_strs_exists (supported_extns, ext)) ? 1 : 0;
 }
 
 static void ffmpeg_get_error (void *prv_data, struct decoder_error *error)
