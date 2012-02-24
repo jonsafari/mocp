@@ -449,6 +449,7 @@ static void *ffmpeg_open (const char *file)
 {
 	struct ffmpeg_data *data;
 	int err;
+	const char *fn;
 	unsigned int audio_ix;
 
 	data = (struct ffmpeg_data *)xmalloc (sizeof (struct ffmpeg_data));
@@ -511,6 +512,11 @@ static void *ffmpeg_open (const char *file)
 				"No codec for this file");
 		goto end;
 	}
+
+	fn = strrchr (file, '/');
+	fn = fn ? fn + 1 : file;
+	debug ("FFmpeg thinks '%s' is format(codec) '%s(%s)'",
+	        fn, data->ic->iformat->name, data->codec->name);
 
 	if (data->codec->capabilities & CODEC_CAP_TRUNCATED)
 		data->enc->flags |= CODEC_FLAG_TRUNCATED;
