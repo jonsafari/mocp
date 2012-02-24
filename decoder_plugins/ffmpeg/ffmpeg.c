@@ -201,60 +201,88 @@ static void ffmpeg_info (const char *file_name,
 		goto end;
 	}
 
-	if (tags_sel & TAGS_COMMENTS) {
+	if (tags_sel & TAGS_TIME) {
+		info->time = -1;
+		if (ic->duration >= 0)
+			info->time = ic->duration / AV_TIME_BASE;
+	}
+
+	if (!(tags_sel & TAGS_COMMENTS))
+		goto end;
+
+#if defined(HAVE_AV_DICT_GET)
+	AVDictionary *md;
+#elif defined(HAVE_AV_METADATA_GET)
+	AVMetadata *md;
+
+	av_metadata_conv (ic, NULL, ic->iformat->metadata_conv);
+#endif
+
+#if defined(HAVE_AV_DICT_GET) || defined(HAVE_AV_METADATA_GET)
+	md = ic->metadata;
+	if (md == NULL) {
+		unsigned int audio_ix;
+
+		audio_ix = find_first_audio (ic);
+		if (audio_ix < ic->nb_streams)
+			md = ic->streams[audio_ix]->metadata;
+	}
+
+	if (md == NULL) {
+		debug ("no metadata found");
+		goto end;
+	}
+#endif
 
 #if defined(HAVE_AV_DICT_GET)
 
-		AVDictionaryEntry *entry;
+	AVDictionaryEntry *entry;
 
-		entry = av_dict_get (ic->metadata, "track", NULL, 0);
-		if (entry && entry->value && entry->value[0])
-			info->track = atoi (entry->value);
-		entry = av_dict_get (ic->metadata, "title", NULL, 0);
-		if (entry && entry->value && entry->value[0])
-			info->title = xstrdup (entry->value);
-		entry = av_dict_get (ic->metadata, "artist", NULL, 0);
-		if (entry && entry->value && entry->value[0])
-			info->artist = xstrdup (entry->value);
-		entry = av_dict_get (ic->metadata, "album", NULL, 0);
-		if (entry && entry->value && entry->value[0])
-			info->album = xstrdup (entry->value);
+	entry = av_dict_get (md, "track", NULL, 0);
+	if (entry && entry->value && entry->value[0])
+		info->track = atoi (entry->value);
+	entry = av_dict_get (md, "title", NULL, 0);
+	if (entry && entry->value && entry->value[0])
+		info->title = xstrdup (entry->value);
+	entry = av_dict_get (md, "artist", NULL, 0);
+	if (entry && entry->value && entry->value[0])
+		info->artist = xstrdup (entry->value);
+	entry = av_dict_get (md, "album", NULL, 0);
+	if (entry && entry->value && entry->value[0])
+		info->album = xstrdup (entry->value);
 
 #elif defined(HAVE_AV_METADATA_GET)
 
-		AVMetadataTag *tag;
- 
-		av_metadata_conv (ic, NULL, ic->iformat->metadata_conv);
+	AVMetadataTag *tag;
 
-		tag = av_metadata_get (ic->metadata, "track", NULL, 0);
-		if (tag && tag->value && tag->value[0])
-			info->track = atoi (tag->value);
-		tag = av_metadata_get (ic->metadata, "title", NULL, 0);
-		if (tag && tag->value && tag->value[0])
-			info->title = xstrdup (tag->value);
-		if (avformat_version () < AV_VERSION_INT(52,50,0))
-			tag = av_metadata_get (ic->metadata, "author", NULL, 0);
-		else
-			tag = av_metadata_get (ic->metadata, "artist", NULL, 0);
-		if (tag && tag->value && tag->value[0])
-			info->artist = xstrdup (tag->value);
-		tag = av_metadata_get (ic->metadata, "album", NULL, 0);
-		if (tag && tag->value && tag->value[0])
-			info->album = xstrdup (tag->value);
+	tag = av_metadata_get (ic->metadata, "track", NULL, 0);
+	if (tag && tag->value && tag->value[0])
+		info->track = atoi (tag->value);
+	tag = av_metadata_get (ic->metadata, "title", NULL, 0);
+	if (tag && tag->value && tag->value[0])
+		info->title = xstrdup (tag->value);
+	if (avformat_version () < AV_VERSION_INT(52,50,0))
+		tag = av_metadata_get (ic->metadata, "author", NULL, 0);
+	else
+		tag = av_metadata_get (ic->metadata, "artist", NULL, 0);
+	if (tag && tag->value && tag->value[0])
+		info->artist = xstrdup (tag->value);
+	tag = av_metadata_get (ic->metadata, "album", NULL, 0);
+	if (tag && tag->value && tag->value[0])
+		info->album = xstrdup (tag->value);
 
 #else
 
-		if (ic->track != 0)
-			info->track = ic->track;
-		if (ic->title[0] != 0)
-			info->title = xstrdup (ic->title);
-		if (ic->author[0] != 0)
-			info->artist = xstrdup (ic->author);
-		if (ic->album[0] != 0)
-			info->album = xstrdup (ic->album);
+	if (ic->track != 0)
+		info->track = ic->track;
+	if (ic->title[0] != 0)
+		info->title = xstrdup (ic->title);
+	if (ic->author[0] != 0)
+		info->artist = xstrdup (ic->author);
+	if (ic->album[0] != 0)
+		info->album = xstrdup (ic->album);
 
 #endif
-	}
 
 	if (tags_sel & TAGS_TIME) {
 		info->time = -1;
