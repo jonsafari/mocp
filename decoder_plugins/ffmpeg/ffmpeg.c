@@ -256,9 +256,12 @@ static void ffmpeg_info (const char *file_name,
 #endif
 	}
 
-	if (tags_sel & TAGS_TIME)
-		info->time = ic->duration >= 0 ? ic->duration / AV_TIME_BASE
-			: -1;
+	if (tags_sel & TAGS_TIME) {
+		info->time = -1;
+		if ((uint64_t)ic->duration != AV_NOPTS_VALUE &&
+		              ic->duration >= 0)
+			info->time = ic->duration / AV_TIME_BASE;
+	}
 
 end:
 	av_close_input_file (ic);
@@ -653,8 +656,17 @@ static int ffmpeg_get_duration (void *prv_data)
 {
 	struct ffmpeg_data *data = (struct ffmpeg_data *)prv_data;
 
-	return (data->ic->duration >= 0) ? data->ic->duration / AV_TIME_BASE
-		: -1;
+	if (!data->stream)
+		return -1;
+
+	if ((uint64_t)data->stream->duration == AV_NOPTS_VALUE)
+		return -1;
+
+	if (data->stream->duration < 0)
+		return -1;
+
+	return data->stream->duration * data->stream->time_base.num
+	                              / data->stream->time_base.den;
 }
 
 static void ffmpeg_get_name (const char *file, char buf[4])
