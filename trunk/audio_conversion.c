@@ -83,6 +83,30 @@
 #define INT32_NE_TO_BE		INT32_BE_TO_NE (l)
 #endif
 
+static void float_to_u8 (const float *in, unsigned char *out, const size_t samples)
+{
+	size_t i;
+
+	assert (in != NULL);
+	assert (out != NULL);
+
+	for (i = 0; i < samples; i++) {
+		float f = in[i] * INT32_MAX;
+
+		if (f >= INT32_MAX)
+			out[i] = UINT8_MAX;
+		else if (f <= INT32_MIN)
+			out[i] = 0;
+		else {
+#ifdef HAVE_LRINTF
+			out[i] = (unsigned int)((lrintf(f) >> 24) - INT8_MIN);
+#else
+			out[i] = (unsigned int)(((int)f >> 24) - INT8_MIN);
+#endif
+		}
+	}
+}
+
 static void float_to_s8 (const float *in, char *out, const size_t samples)
 {
 	size_t i;
@@ -107,6 +131,32 @@ static void float_to_s8 (const float *in, char *out, const size_t samples)
 	}
 }
 
+static void float_to_u16 (const float *in, unsigned char *out,
+		const size_t samples)
+{
+	size_t i;
+
+	assert (in != NULL);
+	assert (out != NULL);
+
+	for (i = 0; i < samples; i++) {
+		uint16_t *out_val = (uint16_t *)(out + i * sizeof (uint16_t));
+		float f = in[i] * INT32_MAX;
+
+		if (f >= INT32_MAX)
+			*out_val = UINT16_MAX;
+		else if (f <= INT32_MIN)
+			*out_val = 0;
+		else {
+#ifdef HAVE_LRINTF
+			*out_val = (unsigned int)((lrintf(f) >> 16) - INT16_MIN);
+#else
+			*out_val = (unsigned int)(((int)f >> 16)) - INT16_MIN);
+#endif
+		}
+	}
+}
+
 static void float_to_s16 (const float *in, char *out,
 		const size_t samples)
 {
@@ -116,7 +166,7 @@ static void float_to_s16 (const float *in, char *out,
 	assert (out != NULL);
 
 	for (i = 0; i < samples; i++) {
-		int16_t *out_val = (int16_t *)(out + i*2);
+		int16_t *out_val = (int16_t *)(out + i * sizeof (int16_t));
 		float f = in[i] * INT32_MAX;
 
 		if (f >= INT32_MAX)
@@ -128,6 +178,37 @@ static void float_to_s16 (const float *in, char *out,
 			*out_val = lrintf(f) >> 16;
 #else
 			*out_val = ((int)f >> 16);
+#endif
+		}
+	}
+}
+
+static void float_to_u32 (const float *in, unsigned char *out,
+		const size_t samples)
+{
+	size_t i;
+
+	/* maximum and minimum values of 32-bit samples */
+	const unsigned int U32_MAX = (1 << 24);
+	const int S32_MAX = (1 << 23) - 1;
+	const int S32_MIN = -(1 << 23);
+
+	assert (in != NULL);
+	assert (out != NULL);
+
+	for (i = 0; i < samples; i++) {
+		uint32_t *out_val = (uint32_t *)(out + i * sizeof (uint32_t));
+		float f = in[i] * S32_MAX;
+
+		if (f >= S32_MAX)
+			*out_val = U32_MAX;
+		else if (f <= S32_MIN)
+			*out_val = 0;
+		else {
+#ifdef HAVE_LRINTF
+			*out_val = (uint32_t)(lrintf(f) - S32_MIN) << 8;
+#else
+			*out_val = (uint32_t)((int32_t)f - S32_MIN) << 8;
 #endif
 		}
 	}
@@ -146,7 +227,7 @@ static void float_to_s32 (const float *in, char *out,
 	assert (out != NULL);
 
 	for (i = 0; i < samples; i++) {
-		int32_t *out_val = (int32_t *)(out + i*sizeof(int32_t));
+		int32_t *out_val = (int32_t *)(out + i * sizeof (int32_t));
 		float f = in[i] * S32_MAX;
 
 		if (f >= S32_MAX)
@@ -163,6 +244,18 @@ static void float_to_s32 (const float *in, char *out,
 	}
 }
 
+static void u8_to_float (const unsigned char *in, float *out,
+		const size_t samples)
+{
+	size_t i;
+
+	assert (in != NULL);
+	assert (out != NULL);
+
+	for (i = 0; i < samples; i++)
+		out[i] = (((int)*in++) + INT8_MIN) / (float)(INT8_MAX + 1);
+}
+
 static void s8_to_float (const char *in, float *out,
 		const size_t samples)
 {
@@ -173,6 +266,19 @@ static void s8_to_float (const char *in, float *out,
 
 	for (i = 0; i < samples; i++)
 		out[i] = *in++ / (float)(INT8_MAX + 1);
+}
+
+static void u16_to_float (const unsigned char *in, float *out,
+		const size_t samples)
+{
+	size_t i;
+	const uint16_t *in_16 = (uint16_t *)in;
+
+	assert (in != NULL);
+	assert (out != NULL);
+
+	for (i = 0; i < samples; i++)
+		out[i] = ((int)*in_16++ + INT16_MIN) / (float)(INT16_MAX + 1);
 }
 
 static void s16_to_float (const char *in, float *out,
@@ -186,6 +292,19 @@ static void s16_to_float (const char *in, float *out,
 
 	for (i = 0; i < samples; i++)
 		out[i] = *in_16++ / (float)(INT16_MAX + 1);
+}
+
+static void u32_to_float (const unsigned char *in, float *out,
+		const size_t samples)
+{
+	size_t i;
+	const uint32_t *in_32 = (uint32_t *)in;
+
+	assert (in != NULL);
+	assert (out != NULL);
+
+	for (i = 0; i < samples; i++)
+		out[i] = ((float)*in_32++ + (float)INT32_MIN) / ((float)INT32_MAX + 1.0);
 }
 
 static void s32_to_float (const char *in, float *out,
@@ -209,16 +328,33 @@ static float *fixed_to_float (const char *buf, const size_t size,
 	float *out = NULL;
 	char fmt_name[SFMT_STR_MAX];
 
+	assert ((fmt & SFMT_MASK_FORMAT) != SFMT_FLOAT);
+
 	switch (fmt & SFMT_MASK_FORMAT) {
+		case SFMT_U8:
+			*new_size = sizeof(float) * size;
+			out = (float *)xmalloc (*new_size);
+			u8_to_float ((unsigned char *)buf, out, size);
+			break;
 		case SFMT_S8:
 			*new_size = sizeof(float) * size;
 			out = (float *)xmalloc (*new_size);
 			s8_to_float (buf, out, size);
 			break;
+		case SFMT_U16:
+			*new_size = sizeof(float) * size / 2;
+			out = (float *)xmalloc (*new_size);
+			u16_to_float ((unsigned char *)buf, out, size / 2);
+			break;
 		case SFMT_S16:
 			*new_size = sizeof(float) * size / 2;
 			out = (float *)xmalloc (*new_size);
 			s16_to_float (buf, out, size / 2);
+			break;
+		case SFMT_U32:
+			*new_size = sizeof(float) * size / 4;
+			out = (float *)xmalloc (*new_size);
+			u32_to_float ((unsigned char *)buf, out, size / 4);
 			break;
 		case SFMT_S32:
 			*new_size = sizeof(float) * size / 4;
@@ -228,6 +364,7 @@ static float *fixed_to_float (const char *buf, const size_t size,
 		default:
 			error ("Can't convert from %s to float!",
 			       sfmt_str (fmt, fmt_name, sizeof (fmt_name)));
+			abort ();
 	}
 
 	return out;
@@ -241,20 +378,37 @@ static char *float_to_fixed (const float *buf, const size_t samples,
 	char fmt_name[SFMT_STR_MAX];
 	char *new_snd = NULL;
 
+	assert ((fmt & SFMT_MASK_FORMAT) != SFMT_FLOAT);
+
 	switch (fmt & SFMT_MASK_FORMAT) {
+		case SFMT_U8:
+			*new_size = samples;
+			new_snd = (char *)xmalloc (samples);
+			float_to_u8 (buf, (unsigned char *)new_snd, samples);
+			break;
 		case SFMT_S8:
 			*new_size = samples;
-			new_snd = (char *) xmalloc(samples);
+			new_snd = (char *)xmalloc (samples);
 			float_to_s8 (buf, new_snd, samples);
+			break;
+		case SFMT_U16:
+			*new_size = samples * 2;
+			new_snd = (char *)xmalloc (*new_size);
+			float_to_u16 (buf, (unsigned char *)new_snd, samples);
 			break;
 		case SFMT_S16:
 			*new_size = samples * 2;
-			new_snd = (char *) xmalloc(*new_size);
+			new_snd = (char *)xmalloc (*new_size);
 			float_to_s16 (buf, new_snd, samples);
+			break;
+		case SFMT_U32:
+			*new_size = samples * 4;
+			new_snd = (char *)xmalloc (*new_size);
+			float_to_u32 (buf, (unsigned char *)new_snd, samples);
 			break;
 		case SFMT_S32:
 			*new_size = samples * 4;
-			new_snd = (char *) xmalloc(*new_size);
+			new_snd = (char *)xmalloc (*new_size);
 			float_to_s32 (buf, new_snd, samples);
 			break;
 		default:
@@ -580,13 +734,9 @@ char *audio_conv (struct audio_conversion *conv, const char *buf,
 
 	/* Special case (optimization): if we only need to convert 32bit samples
 	 * to 16bit, we can do it very simply and quickly. */
-	if (((curr_sfmt & SFMT_MASK_FORMAT) == SFMT_S32
-				|| (curr_sfmt & SFMT_MASK_FORMAT)
-				== SFMT_U32)
-			&& (((conv->to.fmt & SFMT_MASK_FORMAT) == SFMT_S16)
-				|| ((conv->to.fmt & SFMT_MASK_FORMAT)
-					== SFMT_U16))
-			&& conv->from.rate == conv->to.rate) {
+	if ((curr_sfmt & (SFMT_S32 | SFMT_U32)) &&
+	    (conv->to.fmt & (SFMT_S16 | SFMT_U16)) &&
+	    conv->from.rate == conv->to.rate) {
 		char *new_sound;
 
 		if ((curr_sfmt & SFMT_MASK_FORMAT) == SFMT_S32) {
@@ -618,7 +768,6 @@ char *audio_conv (struct audio_conversion *conv, const char *buf,
 		new_sound = (char *)fixed_to_float (curr_sound, *conv_len,
 				curr_sfmt, conv_len);
 		curr_sfmt = sfmt_set_fmt (curr_sfmt, SFMT_FLOAT);
-		assert (new_sound != NULL);
 
 		if (curr_sound != buf)
 			free (curr_sound);
@@ -652,7 +801,6 @@ char *audio_conv (struct audio_conversion *conv, const char *buf,
 					*conv_len / sizeof(float),
 					conv->to.fmt, conv_len);
 			curr_sfmt = sfmt_set_fmt (curr_sfmt, conv->to.fmt);
-			assert (new_sound != NULL);
 
 			if (curr_sound != buf)
 				free (curr_sound);
