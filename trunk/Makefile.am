@@ -66,6 +66,8 @@ mocp_SOURCES = log.c \
 EXTRA_mocp_SOURCES = gnugetopt.h \
 		     getopt.c \
 		     getopt1.c \
+		     md5.c \
+		     md5.h \
 		     null_out.c \
 		     null_out.h \
 		     sndio_out.c \
@@ -83,9 +85,12 @@ mocp_LDADD = @EXTRA_OBJS@ -lltdl
 mocp_DEPENDENCIES = @EXTRA_OBJS@
 mocp_LDFLAGS = @EXTRA_LIBS@ $(RCC_LIBS) -export-dynamic
 EXTRA_DIST = README_equalizer mocp.1 THANKS keymap.example Doxyfile \
-	     doxy_pages/decoder_api.doxy doxy_pages/main_page.doxy \
-	     doxy_pages/sound_output_driver_api.doxy moc.spec.in \
-	     moc.spec
+	         doxy_pages/decoder_api.doxy doxy_pages/main_page.doxy \
+	         doxy_pages/sound_output_driver_api.doxy moc.spec.in \
+	         moc.spec
 EXTRA_DIST += @EXTRA_DISTS@
+EXTRA_DIST += tools/README tools/md5check.sh tools/maketests.sh
+noinst_DATA = tools/README
+noinst_SCRIPTS = tools/md5check.sh tools/maketests.sh
 
 doc_DATA = config.example THANKS README README_equalizer keymap.example

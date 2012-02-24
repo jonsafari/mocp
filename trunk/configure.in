@@ -259,7 +259,7 @@ else
 		AX_CFLAGS_GCC_OPTION([-g])
 		COMPILE_DEBUG='yes'
 	fi
-	EXTRA_OBJS="$EXTRA_OBJS null_out.o"
+	EXTRA_OBJS="$EXTRA_OBJS null_out.o md5.o"
 fi
 
 AC_FUNC_MALLOC
