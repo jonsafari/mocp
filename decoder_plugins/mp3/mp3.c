@@ -666,10 +666,10 @@ static int mp3_seek (void *void_data, int sec)
 	struct mp3_data *data = (struct mp3_data *)void_data;
 	int new_position;
 
+	assert (sec >= 0);
+
 	if (sec >= data->duration)
 		return -1;
-	else if (sec < 0)
-		sec = 0;
 
 	new_position = ((double) sec /
 			(double) data->duration) * data->size;

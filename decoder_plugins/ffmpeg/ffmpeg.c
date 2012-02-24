@@ -249,6 +249,8 @@ end:
 
 static int ffmpeg_seek (void *prv_data ATTR_UNUSED, int sec ATTR_UNUSED)
 {
+	assert (sec >= 0);
+
 #if 0
 	struct ffmpeg_data *data = (struct ffmpeg_data *)prv_data;
 	int err;

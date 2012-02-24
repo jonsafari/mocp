@@ -133,7 +133,7 @@ struct decoder
 	 * Seek to the given position.
 	 *
 	 * \param data Decoder's private data.
-	 * \param sec Where to seek in seconds.
+	 * \param sec Where to seek in seconds (never less than zero).
 	 *
 	 * \return The position that we actually seek to or -1 on error.
 	 * -1 is not a fatal error and further decoding will be performed.

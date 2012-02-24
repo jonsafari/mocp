@@ -542,6 +542,7 @@ static void decode_loop (const struct decoder *f, void *decoder_data,
 			int decoder_seek;
 
 			logit ("seeking");
+			req_seek = MAX(0, req_seek);
 			if ((decoder_seek = f->seek(decoder_data, req_seek))
 					== -1)
 				logit ("error when seeking");

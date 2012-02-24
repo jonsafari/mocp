@@ -12,6 +12,7 @@
  *
  */
 #include <pthread.h>
+#include <assert.h>
 
 #include "sidplay2.h"
 
@@ -439,6 +440,8 @@ extern "C" void sidplay2_info (const char *file_name, struct file_tags *info,
  * */
 extern "C" int sidplay2_seek (void *void_data ATTR_UNUSED, int sec ATTR_UNUSED)
 {
+  assert (sec >= 0);
+
   return -1;
 }
 

@@ -541,9 +541,7 @@ static int flac_seek (void *void_data, int sec)
 	struct flac_data *data = (struct flac_data *)void_data;
 	FLAC__uint64 target_sample;
 
-	if (sec < 0)
-		sec = 0;
-	else if ((unsigned)sec > data->length)
+	if ((unsigned)sec > data->length)
 		return -1;
 
 	target_sample = (FLAC__uint64)((sec/(double)data->length) *
