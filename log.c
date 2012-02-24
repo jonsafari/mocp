@@ -35,8 +35,8 @@ static int log_records_spilt = 0;
 void internal_logit (const char *file, const int line, const char *function,
 		const char *format, ...)
 {
-	char msg[256];
-	char time_str[20];
+	int len;
+	char *msg, time_str[20];
 	struct timeval utc_time;
 	va_list va;
 	struct tm tm_time;
@@ -45,19 +45,26 @@ void internal_logit (const char *file, const int line, const char *function,
 	if (!logfp) {
 		switch (logging_state) {
 		case UNINITIALISED:
-			buffered_log = lists_strs_new (16);
+			buffered_log = lists_strs_new (128);
 			logging_state = BUFFERING;
 			break;
 		case BUFFERING:
-			break;
+			/* Don't let storage run away on us. */
+			if (lists_strs_size (buffered_log) < lists_strs_capacity (buffered_log))
+				break;
+			log_records_spilt += 1;
+			return;
 		case LOGGING:
 			return;
 		}
 	}
 
 	va_start (va, format);
-	vsnprintf (msg, sizeof(msg), format, va);
-	msg[sizeof(msg) - 1] = 0;
+	len = vsnprintf (NULL, 0, format, va) + 1;
+	va_end (va);
+	msg = xmalloc (len);
+	va_start (va, format);
+	vsnprintf (msg, len, format, va);
 	va_end (va);
 
 	gettimeofday (&utc_time, NULL);
@@ -69,8 +76,7 @@ void internal_logit (const char *file, const int line, const char *function,
 		                     file, line, function, msg);
 		fflush (logfp);
 	}
-	else if (lists_strs_size (buffered_log) < lists_strs_capacity (buffered_log)) {
-		int len;
+	else {
 		char *str;
 
 		len = snprintf (NULL, 0, fmt, time_str, (unsigned)utc_time.tv_usec,
@@ -81,10 +87,8 @@ void internal_logit (const char *file, const int line, const char *function,
 
 		lists_strs_push (buffered_log, str);
 	}
-	else {
-		/* Don't let storage run away on us. */
-		log_records_spilt += 1;
-	}
+
+	free (msg);
 }
 
 /* fake logit() function for NDEBUG */
