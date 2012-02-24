@@ -677,6 +677,11 @@ static int ffmpeg_decode (void *prv_data, char *buf, int buf_len,
 		if (!pkt)
 			break;
 
+		if (pkt->stream_index != data->stream->index) {
+			free_packet (pkt);
+			continue;
+		}
+
 #ifdef AV_PKT_FLAG_CORRUPT
 		if (pkt->flags & AV_PKT_FLAG_CORRUPT) {
 			ffmpeg_log_repeats (NULL);
