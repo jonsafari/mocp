@@ -450,6 +450,23 @@ then
 	echo
 fi
 
+dnl
+dnl  If the warning below gets reported, then for further guidance:
+dnl
+dnl         vi +/REQUEST_CHANNELS decoder_plugins/ffmpeg/ffmpeg.c
+dnl
+if test "x$want_ffmpeg" = "xyes" && \
+   test "x$ac_cv_member_struct_AVCodecContext_request_channels" != "xyes"
+then
+	echo "WARNING: It appears that the FFmpeg/LibAV API has changed and"
+	echo "         no longer supports downmixing to stereo as it did"
+	echo "         previously.  Report this message along with the"
+	echo "         output of the 'ffmpeg --version' command to the MOC"
+	echo "         forum.  Meanwhile, you may have to live without stereo"
+	echo "         downmixing."
+	echo
+fi
+
 echo "WARNING: Since MOC version 2 the executable file name has changed to mocp!"
 echo "         Please remove old moc binary if you have installed an older version."
 echo

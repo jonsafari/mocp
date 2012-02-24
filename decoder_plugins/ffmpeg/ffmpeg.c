@@ -40,6 +40,9 @@
 #pragma GCC diagnostic warning "-Wdeprecated-declarations"
 #endif
 #include <libavutil/mathematics.h>
+#ifdef HAVE_AV_GET_CHANNEL_LAYOUT_NB_CHANNELS
+#include <libavutil/audioconvert.h>
+#endif
 #else
 #include <ffmpeg/avformat.h>
 #endif
@@ -532,6 +535,45 @@ static bool is_seek_broken (struct ffmpeg_data *data)
 	return false;
 }
 
+/* Downmix multi-channel audios to stereo. */
+static void set_downmixing (struct ffmpeg_data *data)
+{
+#ifdef HAVE_AV_GET_CHANNEL_LAYOUT_NB_CHANNELS
+	if (av_get_channel_layout_nb_channels (data->enc->channel_layout) <= 2)
+		return;
+#else
+	if (data->enc->channels <= 2)
+		return;
+#endif
+
+	data->enc->channels = 2;
+
+#ifdef HAVE_STRUCT_AVCODECCONTEXT_REQUEST_CHANNELS
+
+	/*
+	 * When FFmpeg breaks its API (and it will), this code will be
+	 * disabled and users will complain that MOC no longer downmixes
+	 * to stereo.  This is because the 'request_channels' field in
+	 * AVCodecContext is marked as deprecated (and so will probably
+	 * be removed at some time) but FFmpeg requires it to be set to
+	 * trigger downmixing (go figure!).  Currently, there is no
+	 * guidance on how it will work in the future, but looking at
+	 * where 's->downmixed' is set near the end of 'ac3_decode_init()'
+	 * in the FFmpeg's source code file 'libavcodec/ac3dec.c' might
+	 * help (in the absence of proper documentation).
+	 */
+
+	data->enc->request_channels = 2;
+
+#ifdef AV_CH_LAYOUT_STEREO_DOWNMIX
+	data->enc->request_channel_layout = AV_CH_LAYOUT_STEREO_DOWNMIX;
+#else
+	data->enc->request_channel_layout = CH_LAYOUT_STEREO_DOWNMIX;
+#endif
+
+#endif
+}
+
 static void *ffmpeg_open (const char *file)
 {
 	struct ffmpeg_data *data;
@@ -616,6 +658,7 @@ static void *ffmpeg_open (const char *file)
 	debug ("FFmpeg thinks '%s' is format(codec) '%s(%s)'",
 	        fn, data->ic->iformat->name, data->codec->name);
 
+	set_downmixing (data);
 	if (data->codec->capabilities & CODEC_CAP_TRUNCATED)
 		data->enc->flags |= CODEC_FLAG_TRUNCATED;
 
@@ -643,10 +686,6 @@ static void *ffmpeg_open (const char *file)
 	data->seek_broken = is_seek_broken (data);
 
 	data->okay = true;
-
-	/* hack for AC3 */
-	if (data->enc->channels > 2)
-		data->enc->channels = 2;
 
 	if (data->ic->duration >= AV_TIME_BASE) {
 #ifdef HAVE_AVIO_SIZE
