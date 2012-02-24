@@ -32,7 +32,7 @@ Before 2.5:
   if there is a song playing or paused, and empty string if stopped.
   %S -- expands to play/stop/pause.
 
-Transitional code removal (after 2.5);
+Transitional code removal (after 2.5):
 
 * Remove changed option type for QueueNextSongReturn.
 * Remove deprecated ffmpeg-config support.
@@ -87,9 +87,6 @@ In future:
 * Recording played sound to a file.
 * Upgrade TiMidity decoder plug-in to TiMidity++.  This would add support
   for soundfonts (.sf2) which are now more common.
-* When the new API of libavformat (in ffmpeg) stablises (maybe in version
-  53) use whatever it provides to obtain tags in ffmpeg.c ffmpeg_info().
-  (Also see the SVN log entry for r2282.)
 
 Maybe never:
 

@@ -62,7 +62,7 @@ void internal_logit (const char *file, const int line, const char *function,
 
 	gettimeofday (&utc_time, NULL);
 	localtime_r (&utc_time.tv_sec, &tm_time);
-	strftime (time_str, sizeof(time_str), "%b %e %T", &tm_time);
+	strftime (time_str, sizeof (time_str), "%b %e %T", &tm_time);
 
 	if (logfp) {
 		fprintf (logfp, fmt, time_str, (unsigned)utc_time.tv_usec,

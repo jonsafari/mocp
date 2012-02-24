@@ -226,9 +226,8 @@ static float *fixed_to_float (const char *buf, const size_t size,
 			s32_to_float (buf, out, size / 4);
 			break;
 		default:
-			 error ("Can't convert %s to float!",
-					 sfmt_str(fmt, fmt_name,
-						 sizeof(fmt_name)));
+			error ("Can't convert from %s to float!",
+			       sfmt_str (fmt, fmt_name, sizeof (fmt_name)));
 	}
 
 	return out;
@@ -259,9 +258,8 @@ static char *float_to_fixed (const float *buf, const size_t samples,
 			float_to_s32 (buf, new_snd, samples);
 			break;
 		default:
-			error ("Can't convert from float to %s",
-					sfmt_str(fmt, fmt_name,
-						sizeof(fmt_name)));
+			error ("Can't convert from float to %s!",
+			       sfmt_str (fmt, fmt_name, sizeof (fmt_name)));
 			abort ();
 	}
 
@@ -324,8 +322,7 @@ static void change_sign (char *buf, const size_t size, long *fmt)
 			break;
 		default:
 			error ("Request for changing sign of unknown format: %s",
-					sfmt_str(*fmt, fmt_name,
-						sizeof(fmt_name)));
+			       sfmt_str (*fmt, fmt_name, sizeof (fmt_name)));
 			abort ();
 	}
 }
@@ -363,7 +360,7 @@ static void swap_endian (char *buf, const size_t size, const long fmt)
 			break;
 		default:
 			error ("Can't convert to native endian!");
-			abort (); /* we can't do any smarter thing */
+			abort (); /* we can't do anything smarter */
 	}
 }
 
@@ -380,7 +377,7 @@ int audio_conv_new (struct audio_conversion *conv,
 
 		/* the only conversion we can do */
 		if (!(from->channels == 1 && to->channels == 2)) {
-			error ("Can't change number of channels");
+			error ("Can't change number of channels!");
 			return 0;
 		}
 	}
@@ -407,12 +404,11 @@ int audio_conv_new (struct audio_conversion *conv,
 		conv->src_state = src_new (resample_type, to->channels, &err);
 		if (!conv->src_state) {
 			error ("Can't resample from %dHz to %dHz: %s",
-					from->rate, to->rate,
-					src_strerror(err));
+					from->rate, to->rate, src_strerror (err));
 			return 0;
 		}
 #else
-		error ("Resampling not supported.");
+		error ("Resampling not supported!");
 		return 0;
 #endif
 	}
@@ -478,7 +474,7 @@ static float *resample_sound (struct audio_conversion *conv, const float *buf,
 		int err;
 
 		if ((err = src_process(conv->src_state, &resample_data))) {
-			error ("Can't resample: %s", src_strerror(err));
+			error ("Can't resample: %s", src_strerror (err));
 			free (output);
 			return NULL;
 		}

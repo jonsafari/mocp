@@ -1344,7 +1344,7 @@ static int req_queue_move (const struct client *cli)
 	return 1;
 }
 
-/* Reveive a command from the client and execute it. */
+/* Receive a command from the client and execute it. */
 static void handle_command (const int client_id)
 {
 	int cmd;

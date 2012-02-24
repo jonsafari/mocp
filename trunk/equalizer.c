@@ -47,14 +47,12 @@
 #include <dirent.h>
 #include <locale.h>
 
-
 #include "common.h"
 #include "audio.h"
 #include "audio_helper.h"
 #include "options.h"
 #include "log.h"
 #include "files.h"
-
 #include "equalizer.h"
 
 /* config processing */
