@@ -267,7 +267,7 @@ static struct info_win
 } info_win;
 
 /* Are we running on xterm? */
-static int has_xterm = 0;
+static bool has_xterm = false;
 
 /* Are we running inside screen? */
 static int has_screen = 0;
@@ -2385,13 +2385,10 @@ static void detect_term ()
 
 	term = getenv ("TERM");
 	if (term) {
-		int ix;
 		lists_t_strs *xterms;
 
 		xterms = options_get_list ("XTerms");
-		ix = lists_strs_find (xterms, term);
-		if (ix < lists_strs_size (xterms))
-			has_xterm = 1;
+		has_xterm = lists_strs_exists (xterms, term);
 	}
 }
 

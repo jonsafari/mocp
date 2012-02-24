@@ -351,3 +351,17 @@ int lists_strs_find (lists_t_strs *list, const char *sought)
 
 	return result;
 }
+
+/* Given a string, return true iff it exists in the list. */
+bool lists_strs_exists (lists_t_strs *list, const char *sought)
+{
+	bool result = false;
+
+	assert (list);
+	assert (sought);
+
+	if (lists_strs_find (list, sought) < lists_strs_size (list))
+		result = true;
+
+	return result;
+}

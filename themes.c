@@ -513,7 +513,7 @@ static void reset_colors_table ()
 		colors[i] = -1;
 }
 
-void theme_init (const int has_xterm)
+void theme_init (bool has_xterm)
 {
 	reset_colors_table ();
 
