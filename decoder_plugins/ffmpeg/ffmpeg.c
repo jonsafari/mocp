@@ -26,7 +26,20 @@
 # include <inttypes.h>
 #endif
 #if HAVE_LIBAVFORMAT_AVFORMAT_H
+/* This warning reset suppresses a deprecation warning message for
+ * av_metadata_set()'s use of an AVMetadata parameter.  Although it
+ * only occurs in FFmpeg release 0.7, the non-linear versioning of
+ * that library makes it impossible to limit the suppression to that
+ * particular release as it seems to have been introduced in avformat
+ * version 53.1.0 and resolved in version 52.108.0. */
+#ifdef __GNUC__
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
 #include <libavformat/avformat.h>
+#ifdef __GNUC__
+#pragma GCC diagnostic warning "-Wdeprecated-declarations"
+#endif
+#include <libavutil/mathematics.h>
 #else
 #include <ffmpeg/avformat.h>
 #endif
@@ -197,12 +210,21 @@ static void ffmpeg_info (const char *file_name,
 	}
 #endif
 
+#ifdef HAVE_AVFORMAT_FIND_STREAM_INFO
+	err = avformat_find_stream_info (ic, NULL);
+	if (err < 0) {
+		ffmpeg_log_repeats (NULL);
+		logit ("avformat_find_stream_info() failed (%d)", err);
+		goto end;
+	}
+#else
 	err = av_find_stream_info (ic);
 	if (err < 0) {
 		ffmpeg_log_repeats (NULL);
 		logit ("av_find_stream_info() failed (%d)", err);
 		goto end;
 	}
+#endif
 
 	if (tags_sel & TAGS_TIME) {
 		info->time = -1;
@@ -218,7 +240,9 @@ static void ffmpeg_info (const char *file_name,
 #elif defined(HAVE_AV_METADATA_GET)
 	AVMetadata *md;
 
+#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(52,83,0)
 	av_metadata_conv (ic, NULL, ic->iformat->metadata_conv);
+#endif
 #endif
 
 #if defined(HAVE_AV_DICT_GET) || defined(HAVE_AV_METADATA_GET)
@@ -258,19 +282,19 @@ static void ffmpeg_info (const char *file_name,
 
 	AVMetadataTag *tag;
 
-	tag = av_metadata_get (ic->metadata, "track", NULL, 0);
+	tag = av_metadata_get (md, "track", NULL, 0);
 	if (tag && tag->value && tag->value[0])
 		info->track = atoi (tag->value);
-	tag = av_metadata_get (ic->metadata, "title", NULL, 0);
+	tag = av_metadata_get (md, "title", NULL, 0);
 	if (tag && tag->value && tag->value[0])
 		info->title = xstrdup (tag->value);
 	if (avformat_version () < AV_VERSION_INT(52,50,0))
-		tag = av_metadata_get (ic->metadata, "author", NULL, 0);
+		tag = av_metadata_get (md, "author", NULL, 0);
 	else
-		tag = av_metadata_get (ic->metadata, "artist", NULL, 0);
+		tag = av_metadata_get (md, "artist", NULL, 0);
 	if (tag && tag->value && tag->value[0])
 		info->artist = xstrdup (tag->value);
-	tag = av_metadata_get (ic->metadata, "album", NULL, 0);
+	tag = av_metadata_get (md, "album", NULL, 0);
 	if (tag && tag->value && tag->value[0])
 		info->album = xstrdup (tag->value);
 
@@ -295,7 +319,11 @@ static void ffmpeg_info (const char *file_name,
 	}
 
 end:
+#ifdef HAVE_AVFORMAT_CLOSE_INPUT
+	avformat_close_input (&ic);
+#else
 	av_close_input_file (ic);
+#endif
 	ffmpeg_log_repeats (NULL);
 }
 
@@ -399,7 +427,11 @@ static void *ffmpeg_open (const char *file)
 		return data;
 	}
 
+#ifdef HAVE_AVFORMAT_FIND_STREAM_INFO
+	err = avformat_find_stream_info (data->ic, NULL);
+#else
 	err = av_find_stream_info (data->ic);
+#endif
 	if (err < 0) {
 		decoder_error (&data->error, ERROR_FATAL, 0,
 				"Could not find codec parameters (err %d)",
@@ -418,7 +450,18 @@ static void *ffmpeg_open (const char *file)
 	data->enc = data->stream->codec;
 
 	data->codec = avcodec_find_decoder (data->enc->codec_id);
-	if (!data->codec || avcodec_open (data->enc, data->codec) < 0) {
+	if (!data->codec) {
+		decoder_error (&data->error, ERROR_FATAL, 0,
+				"No codec for this file");
+		goto end;
+	}
+
+#ifdef HAVE_AVCODEC_OPEN2
+	if (avcodec_open2 (data->enc, data->codec, NULL) < 0)
+#else
+	if (avcodec_open (data->enc, data->codec) < 0)
+#endif
+	{
 		decoder_error (&data->error, ERROR_FATAL, 0,
 				"No codec for this file");
 		goto end;
@@ -455,7 +498,11 @@ static void *ffmpeg_open (const char *file)
 	return data;
 
 end:
+#ifdef HAVE_AVFORMAT_CLOSE_INPUT
+	avformat_close_input (&data->ic);
+#else
 	av_close_input_file (data->ic);
+#endif
 	ffmpeg_log_repeats (NULL);
 	return data;
 }
@@ -619,7 +666,8 @@ static AVPacket *get_packet (struct ffmpeg_data *data)
 	return NULL;
 }
 
-/* Decode samples from packet data. */
+#ifndef HAVE_AVCODEC_DECODE_AUDIO4
+/* Decode samples from packet data using pre-avcodec_decode_audio4(). */
 static int decode_packet (struct ffmpeg_data *data, AVPacket *pkt,
                           char *buf, int buf_len)
 {
@@ -673,6 +721,69 @@ static int decode_packet (struct ffmpeg_data *data, AVPacket *pkt,
 
 	return filled;
 }
+#endif
+
+#ifdef HAVE_AVCODEC_DECODE_AUDIO4
+/* Decode samples from packet data using avcodec_decode_audio4(). */
+static int decode_packet (struct ffmpeg_data *data, AVPacket *pkt,
+                          char *buf, int buf_len)
+{
+	int filled = 0;
+
+	do {
+		int len, got_frame, is_planar, plane_size, data_size, copied;
+		AVFrame frame;
+
+		len = avcodec_decode_audio4 (data->enc, &frame, &got_frame, pkt);
+
+		if (len < 0)  {
+			/* skip frame */
+			decoder_error (&data->error, ERROR_STREAM, 0, "Error in the stream!");
+			break;
+		}
+
+		if (!got_frame) {
+			data->eos = data->eof;
+			break;
+		}
+
+		debug ("Decoded %dB", len);
+
+		pkt->data += len;
+		pkt->size -= len;
+
+		is_planar = av_sample_fmt_is_planar (data->enc->sample_fmt);
+		data_size = av_samples_get_buffer_size (&plane_size,
+		                                        data->enc->channels,                                                   frame.nb_samples,
+		                                        data->enc->sample_fmt, 1);
+
+		if (data_size == 0)
+			continue;
+
+		copied = copy_or_buffer (data, (char *)frame.extended_data[0],
+		                         plane_size, buf, buf_len);
+		buf += copied;
+		filled += copied;
+		buf_len -= copied;
+
+        if (is_planar && data->enc->channels > 1) {
+			int ch;
+
+            for (ch = 1; ch < data->enc->channels; ch += 1) {
+				copied = copy_or_buffer (data, (char *)frame.extended_data[ch],
+				                         plane_size, buf, buf_len);
+				buf += copied;
+				filled += copied;
+				buf_len -= copied;
+            }
+        }
+
+		debug ("Copying %dB (%dB filled)", data_size, filled);
+	} while (pkt->size > 0);
+
+	return filled;
+}
+#endif
 
 static inline int compute_bitrate (struct sound_params *sound_params,
                                    int bytes_used, int bytes_produced,
@@ -755,7 +866,11 @@ static void ffmpeg_close (void *prv_data)
 
 	if (data->okay) {
 		avcodec_close (data->enc);
+#ifdef HAVE_AVFORMAT_CLOSE_INPUT
+		avformat_close_input (&data->ic);
+#else
 		av_close_input_file (data->ic);
+#endif
 		free_remain_buf (data);
 	}
 
