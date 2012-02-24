@@ -44,10 +44,10 @@
 
 #define DEBUG
 
+#include "common.h"
 #include "log.h"
 #include "interface_elements.h"
 #include "interface.h"
-#include "common.h"
 #include "lists.h"
 #include "playlist.h"
 #include "playlist_file.h"

@@ -1,9 +1,6 @@
 #ifndef AUDIO_HELPER_H
 #define AUDIO_HELPER_H
 
-#ifdef HAVE_CONFIG_H
-  #include "config.h"
-#endif
 #ifdef HAVE_STDINT_H
 # include <stdint.h>
 #endif

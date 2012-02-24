@@ -24,10 +24,10 @@
 #include <pwd.h>
 #include <errno.h>
 
+#include "common.h"
 #include "server.h"
 #include "interface.h"
 #include "log.h"
-#include "common.h"
 #include "options.h"
 
 static int im_server = 0; /* Am I the server? */

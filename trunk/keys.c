@@ -30,12 +30,12 @@
 
 #define DEBUG
 
+#include "common.h"
 #include "keys.h"
 #include "interface.h"
 #include "interface_elements.h"
 #include "options.h"
 #include "log.h"
-#include "common.h"
 #include "files.h"
 
 #define CTRL_KEY_CODE	0x1F

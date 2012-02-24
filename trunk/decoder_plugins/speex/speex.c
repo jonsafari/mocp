@@ -33,8 +33,8 @@
 
 /*#define DEBUG*/
 
-#include "decoder.h"
 #include "common.h"
+#include "decoder.h"
 #include "audio.h"
 #include "log.h"
 

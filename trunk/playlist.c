@@ -25,8 +25,8 @@
 
 #define DEBUG
 
-#include "playlist.h"
 #include "common.h"
+#include "playlist.h"
 #include "log.h"
 #include "options.h"
 #include "files.h"

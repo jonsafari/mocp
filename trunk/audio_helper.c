@@ -1,5 +1,9 @@
-#include "audio_helper.h"
+#ifdef HAVE_CONFIG_H
+  #include "config.h"
+#endif
 
+#include "common.h"
+#include "audio_helper.h"
 #include "audio.h"
 
 #define swap_32bit_endianness(i32) \

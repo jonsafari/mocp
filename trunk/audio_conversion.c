@@ -47,8 +47,8 @@
 
 #define DEBUG
 
-#include "audio_conversion.h"
 #include "common.h"
+#include "audio_conversion.h"
 #include "log.h"
 #include "options.h"
 #include "compat.h"

@@ -26,9 +26,9 @@
 #include <strings.h>
 #include <errno.h>
 
+#include "common.h"
 #include "interface.h"
 #include "themes.h"
-#include "common.h"
 #include "files.h"
 #include "options.h"
 

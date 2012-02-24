@@ -28,11 +28,11 @@
 
 #define DEBUG
 
+#include "common.h"
 #include "io.h"
 #include "decoder.h"
 #include "log.h"
 #include "files.h"
-#include "common.h"
 #include "options.h"
 
 // Limiting maximum size for loading a module was suggested by Damian.
