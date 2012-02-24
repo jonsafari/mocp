@@ -43,6 +43,13 @@
 #include "log.h"
 #include "files.h"
 
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(52,94,1)
+#define AV_SAMPLE_FMT_U8   SAMPLE_FMT_U8
+#define AV_SAMPLE_FMT_S16  SAMPLE_FMT_S16
+#define AV_SAMPLE_FMT_S32  SAMPLE_FMT_S32
+#define AV_SAMPLE_FMT_FLT  SAMPLE_FMT_FLT
+#endif
+
 struct ffmpeg_data
 {
 	AVFormatContext *ic;
@@ -55,6 +62,7 @@ struct ffmpeg_data
 
 	bool okay; /* was this stream successfully opened? */
 	struct decoder_error error;
+	long fmt;
 	int bitrate;
 	int avg_bitrate;
 };
@@ -256,6 +264,73 @@ end:
 	ffmpeg_log_repeats (NULL);
 }
 
+/* Once upon a time FFmpeg didn't set AVCodecContext.sample_format. */
+static long fmt_from_codec (struct ffmpeg_data *data)
+{
+	long result = 0;
+
+	if (avcodec_version () < AV_VERSION_INT(52,66,0)) {
+		if (!strcmp (data->ic->iformat->name, "wav")) {
+			switch (data->enc->codec_id) {
+			case CODEC_ID_PCM_S8:
+				result = SFMT_S8;
+				break;
+			case CODEC_ID_PCM_U8:
+				result = SFMT_U8;
+				break;
+			case CODEC_ID_PCM_S16LE:
+			case CODEC_ID_PCM_S16BE:
+				result = SFMT_S16;
+				break;
+			case CODEC_ID_PCM_U16LE:
+			case CODEC_ID_PCM_U16BE:
+				result = SFMT_U16;
+				break;
+			case CODEC_ID_PCM_S24LE:
+			case CODEC_ID_PCM_S24BE:
+			case CODEC_ID_PCM_S32LE:
+			case CODEC_ID_PCM_S32BE:
+				result = SFMT_S32;
+				break;
+			case CODEC_ID_PCM_U24LE:
+			case CODEC_ID_PCM_U24BE:
+			case CODEC_ID_PCM_U32LE:
+			case CODEC_ID_PCM_U32BE:
+				result = SFMT_U32;
+				break;
+			default:
+				result = 0;
+			}
+		}
+	}
+
+	return result;
+}
+
+static long fmt_from_sample_fmt (struct ffmpeg_data *data)
+{
+	long result;
+
+	switch (data->enc->sample_fmt) {
+	case AV_SAMPLE_FMT_U8:
+		result = SFMT_U8;
+		break;
+	case AV_SAMPLE_FMT_S16:
+		result = SFMT_S16;
+		break;
+	case AV_SAMPLE_FMT_S32:
+		result = SFMT_S32;
+		break;
+	case AV_SAMPLE_FMT_FLT:
+		result = SFMT_FLOAT;
+		break;
+	default:
+		result = 0;
+	}
+
+	return result;
+}
+
 static void *ffmpeg_open (const char *file)
 {
 	struct ffmpeg_data *data;
@@ -300,6 +375,7 @@ static void *ffmpeg_open (const char *file)
 				"No audio stream in file");
 		goto end;
 	}
+
 	data->stream = data->ic->streams[audio_ix];
 	data->enc = data->stream->codec;
 
@@ -307,6 +383,15 @@ static void *ffmpeg_open (const char *file)
 	if (!data->codec || avcodec_open (data->enc, data->codec) < 0) {
 		decoder_error (&data->error, ERROR_FATAL, 0,
 				"No codec for this file");
+		goto end;
+	}
+
+	data->fmt = fmt_from_codec (data);
+	if (data->fmt == 0)
+		data->fmt = fmt_from_sample_fmt (data);
+	if (data->fmt == 0) {
+		decoder_error (&data->error, ERROR_FATAL, 0,
+		               "Unsupported sample size!");
 		goto end;
 	}
 
@@ -495,9 +580,10 @@ static int ffmpeg_decode (void *prv_data, char *buf, int buf_len,
 
 	decoder_error_clear (&data->error);
 
+	/* FFmpeg claims to always return native endian. */
 	sound_params->channels = data->enc->channels;
 	sound_params->rate = data->enc->sample_rate;
-	sound_params->fmt = SFMT_S16 | SFMT_NE;
+	sound_params->fmt = data->fmt | SFMT_NE;
 
 	if (data->remain_buf)
 		return take_from_remain_buf (data, buf, buf_len);
