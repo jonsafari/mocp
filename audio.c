@@ -691,24 +691,21 @@ int audio_open (struct sound_params *sound_params)
 
 	assert (sound_format_ok(sound_params->fmt));
 
-	if (audio_opened && sound_params_eq(req_sound_params, *sound_params)) {
-		if (audio_get_bps() < 88200) {
-			logit ("Reopening device due to low bps.");
+	if (audio_opened) {
+		if (sound_params_eq(req_sound_params, *sound_params)) {
+			if (audio_get_bps() >= 88200) {
+				logit ("Audio device already opened with such parameters.");
+				return 1;
+			}
 
 			/* Not closing the device would cause that much
 			 * sound from the previous file to stay in the buffer
 			 * and the user will hear old data, so close it. */
-			audio_close ();
+			logit ("Reopening device due to low bps.");
 		}
-		else {
-			logit ("Audio device already opened with such "
-					"parameters.");
 
-			return 1;
-		}
-	}
-	else if (audio_opened)
 		audio_close ();
+	}
 
 	req_sound_params = *sound_params;
 

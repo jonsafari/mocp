@@ -432,11 +432,11 @@ static void decode_loop (const struct decoder *f, void *decoder_data,
 		struct sound_params sound_params,
 		const float already_decoded_sec)
 {
-	int eof = 0;
+	bool eof = false;
 	char buf[PCM_BUF_SIZE];
 	int decoded = 0;
 	struct sound_params new_sound_params;
-	int sound_params_change = 0;
+	bool sound_params_change = false;
 	float decode_time = already_decoded_sec; /* the position of the decoder
 						    (in seconds) */
 
@@ -494,14 +494,14 @@ static void decode_loop (const struct decoder *f, void *decoder_data,
 			}
 
 			if (!decoded) {
-				eof = 1;
+				eof = true;
 				logit ("EOF from decoder");
 			}
 			else {
 				debug ("decoded %d bytes", decoded);
 				if (!sound_params_eq(new_sound_params,
 							sound_params))
-					sound_params_change = 1;
+					sound_params_change = true;
 
 				bitrate_list_add (&bitrate_list, decode_time,
 						f->get_bitrate(decoder_data));
@@ -551,7 +551,7 @@ static void decode_loop (const struct decoder *f, void *decoder_data,
 				out_buf_time_set (out_buf, decoder_seek);
 				bitrate_list_empty (&bitrate_list);
 				decode_time = decoder_seek;
-				eof = 0;
+				eof = false;
 				decoded = 0;
 			}
 
@@ -571,7 +571,7 @@ static void decode_loop (const struct decoder *f, void *decoder_data,
 				&& out_buf_get_fill(out_buf) == 0) {
 			logit ("Sound parameters have changed.");
 			sound_params = new_sound_params;
-			sound_params_change = 0;
+			sound_params_change = false;
 			set_info_channels (sound_params.channels);
 			set_info_rate (sound_params.rate / 1000);
 			out_buf_wait (out_buf);
