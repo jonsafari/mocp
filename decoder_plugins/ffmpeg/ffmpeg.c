@@ -456,6 +456,9 @@ static void *ffmpeg_open (const char *file)
 		goto end;
 	}
 
+	if (data->codec->capabilities & CODEC_CAP_TRUNCATED)
+		data->enc->flags |= CODEC_FLAG_TRUNCATED;
+
 #ifdef HAVE_AVCODEC_OPEN2
 	if (avcodec_open2 (data->enc, data->codec, NULL) < 0)
 #else
