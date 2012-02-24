@@ -16,6 +16,7 @@
 #endif
 
 #include <stdlib.h>
+#include <pthread.h>
 #include <string.h>
 #include <assert.h>
 #ifdef HAVE_STDINT_H
@@ -58,6 +59,68 @@ struct ffmpeg_data
 	int avg_bitrate;
 };
 
+static void ffmpeg_log_repeats (char *msg)
+{
+	static int msg_count = 0;
+	static char *prev_msg = NULL;
+	static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+
+	/* We need to gate the decoder and precaching threads. */
+	LOCK (mutex);
+	if (prev_msg && !msg) {
+		if (msg_count > 1)
+			logit ("FFmpeg said: Last message repeated %d times", msg_count);
+		free (prev_msg);
+		prev_msg = NULL;
+		msg_count = 0;
+	}
+	if (prev_msg && msg) {
+		if (!strcmp (msg, prev_msg)) {
+			free (msg);
+			msg = NULL;
+			msg_count += 1;
+		}
+	}
+	if (!prev_msg && msg) {
+		logit ("FFmpeg said: %s", msg);
+		prev_msg = msg;
+		msg_count = 1;
+	}
+	UNLOCK (mutex);
+}
+
+static void ffmpeg_log_cb (void *data ATTR_UNUSED, int level,
+                           const char *fmt, va_list vl)
+{
+	int len;
+	char *msg;
+	va_list vlist;
+
+	assert (fmt);
+
+	if (level > av_log_get_level ())
+		return;
+
+#if LIBAVCODEC_VERSION_MAJOR == 52
+	/* Drop this message because it is issued repeatedly and is pointless. */
+	const char diverting[] =
+	           "Diverting av_*_packet function calls to libavcodec.";
+
+	if (!strncmp (diverting, fmt, sizeof (diverting) - 1))
+		return;
+#endif
+
+	va_copy (vlist, vl);
+	len = vsnprintf (NULL, 0, fmt, vlist);
+	va_end (vlist);
+	msg = xmalloc (len + 1);
+	vsnprintf (msg, len + 1, fmt, vl);
+	if (len > 0 && msg[len - 1] == '\n')
+		msg[len - 1] = 0x00;
+
+	ffmpeg_log_repeats (msg);
+}
+
 /* Find the first audio stream and return its index, or nb_streams if
  * none found. */
 static unsigned int find_first_audio (AVFormatContext *ic)
@@ -82,8 +145,20 @@ static unsigned int find_first_audio (AVFormatContext *ic)
 
 static void ffmpeg_init ()
 {
+#ifdef DEBUG
+	av_log_set_level (AV_LOG_INFO);
+#else
+	av_log_set_level (AV_LOG_ERROR);
+#endif
+	av_log_set_callback (ffmpeg_log_cb);
 	avcodec_register_all ();
 	av_register_all ();
+}
+
+static void ffmpeg_destroy ()
+{
+	av_log_set_level (AV_LOG_QUIET);
+	ffmpeg_log_repeats (NULL);
 }
 
 /* Fill info structure with data from ffmpeg comments. */
@@ -97,12 +172,14 @@ static void ffmpeg_info (const char *file_name,
 #ifdef HAVE_AVFORMAT_OPEN_INPUT
 	err = avformat_open_input (&ic, file_name, NULL, NULL);
 	if (err < 0) {
+		ffmpeg_log_repeats (NULL);
 		logit ("avformat_open_input() failed (%d)", err);
 		return;
 	}
 #else
 	err = av_open_input_file (&ic, file_name, NULL, 0, NULL);
 	if (err < 0) {
+		ffmpeg_log_repeats (NULL);
 		logit ("av_open_input_file() failed (%d)", err);
 		return;
 	}
@@ -110,6 +187,7 @@ static void ffmpeg_info (const char *file_name,
 
 	err = av_find_stream_info (ic);
 	if (err < 0) {
+		ffmpeg_log_repeats (NULL);
 		logit ("av_find_stream_info() failed (%d)", err);
 		goto end;
 	}
@@ -175,6 +253,7 @@ static void ffmpeg_info (const char *file_name,
 
 end:
 	av_close_input_file (ic);
+	ffmpeg_log_repeats (NULL);
 }
 
 static void *ffmpeg_open (const char *file)
@@ -202,6 +281,7 @@ static void *ffmpeg_open (const char *file)
 	err = av_open_input_file (&data->ic, file, NULL, 0, NULL);
 #endif
 	if (err < 0) {
+		ffmpeg_log_repeats (NULL);
 		decoder_error (&data->error, ERROR_FATAL, 0, "Can't open file");
 		return data;
 	}
@@ -244,6 +324,7 @@ static void *ffmpeg_open (const char *file)
 
 end:
 	av_close_input_file (data->ic);
+	ffmpeg_log_repeats (NULL);
 	return data;
 }
 
@@ -440,6 +521,7 @@ static void ffmpeg_close (void *prv_data)
 		free_remain_buf (data);
 	}
 
+	ffmpeg_log_repeats (NULL);
 	decoder_error_clear (&data->error);
 	free (data);
 }
@@ -499,7 +581,7 @@ static void ffmpeg_get_error (void *prv_data, struct decoder_error *error)
 static struct decoder ffmpeg_decoder = {
 	DECODER_API_VERSION,
 	ffmpeg_init,
-	NULL,
+	ffmpeg_destroy,
 	ffmpeg_open,
 	NULL,
 	NULL,
