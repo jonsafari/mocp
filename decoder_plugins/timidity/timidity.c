@@ -24,11 +24,11 @@
 
 #define DEBUG
 
+#include "common.h"
 #include "io.h"
 #include "decoder.h"
 #include "log.h"
 #include "files.h"
-#include "common.h"
 #include "options.h"
 
 MidSongOptions midioptions;

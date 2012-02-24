@@ -29,10 +29,10 @@
 # include <inttypes.h>
 #endif
 
+#include "common.h"
 #include "softmixer.h"
 #include "audio_helper.h"
 #include "options.h"
-#include "common.h"
 #include "files.h"
 #include "log.h"
 

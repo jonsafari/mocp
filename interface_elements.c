@@ -44,9 +44,9 @@
 # include <curses.h>
 #endif
 
+#include "common.h"
 #include "menu.h"
 #include "themes.h"
-#include "common.h"
 #include "lists.h"
 #include "options.h"
 #include "interface_elements.h"

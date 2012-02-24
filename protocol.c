@@ -23,11 +23,11 @@
 #include <unistd.h>
 #include <fcntl.h>
 
+#include "common.h"
 #include "log.h"
 #include "protocol.h"
 #include "playlist.h"
 #include "files.h"
-#include "common.h"
 
 /* Maximal socket name. */
 #define UNIX_PATH_MAX	108

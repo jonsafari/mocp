@@ -22,10 +22,10 @@
 #include <errno.h>
 #include <assert.h>
 
+#include "common.h"
 #include "playlist.h"
 #include "playlist_file.h"
 #include "log.h"
-#include "common.h"
 #include "files.h"
 #include "options.h"
 #include "interface.h"

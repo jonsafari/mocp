@@ -18,8 +18,9 @@
 #include <string.h>
 #include <assert.h>
 #include <math.h>
-#include "audio.h"
+
 #include "common.h"
+#include "audio.h"
 #include "log.h"
 #include "options.h"
 

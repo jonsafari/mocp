@@ -18,8 +18,8 @@
 
 #define DEBUG
 
-#include "decoder.h"
 #include "common.h"
+#include "decoder.h"
 #include "server.h"
 #include "log.h"
 #include "files.h"

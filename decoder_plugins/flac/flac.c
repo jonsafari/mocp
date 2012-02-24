@@ -22,10 +22,10 @@
 
 /*#define DEBUG*/
 
+#include "common.h"
 #include "audio.h"
 #include "decoder.h"
 #include "server.h"
-#include "common.h"
 #include "log.h"
 #include "io.h"
 

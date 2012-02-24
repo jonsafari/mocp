@@ -32,8 +32,8 @@
 #include <locale.h>
 #include <assert.h>
 
-#include "server.h"
 #include "common.h"
+#include "server.h"
 #include "interface.h"
 #include "options.h"
 #include "protocol.h"

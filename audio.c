@@ -26,8 +26,8 @@
 
 #define DEBUG
 
-#include "server.h"
 #include "common.h"
+#include "server.h"
 #include "decoder.h"
 #include "playlist.h"
 #include "log.h"

@@ -38,8 +38,8 @@
 
 #define DEBUG
 
-#include "playlist.h"
 #include "common.h"
+#include "playlist.h"
 #include "lists.h"
 #include "interface.h"
 #include "decoder.h"

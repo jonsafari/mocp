@@ -36,9 +36,9 @@
 
 #define DEBUG
 
+#include "common.h"
 #include "log.h"
 #include "protocol.h"
-#include "common.h"
 #include "audio.h"
 #include "oss.h"
 #include "options.h"
