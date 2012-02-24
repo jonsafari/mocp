@@ -404,9 +404,8 @@ static int take_from_remain_buf (struct ffmpeg_data *data, char *buf, int buf_le
 static int decode_from_stream (struct ffmpeg_data *data, char *buf,
                                int buf_len, int *bytes_used)
 {
-	int ret, data_size, pkt_size = 0, filled = 0;
-	uint8_t *pkt_data;
-	AVPacket pkt, pkt_tmp;
+	int filled = 0;
+	AVPacket pkt;
 
 	/* The sample buffer should be 16 byte aligned (because SSE), a segmentation
 	 * fault may occur otherwise.
@@ -418,18 +417,19 @@ static int decode_from_stream (struct ffmpeg_data *data, char *buf,
 	*bytes_used = 0;
 
 	do {
-		ret = av_read_frame (data->ic, &pkt);
-		if (ret < 0)
+		int rc;
+		uint8_t *saved_pkt_data_ptr;
+
+		rc = av_read_frame (data->ic, &pkt);
+		if (rc < 0)
 			return 0;
 
-		memcpy (&pkt_tmp, &pkt, sizeof (pkt));
-		pkt_data = pkt.data;
-		pkt_size = pkt.size;
+		saved_pkt_data_ptr = pkt.data;
 		*bytes_used = pkt.size;
-		debug ("Got %dB packet", pkt_size);
+		debug ("Got %dB packet", pkt.size);
 
-		while (pkt_size) {
-			int len;
+		while (pkt.size > 0) {
+			int len, data_size;
 
 			data_size = sizeof (avbuf);
 
@@ -438,10 +438,10 @@ static int decode_from_stream (struct ffmpeg_data *data, char *buf,
 					&data_size, &pkt);
 #elif defined(HAVE_AVCODEC_DECODE_AUDIO2)
 			len = avcodec_decode_audio2 (data->enc, (int16_t *)avbuf,
-					&data_size, pkt_data, pkt_size);
+					&data_size, pkt.data, pkt.size);
 #else
 			len = avcodec_decode_audio (data->enc, (int16_t *)avbuf,
-					&data_size, pkt_data, pkt_size);
+					&data_size, pkt.data, pkt.size);
 #endif
 
 			debug ("Decoded %dB", data_size);
@@ -453,8 +453,8 @@ static int decode_from_stream (struct ffmpeg_data *data, char *buf,
 				break;
 			}
 
-			pkt_data += len;
-			pkt_size -= len;
+			pkt.data += len;
+			pkt.size -= len;
 
 			if (buf_len) {
 				int to_copy = MIN (data_size, buf_len);
@@ -477,9 +477,12 @@ static int decode_from_stream (struct ffmpeg_data *data, char *buf,
 				add_to_remain_buf (data, avbuf, data_size);
 
 		}
-	} while (!filled);
 
-	av_free_packet (&pkt_tmp);
+		/* FFmpeg will segfault if the data pointer is not restored. */
+		pkt.data = saved_pkt_data_ptr;
+		av_free_packet (&pkt);
+
+	} while (!filled);
 
 	return filled;
 }
