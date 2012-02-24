@@ -760,9 +760,9 @@ char *audio_conv (struct audio_conversion *conv, const char *buf,
 
 	/* convert to float if necessary */
 	if ((conv->from.rate != conv->to.rate
-				|| conv->to.fmt == SFMT_FLOAT
+				|| (conv->to.fmt & SFMT_MASK_FORMAT) == SFMT_FLOAT
 				|| !sfmt_same_bps(conv->to.fmt, curr_sfmt))
-			&& conv->from.fmt != SFMT_FLOAT) {
+			&& (conv->from.fmt & SFMT_MASK_FORMAT) != SFMT_FLOAT) {
 		char *new_sound;
 
 		new_sound = (char *)fixed_to_float (curr_sound, *conv_len,
