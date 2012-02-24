@@ -331,10 +331,10 @@ ASCIILines		= no
 # The default setting reflects the historical situation modified by
 # the experience of users.
 #
-#PreferredDecoders	= aac(aac,*):m4a(ffmpeg)
-#PreferredDecoders	+= mpc(musepack,*)
-#PreferredDecoders	+= wav(sndfile,*,modplug)
-#PreferredDecoders	+= wv(wavpack,*)
+#PreferredDecoders	= aac(aac,*,ffmpeg):m4a(ffmpeg)
+#PreferredDecoders	+= mpc(musepack,*,ffmpeg):mpc8(musepack,*,ffmpeg)
+#PreferredDecoders	+= wav(sndfile,*,modplug,ffmpeg)
+#PreferredDecoders	+= wv(wavpack,*,ffmpeg)
 #PreferredDecoders	+= audio/aac(aac,*):audio/aacp(aac,*):audio/m4a(ffmpeg)
 #PreferredDecoders	+= audio/wav(sndfile,*,modplug)
 
@@ -344,7 +344,7 @@ ASCIILines		= no
 # audio), while the MIME media types will cause Internet audio streams to
 # be assessed on content (which may be either Vorbis or Speex).
 #
-#PreferredDecoders	+= ogg(vorbis):oga(vorbis):spx(speex)
+#PreferredDecoders	+= ogg(vorbis,ffmpeg):oga(vorbis,ffmpeg):spx(speex)
 #PreferredDecoders	+= application/ogg():audio/ogg()
 
 # Resample method to use. There are a few methods of resampling sound supported
