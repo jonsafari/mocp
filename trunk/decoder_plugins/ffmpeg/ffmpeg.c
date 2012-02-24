@@ -466,8 +466,9 @@ static int ffmpeg_get_duration (void *prv_data)
 
 static void ffmpeg_get_name (const char *file, char buf[4])
 {
-	char *ext = ext_pos (file);
+	char *ext;
 
+	ext = ext_pos (file);
 	if (!strcasecmp (ext, "ra"))
 		strcpy (buf, "RA");
 	else if (!strcasecmp (ext, "wma"))

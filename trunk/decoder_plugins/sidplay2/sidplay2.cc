@@ -486,13 +486,13 @@ extern "C" int sidplay2_get_duration (void *void_data)
 
 extern "C" void sidplay2_get_name (const char *file, char buf[4])
 {
-  unsigned int i;
-  char *ext = ext_pos (file);
+  size_t ix;
+  char *ext;
 
+  ext = ext_pos (file);
   strncpy (buf, ext, 3);
-
-  for(i=0;i<strlen(ext);i++)
-    buf[i]=toupper(buf[i]);
+  for (ix = 0; ix < strlen (buf); ix += 1)
+    buf[ix] = toupper (buf[ix]);
 }
 
 extern "C" int sidplay2_our_format_ext(const char *ext)

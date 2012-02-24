@@ -19,9 +19,6 @@ Known bugs:
 - MOC needs to be restarted (when switching themes) in order to understand the
   ATTRIBUTE correctly.
 - db lock timeout in tags_cache.
-- When a driver for a file is identified by MIME media type but the file
-  has an extension which is not as expected, then the get_name() function
-  of some drivers will not return a valid three character name.
 
 Before 2.5:
 

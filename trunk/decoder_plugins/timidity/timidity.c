@@ -147,16 +147,9 @@ static int timidity_get_duration (void *void_data)
   return data->length/1000;
 }
 
-static void timidity_get_name (const char *file, char buf[4])
+static void timidity_get_name (const char *file ATTR_UNUSED, char buf[4])
 {
-  char *ext = ext_pos (file);
-
-  strncpy (buf, ext, 3);
-
-  unsigned int i;
-
-  for(i=0;i<strlen(ext);i++)
-    buf[i]=toupper(buf[i]);
+  strcpy (buf, "MID");
 }
 
 static int timidity_our_format_ext(const char *ext)
