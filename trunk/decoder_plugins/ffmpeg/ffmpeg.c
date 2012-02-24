@@ -39,6 +39,7 @@
 #define DEBUG
 
 #include "common.h"
+#include "audio.h"
 #include "decoder.h"
 #include "log.h"
 #include "files.h"
@@ -63,8 +64,8 @@ struct ffmpeg_data
 	bool okay; /* was this stream successfully opened? */
 	struct decoder_error error;
 	long fmt;
-	int bitrate;
-	int avg_bitrate;
+	int bitrate;            /* in bits per second */
+	int avg_bitrate;        /* in bits per second */
 };
 
 static void ffmpeg_log_repeats (char *msg)
@@ -401,9 +402,16 @@ static void *ffmpeg_open (const char *file)
 	if (data->enc->channels > 2)
 		data->enc->channels = 2;
 
-	data->avg_bitrate = (int) (data->ic->file_size /
-			(data->ic->duration / 1000000) * 8);
-	data->bitrate = data->ic->bit_rate / 1000;
+	if (data->ic->duration >= AV_TIME_BASE) {
+#ifdef HAVE_AVIO_SIZE
+		data->avg_bitrate = (int) (avio_size (data->ic->pb) /
+		                          (data->ic->duration / AV_TIME_BASE) * 8);
+#else
+		data->avg_bitrate = (int) (data->ic->file_size /
+		                          (data->ic->duration / AV_TIME_BASE) * 8);
+#endif
+	}
+	data->bitrate = data->ic->bit_rate;
 
 	return data;
 
@@ -572,6 +580,21 @@ static int decode_from_stream (struct ffmpeg_data *data, char *buf,
 	return filled;
 }
 
+static inline int compute_bitrate (struct sound_params *sound_params,
+                                   int bytes_used, int bytes_produced,
+                                   int bitrate)
+{
+	int64_t bytes_per_frame, bytes_per_second, seconds;
+
+	bytes_per_frame = sfmt_Bps (sound_params->fmt) * sound_params->channels;
+	bytes_per_second = bytes_per_frame * (int64_t)sound_params->rate;
+	seconds = (int64_t)bytes_produced / bytes_per_second;
+	if (seconds > 0)
+		bitrate = (int)((int64_t)bytes_used * 8 / seconds);
+
+	return bitrate;
+}
+
 static int ffmpeg_decode (void *prv_data, char *buf, int buf_len,
                           struct sound_params *sound_params)
 {
@@ -590,12 +613,9 @@ static int ffmpeg_decode (void *prv_data, char *buf, int buf_len,
 
 	bytes_produced = decode_from_stream (data, buf, buf_len, &bytes_used);
 
-	/* 2.0 - 16bit/sample*/
-	data->bitrate = bytes_used * 8 / ((bytes_produced + data->remain_buf_len)
-	                                                  / 2.0
-	                                                  / sound_params->channels
-                                                      / sound_params->rate)
-                                   / 1000;
+	data->bitrate = compute_bitrate (sound_params, bytes_used,
+	                                 bytes_produced + data->remain_buf_len,
+	                                 data->bitrate);
 
 	return bytes_produced;
 }
@@ -619,7 +639,7 @@ static int ffmpeg_get_bitrate (void *prv_data)
 {
 	struct ffmpeg_data *data = (struct ffmpeg_data *)prv_data;
 
-	return data->bitrate;
+	return data->bitrate / 1000;
 }
 
 static int ffmpeg_get_avg_bitrate (void *prv_data)
