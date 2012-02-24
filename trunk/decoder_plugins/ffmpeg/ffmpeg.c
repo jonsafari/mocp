@@ -524,12 +524,75 @@ static int take_from_remain_buf (struct ffmpeg_data *data, char *buf, int buf_le
 	return to_copy;
 }
 
-/* Decode samples from stream data. */
-static int decode_from_stream (struct ffmpeg_data *data, char *buf,
-                               int buf_len, int *bytes_used)
+/* Copy samples to output or remain buffer. */
+static int copy_or_buffer (struct ffmpeg_data *data, char *in, int in_len,
+                                                     char *out, int out_len)
 {
-	int filled = 0;
-	AVPacket pkt;
+	if (in_len == 0)
+		return 0;
+
+	if (in_len <= out_len) {
+		memcpy (out, in, in_len);
+		return in_len;
+	}
+
+	if (out_len == 0) {
+		add_to_remain_buf (data, in, in_len);
+		return 0;
+	}
+
+	memcpy (out, in, out_len);
+	put_in_remain_buf (data, in + out_len, in_len - out_len);
+	return out_len;
+}
+
+/* Create a new packet ('cause FFmpeg doesn't provide one). */
+static inline AVPacket *new_packet (struct ffmpeg_data *data)
+{
+	AVPacket *pkt;
+
+	assert (data->stream);
+
+	pkt = (AVPacket *)xmalloc (sizeof (AVPacket));
+	av_init_packet (pkt);
+	pkt->data = NULL;
+	pkt->size = 0;
+	pkt->stream_index = data->stream->index;
+
+	return pkt;
+}
+
+static inline void free_packet (AVPacket *pkt)
+{
+	assert (pkt);
+
+	av_free_packet (pkt);
+	free (pkt);
+}
+
+/* Read a packet from the file. */
+static AVPacket *get_packet (struct ffmpeg_data *data)
+{
+	int rc;
+	AVPacket *pkt;
+
+	pkt = new_packet (data);
+	rc = av_read_frame (data->ic, pkt);
+	if (rc < 0) {
+		free_packet (pkt);
+		return NULL;
+	}
+
+	debug ("Got %dB packet", pkt->size);
+
+	return pkt;
+}
+
+/* Decode samples from packet data. */
+static int decode_packet (struct ffmpeg_data *data, AVPacket *pkt,
+                          char *buf, int buf_len)
+{
+	int filled = 0, len, data_size, copied;
 
 	/* The sample buffer should be 16 byte aligned (because SSE), a segmentation
 	 * fault may occur otherwise.
@@ -538,75 +601,39 @@ static int decode_from_stream (struct ffmpeg_data *data, char *buf,
 	 */
 	char avbuf[(AVCODEC_MAX_AUDIO_FRAME_SIZE * 3) / 2] __attribute__((aligned(16)));
 
-	*bytes_used = 0;
-
-	do {
-		int rc;
-		uint8_t *saved_pkt_data_ptr;
-
-		rc = av_read_frame (data->ic, &pkt);
-		if (rc < 0)
-			return 0;
-
-		saved_pkt_data_ptr = pkt.data;
-		*bytes_used = pkt.size;
-		debug ("Got %dB packet", pkt.size);
-
-		while (pkt.size > 0) {
-			int len, data_size;
-
-			data_size = sizeof (avbuf);
+	while (pkt->size > 0) {
+		data_size = sizeof (avbuf);
 
 #if defined(HAVE_AVCODEC_DECODE_AUDIO3)
-			len = avcodec_decode_audio3 (data->enc, (int16_t *)avbuf,
-					&data_size, &pkt);
+		len = avcodec_decode_audio3 (data->enc, (int16_t *)avbuf,
+		                             &data_size, pkt);
 #elif defined(HAVE_AVCODEC_DECODE_AUDIO2)
-			len = avcodec_decode_audio2 (data->enc, (int16_t *)avbuf,
-					&data_size, pkt.data, pkt.size);
+		len = avcodec_decode_audio2 (data->enc, (int16_t *)avbuf,
+		                             &data_size, pkt->data, pkt->size);
 #else
-			len = avcodec_decode_audio (data->enc, (int16_t *)avbuf,
-					&data_size, pkt.data, pkt.size);
+		len = avcodec_decode_audio (data->enc, (int16_t *)avbuf,
+		                            &data_size, pkt->data, pkt->size);
 #endif
 
-			debug ("Decoded %dB", data_size);
+		debug ("Decoded %dB", data_size);
 
-			if (len < 0)  {
-				/* skip frame */
-				decoder_error (&data->error, ERROR_STREAM, 0,
-						"Error in the stream!");
-				break;
-			}
-
-			pkt.data += len;
-			pkt.size -= len;
-
-			if (buf_len) {
-				int to_copy = MIN (data_size, buf_len);
-
-				memcpy (buf, avbuf, to_copy);
-
-				buf += to_copy;
-				filled += to_copy;
-				buf_len -= to_copy;
-
-				debug ("Copying %dB (%dB filled)", to_copy,
-						filled);
-
-				if (to_copy < data_size)
-					put_in_remain_buf (data,
-							avbuf + to_copy,
-							data_size - to_copy);
-			}
-			else if (data_size)
-				add_to_remain_buf (data, avbuf, data_size);
-
+		if (len < 0)  {
+			/* skip frame */
+			decoder_error (&data->error, ERROR_STREAM, 0, "Error in the stream!");
+			break;
 		}
 
-		/* FFmpeg will segfault if the data pointer is not restored. */
-		pkt.data = saved_pkt_data_ptr;
-		av_free_packet (&pkt);
+		pkt->data += len;
+		pkt->size -= len;
 
-	} while (!filled);
+		copied = copy_or_buffer (data, avbuf, data_size, buf, buf_len);
+
+		buf += copied;
+		filled += copied;
+		buf_len -= copied;
+
+		debug ("Copying %dB (%dB filled)", copied, filled);
+	}
 
 	return filled;
 }
@@ -630,7 +657,7 @@ static int ffmpeg_decode (void *prv_data, char *buf, int buf_len,
                           struct sound_params *sound_params)
 {
 	struct ffmpeg_data *data = (struct ffmpeg_data *)prv_data;
-	int bytes_used, bytes_produced;
+	int bytes_used = 0, bytes_produced = 0;
 
 	decoder_error_clear (&data->error);
 
@@ -642,7 +669,25 @@ static int ffmpeg_decode (void *prv_data, char *buf, int buf_len,
 	if (data->remain_buf)
 		return take_from_remain_buf (data, buf, buf_len);
 
-	bytes_produced = decode_from_stream (data, buf, buf_len, &bytes_used);
+	do {
+		uint8_t *saved_pkt_data_ptr;
+		AVPacket *pkt;
+
+		pkt = get_packet (data);
+		if (!pkt)
+			break;
+
+		saved_pkt_data_ptr = pkt->data;
+		bytes_used += pkt->size;
+
+		bytes_produced = decode_packet (data, pkt, buf, buf_len);
+		buf += bytes_produced;
+		buf_len -= bytes_produced;
+
+		/* FFmpeg will segfault if the data pointer is not restored. */
+		pkt->data = saved_pkt_data_ptr;
+		free_packet (pkt);
+	} while (!bytes_produced);
 
 	data->bitrate = compute_bitrate (sound_params, bytes_used,
 	                                 bytes_produced + data->remain_buf_len,
