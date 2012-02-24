@@ -70,7 +70,7 @@ static int srv_sock = -1;
 
 static struct plist *playlist = NULL; /* our playlist */
 static struct plist *queue = NULL; /* our queue */
-static struct plist *dir_plist = NULL; /* content of the current directory */
+static struct plist *dir_plist = NULL; /* contents of the current directory */
 
 /* Queue for events coming from the server. */
 static struct event_queue events;
@@ -81,8 +81,8 @@ static char cwd[PATH_MAX] = "";
 /* If the user presses quit, or we receive a termination signal. */
 static volatile enum want_quit want_quit = NO_QUIT;
 
-/* If user presses CTRL-C, set this to 1. This should interrupt long operations
- * that blocks the interface. */
+/* If user presses CTRL-C, set this to 1.  This should interrupt long
+ * operations which block the interface. */
 static volatile int wants_interrupt = 0;
 
 #ifdef SIGWINCH

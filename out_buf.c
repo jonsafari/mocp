@@ -209,10 +209,8 @@ void out_buf_init (struct out_buf *buf, int size)
 	/*fd = open ("out_test", O_CREAT | O_TRUNC | O_WRONLY, 0600);*/
 
 	rc = pthread_create (&buf->tid, NULL, read_thread, buf);
-	if (rc != 0) {
-		logit ("Can't create buffer thread: %s", strerror (rc));
+	if (rc != 0)
 		fatal ("Can't create buffer thread: %s", strerror (rc));
-	}
 }
 
 /* Wait for empty buffer, end playing, free resources allocated for the buf

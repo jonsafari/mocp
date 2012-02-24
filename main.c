@@ -39,7 +39,6 @@
 #include "protocol.h"
 #include "log.h"
 #include "compat.h"
-#include "common.h"
 #include "decoder.h"
 #include "lists.h"
 

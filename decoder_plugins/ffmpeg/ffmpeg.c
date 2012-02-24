@@ -210,7 +210,7 @@ static void *ffmpeg_open (const char *file)
 	data->codec = avcodec_find_decoder (data->enc->codec_id);
 	if (!data->codec || avcodec_open(data->enc, data->codec) < 0) {
 		decoder_error (&data->error, ERROR_FATAL, 0,
-				"No codec for this file.");
+				"No codec for this file");
 		av_close_input_file (data->ic);
 		return data;
 	}

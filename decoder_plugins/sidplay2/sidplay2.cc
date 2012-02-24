@@ -430,12 +430,12 @@ extern "C" void sidplay2_info (const char *file_name, struct file_tags *info,
   delete st;
 }
 
-/* Seeking is not reliable because I don't know how to
- * keep track of the difference between what time moc is
- * at playing and how many has been precached... :-|
+/* Seeking is not reliable because I don't know how to keep track of the
+ * difference between the time which MOC is currently playing and how much
+ * time has been precached... :-|
  *
- * generic seeking can't be done because the tune has to
- * be played until the position (needs CPU)...
+ * Generic seeking can't be done because the whole audio would have to be
+ * replayed until the position is reached (which would introduce a delay).
  * */
 extern "C" int sidplay2_seek (void *void_data ATTR_UNUSED, int sec ATTR_UNUSED)
 {

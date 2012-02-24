@@ -101,7 +101,7 @@ static pthread_mutex_t plist_mut = PTHREAD_MUTEX_INITIALIZER;
 static int audio_opened = 0;
 
 /* Current sound parameters (with which the device is opened). */
-static struct sound_params driver_sound_params = { 0, 0, 0};
+static struct sound_params driver_sound_params = { 0, 0, 0 };
 
 /* Sound parameters requested by the decoder. */
 static struct sound_params req_sound_params = { 0, 0, 0 };
