@@ -22,6 +22,7 @@
 #endif
 
 #include <string.h>
+#include <assert.h>
 #include <wavpack/wavpack.h>
 
 #define DEBUG
@@ -101,6 +102,8 @@ static void wav_close (void *prv_data)
 static int wav_seek (void *prv_data, int sec)
 {
 	struct wavpack_data *data = (struct wavpack_data *)prv_data;
+
+	assert (sec >= 0);
 
 	if ( WavpackSeekSample (data->wpc, sec * data->sample_rate) )
 		return sec;

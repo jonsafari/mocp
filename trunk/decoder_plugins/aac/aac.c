@@ -417,6 +417,8 @@ static void aac_info (const char *file_name,
 
 static int aac_seek (void *prv_data ATTR_UNUSED, int sec ATTR_UNUSED)
 {
+	assert (sec >= 0);
+
 #if 0
 	struct aac_data *data = (struct aac_data *)prv_data;
 

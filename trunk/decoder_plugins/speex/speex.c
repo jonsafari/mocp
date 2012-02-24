@@ -457,6 +457,8 @@ static int spx_seek (void *prv_data ATTR_UNUSED, int sec)
 	ssize_t begin = 0, end;
 	size_t old_pos;
 
+	assert (sec >= 0);
+
 	end = io_file_size (data->stream);
 	if (end == -1)
 		return -1;

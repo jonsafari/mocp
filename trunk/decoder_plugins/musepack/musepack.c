@@ -20,6 +20,7 @@
 #include <strings.h>
 #include <stdio.h>
 #include <errno.h>
+#include <assert.h>
 
 #ifdef MPC_IS_OLD_API
 # include <mpcdec/mpcdec.h>
@@ -294,6 +295,8 @@ static int musepack_seek (void *prv_data, int sec)
 {
 	struct musepack_data *data = (struct musepack_data *)prv_data;
 	int res;
+
+	assert (sec >= 0);
 
 #ifdef MPC_IS_OLD_API
 	res = mpc_decoder_seek_seconds (&data->decoder, sec) ? sec : -1;

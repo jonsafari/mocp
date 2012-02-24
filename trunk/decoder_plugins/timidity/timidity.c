@@ -20,6 +20,7 @@
 
 #include <ctype.h> // for toupper
 #include <string.h>
+#include <assert.h>
 #include <timidity.h>
 
 #define DEBUG
@@ -114,9 +115,10 @@ static int timidity_seek (void *void_data, int sec)
 {
   struct timidity_data *data = (struct timidity_data *)void_data;
 
+  assert (sec >= 0);
+
   int ms = sec*1000;
 
-  ms = MAX(ms,0);
   ms = MIN(ms,data->length);
 
   mid_song_seek(data->midisong, ms);

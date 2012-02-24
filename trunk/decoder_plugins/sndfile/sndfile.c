@@ -14,6 +14,7 @@
 #endif
 
 #include <string.h>
+#include <assert.h>
 #include <sndfile.h>
 
 #define DEBUG
@@ -95,6 +96,8 @@ static int sndfile_seek (void *void_data, int sec)
 {
 	struct sndfile_data *data = (struct sndfile_data *)void_data;
 	int res;
+
+	assert (sec >= 0);
 
 	res = sf_seek (data->sndfile, data->snd_info.samplerate * sec,
 			SEEK_SET);

@@ -24,6 +24,7 @@
 
 #include <ctype.h> // for toupper
 #include <string.h>
+#include <assert.h>
 #include <libmodplug/modplug.h>
 
 #define DEBUG
@@ -201,9 +202,10 @@ static int modplug_seek (void *void_data, int sec)
 {
   struct modplug_data *data = (struct modplug_data *)void_data;
 
+  assert (sec >= 0);
+
   int ms = sec*1000;
 
-  ms = MAX(ms,0);
   ms = MIN(ms,data->length);
 
   ModPlug_Seek(data->modplugfile, ms);
