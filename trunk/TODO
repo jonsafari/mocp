@@ -19,6 +19,11 @@ Known bugs:
 - MOC needs to be restarted (when switching themes) in order to understand the
   ATTRIBUTE correctly.
 - db lock timeout in tags_cache.
+- Seeking in some formats does not work in the FFmpeg decoder because of
+  the limitations of the FFmpeg libraries (and seeking is disabled for them).
+  FLV also has seeking issues and is disabled but will be enabled if
+  SEEK_IN_DECODER is set in the FFmpeg decoder plug-in.  (This may be
+  parameterised in due course.)
 
 Before 2.5:
 
