@@ -17,6 +17,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 #ifdef HAVE_STDINT_H
 # include <stdint.h>
 #endif
@@ -44,31 +45,54 @@
 struct ffmpeg_data
 {
 	AVFormatContext *ic;
+	AVStream *stream;
 	AVCodecContext *enc;
 	AVCodec *codec;
 
 	char *remain_buf;
 	int remain_buf_len;
 
-	int ok; /* was this stream successfully opened? */
+	bool okay; /* was this stream successfully opened? */
 	struct decoder_error error;
 	int bitrate;
 	int avg_bitrate;
 };
 
+/* Find the first audio stream and return its index, or nb_streams if
+ * none found. */
+static unsigned int find_first_audio (AVFormatContext *ic)
+{
+	unsigned int result;
+
+	assert (ic);
+
+	for (result = 0; result < ic->nb_streams; result += 1) {
+#if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(50,15,1)
+		if (ic->streams[result]->codec->codec_type == CODEC_TYPE_AUDIO)
+#else
+		if (ic->streams[result]->codec->codec_type == AVMEDIA_TYPE_AUDIO)
+#endif
+		{
+			break;
+		}
+	}
+
+	return result;
+}
+
 static void ffmpeg_init ()
 {
-	avcodec_register_all();
+	avcodec_register_all ();
 	av_register_all ();
 }
 
-/* Fill info structure with data from ffmpeg comments */
+/* Fill info structure with data from ffmpeg comments. */
 static void ffmpeg_info (const char *file_name,
 		struct file_tags *info,
 		const int tags_sel)
 {
-	AVFormatContext *ic = NULL;
 	int err;
+	AVFormatContext *ic = NULL;
 
 #ifdef HAVE_AVFORMAT_OPEN_INPUT
 	err = avformat_open_input (&ic, file_name, NULL, NULL);
@@ -87,12 +111,13 @@ static void ffmpeg_info (const char *file_name,
 	err = av_find_stream_info (ic);
 	if (err < 0) {
 		logit ("av_find_stream_info() failed (%d)", err);
-		av_close_input_file (ic);
-		return;
+		goto end;
 	}
 
 	if (tags_sel & TAGS_COMMENTS) {
+
 #if defined(HAVE_AV_DICT_GET)
+
 		AVDictionaryEntry *entry;
 
 		entry = av_dict_get (ic->metadata, "track", NULL, 0);
@@ -107,7 +132,9 @@ static void ffmpeg_info (const char *file_name,
 		entry = av_dict_get (ic->metadata, "album", NULL, 0);
 		if (entry && entry->value && entry->value[0])
 			info->album = xstrdup (entry->value);
+
 #elif defined(HAVE_AV_METADATA_GET)
+
 		AVMetadataTag *tag;
  
 		av_metadata_conv (ic, NULL, ic->iformat->metadata_conv);
@@ -118,17 +145,18 @@ static void ffmpeg_info (const char *file_name,
 		tag = av_metadata_get (ic->metadata, "title", NULL, 0);
 		if (tag && tag->value && tag->value[0])
 			info->title = xstrdup (tag->value);
-#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(52,50,0)
-		tag = av_metadata_get (ic->metadata, "author", NULL, 0);
-#else
-		tag = av_metadata_get (ic->metadata, "artist", NULL, 0);
-#endif
+		if (avformat_version () < AV_VERSION_INT(52,50,0))
+			tag = av_metadata_get (ic->metadata, "author", NULL, 0);
+		else
+			tag = av_metadata_get (ic->metadata, "artist", NULL, 0);
 		if (tag && tag->value && tag->value[0])
 			info->artist = xstrdup (tag->value);
 		tag = av_metadata_get (ic->metadata, "album", NULL, 0);
 		if (tag && tag->value && tag->value[0])
 			info->album = xstrdup (tag->value);
+
 #else
+
 		if (ic->track != 0)
 			info->track = ic->track;
 		if (ic->title[0] != 0)
@@ -137,6 +165,7 @@ static void ffmpeg_info (const char *file_name,
 			info->artist = xstrdup (ic->author);
 		if (ic->album[0] != 0)
 			info->album = xstrdup (ic->album);
+
 #endif
 	}
 
@@ -144,6 +173,7 @@ static void ffmpeg_info (const char *file_name,
 		info->time = ic->duration >= 0 ? ic->duration / AV_TIME_BASE
 			: -1;
 
+end:
 	av_close_input_file (ic);
 }
 
@@ -151,95 +181,70 @@ static void *ffmpeg_open (const char *file)
 {
 	struct ffmpeg_data *data;
 	int err;
-	unsigned int i;
-	int audio_index = -1;
+	unsigned int audio_ix;
 
-	data = (struct ffmpeg_data *)xmalloc (sizeof(struct ffmpeg_data));
-	data->ok = 0;
+	data = (struct ffmpeg_data *)xmalloc (sizeof (struct ffmpeg_data));
+	data->okay = false;
 	data->ic = NULL;
+	data->stream = NULL;
+	data->enc = NULL;
+	data->codec = NULL;
+	data->bitrate = 0;
+	data->avg_bitrate = 0;
+	data->remain_buf = NULL;
+	data->remain_buf_len = 0;
 
 	decoder_error_init (&data->error);
 
 #ifdef HAVE_AVFORMAT_OPEN_INPUT
 	err = avformat_open_input (&data->ic, file, NULL, NULL);
-	if (err < 0) {
-		decoder_error (&data->error, ERROR_FATAL, 0, "Can't open file");
-		return data;
-	}
 #else
 	err = av_open_input_file (&data->ic, file, NULL, 0, NULL);
+#endif
 	if (err < 0) {
 		decoder_error (&data->error, ERROR_FATAL, 0, "Can't open file");
 		return data;
 	}
-#endif
 
 	err = av_find_stream_info (data->ic);
 	if (err < 0) {
 		decoder_error (&data->error, ERROR_FATAL, 0,
 				"Could not find codec parameters (err %d)",
 				err);
-		av_close_input_file (data->ic);
-		return data;
+		goto end;
 	}
 
-	av_read_play (data->ic);
-	for (i = 0; i < data->ic->nb_streams; i++) {
-		data->enc = data->ic->streams[i]->codec;
-#if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(50,15,1)
-		if (data->enc->codec_type == CODEC_TYPE_AUDIO)
-#else
-		if (data->enc->codec_type == AVMEDIA_TYPE_AUDIO)
-#endif
-		{
-			audio_index = i;
-			break;
-		}
-	}
-	if (audio_index == -1) {
+	audio_ix = find_first_audio (data->ic);
+	if (audio_ix == data->ic->nb_streams) {
 		decoder_error (&data->error, ERROR_FATAL, 0,
 				"No audio stream in file");
-		av_close_input_file (data->ic);
-		return data;
+		goto end;
 	}
+	data->stream = data->ic->streams[audio_ix];
+	data->enc = data->stream->codec;
 
 	/* hack for AC3 */
 	if (data->enc->channels > 2)
 		data->enc->channels = 2;
 
 	data->codec = avcodec_find_decoder (data->enc->codec_id);
-	if (!data->codec || avcodec_open(data->enc, data->codec) < 0) {
+	if (!data->codec || avcodec_open (data->enc, data->codec) < 0) {
 		decoder_error (&data->error, ERROR_FATAL, 0,
 				"No codec for this file");
-		av_close_input_file (data->ic);
-		return data;
+		goto end;
 	}
 
-	data->remain_buf = NULL;
-	data->remain_buf_len = 0;
+	data->okay = true;
 
-	data->ok = 1;
 	data->avg_bitrate = (int) (data->ic->file_size /
 			(data->ic->duration / 1000000) * 8);
 	data->bitrate = data->ic->bit_rate / 1000;
 
 	return data;
-}
 
-static void ffmpeg_close (void *prv_data)
-{
-	struct ffmpeg_data *data = (struct ffmpeg_data *)prv_data;
-
-	if (data->ok) {
-		avcodec_close (data->enc);
-		av_close_input_file (data->ic);
-
-		if (data->remain_buf)
-			free (data->remain_buf);
-	}
-
-	decoder_error_clear (&data->error);
-	free (data);
+end:
+	av_close_input_file (data->ic);
+	return data;
 }
 
 static int ffmpeg_seek (void *prv_data ATTR_UNUSED, int sec ATTR_UNUSED)
@@ -250,11 +255,8 @@ static int ffmpeg_seek (void *prv_data ATTR_UNUSED, int sec ATTR_UNUSED)
 
 	if ((err = av_seek_frame(data->ic, -1, sec, 0)) < 0)
 		logit ("Seek error %d", err);
-	else if (data->remain_buf) {
-		free (data->remain_buf);
-		data->remain_buf = NULL;
-		data->remain_buf_len = 0;
-	}
+	else
+		free_remain_buf (data);
 
 	return err >= 0 ? sec : -1;
 #endif
@@ -285,16 +287,43 @@ static void add_to_remain_buf (struct ffmpeg_data *data, const char *buf,
 	debug ("remain_buf is %dB long", data->remain_buf_len);
 }
 
-static int ffmpeg_decode (void *prv_data, char *buf, int buf_len,
-		struct sound_params *sound_params)
+/* Free the remainder buffer. */
+static void free_remain_buf (struct ffmpeg_data *data)
 {
-	struct ffmpeg_data *data = (struct ffmpeg_data *)prv_data;
-	int ret;
-	int data_size;
-	AVPacket pkt, pkt_tmp;
+	free (data->remain_buf);
+	data->remain_buf = NULL;
+	data->remain_buf_len = 0;
+}
+
+/* Satisfy the request from previously decoded samples. */
+static int take_from_remain_buf (struct ffmpeg_data *data, char *buf, int buf_len)
+{
+	int to_copy = MIN (buf_len, data->remain_buf_len);
+
+	debug ("Copying %d bytes from the remain buf", to_copy);
+
+	memcpy (buf, data->remain_buf, to_copy);
+
+	if (to_copy < data->remain_buf_len) {
+		memmove (data->remain_buf, data->remain_buf + to_copy,
+				data->remain_buf_len - to_copy);
+		data->remain_buf_len -= to_copy;
+	}
+	else {
+		debug ("Remain buf is now empty");
+		free_remain_buf (data);
+	}
+
+	return to_copy;
+}
+
+/* Decode samples from stream data. */
+static int decode_from_stream (struct ffmpeg_data *data, char *buf,
+                               int buf_len, int *bytes_used)
+{
+	int ret, data_size, pkt_size = 0, filled = 0;
 	uint8_t *pkt_data;
-	int pkt_size = 0;
-	int filled = 0;
+	AVPacket pkt, pkt_tmp;
 
 	/* The sample buffer should be 16 byte aligned (because SSE), a segmentation
 	 * fault may occur otherwise.
@@ -303,53 +332,28 @@ static int ffmpeg_decode (void *prv_data, char *buf, int buf_len,
 	 */
 	char avbuf[(AVCODEC_MAX_AUDIO_FRAME_SIZE * 3) / 2] __attribute__((aligned(16)));
 
-	decoder_error_clear (&data->error);
-
-	sound_params->channels = data->enc->channels;
-	sound_params->rate = data->enc->sample_rate;
-	sound_params->fmt = SFMT_S16 | SFMT_NE;
-
-	if (data->remain_buf) {
-		int to_copy = MIN (buf_len, data->remain_buf_len);
-
-		debug ("Copying %d bytes from the remain buf", to_copy);
-
-		memcpy (buf, data->remain_buf, to_copy);
-
-		if (to_copy < data->remain_buf_len) {
-			memmove (data->remain_buf, data->remain_buf + to_copy,
-					data->remain_buf_len - to_copy);
-			data->remain_buf_len -= to_copy;
-		}
-		else {
-			debug ("Remain buf is now empty");
-			free (data->remain_buf);
-			data->remain_buf = NULL;
-			data->remain_buf_len = 0;
-		}
-
-		return to_copy;
-	}
+	*bytes_used = 0;
 
 	do {
 		ret = av_read_frame (data->ic, &pkt);
 		if (ret < 0)
 			return 0;
 
-		memcpy(&pkt_tmp, &pkt, sizeof(pkt));
+		memcpy (&pkt_tmp, &pkt, sizeof (pkt));
 		pkt_data = pkt.data;
 		pkt_size = pkt.size;
+		*bytes_used = pkt.size;
 		debug ("Got %dB packet", pkt_size);
 
 		while (pkt_size) {
 			int len;
 
-#if defined(HAVE_AVCODEC_DECODE_AUDIO3)
 			data_size = sizeof (avbuf);
+
+#if defined(HAVE_AVCODEC_DECODE_AUDIO3)
 			len = avcodec_decode_audio3 (data->enc, (int16_t *)avbuf,
 					&data_size, &pkt);
 #elif defined(HAVE_AVCODEC_DECODE_AUDIO2)
-			data_size = sizeof (avbuf);
 			len = avcodec_decode_audio2 (data->enc, (int16_t *)avbuf,
 					&data_size, pkt_data, pkt_size);
 #else
@@ -392,13 +396,50 @@ static int ffmpeg_decode (void *prv_data, char *buf, int buf_len,
 		}
 	} while (!filled);
 
-	/* 2.0 - 16bit/sample*/
-	data->bitrate = pkt.size * 8 / ((filled + data->remain_buf_len) / 2.0 /
-			sound_params->channels / sound_params->rate) / 1000;
-
 	av_free_packet (&pkt_tmp);
 
 	return filled;
+}
+
+static int ffmpeg_decode (void *prv_data, char *buf, int buf_len,
+                          struct sound_params *sound_params)
+{
+	struct ffmpeg_data *data = (struct ffmpeg_data *)prv_data;
+	int bytes_used, bytes_produced;
+
+	decoder_error_clear (&data->error);
+
+	sound_params->channels = data->enc->channels;
+	sound_params->rate = data->enc->sample_rate;
+	sound_params->fmt = SFMT_S16 | SFMT_NE;
+
+	if (data->remain_buf)
+		return take_from_remain_buf (data, buf, buf_len);
+
+	bytes_produced = decode_from_stream (data, buf, buf_len, &bytes_used);
+
+	/* 2.0 - 16bit/sample*/
+	data->bitrate = bytes_used * 8 / ((bytes_produced + data->remain_buf_len)
+	                                                  / 2.0
+	                                                  / sound_params->channels
+                                                      / sound_params->rate)
+                                   / 1000;
+
+	return bytes_produced;
+}
+
+static void ffmpeg_close (void *prv_data)
+{
+	struct ffmpeg_data *data = (struct ffmpeg_data *)prv_data;
+
+	if (data->okay) {
+		avcodec_close (data->enc);
+		av_close_input_file (data->ic);
+		free_remain_buf (data);
+	}
+
+	decoder_error_clear (&data->error);
+	free (data);
 }
 
 static int ffmpeg_get_bitrate (void *prv_data)
