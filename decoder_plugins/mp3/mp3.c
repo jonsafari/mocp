@@ -722,8 +722,9 @@ static int mp3_get_duration (void *void_data)
 
 static void mp3_get_name (const char *file, char buf[4])
 {
-	char *ext = ext_pos (file);
+	char *ext;
 
+	ext = ext_pos (file);
 	if (!strcasecmp (ext, "mp3"))
 		strcpy (buf, "MP3");
 	else if (!strcasecmp (ext, "mp2"))
@@ -732,6 +733,8 @@ static void mp3_get_name (const char *file, char buf[4])
 		strcpy (buf, "MP1");
 	else if (!strcasecmp (ext, "mpga"))
 		strcpy (buf, "MPG");
+	else
+		strcpy (buf, "MPx");
 }
 
 static int mp3_our_format_ext (const char *ext)

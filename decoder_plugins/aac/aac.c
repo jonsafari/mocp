@@ -553,12 +553,9 @@ static int aac_get_duration (void *prv_data)
 	return -1;
 }
 
-static void aac_get_name (const char *file, char buf[4])
+static void aac_get_name (const char *file ATTR_UNUSED, char buf[4])
 {
-	char *ext = ext_pos (file);
-
-	if (!strcasecmp (ext, "aac"))
-		strcpy (buf, "AAC");
+	strcpy (buf, "AAC");
 }
 
 static int aac_our_format_ext (const char *ext)

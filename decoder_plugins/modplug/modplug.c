@@ -236,14 +236,13 @@ static int modplug_get_duration (void *void_data)
 
 static void modplug_get_name (const char *file, char buf[4])
 {
-  char *ext = ext_pos (file);
+  size_t ix;
+  char *ext;
 
-  strncpy(buf, ext, 3);
-
-  unsigned int i;
-
-  for(i=0;i<strlen(ext);i++)
-    buf[i]=toupper(buf[i]);
+  ext = ext_pos (file);
+  strncpy (buf, ext, 3);
+  for (ix = 0; ix < strlen (buf); ix += 1)
+    buf[ix] = toupper (buf[ix]);
 }
 
 static int modplug_our_format_ext(const char *ext)

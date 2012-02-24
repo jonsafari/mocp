@@ -218,7 +218,7 @@ char *file_type_name (const char *file)
 	if (i == -1)
 		return NULL;
 
-	buf[0] = 0x00;
+	memset (buf, 0, sizeof (buf));
 	plugins[i].decoder->get_name (file, buf);
 
 	assert (buf[0]);
