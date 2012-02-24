@@ -303,10 +303,6 @@ static void *ffmpeg_open (const char *file)
 	data->stream = data->ic->streams[audio_ix];
 	data->enc = data->stream->codec;
 
-	/* hack for AC3 */
-	if (data->enc->channels > 2)
-		data->enc->channels = 2;
-
 	data->codec = avcodec_find_decoder (data->enc->codec_id);
 	if (!data->codec || avcodec_open (data->enc, data->codec) < 0) {
 		decoder_error (&data->error, ERROR_FATAL, 0,
@@ -315,6 +311,10 @@ static void *ffmpeg_open (const char *file)
 	}
 
 	data->okay = true;
+
+	/* hack for AC3 */
+	if (data->enc->channels > 2)
+		data->enc->channels = 2;
 
 	data->avg_bitrate = (int) (data->ic->file_size /
 			(data->ic->duration / 1000000) * 8);
