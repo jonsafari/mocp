@@ -119,15 +119,19 @@ static void check_moc_dir ()
 	/* strip trailing slash */
 	dir_name[strlen(dir_name)-1] = 0;
 
-	if (stat(dir_name, &file_stat) == -1) {
+	if (stat (dir_name, &file_stat) == -1) {
 		if (errno == ENOENT) {
-			if (mkdir(dir_name, 0700) == -1)
+			if (mkdir (dir_name, 0700) == -1)
 				fatal ("Can't create directory %s: %s",
-						dir_name, strerror(errno));
+						dir_name, strerror (errno));
 		}
 		else
 			fatal ("Error trying to check for "CONFIG_DIR
-					" directory: %s", strerror(errno));
+					" directory: %s", strerror (errno));
+	}
+	else {
+		if (!S_ISDIR(file_stat.st_mode) || access (dir_name, W_OK))
+			fatal ("%s is not a writable directory!", dir_name);
 	}
 }
 
