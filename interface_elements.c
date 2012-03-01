@@ -3637,6 +3637,22 @@ void windows_init ()
 	iface_initialized = 1;
 }
 
+void windows_reset ()
+{
+	if (screen_initialized) {
+
+		/* endwin() sometimes fails on X-terminals when we get SIGCHLD
+		 * at this moment.  Double invocation seems to solve this. */
+		if (endwin () == ERR && endwin () == ERR)
+			logit ("endwin() failed!");
+
+		/* Make sure that the next line after we exit will be "clear". */
+		printf ("\n");
+		fflush (stdout);
+
+	}
+}
+
 void windows_end ()
 {
 	if (iface_initialized) {
@@ -3651,16 +3667,7 @@ void windows_end ()
 		utf8_cleanup ();
 	}
 
-	if (screen_initialized) {
-
-		/* endwin() sometimes fails on X-terminals when we get SIGCHLD
-		 * at this moment.  Double invocation seems to solve this. */
-		if (endwin() == ERR && endwin() == ERR)
-			logit ("endwin() failed!");
-
-		/* Make sure that the next line after we exit will be "clear". */
-		putchar ('\n');
-	}
+	windows_reset ();
 
 	lyrics_cleanup ();
 }

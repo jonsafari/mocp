@@ -27,6 +27,7 @@
 #include "common.h"
 #include "server.h"
 #include "interface.h"
+#include "interface_elements.h"
 #include "log.h"
 #include "options.h"
 
@@ -53,6 +54,8 @@ void fatal (const char *format, ...)
 {
 	va_list va;
 	char msg[256];
+
+	windows_reset ();
 
 	va_start (va, format);
 	vsnprintf (msg, sizeof(msg), format, va);
