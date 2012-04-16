@@ -66,7 +66,8 @@ What software is required to compile it?
  - libdb version 4 or later
 
 To support audio formats you need:
- - Ogg Vorbis - libvorbis (http://www.xiph.org/ogg/vorbis/download/)
+ - Ogg Vorbis - libvorbis (http://www.xiph.org/ogg/vorbis/download/), or
+                libvorbisidec (http://svn.xiph.org/trunk/Tremor).
  - mp3 - libmad with libid3tag (ftp://ftp.mars.org/pub/mpeg/)
  - FLAC - (http://flac.sourceforge.net/)
  - WAVE, AU, AIFF, SVX, SPH, IRC, VOC - libsndfile
@@ -135,6 +136,14 @@ Note that MOC and some of its supporting packages make use GNU extensions
 to the C89 and C99 language standards.  Therefore, do not set the '-std'
 option in CFLAGS to a non-GNU value; if you do, configure will fail
 unexpectedly.
+
+In addition to the standard configure options documented in the INSTALL
+file, there are some MOC-specific options:
+
+	--with-vorbis=[yes|no|tremor]
+
+	  Using 'tremor' will cause MOC to build against the integer-only
+	  implementation of the Vorbis library (libvorbisidec).
 
 --------------------------------------------------------------------------------
 How to use it?

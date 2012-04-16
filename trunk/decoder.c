@@ -38,6 +38,8 @@ static struct plugin {
 
 static int plugins_num = 0;
 
+static bool have_tremor = false;
+
 /* This structure holds the user's decoder preferences for audio formats. */
 struct decoder_s_preference {
 	struct decoder_s_preference *next;    /* chain pointer */
@@ -374,6 +376,11 @@ static char *list_decoder_names (int *decoder_list, int count)
 	names = lists_strs_new (count);
 	for (ix = 0; ix < count; ix += 1)
 		lists_strs_append (names, plugins[decoder_list[ix]].name);
+	if (have_tremor) {
+		ix = lists_strs_find (names, "vorbis");
+		if (ix < lists_strs_size (names))
+			lists_strs_replace (names, ix, "vorbis(tremor)");
+	}
 	result = lists_strs_fmt (names, " %s");
 	lists_strs_free (names);
 
@@ -445,7 +452,17 @@ static int lt_load_plugin (const char *file, lt_ptr debug_info_ptr)
 
 	plugins[plugins_num].name = extract_decoder_name (name);
 
-	debug ("loaded %s decoder", plugins[plugins_num].name);
+	/* Is the Vorbis decoder using Tremor? */
+	if (!strcmp (plugins[plugins_num].name, "vorbis")) {
+		bool (*vorbis_is_tremor)();
+
+		vorbis_is_tremor = lt_dlsym (plugins[plugins_num].handle,
+		                             "vorbis_is_tremor");
+		if (vorbis_is_tremor)
+			have_tremor = vorbis_is_tremor ();
+	}
+
+	debug ("Loaded %s decoder", plugins[plugins_num].name);
 
 	if (plugins[plugins_num].decoder->init)
 		plugins[plugins_num].decoder->init ();
@@ -634,7 +651,7 @@ static void load_plugins (int debug_info)
 		default_decoder_list[ix] = ix;
 
 	names = list_decoder_names (default_decoder_list, plugins_num);
-	logit ("loaded %d decoders:%s", plugins_num, names);
+	logit ("Loaded %d decoders:%s", plugins_num, names);
 	free (names);
 }
 
