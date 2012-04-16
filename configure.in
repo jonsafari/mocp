@@ -111,42 +111,12 @@ AC_TRY_LINK([
 
 AC_C_BIGENDIAN
 
-AC_CHECK_HEADERS([iconv.h])
-
-dnl iconv test taken from VIM:
-dnl Link with iconv for charset translation, if not found without library.
-dnl check for iconv() requires including iconv.h
-dnl Add "-liconv" when possible; Solaris has iconv but use GNU iconv when it
-dnl has been installed.
-HAVE_ICONV=no
-AC_MSG_CHECKING(for iconv_open())
-save_LIBS="$LIBS"
-LIBS="$LIBS -liconv"
-AC_TRY_LINK([
-#ifdef HAVE_ICONV_H
-# include <iconv.h>
-#endif
-    ], [iconv_open("fr", "to");],
-    AC_MSG_RESULT(yes; with -liconv)
-    HAVE_ICONV=yes
-    EXTRA_LIBS="$EXTRA_LIBS -liconv"
-    LIBS="$save_LIBS",
-    LIBS="$save_LIBS"
-
-    AC_TRY_LINK([
-#ifdef HAVE_ICONV_H
-# include <iconv.h>
-#endif
-	], [iconv_open("fr", "to");],
-	AC_MSG_RESULT(yes)
-	HAVE_ICONV=yes,
-	AC_MSG_RESULT(no))
-        )
-
-if test "$HAVE_ICONV" != "yes"
-then
+dnl Require with iconv for charset translation.
+AM_ICONV
+if test "x$am_cv_func_iconv" != xyes; then
 	AC_MSG_ERROR([No iconv library found.])
 fi
+EXTRA_LIBS="$EXTRA_LIBS $LIBICONV"
 
 AC_C_CONST
 AC_C_INLINE

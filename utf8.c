@@ -20,7 +20,7 @@
 
 #include <stdarg.h>
 
-#ifdef HAVE_ICONV_H
+#ifdef HAVE_ICONV
 # include <iconv.h>
 #endif
 #ifdef HAVE_RCC
