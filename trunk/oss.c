@@ -19,18 +19,17 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <errno.h>
+#include <string.h>
+#include <strings.h>
+#include <unistd.h>
+#include <assert.h>
 
 #ifdef HAVE_SOUNDCARD_H
 # include <soundcard.h>
 #else
 # include <sys/soundcard.h>
 #endif
-
-#include <errno.h>
-#include <string.h>
-#include <strings.h>
-#include <unistd.h>
-#include <assert.h>
 
 #include "common.h"
 #include "server.h"
@@ -65,9 +64,9 @@ static const struct {
 
 static int open_dev ()
 {
-	if ((dsp_fd = open(options_get_str("OSSDevice"), O_WRONLY)) == -1) {
-		error ("Can't open %s, %s", options_get_str("OSSDevice"),
-				strerror(errno));
+	if ((dsp_fd = open (options_get_str ("OSSDevice"), O_WRONLY)) == -1) {
+		error ("Can't open %s, %s", options_get_str ("OSSDevice"),
+		        strerror (errno));
 		return 0;
 	}
 
@@ -76,19 +75,18 @@ static int open_dev ()
 	return 1;
 }
 
-/* Fill caps with the device capabilities. Return 0 on error. */
+/* Fill caps with the device capabilities.  Return 0 on error. */
 static int set_capabilities (struct output_driver_caps *caps)
 {
 	int format_mask;
 
-	if (!open_dev()) {
+	if (!open_dev ()) {
 		error ("Can't open the device.");
 		return 0;
 	}
 
-	if (ioctl(dsp_fd, SNDCTL_DSP_GETFMTS, &format_mask) == -1) {
-		error ("Can't get supported audio formats: %s",
-				strerror(errno));
+	if (ioctl (dsp_fd, SNDCTL_DSP_GETFMTS, &format_mask) == -1) {
+		error ("Can't get supported audio formats: %s", strerror (errno));
 		close (dsp_fd);
 		return 0;
 	}
@@ -108,20 +106,20 @@ static int set_capabilities (struct output_driver_caps *caps)
 		/* Workaround for vmix that lies that it doesn't support any
 		 * format. */
 		error ("The driver claims that no format known to me is "
-				"supported. I will assume that SFMT_S8 and "
-				"SFMT_S16 (native endian) are supported.");
+		       "supported. I will assume that SFMT_S8 and "
+		       "SFMT_S16 (native endian) are supported.");
 		caps->formats = SFMT_S8 | SFMT_S16 | SFMT_NE;
 	}
 
 	caps->min_channels = caps->max_channels = 1;
-	if (ioctl(dsp_fd, SNDCTL_DSP_CHANNELS, &caps->min_channels)) {
-		error ("Can't set number of channels: %s", strerror(errno));
+	if (ioctl (dsp_fd, SNDCTL_DSP_CHANNELS, &caps->min_channels)) {
+		error ("Can't set number of channels: %s", strerror (errno));
 		close (dsp_fd);
 		return 0;
 	}
 
 	close (dsp_fd);
-	if (!open_dev()) {
+	if (!open_dev ()) {
 		error ("Can't open the device.");
 		return 0;
 	}
@@ -129,8 +127,8 @@ static int set_capabilities (struct output_driver_caps *caps)
 	if (caps->min_channels != 1)
 		caps->min_channels = 2;
 	caps->max_channels = 2;
-	if (ioctl(dsp_fd, SNDCTL_DSP_CHANNELS, &caps->max_channels)) {
-		error ("Can't set number of channels: %s", strerror(errno));
+	if (ioctl (dsp_fd, SNDCTL_DSP_CHANNELS, &caps->max_channels)) {
+		error ("Can't set number of channels: %s", strerror (errno));
 		close (dsp_fd);
 		return 0;
 	}
@@ -149,20 +147,21 @@ static int set_capabilities (struct output_driver_caps *caps)
 	return 1;
 }
 
-/* Get PCM volume, return -1 on error */
+/* Get PCM volume.  Return -1 on error. */
 static int oss_read_mixer ()
 {
 	int vol;
 
 #ifdef OSSv3_MIXER
 	if (mixer_fd != -1 && mixer_channel_current != -1) {
-		if (ioctl(mixer_fd, MIXER_READ(mixer_channel_current), &vol)
-				== -1)
+		if (ioctl (mixer_fd, MIXER_READ(mixer_channel_current), &vol) == -1)
 #else
-	if(dsp_fd != -1) {
-		if (ioctl(dsp_fd, SNDCTL_DSP_GETPLAYVOL, &vol) == -1)
+	if (dsp_fd != -1) {
+		if (ioctl (dsp_fd, SNDCTL_DSP_GETPLAYVOL, &vol) == -1)
 #endif
+		{
 			error ("Can't read from mixer");
+		}
 		else {
 			/* Average between left and right */
 			return ((vol & 0xFF) + ((vol >> 8) & 0xFF)) / 2;
@@ -177,7 +176,7 @@ static int oss_mixer_name_to_channel (const char *name)
 	unsigned int i;
 
 	for (i = 0; i < MIXER_CHANNELS_NUM; i++) {
-		if (!strcasecmp(mixer_channels[i].name, name))
+		if (!strcasecmp (mixer_channels[i].name, name))
 			return i;
 	}
 
@@ -188,16 +187,17 @@ static int oss_init (struct output_driver_caps *caps)
 {
 #ifdef OSSv3_MIXER
 	/* Open the mixer device */
-	mixer_fd = open (options_get_str("OSSMixerDevice"), O_RDWR);
-	if (mixer_fd == -1)
+	mixer_fd = open (options_get_str ("OSSMixerDevice"), O_RDWR);
+	if (mixer_fd == -1) {
 		error ("Can't open mixer device %s: %s",
-				options_get_str("OSSMixerDevice"),
-				strerror(errno));
+		        options_get_str ("OSSMixerDevice"),
+		        strerror (errno));
+	}
 	else {
 		mixer_channel1 = oss_mixer_name_to_channel (
-				options_get_str("OSSMixerChannel"));
+				options_get_str ("OSSMixerChannel"));
 		mixer_channel2 = oss_mixer_name_to_channel (
-				options_get_str("OSSMixerChannel2"));
+				options_get_str ("OSSMixerChannel2"));
 
 		if (mixer_channel1 == -1)
 			fatal ("Bad first OSS mixer channel!");
@@ -206,11 +206,11 @@ static int oss_init (struct output_driver_caps *caps)
 
 		/* test mixer channels */
 		mixer_channel_current = mixer_channel1;
-		if (oss_read_mixer() == -1)
+		if (oss_read_mixer () == -1)
 			mixer_channel1 = -1;
 
 		mixer_channel_current = mixer_channel2;
-		if (oss_read_mixer() == -1)
+		if (oss_read_mixer () == -1)
 			mixer_channel2 = -1;
 
 		if (mixer_channel1 != -1)
@@ -267,56 +267,56 @@ static int oss_set_params ()
 			break;
 		default:
 			error ("format %s is not supported by the device",
-				sfmt_str(params.fmt, fmt_name,
-					sizeof(fmt_name)));
+			        sfmt_str (params.fmt, fmt_name, sizeof (fmt_name)));
 			return 0;
 	}
 
-	if (ioctl(dsp_fd, SNDCTL_DSP_SETFMT, &req_format) == -1) {
-		error ("Can't set audio format: %s", strerror(errno));
+	if (ioctl (dsp_fd, SNDCTL_DSP_SETFMT, &req_format) == -1) {
+		error ("Can't set audio format: %s", strerror (errno));
 		oss_close ();
 		return 0;
 	}
 
 	/* Set number of channels */
 	req_channels = params.channels;
-	if (ioctl(dsp_fd, SNDCTL_DSP_CHANNELS, &req_channels) == -1) {
+	if (ioctl (dsp_fd, SNDCTL_DSP_CHANNELS, &req_channels) == -1) {
 		error ("Can't set number of channels to %d, %s",
-				params.channels, strerror(errno));
+		        params.channels, strerror (errno));
 		oss_close ();
 		return 0;
 	}
 	if (params.channels != req_channels) {
-		error ("Can't set number of channels to %d, device doesn't support this value",
+		error ("Can't set number of channels to %d, "
+		       "device doesn't support this value",
 				params.channels);
 		oss_close ();
 		return 0;
 	}
 
 	/* Set sample rate */
-	if (ioctl(dsp_fd, SNDCTL_DSP_SPEED, &params.rate) == -1) {
+	if (ioctl (dsp_fd, SNDCTL_DSP_SPEED, &params.rate) == -1) {
 		error ("Can't set sampling rate to %d, %s", params.rate,
-				strerror(errno));
+		        strerror (errno));
 		oss_close ();
 		return 0;
 	}
 
 	logit ("Audio parameters set to: %s, %d channels, %dHz",
-			sfmt_str(params.fmt, fmt_name, sizeof(fmt_name)),
-			params.channels, params.rate);
+	        sfmt_str (params.fmt, fmt_name, sizeof (fmt_name)),
+	        params.channels, params.rate);
 
 	return 1;
 }
 
-/* Return 0 on fail */
+/* Return 0 on failure. */
 static int oss_open (struct sound_params *sound_params)
 {
 	params = *sound_params;
 
-	if (!open_dev())
+	if (!open_dev ())
 		return 0;
 
-	if (!oss_set_params()) {
+	if (!oss_set_params ()) {
 		oss_close ();
 		return 0;
 	}
@@ -331,10 +331,10 @@ static int oss_play (const char *buff, const size_t size)
 	if (dsp_fd == -1)
 		error ("Can't play, audio device isn't opened!");
 
-	res = write(dsp_fd, buff, size);
+	res = write (dsp_fd, buff, size);
 
 	if (res == -1)
-		error ("Error writing pcm sound: %s", strerror(errno));
+		error ("Error writing pcm sound: %s", strerror (errno));
 
 	return res == -1 ? -errno : res;
 }
@@ -343,27 +343,26 @@ static int oss_play (const char *buff, const size_t size)
 static void oss_set_mixer (int vol)
 {
 #ifdef OSSv3_MIXER
-	if (mixer_fd != -1) {
+	if (mixer_fd != -1)
 #else
-	if (dsp_fd != -1) {
+	if (dsp_fd != -1)
 #endif
-		if (vol > 100)
-			vol = 100;
-		else if (vol < 0)
-			vol = 0;
-
+	{
+		vol = MIN(vol, 100);
+		vol = MAX(0, vol);
 		vol = vol | (vol << 8);
 #ifdef OSSv3_MIXER
-		if (ioctl(mixer_fd, MIXER_WRITE(mixer_channel_current), &vol)
-				== -1)
+		if (ioctl (mixer_fd, MIXER_WRITE(mixer_channel_current), &vol) == -1)
 #else
-		if (ioctl(dsp_fd, SNDCTL_DSP_SETPLAYVOL, &vol) == -1)
+		if (ioctl (dsp_fd, SNDCTL_DSP_SETPLAYVOL, &vol) == -1)
 #endif
+		{
 			error ("Can't set mixer, ioctl failed");
+		}
 	}
 }
 
-/* Return number of bytes in device buffer */
+/* Return number of bytes in device buffer. */
 static int oss_get_buff_fill ()
 {
 	audio_buf_info buff_info;
@@ -371,7 +370,7 @@ static int oss_get_buff_fill ()
 	if (dsp_fd == -1)
 		return 0;
 
-	if (ioctl(dsp_fd, SNDCTL_DSP_GETOSPACE, &buff_info) == -1) {
+	if (ioctl (dsp_fd, SNDCTL_DSP_GETOSPACE, &buff_info) == -1) {
 		error ("SNDCTL_DSP_GETOSPACE failed");
 		return 0;
 	}
@@ -379,7 +378,7 @@ static int oss_get_buff_fill ()
 	return (buff_info.fragstotal * buff_info.fragsize) - buff_info.bytes;
 }
 
-/* Reset device buffer, stop playing immediately, return 0 on error */
+/* Reset device buffer and stop playing immediately.  Return 0 on error. */
 static int oss_reset ()
 {
 	if (dsp_fd == -1) {
@@ -389,11 +388,11 @@ static int oss_reset ()
 
 	logit ("Reseting audio device");
 
-	if (ioctl(dsp_fd, SNDCTL_DSP_RESET, NULL) == -1)
+	if (ioctl (dsp_fd, SNDCTL_DSP_RESET, NULL) == -1)
 		error ("Reseting audio device failed");
 	close (dsp_fd);
 	dsp_fd = -1;
-	if (!open_dev() || !oss_set_params()) {
+	if (!open_dev () || !oss_set_params ()) {
 		error ("Failed to open audio device after reseting");
 		return 0;
 	}
@@ -415,8 +414,8 @@ static char *oss_get_mixer_channel_name ()
 {
 #ifdef OSSv3_MIXER
 	if (mixer_channel_current == mixer_channel1)
-		return xstrdup (options_get_str("OSSMixerChannel"));
-	return xstrdup (options_get_str("OSSMixerChannel2"));
+		return xstrdup (options_get_str ("OSSMixerChannel"));
+	return xstrdup (options_get_str ("OSSMixerChannel2"));
 #else
 	return xstrdup ("moc");
 #endif
