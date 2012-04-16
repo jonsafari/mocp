@@ -67,7 +67,7 @@ typedef unsigned char _Bool;
 
 #define ARRAY_SIZE(x)	(sizeof(x)/sizeof(x[0]))
 
-void *xmalloc (const size_t size);
+void *xmalloc (size_t size);
 void *xcalloc (size_t nmemb, size_t size);
 void *xrealloc (void *ptr, const size_t size);
 char *xstrdup (const char *s);

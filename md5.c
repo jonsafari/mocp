@@ -22,9 +22,12 @@
 
 /* Written by Ulrich Drepper <drepper@gnu.ai.mit.edu>, 1995.  */
 
-#include <config.h>
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
 
 #include "md5.h"
+#include "common.h"
 
 #include <stddef.h>
 #include <stdlib.h>
@@ -140,7 +143,7 @@ md5_stream (FILE *stream, void *resblock)
   struct md5_ctx ctx;
   size_t sum;
 
-  char *buffer = malloc (BLOCKSIZE + 72);
+  char *buffer = xmalloc (BLOCKSIZE + 72);
   if (!buffer)
     return 1;
 
