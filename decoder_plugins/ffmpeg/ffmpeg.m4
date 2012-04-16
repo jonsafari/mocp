@@ -5,18 +5,21 @@ AC_ARG_WITH(ffmpeg, AS_HELP_STRING([--without-ffmpeg],
 
 if test "x$with_ffmpeg" != "xno"
 then
-	PKG_CHECK_MODULES(libavformat, libavformat,
-		[AC_SUBST(libavformat_CFLAGS)
-		 AC_SUBST(libavformat_LIBS)
+	PKG_CHECK_MODULES(ffmpeg, libavutil libavcodec libavformat,
+		[AC_SUBST(ffmpeg_CFLAGS)
+		 AC_SUBST(ffmpeg_LIBS)
 		 want_ffmpeg="yes"
 		 DECODER_PLUGINS="$DECODER_PLUGINS ffmpeg/libav"],
 		[AC_CHECK_PROG([FFMPEG_CONFIG], [ffmpeg-config], [yes])
 		 if test "x$FFMPEG_CONFIG" = "xyes"
 		 then
-			 libavformat_CFLAGS=`ffmpeg-config --cflags`
-			 libavformat_LIBS=`ffmpeg-config --plugin-libs avformat`
-			 AC_SUBST(libavformat_CFLAGS)
-			 AC_SUBST(libavformat_LIBS)
+			 ffmpeg_CFLAGS=`ffmpeg-config --cflags`
+			 avformat_LIBS=`ffmpeg-config --plugin-libs avformat`
+			 avcodec_LIBS=`ffmpeg-config --plugin-libs avcodec`
+			 avutil_LIBS=`ffmpeg-config --plugin-libs avutil`
+			 ffmpeg_LIBS="$avformat_LIBS $avcodec_LIBS $avutil_LIBS"
+			 AC_SUBST(ffmpeg_CFLAGS)
+			 AC_SUBST(ffmpeg_LIBS)
 			 want_ffmpeg="yes"
 			 DECODER_PLUGINS="$DECODER_PLUGINS ffmpeg/libav"
 		 fi])
@@ -36,6 +39,7 @@ then
 		                     [#include <libavcodec/avcodec.h>])
 		fi
 		save_LIBS="$LIBS"
+		LIBS="$LIBS $ffmpeg_LIBS"
 		AC_SEARCH_LIBS(avcodec_open2, avcodec,
 			[AC_DEFINE([HAVE_AVCODEC_OPEN2], 1,
 				[Define to 1 if you have the `avcodec_open2' function.])])
