@@ -145,12 +145,32 @@ AC_ARG_WITH(oss, AS_HELP_STRING(--without-oss, Compile without OSS support.))
 
 if test "x$with_oss" != "xno"
 then
+	OSSLIBDIR="$with_oss"
+	if test "x$with_oss" = "x" || test "x$with_oss" = "xyes"
+	then
+		OSSLIBDIR="/usr/lib/oss"
+		if test -f "/etc/oss.conf"
+		then
+			. /etc/oss.conf
+		fi
+	fi
+
+	if test -d "$OSSLIBDIR/include"
+	then
+		OSS_CFLAGS="-I$OSSLIBDIR/include"
+	fi
+
+	save_CPPFLAGS="$CPPFLAGS"
+	CPPFLAGS="$CPPFLAGS $OSS_CFLAGS"
 	AC_CHECK_HEADERS([sys/soundcard.h soundcard.h])
-	if test "$ac_cv_header_sys_soundcard_h" = "yes" \
-		-o "$ac_cv_header_soundcard_h" = "yes"
+	CPPFLAGS="$save_CPPFLAGS"
+
+	if test "$ac_cv_header_sys_soundcard_h" = "yes" -o \
+	        "$ac_cv_header_soundcard_h" = "yes"
 	then
 		AC_DEFINE([HAVE_OSS], 1, [Define if you have OSS.])
 		EXTRA_OBJS="$EXTRA_OBJS oss.o"
+		CFLAGS="$CFLAGS $OSS_CFLAGS"
 		SOUND_DRIVERS="$SOUND_DRIVERS OSS"
 		AC_CHECK_LIB([ossaudio], [_oss_ioctl],
 		             [EXTRA_LIBS="$EXTRA_LIBS -lossaudio"])

@@ -25,10 +25,10 @@
 #include <unistd.h>
 #include <assert.h>
 
-#ifdef HAVE_SOUNDCARD_H
-# include <soundcard.h>
-#else
+#ifdef HAVE_SYS_SOUNDCARD_H
 # include <sys/soundcard.h>
+#else
+# include <soundcard.h>
 #endif
 
 #include "common.h"
@@ -37,10 +37,13 @@
 #include "log.h"
 #include "options.h"
 
-#ifndef SNDCTL_DSP_GETPLAYVOL
+#if OSS_VERSION >= 0x40000 || SOUND_VERSION >= 0x40000
+#define OSSv4_MIXER
+#else
 #define OSSv3_MIXER
 #endif
 
+static bool started = false;
 static int volatile dsp_fd = -1;
 #ifdef OSSv3_MIXER
 static int mixer_fd = -1;
@@ -152,6 +155,9 @@ static int oss_read_mixer ()
 {
 	int vol;
 
+	if (!started)
+		return -1;
+
 #ifdef OSSv3_MIXER
 	if (mixer_fd != -1 && mixer_channel_current != -1) {
 		if (ioctl (mixer_fd, MIXER_READ(mixer_channel_current), &vol) == -1)
@@ -239,6 +245,7 @@ static void oss_close ()
 		logit ("Audio device closed");
 	}
 
+	started = false;
 	params.channels = 0;
 	params.rate = 0;
 	params.fmt = 0;
@@ -320,6 +327,8 @@ static int oss_open (struct sound_params *sound_params)
 		oss_close ();
 		return 0;
 	}
+
+	started = true;
 
 	return 1;
 }

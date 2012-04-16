@@ -140,6 +140,11 @@ unexpectedly.
 In addition to the standard configure options documented in the INSTALL
 file, there are some MOC-specific options:
 
+	--with-oss=[yes|no|DIR]
+
+	  Where DIR is the location of the OSS include directory (and
+	  defaults to '/usr/lib/oss').
+
 	--with-vorbis=[yes|no|tremor]
 
 	  Using 'tremor' will cause MOC to build against the integer-only
