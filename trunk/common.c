@@ -11,6 +11,7 @@
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
+# undef malloc
 #endif
 
 #include <stdio.h>
@@ -67,9 +68,13 @@ void fatal (const char *format, ...)
 	exit (EXIT_FATAL);
 }
 
-void *xmalloc (const size_t size)
+void *xmalloc (size_t size)
 {
 	void *p;
+
+#ifndef HAVE_MALLOC
+	size = MAX(1, size);
+#endif
 
 	if ((p = malloc(size)) == NULL)
 		fatal ("Can't allocate memory!");
