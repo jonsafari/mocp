@@ -27,6 +27,7 @@ declare -A UNSUPPORTED
 EXTRA=false
 RC=0
 SILENT=false
+TREMOR=false
 VERBOSE=false
 
 # Clean error termination.
@@ -172,6 +173,10 @@ do
   [[ "$REPLY" =~ "This is Music On Console" ]] && \
       REVN="$(echo "$REPLY" | sed 's/^.*Music/Music/')"
 
+  # Check for Tremor decoder.
+  [[ "$REPLY" =~ Loaded\ [0-9]+\ decoders:.*vorbis\(tremor\) ]] && \
+     TREMOR=true
+
   # Extract file's full pathname.
   [[ "$REPLY" =~ "Playing item" ]] && \
      FILE="$(echo "$REPLY" | sed 's/^.* item [0-9]*: \(.*\)$/\1/')"
@@ -185,6 +190,7 @@ do
   SUM=$(echo $REST | cut -f2 -d' ')
   LEN=$(echo $REST | cut -f3 -d' ')
   DEC=$(echo $REST | cut -f4 -d' ')
+  $TREMOR && [[ "$DEC" = "vorbis" ]] && DEC=tremor
   FMT=$(echo $REST | cut -f5 -d' ')
   CHANS=$(echo $REST | cut -f6 -d' ')
   RATE=$(echo $REST | cut -f7 -d' ')
@@ -198,7 +204,7 @@ do
       $DEC
       SUM2=$(echo "$SUM2" | cut -f1 -d' ')
       ;;
-  aac|modplug|musepack|sidplay2|timidity|wavpack)
+  aac|modplug|musepack|sidplay2|timidity|tremor|wavpack)
       [[ "${UNSUPPORTED[$DEC]}" ]] || {
         echo -e "*** Decoder not yet supported: $DEC\n" > /dev/stderr
         UNSUPPORTED[$DEC]="Y"
