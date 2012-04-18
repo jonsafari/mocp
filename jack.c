@@ -138,21 +138,33 @@ static int moc_jack_init (struct output_driver_caps *caps)
 #ifdef HAVE_JACK_CLIENT_OPEN
 
 	jack_status_t status;
+	jack_options_t options;
 
 	/* open a client connection to the JACK server */
-	client = jack_client_open (client_name, JackNullOption, &status, NULL);
+	options = JackNullOption;
+	if (!options_get_bool ("JackStartServer"))
+		options |= JackNoStartServer;
+	client = jack_client_open (client_name, options, &status, NULL);
+	if (client == NULL) {
+		error ("jack_client_open() failed, status = 0x%2.0x", status);
+		if (status & JackServerFailed)
+			error ("Unable to connect to JACK server");
+		return 0;
+	}
+
+	if (status & JackServerStarted)
+		printf ("JACK server started\n");
 
 #else
 
 	/* try to become a client of the JACK server */
 	client = jack_client_new (client_name);
-
-#endif
-
 	if (client == NULL) {
 		error ("Cannot create client; JACK server not running?");
 		return 0;
 	}
+
+#endif
 
 	jack_shutdown = 0;
 	jack_on_shutdown (client, shutdown_callback, NULL);

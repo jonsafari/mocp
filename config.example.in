@@ -118,8 +118,8 @@ Prebuffering		= 64
 # working driver will be used.
 SoundDriver		= @SOUNDDRIVER@
 
-# Jack output settings.
 JackClientName		= "moc"
+JackStartServer		= no
 JackOutLeft 		= "@ALSA_PCM@:playback_1"
 JackOutRight		= "@ALSA_PCM@:playback_2"
 

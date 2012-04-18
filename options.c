@@ -605,6 +605,7 @@ void options_init ()
 	add_int  ("InputBuffer", 512, CHECK_RANGE(1), 32, INT_MAX);
 	add_int  ("Prebuffering", 64, CHECK_RANGE(1), 0, INT_MAX);
 	add_str  ("JackClientName", "moc", CHECK_NONE);
+	add_bool ("JackStartServer", false);
 #ifdef DARWIN
 	add_str  ("JackOutLeft", "system:playback_1", CHECK_NONE);
 	add_str  ("JackOutRight", "system:playback_2", CHECK_NONE);
