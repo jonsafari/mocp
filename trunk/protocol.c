@@ -169,12 +169,13 @@ char *get_str (int sock)
 
 int send_str (int sock, const char *str)
 {
-	int len = strlen (str);
+	int len;
 
-	if (!send_int(sock, strlen(str)))
+	len = strlen (str);
+	if (!send_int (sock, len))
 		return 0;
 
-	if (send(sock, str, len, 0) != len)
+	if (send (sock, str, len, 0) != len)
 		return 0;
 
 	return 1;

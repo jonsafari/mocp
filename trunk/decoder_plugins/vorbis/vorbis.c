@@ -282,8 +282,8 @@ static int vorbis_can_decode (struct io_stream *stream)
 {
 	char buf[34];
 
-	if (io_peek(stream, buf, 34) == 34 && !memcmp(buf, "OggS", 5)
-			&& !memcpy(buf + 28, "vorbis", 6))
+	if (io_peek (stream, buf, 34) == 34 && !memcmp (buf, "OggS", 4)
+			&& !memcmp (buf + 28, "vorbis", 6))
 		return 1;
 
 	return 0;

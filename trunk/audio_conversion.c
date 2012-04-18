@@ -151,7 +151,7 @@ static void float_to_u16 (const float *in, unsigned char *out,
 #ifdef HAVE_LRINTF
 			*out_val = (unsigned int)((lrintf(f) >> 16) - INT16_MIN);
 #else
-			*out_val = (unsigned int)(((int)f >> 16)) - INT16_MIN);
+			*out_val = (unsigned int)(((int)f >> 16) - INT16_MIN);
 #endif
 		}
 	}
