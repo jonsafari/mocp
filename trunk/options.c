@@ -606,13 +606,8 @@ void options_init ()
 	add_int  ("Prebuffering", 64, CHECK_RANGE(1), 0, INT_MAX);
 	add_str  ("JackClientName", "moc", CHECK_NONE);
 	add_bool ("JackStartServer", false);
-#ifdef DARWIN
 	add_str  ("JackOutLeft", "system:playback_1", CHECK_NONE);
 	add_str  ("JackOutRight", "system:playback_2", CHECK_NONE);
-#else
-	add_str  ("JackOutLeft", "alsa_pcm:playback_1", CHECK_NONE);
-	add_str  ("JackOutRight", "alsa_pcm:playback_2", CHECK_NONE);
-#endif
 	add_bool ("ASCIILines", false);
 	add_str  ("FastDir1", NULL, CHECK_NONE);
 	add_str  ("FastDir2", NULL, CHECK_NONE);

@@ -120,8 +120,8 @@ SoundDriver		= @SOUNDDRIVER@
 
 JackClientName		= "moc"
 JackStartServer		= no
-JackOutLeft 		= "@ALSA_PCM@:playback_1"
-JackOutRight		= "@ALSA_PCM@:playback_2"
+JackOutLeft 		= "system:playback_1"
+JackOutRight		= "system:playback_2"
 
 # OSS output device.
 OSSDevice		= /dev/dsp

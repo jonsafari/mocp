@@ -74,9 +74,6 @@ case "$OS" in
 	OpenBSD)
 		AC_DEFINE([OPENBSD], 1, [Define if your system is OpenBSD])
 		;;
-	Darwin)
-		AC_DEFINE([DARWIN], 1, [Define if your system is Darwin])
-		;;
 esac
 
 AC_DEFINE([_FILE_OFFSET_BITS], 64, [Use 64bit IO])
@@ -204,12 +201,6 @@ then
 	      CFLAGS="$CFLAGS $ALSA_CFLAGS"],
 	     [true])
 fi
-
-AC_SUBST([ALSA_PCM])
-case "$host_os" in
-	darwin*) ALSA_PCM=system;;
-	      *) ALSA_PCM=alsa_pcm;;
-esac
 
 AC_ARG_WITH(jack, AS_HELP_STRING(--without-jack, Compile without JACK support.))
 
