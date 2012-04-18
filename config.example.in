@@ -119,7 +119,8 @@ Prebuffering		= 64
 SoundDriver		= @SOUNDDRIVER@
 
 # Jack output settings.
-JackOutLeft		= "@ALSA_PCM@:playback_1"
+JackClientName		= "moc"
+JackOutLeft 		= "@ALSA_PCM@:playback_1"
 JackOutRight		= "@ALSA_PCM@:playback_2"
 
 # OSS output device.

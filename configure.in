@@ -220,7 +220,10 @@ then
 			   EXTRA_OBJS="$EXTRA_OBJS jack.o"
 			   AC_DEFINE([HAVE_JACK], 1, [Define if you have JACK.])
 			   EXTRA_LIBS="$EXTRA_LIBS $JACK_LIBS"
-			   CFLAGS="$CFLAGS $JACK_CFLAGS"],
+			   CFLAGS="$CFLAGS $JACK_CFLAGS"
+			   AC_SEARCH_LIBS(jack_client_open, jack,
+			       [AC_DEFINE([HAVE_JACK_CLIENT_OPEN], 1,
+			           [Define to 1 if you have the `jack_client_open' function.])])],
 			  [true])
 fi
 
