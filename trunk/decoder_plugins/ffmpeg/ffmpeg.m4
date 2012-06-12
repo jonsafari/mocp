@@ -6,18 +6,22 @@ AC_ARG_WITH(ffmpeg, AS_HELP_STRING([--without-ffmpeg],
 if test "x$with_ffmpeg" != "xno"
 then
 	PKG_CHECK_MODULES(ffmpeg, libavutil libavcodec libavformat,
-		[AC_SUBST(ffmpeg_CFLAGS)
+		[ffmpeg_CPPFLAGS=`$PKG_CONFIG --cflags-only-I libavutil libavcodec libavformat`
+		 AC_SUBST(ffmpeg_CPPFLAGS)
+		 AC_SUBST(ffmpeg_CFLAGS)
 		 AC_SUBST(ffmpeg_LIBS)
 		 want_ffmpeg="yes"
 		 DECODER_PLUGINS="$DECODER_PLUGINS ffmpeg/libav"],
 		[AC_CHECK_PROG([FFMPEG_CONFIG], [ffmpeg-config], [yes])
 		 if test "x$FFMPEG_CONFIG" = "xyes"
 		 then
+			 ffmpeg_CPPFLAGS=`ffmpeg-config --cflags`
 			 ffmpeg_CFLAGS=`ffmpeg-config --cflags`
 			 avformat_LIBS=`ffmpeg-config --plugin-libs avformat`
 			 avcodec_LIBS=`ffmpeg-config --plugin-libs avcodec`
 			 avutil_LIBS=`ffmpeg-config --plugin-libs avutil`
 			 ffmpeg_LIBS="$avformat_LIBS $avcodec_LIBS $avutil_LIBS"
+			 AC_SUBST(ffmpeg_CPPFLAGS)
 			 AC_SUBST(ffmpeg_CFLAGS)
 			 AC_SUBST(ffmpeg_LIBS)
 			 want_ffmpeg="yes"
@@ -29,6 +33,12 @@ then
 		then
 			FFMPEG_DEPRECATED="yes"
 		fi
+		save_CPPFLAGS="$CPPFLAGS"
+		CPPFLAGS="$CPPFLAGS $ffmpeg_CPPFLAGS"
+		save_CFLAGS="$CFLAGS"
+		CFLAGS="$CFLAGS $ffmpeg_CFLAGS"
+		save_LIBS="$LIBS"
+		LIBS="$LIBS $ffmpeg_LIBS"
 		AC_CHECK_HEADERS(ffmpeg/avformat.h libavformat/avformat.h)
 		if test "x$ac_cv_header_ffmpeg_avformat_h" = "xyes"
 		then
@@ -38,8 +48,6 @@ then
 			AC_CHECK_MEMBERS([struct AVCodecContext.request_channels], [], [],
 		                     [#include <libavcodec/avcodec.h>])
 		fi
-		save_LIBS="$LIBS"
-		LIBS="$LIBS $ffmpeg_LIBS"
 		AC_SEARCH_LIBS(avcodec_open2, avcodec,
 			[AC_DEFINE([HAVE_AVCODEC_OPEN2], 1,
 				[Define to 1 if you have the `avcodec_open2' function.])])
@@ -75,6 +83,8 @@ then
 		AC_SEARCH_LIBS(av_get_channel_layout_nb_channels, avutil,
 			[AC_DEFINE([HAVE_AV_GET_CHANNEL_LAYOUT_NB_CHANNELS], 1,
 				[Define to 1 if you have the `av_get_channel_layout_nb_channels' function.])])
+		CPPFLAGS="$save_CPPFLAGS"
+		CFLAGS="$save_CFLAGS"
 		LIBS="$save_LIBS"
 	fi
 fi
