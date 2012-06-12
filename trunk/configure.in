@@ -1,7 +1,7 @@
 dnl This can be moved into AC_INIT when AC_PREREQ reaches 2.64.
 m4_define([AC_PACKAGE_URL],[http://moc.daper.net/])
 
-AC_INIT([Music On Console],[2.5.0-alpha4],[daper@daper.net],[moc])
+AC_INIT([Music On Console],[2.5.0-alpha4],[mocmaint@daper.net],[moc])
 AC_CONFIG_SRCDIR([main.c])
 AC_CONFIG_HEADERS([config.h])
 
@@ -387,7 +387,7 @@ AC_OUTPUT([Makefile
 	  ])
 
 echo
-echo "----------------------------------------------------------------------"
+echo "-----------------------------------------------------------------------"
 echo "MOC will be compiled with:"
 echo
 DECODERS_LEN=`expr length "$DECODER_PLUGINS"`
@@ -409,7 +409,7 @@ echo "RCC:               "$COMPILE_RCC
 echo "Network streams:   "$COMPILE_CURL
 echo "Resampling:        "$COMPILE_SAMPLERATE
 echo "MIME magic:        "$COMPILE_MAGIC
-echo "----------------------------------------------------------------------"
+echo "-----------------------------------------------------------------------"
 echo
 
 if test "x$FFMPEG_CONFIG" = "xyes"
@@ -449,12 +449,11 @@ dnl
 if test "x$want_ffmpeg" = "xyes" && \
    test "x$ac_cv_member_struct_AVCodecContext_request_channels" != "xyes"
 then
-	echo "WARNING: It appears that the FFmpeg/LibAV API has changed and"
-	echo "         no longer supports downmixing to stereo as it did"
-	echo "         previously.  Report this message along with the"
-	echo "         output of the 'ffmpeg --version' command to the MOC"
-	echo "         forum.  Meanwhile, you may have to live without stereo"
-	echo "         downmixing."
+	echo "WARNING: It appears that the FFmpeg/LibAV API has changed and no longer"
+	echo "         supports downmixing to stereo as it did previously.  Report"
+	echo "         this message along with the output of 'ffmpeg --version' to"
+	echo "         <$PACKAGE_BUGREPORT>.  Meanwhile, you may have to live without"
+	echo "         stereo downmixing."
 	echo
 fi
 
