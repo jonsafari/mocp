@@ -769,6 +769,7 @@ static void play_file (const char *file, const struct decoder *f,
 		f->get_error (decoder_data, &err);
 		if (err.type != ERROR_OK) {
 			f->close (decoder_data);
+			status_msg ("");
 			error ("%s", err.err);
 			decoder_error_clear (&err);
 			logit ("Can't open file, exiting");
