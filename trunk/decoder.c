@@ -428,25 +428,31 @@ static int lt_load_plugin (const char *file, lt_ptr debug_info_ptr)
 	if (present_handle (plugins[plugins_num].handle)) {
 		if (debug_info)
 			printf ("Already loaded\n");
+		if (lt_dlclose (plugins[plugins_num].handle))
+			fprintf (stderr, "Error unloading plugin: %s\n", lt_dlerror ());
 		return 0;
 	}
 
 	init_func = lt_dlsym (plugins[plugins_num].handle, "plugin_init");
 	if (!init_func) {
 		fprintf (stderr, "No init function in the plugin!\n");
+		if (lt_dlclose (plugins[plugins_num].handle))
+			fprintf (stderr, "Error unloading plugin: %s\n", lt_dlerror ());
 		return 0;
 	}
 
 	plugins[plugins_num].decoder = init_func ();
 	if (!plugins[plugins_num].decoder) {
 		fprintf (stderr, "NULL decoder!\n");
+		if (lt_dlclose (plugins[plugins_num].handle))
+			fprintf (stderr, "Error unloading plugin: %s\n", lt_dlerror ());
 		return 0;
 	}
 
 	if (plugins[plugins_num].decoder->api_version != DECODER_API_VERSION) {
 		fprintf (stderr, "Plugin uses different API version\n");
-		if (lt_dlclose(plugins[plugins_num].handle))
-			fprintf (stderr, "Error unloading plugin: %s\n", lt_dlerror());
+		if (lt_dlclose (plugins[plugins_num].handle))
+			fprintf (stderr, "Error unloading plugin: %s\n", lt_dlerror ());
 		return 0;
 	}
 
@@ -669,6 +675,8 @@ static void cleanup_decoders ()
 		if (plugins[ix].decoder->destroy)
 			plugins[ix].decoder->destroy ();
 		free (plugins[ix].name);
+		if (plugins[ix].handle)
+			lt_dlclose (plugins[ix].handle);
 	}
 
 	if (lt_dlexit ())
