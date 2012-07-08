@@ -88,8 +88,7 @@ mocp_DEPENDENCIES = @EXTRA_OBJS@
 mocp_LDFLAGS = @EXTRA_LIBS@ $(RCC_LIBS) -export-dynamic
 EXTRA_DIST = README_equalizer mocp.1 THANKS keymap.example Doxyfile \
 	         doxy_pages/decoder_api.doxy doxy_pages/main_page.doxy \
-	         doxy_pages/sound_output_driver_api.doxy moc.spec.in \
-	         moc.spec
+	         doxy_pages/sound_output_driver_api.doxy
 EXTRA_DIST += @EXTRA_DISTS@
 EXTRA_DIST += tools/README tools/md5check.sh tools/maketests.sh
 noinst_DATA = tools/README

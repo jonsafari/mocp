@@ -402,7 +402,6 @@ AC_SUBST(EXTRA_DISTS)
 AC_OUTPUT([Makefile
 	  themes/Makefile
 	  config.example
-	  moc.spec
 	  ])
 
 echo
