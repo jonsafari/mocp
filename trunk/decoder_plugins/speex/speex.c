@@ -130,8 +130,9 @@ static int read_speex_header (struct spx_data *data)
 	int stream_init = 0;
 	char *buf;
 	int nb_read;
+	int header_packets = 2;
 
-	while (packet_count < 2) {
+	while (packet_count < header_packets) {
 
 		/* Get the ogg buffer for writing */
 		buf = ogg_sync_buffer (&data->oy, 200);
@@ -195,6 +196,8 @@ static int read_speex_header (struct spx_data *data)
 							sizeof(int16_t));
 					data->output_start = 0;
 					data->output_left = 0;
+
+					header_packets += data->header->extra_headers;
 				}
 				else if (packet_count == 1) {
 					data->comment_packet_len
@@ -206,7 +209,6 @@ static int read_speex_header (struct spx_data *data)
 							data->op.packet,
 							data->comment_packet_len);
 				}
-				/* FIXME: ignore extra headers */
 
 				packet_count++;
 			}
