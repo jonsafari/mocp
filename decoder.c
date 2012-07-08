@@ -177,7 +177,7 @@ static int find_decoder (const char *extn, const char *file, char **mime)
 	result = -1;
 	if (mime && *mime)
 		result = find_mime_decoder (default_decoder_list, plugins_num, *mime);
-	if (result == -1 && extn)
+	if (result == -1 && extn && *extn)
 		result = find_extn_decoder (default_decoder_list, plugins_num, extn);
 
 	return result;
