@@ -86,6 +86,7 @@ static int sndio_open (struct sound_params *sound_params)
 	                            || !sio_start (hdl)) {
 		logit ("Failed to set sndio parameters.");
 		sio_close (hdl);
+		hdl = NULL;
 		return 0;
 	}
 	sio_setvol (hdl, PCT_TO_SIO(curvol));
