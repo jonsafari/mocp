@@ -23,9 +23,6 @@
 #ifdef HAVE_ICONV
 # include <iconv.h>
 #endif
-#ifdef HAVE_RCC
-# include <librcc.h>
-#endif
 #ifdef HAVE_NL_TYPES_H
 # include <nl_types.h>
 #endif
@@ -49,6 +46,7 @@
 #include "log.h"
 #include "options.h"
 #include "utf8.h"
+#include "rcc.h"
 
 static char *terminal_charset = NULL;
 static int using_utf8 = 0;
@@ -56,30 +54,6 @@ static int using_utf8 = 0;
 static iconv_t iconv_desc = (iconv_t)(-1);
 static iconv_t files_iconv_desc = (iconv_t)(-1);
 static iconv_t xterm_iconv_desc = (iconv_t)(-1);
-
-
-char *iconv_rcc (char *str)
-{
-#ifdef HAVE_RCC
-	rcc_string rccstring;
-	char *reencoded;
-
-	assert (str != NULL);
-
-	rccstring = rccFrom(NULL, 0, str);
-	if (rccstring) {
-		if (*rccstring && (reencoded = rccToCharset(NULL, "UTF-8", rccstring))) {
-		    free(str);
-		    free(rccstring);
-		    return reencoded;
-		}
-
-		free (rccstring);
-	}
-	return str;
-#endif /* HAVE_RCC */
-	return xstrdup (str);
-}
 
 
 /* Return a malloc()ed string converted using iconv().
@@ -330,9 +304,6 @@ static void iconv_cleanup ()
 	if (iconv_desc != (iconv_t)(-1)
 			&& iconv_close(iconv_desc) == -1)
 		logit ("iconv_close() failed: %s", strerror(errno));
-#ifdef HAVE_RCC
-	rccFree ();
-#endif
 }
 
 void utf8_init ()
@@ -365,22 +336,6 @@ void utf8_init ()
 		if (iconv_desc == (iconv_t)(-1))
 			logit ("iconv_open() failed: %s", strerror(errno));
 	}
-#ifdef HAVE_RCC
-	rcc_class classes[] = {
-		{ "input", RCC_CLASS_STANDARD, NULL, NULL, "Input Encoding",
-			0 },
-		{ "output", RCC_CLASS_KNOWN, NULL, NULL,
-			"Output Encoding", 0 },
-		{ NULL, 0, NULL, NULL, NULL, 0 }
-	};
-
-	rccInit ();
-	rccInitDefaultContext(NULL, 0, 0, classes, 0);
-	rccLoad(NULL, "moc");
-	rccSetOption(NULL, RCC_OPTION_TRANSLATE,
-			RCC_OPTION_TRANSLATE_SKIP_PARRENT);
-	rccSetOption(NULL, RCC_OPTION_AUTODETECT_LANGUAGE, 1);
-#endif /* HAVE_RCC */
 
 	if (options_get_int ("FileNamesIconv"))
 	{

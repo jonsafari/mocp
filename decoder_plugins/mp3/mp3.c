@@ -33,9 +33,6 @@
 #ifdef HAVE_ICONV
 # include <iconv.h>
 #endif
-#ifdef HAVE_RCC
-# include <librcc.h>
-#endif
 
 #define DEBUG
 
@@ -48,6 +45,7 @@
 #include "options.h"
 #include "files.h"
 #include "utf8.h"
+#include "rcc.h"
 #include "options.h"
 
 #define INPUT_BUFFER	(32 * 1024)
@@ -117,28 +115,6 @@ static size_t fill_buff (struct mp3_data *data)
 	return read_size;
 }
 
-#ifdef HAVE_RCC
-static char *do_rcc (char *str)
-{
-	rcc_string rccstring;
-	char *reencoded;
-
-	assert (str != NULL);
-
-	rccstring = rccFrom(NULL, 0, str);
-	if (rccstring) {
-		if (*rccstring && (reencoded = rccToCharset(NULL, "UTF-8", rccstring))) {
-		    free(str);
-		    free(rccstring);
-		    return reencoded;
-		}
-
-		free (rccstring);
-	}
-	return str;
-}
-#endif
-
 static char *id3v1_fix (const char *str)
 {
 	if (iconv_id3_fix != (iconv_t)-1)
@@ -191,7 +167,7 @@ static char *get_tag (struct id3_tag *tag, const char *what)
 
 #ifdef HAVE_RCC
 				if (options_get_int("UseRCC"))
-					comm = do_rcc (comm);
+					comm = rcc_reencode (comm);
 				else {
 #endif /* HAVE_RCC */
 					t = comm;
@@ -795,23 +771,6 @@ static int mp3_can_decode (struct io_stream *stream)
 
 static void mp3_init ()
 {
-#ifdef HAVE_RCC
-	rcc_class classes[] = {
-		{ "input", RCC_CLASS_STANDARD, NULL, NULL, "Input Encoding",
-			0 },
-		{ "output", RCC_CLASS_KNOWN, NULL, NULL,
-			"Output Encoding", 0 },
-		{ NULL, 0, NULL, NULL, NULL, 0 }
-	};
-
-	rccInit ();
-	rccInitDefaultContext(NULL, 0, 0, classes, 0);
-	rccLoad(NULL, "moc");
-	rccSetOption(NULL, RCC_OPTION_TRANSLATE,
-			RCC_OPTION_TRANSLATE_SKIP_PARRENT);
-	rccSetOption(NULL, RCC_OPTION_AUTODETECT_LANGUAGE, 1);
-#endif
-
 	iconv_id3_fix = iconv_open ("UTF-8",
 			options_get_str("ID3v1TagsEncoding"));
 		if (iconv_id3_fix == (iconv_t)(-1))
@@ -820,10 +779,6 @@ static void mp3_init ()
 
 static void mp3_destroy ()
 {
-#ifdef HAVE_RCC
-	rccFree ();
-#endif
-
 	if (iconv_close(iconv_id3_fix) == -1)
 		logit ("iconv_close() failed: %s", strerror(errno));
 }

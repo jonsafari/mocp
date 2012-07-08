@@ -115,6 +115,21 @@ if test "x$am_cv_func_iconv" != xyes; then
 fi
 EXTRA_LIBS="$EXTRA_LIBS $LIBICONV"
 
+dnl librcc
+COMPILE_RCC=no
+AC_ARG_WITH(rcc, AS_HELP_STRING([--without-rcc],
+                                [Compile without LIBRCC support]))
+if test "x$with_rcc" != "xno"
+then
+AC_CHECK_HEADERS([librcc.h],
+                 [AC_DEFINE([HAVE_RCC], 1, [Define if you have librcc.h])
+                  AC_CHECK_LIB(rcc, rccInit,
+                               [RCC_LIBS="-lrcc"
+                                AC_SUBST([RCC_LIBS])
+                                COMPILE_RCC=yes])
+                 ])
+fi
+
 AC_C_CONST
 AC_C_INLINE
 AC_TYPE_OFF_T
