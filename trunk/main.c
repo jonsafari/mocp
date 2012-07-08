@@ -197,7 +197,6 @@ static void start_moc (const struct parameters *params, lists_t_strs *args)
 		server_loop (list_sock);
 	}
 
-
 	if (!params->only_server) {
 		signal (SIGPIPE, SIG_IGN);
 		if (ping_server(server_sock)) {
