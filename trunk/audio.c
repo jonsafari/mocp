@@ -730,11 +730,11 @@ int audio_open (struct sound_params *sound_params)
 		driver_sound_params.channels = req_sound_params.channels;
 
 	res = hw.open (&driver_sound_params);
-	driver_sound_params.rate = hw.get_rate ();
 
 	if (res) {
 		char fmt_name[SFMT_STR_MAX];
 
+		driver_sound_params.rate = hw.get_rate ();
 		if (driver_sound_params.fmt != req_sound_params.fmt
 				|| driver_sound_params.channels
 				!= req_sound_params.channels
