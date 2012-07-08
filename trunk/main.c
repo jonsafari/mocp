@@ -41,6 +41,7 @@
 #include "compat.h"
 #include "decoder.h"
 #include "lists.h"
+#include "files.h"
 #include "rcc.h"
 
 struct parameters
@@ -175,6 +176,7 @@ static void start_moc (const struct parameters *params, lists_t_strs *args)
 				signal (SIGCHLD, sig_chld);
 				server_loop (list_sock);
 				options_free ();
+				files_cleanup ();
 				rcc_cleanup ();
 				exit (0);
 			case -1:
@@ -805,6 +807,8 @@ int main (int argc, char *argv[])
 
 	log_command_line (argc, argv);
 
+	files_init ();
+
 	if (get_home () == NULL)
 		fatal ("Could not determine user's home directory!");
 
@@ -844,6 +848,7 @@ int main (int argc, char *argv[])
 		start_moc (&params, args);
 
 	rcc_cleanup ();
+	files_cleanup ();
 
 	return 0;
 }
