@@ -345,8 +345,9 @@ ASCIILines		= no
 # audio), while the MIME media types will cause Internet audio streams to
 # be assessed on content (which may be either Vorbis or Speex).
 #
-#PreferredDecoders	+= ogg(vorbis,ffmpeg):oga(vorbis,ffmpeg):spx(speex)
-#PreferredDecoders	+= application/ogg():audio/ogg()
+#PreferredDecoders	+= ogg(vorbis,ffmpeg):oga(vorbis,ffmpeg):ogv(ffmpeg)
+#PreferredDecoders	+= spx(speex)
+#PreferredDecoders	+= application/ogg(vorbis):audio/ogg(vorbis)
 
 # Resample method to use. There are a few methods of resampling sound supported
 # by libresamplerate. The default is the fastest (linear). Better description

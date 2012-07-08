@@ -221,12 +221,12 @@ static void load_audio_extns (lists_t_strs *list)
 			lists_strs_append (list, audio_extns[ix].extn);
 	}
 
-	/* Support Ogg only when FFmpeg/LibAV supports Vorbis (for now). */
 	if (av_find_input_format ("ogg")) {
-		if (avcodec_find_decoder (CODEC_ID_VORBIS)) {
+		lists_strs_append (list, "ogg");
+		if (avcodec_find_decoder (CODEC_ID_VORBIS))
 			lists_strs_append (list, "oga");
-			lists_strs_append (list, "ogg");
-		}
+		if (avcodec_find_decoder (CODEC_ID_THEORA))
+			lists_strs_append (list, "ogv");
 	}
 
 	/* In theory, FFmpeg supports Speex if built with libspeex enabled.

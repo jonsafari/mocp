@@ -642,8 +642,9 @@ void options_init ()
 	                 "wv(wavpack,*,ffmpeg):"
 	                 "audio/aac(aac,*):audio/aacp(aac,*):audio/m4a(ffmpeg):"
 	                 "audio/wav(sndfile,*,modplug):"
-	                 "ogg(vorbis,ffmpeg):oga(vorbis,ffmpeg):spx(speex):"
-	                 "application/ogg():audio/ogg()",
+	                 "ogg(vorbis,ffmpeg):oga(vorbis,ffmpeg):ogv(ffmpeg):"
+	                 "spx(speex):"
+	                 "application/ogg(vorbis):audio/ogg(vorbis)",
 	                 CHECK_FUNCTION);
 	add_int  ("ForceSampleRate", 0, CHECK_RANGE(1), 0, 500000);
 	add_str  ("HTTPProxy", NULL, CHECK_NONE);
