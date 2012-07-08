@@ -320,7 +320,6 @@ static void *flac_open_internal (const char *file, const int buffered)
 		decoder_error (&data->error, ERROR_FATAL, 0,
 				"Can't load file: %s",
 				io_strerror(data->stream));
-		io_close (data->stream);
 		return data;
 	}
 
@@ -421,9 +420,9 @@ static void flac_close (void *void_data)
 			FLAC__stream_decoder_delete (data->decoder);
 #endif
 		}
-		io_close (data->stream);
 	}
 
+	io_close (data->stream);
 	free (data);
 }
 

@@ -219,6 +219,8 @@ static void start_moc (const struct parameters *params, lists_t_strs *args)
 
 	if (params->only_server)
 		send_int (server_sock, CMD_DISCONNECT);
+
+	close (server_sock);
 }
 
 static void show_version ()

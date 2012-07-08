@@ -253,10 +253,12 @@ static void *spx_open (const char *file)
 		data = spx_open_internal (stream);
 	else {
 		data = (struct spx_data *)xmalloc (sizeof(struct spx_data));
+		data->stream = NULL;
 		decoder_error_init (&data->error);
 		decoder_error (&data->error, ERROR_STREAM, 0,
 				"Can't open file: %s",
-				io_strerror(data->stream));
+				io_strerror(stream));
+        io_close (stream);
 		data->ok = 0;
 	}
 
@@ -293,9 +295,9 @@ static void spx_close (void *prv_data)
 		speex_bits_destroy (&data->bits);
 		ogg_stream_clear (&data->os);
 		ogg_sync_clear (&data->oy);
-		io_close (data->stream);
 	}
 
+	io_close (data->stream);
 	decoder_error_clear (&data->error);
 
 	free (data);
@@ -449,6 +451,8 @@ static void spx_info (const char *file_name, struct file_tags *tags,
 
 		spx_close (data);
 	}
+	else
+		io_close (s);
 }
 
 static int spx_seek (void *prv_data ATTR_UNUSED, int sec)

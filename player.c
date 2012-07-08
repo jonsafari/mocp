@@ -440,6 +440,7 @@ static void decode_loop (const struct decoder *f, void *decoder_data,
 		const float already_decoded_sec)
 {
 	bool eof = false;
+	bool stopped = false;
 	char buf[PCM_BUF_SIZE];
 	int decoded = 0;
 	struct sound_params new_sound_params;
@@ -523,7 +524,8 @@ static void decode_loop (const struct decoder *f, void *decoder_data,
 			debug ("waiting...");
 			if (eof && !precache.file && next_file
 					&& file_type(next_file) == F_SOUND
-					&& options_get_int("Precache"))
+					&& options_get_int("Precache")
+					&& options_get_bool("AutoNext"))
 				start_precache (&precache, next_file);
 			pthread_cond_wait (&request_cond, &request_cond_mutex);
 			UNLOCK (request_cond_mutex);
@@ -536,6 +538,7 @@ static void decode_loop (const struct decoder *f, void *decoder_data,
 		 * the request has changed. */
 		if (request == REQ_STOP) {
 			logit ("stop");
+			stopped = true;
 			md5->okay = false;
 			out_buf_stop (out_buf);
 
@@ -619,6 +622,12 @@ static void decode_loop (const struct decoder *f, void *decoder_data,
 	UNLOCK (curr_tags_mut);
 
 	out_buf_wait (out_buf);
+
+	if (precache.ok && (stopped || !options_get_bool ("AutoNext"))) {
+		precache_wait (&precache);
+		precache.f->close (precache.decoder_data);
+		precache_reset (&precache);
+	}
 }
 
 #if !defined(NDEBUG) && defined(DEBUG)
@@ -708,8 +717,10 @@ static void play_file (const char *file, const struct decoder *f,
 		set_info_channels (sound_params.channels);
 		set_info_rate (sound_params.rate / 1000);
 
-		if (!audio_open(&sound_params))
+		if (!audio_open(&sound_params)) {
+			precache.f->close (precache.decoder_data);
 			return;
+		}
 
 #if !defined(NDEBUG) && defined(DEBUG)
 		md5.len += precache.buf_fill;
