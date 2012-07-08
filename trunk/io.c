@@ -471,7 +471,7 @@ static void io_open_file (struct io_stream *s, const char *file)
 	}
 }
 
-/* Open the file. Return NULL on error. */
+/* Open the file. */
 struct io_stream *io_open (const char *file, const int buffered)
 {
 	int rc;
