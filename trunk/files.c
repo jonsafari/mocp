@@ -305,46 +305,39 @@ void resolve_path (char *buf, const int size, const char *file)
  * If some tags are already present, don't read them.
  * If present_tags is NULL, allocate new tags. */
 struct file_tags *read_file_tags (const char *file,
-		struct file_tags *present_tags, const int tags_sel)
+		struct file_tags *tags, const int tags_sel)
 {
-	struct file_tags *tags;
 	struct decoder *df;
 	int needed_tags;
 
 	assert (file != NULL);
 
-	if (present_tags) {
-		tags = present_tags;
-		needed_tags = ~tags->filled & tags_sel;
-	}
-	else {
+	if (tags == NULL)
 		tags = tags_new ();
-		needed_tags = tags_sel;
-	}
 
-	if (file_type(file) == F_URL)
+	if (file_type (file) == F_URL)
 		return tags;
 
-	df = get_decoder (file);
+	needed_tags = ~tags->filled & tags_sel;
+	if (!needed_tags) {
+		debug ("No need to read any tags");
+		return tags;
+	}
 
+	df = get_decoder (file);
 	if (!df) {
 		logit ("Can't find decoder functions for %s", file);
 		return tags;
 	}
 
-	if (needed_tags) {
-
-		/* This makes sure that we don't cause a memory leak */
-		assert (!((needed_tags & TAGS_COMMENTS) &&
+	/* This makes sure that we don't cause a memory leak */
+	assert (!((needed_tags & TAGS_COMMENTS) &&
 					(tags->title
 					 || tags->artist
 					 || tags->album)));
 
-		df->info (file, tags, needed_tags);
-		tags->filled |= tags_sel;
-	}
-	else
-		debug ("No need to read any tags");
+	df->info (file, tags, needed_tags);
+	tags->filled |= tags_sel;
 
 	return tags;
 }

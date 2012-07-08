@@ -459,8 +459,9 @@ static char *get_curr_file ()
 
 static void update_mixer_value ()
 {
-	int val = get_mixer_value ();
+	int val;
 
+	val = get_mixer_value ();
 	iface_set_mixer_value MAX(val, 0);
 }
 

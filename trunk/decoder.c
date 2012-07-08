@@ -661,26 +661,37 @@ void decoder_init (int debug_info)
 	load_preferences ();
 }
 
-void decoder_cleanup ()
+static void cleanup_decoders ()
 {
-	int i;
-	decoder_t_preference *pref, *next;
+	int ix;
 
-	for (i = 0; i < plugins_num; i++) {
-		if (plugins[i].decoder->destroy)
-			plugins[i].decoder->destroy ();
-		free (plugins[i].name);
+	for (ix = 0; ix < plugins_num; ix++) {
+		if (plugins[ix].decoder->destroy)
+			plugins[ix].decoder->destroy ();
+		free (plugins[ix].name);
 	}
 
 	if (lt_dlexit ())
 		logit ("lt_exit() failed: %s", lt_dlerror ());
+}
+
+static void cleanup_preferences ()
+{
+	decoder_t_preference *pref, *next;
 
 	pref = preferences;
 	for (pref = preferences; pref; pref = next) {
 		next = pref->next;
 		free (pref);
 	}
+
 	preferences = NULL;
+}
+
+void decoder_cleanup ()
+{
+	cleanup_decoders ();
+	cleanup_preferences ();
 }
 
 /* Fill the error structure with an error of a given type and message.

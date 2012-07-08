@@ -38,8 +38,6 @@
 #include "log.h"
 #include "files.h"
 
-#define CTRL_KEY_CODE	0x1F
-
 /* ^c version of c */
 #ifndef CTRL
 # define CTRL(c) ((c) & CTRL_KEY_CODE)

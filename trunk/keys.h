@@ -123,6 +123,7 @@ enum key_context
 #endif
 
 #define META_KEY_FLAG	0x80
+#define CTRL_KEY_CODE	0x1F
 
 struct iface_key;
 enum key_cmd get_key_cmd (const enum key_context context, const struct iface_key *key);

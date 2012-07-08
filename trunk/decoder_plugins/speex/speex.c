@@ -249,7 +249,7 @@ static void *spx_open (const char *file)
 	struct spx_data *data;
 
 	stream = io_open (file, 1);
-	if (io_ok(stream))
+	if (io_ok (stream))
 		data = spx_open_internal (stream);
 	else {
 		data = (struct spx_data *)xmalloc (sizeof(struct spx_data));
@@ -437,7 +437,7 @@ static void spx_info (const char *file_name, struct file_tags *tags,
 	struct io_stream *s;
 
 	s = io_open (file_name, 0);
-	if (io_ok(s)) {
+	if (io_ok (s)) {
 		struct spx_data *data = spx_open_internal (s);
 
 		if (data->ok) {
@@ -559,10 +559,9 @@ static int spx_decode (void *prv_data, char *sound_buf, int nbytes,
 		/* First see if there is anything left in the output buffer and
 		 * empty it out */
 		if (data->output_left > 0) {
-			int to_copy = nbytes / 2;
+			int to_copy = nbytes / sizeof(int16_t);
 
-			to_copy = data->output_left < to_copy
-				? data->output_left : to_copy;
+			to_copy = MIN(data->output_left, to_copy);
 
 			memcpy (out, data->output + data->output_start,
 					to_copy * sizeof(int16_t));
@@ -571,8 +570,9 @@ static int spx_decode (void *prv_data, char *sound_buf, int nbytes,
 			data->output_start += to_copy;
 			data->output_left -= to_copy;
 
-			nbytes -= to_copy * 2;
-		} else if (ogg_stream_packetout(&data->os, &data->op) == 1) {
+			nbytes -= to_copy * sizeof(int16_t);
+		}
+		else if (ogg_stream_packetout (&data->os, &data->op) == 1) {
 			int16_t *temp_output = data->output;
 
 			/* Decode some more samples */
