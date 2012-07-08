@@ -291,6 +291,8 @@ void equalizer_read_config()
 
   FILE *cf = fopen(sfile, "r");
 
+  free (sfile);
+
   if(cf==NULL)
   {
     logit ("Unable to read equalizer configuration");

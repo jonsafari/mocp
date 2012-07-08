@@ -280,6 +280,8 @@ static void *precache_thread (void *data)
 		precache->f->get_error (precache->decoder_data, &err);
 
 		if (err.type == ERROR_FATAL) {
+			logit ("Error reading file for precache: %s", err.err);
+			decoder_error_clear (&err);
 			precache->f->close (precache->decoder_data);
 			return NULL;
 		}
@@ -293,6 +295,7 @@ static void *precache_thread (void *data)
 			 * parameters in the buffer, give up with
 			 * precaching. (this should never happen). */
 			logit ("Sound parameters have changed when precaching.");
+			decoder_error_clear (&err);
 			precache->f->close (precache->decoder_data);
 			return NULL;
 		}
@@ -308,8 +311,10 @@ static void *precache_thread (void *data)
 				new_sound_params.rate *
 				new_sound_params.channels);
 
-		if (err.type != ERROR_OK)
+		if (err.type != ERROR_OK) {
+			decoder_error_clear (&err);
 			break; /* Don't lose the error message */
+		}
 	}
 
 	precache->ok = 1;
@@ -718,7 +723,9 @@ static void play_file (const char *file, const struct decoder *f,
 		set_info_rate (sound_params.rate / 1000);
 
 		if (!audio_open(&sound_params)) {
+			md5.okay = false;
 			precache.f->close (precache.decoder_data);
+			precache_reset (&precache);
 			return;
 		}
 

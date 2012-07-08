@@ -410,19 +410,18 @@ static void flac_close (void *void_data)
 {
 	struct flac_data *data = (struct flac_data *)void_data;
 
-	if (data->ok) {
-		if (data->decoder) {
+	if (data->decoder) {
 #ifdef LEGACY_FLAC
-			FLAC__seekable_stream_decoder_finish (data->decoder);
-			FLAC__seekable_stream_decoder_delete (data->decoder);
+		FLAC__seekable_stream_decoder_finish (data->decoder);
+		FLAC__seekable_stream_decoder_delete (data->decoder);
 #else
-			FLAC__stream_decoder_finish (data->decoder);
-			FLAC__stream_decoder_delete (data->decoder);
+		FLAC__stream_decoder_finish (data->decoder);
+		FLAC__stream_decoder_delete (data->decoder);
 #endif
-		}
 	}
 
 	io_close (data->stream);
+	decoder_error_clear (&data->error);
 	free (data);
 }
 

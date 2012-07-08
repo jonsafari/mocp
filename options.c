@@ -1218,6 +1218,8 @@ void options_free ()
 		else if (options[i].type == OPTION_LIST) {
 			lists_strs_free (options[i].value.list);
 			options[i].value.list = NULL;
+			for (ix = 0; ix < options[i].count; ix += 1)
+				free (((char **) options[i].constraints)[ix]);
 		}
 		else if (options[i].type == OPTION_SYMB)
 			options[i].value.str = NULL;

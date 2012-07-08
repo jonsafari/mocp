@@ -93,6 +93,9 @@ static void timidity_close (void *void_data)
   if (data->midisong) {
     mid_song_free(data->midisong);
   }
+
+  decoder_error_clear (&data->error);
+  free (data);
 }
 
 static void timidity_info (const char *file_name, struct file_tags *info,
@@ -100,8 +103,10 @@ static void timidity_info (const char *file_name, struct file_tags *info,
 {
   struct timidity_data *data = make_timidity_data(file_name);
 
-  if(data->midisong==NULL)
+  if(data->midisong==NULL) {
+    free (data);
     return;
+  }
 
   if(tags_sel & TAGS_TIME) {
     info->time = mid_song_get_total_time(data->midisong) / 1000;

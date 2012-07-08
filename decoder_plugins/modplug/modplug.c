@@ -175,6 +175,8 @@ static void modplug_close (void *void_data)
     ModPlug_Unload(data->modplugfile);
     free(data->filedata);
   }
+
+  decoder_error_clear (&data->error);
   free (data);
 }
 

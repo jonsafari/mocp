@@ -508,6 +508,7 @@ static void override_config_option (const char *optarg, lists_t_strs *deferred)
 	if (type == OPTION_LIST) {
 		if (deferred) {
 			lists_strs_append (deferred, optarg);
+			free (name);
 			return;
 		}
 	}
@@ -849,6 +850,7 @@ int main (int argc, char *argv[])
 	else
 		start_moc (&params, args);
 
+	lists_strs_free (args);
 	options_free ();
 	decoder_cleanup ();
 	io_cleanup ();
