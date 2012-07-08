@@ -219,6 +219,7 @@ static int read_speex_header (struct spx_data *data)
 static struct spx_data *spx_open_internal (struct io_stream *stream)
 {
 	struct spx_data *data;
+	SpeexStereoState stereo = SPEEX_STEREO_STATE_INIT;
 
 	data = (struct spx_data *)xmalloc (sizeof(struct spx_data));
 
@@ -226,6 +227,7 @@ static struct spx_data *spx_open_internal (struct io_stream *stream)
 	data->stream = stream;
 
 	data->st = NULL;
+	data->stereo = stereo;
 	data->header = NULL;
 	data->output = NULL;
 	data->comment_packet = NULL;

@@ -54,6 +54,7 @@ static void wav_data_init (struct wavpack_data *data)
 	data->channels = WavpackGetReducedChannels (data->wpc);
 	data->duration = data->sample_num / data->sample_rate;
 	data->mode = WavpackGetMode (data->wpc);
+	data->avg_bitrate = WavpackGetAverageBitrate (data->wpc, 1) / 1000;
 
 	data->ok = 1;
 	debug ("File opened. S_n %d. S_r %d. Time %d. Avg_Bitrate %d.",
@@ -79,10 +80,9 @@ static void *wav_open (const char *file)
 		decoder_error (&data->error, ERROR_FATAL, 0, "%s", wv_error);
 		logit ("wv_open error: %s", wv_error);
 	}
-	else {
+	else
 		wav_data_init (data);
-		data->avg_bitrate = WavpackGetAverageBitrate (data->wpc, 1) / 1000;
-	}
+
 	return data;
 }
 
