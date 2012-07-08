@@ -324,13 +324,10 @@ static void *flac_open_internal (const char *file, const int buffered)
 		return data;
 	}
 
-	data->ok = 1;
-
 #ifdef LEGACY_FLAC
 	if (!(data->decoder = FLAC__seekable_stream_decoder_new())) {
 		decoder_error (&data->error, ERROR_FATAL, 0,
 				"FLAC__seekable_stream_decoder_new() failed");
-		data->ok = 0;
 		return data;
 	}
 
@@ -361,7 +358,6 @@ static void *flac_open_internal (const char *file, const int buffered)
 			!= FLAC__SEEKABLE_STREAM_DECODER_OK) {
 		decoder_error (&data->error, ERROR_FATAL, 0,
 				"FLAC__seekable_stream_decoder_init() failed");
-		data->ok = 0;
 		return data;
 	}
 
@@ -370,14 +366,12 @@ static void *flac_open_internal (const char *file, const int buffered)
 		decoder_error (&data->error, ERROR_FATAL, 0,
 				"FLAC__seekable_stream_decoder_process_until_end_of_metadata()"
 				" failed.");
-		data->ok = 0;
 		return data;
 	}
 #else
 	if (!(data->decoder = FLAC__stream_decoder_new())) {
 		decoder_error (&data->error, ERROR_FATAL, 0,
 				"FLAC__stream_decoder_new() failed");
-		data->ok = 0;
 		return data;
 	}
 
@@ -391,7 +385,6 @@ static void *flac_open_internal (const char *file, const int buffered)
 			!= FLAC__STREAM_DECODER_INIT_STATUS_OK) {
 		decoder_error (&data->error, ERROR_FATAL, 0,
 				"FLAC__stream_decoder_init() failed");
-		data->ok = 0;
 		return data;
 	}
 
@@ -399,10 +392,11 @@ static void *flac_open_internal (const char *file, const int buffered)
 		decoder_error (&data->error, ERROR_FATAL, 0,
 				"FLAC__stream_decoder_process_until_end_of_metadata()"
 				" failed.");
-		data->ok = 0;
 		return data;
 	}
 #endif
+
+	data->ok = 1;
 	data->avg_bitrate = (data->bits_per_sample) * data->sample_rate;
 
 	return data;

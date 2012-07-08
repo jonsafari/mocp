@@ -309,9 +309,8 @@ static void go_to_another_file ()
 	if (plist_count(&queue) && go_next) {
 		logit ("Playing file from queue");
 
-		if (!before_queue_fname && curr_playing_fname) {
+		if (!before_queue_fname && curr_playing_fname)
 			before_queue_fname = xstrdup (curr_playing_fname);
-		}
 
 		curr_plist = &queue;
 		curr_playing = plist_next (&queue, -1);
@@ -816,34 +815,29 @@ int audio_send_pcm (const char *buf, const size_t size)
 	char *softmixed = NULL;
 	char *equalized = NULL;
 
-	if(equalizer_is_active())
+	if (equalizer_is_active ())
 	{
-		equalized = xmalloc(size);
-		memcpy(equalized, buf, size);
+		equalized = xmalloc (size);
+		memcpy (equalized, buf, size);
 
-		equalizer_process_buffer(equalized, size, &driver_sound_params);
+		equalizer_process_buffer (equalized, size, &driver_sound_params);
 
 		buf = equalized;
 	}
 
-	if(softmixer_is_active())
+	if (softmixer_is_active ())
 	{
-		if(equalized)
+		if (equalized)
 		{
 			softmixed = equalized;
 		}
 		else
 		{
-			softmixed = xmalloc(size);
-			memcpy(softmixed, buf, size);
+			softmixed = xmalloc (size);
+			memcpy (softmixed, buf, size);
 		}
 
-		softmixer_process_buffer
-		(
-			softmixed
-			, size
-			, &driver_sound_params
-		);
+		softmixer_process_buffer (softmixed, size, &driver_sound_params);
 
 		buf = softmixed;
 	}
@@ -855,11 +849,11 @@ int audio_send_pcm (const char *buf, const size_t size)
 	if (played == 0)
 		fatal ("Audio output error!");
 
-	if(softmixed && !equalized)
-		free(softmixed);
+	if (softmixed && !equalized)
+		free (softmixed);
 
-	if(equalized)
-		free(equalized);
+	if (equalized)
+		free (equalized);
 
 	return played;
 }
@@ -1100,23 +1094,23 @@ char *audio_get_sname ()
 
 int audio_get_mixer ()
 {
-        if(current_mixer==2)
-          return softmixer_get_value();
+	if (current_mixer == 2)
+		return softmixer_get_value ();
 
-        return hw.read_mixer ();
+	return hw.read_mixer ();
 }
 
 void audio_set_mixer (const int val)
 {
-	if (val >= 0 && val <= 100)
-        {
-                if(current_mixer==2)
-                  softmixer_set_value(val);
-                else
-		  hw.set_mixer (val);
-        }
-	else
+	if (val < 0 || val > 100) {
 		logit ("Tried to set mixer to volume out of range.");
+		return;
+	}
+
+	if (current_mixer == 2)
+		softmixer_set_value (val);
+	else
+		hw.set_mixer (val);
 }
 
 void audio_plist_delete (const char *file)
@@ -1151,18 +1145,22 @@ int audio_get_ftime (const char *file)
 {
 	int i;
 	int time;
-	time_t mtime = get_mtime (file);
+	time_t mtime;
+
+	mtime = get_mtime (file);
 
 	LOCK (plist_mut);
-	if ((i = plist_find_fname(&playlist, file)) != -1
-			&& (time = get_item_time(&playlist, i)) != -1) {
-		if (playlist.items[i].mtime == mtime) {
-			debug ("Found time for %s", file);
-			UNLOCK (plist_mut);
-			return time;
-		}
-		else
+	i = plist_find_fname (&playlist, file);
+	if (i != -1) {
+		time = get_item_time (&playlist, i);
+		if (time != -1) {
+			if (playlist.items[i].mtime == mtime) {
+				debug ("Found time for %s", file);
+				UNLOCK (plist_mut);
+				return time;
+			}
 			logit ("mtime for %s has changed", file);
+		}
 	}
 	UNLOCK (plist_mut);
 
@@ -1249,15 +1247,15 @@ struct file_tags *audio_get_curr_tags ()
 
 char *audio_get_mixer_channel_name ()
 {
-        if(current_mixer==2)
-          return softmixer_name();
+	if (current_mixer == 2)
+		return softmixer_name ();
 
-        return hw.get_mixer_channel_name ();
+	return hw.get_mixer_channel_name ();
 }
 
 void audio_toggle_mixer_channel ()
 {
-        current_mixer=(current_mixer+1)%3;
-        if(current_mixer<2)
-          hw.toggle_mixer_channel ();
+	current_mixer = (current_mixer + 1) % 3;
+	if (current_mixer < 2)
+		hw.toggle_mixer_channel ();
 }

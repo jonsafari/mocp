@@ -46,6 +46,12 @@
 #include "log.h"
 #include "audio.h"
 
+/* The name of the version tag file in the cache directory. */
+#define MOC_VERSION_TAG "moc_version_tag"
+
+/* The maximum length of the version tag (including trailing NULL). */
+#define VERSION_TAG_MAX 64
+
 /* Number used to create cache version tag to detect incompatibilities
  * between cache version stored on the disk and MOC/BerkeleyDB environment.
  *
@@ -432,7 +438,7 @@ static void tags_cache_add (struct tags_cache *c, const char *file,
 static struct file_tags *tags_cache_read_add (struct tags_cache *c,
 		const int client_id, const char *file, int tags_sel)
 {
-	struct file_tags *tags;
+	struct file_tags *tags = NULL;
 	DBT key;
 	DBT serialized_cache_rec;
 	DB_LOCK lock;
@@ -470,16 +476,14 @@ static struct file_tags *tags_cache_read_add (struct tags_cache *c,
 	if (ret == 0) {
 		struct cache_record rec;
 
-		if (cache_record_deserialize(&rec, serialized_cache_rec.data,
-				serialized_cache_rec.size, 0)) {
-			time_t curr_mtime = get_mtime(file);
+		if (cache_record_deserialize (&rec, serialized_cache_rec.data,
+		                              serialized_cache_rec.size, 0)) {
+			time_t curr_mtime = get_mtime (file);
 
 			if (rec.mod_time != curr_mtime) {
 
 				/* outdated tags - remove them and reread */
 				tags_free (rec.tags);
-				rec.tags = tags_new ();
-				rec.mod_time = curr_mtime;
 
 				debug ("Tags in the cache are outdated");
 			}
@@ -496,11 +500,10 @@ static struct file_tags *tags_cache_read_add (struct tags_cache *c,
 				debug ("Tags in the cache are not what we want.");
 			}
 		}
-		tags = tags_new ();
 	}
-	else {
+
+	if (tags == NULL)
 		tags = tags_new ();
-	}
 
 	if (tags_sel & TAGS_TIME) {
 		int time;
@@ -714,6 +717,7 @@ void tags_cache_add_request (struct tags_cache *c, const char *file,
 				goto end;
 			}
 
+			tags_free (rec.tags);
 			debug ("Found outdated or incomplete tags in the cache");
 		}
 	}
@@ -761,12 +765,12 @@ void tags_cache_clear_up_to (struct tags_cache *c, const char *file,
 	UNLOCK (c->mutex);
 }
 
-void tags_cache_save (struct tags_cache *c ATTR_UNUSED, const char *file_name ATTR_UNUSED)
+void tags_cache_save (struct tags_cache *c ATTR_UNUSED, const char *cache_dir ATTR_UNUSED)
 {
 	//TODO: to remove
 
 	assert (c != NULL);
-	assert (file_name != NULL);
+	assert (cache_dir != NULL);
 }
 
 /* Purge content of a directory. */
@@ -837,7 +841,7 @@ static int purge_directory (const char *dir_path)
 
 /* Create a MOC/db version string.
  *
- * @param buf Output buffer (at least 64 chars long)
+ * @param buf Output buffer (at least VERSION_TAG_MAX chars long)
  */
 static const char *create_version_tag (char *buf)
 {
@@ -846,8 +850,8 @@ static const char *create_version_tag (char *buf)
 
 	db_version (&db_major, &db_minor, NULL);
 
-	snprintf (buf, 64, "%d %d %d", CACHE_DB_FORMAT_VERSION, db_major,
-			db_minor);
+	snprintf (buf, VERSION_TAG_MAX, "%d %d %d",
+	          CACHE_DB_FORMAT_VERSION, db_major, db_minor);
 
 	return buf;
 }
@@ -858,17 +862,17 @@ static const char *create_version_tag (char *buf)
 static int cache_version_matches (const char *cache_dir)
 {
 	char *fname = NULL;
-	char disk_version_tag[65];
+	char disk_version_tag[VERSION_TAG_MAX];
 	ssize_t rres;
 	FILE *f;
 	int compare_result = 0;
 
-	fname = (char *)xmalloc (strlen (cache_dir) + sizeof ("/moc_version_tag"));
-	sprintf (fname, "%s/moc_version_tag", cache_dir);
+	fname = (char *)xmalloc (strlen (cache_dir) + sizeof (MOC_VERSION_TAG) + 1);
+	sprintf (fname, "%s/%s", cache_dir, MOC_VERSION_TAG);
 
 	f = fopen (fname, "r");
 	if (!f) {
-		logit ("No moc_version_tag in cache directory");
+		logit ("No %s in cache directory", MOC_VERSION_TAG);
 		free (fname);
 		return 0;
 	}
@@ -878,7 +882,7 @@ static int cache_version_matches (const char *cache_dir)
 		logit ("On-disk version tag too long");
 	}
 	else {
-		char cur_version_tag[64];
+		char cur_version_tag[VERSION_TAG_MAX];
 		disk_version_tag[rres] = '\0';
 
 		create_version_tag (cur_version_tag);
@@ -893,13 +897,13 @@ static int cache_version_matches (const char *cache_dir)
 
 static void write_cache_version (const char *cache_dir)
 {
-	char cur_version_tag[64];
+	char cur_version_tag[VERSION_TAG_MAX];
 	char *fname = NULL;
 	FILE *f;
 	size_t rc;
 
-	fname = (char *)xmalloc (strlen (cache_dir) + sizeof ("/moc_version_tag"));
-	sprintf (fname, "%s/moc_version_tag", cache_dir);
+	fname = (char *)xmalloc (strlen (cache_dir) + sizeof (MOC_VERSION_TAG) + 1);
+	sprintf (fname, "%s/%s", cache_dir, MOC_VERSION_TAG);
 
 	f = fopen (fname, "w");
 	if (!f) {
@@ -920,9 +924,9 @@ static void write_cache_version (const char *cache_dir)
 
 /* Make sure that the cache directory exists and clear it if necessary.
  */
-static int prepare_cache_dir (const char *file_name)
+static int prepare_cache_dir (const char *cache_dir)
 {
-	if (mkdir (file_name, 0700) == 0)
+	if (mkdir (cache_dir, 0700) == 0)
 		return 1;
 
 	if (errno != EEXIST) {
@@ -931,22 +935,22 @@ static int prepare_cache_dir (const char *file_name)
 		return 0;
 	}
 
-	if (!cache_version_matches (file_name)) {
+	if (!cache_version_matches (cache_dir)) {
 		logit ("Tags cache directory is the wrong version, purging....");
 
-		if (!purge_directory (file_name))
+		if (!purge_directory (cache_dir))
 			return 0;
-		write_cache_version (file_name);
+		write_cache_version (cache_dir);
 	}
 
 	return 1;
 }
 
-void tags_cache_load (struct tags_cache *c, const char *file_name)
+void tags_cache_load (struct tags_cache *c, const char *cache_dir)
 {
 	int ret;
 
-	if (!prepare_cache_dir (file_name))
+	if (!prepare_cache_dir (cache_dir))
 		return;
 
 	ret = db_env_create (&c->db_env, 0);
@@ -955,11 +959,11 @@ void tags_cache_load (struct tags_cache *c, const char *file_name)
 		return;
 	}
 
-	ret = c->db_env->open (c->db_env, file_name,
+	ret = c->db_env->open (c->db_env, cache_dir,
 			DB_CREATE  | DB_INIT_MPOOL | DB_THREAD | DB_INIT_LOCK, 0);
 	if (ret) {
 		logit ("Can't open DB environment (%s): %s",
-				file_name, db_strerror (ret));
+				cache_dir, db_strerror (ret));
 		c->db_env->close (c->db_env, 0);
 		c->db_env = NULL;
 		return;
