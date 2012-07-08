@@ -114,6 +114,7 @@ static struct modplug_data *make_modplug_data(const char *file) {
   struct io_stream *s = io_open(file, 0);
   if(!io_ok(s)) {
     decoder_error(&data->error, ERROR_FATAL, 0, "Can't open file: %s", file);
+    io_close(s);
     return data;
   }
 

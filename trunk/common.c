@@ -65,6 +65,8 @@ void fatal (const char *format, ...)
 	logit ("FATAL ERROR: %s", msg);
 	va_end (va);
 
+	log_close ();
+
 	exit (EXIT_FATAL);
 }
 

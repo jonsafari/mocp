@@ -3604,6 +3604,8 @@ void interface_end ()
 	event_queue_free (&events);
 
 	logit ("Interface exited");
+
+	log_close ();
 }
 
 void interface_fatal (const char *format, ...)

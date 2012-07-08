@@ -274,16 +274,17 @@ static void thread_signal (const int signum, void (*func)(int))
 		fatal ("sigaction() failed: %s", strerror(errno));
 }
 
-static void redirect_output (int out_fd)
+static void redirect_output (FILE *stream)
 {
-	int fd;
+	FILE *rc;
 
-	fd = open ("/dev/null", O_WRONLY);
-	if (fd == -1)
-		fatal ("Can't open /dev/null: %s", strerror(errno));
+	if (stream == stdin)
+		rc = freopen ("/dev/null", "r", stream);
+	else
+		rc = freopen ("/dev/null", "w", stream);
 
-	if (dup2(fd, out_fd) == -1)
-		fatal ("dup2() failed: %s", strerror(errno));
+	if (!rc)
+		fatal ("Can't open /dev/null: %s", strerror (errno));
 }
 
 /* Initialize the server - return fd of the listening socket or -1 on error */
@@ -353,8 +354,9 @@ int server_init (int debugging, int foreground)
 
 	if (!foreground) {
 		setsid ();
-		redirect_output (STDOUT_FILENO);
-		redirect_output (STDERR_FILENO);
+		redirect_output (stdin);
+		redirect_output (stdout);
+		redirect_output (stderr);
 	}
 
 	return server_sock;
@@ -627,6 +629,7 @@ static void server_shutdown ()
 	close (wake_up_pipe[0]);
 	close (wake_up_pipe[1]);
 	logit ("Server exited");
+	log_close ();
 }
 
 /* Send EV_BUSY message and close the connection. */
