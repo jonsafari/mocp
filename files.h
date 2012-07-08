@@ -11,6 +11,8 @@ extern "C" {
 
 #define FILES_LIST_INIT_SIZE	64
 
+void files_init ();
+void files_cleanup ();
 int read_directory (const char *directory, lists_t_strs *dirs,
 		lists_t_strs *playlists, struct plist *plist);
 int read_directory_recurr (const char *directory, struct plist *plist);

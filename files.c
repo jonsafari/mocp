@@ -51,6 +51,42 @@
 
 #define READ_LINE_INIT_SIZE	256
 
+#ifdef HAVE_LIBMAGIC
+static magic_t cookie = NULL;
+static char *cached_file = NULL;
+static char *cached_result = NULL;
+#endif
+
+void files_init ()
+{
+#ifdef HAVE_LIBMAGIC
+	assert (cookie == NULL);
+
+	cookie = magic_open (MAGIC_SYMLINK | MAGIC_MIME | MAGIC_ERROR |
+	                     MAGIC_NO_CHECK_COMPRESS | MAGIC_NO_CHECK_ELF |
+	                     MAGIC_NO_CHECK_TAR | MAGIC_NO_CHECK_TOKENS |
+	                     MAGIC_NO_CHECK_FORTRAN | MAGIC_NO_CHECK_TROFF);
+	if (cookie == NULL)
+		logit ("Error allocating magic cookie: %s", strerror (errno));
+	else if (magic_load (cookie, NULL) != 0) {
+		logit ("Error loading magic database: %s", magic_error (cookie));
+		magic_close (cookie);
+		cookie = NULL;
+	}
+#endif
+}
+
+void files_cleanup ()
+{
+#ifdef HAVE_LIBMAGIC
+	free (cached_file);
+	cached_file = NULL;
+	free (cached_result);
+	cached_result = NULL;
+	magic_close (cookie);
+	cookie = NULL;
+#endif
+}
 
 /* Is the string a URL? */
 inline int is_url (const char *str)
@@ -104,26 +140,6 @@ const char *file_mime_type (const char *file ATTR_UNUSED)
 	assert (file != NULL);
 
 #ifdef HAVE_LIBMAGIC
-	static bool initialised = false;
-	static magic_t cookie = NULL;
-	static char *cached_file = NULL;
-	static char *cached_result = NULL;
-
-	if (!initialised) {
-		initialised = true;
-		cookie = magic_open (MAGIC_SYMLINK | MAGIC_MIME | MAGIC_ERROR |
-		                     MAGIC_NO_CHECK_COMPRESS | MAGIC_NO_CHECK_ELF |
-		                     MAGIC_NO_CHECK_TAR | MAGIC_NO_CHECK_TOKENS |
-		                     MAGIC_NO_CHECK_FORTRAN | MAGIC_NO_CHECK_TROFF);
-		if (cookie == NULL)
-			logit ("Error allocating magic cookie: %s", strerror (errno));
-		else if (magic_load (cookie, NULL) != 0) {
-			logit ("Error loading magic database: %s", magic_error (cookie));
-			magic_close (cookie);
-			cookie = NULL;
-		}
-	}
-
 	if (cookie != NULL) {
 		if (cached_file && !strcmp (cached_file, file))
 			result = cached_result;
