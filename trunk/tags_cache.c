@@ -900,7 +900,7 @@ static void write_cache_version (const char *cache_dir)
 	char cur_version_tag[VERSION_TAG_MAX];
 	char *fname = NULL;
 	FILE *f;
-	size_t rc;
+	int rc;
 
 	fname = (char *)xmalloc (strlen (cache_dir) + sizeof (MOC_VERSION_TAG) + 1);
 	sprintf (fname, "%s/%s", cache_dir, MOC_VERSION_TAG);
@@ -913,10 +913,9 @@ static void write_cache_version (const char *cache_dir)
 	}
 
 	create_version_tag (cur_version_tag);
-	rc = fwrite (cur_version_tag, 1, strlen (cur_version_tag), f);
+	rc = fwrite (cur_version_tag, strlen (cur_version_tag), 1, f);
 	if (rc != 1)
-		logit ("Error writing cache version tag: %s",
-		        strerror (errno));
+		logit ("Error writing cache version tag: %d", rc);
 
 	free (fname);
 	fclose (f);
@@ -926,8 +925,10 @@ static void write_cache_version (const char *cache_dir)
  */
 static int prepare_cache_dir (const char *cache_dir)
 {
-	if (mkdir (cache_dir, 0700) == 0)
+	if (mkdir (cache_dir, 0700) == 0) {
+		write_cache_version (cache_dir);
 		return 1;
+	}
 
 	if (errno != EEXIST) {
 		error ("Failed to create directory for tags cache: %s",
