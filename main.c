@@ -653,6 +653,7 @@ static lists_t_strs *process_command_line (int argc, char *argv[],
 				break;
 			case 'F':
 				params->foreground = 1;
+				params->only_server = 1;
 				break;
 			case 'R':
 				if (!options_check_list ("SoundDriver", optarg))
