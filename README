@@ -62,7 +62,7 @@ What software is required to compile it?
  - UNIX system with POSIX threads (e.g., Linux or FreeBSD)
  - ncurses (probably already installed in your system)
  - C and C++ compilers (MOC is written in C, but libtool and some decoder
-   plugins require a C++ compiler).
+   plugins require a C++ compiler)
  - libdb version 4 or later
 
 To support audio formats you need:
@@ -96,7 +96,7 @@ For resampling (playing files with sample rate not supported by your hardware):
 For JACK (low-latency audio server):
  - http://jackit.sourceforge.net/
 
-For librcc (fixes encoding in broken mp3 tags).
+For librcc (fixes encoding in broken mp3 tags):
  - http://rusxmms.sourceforge.net/
 
 --------------------------------------------------------------------------------
@@ -105,6 +105,7 @@ Which systems is MOC running on?
 
 I develop and test MOC under GNU/Linux. Sometimes I try to run it on other
 operating systems, and I know it compiles and possibly works under:
+
 - FreeBSD
 - NetBSD
 - OpenBSD
@@ -139,6 +140,11 @@ unexpectedly.
 
 In addition to the standard configure options documented in the INSTALL
 file, there are some MOC-specific options:
+
+	--enable-debug=[yes|no|gdb]
+
+	  Using 'gdb' will cause MOC to be built with options tailored to
+	  use with GDB.
 
 	--with-oss=[yes|no|DIR]
 
@@ -218,4 +224,4 @@ Who wrote that? Where can I send bug reports, questions or comments?
 	* Original author is Damian Pietras
 	* Current maintainer is John Fitzgerald
 	* For comments and questions see the official forum http://moc.daper.net/forum
-	* Found a bug? You can reach maintainer(s) at mocmaint@daper.net 
+	* Found a bug? You can reach maintainer(s) at mocmaint@daper.net

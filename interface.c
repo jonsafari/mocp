@@ -748,7 +748,6 @@ static void update_curr_file ()
 	else if (file[0] &&
 			(!curr_file.file || strcmp(file, curr_file.file))) {
 
-
 		/* played file has changed */
 
 		file_info_cleanup (&curr_file);
@@ -1759,7 +1758,6 @@ static void add_dir_plist ()
 		return;
 	}
 
-
 	if (!strcmp(file, "..")) {
 		error ("Can't add '..'.");
 		free (file);
@@ -1888,7 +1886,6 @@ static void add_file_plist ()
 		free (file);
 		return;
 	}
-
 
 	if (plist_find_fname(playlist, file) == -1) {
 		struct plist_item *item = &dir_plist->items[

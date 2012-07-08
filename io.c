@@ -274,7 +274,6 @@ void io_close (struct io_stream *s)
 
 	logit ("Closing stream...");
 
-
 	if (s->opened) {
 
 		if (s->buffered) {

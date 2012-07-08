@@ -278,8 +278,8 @@ static int wav_our_format_ext(const char *ext)
 
 static struct decoder wv_decoder = {
         DECODER_API_VERSION,
-	NULL,//wav_init
-	NULL,//wav_destroy
+        NULL,//wav_init
+        NULL,//wav_destroy
         wav_open,
         NULL,//wav_open_stream,
         NULL,//wav_can_decode,
@@ -295,7 +295,7 @@ static struct decoder wv_decoder = {
         wav_get_name,
         NULL,//wav_current_tags,
         NULL,//wav_get_stream
-	wav_get_avg_bitrate
+        wav_get_avg_bitrate
 };
 
 struct decoder *plugin_init ()

@@ -262,7 +262,7 @@ static void *precache_thread (void *data)
 			precache->f->get_duration(precache->decoder_data));
 
 	/* Stop at PCM_BUF_SIZE, because when we decode too much, there is no
-	 * place when we can put the data that don't fit into the buffer. */
+	 * place where we can put the data that doesn't fit into the buffer. */
 	while (precache->buf_fill < PCM_BUF_SIZE) {
 		decoded = precache->f->decode (precache->decoder_data,
 				precache->buf + precache->buf_fill,
@@ -270,8 +270,8 @@ static void *precache_thread (void *data)
 
 		if (!decoded) {
 
-			/* EOF so fast? we can't pass this information
-			 * in precache, so give up */
+			/* EOF so fast? We can't pass this information
+			 * in precache, so give up. */
 			logit ("EOF when precaching.");
 			precache->f->close (precache->decoder_data);
 			return NULL;
@@ -289,9 +289,9 @@ static void *precache_thread (void *data)
 		else if (!sound_params_eq(precache->sound_params,
 					new_sound_params)) {
 
-			/* there is no way to store sound with two different
+			/* There is no way to store sound with two different
 			 * parameters in the buffer, give up with
-			 * precacheing. (this should never happen) */
+			 * precaching. (this should never happen). */
 			logit ("Sound parameters have changed when precaching.");
 			precache->f->close (precache->decoder_data);
 			return NULL;
@@ -400,8 +400,8 @@ static void update_tags (const struct decoder *f, void *decoder_data,
 	else if (s && (stream_title = io_get_metadata_title(s))) {
 		if (curr_tags && curr_tags->title
 				&& tags_source == TAGS_SOURCE_DECODER) {
-			logit ("New io stream tags, ignored because there are "
-					" decoder tags present.");
+			logit ("New IO stream tags, ignored because there are "
+					"decoder tags present");
 			free (stream_title);
 		}
 		else {

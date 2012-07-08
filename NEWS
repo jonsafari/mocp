@@ -1,8 +1,8 @@
 2.4.4
 	* Fix crash when saving a playlist with URLs.
 	* Fix hang in case of symlink loop (like symlink to parent directory)
-	  when adding files recursivelly to the playlist.
-	* Fix bad memory acces when using FILL parameter in layouts that caused
+	  when adding files recursively to the playlist.
+	* Fix bad memory access when using FILL parameter in layouts that caused
 	  "FATAL_ERROR: Layout1 is malformed".
 	* Fix compilation with newer ffmpeg. (Alexis Ballier)
 	* Increase maximum file title (made from tags) length to 512. Helps on
@@ -10,7 +10,7 @@
 	* Fix displaying URLs on the playlist when it ends with a slash.
 	* Fix compilation of flac plugin by detecting libflac using pkg-config.
 	* Fix for multichannel playback. (Maarten van Es)
-	* Fix handling of invalid track number in tags. A segfault occured when
+	* Fix handling of invalid track number in tags. A segfault occurred when
 	  the track number was at least a value of 2^31.
 	* Support for the new (SVN) libmpcdec API.
 	* Remove old, irrelevant comment about iconv from the configuration
@@ -19,9 +19,9 @@
 	* Run libtoolize in autogen.sh to prevent conflicts with installed
 	  libtool/libltdl version.
 2.4.3
-	* Fix displaying tags from internet streams, sometimes the name of the
-	  station or other less seful text was displayed instead the title.
-	* Fix a problem with opening internet streams with curl 7.16.x. (Samid
+	* Fix displaying tags from Internet streams, sometimes the name of the
+	  station or other less useful text was displayed instead the title.
+	* Fix a problem with opening Internet streams with curl 7.16.x. (Samid
 	  Tennakoon)
 	* Fix XTermTitle for urxvt.
 	* Fix delete and backspace keys in entries.
@@ -129,7 +129,7 @@
 	  the user.
 	* Count speex time without scaning the whole file.
 	* -e is an alias for -a.
-	* Display the current time for internet streams.
+	* Display the current time for Internet streams.
 	* MusicDir can be a playlist.
 	* Silent seeking can be configured using SilentSeekTime option.
 	* After adding a file to the playlist, the cursor is moved down.
@@ -141,7 +141,7 @@
 	* Fixed OSS support on some machones (like G3 iBook).
 2.3.3
 	* Workaround for backspace key on many terminals (like aterm).
-	* Fixed a memory leak when playing internet streams. (rixx)
+	* Fixed a memory leak when playing Internet streams. (rixx)
 	* Fixed a crash when an mpc file coudn't be read.
 	* Fixed a memory leak occuring with every played mp3 file.
 	* Fixed a memory leak when seeking in MPC file.

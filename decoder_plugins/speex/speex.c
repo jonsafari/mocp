@@ -396,7 +396,7 @@ static int count_time (struct spx_data *data)
 	if (io_file_size(data->stream) > 10000) {
 		debug ("Seeking near the end");
 		if (io_seek(data->stream, -10000, SEEK_END) == -1)
-			logit ("Seeking failed, scaning whole file");
+			logit ("Seeking failed, scanning whole file");
 		ogg_sync_reset (&data->oy);
 	}
 

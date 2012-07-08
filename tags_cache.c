@@ -382,7 +382,6 @@ static void tags_cache_gc (struct tags_cache *c)
 	}
 	else
 		debug ("Cache empty");
-
 }
 
 /* Add this tags object for the file to the cache. */
@@ -780,25 +779,24 @@ static int purge_directory (const char *dir_path)
 
 	dir = opendir (dir_path);
 	if (!dir) {
-		logit ("Can't open directory %s: %s", dir_path,
-				strerror(errno));
+		logit ("Can't open directory %s: %s", dir_path, strerror (errno));
 		return 0;
 	}
 
-	while ((d = readdir(dir))) {
+	while ((d = readdir (dir))) {
 		struct stat st;
 		char *fpath;
 		int len;
 
-		if (!strcmp(d->d_name, ".") || !strcmp(d->d_name, ".."))
+		if (!strcmp (d->d_name, ".") || !strcmp (d->d_name, ".."))
 			continue;
 
-		len = strlen(dir_path) + strlen(d->d_name) + 2;
+		len = strlen (dir_path) + strlen (d->d_name) + 2;
 		fpath = (char *)xmalloc (len);
 		snprintf (fpath, len, "%s/%s", dir_path, d->d_name);
 
 		if (stat(fpath, &st) < 0) {
-			logit ("Can't stat %s: %s", fpath, strerror(errno));
+			logit ("Can't stat %s: %s", fpath, strerror (errno));
 			free (fpath);
 			closedir (dir);
 			return 0;
@@ -813,7 +811,7 @@ static int purge_directory (const char *dir_path)
 
 			logit ("Removing directory %s...", fpath);
 			if (rmdir(fpath) < 0) {
-				logit ("Can't remove %s: %s", fpath, strerror(errno));
+				logit ("Can't remove %s: %s", fpath, strerror (errno));
 				free (fpath);
 				closedir (dir);
 				return 0;
@@ -823,7 +821,7 @@ static int purge_directory (const char *dir_path)
 			logit ("Removing file %s...", fpath);
 
 			if (unlink(fpath) < 0) {
-				logit ("Can't remove %s: %s", fpath, strerror(errno));
+				logit ("Can't remove %s: %s", fpath, strerror (errno));
 				free (fpath);
 				closedir (dir);
 				return 0;
@@ -865,7 +863,7 @@ static int cache_version_matches (const char *cache_dir)
 	FILE *f;
 	int compare_result = 0;
 
-	fname = (char *)xmalloc (strlen(cache_dir) + sizeof("/moc_version_tag"));
+	fname = (char *)xmalloc (strlen (cache_dir) + sizeof ("/moc_version_tag"));
 	sprintf (fname, "%s/moc_version_tag", cache_dir);
 
 	f = fopen (fname, "r");
@@ -875,8 +873,8 @@ static int cache_version_matches (const char *cache_dir)
 		return 0;
 	}
 
-	rres = fread (disk_version_tag, 1, sizeof(disk_version_tag) - 1, f);
-	if (rres == sizeof(disk_version_tag) - 1) {
+	rres = fread (disk_version_tag, 1, sizeof (disk_version_tag) - 1, f);
+	if (rres == sizeof (disk_version_tag) - 1) {
 		logit ("On-disk version tag too long");
 	}
 	else {
@@ -886,7 +884,6 @@ static int cache_version_matches (const char *cache_dir)
 		create_version_tag (cur_version_tag);
 		compare_result = !strcmp (disk_version_tag, cur_version_tag);
 	}
-
 
 	fclose (f);
 	free (fname);
@@ -901,22 +898,21 @@ static void write_cache_version (const char *cache_dir)
 	FILE *f;
 	size_t rc;
 
-	fname = (char *)xmalloc (strlen(cache_dir) + sizeof("/moc_version_tag"));
+	fname = (char *)xmalloc (strlen (cache_dir) + sizeof ("/moc_version_tag"));
 	sprintf (fname, "%s/moc_version_tag", cache_dir);
 
 	f = fopen (fname, "w");
 	if (!f) {
-		logit ("Error opening cache: %s",
-		        strerror(errno));
+		logit ("Error opening cache: %s", strerror (errno));
 		free (fname);
 		return;
 	}
 
 	create_version_tag (cur_version_tag);
-	rc = fwrite (cur_version_tag, 1, strlen(cur_version_tag), f);
+	rc = fwrite (cur_version_tag, 1, strlen (cur_version_tag), f);
 	if (rc != 1)
 		logit ("Error writing cache version tag: %s",
-		        strerror(errno));
+		        strerror (errno));
 
 	free (fname);
 	fclose (f);
@@ -926,19 +922,19 @@ static void write_cache_version (const char *cache_dir)
  */
 static int prepare_cache_dir (const char *file_name)
 {
-	if (mkdir(file_name, 0700) == 0)
+	if (mkdir (file_name, 0700) == 0)
 		return 1;
 
 	if (errno != EEXIST) {
 		error ("Failed to create directory for tags cache: %s",
-				strerror(errno));
+				strerror (errno));
 		return 0;
 	}
 
-	if (!cache_version_matches(file_name)) {
+	if (!cache_version_matches (file_name)) {
 		logit ("Tags cache directory is the wrong version, purging....");
 
-		if (!purge_directory(file_name))
+		if (!purge_directory (file_name))
 			return 0;
 		write_cache_version (file_name);
 	}
@@ -950,30 +946,28 @@ void tags_cache_load (struct tags_cache *c, const char *file_name)
 {
 	int ret;
 
-	if (!prepare_cache_dir(file_name))
+	if (!prepare_cache_dir (file_name))
 		return;
 
 	ret = db_env_create (&c->db_env, 0);
 	if (ret) {
-		error ("Can't create DB environment: %s", db_strerror(ret));
+		error ("Can't create DB environment: %s", db_strerror (ret));
 		return;
 	}
 
 	ret = c->db_env->open (c->db_env, file_name,
-			DB_CREATE  | DB_INIT_MPOOL | DB_THREAD | DB_INIT_LOCK,
-			0);
+			DB_CREATE  | DB_INIT_MPOOL | DB_THREAD | DB_INIT_LOCK, 0);
 	if (ret) {
 		logit ("Can't open DB environment (%s): %s",
-				file_name, db_strerror(ret));
+				file_name, db_strerror (ret));
 		c->db_env->close (c->db_env, 0);
 		c->db_env = NULL;
 		return;
 	}
 
-
 	ret = c->db_env->lock_id (c->db_env, &c->locker);
 	if (ret) {
-		error ("Failed to get DB locker: %s", db_strerror(ret));
+		error ("Failed to get DB locker: %s", db_strerror (ret));
 		c->db = NULL;
 
 		c->db_env->close (c->db_env, 0);
@@ -984,7 +978,7 @@ void tags_cache_load (struct tags_cache *c, const char *file_name)
 
 	ret = db_create (&c->db, c->db_env, 0);
 	if (ret) {
-		error ("Failed to create cache db: %s", db_strerror(ret));
+		error ("Failed to create cache db: %s", db_strerror (ret));
 		c->db = NULL;
 
 		c->db_env->close (c->db_env, 0);
@@ -993,11 +987,10 @@ void tags_cache_load (struct tags_cache *c, const char *file_name)
 		return;
 	}
 
-	ret = c->db->open (c->db, NULL, "tags.db", NULL, DB_BTREE,
-			DB_CREATE, 0);
+	ret = c->db->open (c->db, NULL, "tags.db", NULL, DB_BTREE, DB_CREATE, 0);
 	if (ret) {
 		error ("Failed to open (or create) tags cache db: %s",
-				db_strerror(ret));
+				db_strerror (ret));
 		abort ();
 		c->db->close (c->db, 0);
 		c->db = NULL;
@@ -1019,7 +1012,7 @@ struct file_tags *tags_cache_get_immediate (struct tags_cache *c,
 	assert (file != NULL);
 
 	debug ("Immediate tags read for %s", file);
-	if (!is_url(file))
+	if (!is_url (file))
 		tags = tags_cache_read_add (c, -1, file, tags_sel);
 	else
 		tags = tags_new ();

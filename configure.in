@@ -138,7 +138,8 @@ AX_PATH_BDB([4], [
 	       ],
 	       AC_MSG_ERROR([BerkeleyDB (libdb) not found.]))
 
-AC_ARG_WITH(oss, AS_HELP_STRING(--without-oss, Compile without OSS support.))
+AC_ARG_WITH(oss, AS_HELP_STRING([--without-oss],
+                                [Compile without OSS support]))
 
 if test "x$with_oss" != "xno"
 then
@@ -174,7 +175,8 @@ then
 	fi
 fi
 
-AC_ARG_WITH(sndio, AS_HELP_STRING(--without-sndio, Compile without SNDIO support.))
+AC_ARG_WITH(sndio, AS_HELP_STRING([--without-sndio],
+                                  [Compile without SNDIO support]))
 
 if test "x$with_sndio" != "xno"
 then
@@ -189,7 +191,8 @@ then
 	fi
 fi
 
-AC_ARG_WITH(alsa, AS_HELP_STRING(--without-alsa, Compile without ALSA support.))
+AC_ARG_WITH(alsa, AS_HELP_STRING([--without-alsa],
+                                 [Compile without ALSA support]))
 
 if test "x$with_alsa" != "xno"
 then
@@ -202,7 +205,8 @@ then
 	     [true])
 fi
 
-AC_ARG_WITH(jack, AS_HELP_STRING(--without-jack, Compile without JACK support.))
+AC_ARG_WITH(jack, AS_HELP_STRING([--without-jack],
+                                 [Compile without JACK support]))
 
 if test "x$with_jack" != "xno"
 then
@@ -224,8 +228,8 @@ case "$host_os" in
 	       *) SOUNDDRIVER="JACK:ALSA:OSS";;
 esac
 
-AC_ARG_ENABLE(debug, AS_HELP_STRING([[--enable-debug[[=gdb]]]],
-                                    [Enable [GDB] debugging code]))
+AC_ARG_ENABLE(debug, AS_HELP_STRING([--enable-debug],
+                                    [Enable debugging code]))
 
 if test "x$enable_debug" = "xno"
 then
@@ -268,8 +272,8 @@ dnl optional functions
 AC_CHECK_FUNCS([strcasestr strerror_r])
 
 dnl MIME magic
-AC_ARG_WITH(magic, AS_HELP_STRING(--without-magic,
-	[Compile without MIME magic support.]))
+AC_ARG_WITH(magic, AS_HELP_STRING([--without-magic],
+                                  [Compile without MIME magic support]))
 COMPILE_MAGIC="no"
 if test "x$with_magic" != "xno"
 then
@@ -324,8 +328,8 @@ AC_CHECK_FUNC(getopt_long,
 	      )
 
 dnl samplerate
-AC_ARG_WITH(samplerate, AS_HELP_STRING(--without-samplerate,
-	    Compile without libsamplerate))
+AC_ARG_WITH(samplerate, AS_HELP_STRING([--without-samplerate],
+                                       [Compile without libsamplerate]))
 COMPILE_SAMPLERATE="no"
 if test "x$with_samplerate" != "xno"
 then
@@ -343,8 +347,8 @@ m4_include(decoder_plugins/decoders.m4)
 
 dnl curl
 COMPILE_CURL="no"
-AC_ARG_WITH(curl, AS_HELP_STRING(--without-curl,
-	    [Compile without curl (Internet streams support)]))
+AC_ARG_WITH(curl, AS_HELP_STRING([--without-curl],
+                                 [Compile without Internet streams support]))
 if test "x$with_curl" != "xno"
 then
 	dnl FIXME: make a better curl test

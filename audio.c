@@ -558,7 +558,6 @@ void audio_play (const char *fname)
 		plist_delete (curr_plist, curr_playing);
 
 		started_playing_in_queue = 1;
-
 	}
 	else if (options_get_int("Shuffle")) {
 		plist_clear (&shuffled_plist);
@@ -973,10 +972,10 @@ void audio_initialize ()
 
 	out_buf_init (&out_buf, options_get_int("OutputBuffer") * 1024);
 
-        softmixer_init();
-        equalizer_init();
+	softmixer_init();
+	equalizer_init();
 
-        plist_init (&playlist);
+	plist_init (&playlist);
 	plist_init (&shuffled_plist);
 	plist_init (&queue);
 	player_init ();
