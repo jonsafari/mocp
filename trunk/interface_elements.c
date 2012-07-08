@@ -58,6 +58,7 @@
 #include "protocol.h"
 #include "interface.h"
 #include "utf8.h"
+#include "rcc.h"
 #include "lyrics.h"
 
 #ifndef PACKAGE_REVISION
@@ -1142,7 +1143,7 @@ static void side_menu_make_list_content (struct side_menu *m,
 				strcpy (title, strrchr (lists_strs_at (dirs, i), '/') + 1);
 				strcat (title, "/");
 				t_str = xstrdup (title);
-				t_str = iconv_rcc (t_str);
+				t_str = rcc_reencode (t_str);
 				snprintf(title, PATH_MAX, "%s", t_str);
 				free(t_str);
 			}

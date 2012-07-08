@@ -41,6 +41,7 @@
 #include "compat.h"
 #include "decoder.h"
 #include "lists.h"
+#include "rcc.h"
 
 struct parameters
 {
@@ -174,6 +175,7 @@ static void start_moc (const struct parameters *params, lists_t_strs *args)
 				signal (SIGCHLD, sig_chld);
 				server_loop (list_sock);
 				options_free ();
+				rcc_cleanup ();
 				exit (0);
 			case -1:
 				fatal ("fork() failed: %s", strerror(errno));
@@ -832,6 +834,7 @@ int main (int argc, char *argv[])
 
 	check_moc_dir ();
 
+	rcc_init ();
 	decoder_init (params.debug);
 	srand (time(NULL));
 
@@ -839,6 +842,8 @@ int main (int argc, char *argv[])
 		server_command (&params, args);
 	else
 		start_moc (&params, args);
+
+	rcc_cleanup ();
 
 	return 0;
 }
