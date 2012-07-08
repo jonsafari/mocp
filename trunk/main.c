@@ -176,8 +176,11 @@ static void start_moc (const struct parameters *params, lists_t_strs *args)
 				signal (SIGCHLD, sig_chld);
 				server_loop (list_sock);
 				options_free ();
+				decoder_cleanup ();
+				io_cleanup ();
 				files_cleanup ();
 				rcc_cleanup ();
+				compat_cleanup ();
 				exit (0);
 			case -1:
 				fatal ("fork() failed: %s", strerror(errno));
@@ -216,10 +219,6 @@ static void start_moc (const struct parameters *params, lists_t_strs *args)
 
 	if (params->only_server)
 		send_int (server_sock, CMD_DISCONNECT);
-
-	options_free ();
-	decoder_cleanup ();
-	compat_cleanup ();
 }
 
 static void show_version ()
@@ -838,6 +837,7 @@ int main (int argc, char *argv[])
 
 	check_moc_dir ();
 
+	io_init ();
 	rcc_init ();
 	decoder_init (params.debug);
 	srand (time(NULL));
@@ -847,8 +847,12 @@ int main (int argc, char *argv[])
 	else
 		start_moc (&params, args);
 
+	options_free ();
+	decoder_cleanup ();
+	io_cleanup ();
 	rcc_cleanup ();
 	files_cleanup ();
+	compat_cleanup ();
 
 	return 0;
 }
