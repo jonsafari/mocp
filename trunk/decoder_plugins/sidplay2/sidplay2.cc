@@ -330,6 +330,7 @@ extern "C" void sidplay2_close(void *void_data)
   if(data->sublengths!=NULL)
     delete data->sublengths;
 
+  decoder_error_clear (&data->error);
   free(data);
 }
 

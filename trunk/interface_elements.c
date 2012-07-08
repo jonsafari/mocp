@@ -1228,6 +1228,7 @@ static void side_menu_draw_frame (const struct side_menu *m)
 			tail = xstrtail (m->title, m->width - 7);
 			title = (char *)xmalloc (strlen(tail) + 4);
 			sprintf (title, "...%s", tail);
+			free (tail);
 		}
 		else
 			title = xstrdup (m->title);
@@ -2733,8 +2734,6 @@ static void info_win_destroy (struct info_win *w)
 
 	if (w->win)
 		delwin (w->win);
-	if (w->current_message)
-		queued_message_destroy (w->current_message);
 	if (w->in_entry)
 		entry_destroy (&w->entry);
 
@@ -3156,6 +3155,7 @@ static void info_win_display_msg (struct info_win *w)
 	if (!w->current_message && w->queued_message_head && !w->in_entry) {
 		w->current_message = w->queued_message_head;
 		w->queued_message_head = w->current_message->next;
+		w->current_message->next = NULL;
 		if (!w->queued_message_head)
 			w->queued_message_tail = NULL;
 		w->queued_message_total -= 1;
@@ -3221,7 +3221,11 @@ static void info_win_clear_msg (struct info_win *w)
 	w->queued_message_total = 0;
 	w->queued_message_errors = 0;
 	w->queued_message_tail = NULL;
-	w->current_message = NULL;
+
+	if (w->current_message) {
+		queued_message_destroy (w->current_message);
+		w->current_message = NULL;
+	}
 }
 
 /* Queue a new message for display. */

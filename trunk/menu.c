@@ -367,7 +367,7 @@ void menu_free (struct menu *menu)
 
 	assert (menu != NULL);
 
-	mi = menu->top;
+	mi = menu->items;
 	while (mi) {
 		struct menu_item *next = mi->next;
 

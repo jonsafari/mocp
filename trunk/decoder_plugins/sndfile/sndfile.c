@@ -69,6 +69,8 @@ static void sndfile_close (void *void_data)
 
 	if (data->sndfile)
 		sf_close (data->sndfile);
+
+	decoder_error_clear (&data->error);
 	free (data);
 }
 

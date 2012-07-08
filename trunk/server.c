@@ -1013,11 +1013,13 @@ static int req_send_queue (struct client *cli)
 						" the client.");
 				close (cli->socket);
 				del_client (cli);
+				free (queue);
 				return 0;
 			}
 		}
 
 	plist_free (queue);
+	free (queue);
 
 	if (!send_item (cli->socket, NULL)) {
 		logit ("Error while sending end of playlist mark, disconnecting"

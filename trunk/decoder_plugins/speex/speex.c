@@ -226,6 +226,7 @@ static struct spx_data *spx_open_internal (struct io_stream *stream)
 	data->stream = stream;
 
 	data->st = NULL;
+	data->header = NULL;
 	data->output = NULL;
 	data->comment_packet = NULL;
 	data->bitrate = -1;
@@ -300,6 +301,7 @@ static void spx_close (void *prv_data)
 	io_close (data->stream);
 	decoder_error_clear (&data->error);
 
+	free (data->header);
 	free (data);
 }
 
