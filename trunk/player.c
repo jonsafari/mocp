@@ -500,9 +500,8 @@ static void decode_loop (const struct decoder *f, void *decoder_data,
 			f->get_error (decoder_data, &err);
 			if (err.type != ERROR_OK) {
 				md5->okay = false;
-				if (err.type != ERROR_STREAM
-						|| options_get_int(
-							"ShowStreamErrors"))
+				if (err.type != ERROR_STREAM ||
+				    options_get_bool ("ShowStreamErrors"))
 					error ("%s", err.err);
 				decoder_error_clear (&err);
 			}
@@ -739,9 +738,8 @@ static void play_file (const char *file, const struct decoder *f,
 		precache.f->get_error (precache.decoder_data, &err);
 		if (err.type != ERROR_OK) {
 			md5.okay = false;
-			if (err.type != ERROR_STREAM
-					|| options_get_int(
-						"ShowStreamErrors"))
+			if (err.type != ERROR_STREAM ||
+			    options_get_bool ( "ShowStreamErrors"))
 				error ("%s", err.err);
 			decoder_error_clear (&err);
 		}

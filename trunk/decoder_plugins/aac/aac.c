@@ -305,7 +305,7 @@ static void *aac_open_internal (struct io_stream *stream, const char *fname)
 		return data;
 	}
 
-	logit ("sample rate %uHz, channels %d\n", (unsigned)data->sample_rate,
+	logit ("sample rate %uHz, channels %d", (unsigned)data->sample_rate,
 			(int)data->channels);
 	if (!data->sample_rate || !data->channels) {
 		decoder_error (&data->error, ERROR_FATAL, 0,
@@ -314,7 +314,7 @@ static void *aac_open_internal (struct io_stream *stream, const char *fname)
 	}
 
 	/* skip the header */
-	logit ("skipping header (%d bytes)\n", n);
+	logit ("skipping header (%d bytes)", n);
 	buffer_consume (data, n);
 
 	/*NeAACDecInitDRM(data->decoder, data->sample_rate, data->channels);*/
@@ -464,12 +464,14 @@ static int decode_one_frame (struct aac_data *data, void *buffer, int count)
 	buffer_consume (data, frame_info.bytesconsumed);
 
 	if (!sample_buf || frame_info.bytesconsumed <= 0) {
-		logit ("fatal error: %s", NeAACDecGetErrorMessage(frame_info.error));
+		decoder_error (&data->error, ERROR_FATAL, 0, "%s",
+		               NeAACDecGetErrorMessage (frame_info.error));
 		return -1;
 	}
 
 	if (frame_info.error != 0) {
-		logit ("frame error: %s", NeAACDecGetErrorMessage(frame_info.error));
+		decoder_error (&data->error, ERROR_STREAM, 0, "%s",
+		               NeAACDecGetErrorMessage (frame_info.error));
 		return -2;
 	}
 
@@ -478,7 +480,8 @@ static int decode_one_frame (struct aac_data *data, void *buffer, int count)
 
 	if (frame_info.channels != (unsigned char)data->channels ||
 	    frame_info.samplerate != (unsigned long)data->sample_rate) {
-		logit ("invalid channel or sample_rate count\n");
+		decoder_error (&data->error, ERROR_STREAM, 0, "%s",
+		               "Invalid channel or sample_rate count");
 		return -2;
 	}
 
