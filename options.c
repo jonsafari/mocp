@@ -636,11 +636,11 @@ void options_init ()
 	                 CHECK_SYMBOL(5), "SincBestQuality", "SincMediumQuality",
 	                                  "SincFastest", "ZeroOrderHold", "Linear");
 	add_list ("PreferredDecoders",
-	                 "aac(aac,*,ffmpeg):m4a(ffmpeg):"
+	                 "aac(aac,ffmpeg):m4a(ffmpeg):"
 	                 "mpc(musepack,*,ffmpeg):mpc8(musepack,*,ffmpeg):"
 	                 "wav(sndfile,*,modplug,ffmpeg):"
 	                 "wv(wavpack,*,ffmpeg):"
-	                 "audio/aac(aac,*):audio/aacp(aac,*):audio/m4a(ffmpeg):"
+	                 "audio/aac(aac):audio/aacp(aac):audio/m4a(ffmpeg):"
 	                 "audio/wav(sndfile,*,modplug):"
 	                 "ogg(vorbis,ffmpeg):oga(vorbis,ffmpeg):ogv(ffmpeg):"
 	                 "spx(speex):"
