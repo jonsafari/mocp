@@ -85,7 +85,15 @@ static size_t header_callback (void *data, size_t size, size_t nmemb,
 	memcpy (header, data, size * nmemb - 2);
 	header[header_size-1] = 0;
 
-	if (!strncasecmp(header, "Content-Type:", sizeof("Content-Type:")-1)) {
+	if (!strncasecmp(header, "Location:", sizeof("Location:")-1)) {
+		s->curl.got_locn = 1;
+	}
+	else if (!strncasecmp(header, "Content-Type:", sizeof("Content-Type:")-1)) {
+		/* If we got redirected then use the last MIME type. */
+		if (s->curl.got_locn && s->curl.mime_type) {
+			free (s->curl.mime_type);
+			s->curl.mime_type = NULL;
+		}
 		if (s->curl.mime_type)
 			logit ("Another Content-Type header!");
 		else {
@@ -208,6 +216,7 @@ void io_curl_open (struct io_stream *s, const char *url)
 	s->curl.buf = NULL;
 	s->curl.buf_fill = 0;
 	s->curl.need_perform_loop = 1;
+	s->curl.got_locn = 0;
 
 	s->curl.wake_up_pipe[0] = -1;
 	s->curl.wake_up_pipe[1] = -1;
@@ -244,7 +253,6 @@ void io_curl_open (struct io_stream *s, const char *url)
 	curl_easy_setopt (s->curl.handle, CURLOPT_WRITEHEADER, s);
 	curl_easy_setopt (s->curl.handle, CURLOPT_USERAGENT,
 			PACKAGE_NAME"/"PACKAGE_VERSION);
-	curl_easy_setopt (s->curl.handle, CURLOPT_FOLLOWLOCATION, 1);
 	curl_easy_setopt (s->curl.handle, CURLOPT_URL, s->curl.url);
 	curl_easy_setopt (s->curl.handle, CURLOPT_FOLLOWLOCATION, 1);
 	curl_easy_setopt (s->curl.handle, CURLOPT_FAILONERROR, 1);
