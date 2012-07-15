@@ -332,11 +332,11 @@ ASCIILines		= no
 # The default setting reflects the historical situation modified by
 # the experience of users.
 #
-#PreferredDecoders	= aac(aac,*,ffmpeg):m4a(ffmpeg)
+#PreferredDecoders	= aac(aac,ffmpeg):m4a(ffmpeg)
 #PreferredDecoders	+= mpc(musepack,*,ffmpeg):mpc8(musepack,*,ffmpeg)
 #PreferredDecoders	+= wav(sndfile,*,modplug,ffmpeg)
 #PreferredDecoders	+= wv(wavpack,*,ffmpeg)
-#PreferredDecoders	+= audio/aac(aac,*):audio/aacp(aac,*):audio/m4a(ffmpeg)
+#PreferredDecoders	+= audio/aac(aac):audio/aacp(aac):audio/m4a(ffmpeg)
 #PreferredDecoders	+= audio/wav(sndfile,*,modplug)
 
 # The following PreferredDecoders attempt to handle the ambiguity surrounding
