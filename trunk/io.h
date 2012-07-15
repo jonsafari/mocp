@@ -42,6 +42,7 @@ struct io_stream_curl
 	char *buf;		/* buffer for data the curl gives us */
 	long buf_fill;
 	int need_perform_loop;	/* do we need the perform() loop? */
+	int got_locn;	/* received a location header */
 	char *mime_type;	/* mime type of the stream */
 	int wake_up_pipe[2];	/* pipes used to wake up the curl read
 					   loop that does select() */
