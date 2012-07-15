@@ -91,8 +91,8 @@ void files_cleanup ()
 /* Is the string a URL? */
 inline int is_url (const char *str)
 {
-	return !strncmp(str, "http://", sizeof("http://")-1)
-		|| !strncmp(str, "ftp://", sizeof("ftp://")-1);
+	return !strncasecmp (str, "http://", sizeof ("http://") - 1)
+		|| !strncasecmp (str, "ftp://", sizeof ("ftp://") - 1);
 }
 
 /* Return 1 if the file is a directory, 0 if not, -1 on error. */

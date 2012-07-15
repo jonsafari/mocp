@@ -38,6 +38,7 @@
 #include "log.h"
 #include "io.h"
 #include "options.h"
+#include "files.h"
 #ifdef HAVE_CURL
 # include "io_curl.h"
 #endif
@@ -489,8 +490,7 @@ struct io_stream *io_open (const char *file, const int buffered)
 
 #ifdef HAVE_CURL
 	s->curl.mime_type = NULL;
-	if (!strncasecmp(file, "http://", sizeof("http://")-1)
-			|| !strncasecmp(file, "ftp://", sizeof("ftp://")-1))
+	if (is_url (file))
 		io_curl_open (s, file);
 	else
 #endif
