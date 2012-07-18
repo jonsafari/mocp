@@ -293,10 +293,10 @@ static int alsa_init (struct output_driver_caps *caps)
 
 	if (mixer_handle) {
 		mixer_elem1 = alsa_init_mixer_channel (
-				options_get_str("AlsaMixer"),
+				options_get_str ("ALSAMixer1"),
 				&mixer1_min, &mixer1_max);
 		mixer_elem2 = alsa_init_mixer_channel (
-				options_get_str("AlsaMixer2"),
+				options_get_str ("ALSAMixer2"),
 				&mixer2_min, &mixer2_max);
 	}
 
@@ -716,8 +716,8 @@ static void alsa_toggle_mixer_channel ()
 static char *alsa_get_mixer_channel_name ()
 {
 	if (mixer_elem_curr == mixer_elem1)
-		return xstrdup (options_get_str("AlsaMixer"));
-	return xstrdup (options_get_str("AlsaMixer2"));
+		return xstrdup (options_get_str ("ALSAMixer1"));
+	return xstrdup (options_get_str ("ALSAMixer2"));
 }
 
 void alsa_funcs (struct hw_funcs *funcs)
