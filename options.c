@@ -567,7 +567,7 @@ void options_init ()
 	add_int  ("OutputBuffer", 512, CHECK_RANGE(1), 128, INT_MAX);
 	add_str  ("OSSDevice", "/dev/dsp", CHECK_NONE);
 	add_str  ("OSSMixerDevice", "/dev/mixer", CHECK_NONE);
-	add_str  ("OSSMixerChannel", "pcm", CHECK_NONE);
+	add_str  ("OSSMixerChannel1", "pcm", CHECK_NONE);
 	add_str  ("OSSMixerChannel2", "master", CHECK_NONE);
 #ifdef OPENBSD
 	add_list ("SoundDriver", "SNDIO:JACK:OSS",
@@ -577,9 +577,9 @@ void options_init ()
 	                  CHECK_DISCRETE(5), "SNDIO", "Jack", "ALSA", "OSS", "null");
 #endif
 	add_bool ("ShowHiddenFiles", true);
-	add_str  ("AlsaDevice", "default", CHECK_NONE);
-	add_str  ("AlsaMixer", "PCM", CHECK_NONE);
-	add_str  ("AlsaMixer2", "Master", CHECK_NONE);
+	add_str  ("ALSADevice", "default", CHECK_NONE);
+	add_str  ("ALSAMixer1", "PCM", CHECK_NONE);
+	add_str  ("ALSAMixer2", "Master", CHECK_NONE);
 	add_bool ("HideFileExtension", false);
 	add_bool ("ShowFormat", true);
 	add_symb ("ShowTime", "IfAvailable",
@@ -988,6 +988,7 @@ static bool set_option (const char *name, const char *value_in, bool append)
 {
 	int i;
 	char *value, *value_s;
+	const char *name_s;
 
 	if (is_deprecated_option (name)) {
 		fprintf (stderr, "\n\tOption '%s' was ignored;"
@@ -996,9 +997,27 @@ static bool set_option (const char *name, const char *value_in, bool append)
 		return true;
 	}
 
-	i = find_option (name, OPTION_ANY);
+	name_s = name;
+
+	/* Handle a change of option name for OSSMixerChannel. */
+	if (!strcasecmp (name, "OSSMixerChannel"))
+		name_s = "OSSMixerChannel1";
+
+	/* Handle a change of option name for ALSAMixer. */
+	if (!strcasecmp (name, "ALSAMixer"))
+		name_s = "ALSAMixer1";
+
+	/* Warn if configuration file needs updating. */
+	if (name != name_s) {
+		fprintf (stderr, "\n\tThe name of option '%s' has changed to '%s';"
+		                 "\n\tplease update your configuration file accordingly.\n\n",
+		                 name, name_s);
+		sleep (5);
+	}
+
+	i = find_option (name_s, OPTION_ANY);
 	if (i == -1) {
-		fprintf (stderr, "Wrong option name: '%s'.", name);
+		fprintf (stderr, "Wrong option name: '%s'.", name_s);
 		return false;
 	}
 
@@ -1008,20 +1027,20 @@ static bool set_option (const char *name, const char *value_in, bool append)
 	if (append && options[i].type != OPTION_LIST) {
 		fprintf (stderr,
 		         "Only list valued options can be appended to ('%s').",
-		         name);
+		         name_s);
 		return false;
 	}
 
 	if (!append && options[i].set_in_config) {
 		fprintf (stderr, "Tried to set an option that has been already "
-		                 "set in the config file ('%s').", name);
+		                 "set in the config file ('%s').", name_s);
 		return false;
 	}
 
 	options[i].set_in_config = 1;
 
 	/* Substitute environmental variables. */
-	value_s = substitute_variable (name, value_in);
+	value_s = substitute_variable (name_s, value_in);
 	value = NULL;
 
 	/* Handle a change of option type for QueueNextSongReturn. */
@@ -1051,13 +1070,13 @@ static bool set_option (const char *name, const char *value_in, bool append)
 		                 "\n\tplease read the comments for this option in"
 		                 "\n\tthe supplied config.example file and update"
 		                 "\n\tyour own configuration file accordingly.\n\n",
-		                 name);
+		                 name_s);
 		sleep (5);
 	}
 	else
 		value = value_s;
 
-	if (!options_set_pair (name, value, append))
+	if (!options_set_pair (name_s, value, append))
 		return false;
 
 	free (value);
