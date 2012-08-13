@@ -291,6 +291,7 @@ AC_CHECK_FUNC([sinh], ,
 
 dnl optional functions
 AC_CHECK_FUNCS([strcasestr strerror_r syslog])
+AX_CHECK_UNAME_SYSCALL
 
 dnl MIME magic
 AC_ARG_WITH(magic, AS_HELP_STRING([--without-magic],
