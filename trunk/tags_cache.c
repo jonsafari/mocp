@@ -403,7 +403,7 @@ static void tags_cache_gc (struct tags_cache *c)
 	DBT serialized_cache_rec;
 	int ret;
 	char *last_referenced = NULL;
-	time_t last_referenced_atime = time (NULL);
+	time_t last_referenced_atime = time (NULL) + 1;
 	int nitems = 0;
 
 	c->db->cursor (c->db, NULL, &cur, 0);
@@ -447,7 +447,7 @@ static void tags_cache_gc (struct tags_cache *c)
 	debug ("Elements in cache: %d (limit %d)", nitems, c->max_items);
 
 	if (last_referenced) {
-		if (nitems > c->max_items)
+		if (nitems >= c->max_items)
 			tags_cache_remove_rec (c, last_referenced);
 		free (last_referenced);
 	}
