@@ -1032,7 +1032,7 @@ static char *make_menu_title (const char *plist_title,
 	char *title = xstrdup (plist_title);
 
 	if (!made_from_tags) {
-		if (!full_path && !is_url(title)) {
+		if (!full_path && !is_url (title)) {
 
 			/* Use only the file name instead of the full path. */
 			char *slash = strrchr (title, '/');
@@ -1045,6 +1045,7 @@ static char *make_menu_title (const char *plist_title,
 			}
 		}
 	}
+
 	return title;
 }
 

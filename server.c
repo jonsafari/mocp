@@ -194,7 +194,7 @@ static int locking_client ()
 static int client_lock (struct client *cli)
 {
 	if (cli->lock) {
-		logit ("Client wants deadlock.");
+		logit ("Client wants deadlock");
 		return 0;
 	}
 
@@ -215,7 +215,7 @@ static int is_locking (const struct client *cli)
 static int client_unlock (struct client *cli)
 {
 	if (!cli->lock) {
-		logit ("Client wants to unlock when there is no lock.");
+		logit ("Client wants to unlock when there is no lock");
 		return 0;
 	}
 
@@ -489,7 +489,7 @@ static void on_song_change ()
 	tags_free (curr_tags);
 
 	cmd = lists_strs_fmt (arg_list, " %s");
-	debug ("Running command:%s", cmd);
+	debug ("Running command: %s", cmd);
 	free (cmd);
 
 	switch (fork ()) {
@@ -582,8 +582,7 @@ static void add_event_all (const int event, const void *data)
 	if (added)
 		wake_up_server ();
 	else
-		debug ("No events have been added because there are no "
-				"clients.");
+		debug ("No events have been added because there are no clients");
 }
 
 /* Send events from the queue. Return 0 on error. */
@@ -635,7 +634,7 @@ static void server_shutdown ()
 /* Send EV_BUSY message and close the connection. */
 static void busy (int sock)
 {
-	logit ("Closing connection due to maximum number of clients reached.");
+	logit ("Closing connection due to maximum number of clients reached");
 	send_int (sock, EV_BUSY);
 	close (sock);
 }
@@ -775,8 +774,7 @@ static int send_option (struct client *cli)
 
 	/* We can send only a few options, others make no sense here. */
 	if (!valid_sync_option(name)) {
-		logit ("Client wantetd to get not supported option '%s'",
-				name);
+		logit ("Client wanted to get invalid option '%s'", name);
 		free (name);
 		return 0;
 	}
@@ -876,7 +874,7 @@ static int get_client_plist (struct client *cli)
 {
 	int first;
 
-	debug ("Client with fd %d requests the playlist.", cli->socket);
+	debug ("Client with fd %d requests the playlist", cli->socket);
 
 	/* Find the first connected client, and ask it to send the playlist.
 	 * Here, send 1 if there is a client with the playlist, or 0 if there
@@ -886,7 +884,7 @@ static int get_client_plist (struct client *cli)
 
 	first = find_sending_plist ();
 	if (first == -1) {
-		debug ("No clients with the playlist.");
+		debug ("No clients with the playlist");
 		cli->requests_plist = 0;
 		if (!send_data_int(cli, 0))
 			return 0;
@@ -925,14 +923,13 @@ static int req_send_plist (struct client *cli)
 	debug ("Client with fd %d wants to send its playlists", cli->socket);
 
 	if (requesting == -1) {
-		logit ("No clients are requesting the playlist.");
+		logit ("No clients are requesting the playlist");
 		send_fd = -1;
 	}
 	else {
 		send_fd = clients[requesting].socket;
 		if (!send_int(send_fd, EV_DATA)) {
-			logit ("Error while sending response, disconnecting"
-					" the client");
+			logit ("Error while sending response; disconnecting the client");
 			close (send_fd);
 			del_client (&clients[requesting]);
 			send_fd = -1;
@@ -945,7 +942,7 @@ static int req_send_plist (struct client *cli)
 	}
 
 	if (send_fd != -1 && !send_int(send_fd, serial)) {
-		error ("Error while sending serial, disconnecting the client");
+		error ("Error while sending serial; disconnecting the client");
 		close (send_fd);
 		del_client (&clients[requesting]);
 		send_fd = -1;
@@ -955,8 +952,7 @@ static int req_send_plist (struct client *cli)
 	 * because there is no way to say that we don't need it. */
 	while ((item = recv_item(cli->socket)) && item->file[0]) {
 		if (send_fd != -1 && !send_item(send_fd, item)) {
-			logit ("Error while sending item, disconnecting the"
-					" client");
+			logit ("Error while sending item; disconnecting the client");
 			close (send_fd);
 			del_client (&clients[requesting]);
 			send_fd = -1;
@@ -974,8 +970,8 @@ static int req_send_plist (struct client *cli)
 		logit ("Error while receiving item");
 
 	if (send_fd != -1 && !send_item (send_fd, NULL)) {
-		logit ("Error while sending end of playlist mark, disconnecting"
-				" the client.");
+		logit ("Error while sending end of playlist mark; "
+		       "disconnecting the client");
 		close (send_fd);
 		del_client (&clients[requesting]);
 		return 0;
@@ -994,11 +990,10 @@ static int req_send_queue (struct client *cli)
 	int i;
 	struct plist *queue;
 
-	logit ("Client with fd %d wants queue ... sending it", cli->socket);
+	logit ("Client with fd %d wants queue... sending it", cli->socket);
 
 	if (!send_int(cli->socket, EV_DATA)) {
-		logit ("Error while sending response, disconnecting"
-				" the client.");
+		logit ("Error while sending response; disconnecting the client");
 		close (cli->socket);
 		del_client (cli);
 		return 0;
@@ -1009,8 +1004,7 @@ static int req_send_queue (struct client *cli)
 	for (i = 0; i < queue->num; i++)
 		if (!plist_deleted(queue, i)) {
 			if(!send_item(cli->socket, &queue->items[i])){
-				logit ("Error sending queue, disconnecting"
-						" the client.");
+				logit ("Error sending queue; disconnecting the client");
 				close (cli->socket);
 				del_client (cli);
 				free (queue);
@@ -1022,8 +1016,8 @@ static int req_send_queue (struct client *cli)
 	free (queue);
 
 	if (!send_item (cli->socket, NULL)) {
-		logit ("Error while sending end of playlist mark, disconnecting"
-				" the client.");
+		logit ("Error while sending end of playlist mark; "
+		       "disconnecting the client");
 		close (cli->socket);
 		del_client (cli);
 		return 0;
@@ -1130,8 +1124,7 @@ static int gen_serial (const struct client *cli)
 		seed = (seed + 1) & 0xFF;
 	} while (serial == audio_plist_get_serial());
 
-	debug ("Generated serial %d for client with fd %d", serial,
-			cli->socket);
+	debug ("Generated serial %d for client with fd %d", serial, cli->socket);
 
 	return serial;
 }
@@ -1569,12 +1562,12 @@ static void handle_command (const int client_id)
 				err = 1;
 			break;
 		default:
-			logit ("Bad command (0x%x) from the client.", cmd);
+			logit ("Bad command (0x%x) from the client", cmd);
 			err = 1;
 	}
 
 	if (err) {
-		logit ("Closing client connection due to error.");
+		logit ("Closing client connection due to error");
 		close (cli->socket);
 		del_client (cli);
 	}
