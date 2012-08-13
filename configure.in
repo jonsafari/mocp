@@ -146,12 +146,18 @@ then
 	AC_MSG_WARN([No pkg-config utility found or it's too old, I will have trouble finding installed libraries.])
 fi
 
-AX_PATH_BDB([4], [
-	       LIBS="$BDB_LIBS $EXTRA_LIBS"
-	       LDFLAGS="$BDB_LDFLAGS $LDFLAGS"
-	       CPPFLAGS="$CPPFLAGS $BDB_CPPFLAGS"
-	       ],
-	       AC_MSG_ERROR([BerkeleyDB (libdb) not found.]))
+AC_ARG_ENABLE(cache, AS_HELP_STRING([--enable-cache],
+                                    [Enable tags caching code]))
+
+if test "x$enable_cache" != "xno"
+then
+	AX_PATH_BDB([4], [
+		       LIBS="$BDB_LIBS $EXTRA_LIBS"
+		       LDFLAGS="$BDB_LDFLAGS $LDFLAGS"
+		       CPPFLAGS="$CPPFLAGS $BDB_CPPFLAGS"
+		       ],
+		       AC_MSG_ERROR([BerkeleyDB (libdb) not found.]))
+fi
 
 AC_ARG_WITH(oss, AS_HELP_STRING([--without-oss],
                                 [Compile without OSS support]))

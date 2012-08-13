@@ -63,7 +63,7 @@ What software is required to compile it?
  - ncurses (probably already installed in your system)
  - C and C++ compilers (MOC is written in C, but libtool and some decoder
    plugins require a C++ compiler)
- - libdb version 4 or later
+ - libdb version 4 or later (unless configured with --disable-cache)
 
 To support audio formats you need:
  - Ogg Vorbis - libvorbis (http://www.xiph.org/ogg/vorbis/download/), or
@@ -140,6 +140,14 @@ unexpectedly.
 
 In addition to the standard configure options documented in the INSTALL
 file, there are some MOC-specific options:
+
+	--enable-cache=[yes|no]
+
+	  Specifying 'no' will disable the tags cache support.  If your
+	  intent is to remove the Berkeley DB dependancy (rather than
+	  simply removing the on-disk cache) then you should also either
+	  build MOC without RCC support or use a librcc built with BDB
+	  disabled.
 
 	--enable-debug=[yes|no|gdb]
 

@@ -2,7 +2,9 @@
 #define TAGS_CACHE_H
 
 #include <pthread.h>
+#ifdef HAVE_DB_H
 #include <db.h>
+#endif
 
 #include "playlist.h"
 
@@ -21,9 +23,11 @@ struct request_queue
 struct tags_cache
 {
 	/* BerkeleyDB's stuff for storing cache. */
+#ifdef HAVE_DB_H
 	DB_ENV *db_env;
 	DB *db;
 	u_int32_t locker;
+#endif
 
 	int max_items;		/* maximum number of items in the cache. */
 	struct request_queue queues[CLIENTS_MAX]; /* requests queues for each
