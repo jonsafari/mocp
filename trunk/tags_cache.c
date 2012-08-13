@@ -46,6 +46,9 @@
 #include "log.h"
 #include "audio.h"
 
+/* The name of the tags database in the cache directory. */
+#define TAGS_DB "tags.db"
+
 /* The name of the version tag file in the cache directory. */
 #define MOC_VERSION_TAG "moc_version_tag"
 
@@ -58,6 +61,14 @@
  * If you modify the DB structure, increase this number.
  */
 #define CACHE_DB_FORMAT_VERSION	1
+
+/* Element of a requests queue. */
+struct request_queue_node
+{
+	struct request_queue_node *next;
+	char *file; /* file that this request is for (malloc()ed) */
+	int tags_sel; /* which tags to read (TAGS_*) */
+};
 
 struct cache_record
 {
@@ -92,7 +103,7 @@ static void request_queue_clear (struct request_queue *q)
 
 /* Remove items from the queue from the beginning to the specified file. */
 static void request_queue_clear_up_to (struct request_queue *q,
-		const char *file)
+                                              const char *file)
 {
 	int stop = 0;
 
@@ -103,7 +114,7 @@ static void request_queue_clear_up_to (struct request_queue *q,
 
 		q->head = q->head->next;
 
-		if (!strcmp(o->file, file))
+		if (!strcmp (o->file, file))
 			stop = 1;
 
 		free (o->file);
@@ -115,7 +126,7 @@ static void request_queue_clear_up_to (struct request_queue *q,
 }
 
 static void request_queue_add (struct request_queue *q, const char *file,
-		const int tags_sel)
+                                                            int tags_sel)
 {
 	assert (q != NULL);
 
@@ -171,7 +182,7 @@ static char *request_queue_pop (struct request_queue *q, int *tags_sel)
 
 static size_t strlen_null (const char *s)
 {
-	return s ? strlen(s) : 0;
+	return s ? strlen (s) : 0;
 }
 
 static char *cache_record_serialize (const struct cache_record *rec, int *len)
@@ -235,8 +246,7 @@ static char *cache_record_serialize (const struct cache_record *rec, int *len)
 }
 
 static int cache_record_deserialize (struct cache_record *rec,
-		const char *serialized, const size_t size,
-		const int skip_tags)
+           const char *serialized, size_t size, int skip_tags)
 {
 	const char *p = serialized;
 	size_t bytes_left = size;
@@ -299,7 +309,8 @@ static int cache_record_deserialize (struct cache_record *rec,
 	return 1;
 
 err:
-	logit ("Cache record deserialization error at %ldB", (long) (p - serialized));
+	logit ("Cache record deserialization error at %ldB",
+	       (long) (p - serialized));
 	tags_free (rec->tags);
 	rec->tags = NULL;
 	return 0;
@@ -323,7 +334,7 @@ static void tags_cache_remove_rec (struct tags_cache *c, const char *fname)
 	ret = c->db->del (c->db, NULL, &key, 0);
 	if (ret)
 		logit ("Can't remove item for %s from the cache: %s", fname,
-				db_strerror(ret));
+				db_strerror (ret));
 }
 
 /* Remove the one element of the cache based on it's access time. */
@@ -337,10 +348,6 @@ static void tags_cache_gc (struct tags_cache *c)
 	time_t last_referenced_atime = time (NULL);
 	int nitems = 0;
 
-	assert (c != NULL);
-	if (!c->db)
-		return;
-
 	c->db->cursor (c->db, NULL, &cur, 0);
 
 	memset (&key, 0, sizeof(key));
@@ -349,11 +356,11 @@ static void tags_cache_gc (struct tags_cache *c)
 	key.flags = DB_DBT_MALLOC;
 	serialized_cache_rec.flags = DB_DBT_MALLOC;
 
-	while ((ret = cur->c_get(cur, &key, &serialized_cache_rec, DB_NEXT))
+	while ((ret = cur->c_get (cur, &key, &serialized_cache_rec, DB_NEXT))
 			== 0) {
 		struct cache_record rec;
 
-		if (cache_record_deserialize(&rec, serialized_cache_rec.data,
+		if (cache_record_deserialize (&rec, serialized_cache_rec.data,
 					serialized_cache_rec.size, 1)
 				&& rec.atime < last_referenced_atime) {
 			last_referenced_atime = rec.atime;
@@ -375,7 +382,7 @@ static void tags_cache_gc (struct tags_cache *c)
 
 	if (ret != DB_NOTFOUND)
 		logit ("Searching for element to remove failed (cursor): %s",
-				db_strerror(ret));
+				db_strerror (ret));
 
 	cur->c_close (cur);
 
@@ -392,7 +399,7 @@ static void tags_cache_gc (struct tags_cache *c)
 
 /* Add this tags object for the file to the cache. */
 static void tags_cache_add (struct tags_cache *c, const char *file,
-		struct file_tags *tags)
+                                            struct file_tags *tags)
 {
 	char *serialized_cache_rec;
 	int serial_len;
@@ -404,6 +411,8 @@ static void tags_cache_add (struct tags_cache *c, const char *file,
 	assert (c != NULL);
 	assert (tags != NULL);
 	assert (file != NULL);
+
+	debug ("Adding/updating cache object");
 
 	rec.mod_time = get_mtime (file);
 	rec.atime = time (NULL);
@@ -417,17 +426,16 @@ static void tags_cache_add (struct tags_cache *c, const char *file,
 	memset (&data, 0, sizeof(data));
 
 	key.data = (void *)file;
-	key.size = strlen(file);
+	key.size = strlen (file);
 
 	data.data = serialized_cache_rec;
 	data.size = serial_len;
 
-	tags_cache_gc  (c);
+	tags_cache_gc (c);
 
 	ret = c->db->put (c->db, NULL, &key, &data, 0);
-	if (ret) {
-		logit ("DB put error: %s", db_strerror(ret));
-	}
+	if (ret)
+		logit ("DB put error: %s", db_strerror (ret));
 
 	free (serialized_cache_rec);
 }
@@ -436,7 +444,7 @@ static void tags_cache_add (struct tags_cache *c, const char *file,
  * If client_id != -1, the server is notified using tags_response().
  * If client_id == -1, copy of file_tags is returned. */
 static struct file_tags *tags_cache_read_add (struct tags_cache *c,
-		const int client_id, const char *file, int tags_sel)
+                     const char *file, int tags_sel, int client_id)
 {
 	struct file_tags *tags = NULL;
 	DBT key;
@@ -445,7 +453,7 @@ static struct file_tags *tags_cache_read_add (struct tags_cache *c,
 	int got_lock = 0;
 	int ret;
 
-	assert (c != NULL);
+	assert (c->db_env != NULL);
 	assert (c->db != NULL);
 	assert (file != NULL);
 
@@ -455,19 +463,19 @@ static struct file_tags *tags_cache_read_add (struct tags_cache *c,
 	memset (&serialized_cache_rec, 0, sizeof(serialized_cache_rec));
 
 	key.data = (void *)file;
-	key.size = strlen(file);
+	key.size = strlen (file);
 	serialized_cache_rec.flags = DB_DBT_MALLOC;
 
 	ret = c->db_env->lock_get (c->db_env, c->locker, 0,
 			&key, DB_LOCK_WRITE, &lock);
 	if (ret) {
-		logit ("Can't get DB lock: %s", db_strerror(ret));
+		logit ("Can't get DB lock: %s", db_strerror (ret));
 	}
 	else {
 		got_lock = 1;
 		ret = c->db->get (c->db, NULL, &key, &serialized_cache_rec, 0);
 		if (ret && ret != DB_NOTFOUND)
-			logit ("Cache DB get error: %s", db_strerror(ret));
+			logit ("Cache DB get error: %s", db_strerror (ret));
 	}
 
 	/* If this entry is already present in the cache, we have 3 options:
@@ -481,23 +489,18 @@ static struct file_tags *tags_cache_read_add (struct tags_cache *c,
 			time_t curr_mtime = get_mtime (file);
 
 			if (rec.mod_time != curr_mtime) {
-
-				/* outdated tags - remove them and reread */
-				tags_free (rec.tags);
-
 				debug ("Tags in the cache are outdated");
+				tags_free (rec.tags);  /* remove them and reread tags */
 			}
 			else if ((rec.tags->filled & tags_sel) == tags_sel
 					&& client_id == -1) {
 				debug ("Tags are in the cache.");
-				tags = rec.tags;
-
+				tags = rec.tags;  /* use them */
 				goto end;
 			}
 			else {
-				tags = rec.tags; /* read tags in addition to already
-						      present tags */
-				debug ("Tags in the cache are not what we want.");
+				debug ("Tags in the cache are not what we want");
+				tags = rec.tags;  /* read additional tags */
 			}
 		}
 	}
@@ -519,8 +522,6 @@ static struct file_tags *tags_cache_read_add (struct tags_cache *c,
 	}
 
 	tags = read_file_tags (file, tags, tags_sel);
-
-	debug ("Adding/updating cache object");
 	tags_cache_add (c, file, tags);
 
 	if (client_id != -1) {
@@ -536,7 +537,7 @@ end:
 	if (got_lock) {
 		ret = c->db_env->lock_put (c->db_env, &lock);
 		if (ret)
-			logit ("Can't release DB lock: %s", db_strerror(ret));
+			logit ("Can't release DB lock: %s", db_strerror (ret));
 	}
 
 	if (serialized_cache_rec.data)
@@ -547,11 +548,15 @@ end:
 
 static void *reader_thread (void *cache_ptr)
 {
-	struct tags_cache *c = (struct tags_cache *)cache_ptr;
-	int curr_queue = 0; /* index of the queue from where we will get the
-			       next request */
+	struct tags_cache *c;
+	int curr_queue = 0; /* index of the queue from where
+	                       we will get the next request */
 
 	logit ("Tags reader thread started");
+
+	assert (cache_ptr != NULL);
+
+	c = (struct tags_cache *)cache_ptr;
 
 	LOCK (c->mutex);
 
@@ -560,16 +565,15 @@ static void *reader_thread (void *cache_ptr)
 		char *request_file;
 		int tags_sel = 0;
 
-		/* find the queue with a request waiting, begin searching at
+		/* Find the queue with a request waiting.  Begin searching at
 		 * curr_queue: we want to get one request from each queue,
-		 * and then move to the next non-empty queue */
+		 * and then move to the next non-empty queue. */
 		i = curr_queue;
-		while (i < CLIENTS_MAX && request_queue_empty(&c->queues[i]))
+		while (i < CLIENTS_MAX && request_queue_empty (&c->queues[i]))
 			i++;
 		if (i == CLIENTS_MAX) {
 			i = 0;
-			while (i < curr_queue
-					&& request_queue_empty(&c->queues[i]))
+			while (i < curr_queue && request_queue_empty (&c->queues[i]))
 				i++;
 
 			if (i == curr_queue) {
@@ -580,16 +584,14 @@ static void *reader_thread (void *cache_ptr)
 		}
 		curr_queue = i;
 
-		request_file = request_queue_pop (&c->queues[curr_queue],
-				&tags_sel);
+		request_file = request_queue_pop (&c->queues[curr_queue], &tags_sel);
 		UNLOCK (c->mutex);
 
-		tags_cache_read_add (c, curr_queue, request_file, tags_sel);
+		tags_cache_read_add (c, request_file, tags_sel, curr_queue);
 		free (request_file);
 
 		LOCK (c->mutex);
-		if (++curr_queue == CLIENTS_MAX)
-			curr_queue = 0;
+		curr_queue = (curr_queue + 1) % CLIENTS_MAX;
 	}
 
 	UNLOCK (c->mutex);
@@ -599,7 +601,7 @@ static void *reader_thread (void *cache_ptr)
 	return NULL;
 }
 
-void tags_cache_init (struct tags_cache *c, const size_t max_size)
+void tags_cache_init (struct tags_cache *c, size_t max_size)
 {
 	int i, rc;
 
@@ -664,7 +666,7 @@ void tags_cache_destroy (struct tags_cache *c)
 }
 
 void tags_cache_add_request (struct tags_cache *c, const char *file,
-		const int tags_sel, const int client_id)
+                                        int tags_sel, int client_id)
 {
 	DBT serialized_cache_rec;
 	DBT key;
@@ -673,6 +675,8 @@ void tags_cache_add_request (struct tags_cache *c, const char *file,
 	DB_LOCK lock;
 
 	assert (c != NULL);
+	assert (c->db_env != NULL);
+	assert (c->db != NULL);
 	assert (file != NULL);
 	assert (client_id >= 0 && client_id < CLIENTS_MAX);
 
@@ -680,26 +684,26 @@ void tags_cache_add_request (struct tags_cache *c, const char *file,
 
 	memset (&key, 0, sizeof(key));
 	key.data = (void *)file;
-	key.size = strlen(file);
+	key.size = strlen (file);
 
 	memset (&serialized_cache_rec, 0, sizeof(serialized_cache_rec));
 	serialized_cache_rec.flags = DB_DBT_MALLOC;
 
 	db_ret = c->db_env->lock_get (c->db_env, c->locker, 0,
-			&key, DB_LOCK_WRITE, &lock);
+	                              &key, DB_LOCK_WRITE, &lock);
 	if (db_ret) {
 		got_lock = 0;
-		logit ("Can't get DB lock: %s", db_strerror(db_ret));
+		logit ("Can't get DB lock: %s", db_strerror (db_ret));
 	}
 	else {
 		got_lock = 1;
 	}
 
 	if (c->db) {
-		db_ret = c->db->get(c->db, NULL, &key, &serialized_cache_rec, 0);
+		db_ret = c->db->get (c->db, NULL, &key, &serialized_cache_rec, 0);
 
 		if (db_ret && db_ret != DB_NOTFOUND)
-			error ("Cache DB search error: %s", db_strerror(db_ret));
+			error ("Cache DB search error: %s", db_strerror (db_ret));
 	}
 	else
 		db_ret = DB_NOTFOUND;
@@ -707,9 +711,9 @@ void tags_cache_add_request (struct tags_cache *c, const char *file,
 	if (db_ret == 0) {
 		struct cache_record rec;
 
-		if (cache_record_deserialize(&rec, serialized_cache_rec.data,
+		if (cache_record_deserialize (&rec, serialized_cache_rec.data,
 					serialized_cache_rec.size, 0)) {
-			if (rec.mod_time == get_mtime(file)
+			if (rec.mod_time == get_mtime (file)
 					&& (rec.tags->filled & tags_sel) == tags_sel) {
 				tags_response (client_id, file, rec.tags);
 				tags_free (rec.tags);
@@ -731,14 +735,14 @@ end:
 	if (got_lock) {
 		db_ret = c->db_env->lock_put (c->db_env, &lock);
 		if (db_ret)
-			logit ("Can't release DB lock: %s", db_strerror(db_ret));
+			logit ("Can't release DB lock: %s", db_strerror (db_ret));
 	}
 
 	if (serialized_cache_rec.data)
 		free (serialized_cache_rec.data);
 }
 
-void tags_cache_clear_queue (struct tags_cache *c, const int client_id)
+void tags_cache_clear_queue (struct tags_cache *c, int client_id)
 {
 	assert (c != NULL);
 	assert (client_id >= 0 && client_id < CLIENTS_MAX);
@@ -752,20 +756,21 @@ void tags_cache_clear_queue (struct tags_cache *c, const int client_id)
 /* Remove all pending requests from the queue for the given client up to
  * the request associated with the given file. */
 void tags_cache_clear_up_to (struct tags_cache *c, const char *file,
-		const int client_id)
+                                                      int client_id)
 {
 	assert (c != NULL);
 	assert (client_id >= 0 && client_id < CLIENTS_MAX);
 	assert (file != NULL);
 
 	LOCK (c->mutex);
-	request_queue_clear_up_to (&c->queues[client_id], file);
 	debug ("Removing requests for client %d up to file %s", client_id,
 			file);
+	request_queue_clear_up_to (&c->queues[client_id], file);
 	UNLOCK (c->mutex);
 }
 
-void tags_cache_save (struct tags_cache *c ATTR_UNUSED, const char *cache_dir ATTR_UNUSED)
+void tags_cache_save (struct tags_cache *c ATTR_UNUSED,
+                      const char *cache_dir ATTR_UNUSED)
 {
 	//TODO: to remove
 
@@ -799,7 +804,7 @@ static int purge_directory (const char *dir_path)
 		fpath = (char *)xmalloc (len);
 		snprintf (fpath, len, "%s/%s", dir_path, d->d_name);
 
-		if (stat(fpath, &st) < 0) {
+		if (stat (fpath, &st) < 0) {
 			logit ("Can't stat %s: %s", fpath, strerror (errno));
 			free (fpath);
 			closedir (dir);
@@ -807,14 +812,14 @@ static int purge_directory (const char *dir_path)
 		}
 
 		if (S_ISDIR(st.st_mode)) {
-			if (!purge_directory(fpath)) {
+			if (!purge_directory (fpath)) {
 				free (fpath);
 				closedir (dir);
 				return 0;
 			}
 
 			logit ("Removing directory %s...", fpath);
-			if (rmdir(fpath) < 0) {
+			if (rmdir (fpath) < 0) {
 				logit ("Can't remove %s: %s", fpath, strerror (errno));
 				free (fpath);
 				closedir (dir);
@@ -824,7 +829,7 @@ static int purge_directory (const char *dir_path)
 		else {
 			logit ("Removing file %s...", fpath);
 
-			if (unlink(fpath) < 0) {
+			if (unlink (fpath) < 0) {
 				logit ("Can't remove %s: %s", fpath, strerror (errno));
 				free (fpath);
 				closedir (dir);
@@ -856,9 +861,8 @@ static const char *create_version_tag (char *buf)
 	return buf;
 }
 
-/* Check version of the cache directory. If it was created
- * using format not handled by this version of MOC, return 0.
- */
+/* Check version of the cache directory.  If it was created
+ * using format not handled by this version of MOC, return 0. */
 static int cache_version_matches (const char *cache_dir)
 {
 	char *fname = NULL;
@@ -883,6 +887,7 @@ static int cache_version_matches (const char *cache_dir)
 	}
 	else {
 		char cur_version_tag[VERSION_TAG_MAX];
+
 		disk_version_tag[rres] = '\0';
 
 		create_version_tag (cur_version_tag);
@@ -921,8 +926,7 @@ static void write_cache_version (const char *cache_dir)
 	fclose (f);
 }
 
-/* Make sure that the cache directory exists and clear it if necessary.
- */
+/* Make sure that the cache directory exists and clear it if necessary. */
 static int prepare_cache_dir (const char *cache_dir)
 {
 	if (mkdir (cache_dir, 0700) == 0) {
@@ -951,6 +955,9 @@ void tags_cache_load (struct tags_cache *c, const char *cache_dir)
 {
 	int ret;
 
+	assert (c != NULL);
+	assert (cache_dir != NULL);
+
 	if (!prepare_cache_dir (cache_dir))
 		return;
 
@@ -965,51 +972,37 @@ void tags_cache_load (struct tags_cache *c, const char *cache_dir)
 	if (ret) {
 		logit ("Can't open DB environment (%s): %s",
 				cache_dir, db_strerror (ret));
-		c->db_env->close (c->db_env, 0);
-		c->db_env = NULL;
-		return;
+		goto err;
 	}
 
 	ret = c->db_env->lock_id (c->db_env, &c->locker);
 	if (ret) {
 		error ("Failed to get DB locker: %s", db_strerror (ret));
-		c->db = NULL;
-
-		c->db_env->close (c->db_env, 0);
-		c->db_env = NULL;
-
-		return;
+		goto err;
 	}
 
 	ret = db_create (&c->db, c->db_env, 0);
 	if (ret) {
 		error ("Failed to create cache db: %s", db_strerror (ret));
-		c->db = NULL;
-
-		c->db_env->close (c->db_env, 0);
-		c->db_env = NULL;
-
-		return;
+		goto err;
 	}
 
-	ret = c->db->open (c->db, NULL, "tags.db", NULL, DB_BTREE, DB_CREATE, 0);
-	if (ret) {
-		error ("Failed to open (or create) tags cache db: %s",
-				db_strerror (ret));
-		abort ();
-		c->db->close (c->db, 0);
-		c->db = NULL;
-
-		c->db_env->close (c->db_env, 0);
-		c->db_env = NULL;
-
+	ret = c->db->open (c->db, NULL, TAGS_DB, NULL, DB_BTREE, DB_CREATE, 0);
+	if (!ret)
 		return;
-	}
+
+	error ("Failed to open (or create) tags cache db: %s", db_strerror (ret));
+	c->db->close (c->db, 0);
+
+err:
+	c->db = NULL;
+	c->db_env->close (c->db_env, 0);
+	c->db_env = NULL;
 }
 
 /* Immediately read tags for a file bypassing the request queue. */
 struct file_tags *tags_cache_get_immediate (struct tags_cache *c,
-		const char *file, const int tags_sel)
+                                  const char *file, int tags_sel)
 {
 	struct file_tags *tags;
 
@@ -1017,8 +1010,9 @@ struct file_tags *tags_cache_get_immediate (struct tags_cache *c,
 	assert (file != NULL);
 
 	debug ("Immediate tags read for %s", file);
+
 	if (!is_url (file))
-		tags = tags_cache_read_add (c, -1, file, tags_sel);
+		tags = tags_cache_read_add (c, file, tags_sel, -1);
 	else
 		tags = tags_new ();
 
