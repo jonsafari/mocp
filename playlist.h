@@ -47,7 +47,6 @@ struct plist_item
 {
 	char *file;
 	enum file_type type;	/* type of the file (F_OTHER if not read yet) */
-	char *title;		/* points to title_file or title_tags */
 	char *title_file;	/* title based on the file name */
 	char *title_tags;	/* title based on the tags */
 	struct file_tags *tags;

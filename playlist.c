@@ -180,7 +180,6 @@ struct plist_item *plist_new_item ()
 	item->file = NULL;
 	item->type = F_OTHER;
 	item->deleted = 0;
-	item->title = NULL;
 	item->title_file = NULL;
 	item->title_tags = NULL;
 	item->tags = NULL;
@@ -206,7 +205,6 @@ int plist_add (struct plist *plist, const char *file_name)
 	plist->items[plist->num].type = file_name ? file_type (file_name)
 		: F_OTHER;
 	plist->items[plist->num].deleted = 0;
-	plist->items[plist->num].title = NULL;
 	plist->items[plist->num].title_file = NULL;
 	plist->items[plist->num].title_tags = NULL;
 	plist->items[plist->num].tags = NULL;
@@ -241,13 +239,6 @@ void plist_item_copy (struct plist_item *dst, const struct plist_item *src)
 		dst->tags = tags_dup (src->tags);
 	else
 		dst->tags = NULL;
-
-	if (src->title == src->title_file)
-		dst->title = dst->title_file;
-	else if (src->title == src->title_tags)
-		dst->title = dst->title_tags;
-	else
-		dst->title = NULL;
 
 	dst->deleted = src->deleted;
 }
@@ -321,8 +312,6 @@ void plist_free_item_fields (struct plist_item *item)
 		tags_free (item->tags);
 		item->tags = NULL;
 	}
-
-	item->title = NULL;
 }
 
 /* Clear the list. */
