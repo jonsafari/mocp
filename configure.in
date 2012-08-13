@@ -290,7 +290,7 @@ AC_CHECK_FUNC([sinh], ,
                EXTRA_LIBS="$EXTRA_LIBS -lm"])
 
 dnl optional functions
-AC_CHECK_FUNCS([strcasestr strerror_r])
+AC_CHECK_FUNCS([strcasestr strerror_r syslog])
 
 dnl MIME magic
 AC_ARG_WITH(magic, AS_HELP_STRING([--without-magic],

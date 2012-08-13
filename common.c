@@ -24,6 +24,9 @@
 #include <sys/types.h>
 #include <pwd.h>
 #include <errno.h>
+#ifdef HAVE_SYSLOG
+#include <syslog.h>
+#endif
 
 #include "common.h"
 #include "server.h"
@@ -50,7 +53,8 @@ void error (const char *format, ...)
 		interface_error (msg);
 }
 
-/* End program with a message. Use when an error occurs and we can't recover. */
+/* End program with a message. Use when an error occurs and we can't recover.
+ * If we're the server, then also log the message to the system log. */
 void fatal (const char *format, ...)
 {
 	va_list va;
@@ -66,6 +70,11 @@ void fatal (const char *format, ...)
 	va_end (va);
 
 	log_close ();
+
+#ifdef HAVE_SYSLOG
+	if (im_server)
+		syslog (LOG_USER|LOG_ERR, "%s", msg);
+#endif
 
 	exit (EXIT_FATAL);
 }
