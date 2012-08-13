@@ -15,6 +15,7 @@
 
 #include <stdio.h>
 #include <stdarg.h>
+#include <pthread.h>
 #include <sys/time.h>
 #include <time.h>
 
@@ -31,6 +32,8 @@ static enum {
 static lists_t_strs *buffered_log = NULL;
 static int log_records_spilt = 0;
 
+static pthread_mutex_t logging_mutex = PTHREAD_MUTEX_INITIALIZER;
+
 /* Put something into the log */
 void internal_logit (const char *file, const int line, const char *function,
 		const char *format, ...)
@@ -41,6 +44,8 @@ void internal_logit (const char *file, const int line, const char *function,
 	va_list va;
 	struct tm tm_time;
 	const char fmt[] = "%s.%06u: %s:%d %s(): %s\n";
+
+	LOCK(logging_mutex);
 
 	if (!logfp) {
 		switch (logging_state) {
@@ -53,8 +58,8 @@ void internal_logit (const char *file, const int line, const char *function,
 			if (lists_strs_size (buffered_log) < lists_strs_capacity (buffered_log))
 				break;
 			log_records_spilt += 1;
-			return;
 		case LOGGING:
+			UNLOCK(logging_mutex);
 			return;
 		}
 	}
@@ -88,6 +93,8 @@ void internal_logit (const char *file, const int line, const char *function,
 		lists_strs_push (buffered_log, str);
 	}
 
+	UNLOCK(logging_mutex);
+
 	free (msg);
 }
 
@@ -100,6 +107,8 @@ void fake_logit (const char *format ATTR_UNUSED, ...)
 void log_init_stream (FILE *f, const char *fn)
 {
 	logfp = f;
+
+	LOCK(logging_mutex);
 
 	if (logging_state == BUFFERING) {
 		if (logfp) {
@@ -116,6 +125,8 @@ void log_init_stream (FILE *f, const char *fn)
 
 	logging_state = LOGGING;
 
+	UNLOCK(logging_mutex);
+
 	logit ("Writing log to: %s", fn);
 	if (log_records_spilt > 0)
 		logit ("%d log records spilt", log_records_spilt);
@@ -123,12 +134,15 @@ void log_init_stream (FILE *f, const char *fn)
 
 void log_close ()
 {
-	if (!(logfp == stdout || logfp == stderr || logfp == NULL))
+	LOCK(logging_mutex);
+	if (!(logfp == stdout || logfp == stderr || logfp == NULL)) {
 		fclose (logfp);
+		logfp = NULL;
+	}
 	if (buffered_log) {
 		lists_strs_free (buffered_log);
 		buffered_log = NULL;
 	}
-	logging_state = UNINITIALISED;
 	log_records_spilt = 0;
+	UNLOCK(logging_mutex);
 }
