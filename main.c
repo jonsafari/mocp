@@ -32,6 +32,10 @@
 #include <locale.h>
 #include <assert.h>
 
+#ifdef HAVE_UNAME_SYSCALL
+#include <sys/utsname.h>
+#endif
+
 #include "common.h"
 #include "server.h"
 #include "interface.h"
@@ -225,6 +229,11 @@ static void start_moc (const struct parameters *params, lists_t_strs *args)
 
 static void show_version ()
 {
+#ifdef HAVE_UNAME_SYSCALL
+	int rc;
+	struct utsname uts;
+#endif
+
 	putchar ('\n');
 	printf ("          This is : %s\n", PACKAGE_NAME);
 	printf ("          Version : %s\n", PACKAGE_VERSION);
@@ -266,6 +275,13 @@ static void show_version ()
 	printf (" resample");
 #endif
 	putchar ('\n');
+
+#ifdef HAVE_UNAME_SYSCALL
+	rc = uname (&uts);
+	if (rc == 0)
+		printf ("       Running on : %s %s %s\n", uts.sysname, uts.release,
+	                                                           uts.machine);
+#endif
 
 	printf ("           Author : Damian Pietras\n");
 	printf ("         Homepage : %s\n", PACKAGE_URL);
@@ -798,6 +814,11 @@ int main (int argc, char *argv[])
 	lists_t_strs *deferred_overrides;
 	lists_t_strs *args;
 
+#ifdef HAVE_UNAME_SYSCALL
+	int rc;
+	struct utsname uts;
+#endif
+
 #ifdef PACKAGE_REVISION
 	logit ("This is Music On Console (revision %s)", PACKAGE_REVISION);
 #else
@@ -806,6 +827,12 @@ int main (int argc, char *argv[])
 
 #ifdef CONFIGURATION
 	logit ("Configured:%s", CONFIGURATION);
+#endif
+
+#ifdef HAVE_UNAME_SYSCALL
+	rc = uname (&uts);
+	if (rc == 0)
+		logit ("Running on: %s %s %s", uts.sysname, uts.release, uts.machine);
 #endif
 
 	log_command_line (argc, argv);
