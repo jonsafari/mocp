@@ -95,7 +95,7 @@ static decoder_t_preference *lookup_preference (const char *extn,
 			if (!type) {
 				if (mime && *mime == NULL && file && file[0]) {
 					if (options_get_bool ("UseMimeMagic"))
-						*mime = xstrdup (file_mime_type (file));
+						*mime = file_mime_type (file);
 				}
 				if (mime && *mime && strchr (*mime, '/'))
 					type = xstrdup (*mime);

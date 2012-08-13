@@ -24,6 +24,7 @@
 
 #ifdef HAVE_LIBMAGIC
 #include <magic.h>
+#include <pthread.h>
 #endif
 
 /* Include dirent for various systems */
@@ -133,21 +134,24 @@ enum file_type file_type (const char *file)
 }
 
 /* Given a file name, return the mime type or NULL. */
-const char *file_mime_type (const char *file ATTR_UNUSED)
+char *file_mime_type (const char *file ATTR_UNUSED)
 {
-	const char *result = NULL;
+	char *result = NULL;
 
 	assert (file != NULL);
 
 #ifdef HAVE_LIBMAGIC
+	static pthread_mutex_t magic_mutex = PTHREAD_MUTEX_INITIALIZER;
+
 	if (cookie != NULL) {
+		LOCK(magic_mutex);
 		if (cached_file && !strcmp (cached_file, file))
-			result = cached_result;
+			result = xstrdup (cached_result);
 		else {
 			free (cached_file);
 			free (cached_result);
 			cached_file = cached_result = NULL;
-			result = magic_file (cookie, file);
+			result = xstrdup (magic_file (cookie, file));
 			if (result == NULL)
 				logit ("Error interrogating file: %s", magic_error (cookie));
 			else {
@@ -155,6 +159,7 @@ const char *file_mime_type (const char *file ATTR_UNUSED)
 				cached_result = xstrdup (result);
 			}
 		}
+		UNLOCK(magic_mutex);
 	}
 #endif
 

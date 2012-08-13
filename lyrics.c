@@ -46,9 +46,9 @@ void lyrics_lines_set (lists_t_strs *lines)
 /* Return a list of lyrics lines loaded from a file, or NULL on error. */
 lists_t_strs *lyrics_load_file (const char *filename)
 {
+	int text_plain;
 	FILE *lyrics_file = NULL;
-	const char *mime;
-	char *line;
+	char *mime, *line;
 	lists_t_strs *result;
 
 	assert (filename);
@@ -57,7 +57,9 @@ lists_t_strs *lyrics_load_file (const char *filename)
 	if (!file_exists (filename))
 		return NULL;
 	mime = file_mime_type (filename);
-	if (mime && strncmp (mime, "text/plain", 10))
+	text_plain = mime ? !strncmp (mime, "text/plain", 10) : 0;
+	free (mime);
+	if (!text_plain)
 		return NULL;
 
 	lyrics_file = fopen (filename, "r");
