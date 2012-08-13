@@ -386,8 +386,11 @@ ASCIILines		= no
 #UseRealtimePriority	= no
 
 # The number of audio files for which MOC will cache tags.  When this limit
-# is reached, file tags are discarded on a least recently used basis.  You
-# can disable the cache by giving it a size of zero.
+# is reached, file tags are discarded on a least recently used basis (with
+# one second resolution).  You can disable the cache by giving it a size of
+# zero.  Note that if you decrease the cache size below the number of items
+# currently in the cache, the number will not decrease immediately (if at
+# all).
 TagsCacheSize		= 256
 
 # Number items in the playlist.
