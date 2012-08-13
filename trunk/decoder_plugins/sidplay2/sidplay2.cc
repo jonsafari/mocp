@@ -506,7 +506,8 @@ extern "C" void sidplay2_get_name (const char *file, char buf[4])
 extern "C" int sidplay2_our_format_ext(const char *ext)
 {
   return
-    !strcasecmp (ext, "SID");
+    !strcasecmp (ext, "SID") ||
+    !strcasecmp (ext, "MUS");
 }
 
 extern "C" void init()
