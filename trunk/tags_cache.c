@@ -58,7 +58,9 @@
 /* Number used to create cache version tag to detect incompatibilities
  * between cache version stored on the disk and MOC/BerkeleyDB environment.
  *
- * If you modify the DB structure, increase this number.
+ * If you modify the DB structure, increase this number.  You can also
+ * temporarily set it to zero to disable cache activity during structural
+ * changes which require multiple commits.
  */
 #define CACHE_DB_FORMAT_VERSION	1
 
@@ -555,8 +557,11 @@ static struct file_tags *tags_cache_read_add (struct tags_cache *c,
 
 	debug ("Getting tags for %s", file);
 
-	tags = (struct file_tags *)with_db_lock (locked_read_add, c, file,
-	                                         tags_sel, client_id);
+	if (c->max_items)
+		tags = (struct file_tags *)with_db_lock (locked_read_add, c, file,
+		                                         tags_sel, client_id);
+	else
+		tags = read_missing_tags (file, tags, tags_sel);
 
 	if (client_id != -1) {
 		tags_response (client_id, file, tags);
@@ -638,6 +643,8 @@ void tags_cache_init (struct tags_cache *c, size_t max_size)
 		request_queue_init (&c->queues[i]);
 
 	c->max_items = max_size;
+	if (CACHE_DB_FORMAT_VERSION == 0)
+		c->max_items = 0;
 	c->stop_reader_thread = 0;
 	pthread_mutex_init (&c->mutex, NULL);
 
@@ -694,32 +701,32 @@ static void *locked_add_request (struct tags_cache *c, const char *file,
                                  DBT *key, DBT *serialized_cache_rec)
 {
 	int db_ret;
+	struct cache_record rec;
 
-	if (c->db) {
-		db_ret = c->db->get (c->db, NULL, key, serialized_cache_rec, 0);
+	assert (c->db);
 
-		if (db_ret && db_ret != DB_NOTFOUND)
-			error ("Cache DB search error: %s", db_strerror (db_ret));
+	db_ret = c->db->get (c->db, NULL, key, serialized_cache_rec, 0);
+
+	if (db_ret == DB_NOTFOUND)
+		return NULL;
+
+	if (db_ret) {
+		error ("Cache DB search error: %s", db_strerror (db_ret));
+		return NULL;
 	}
-	else
-		db_ret = DB_NOTFOUND;
 
-	if (db_ret == 0) {
-		struct cache_record rec;
-
-		if (cache_record_deserialize (&rec, serialized_cache_rec->data,
-					serialized_cache_rec->size, 0)) {
-			if (rec.mod_time == get_mtime (file)
-					&& (rec.tags->filled & tags_sel) == tags_sel) {
-				tags_response (client_id, file, rec.tags);
-				tags_free (rec.tags);
-				debug ("Tags are present in the cache");
-				return NULL;
-			}
-
+	if (cache_record_deserialize (&rec, serialized_cache_rec->data,
+				serialized_cache_rec->size, 0)) {
+		if (rec.mod_time == get_mtime (file)
+				&& (rec.tags->filled & tags_sel) == tags_sel) {
+			tags_response (client_id, file, rec.tags);
 			tags_free (rec.tags);
-			debug ("Found outdated or incomplete tags in the cache");
+			debug ("Tags are present in the cache");
+			return NULL;
 		}
+
+		tags_free (rec.tags);
+		debug ("Found outdated or incomplete tags in the cache");
 	}
 
 	return NULL;
@@ -734,7 +741,8 @@ void tags_cache_add_request (struct tags_cache *c, const char *file,
 
 	debug ("Request for tags for %s from client %d", file, client_id);
 
-	with_db_lock (locked_add_request, c, file, tags_sel, client_id);
+	if (c->max_items)
+		with_db_lock (locked_add_request, c, file, tags_sel, client_id);
 
 	LOCK (c->mutex);
 	request_queue_add (&c->queues[client_id], file, tags_sel);
@@ -958,12 +966,19 @@ void tags_cache_load (struct tags_cache *c, const char *cache_dir)
 	assert (c != NULL);
 	assert (cache_dir != NULL);
 
-	if (!prepare_cache_dir (cache_dir))
-		fatal ("Can't prepare cache directory!");
+	if (!c->max_items)
+		return;
+
+	if (!prepare_cache_dir (cache_dir)) {
+		error ("Can't prepare cache directory!");
+		goto err;
+	}
 
 	ret = db_env_create (&c->db_env, 0);
-	if (ret)
-		fatal ("Can't create DB environment: %s", db_strerror (ret));
+	if (ret) {
+		error ("Can't create DB environment: %s", db_strerror (ret));
+		goto err;
+	}
 
 	ret = c->db_env->open (c->db_env, cache_dir,
 			DB_CREATE  | DB_INIT_MPOOL | DB_THREAD | DB_INIT_LOCK, 0);
@@ -994,9 +1009,12 @@ void tags_cache_load (struct tags_cache *c, const char *cache_dir)
 
 err:
 	c->db = NULL;
-	c->db_env->close (c->db_env, 0);
-	c->db_env = NULL;
-	fatal ("Failed to initialise tags cache");
+	if (c->db_env) {
+		c->db_env->close (c->db_env, 0);
+		c->db_env = NULL;
+	}
+	c->max_items = 0;
+	error ("Failed to initialise tags cache: caching disabled");
 }
 
 /* Immediately read tags for a file bypassing the request queue. */
