@@ -621,15 +621,9 @@ static void update_item_tags (struct plist *plist, const int num,
 
 	make_tags_title (plist, num);
 
-	if (options_get_int("ReadTags")) {
-		if (plist->items[num].title_tags)
-			plist->items[num].title = plist->items[num].title_tags;
-		else {
-			if (!plist->items[num].title_file)
-				make_file_title (plist, num, options_get_int(
-							"HideFileExtension"));
-			plist->items[num].title = plist->items[num].title_file;
-		}
+	if (options_get_int ("ReadTags") && !plist->items[num].title_tags) {
+		if (!plist->items[num].title_file)
+			make_file_title (plist, num, options_get_int ("HideFileExtension"));
 	}
 
 	if (old_tags)
@@ -854,22 +848,11 @@ static void event_plist_add (const struct plist_item *item)
 		if (needed_tags)
 			send_tags_request (item->file, needed_tags);
 
-		if (options_get_int("ReadTags")) {
+		if (options_get_int ("ReadTags"))
 			make_tags_title (playlist, item_num);
-
-			if (playlist->items[item_num].title_tags)
-				playlist->items[item_num].title =
-					playlist->items[item_num].title_tags;
-			else
-				playlist->items[item_num].title =
-					playlist->items[item_num].title_file;
-		}
-		else {
+		else
 			make_file_title (playlist, item_num,
-					options_get_int("HideFileExtension"));
-			playlist->items[item_num].title =
-				playlist->items[item_num].title_file;
-		}
+					options_get_int ("HideFileExtension"));
 
 		/* Just calling iface_update_queue_positions (queue, playlist,
 		 * NULL, NULL) is too slow in cases when we receive a large
@@ -2223,7 +2206,6 @@ static void add_url_to_plist (const char *url)
 
 			item->file = xstrdup (url);
 			item->title_file = xstrdup (url);
-			item->title = item->title_file;
 
 			send_int_to_srv (CMD_CLI_PLIST_ADD);
 			send_item_to_srv (item);
@@ -3694,10 +3676,8 @@ static void add_recursively (struct plist *plist, lists_t_strs *args)
 				&& plist_find_fname (plist, path) == -1) {
 			int added = plist_add (plist, path);
 
-			if (is_url (path)) {
+			if (is_url (path))
 				make_file_title (plist, added, 0);
-				plist->items[added].title = plist->items[added].title_file;
-			}
 		}
 	}
 }

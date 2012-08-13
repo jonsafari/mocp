@@ -221,36 +221,35 @@ void make_tags_title (struct plist *plist, const int num)
 /* Switch playlist titles to title_file */
 void switch_titles_file (struct plist *plist)
 {
-	int i;
-	int hide_extension = options_get_int("HideFileExtension");
+	int i, hide_extn;
 
-	for (i = 0; i < plist->num; i++)
-		if (!plist_deleted(plist, i)) {
-			if (!plist->items[i].title_file)
-				make_file_title (plist, i, hide_extension);
-			assert (plist->items[i].title_file != NULL);
-			plist->items[i].title = plist->items[i].title_file;
-		}
+	hide_extn = options_get_int ("HideFileExtension");
+
+	for (i = 0; i < plist->num; i++) {
+		if (plist_deleted (plist, i))
+			continue;
+
+		if (!plist->items[i].title_file)
+			make_file_title (plist, i, hide_extn);
+
+		assert (plist->items[i].title_file != NULL);
+	}
 }
 
 /* Switch playlist titles to title_tags */
 void switch_titles_tags (struct plist *plist)
 {
-	int i;
+	int i, hide_extn;
 
-	for (i = 0; i < plist->num; i++)
-		if (!plist_deleted(plist, i)) {
-			if (plist->items[i].title_tags)
-				plist->items[i].title
-					= plist->items[i].title_tags;
-			else {
-				if (!plist->items[i].title_file)
-					make_file_title (plist, i,
-							options_get_int("HideFileExtension"));
-				plist->items[i].title
-					= plist->items[i].title_file;
-			}
-		}
+	hide_extn = options_get_int ("HideFileExtension");
+
+	for (i = 0; i < plist->num; i++) {
+		if (plist_deleted (plist, i))
+			continue;
+
+		if (!plist->items[i].title_tags && !plist->items[i].title_file)
+			make_file_title (plist, i, hide_extn);
+	}
 }
 
 /* Add file to the directory path in buf resolving '../' and removing './'. */

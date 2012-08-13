@@ -1055,14 +1055,19 @@ static char *make_menu_title (const char *plist_title,
 static int add_to_menu (struct menu *menu, const struct plist *plist,
 		const int num, const int full_paths)
 {
+	bool made_from_tags;
 	struct menu_item *added;
 	const struct plist_item *item = &plist->items[num];
 	char *title;
 	const char *type_name;
 
-	title = make_menu_title (item->title, item->title == item->title_tags,
-	                         full_paths);
-	added = menu_add (menu, title, plist_file_type(plist, num), item->file);
+	made_from_tags = (options_get_bool ("ReadTags") && item->title_tags);
+
+	if (made_from_tags)
+		title = make_menu_title (item->title_tags, 1, 0);
+	else
+		title = make_menu_title (item->title_file, 0, full_paths);
+	added = menu_add (menu, title, plist_file_type (plist, num), item->file);
 	free (title);
 
 	if (item->tags && item->tags->time != -1) {
@@ -1083,7 +1088,7 @@ static int add_to_menu (struct menu *menu, const struct plist *plist,
 	menu_item_set_format (added, type_name);
 	menu_item_set_queue_pos (added, item->queue_pos);
 
-	if (full_paths && item->title == item->title_file)
+	if (full_paths && !made_from_tags)
 		menu_item_set_align (added, MENU_ALIGN_RIGHT);
 
 	return menu_is_visible (menu, added);
@@ -1408,6 +1413,7 @@ static void update_menu_item (struct menu_item *mi,
 		const struct plist *plist,
 		const int n, const int full_path)
 {
+	bool made_from_tags;
 	char *title;
 	const struct plist_item *item;
 
@@ -1426,12 +1432,16 @@ static void update_menu_item (struct menu_item *mi,
 	else
 		menu_item_set_time (mi, "");
 
-	title = make_menu_title (item->title,
-			item->title == item->title_tags, full_path);
+	made_from_tags = (options_get_bool ("ReadTags") && item->title_tags);
+
+	if (made_from_tags)
+		title = make_menu_title (item->title_tags, 1, 0);
+	else
+		title = make_menu_title (item->title_file, 0, full_path);
 
 	menu_item_set_title (mi, title);
 
-	if (full_path && item->title == item->title_file)
+	if (full_path && !made_from_tags)
 		menu_item_set_align (mi, MENU_ALIGN_RIGHT);
 	else
 		menu_item_set_align (mi, MENU_ALIGN_LEFT);
