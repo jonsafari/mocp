@@ -74,11 +74,23 @@ char *xstrdup (const char *s);
 
 char *str_repl (char *target, const char *oldstr, const char *newstr);
 
+#ifdef NDEBUG
+#define fatal(format, ...) \
+	internal_fatal (NULL, 0, NULL, format, ## __VA_ARGS__)
+#else
+#define fatal(format, ...) \
+	internal_fatal (__FILE__, __LINE__, __FUNCTION__, format, \
+	## __VA_ARGS__)
+#endif
+
 #ifdef HAVE__ATTRIBUTE__
-void fatal (const char *format, ...) __attribute__((format (printf, 1, 2), noreturn));
+void internal_fatal (const char *file, int line, const char *function,
+		const char *format, ...)
+	__attribute__ ((format (printf, 4, 5), noreturn));
 void error (const char *format, ...) __attribute__((format (printf, 1, 2)));
 #else
-void fatal (const char *format, ...);
+void internal_fatal (const char *file, int line, const char *function,
+		const char *format, ...);
 void error (const char *format, ...);
 #endif
 
