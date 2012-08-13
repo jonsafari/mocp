@@ -959,18 +959,16 @@ void tags_cache_load (struct tags_cache *c, const char *cache_dir)
 	assert (cache_dir != NULL);
 
 	if (!prepare_cache_dir (cache_dir))
-		return;
+		fatal ("Can't prepare cache directory!");
 
 	ret = db_env_create (&c->db_env, 0);
-	if (ret) {
-		error ("Can't create DB environment: %s", db_strerror (ret));
-		return;
-	}
+	if (ret)
+		fatal ("Can't create DB environment: %s", db_strerror (ret));
 
 	ret = c->db_env->open (c->db_env, cache_dir,
 			DB_CREATE  | DB_INIT_MPOOL | DB_THREAD | DB_INIT_LOCK, 0);
 	if (ret) {
-		logit ("Can't open DB environment (%s): %s",
+		error ("Can't open DB environment (%s): %s",
 				cache_dir, db_strerror (ret));
 		goto err;
 	}
@@ -998,6 +996,7 @@ err:
 	c->db = NULL;
 	c->db_env->close (c->db_env, 0);
 	c->db_env = NULL;
+	fatal ("Failed to initialise tags cache");
 }
 
 /* Immediately read tags for a file bypassing the request queue. */
