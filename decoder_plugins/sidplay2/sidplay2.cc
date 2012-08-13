@@ -14,6 +14,7 @@
 #include <pthread.h>
 #include <assert.h>
 
+#include "common.h"
 #include "sidplay2.h"
 
 static SID_EXTERN::sidplay2 *players [POOL_SIZE];
@@ -364,8 +365,9 @@ extern "C" void sidplay2_info (const char *file_name, struct file_tags *info,
     && strlen(sti.infoString[STITLE])>0
   )
   {
-    info->title = xstrdup(sti.infoString[STITLE]);
-    info->filled |= TAGS_COMMENTS;
+    info->title = trim(sti.infoString[STITLE],strlen(sti.infoString[STITLE]));
+	if (info->title)
+    	info->filled |= TAGS_COMMENTS;
   }
 
   if
@@ -375,8 +377,9 @@ extern "C" void sidplay2_info (const char *file_name, struct file_tags *info,
     && strlen(sti.infoString[SAUTHOR])>0
   )
   {
-    info->artist = xstrdup(sti.infoString[SAUTHOR]);
-    info->filled |= TAGS_COMMENTS;
+    info->artist = trim(sti.infoString[SAUTHOR],strlen(sti.infoString[SAUTHOR]));
+	if (info->artist)
+    	info->filled |= TAGS_COMMENTS;
   }
 
   // Not really album - but close...
@@ -387,8 +390,9 @@ extern "C" void sidplay2_info (const char *file_name, struct file_tags *info,
     && strlen(sti.infoString[SCOPY])>0
   )
   {
-    info->album = xstrdup(sti.infoString[SCOPY]);
-    info->filled |= TAGS_COMMENTS;
+    info->album = trim(sti.infoString[SCOPY],strlen(sti.infoString[SCOPY]));
+	if (info->album)
+    	info->filled |= TAGS_COMMENTS;
   }
 
   info->time = 0;
