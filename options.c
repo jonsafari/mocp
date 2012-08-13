@@ -557,58 +557,79 @@ void options_init ()
 	add_bool ("ReadTags", true);
 	add_str  ("MusicDir", NULL, CHECK_NONE);
 	add_bool ("StartInMusicDir", false);
+	add_symb ("Sort", "FileName", CHECK_SYMBOL(1), "FileName");
 	add_bool ("ShowStreamErrors", false);
+	add_bool ("MP3IgnoreCRCErrors", true);
 	add_bool ("Repeat", false);
 	add_bool ("Shuffle", false);
 	add_bool ("AutoNext", true);
-	add_symb ("Sort", "FileName", CHECK_SYMBOL(1), "FileName");
 	add_str  ("FormatString",
-			"%(n:%n :)%(a:%a - :)%(t:%t:)%(A: \\(%A\\):)", CHECK_NONE);
+	          "%(n:%n :)%(a:%a - :)%(t:%t:)%(A: \\(%A\\):)", CHECK_NONE);
+	add_int  ("InputBuffer", 512, CHECK_RANGE(1), 32, INT_MAX);
 	add_int  ("OutputBuffer", 512, CHECK_RANGE(1), 128, INT_MAX);
-	add_str  ("OSSDevice", "/dev/dsp", CHECK_NONE);
-	add_str  ("OSSMixerDevice", "/dev/mixer", CHECK_NONE);
-	add_str  ("OSSMixerChannel1", "pcm", CHECK_NONE);
-	add_str  ("OSSMixerChannel2", "master", CHECK_NONE);
+	add_int  ("Prebuffering", 64, CHECK_RANGE(1), 0, INT_MAX);
+	add_str  ("HTTPProxy", NULL, CHECK_NONE);
+
 #ifdef OPENBSD
 	add_list ("SoundDriver", "SNDIO:JACK:OSS",
-	                  CHECK_DISCRETE(5), "SNDIO", "Jack", "ALSA", "OSS", "null");
+	          CHECK_DISCRETE(5), "SNDIO", "Jack", "ALSA", "OSS", "null");
 #else
 	add_list ("SoundDriver", "Jack:ALSA:OSS",
-	                  CHECK_DISCRETE(5), "SNDIO", "Jack", "ALSA", "OSS", "null");
+	          CHECK_DISCRETE(5), "SNDIO", "Jack", "ALSA", "OSS", "null");
 #endif
-	add_bool ("ShowHiddenFiles", true);
+
+	add_str  ("JackClientName", "moc", CHECK_NONE);
+	add_bool ("JackStartServer", false);
+	add_str  ("JackOutLeft", "system:playback_1", CHECK_NONE);
+	add_str  ("JackOutRight", "system:playback_2", CHECK_NONE);
+
+	add_str  ("OSSDevice", "/dev/dsp", CHECK_NONE);
+	add_str  ("OSSMixerDevice", "/dev/mixer", CHECK_NONE);
+	add_symb ("OSSMixerChannel1", "pcm",
+	          CHECK_SYMBOL(3), "pcm", "master", "speaker");
+	add_symb ("OSSMixerChannel2", "master",
+	          CHECK_SYMBOL(3), "pcm", "master", "speaker");
+
 	add_str  ("ALSADevice", "default", CHECK_NONE);
 	add_str  ("ALSAMixer1", "PCM", CHECK_NONE);
 	add_str  ("ALSAMixer2", "Master", CHECK_NONE);
+
+	add_bool ("Softmixer_SaveState", true);
+	add_bool ("Equalizer_SaveState", true);
+
+	add_bool ("ShowHiddenFiles", false);
 	add_bool ("HideFileExtension", false);
 	add_bool ("ShowFormat", true);
 	add_symb ("ShowTime", "IfAvailable",
 	                 CHECK_SYMBOL(3), "yes", "no", "IfAvailable");
 	add_bool ("ShowTimePercent", false);
+
 	add_list ("XTerms", "xterm:"
 	                    "xterm-colour:xterm-color:"
 	                    "xterm-256colour:xterm-256color:"
 	                    "rxvt:rxvt-unicode:"
 	                    "rxvt-unicode-256colour:rxvt-unicode-256color:"
 	                    "eterm", CHECK_NONE);
+
 	add_str  ("Theme", NULL, CHECK_NONE);
 	add_str  ("XTermTheme", NULL, CHECK_NONE);
 	add_str  ("ForceTheme", NULL, CHECK_NONE); /* Used when -T is set */
 	add_bool ("AutoLoadLyrics", true);
 	add_str  ("MOCDir", "~/.moc", CHECK_NONE);
-	add_bool ("UseMmap", false);
+	add_bool ("UseMMap", false);
 	add_bool ("UseMimeMagic", false);
+	add_str  ("ID3v1TagsEncoding", "WINDOWS-1250", CHECK_NONE);
+	add_bool ("UseRCC", true);
+	add_bool ("UseRCCForFilesystem", true);
+	add_bool ("EnforceTagsEncoding", false);
+	add_bool ("FileNamesIconv", false);
+	add_bool ("NonUTFXterm", false);
 	add_bool ("Precache", true);
 	add_bool ("SavePlaylist", true);
-	add_str  ("Keymap", NULL, CHECK_NONE);
 	add_bool ("SyncPlaylist", true);
-	add_int  ("InputBuffer", 512, CHECK_RANGE(1), 32, INT_MAX);
-	add_int  ("Prebuffering", 64, CHECK_RANGE(1), 0, INT_MAX);
-	add_str  ("JackClientName", "moc", CHECK_NONE);
-	add_bool ("JackStartServer", false);
-	add_str  ("JackOutLeft", "system:playback_1", CHECK_NONE);
-	add_str  ("JackOutRight", "system:playback_2", CHECK_NONE);
+	add_str  ("Keymap", NULL, CHECK_NONE);
 	add_bool ("ASCIILines", false);
+
 	add_str  ("FastDir1", NULL, CHECK_NONE);
 	add_str  ("FastDir2", NULL, CHECK_NONE);
 	add_str  ("FastDir3", NULL, CHECK_NONE);
@@ -619,22 +640,10 @@ void options_init ()
 	add_str  ("FastDir8", NULL, CHECK_NONE);
 	add_str  ("FastDir9", NULL, CHECK_NONE);
 	add_str  ("FastDir10", NULL, CHECK_NONE);
-	add_str  ("ExecCommand1", NULL, CHECK_NONE);
-	add_str  ("ExecCommand2", NULL, CHECK_NONE);
-	add_str  ("ExecCommand3", NULL, CHECK_NONE);
-	add_str  ("ExecCommand4", NULL, CHECK_NONE);
-	add_str  ("ExecCommand5", NULL, CHECK_NONE);
-	add_str  ("ExecCommand6", NULL, CHECK_NONE);
-	add_str  ("ExecCommand7", NULL, CHECK_NONE);
-	add_str  ("ExecCommand8", NULL, CHECK_NONE);
-	add_str  ("ExecCommand9", NULL, CHECK_NONE);
-	add_str  ("ExecCommand10", NULL, CHECK_NONE);
-	add_bool ("Mp3IgnoreCRCErrors", true);
+
 	add_int  ("SeekTime", 1, CHECK_RANGE(1), 1, INT_MAX);
 	add_int  ("SilentSeekTime", 5, CHECK_RANGE(1), 1, INT_MAX);
-	add_symb ("ResampleMethod", "Linear",
-	                 CHECK_SYMBOL(5), "SincBestQuality", "SincMediumQuality",
-	                                  "SincFastest", "ZeroOrderHold", "Linear");
+
 	add_list ("PreferredDecoders",
 	                 "aac(aac,ffmpeg):m4a(ffmpeg):"
 	                 "mpc(musepack,*,ffmpeg):mpc8(musepack,*,ffmpeg):"
@@ -647,48 +656,56 @@ void options_init ()
 	                 "spx(speex):"
 	                 "application/ogg(vorbis):audio/ogg(vorbis)",
 	                 CHECK_FUNCTION);
+
+	add_symb ("ResampleMethod", "Linear",
+	                 CHECK_SYMBOL(5), "SincBestQuality", "SincMediumQuality",
+	                                  "SincFastest", "ZeroOrderHold", "Linear");
 	add_int  ("ForceSampleRate", 0, CHECK_RANGE(1), 0, 500000);
-	add_str  ("HTTPProxy", NULL, CHECK_NONE);
+	add_bool ("Allow24bitOutput", false);
 	add_bool ("UseRealtimePriority", false);
 	add_int  ("TagsCacheSize", 256, CHECK_RANGE(1), 0, INT_MAX);
 	add_bool ("PlaylistNumbering", true);
+
 	add_list ("Layout1", "directory(0,0,50%,100%):playlist(50%,0,FILL,100%)",
 	                     CHECK_FUNCTION);
 	add_list ("Layout2", "directory(0,0,100%,100%):playlist(0,0,100%,100%)",
 	                     CHECK_FUNCTION);
 	add_list ("Layout3", NULL, CHECK_FUNCTION);
+
 	add_bool ("FollowPlayedFile", true);
 	add_bool ("CanStartInPlaylist", true);
+	add_str  ("ExecCommand1", NULL, CHECK_NONE);
+	add_str  ("ExecCommand2", NULL, CHECK_NONE);
+	add_str  ("ExecCommand3", NULL, CHECK_NONE);
+	add_str  ("ExecCommand4", NULL, CHECK_NONE);
+	add_str  ("ExecCommand5", NULL, CHECK_NONE);
+	add_str  ("ExecCommand6", NULL, CHECK_NONE);
+	add_str  ("ExecCommand7", NULL, CHECK_NONE);
+	add_str  ("ExecCommand8", NULL, CHECK_NONE);
+	add_str  ("ExecCommand9", NULL, CHECK_NONE);
+	add_str  ("ExecCommand10", NULL, CHECK_NONE);
+
 	add_bool ("UseCursorSelection", false);
-	add_str  ("ID3v1TagsEncoding", "WINDOWS-1250", CHECK_NONE);
-	add_bool ("UseRCC", true);
-	add_bool ("UseRCCForFilesystem", true);
-	add_bool ("EnforceTagsEncoding", false);
-	add_bool ("FileNamesIconv", false);
-	add_bool ("NonUTFXterm", false);
 	add_bool ("SetXtermTitle", true);
 	add_bool ("SetScreenTitle", true);
 	add_bool ("PlaylistFullPaths", true);
+
 	add_str  ("BlockDecorators", "`\"'", CHECK_LENGTH(1), 3, 3);
 	add_int  ("MessageLingerTime", 3, CHECK_RANGE(1), 0, INT_MAX);
 	add_bool ("PrefixQueuedMessages", true);
 	add_str  ("ErrorMessagesQueued", "!", CHECK_NONE);
-	add_bool ("Allow24bitOutput", false);
-
-	add_int  ("ModPlug_Channels", 2, CHECK_DISCRETE(2), 1, 2);
-	add_int  ("ModPlug_Frequency", 44100,
-	                 CHECK_DISCRETE(4), 11025, 22050, 44100, 48000);
-	add_int  ("ModPlug_Bits", 16, CHECK_DISCRETE(3), 8, 16, 32);
 
 	add_bool ("ModPlug_Oversampling", true);
 	add_bool ("ModPlug_NoiseReduction", true);
 	add_bool ("ModPlug_Reverb", false);
 	add_bool ("ModPlug_MegaBass", false);
 	add_bool ("ModPlug_Surround", false);
-
 	add_symb ("ModPlug_ResamplingMode", "FIR",
 	                 CHECK_SYMBOL(4), "FIR", "SPLINE", "LINEAR", "NEAREST");
-
+	add_int  ("ModPlug_Channels", 2, CHECK_DISCRETE(2), 1, 2);
+	add_int  ("ModPlug_Bits", 16, CHECK_DISCRETE(3), 8, 16, 32);
+	add_int  ("ModPlug_Frequency", 44100,
+	                 CHECK_DISCRETE(4), 11025, 22050, 44100, 48000);
 	add_int  ("ModPlug_ReverbDepth", 0, CHECK_RANGE(1), 0, 100);
 	add_int  ("ModPlug_ReverbDelay", 0, CHECK_RANGE(1), 0, INT_MAX);
 	add_int  ("ModPlug_BassAmount", 0, CHECK_RANGE(1), 0, 100);
@@ -697,11 +714,11 @@ void options_init ()
 	add_int  ("ModPlug_SurroundDelay", 0, CHECK_RANGE(1), 0, INT_MAX);
 	add_int  ("ModPlug_LoopCount", 0, CHECK_RANGE(1), -1, INT_MAX);
 
-	add_int  ("TiMidity_Volume", 100, CHECK_RANGE(1), 0, 800);
 	add_int  ("TiMidity_Rate", 44100, CHECK_RANGE(1), 8000, 48000);
 		// not sure about the limits... I like 44100
 	add_int  ("TiMidity_Bits", 16, CHECK_DISCRETE(2), 8, 16);
 	add_int  ("TiMidity_Channels", 2, CHECK_DISCRETE(2), 1, 2);
+	add_int  ("TiMidity_Volume", 100, CHECK_RANGE(1), 0, 800);
 	add_str  ("TiMidity_Config", NULL, CHECK_NONE);
 
 	add_int  ("SidPlay2_DefaultSongLength", 180,
@@ -711,19 +728,15 @@ void options_init ()
 	add_str  ("SidPlay2_Database", NULL, CHECK_NONE);
 	add_int  ("SidPlay2_Frequency", 44100, CHECK_RANGE(1), 4000, 48000);
 	add_int  ("SidPlay2_Bits", 16, CHECK_DISCRETE(2), 8, 16);
+	add_int  ("SidPlay2_Optimisation", 0, CHECK_RANGE(1), 0, 2);
 	add_symb ("SidPlay2_PlayMode", "M",
 	                 CHECK_SYMBOL(4), "M", "S", "L", "R");
-	add_int  ("SidPlay2_Optimisation", 0, CHECK_RANGE(1), 0, 2);
 	add_bool ("SidPlay2_StartAtStart", true);
 	add_bool ("SidPlay2_PlaySubTunes", true);
 
 	add_str  ("OnSongChange", NULL, CHECK_NONE);
 	add_bool ("RepeatSongChange", false);
 	add_str  ("OnStop", NULL, CHECK_NONE);
-
-	add_bool ("Softmixer_SaveState", true);
-
-	add_bool ("Equalizer_SaveState", true);
 
 	add_bool ("QueueNextSongReturn", false);
 }
@@ -1044,6 +1057,22 @@ static bool set_option (const char *name, const char *value_in, bool append)
 	value_s = substitute_variable (name_s, value_in);
 	value = NULL;
 
+	/* Handle a change of option type for SidPlay2_StartAtStart. */
+	if (!strcasecmp (options[i].name, "SidPlay2_StartAtStart")) {
+		if (!strcmp (value_s, "0"))
+			value = xstrdup ("no");
+		else if (!strcmp (value_s, "1"))
+			value = xstrdup ("yes");
+	}
+
+	/* Handle a change of option type for SidPlay2_PlaySubTunes. */
+	if (!strcasecmp (options[i].name, "SidPlay2_PlaySubTunes")) {
+		if (!strcmp (value_s, "0"))
+			value = xstrdup ("no");
+		else if (!strcmp (value_s, "1"))
+			value = xstrdup ("yes");
+	}
+
 	/* Handle a change of option type for QueueNextSongReturn. */
 	if (!strcasecmp (options[i].name, "QueueNextSongReturn")) {
 		if (!strcmp (value_s, "0"))
@@ -1088,9 +1117,8 @@ static bool set_option (const char *name, const char *value_in, bool append)
  * be checked without parsing the whole file. */
 static void sanity_check ()
 {
-	if (options_get_int("Prebuffering") > options_get_int("InputBuffer"))
-		fatal ("Prebuffering is set to a value greater than "
-				"InputBuffer!");
+	if (options_get_int ("Prebuffering") > options_get_int ("InputBuffer"))
+		fatal ("Prebuffering is set to a value greater than InputBuffer!");
 }
 
 /* Parse the configuration file. */
