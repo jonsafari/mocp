@@ -899,8 +899,13 @@ static const char *create_version_tag (char *buf)
 
 	db_version (&db_major, &db_minor, NULL);
 
+#ifdef PACKAGE_REVISION
+	snprintf (buf, VERSION_TAG_MAX, "%d %d %d r%s",
+	          CACHE_DB_FORMAT_VERSION, db_major, db_minor, PACKAGE_REVISION);
+#else
 	snprintf (buf, VERSION_TAG_MAX, "%d %d %d",
 	          CACHE_DB_FORMAT_VERSION, db_major, db_minor);
+#endif
 
 	return buf;
 }
@@ -932,11 +937,24 @@ static int cache_version_matches (const char *cache_dir)
 		logit ("On-disk version tag too long");
 	}
 	else {
-		char cur_version_tag[VERSION_TAG_MAX];
+		char *ptr, cur_version_tag[VERSION_TAG_MAX];
 
 		disk_version_tag[rres] = '\0';
+		ptr = strrchr (disk_version_tag, '\n');
+		if (ptr)
+			*ptr = '\0';
+		ptr = strrchr (disk_version_tag, ' ');
+		if (ptr && ptr[1] == 'r')
+			*ptr = '\0';
 
 		create_version_tag (cur_version_tag);
+		ptr = strrchr (cur_version_tag, '\n');
+		if (ptr)
+			*ptr = '\0';
+		ptr = strrchr (cur_version_tag, ' ');
+		if (ptr && ptr[1] == 'r')
+			*ptr = '\0';
+
 		compare_result = !strcmp (disk_version_tag, cur_version_tag);
 	}
 
