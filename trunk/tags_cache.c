@@ -23,7 +23,10 @@
 #include <sys/stat.h>
 #include <time.h>
 #include <unistd.h>
+
+#ifdef HAVE_DB_H
 #include <db.h>
+#endif
 
 /* Include dirent for various systems */
 #ifdef HAVE_DIRENT_H
@@ -182,11 +185,14 @@ static char *request_queue_pop (struct request_queue *q, int *tags_sel)
 	return file;
 }
 
+#ifdef HAVE_DB_H
 static size_t strlen_null (const char *s)
 {
 	return s ? strlen (s) : 0;
 }
+#endif
 
+#ifdef HAVE_DB_H
 static char *cache_record_serialize (const struct cache_record *rec, int *len)
 {
 	char *buf;
@@ -246,7 +252,9 @@ static char *cache_record_serialize (const struct cache_record *rec, int *len)
 
 	return buf;
 }
+#endif
 
+#ifdef HAVE_DB_H
 static int cache_record_deserialize (struct cache_record *rec,
            const char *serialized, size_t size, int skip_tags)
 {
@@ -317,15 +325,19 @@ err:
 	rec->tags = NULL;
 	return 0;
 }
+#endif
 
 /* Locked DB function prototype.
  * The function must not acquire or release DB locks. */
+#ifdef HAVE_DB_H
 typedef void *t_locked_fn (struct tags_cache *, const char *,
                                       int, int, DBT *, DBT *);
+#endif
 
 /* This function ensures that a DB function takes place while holding a
  * database record lock.  It also provides an initialised database thang
  * for the key and record. */
+#ifdef HAVE_DB_H
 static void *with_db_lock (t_locked_fn fn, struct tags_cache *c,
                            const char *file, int tags_sel, int client_id)
 {
@@ -359,7 +371,9 @@ static void *with_db_lock (t_locked_fn fn, struct tags_cache *c,
 
 	return result;
 }
+#endif
 
+#ifdef HAVE_DB_H
 static void tags_cache_remove_rec (struct tags_cache *c, const char *fname)
 {
 	DBT key;
@@ -378,8 +392,10 @@ static void tags_cache_remove_rec (struct tags_cache *c, const char *fname)
 		logit ("Can't remove item for %s from the cache: %s", fname,
 				db_strerror (ret));
 }
+#endif
 
 /* Remove the one element of the cache based on it's access time. */
+#ifdef HAVE_DB_H
 static void tags_cache_gc (struct tags_cache *c)
 {
 	DBC *cur;
@@ -438,8 +454,10 @@ static void tags_cache_gc (struct tags_cache *c)
 	else
 		debug ("Cache empty");
 }
+#endif
 
 /* Add this tags object for the file to the cache. */
+#ifdef HAVE_DB_H
 static void tags_cache_add (struct tags_cache *c, const char *file,
                                   DBT *key, struct file_tags *tags)
 {
@@ -473,6 +491,7 @@ static void tags_cache_add (struct tags_cache *c, const char *file,
 
 	free (serialized_cache_rec);
 }
+#endif
 
 /* Read time tags for a file into tags structure (or create it if NULL). */
 struct file_tags *read_missing_tags (const char *file,
@@ -500,6 +519,7 @@ struct file_tags *read_missing_tags (const char *file,
 }
 
 /* Read the selected tags for this file and add it to the cache. */
+#ifdef HAVE_DB_H
 static void *locked_read_add (struct tags_cache *c, const char *file,
                               const int tags_sel, const int client_id,
                               DBT *key, DBT *serialized_cache_rec)
@@ -544,11 +564,12 @@ static void *locked_read_add (struct tags_cache *c, const char *file,
 
 	return tags;
 }
+#endif
 
 /* Read the selected tags for this file and add it to the cache.
  * If client_id != -1, the server is notified using tags_response().
  * If client_id == -1, copy of file_tags is returned. */
-static struct file_tags *tags_cache_read_add (struct tags_cache *c,
+static struct file_tags *tags_cache_read_add (struct tags_cache *c ATTR_UNUSED,
                      const char *file, int tags_sel, int client_id)
 {
 	struct file_tags *tags = NULL;
@@ -557,10 +578,12 @@ static struct file_tags *tags_cache_read_add (struct tags_cache *c,
 
 	debug ("Getting tags for %s", file);
 
+#ifdef HAVE_DB_H
 	if (c->max_items)
 		tags = (struct file_tags *)with_db_lock (locked_read_add, c, file,
 		                                         tags_sel, client_id);
 	else
+#endif
 		tags = read_missing_tags (file, tags, tags_sel);
 
 	if (client_id != -1) {
@@ -636,8 +659,10 @@ void tags_cache_init (struct tags_cache *c, size_t max_size)
 
 	assert (c != NULL);
 
+#ifdef HAVE_DB_H
 	c->db_env = NULL;
 	c->db = NULL;
+#endif
 
 	for (i = 0; i < CLIENTS_MAX; i++)
 		request_queue_init (&c->queues[i]);
@@ -668,17 +693,21 @@ void tags_cache_destroy (struct tags_cache *c)
 	pthread_cond_signal (&c->request_cond);
 	UNLOCK (c->mutex);
 
+#ifdef HAVE_DB_H
 	if (c->db) {
 		c->db->close (c->db, 0);
 		c->db = NULL;
 	}
+#endif
 
+#ifdef HAVE_DB_H
 	if (c->db_env) {
 		c->db_env->lock_id_free (c->db_env, c->locker);
 
 		c->db_env->close (c->db_env, 0);
 		c->db_env = NULL;
 	}
+#endif
 
 	rc = pthread_join (c->reader_thread, NULL);
 	if (rc != 0)
@@ -696,6 +725,7 @@ void tags_cache_destroy (struct tags_cache *c)
 		logit ("Can't destroy request_cond: %s", strerror (rc));
 }
 
+#ifdef HAVE_DB_H
 static void *locked_add_request (struct tags_cache *c, const char *file,
                                  int tags_sel, int client_id,
                                  DBT *key, DBT *serialized_cache_rec)
@@ -731,6 +761,7 @@ static void *locked_add_request (struct tags_cache *c, const char *file,
 
 	return NULL;
 }
+#endif
 
 void tags_cache_add_request (struct tags_cache *c, const char *file,
                                         int tags_sel, int client_id)
@@ -741,8 +772,10 @@ void tags_cache_add_request (struct tags_cache *c, const char *file,
 
 	debug ("Request for tags for %s from client %d", file, client_id);
 
+#ifdef HAVE_DB_H
 	if (c->max_items)
 		with_db_lock (locked_add_request, c, file, tags_sel, client_id);
+#endif
 
 	LOCK (c->mutex);
 	request_queue_add (&c->queues[client_id], file, tags_sel);
@@ -787,6 +820,7 @@ void tags_cache_save (struct tags_cache *c ATTR_UNUSED,
 }
 
 /* Purge content of a directory. */
+#ifdef HAVE_DB_H
 static int purge_directory (const char *dir_path)
 {
 	DIR *dir;
@@ -851,11 +885,13 @@ static int purge_directory (const char *dir_path)
 	closedir (dir);
 	return 1;
 }
+#endif
 
 /* Create a MOC/db version string.
  *
  * @param buf Output buffer (at least VERSION_TAG_MAX chars long)
  */
+#ifdef HAVE_DB_H
 static const char *create_version_tag (char *buf)
 {
 	int db_major;
@@ -868,9 +904,11 @@ static const char *create_version_tag (char *buf)
 
 	return buf;
 }
+#endif
 
 /* Check version of the cache directory.  If it was created
  * using format not handled by this version of MOC, return 0. */
+#ifdef HAVE_DB_H
 static int cache_version_matches (const char *cache_dir)
 {
 	char *fname = NULL;
@@ -907,7 +945,9 @@ static int cache_version_matches (const char *cache_dir)
 
 	return compare_result;
 }
+#endif
 
+#ifdef HAVE_DB_H
 static void write_cache_version (const char *cache_dir)
 {
 	char cur_version_tag[VERSION_TAG_MAX];
@@ -933,8 +973,10 @@ static void write_cache_version (const char *cache_dir)
 	free (fname);
 	fclose (f);
 }
+#endif
 
 /* Make sure that the cache directory exists and clear it if necessary. */
+#ifdef HAVE_DB_H
 static int prepare_cache_dir (const char *cache_dir)
 {
 	if (mkdir (cache_dir, 0700) == 0) {
@@ -958,13 +1000,15 @@ static int prepare_cache_dir (const char *cache_dir)
 
 	return 1;
 }
+#endif
 
 void tags_cache_load (struct tags_cache *c, const char *cache_dir)
 {
-	int ret;
-
 	assert (c != NULL);
 	assert (cache_dir != NULL);
+
+#ifdef HAVE_DB_H
+	int ret;
 
 	if (!c->max_items)
 		return;
@@ -1015,6 +1059,7 @@ err:
 	}
 	c->max_items = 0;
 	error ("Failed to initialise tags cache: caching disabled");
+#endif
 }
 
 /* Immediately read tags for a file bypassing the request queue. */
