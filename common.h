@@ -95,6 +95,7 @@ void error (const char *format, ...);
 #endif
 
 void set_me_server ();
+char *trim (const char *src, size_t len);
 bool is_valid_symbol (const char *candidate);
 char *create_file_name (const char *file);
 void sec_to_min (char *buff, const int seconds);

@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
+#include <ctype.h>
 #include <assert.h>
 #include <unistd.h>
 #include <sys/types.h>
@@ -149,6 +150,35 @@ char *str_repl (char *target, const char *oldstr, const char *newstr)
 	}
 	target = xrealloc(target, target_len + 1);
 	return target;
+}
+
+/* Extract a substring starting at 'src' for length 'len' and remove
+ * any leading and trailing whitespace.  Return NULL if unable.  */
+char *trim (const char *src, size_t len)
+{
+	char *result;
+	const char *first, *last;
+
+	for (last = &src[len - 1]; last >= src; last -= 1) {
+		if (!isspace (*last))
+			break;
+	}
+	if (last < src)
+		return NULL;
+
+	for (first = src; first <= last; first += 1) {
+		if (!isspace (*first))
+			break;
+	}
+	if (first > last)
+		return NULL;
+
+	last += 1;
+	result = xcalloc (last - first + 1, sizeof (char));
+	strncpy (result, first, last - first);
+	result[last - first] = 0x00;
+
+	return result;
 }
 
 /* Return true iff the argument would be a syntactically valid symbol.

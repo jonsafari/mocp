@@ -475,31 +475,6 @@ static void log_command_line (int argc, char *argv[])
 	lists_strs_free (cmdline);
 }
 
-/* Extract a substring starting at 'src' for length 'len' and remove
- * any leading and trailing blanks.  Return NULL if unable.  */
-static char *extract_trimmed_token (const char *src, size_t len)
-{
-	size_t first, last;
-	char *result;
-
-	first = strspn (src, " ");
-	if (first > len)
-		return NULL;
-
-	for (last = len; last > 0; len -= 1) {
-		if (src[last - 1] != ' ')
-			break;
-	}
-	if (last == 0)
-		return NULL;
-
-	result = xcalloc (last - first + 1, sizeof (char));
-	strncpy (result, &src[first], last - first);
-	result[last] = 0x00;
-
-	return result;
-}
-
 static void override_config_option (const char *optarg, lists_t_strs *deferred)
 {
 	int len;
@@ -516,7 +491,7 @@ static void override_config_option (const char *optarg, lists_t_strs *deferred)
 	/* Allow for list append operator ("+="). */
 	append = (ptr > optarg && *(ptr - 1) == '+');
 
-	name = extract_trimmed_token (optarg, ptr - optarg - (append ? 1 : 0));
+	name = trim (optarg, ptr - optarg - (append ? 1 : 0));
 	if (!name || strlen (name) == 0)
 		goto error;
 	type = options_get_type (name);
@@ -531,7 +506,7 @@ static void override_config_option (const char *optarg, lists_t_strs *deferred)
 	else if (append)
 		goto error;
 
-	value = extract_trimmed_token (ptr + 1, strlen (ptr + 1));
+	value = trim (ptr + 1, strlen (ptr + 1));
 	if (!value || strlen (value) == 0)
 		goto error;
 
