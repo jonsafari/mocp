@@ -14,6 +14,7 @@
 #endif
 
 #include <stdio.h>
+#include <stddef.h>
 #include <string.h>
 #include <stdarg.h>
 #include <errno.h>
@@ -49,7 +50,7 @@ struct decoder_s_preference {
 	int decoders;                         /* number of decoders */
 	int decoder_list[PLUGINS_NUM];        /* decoder indices */
 	char *subtype;                        /* MIME subtype or NULL */
-	char type[0];                         /* MIME type or filename extn */
+	char type[FLEXIBLE_ARRAY_MEMBER];     /* MIME type or filename extn */
 };
 typedef struct decoder_s_preference decoder_t_preference;
 static decoder_t_preference *preferences = NULL;
@@ -487,8 +488,9 @@ static decoder_t_preference *make_preference (const char *prefix)
 
 	assert (prefix && prefix[0]);
 
-	result = (decoder_t_preference *)xmalloc (sizeof (decoder_t_preference) +
-	                                          strlen (prefix) + 1);
+	result = (decoder_t_preference *)xmalloc (
+		offsetof (decoder_t_preference, type) + strlen (prefix) + 1
+	);
 	result->next = NULL;
 	result->decoders = 0;
 	strcpy (result->type, prefix);
