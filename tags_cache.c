@@ -316,13 +316,53 @@ err:
 	return 0;
 }
 
+/* Locked DB function prototype.
+ * The function must not acquire or release DB locks. */
+typedef void *t_locked_fn (struct tags_cache *, const char *,
+                                      int, int, DBT *, DBT *);
+
+/* This function ensures that a DB function takes place while holding a
+ * database record lock.  It also provides an initialised database thang
+ * for the key and record. */
+static void *with_db_lock (t_locked_fn fn, struct tags_cache *c,
+                           const char *file, int tags_sel, int client_id)
+{
+	int rc;
+	void *result;
+	DB_LOCK lock;
+	DBT key, record;
+
+	assert (c->db_env != NULL);
+
+	memset (&key, 0, sizeof (key));
+	key.data = (void *) file;
+	key.size = strlen (file);
+
+	memset (&record, 0, sizeof (record));
+	record.flags = DB_DBT_MALLOC;
+
+	rc = c->db_env->lock_get (c->db_env, c->locker, 0,
+			&key, DB_LOCK_WRITE, &lock);
+	if (rc)
+		fatal ("Can't get DB lock: %s", db_strerror (rc));
+
+	result = fn (c, file, tags_sel, client_id, &key, &record);
+
+	rc = c->db_env->lock_put (c->db_env, &lock);
+	if (rc)
+		fatal ("Can't release DB lock: %s", db_strerror (rc));
+
+	if (record.data)
+		free (record.data);
+
+	return result;
+}
+
 static void tags_cache_remove_rec (struct tags_cache *c, const char *fname)
 {
 	DBT key;
 	int ret;
 
-	assert (c != NULL);
-	assert (c->db != NULL);
 	assert (fname != NULL);
 
 	debug ("Removing %s from the cache...", fname);
@@ -399,18 +439,15 @@ static void tags_cache_gc (struct tags_cache *c)
 
 /* Add this tags object for the file to the cache. */
 static void tags_cache_add (struct tags_cache *c, const char *file,
-                                            struct file_tags *tags)
+                                  DBT *key, struct file_tags *tags)
 {
 	char *serialized_cache_rec;
 	int serial_len;
 	struct cache_record rec;
-	DBT key;
 	DBT data;
 	int ret;
 
-	assert (c != NULL);
 	assert (tags != NULL);
-	assert (file != NULL);
 
 	debug ("Adding/updating cache object");
 
@@ -422,89 +459,23 @@ static void tags_cache_add (struct tags_cache *c, const char *file,
 	if (!serialized_cache_rec)
 		return;
 
-	memset (&key, 0, sizeof(key));
 	memset (&data, 0, sizeof(data));
-
-	key.data = (void *)file;
-	key.size = strlen (file);
-
 	data.data = serialized_cache_rec;
 	data.size = serial_len;
 
 	tags_cache_gc (c);
 
-	ret = c->db->put (c->db, NULL, &key, &data, 0);
+	ret = c->db->put (c->db, NULL, key, &data, 0);
 	if (ret)
-		logit ("DB put error: %s", db_strerror (ret));
+		error ("DB put error: %s", db_strerror (ret));
 
 	free (serialized_cache_rec);
 }
 
-/* Read the selected tags for this file and add it to the cache.
- * If client_id != -1, the server is notified using tags_response().
- * If client_id == -1, copy of file_tags is returned. */
-static struct file_tags *tags_cache_read_add (struct tags_cache *c,
-                     const char *file, int tags_sel, int client_id)
+/* Read time tags for a file into tags structure (or create it if NULL). */
+struct file_tags *read_missing_tags (const char *file,
+                 struct file_tags *tags, int tags_sel)
 {
-	struct file_tags *tags = NULL;
-	DBT key;
-	DBT serialized_cache_rec;
-	DB_LOCK lock;
-	int got_lock = 0;
-	int ret;
-
-	assert (c->db_env != NULL);
-	assert (c->db != NULL);
-	assert (file != NULL);
-
-	debug ("Getting tags for %s", file);
-
-	memset (&key, 0, sizeof(key));
-	memset (&serialized_cache_rec, 0, sizeof(serialized_cache_rec));
-
-	key.data = (void *)file;
-	key.size = strlen (file);
-	serialized_cache_rec.flags = DB_DBT_MALLOC;
-
-	ret = c->db_env->lock_get (c->db_env, c->locker, 0,
-			&key, DB_LOCK_WRITE, &lock);
-	if (ret) {
-		logit ("Can't get DB lock: %s", db_strerror (ret));
-	}
-	else {
-		got_lock = 1;
-		ret = c->db->get (c->db, NULL, &key, &serialized_cache_rec, 0);
-		if (ret && ret != DB_NOTFOUND)
-			logit ("Cache DB get error: %s", db_strerror (ret));
-	}
-
-	/* If this entry is already present in the cache, we have 3 options:
-	 * we must read different tags (TAGS_*) or the tags are outdated
-	 * or this is an immediate tags read (client_id == -1) */
-	if (ret == 0) {
-		struct cache_record rec;
-
-		if (cache_record_deserialize (&rec, serialized_cache_rec.data,
-		                              serialized_cache_rec.size, 0)) {
-			time_t curr_mtime = get_mtime (file);
-
-			if (rec.mod_time != curr_mtime) {
-				debug ("Tags in the cache are outdated");
-				tags_free (rec.tags);  /* remove them and reread tags */
-			}
-			else if ((rec.tags->filled & tags_sel) == tags_sel
-					&& client_id == -1) {
-				debug ("Tags are in the cache.");
-				tags = rec.tags;  /* use them */
-				goto end;
-			}
-			else {
-				debug ("Tags in the cache are not what we want");
-				tags = rec.tags;  /* read additional tags */
-			}
-		}
-	}
-
 	if (tags == NULL)
 		tags = tags_new ();
 
@@ -522,7 +493,70 @@ static struct file_tags *tags_cache_read_add (struct tags_cache *c,
 	}
 
 	tags = read_file_tags (file, tags, tags_sel);
-	tags_cache_add (c, file, tags);
+
+	return tags;
+}
+
+/* Read the selected tags for this file and add it to the cache. */
+static void *locked_read_add (struct tags_cache *c, const char *file,
+                              const int tags_sel, const int client_id,
+                              DBT *key, DBT *serialized_cache_rec)
+{
+	int ret;
+	struct file_tags *tags = NULL;
+
+	assert (c->db != NULL);
+
+	ret = c->db->get (c->db, NULL, key, serialized_cache_rec, 0);
+	if (ret && ret != DB_NOTFOUND)
+		logit ("Cache DB get error: %s", db_strerror (ret));
+
+	/* If this entry is already present in the cache, we have 3 options:
+	 * we must read different tags (TAGS_*) or the tags are outdated
+	 * or this is an immediate tags read (client_id == -1) */
+	if (ret == 0) {
+		struct cache_record rec;
+
+		if (cache_record_deserialize (&rec, serialized_cache_rec->data,
+		                              serialized_cache_rec->size, 0)) {
+			time_t curr_mtime = get_mtime (file);
+
+			if (rec.mod_time != curr_mtime) {
+				debug ("Tags in the cache are outdated");
+				tags_free (rec.tags);  /* remove them and reread tags */
+			}
+			else if ((rec.tags->filled & tags_sel) == tags_sel
+					&& client_id == -1) {
+				debug ("Tags are in the cache.");
+				return rec.tags;
+			}
+			else {
+				debug ("Tags in the cache are not what we want");
+				tags = rec.tags;  /* read additional tags */
+			}
+		}
+	}
+
+	tags = read_missing_tags (file, tags, tags_sel);
+	tags_cache_add (c, file, key, tags);
+
+	return tags;
+}
+
+/* Read the selected tags for this file and add it to the cache.
+ * If client_id != -1, the server is notified using tags_response().
+ * If client_id == -1, copy of file_tags is returned. */
+static struct file_tags *tags_cache_read_add (struct tags_cache *c,
+                     const char *file, int tags_sel, int client_id)
+{
+	struct file_tags *tags = NULL;
+
+	assert (file != NULL);
+
+	debug ("Getting tags for %s", file);
+
+	tags = (struct file_tags *)with_db_lock (locked_read_add, c, file,
+	                                         tags_sel, client_id);
 
 	if (client_id != -1) {
 		tags_response (client_id, file, tags);
@@ -532,16 +566,6 @@ static struct file_tags *tags_cache_read_add (struct tags_cache *c,
 
 	/* TODO: Remove the oldest items from the cache if we exceeded the maximum
 	 * cache size */
-
-end:
-	if (got_lock) {
-		ret = c->db_env->lock_put (c->db_env, &lock);
-		if (ret)
-			logit ("Can't release DB lock: %s", db_strerror (ret));
-	}
-
-	if (serialized_cache_rec.data)
-		free (serialized_cache_rec.data);
 
 	return tags;
 }
@@ -665,42 +689,14 @@ void tags_cache_destroy (struct tags_cache *c)
 		logit ("Can't destroy request_cond: %s", strerror (rc));
 }
 
-void tags_cache_add_request (struct tags_cache *c, const char *file,
-                                        int tags_sel, int client_id)
+static void *locked_add_request (struct tags_cache *c, const char *file,
+                                 int tags_sel, int client_id,
+                                 DBT *key, DBT *serialized_cache_rec)
 {
-	DBT serialized_cache_rec;
-	DBT key;
 	int db_ret;
-	int got_lock;
-	DB_LOCK lock;
-
-	assert (c != NULL);
-	assert (c->db_env != NULL);
-	assert (c->db != NULL);
-	assert (file != NULL);
-	assert (client_id >= 0 && client_id < CLIENTS_MAX);
-
-	debug ("Request for tags for %s from client %d", file, client_id);
-
-	memset (&key, 0, sizeof(key));
-	key.data = (void *)file;
-	key.size = strlen (file);
-
-	memset (&serialized_cache_rec, 0, sizeof(serialized_cache_rec));
-	serialized_cache_rec.flags = DB_DBT_MALLOC;
-
-	db_ret = c->db_env->lock_get (c->db_env, c->locker, 0,
-	                              &key, DB_LOCK_WRITE, &lock);
-	if (db_ret) {
-		got_lock = 0;
-		logit ("Can't get DB lock: %s", db_strerror (db_ret));
-	}
-	else {
-		got_lock = 1;
-	}
 
 	if (c->db) {
-		db_ret = c->db->get (c->db, NULL, &key, &serialized_cache_rec, 0);
+		db_ret = c->db->get (c->db, NULL, key, serialized_cache_rec, 0);
 
 		if (db_ret && db_ret != DB_NOTFOUND)
 			error ("Cache DB search error: %s", db_strerror (db_ret));
@@ -711,14 +707,14 @@ void tags_cache_add_request (struct tags_cache *c, const char *file,
 	if (db_ret == 0) {
 		struct cache_record rec;
 
-		if (cache_record_deserialize (&rec, serialized_cache_rec.data,
-					serialized_cache_rec.size, 0)) {
+		if (cache_record_deserialize (&rec, serialized_cache_rec->data,
+					serialized_cache_rec->size, 0)) {
 			if (rec.mod_time == get_mtime (file)
 					&& (rec.tags->filled & tags_sel) == tags_sel) {
 				tags_response (client_id, file, rec.tags);
 				tags_free (rec.tags);
 				debug ("Tags are present in the cache");
-				goto end;
+				return NULL;
 			}
 
 			tags_free (rec.tags);
@@ -726,20 +722,24 @@ void tags_cache_add_request (struct tags_cache *c, const char *file,
 		}
 	}
 
+	return NULL;
+}
+
+void tags_cache_add_request (struct tags_cache *c, const char *file,
+                                        int tags_sel, int client_id)
+{
+	assert (c != NULL);
+	assert (file != NULL);
+	assert (client_id >= 0 && client_id < CLIENTS_MAX);
+
+	debug ("Request for tags for %s from client %d", file, client_id);
+
+	with_db_lock (locked_add_request, c, file, tags_sel, client_id);
+
 	LOCK (c->mutex);
 	request_queue_add (&c->queues[client_id], file, tags_sel);
 	pthread_cond_signal (&c->request_cond);
 	UNLOCK (c->mutex);
-
-end:
-	if (got_lock) {
-		db_ret = c->db_env->lock_put (c->db_env, &lock);
-		if (db_ret)
-			logit ("Can't release DB lock: %s", db_strerror (db_ret));
-	}
-
-	if (serialized_cache_rec.data)
-		free (serialized_cache_rec.data);
 }
 
 void tags_cache_clear_queue (struct tags_cache *c, int client_id)
