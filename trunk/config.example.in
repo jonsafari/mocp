@@ -2,15 +2,15 @@
 # 'config' and placed in the ~/.moc directory.  As this file can specify
 # commands which invoke other applications, MOC will refuse to start if it
 # is not owned by either root or the current user, or if it is writable by
-# anyone other than it's owner.
+# anyone other than it's owner.  All options are given with their default
+# values, and therefore commented.
 
-#
 # Comments begin with '#'.
 # You can use quotes and escape ('\') in parameters.
 #
 # You can have variable values substituted by enclosing the variable name
 # as "${...}".  (This only applies to the portion of the option following
-# the '='.)  Variables are substituted first from the environment then,
+# the ' ='.)  Variables are substituted first from the environment then,
 # if not found, from the configuration options.  (Note that the value of
 # a configuration option substituted is that which it has at the time the
 # substitution variable is encountered.)  If there is a naming conflict
@@ -39,13 +39,13 @@
 #
 # Some options take lists of strings as their values.  The strings are
 # separated by colons.  Additional strings can be appended to the list
-# using "+=" in place of a plain "=" to assign the value.  For an example,
+# using "+ =" in place of a plain "=" to assign the value.  For an example,
 # see the XTerms option.
 #
 # You can override any configuration option when you run MOC using the
 # '-O' command line option:
 #
-#     mocp -O AutoNext=no -O messagelingertime=1 -O XTerms+=xxt:xwt
+#     mocp -O AutoNext =no -O messagelingertime=1 -O XTerms+=xxt:xwt
 #
 # This command line option can be repeated as many times as needed and
 # the configuration option name is not case sensitive.  (Note that MOC
@@ -55,214 +55,219 @@
 # picked up by substitutions), however list-valued options are overridden
 # afterwards (which gives the choice of whether the configured values are
 # replaced or added to).
+
+# Remember that the client and server are separate processes and the
+# server will retain the configuration values formed from the environment
+# within which it was originally started.
+
+# Show file titles (title, author, album) instead of file names?
+#ReadTags = yes
+
+# In which directory do you store your music files?  If you specify it
+# you will be able to jump straight to this directory with the '-m'
+# parameter or the 'm' command.  This can also point to a playlist.
 #
+# Example:    MusicDir = "/home/joe/music"
+#
+#MusicDir =
 
+# Start in the music directory by default?  If set to 'no', start
+# in the current directory by default.  A single directory on
+# the command line takes precedence.
+#StartInMusicDir = no
 
-# Show file titles (title, author, album) instead of file names.
-ReadTags		= yes
+# How to sort?  FileName is the option's only value for now.
+#Sort = FileName
 
-# Directory in which you store music files. If you specify it you will be able
-# to quickly go to this directory with the '-m' parameter or the 'm' command.
-# This can also point to a playlist.
-#MusicDir		= "/home/joe/music"
+# Show errors in the streams (for example, broken frames in MP3 files)?
+#ShowStreamErrors = no
 
-# How to sort? FileName is the only option for now.
-Sort			= FileName
+# Ignore CRC errors in MP3 files?  Most players do that, so the default
+# value is 'yes'.
+#MP3IgnoreCRCErrors = yes
 
-# Show errors in the streams, for example CRC errors or broken frames in mp3
-# files.
-ShowStreamErrors	= no
-
-# Ignore CRC errors in MP3 files. Most players do that, so the default value is
-# set to yes.
-Mp3IgnoreCRCErrors	= yes
-
-# Turn on repeat.
-Repeat			= no
-
-# Turn on shuffle.
-Shuffle			= no
-
-# Turn on AutoNext.
-AutoNext		= yes
+# Set playback toggles.
+#Repeat = no
+#Shuffle = no
+#AutoNext = yes
 
 # Default FormatString:
-# %n - Track number
-# %a - Artist
-# %A - Album
-# %t - Title
-# %(X:TRUE:FALSE) - ternary expression - if X exists, do TRUE, otherwise
-#                   FALSE. '\' - escape character (must be double, because of
-#                   config interpreter). man zshmisc for more info.
-FormatString		= "%(n:%n :)%(a:%a - :)%(t:%t:)%(A: \(%A\):)"
+#
+#   %n - Track number
+#   %a - Artist
+#   %A - Album
+#   %t - Title
+#   %(X:TRUE:FALSE) - Ternary expression: if X exists, do TRUE,
+#                     otherwise FALSE.  The escape character must
+#                     be doubled (i.e., '\\').  (See zshmisc
+#                     documentation for more information.)
+#
+#FormatString = "%(n:%n :)%(a:%a - :)%(t:%t:)%(A: \(%A\):)"
 
-# Output buffer size in kilobytes. Minimum value is 128KB. */
-OutputBuffer		= 2048
-
-# Input buffer size in kilobytes. Minimum value is 32KB. */
-InputBuffer		= 512
+# Input and ouput buffer sizes (in kilobytes).
+#InputBuffer = 512                  # Minimum value is 32KB
+#OutputBuffer = 512                 # Minimum value is 128KB
 
 # How much to fill the input buffer before playing (in kilobytes)?
-# This can't be more than InputBuffer value.
-# Remember that for network streams beside the positive effect this also causes
-# delay between what you can hear and what is broadcasted.
-Prebuffering		= 64
+# This can't be greater than the value of InputBuffer.  While this has
+# a positive effect for network streams, it also causes the broadcast
+# audio to be delayed.
+#Prebuffering = 64
 
-# Use this HTTP proxy server for internet streams. If not set, the
+# Use this HTTP proxy server for internet streams.  If not set, the
 # environment variables http_proxy and ALL_PROXY will be used if present.
-#HTTPProxy		= my_proxy:port
+#
+# Format: HTTPProxy = PROXY_NAME:PORT
+#
+#HTTPProxy =
 
 # Sound driver - OSS, ALSA, JACK, SNDIO (on OpenBSD) or null (only for
-# debugging).
-# You can enter more than one driver as a colon-separated list.  The first
-# working driver will be used.
-SoundDriver		= @SOUNDDRIVER@
+# debugging).  You can enter more than one driver as a colon-separated
+# list.  The first working driver will be used.
+#SoundDriver = @SOUNDDRIVER@
 
-JackClientName		= "moc"
-JackStartServer		= no
-JackOutLeft 		= "system:playback_1"
-JackOutRight		= "system:playback_2"
+# Jack output settings.
+#JackClientName = "moc"
+#JackStartServer = no
+#JackOutLeft = "system:playback_1"
+#JackOutRight = "system:playback_2"
 
-# OSS output device.
-OSSDevice		= /dev/dsp
+# OSS output settings.
+#OSSDevice = /dev/dsp
+#OSSMixerDevice = /dev/mixer
+#OSSMixerChannel1 = pcm             # 'pcm', 'master' or 'speaker'
+#OSSMixerChannel2 = master          # 'pcm', 'master' or 'speaker'
 
-# OSS Mixer device.
-OSSMixerDevice		= /dev/mixer
-
-# OSS Mixer channel: pcm or master.
-OSSMixerChannel1	= pcm
-
-# Second OSS Mixer channel: pcm or master.
-OSSMixerChannel2	= master
-
-# ALSA mixer device.
-ALSAMixer1 		= PCM
-
-# Second ALSA mixer device.
-ALSAMixer2		= Master
-
-# ALSA output device.
-ALSADevice		= default
+# ALSA output settings.
+#ALSADevice = default
+#ALSAMixer1 = PCM
+#ALSAMixer2 = Master
 
 # Save software mixer state?
-# If enabled, a file 'softmixer' will
-# be created in '~/.moc/' storing the
-# mixersetting set when the server is shut-down.
-# Note that there is a 'hidden' 'Amplification'
-# setting in that file.
-# Amplification (0-200) is used to scale
-# the mixer setting (0-100). This results
-# in a higher signal amplitude but may also
-# produce clipping.
+# If enabled, a file 'softmixer' will be created in '~/.moc/' storing the
+# mixersetting set when the server is shut down.
+# Note that there is a "hidden" 'Amplification' setting in that file.
+# Amplification (0-200) is used to scale the mixer setting (0-100).  This
+# results in a higher signal amplitude but may also produce clipping.
 #Softmixer_SaveState = yes
 
 # Save equalizer state?
-# If enabled, a file 'equalizer' will
-# be created in '~/.moc/' storing the
-# equalizer settings when the server is shut-down.
-# There is a 'hidden' 'Mixin' setting in that file.
-# Mixin (0.0-1.0) is used to determine how much of
-# the original signal is used after equalizing.
-# 0 means to only use the equalized sound, 1
-# effectively disabled the mixer.
-# Default is 0.25
+# If enabled, a file 'equalizer' will be created in '~/.moc/' storing the
+# equalizer settings when the server is shut down.
+# Note that there is a "hidden" 'Mixin' setting in that file.
+# Mixin (0.0-1.0) is used to determine how much of the original signal is
+# used after equalizing.  0 means to only use the equalized sound, while 1
+# effectively disabled the mixer.  The default is 0.25.
 #Equalizer_SaveState = yes
 
 # Show files with dot at the beginning?
-ShowHiddenFiles		= no
+#ShowHiddenFiles = no
 
-# Start in the music directory if no arguments are given. If set to no, start
-# in the current directory.
-StartInMusicDir		= no
+# Hide file name extensions?
+#HideFileExtension = no
 
-# Hide file name extensions.
-HideFileExtension	= no
+# Show file format in menu?
+#ShowFormat = yes
 
-# Show file format in menu.
-ShowFormat		= yes
-
-# Show file time in menu. Possible options: yes, no, IfAvailable - show the
-# time only when it was read before (often works faster).
-ShowTime		= IfAvailable
+# Show file time in menu?  Possible values: 'yes', 'no' and 'IfAvailable'
+# (meaning show the time only when it is already known, which often works
+# faster).
+#ShowTime = IfAvailable
 
 # Show time played as a percentage in the time progress bar.
-#ShowTimePercent	= no
+#ShowTimePercent = no
 
 # Values of the TERM environment variable which are deemed to be xterms.
-XTerms = xterm
-XTerms += xterm-colour:xterm-color
-XTerms += xterm-256colour:xterm-256color
-XTerms += rxvt:rxvt-unicode
-XTerms += rxvt-unicode-256colour:rxvt-unicode-256color
-XTerms += eterm
+#XTerms = xterm
+#XTerms + = xterm-colour:xterm-color
+#XTerms + = xterm-256colour:xterm-256color
+#XTerms + = rxvt:rxvt-unicode
+#XTerms + = rxvt-unicode-256colour:rxvt-unicode-256color
+#XTerms + = eterm
 
-# Theme file. This can be absolute path or relative to
-# /usr/share/moc/themes/ (depends on installation prefix) or ~/.moc/themes/
-# Theme			= example_theme
+# Theme file to use.  This can be absolute path or relative to
+# /usr/share/moc/themes/ (depends on installation prefix) or
+# ~/.moc/themes/ .
+#
+# Example:    Theme = laras_theme
+#
+#Theme =
 
 # The theme used when running on an xterm.
-# XTermTheme		= transparent-background
+#
+# Example:    XTermTheme = transparent-background
+#
+#XTermTheme =
 
 # Should MOC try to autoload the default lyrics file for an audio?  (The
 # default lyrics file is a text file with the same file name as the audio
 # file name with any trailing "extension" removed.)
-# AutoLoadLyrics	= yes
+#AutoLoadLyrics = yes
 
-# MOC directory - where pid file, socket, and state files are stored.
+# MOC directory (where pid file, socket and state files are stored).
 # You can use ~ at the beginning.
-# MOCDir		= ~/.moc
+#MOCDir = ~/.moc
 
-# Use mmap() to read files. mmap() is much slower on NFS.
-UseMmap			= no
+# Use mmap() to read files.  mmap() is much slower on NFS.
+#UseMMap = no
 
 # Use MIME to identify audio files.  This can make for slower loading
 # of playlists but is more accurate than using "extensions".
-#UseMimeMagic	= no
+#UseMimeMagic = no
 
-# Assume this encoding for ID3 version 1/1.1 tags (mp3 files). Unlike ID3v2
-# UTF-8 is not used here and MOC can't guess how tags are encoded. Another
-# solution is using librcc (see the next option). This option is ignored
-# if UseRCC is set to yes.
-#ID3v1TagsEncoding		= WINDOWS-1250
+# Assume this encoding for ID3 version 1/1.1 tags (MP3 files).  Unlike
+# ID3v2, UTF-8 is not used here and MOC can't guess how tags are encoded.
+# Another solution is using librcc (see the next option).  This option is
+# ignored if UseRCC is set to 'yes'.
+#ID3v1TagsEncoding = WINDOWS-1250
 
 # Use librcc to fix ID3 version 1/1.1 tags encoding.
-#UseRCC				= yes
+#UseRCC = yes
 
 # Use librcc to filenames and directory names encoding.
-#UseRCCForFilesystem			= yes
+#UseRCCForFilesystem = yes
 
-# When this option is set the player assumes that if the encoding of ID3v2
-# is set to ISO-8859-1 then the ID3v1TagsEncoding is actually that and
-# applies appropriate conversion.
-#EnforceTagsEncoding	= no
+# When this option is set the player assumes that if the encoding of
+# ID3v2 is set to ISO-8859-1 then the ID3v1TagsEncoding is actually
+# that and applies appropriate conversion.
+#EnforceTagsEncoding = no
 
 # Enable the conversion of filenames from the local encoding to UTF8.
-#FileNamesIconv		= no
+#FileNamesIconv = no
 
 # Enable the conversion of the xterm title from UTF8 to the local encoding.
-#NonUTFXterm		= no
+#NonUTFXterm = no
 
 # Remember the playlist after exit?
-SavePlaylist		= yes
+#SavePlaylist = yes
 
-# When using more than one client (interface) at a time, do they share the
-# playlist?
-SyncPlaylist		= yes
+# When using more than one client (interface) at a time, do they share
+# the playlist?
+#SyncPlaylist = yes
 
-# Choose a keymap file (relative to ~/.moc/ or absolute path).
-# Example keymap with description is included (keymap.example).
-#Keymap			= my_keymap
+# Choose a keymap file (relative to '~/.moc/' or using an absolute path).
+# An annotated example keymap file is included ('keymap.example').
+#
+# Example:    Keymap = my_keymap
+#
+#Keymap =
 
-# Use ASCII characters instead of graphic for drawing lines. This helps on
-# some terminals.
-ASCIILines		= no
+# Use ASCII rather than graphic characters for drawing lines.  This
+# helps on some terminals.
+#ASCIILines = no
 
-# FastDirs, these allow you to jump directly to a directory, the key bindings
-# are in the keymap file.
-#Fastdir1 = /mp3/rock
-#Fastdir2 = /mp3/electronic
-#Fastdir3 = /mp3/rap
-#Fastdir4 = /mp3/etc
+# FastDirs, these allow you to jump directly to a directory, the key
+# bindings are in the keymap file.
+#
+# Examples:   Fastdir1 = /mp3/rock
+#             Fastdir2 = /mp3/electronic
+#             Fastdir3 = /mp3/rap
+#             Fastdir4 = /mp3/etc
+#
+#Fastdir1 =
+#Fastdir2 =
+#Fastdir3 =
+#Fastdir4 =
 #Fastdir5 =
 #Fastdir6 =
 #Fastdir7 =
@@ -270,12 +275,10 @@ ASCIILines		= no
 #Fastdir9 =
 #Fastdir10 =
 
-# How fast to seek? Number of seconds per key stroke.
-#SeekTime		= 1
-
-# How fast to seek (when using silent seeking)? Number of seconds per key
-# stroke.
-#SilentSeekTime		= 5
+# How fast to seek (in number of seconds per keystroke).  The first
+# option is for normal seek and the second for silent seek.
+#SeekTime = 1
+#SilentSeekTime = 5
 
 # PreferredDecoders allows you to specify which decoder should be used
 # for any given audio format.  It is a colon-separated list in which
@@ -318,13 +321,13 @@ ASCIILines		= no
 # type and streamed media content) and which decoder(s) (if any) are used
 # based on the option's list entries and their ordering.
 #
-# Examples: aac(aac,ffmpeg)             first try FAAD2 for AACs then FFmpeg
-#           mp3()                       ignore MP3 files
-#           wav(*,sndfile)              use sndfile for WAV as a last resort
-#           ogg(vorbis,*):flac(flac,*)  try Xiph decoders first
-#           ogg():audio/ogg()           ignore OGG files, and
-#                                       force Internet selection by content
-#           gz():html()                 ignore some non-audio files
+# Examples:   aac(aac,ffmpeg)             first try FAAD2 for AACs then FFmpeg
+#             mp3()                       ignore MP3 files
+#             wav(*,sndfile)              use sndfile for WAV as a last resort
+#             ogg(vorbis,*):flac(flac,*)  try Xiph decoders first
+#             ogg():audio/ogg()           ignore OGG files, and
+#                                         force Internet selection by content
+#             gz():html()                 ignore some non-audio files
 #
 # Any unspecified audio formats default to trying all decoders.
 # Any unknown (or misspelt) drivers are ignored.
@@ -332,13 +335,13 @@ ASCIILines		= no
 # The default setting reflects the historical situation modified by
 # the experience of users.
 #
-#PreferredDecoders	= aac(aac,ffmpeg):m4a(ffmpeg)
-#PreferredDecoders	+= mpc(musepack,*,ffmpeg):mpc8(musepack,*,ffmpeg)
-#PreferredDecoders	+= sid(sidplay2):mus(sidplay2)
-#PreferredDecoders	+= wav(sndfile,*,modplug,ffmpeg)
-#PreferredDecoders	+= wv(wavpack,*,ffmpeg)
-#PreferredDecoders	+= audio/aac(aac):audio/aacp(aac):audio/m4a(ffmpeg)
-#PreferredDecoders	+= audio/wav(sndfile,*,modplug)
+#PreferredDecoders  = aac(aac,ffmpeg):m4a(ffmpeg)
+#PreferredDecoders += mpc(musepack,*,ffmpeg):mpc8(musepack,*,ffmpeg)
+#PreferredDecoders += sid(sidplay2):mus(sidplay2)
+#PreferredDecoders += wav(sndfile,*,modplug,ffmpeg)
+#PreferredDecoders += wv(wavpack,*,ffmpeg)
+#PreferredDecoders += audio/aac(aac):audio/aacp(aac):audio/m4a(ffmpeg)
+#PreferredDecoders += audio/wav(sndfile,*,modplug)
 
 # The following PreferredDecoders attempt to handle the ambiguity surrounding
 # container types such as OGG for files.  The first two entries will force
@@ -346,45 +349,50 @@ ASCIILines		= no
 # audio), while the MIME media types will cause Internet audio streams to
 # be assessed on content (which may be either Vorbis or Speex).
 #
-#PreferredDecoders	+= ogg(vorbis,ffmpeg):oga(vorbis,ffmpeg):ogv(ffmpeg)
-#PreferredDecoders	+= spx(speex)
-#PreferredDecoders	+= application/ogg(vorbis):audio/ogg(vorbis)
+#PreferredDecoders += ogg(vorbis,ffmpeg):oga(vorbis,ffmpeg):ogv(ffmpeg)
+#PreferredDecoders += spx(speex)
+#PreferredDecoders += application/ogg(vorbis):audio/ogg(vorbis)
 
-# Resample method to use. There are a few methods of resampling sound supported
-# by libresamplerate. The default is the fastest (linear). Better description
-# is here: http://www.mega-nerd.com/libsamplerate/api_misc.html#Converters
+# Which resampling method to use.  There are a few methods of resampling
+# sound supported by libresamplerate.  The default is 'Linear') which is
+# also the fastest.  A better description can be found at:
 #
-# High quality (based on bandlimited interpolation), but slow methods:
+#    http://www.mega-nerd.com/libsamplerate/api_misc.html#Converters
 #
-# SincBestQuality - really slow (I know you probably have an xx GHz processor,
-#			but it's not enough to not see this in the top output :)
-#			The worst case Signal-to-Noise Ratio is 97dB.
-# SincMediumQuality - much faster.
-# SincFastest - the fastest bandlimited interpolation.
+# but briefly, the following methods are based on bandlimited interpolation
+# and are higher quality, but also slower:
 #
-# Poor quality, but much faster methods:
+#    SincBestQuality   - really slow (I know you probably have an xx GHz
+#                        processor, but it's still not enough to not see
+#                        this in the top output :)  The worst case
+#                        Signal-to-Noise Ratio is 97dB.
+#    SincMediumQuality - much faster.
+#    SincFastest       - the fastest bandlimited interpolation.
 #
-# ZeroOrderHold - really poor quality, but it's really fast.
-# Linear - a bit better and a bit slower.
+# And these are lower quality, but much faster methods:
 #
-#ResampleMethod		= Linear
+#    ZeroOrderHold - really poor quality, but it's really fast.
+#    Linear - a bit better and a bit slower.
+#
+#ResampleMethod = Linear
 
-# Always use this sample rate when opening the audio device (and resample the
-# sound if necessary). When set to 0 the device is opened with the file's rate.
-#ForceSampleRate	= 48000
+# Always use this sample rate (in Hz) when opening the audio device (and
+# resample the sound if necessary).  When set to 0 the device is opened
+# with the file's rate.
+#ForceSampleRate = 0
 
-# By default even if the sound card reports that it can output 24bit samples
-# MOC converts 24bit PCM to 16bit. This option set to yes allows MOC to use
-# 24bit output (for example MP3 decoder uses this format). This is disabled
-# in the default configuration because there were reports that it prevents
+# By default, even if the sound card reports that it can output 24bit samples
+# MOC converts 24bit PCM to 16bit.  Setting this option to 'yes' allows MOC
+# to use 24bit output.  (The MP3 decoder, for example, uses this format.)
+# This is disabled by default because there were reports that it prevents
 # MP3 files from playing on some soundcards.
-#Allow24bitOutput	= no
+#Allow24bitOutput = no
 
-# Use realtime priority for output buffer thread. This will prevent gaps while
-# playing even with heavy load. The user which runs MOC must have permissions
-# to set such a priority. This could be dangerous, because it is possible that
-# a bug in MOC will freeze your computer.
-#UseRealtimePriority	= no
+# Use realtime priority for output buffer thread.  This will prevent gaps
+# while playing even with heavy load.  The user who runs MOC must have
+# permissions to set such a priority.  This could be dangerous, because it
+# is possible that a bug in MOC will freeze your computer.
+#UseRealtimePriority = no
 
 # The number of audio files for which MOC will cache tags.  When this limit
 # is reached, file tags are discarded on a least recently used basis (with
@@ -392,10 +400,10 @@ ASCIILines		= no
 # zero.  Note that if you decrease the cache size below the number of items
 # currently in the cache, the number will not decrease immediately (if at
 # all).
-TagsCacheSize		= 256
+#TagsCacheSize = 256
 
 # Number items in the playlist.
-#PlaylistNumbering	= yes
+#PlaylistNumbering = yes
 
 # Main window layouts can be configured.  You can change the position and
 # size of the menus (directory and playlist).  You have three layouts and
@@ -403,17 +411,20 @@ TagsCacheSize		= 256
 # only two layouts are configured.
 #
 # The format is as follows:
-# Each layout is described as a list of menu entries.
-# Each menu entry is of the form:
 #
-#         menu(position_x, position_y, width, height)
+#     - Each layout is described as a list of menu entries.
+#     - Each menu entry is of the form:
 #
-# 'menu' is either "directory" or "playlist".
-# The parameters define position and size of the menu.  They can be absolute
-# numbers (like 10) or a percentage of the screen size (like 45%).
-# 'width' and 'height' can have also value of FILL which means fill the
-# screen from the menu's position to the border.
-# Menus may overlap.
+#           menu(position_x, position_y, width, height)
+#
+#       where 'menu' is either 'directory' or 'playlist'.
+#     - The parameters define position and size of the menu.  They can
+#       be absolute numbers (like 10) or a percentage of the screen size
+#       (like 45%).
+#     - 'width' and 'height' can have also value of 'FILL' which means
+#        fill the screen from the menu's position to the border.
+#     - Menus may overlap.
+#
 # You must describe at least one menu (default is to fill the whole window).
 # There must be at least one layout (Layout1) defined; others can be empty.
 #
@@ -434,64 +445,80 @@ TagsCacheSize		= 256
 #             and the directory menu at the bottom.  Playlist will
 #             occupy 10 lines and the directory menu the rest.
 #
-#Layout1		= directory(0,0,50%,100%):playlist(50%,0,FILL,100%)
-#Layout2		= directory(0,0,100%,100%):playlist(0,0,100%,100%)
-#Layout3		= ""
+#Layout1 = directory(0,0,50%,100%):playlist(50%,0,FILL,100%)
+#Layout2 = directory(0,0,100%,100%):playlist(0,0,100%,100%)
+#Layout3 = ""
 
 # When the song changes, should the menu be scrolled so that the currently
 # played file is visible?
-FollowPlayedFile	= yes
+#FollowPlayedFile = yes
 
-# What to do if the interface was started and something from the playlist is
-# playing? If CanStartInPlaylist is set to "yes", the interface will switch to
-# the playlist. When set to "no" it will start from the last directory.
-CanStartInPlaylist	= yes
+# What to do if the interface was started and the server is already playing
+# something from the playlist?  If CanStartInPlaylist is set to 'yes', the
+# interface will switch to the playlist.  When set to 'no' it will start
+# from the last directory.
+#CanStartInPlaylist = yes
 
-# Executing external commands (1 - 10) invoked with key commands (F1 - F10 by
-# default).
+# Executing external commands (1 - 10) invoked with key commands (F1 - F10
+# by default).
+#
 # Some arguments are substituted before executing:
-# %f - file path
-# %i - title made from tags
-# %S - start block mark (in seconds)
-# %E - end block mark (in seconds)
 #
-# Data from tags:
-# %t - title
-# %a - album
-# %r - artist
-# %n - track
-# %m - time of the file (in seconds)
+#     %f - file path
+#     %i - title made from tags
+#     %S - start block mark (in seconds)
+#     %E - end block mark (in seconds)
 #
-# Parameters above apply to the currently selected file. If you change them to
-# capital letters, they are taken from the file currently playing.
+# Data from tags can also be substituted:
+#
+#     %t - title
+#     %a - album
+#     %r - artist
+#     %n - track
+#     %m - time of the file (in seconds)
+#
+# The parameters above apply to the currently selected file.  If you change
+# them to capital letters, they are taken from the file currently playing.
 #
 # Programs are run using execv(), not a shell, so you can't do things like
-# redirecting the output to a file. The command string is split using blank
-# characters as separators, the first element is the command to be executed
-# and the rest are parameters, so if you use "echo Playing: %I" we run program
-# echo (from $PATH) with 2 parameters: 'Playing:' string and the title. Even
-# if the title contains spaces it's still one parameter and it's safe if it
-# contains `rm -rf /`.
+# redirecting the output to a file.  The command string is split using blank
+# characters as separators; the first element is the command to be executed
+# and the rest are its parameters, so if you use "echo Playing: %I" we run
+# program 'echo' (from $PATH) with 2 parameters: the string 'Playing:' and
+# the title of the file currently playing.  Even if the title contains
+# spaces, it's still one parameter and it's safe if it contains `rm -rf /`.
 #
-# Examples:
-# ExecCommand1		= "cp %f /mnt/usb_drive"
-# ExecCommand2		= "/home/joe/now_playing %I"
+# Examples:   ExecCommand1 = "cp %f /mnt/usb_drive"
+#             ExecCommand2 = "/home/joe/now_playing %I"
+#
+#ExecCommand1 =
+#ExecCommand2 =
+#ExecCommand3 =
+#ExecCommand4 =
+#ExecCommand5 =
+#ExecCommand6 =
+#ExecCommand7 =
+#ExecCommand8 =
+#ExecCommand9 =
+#ExecCommand10 =
 
-# Display the cursor in the line with the selected file. This can be useful with
-# a braille display.
-# UseCursorSelection	= no
+# Display the cursor in the line with the selected file.  Some braille
+# readers (the Handy Tech modular series ZMU 737, for example) use the
+# cursor to focus and can make use of it to present the file line even
+# when other fields are changing.
+#UseCursorSelection = no
 
 # Set the terminal title when running under xterm.
-#SetXtermTitle		= yes
+#SetXtermTitle = yes
 
 # Set the terminal title when running under screen.
-#SetScreenTitle		= yes
+#SetScreenTitle = yes
 
 # Display full paths instead of just file names in the playlist.
-#PlaylistFullPaths	= yes
+#PlaylistFullPaths = yes
 
-# The following setting describes to how block markers are displayed
-# in the play time progress bar.  Its value is a string of exactly three
+# The following setting describes how block markers are displayed in
+# the play time progress bar.  Its value is a string of exactly three
 # characters.  The first character is displayed in a position which
 # corresponds to the time marked as the start of a block and the last
 # character to the time marked as the end of the block.  The middle
@@ -499,69 +526,59 @@ CanStartInPlaylist	= yes
 # would fall in the same position (within the resolution of the interface).
 # You can turn off the displaying of these block marker positions by using
 # three space characters.
-#BlockDecorators	= "`\"'"
+#BlockDecorators = "`\"'"
 
 # How long (in seconds) to leave a message displayed on the screen.
 # Setting this to a high value allows you to scroll through the messages
 # using the 'hide_message' key.  Setting it to zero means you'll have to
-# be quick to see any message at all.  Any new messages will queued up
+# be quick to see any message at all.  Any new messages will be queued up
 # and displayed after the current message's linger time expires.
-#MessageLingerTime	= 3
+#MessageLingerTime = 3
 
 # Does MOC display a prefix on delayed messages indicating
 # the number of queued messages still to be displayed?
-#PrefixQueuedMessages	= yes
+#PrefixQueuedMessages = yes
 
 # String to append to the queued message count if any
 # error messages are still waiting to be displayed.
-#ErrorMessagesQueued	= "!"
+#ErrorMessagesQueued = "!"
 
-# Enable oversampling (yes/no).
+# Self-describing ModPlug options (with 'yes' or 'no' values).
 #ModPlug_Oversampling = yes
-# Enable noise reduction (yes/no).
 #ModPlug_NoiseReduction = yes
-# Enable reverb (yes/no).
 #ModPlug_Reverb = no
-# Enable mega-bass (yes/no).
 #ModPlug_MegaBass = no
-# Enable surround (yes/no).
 #ModPlug_Surround = no
-# Resampling mode. One of FIR/SPLINE/LINEAR/NEAREST:
-# FIR :      8 tap fir filter (extremely high quality).
-# SPLINE :   Cubic spline interpolation (high quality).
-# LINEAR :   Linear interpolation (fast, good quality).
-# NEAREST :  No interpolation (very fast, extremely bad sound quality).
-#ModPlug_ResamplingMode = FIR
-# Number of channles (1 or 2).
-#ModPlug_Channels = 2
-# Bits per sample (8,16,32). 32 Bits seems to be buggy...
-#ModPlug_Bits = 16
-# Sampling rate (11025, 22050, 44100, 48000).
-#ModPlug_Frequency = 44100
-# Reverb level 0(quiet)-100(loud).
-#ModPlug_ReverbDepth = 0
-# Reverb delay in ms, usually 40-200ms.
-#ModPlug_ReverbDelay = 0
-# Bass level 0(quiet)-100(loud).
-#ModPlug_BassAmount = 0
-# Bass cutoff in Hz (10-100).
-#ModPlug_BassRange = 10
-# Surround level 0(quiet)-100(heavy).
-#ModPlug_SurroundDepth = 0
-# Surround delay in ms, usually 5-40ms.
-#ModPlug_SurroundDelay = 0
-# Number of times to loop. Zero prevents looping. -1 loops forever.
-#ModPlug_LoopCount = 0
 
-#TiMidity-Options.
-# Rate must be in between 8000 and 48000.
-#TiMidity_Rate = 44100
-# Bitrate is 8 or 16.
-#TiMidity_Bits = 16
-# Channels is 1 or 2.
-#TiMidity_Channels = 2
-# Volume-Range is 0-800.
-#TiMidity_Volume = 100
+# ModPlug resampling mode.
+# Valid values are:
+#
+#     FIR -      8 tap fir filter (extremely high quality)
+#     SPLINE -   Cubic spline interpolation (high quality)
+#     LINEAR -   Linear interpolation (fast, good quality)
+#     NEAREST -  No interpolation (very fast, extremely bad sound quality)
+#
+#ModPlug_ResamplingMode = FIR
+
+# Other self-describing ModPlug audio characteristic options.
+# (Note that the 32 bit sample size seems to be buggy.)
+#ModPlug_Channels = 2               # 1 or 2 channels
+#ModPlug_Bits = 16                  # 8, 16 or 32 bits
+#ModPlug_Frequency = 44100          # 11025, 22050, 44100 or 48000 Hz
+#ModPlug_ReverbDepth = 0            # 0 (quiet) to 100 (loud)
+#ModPlug_ReverbDelay = 0            # Delay in ms (usually 40-200ms)
+#ModPlug_BassAmount = 0             # 0 (quiet) to 100 (loud).
+#ModPlug_BassRange = 10             # Cutoff in Hz (10-100).
+#ModPlug_SurroundDepth = 0          # Surround level 0(quiet)-100(heavy).
+#ModPlug_SurroundDelay = 0          # Surround delay in ms, usually 5-40ms.
+#ModPlug_LoopCount = 0              # 0 (never), n (times) or -1 (forever)
+
+# Self-describing TiMidity audio characteristic options.
+#TiMidity_Rate = 44100              # Between 8000 and 48000
+#TiMidity_Bits = 16                 # 8 or 16
+#TiMidity_Channels = 2              # 1 or 2
+#TiMidity_Volume = 100              # 0 to 800
+
 # You can setup a TiMidity-Config-File here.
 # Leave it unset to use library defaults (/etc/timidity.cfg mostly).
 # Setting it to 'yes' also uses the library defaults.
@@ -569,66 +586,68 @@ CanStartInPlaylist	= yes
 # Otherwise set it to the name of a specific file.
 #TiMidity_Config =
 
-# SidPlay2-Options.
-# Default length of a song if not in database (seconds).
-#SidPlay2_DefaultSongLength = 180
-# Play at least a specific time if song is shorter (seconds).
-#SidPlay2_MinimumSongLength = 0
+# Self-describing SidPlay2 audio characteristic options.
+#SidPlay2_DefaultSongLength = 180   # If not in database (in seconds)
+#SidPlay2_MinimumSongLength = 0     # Play at least n (in seconds)
+#SidPlay2_Frequency = 44100         # 4000 to 48000
+#SidPlay2_Bits = 16                 # 8 or 16
+#SidPlay2_Optimisation = 0          # 0 (worst quality) to 2 (best quality)
+
 # Set path to a HVSC-compatible database (if not set, database is disabled).
-#SidPlay2_Database
-# Sampling Frequency (4000-48000Hz).
-#SidPlay2_Frequency = 44100
-# Sampling Resolution (8/16).
-#SidPlay2_Bits = 16
-# Playback Mode:
-# "M": Mono (best for many SIDs).
-# "S": Stereo.
-# "L"/"R": Left / Right.
+#SidPlay2_Database =
+
+# SidPlay2 playback Mode:
+#
+#     "M": Mono (best for many SIDs)
+#     "S": Stereo
+#     "L"/"R": Left / Right
+#
 #SidPlay2_PlayMode = "M"
-# Optimisation-level (0-2), 0 is best quality.
-#SidPlay2_Optimisation = 0
-# Use start-song information from SID (1) or start at first song (0).
-# Songs before the start-song won't be played.
-#SidPlay2_StartAtStart = 1
-# Play sub-tunes.
-#SidPlay2_PlaySubTunes = 1
 
-# OnSongChange.
-# Specify the full path (i.e. no ~) of an executable to run.
+# Use start-song information from SID ('yes') or start at first song
+# ('no').  Songs before the start-song won't be played.  (Note that this
+# option previously took the values 1 and 0; these are now deprecated
+# in favour of 'yes' and 'no'.)
+#SidPlay2_StartAtStart = yes
+
+# Play sub-tunes.  (Note that this option previously took the values 1
+# and 0; these are now deprecated in favour of 'yes' and 'no'.)
+#SidPlay2_PlaySubTunes = yes
+
+# Run the OnSongChange command when a new song starts playing.
+# Specify the full path (i.e. no leading '~') of an executable to run.
 # Arguments will be passed, and you can use the following escapes:
-#  %a artist
-#  %r album
-#  %f filename
-#  %t title
-#  %n track
-#  %d file duration in XX:YY form
-#  %D file duration, number of seconds
 #
-# No pipes/redirects can be used directly, but writing a shell
-# script can do the job.
+#     %a artist
+#     %r album
+#     %f filename
+#     %t title
+#     %n track
+#     %d file duration in XX:YY form
+#     %D file duration, number of seconds
 #
-# Example:
+# No pipes/redirects can be used directly, but writing a shell script
+# can do the job.
 #
-#OnSongChange = "/home/jack/.moc/myscript %a %r"
+# Example:    OnSongChange = "/home/jack/.moc/myscript %a %r"
+#
+#OnSongChange =
 
-# RepeatSongChange.
-# If 'yes' then MOC will execute the 'OnSongChange' command every time a
-# song starts playing regardless of whether or not it is just repeating.
+# If RepeatSongChange is 'yes' then MOC will execute the command every time
+# a song starts playing regardless of whether or not it is just repeating.
 # Otherwise the command will only be executed when a different song is
 # started.
 #RepeatSongChange = no
 
-# OnStop.
-# Run the following command (full path, no arguments) when MOC changes state
-# to stopped (when user stopped playing or changes a song).
-#
+# Run the OnStop command (full path, no arguments) when MOC changes state
+# to stopped (i.e., when user stopped playing or changes a song).
 #OnStop = "/home/jack/.moc/myscript_on_stop"
 
-# This options determines what song to play after finishing all the songs in
-# queue. Setting this to 'yes' causes MOC to play the song which follows the
-# song played before playing the queue. If set to 'no', MOC will play the song
-# after the last song in the queue if it was in the playlist. The default is
-# 'yes' because this is the way other players usually behave. (Note that this
-# option previously took the values 1 and 0; these are now deprecated in
-# favour of 'yes' and 'no'.)
+# This option determines which song to play after finishing all the songs
+# in the queue.  Setting this to 'yes' causes MOC to play the song which
+# follows the song being played before queue playing started. If set to
+# 'no', MOC will play the song following the last song in the queue if it
+# is in the playlist.  The default is 'yes' because this is the way other
+# players usually behave.  (Note that this option previously took the
+# values 1 and 0; these are now deprecated in favour of 'yes' and 'no'.)
 #QueueNextSongReturn = yes

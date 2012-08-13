@@ -201,9 +201,9 @@ static int oss_init (struct output_driver_caps *caps)
 	}
 	else {
 		mixer_channel1 = oss_mixer_name_to_channel (
-				options_get_str ("OSSMixerChannel1"));
+				options_get_symb ("OSSMixerChannel1"));
 		mixer_channel2 = oss_mixer_name_to_channel (
-				options_get_str ("OSSMixerChannel2"));
+				options_get_symb ("OSSMixerChannel2"));
 
 		if (mixer_channel1 == -1)
 			fatal ("Bad first OSS mixer channel!");
@@ -423,8 +423,8 @@ static char *oss_get_mixer_channel_name ()
 {
 #ifdef OSSv3_MIXER
 	if (mixer_channel_current == mixer_channel1)
-		return xstrdup (options_get_str ("OSSMixerChannel1"));
-	return xstrdup (options_get_str ("OSSMixerChannel2"));
+		return xstrdup (options_get_symb ("OSSMixerChannel1"));
+	return xstrdup (options_get_symb ("OSSMixerChannel2"));
 #else
 	return xstrdup ("moc");
 #endif

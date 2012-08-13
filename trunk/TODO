@@ -36,6 +36,8 @@ Before 2.5:
 
 Transitional code removal (after 2.5):
 
+* Remove changed option type for SidPlay2_StartAtStart.
+* Remove changed option type for SidPlay2_PlaySubTunes.
 * Remove changed option type for QueueNextSongReturn.
 * Remove changed option type for SoundDriver.
 * Remove changed option format for Layouts.

@@ -349,7 +349,7 @@ static struct mp3_data *mp3_open_internal (const char *file,
 		mad_frame_init (&data->frame);
 		mad_synth_init (&data->synth);
 
-		if (options_get_int("Mp3IgnoreCRCErrors"))
+		if (options_get_int ("MP3IgnoreCRCErrors"))
 				mad_stream_options (&data->stream,
 					MAD_OPTION_IGNORECRC);
 
@@ -407,7 +407,7 @@ static void *mp3_open_stream (struct io_stream *stream)
 	mad_frame_init (&data->frame);
 	mad_synth_init (&data->synth);
 
-	if (options_get_int("Mp3IgnoreCRCErrors"))
+	if (options_get_int ("MP3IgnoreCRCErrors"))
 			mad_stream_options (&data->stream,
 				MAD_OPTION_IGNORECRC);
 
