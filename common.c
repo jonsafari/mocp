@@ -55,7 +55,8 @@ void error (const char *format, ...)
 
 /* End program with a message. Use when an error occurs and we can't recover.
  * If we're the server, then also log the message to the system log. */
-void fatal (const char *format, ...)
+void internal_fatal (const char *file ATTR_UNUSED, int line ATTR_UNUSED,
+                 const char *function ATTR_UNUSED, const char *format, ...)
 {
 	va_list va;
 	char msg[256];
@@ -66,7 +67,9 @@ void fatal (const char *format, ...)
 	vsnprintf (msg, sizeof(msg), format, va);
 	msg[sizeof(msg) - 1] = 0;
 	fprintf (stderr, "\nFATAL_ERROR: %s\n\n", msg);
-	logit ("FATAL ERROR: %s", msg);
+#ifndef NDEBUG
+	internal_logit (file, line, function, "FATAL ERROR: %s", msg);
+#endif
 	va_end (va);
 
 	log_close ();
