@@ -638,6 +638,7 @@ void options_init ()
 	add_list ("PreferredDecoders",
 	                 "aac(aac,ffmpeg):m4a(ffmpeg):"
 	                 "mpc(musepack,*,ffmpeg):mpc8(musepack,*,ffmpeg):"
+	                 "sid(sidplay2):mus(sidplay2):"
 	                 "wav(sndfile,*,modplug,ffmpeg):"
 	                 "wv(wavpack,*,ffmpeg):"
 	                 "audio/aac(aac):audio/aacp(aac):audio/m4a(ffmpeg):"
