@@ -269,7 +269,7 @@ static void show_version ()
 	printf (" DEBUG");
 #endif
 #ifdef HAVE_CURL
-	printf (" internet streams");
+	printf (" Internet streams");
 #endif
 #ifdef HAVE_SAMPLERATE
 	printf (" resample");

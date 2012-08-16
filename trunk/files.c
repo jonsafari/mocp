@@ -166,16 +166,16 @@ char *file_mime_type (const char *file ATTR_UNUSED)
 	return result;
 }
 
-/* Make a title from the file name for the item. If hide extension != 0, strip
- * the file name from extension. */
+/* Make a title from the file name for the item.  If hide_extn != 0,
+ * strip the file name from extension. */
 void make_file_title (struct plist *plist, const int num,
 		const int hide_extension)
 {
 	assert (plist != NULL);
 	assert (num >= 0 && num < plist->num);
-	assert (!plist_deleted(plist, num));
+	assert (!plist_deleted (plist, num));
 
-	if (file_type(plist->items[num].file) != F_URL) {
+	if (file_type (plist->items[num].file) != F_URL) {
 		char *file = xstrdup (plist->items[num].file);
 
 		if (hide_extension) {
@@ -318,8 +318,6 @@ void resolve_path (char *buf, const int size, const char *file)
 	if (len > 1 && buf[len-1] == '/')
 		buf[--len] = 0;
 }
-
-
 
 /* Read selected tags for a file into tags structure (or create it if NULL).
  * If some tags are already present, don't read them.
@@ -578,13 +576,13 @@ static char *add_dir_file (const char *base, const char *name)
 	return path;
 }
 
-/* Find a directory that the beginning part of the path matches dir.
- * Returned path has slash at the end if the name was unambiguous.
- * Complete the name of the directory if possible to the place where it it
- * ambiguous.
- * Return NULL if nothing was found.
+/* Find directories having a prefix of 'pattern'.
+ * - If there are no matches, NULL is returned.
+ * - If there is one such directory, it is returned with a trailing '/'.
+ * - Otherwise the longest common prefix is returned (with no trailing '/').
+ * (This is used for directory auto-completion.)
  * Returned memory is malloc()ed.
- * patterm is modified! */
+ * 'pattern' is temporarily modified! */
 char *find_match_dir (char *pattern)
 {
 	char *slash;

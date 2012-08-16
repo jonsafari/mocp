@@ -84,25 +84,23 @@ static int plist_load_m3u (struct plist *plist, const char *fname,
 	int after_extinf = 0;
 	int added = 0;
 
-	if (!(file = fopen(fname, "r"))) {
-		error ("Can't open playlist file: %s",
-				strerror(errno));
+	if (!(file = fopen (fname, "r"))) {
+		error ("Can't open playlist file: %s", strerror (errno));
 		return 0;
 	}
 
-	if (flock(fileno(file), LOCK_SH) == -1)
-		logit ("Can't flock() the playlist file: %s", strerror(errno));
+	if (flock (fileno (file), LOCK_SH) == -1)
+		logit ("Can't flock() the playlist file: %s", strerror (errno));
 
-	while ((line = read_line(file))) {
-		if (!strncmp(line, "#EXTINF:", sizeof("#EXTINF:")-1)) {
+	while ((line = read_line (file))) {
+		if (!strncmp (line, "#EXTINF:", sizeof("#EXTINF:") - 1)) {
 			char *comma;
 			char *num_err;
 			char time_text[10] = "";
 			int time_sec;
 
 			if (after_extinf) {
-				error ("Broken M3U file: double "
-						"#EXTINF.");
+				error ("Broken M3U file: double #EXTINF!");
 				free (line);
 				plist_delete (plist, last_added);
 				return added;
@@ -111,29 +109,26 @@ static int plist_load_m3u (struct plist *plist, const char *fname,
 			/* Find the comma */
 			comma = strchr (line + (sizeof("#EXTINF:") - 1), ',');
 			if (!comma) {
-				error ("Broken M3U file: no comma "
-						"in #EXTINF.");
+				error ("Broken M3U file: no comma in #EXTINF!");
 				free (line);
 				return added;
 			}
 
 			/* Get the time string */
-			time_text[sizeof(time_text)-1] = 0;
+			time_text[sizeof(time_text) - 1] = 0;
 			strncpy (time_text, line + sizeof("#EXTINF:") - 1,
-					MIN(comma - line - (sizeof("#EXTINF:")
-						- 1), sizeof(time_text)));
-			if (time_text[sizeof(time_text)-1]) {
-				error ("Broken M3U file: "
-						"wrong time.");
+			         MIN(comma - line - (sizeof("#EXTINF:") - 1),
+			         sizeof(time_text)));
+			if (time_text[sizeof(time_text) - 1]) {
+				error ("Broken M3U file: wrong time!");
 				free (line);
 				return added;
 			}
 
-			/* Extract the time */
+			/* Extract the time. */
 			time_sec = strtol (time_text, &num_err, 10);
 			if (*num_err) {
-				error ("Broken M3U file: "
-						"time is not a number.");
+				error ("Broken M3U file: time is not a number!");
 				free (line);
 				return added;
 			}
@@ -143,21 +138,18 @@ static int plist_load_m3u (struct plist *plist, const char *fname,
 			plist_set_title_tags (plist, last_added, comma + 1);
 
 			if (*time_text)
-				plist_set_item_time (plist, last_added,
-						time_sec);
+				plist_set_item_time (plist, last_added, time_sec);
 		}
 		else if (line[0] != '#') {
-			char path[2*PATH_MAX];
+			char path[2 * PATH_MAX];
 
 			strip_string (line);
-			if (strlen(line) <= PATH_MAX) {
+			if (strlen (line) <= PATH_MAX) {
 				make_path (path, sizeof(path), cwd, line);
 
-				if (plist_find_fname(plist, path) == -1) {
+				if (plist_find_fname (plist, path) == -1) {
 					if (after_extinf)
-						plist_set_file (plist,
-								last_added,
-								path);
+						plist_set_file (plist, last_added, path);
 					else
 						plist_add (plist, path);
 					added++;
@@ -170,8 +162,8 @@ static int plist_load_m3u (struct plist *plist, const char *fname,
 
 			after_extinf = 0;
 		}
-		else if (load_serial && !strncmp(line, "#MOCSERIAL: ",
-					sizeof("#MOCSERIAL: ") - 1)) {
+		else if (load_serial &&
+		         !strncmp (line, "#MOCSERIAL: ", sizeof("#MOCSERIAL: ") - 1)) {
 			char *serial_str = line + sizeof("#MOCSERIAL: ") - 1;
 
 			if (serial_str[0]) {
@@ -309,9 +301,8 @@ static int plist_load_pls (struct plist *plist, const char *fname,
 	long i, nitems, added = 0;
 	char *e;
 
-	if (!(file = fopen(fname, "r"))) {
-		error ("Can't open playlist file: %s",
-				strerror(errno));
+	if (!(file = fopen (fname, "r"))) {
+		error ("Can't open playlist file: %s", strerror (errno));
 		return 0;
 	}
 
@@ -337,19 +328,19 @@ static int plist_load_pls (struct plist *plist, const char *fname,
 		char key[16];
 		int time;
 		int last_added;
-		char path[2*PATH_MAX];
+		char path[2 * PATH_MAX];
 
 		sprintf (key, "File%ld", i);
-		if (!(pls_file = read_ini_value(file, "playlist", key))) {
+		if (!(pls_file = read_ini_value (file, "playlist", key))) {
 			error ("Broken PLS file");
 			break;
 		}
 
 		sprintf (key, "Title%ld", i);
-		pls_title = read_ini_value(file, "playlist", key);
+		pls_title = read_ini_value (file, "playlist", key);
 
 		sprintf (key, "Length%ld", i);
-		pls_length = read_ini_value(file, "playlist", key);
+		pls_length = read_ini_value (file, "playlist", key);
 
 		if (pls_length) {
 			time = strtol (pls_length, &e, 10);
@@ -359,22 +350,18 @@ static int plist_load_pls (struct plist *plist, const char *fname,
 		else
 			time = -1;
 
-		if (strlen(pls_file) <= PATH_MAX) {
+		if (strlen (pls_file) <= PATH_MAX) {
 			make_path (path, sizeof(path), cwd, pls_file);
-			if (plist_find_fname(plist, path) == -1) {
+			if (plist_find_fname (plist, path) == -1) {
 				last_added = plist_add (plist, path);
 
 				if (pls_title && pls_title[0])
-					plist_set_title_tags (plist, last_added,
-							pls_title);
+					plist_set_title_tags (plist, last_added, pls_title);
 
 				if (time > 0) {
-					plist->items[last_added].tags
-						= tags_new ();
-					plist->items[last_added].tags->time
-						= time;
-					plist->items[last_added].tags->filled
-						|= TAGS_TIME;
+					plist->items[last_added].tags = tags_new ();
+					plist->items[last_added].tags->time = time;
+					plist->items[last_added].tags->filled |= TAGS_TIME;
 				}
 			}
 		}
@@ -426,29 +413,29 @@ static int plist_save_m3u (struct plist *plist, const char *fname,
 
 	debug ("Saving playlist to '%s'", fname);
 
-	if (!(file = fopen(fname, "w"))) {
-		error ("Can't save playlist: %s", strerror(errno));
+	if (!(file = fopen (fname, "w"))) {
+		error ("Can't save playlist: %s", strerror (errno));
 		return 0;
 	}
 
-	if (flock(fileno(file), LOCK_EX) == -1)
-		logit ("Can't flock() the playlist file: %s", strerror(errno));
+	if (flock (fileno (file), LOCK_EX) == -1)
+		logit ("Can't flock() the playlist file: %s", strerror (errno));
 
-	if (fprintf(file, "#EXTM3U\r\n") < 0) {
-		error ("Error writing playlist: %s", strerror(errno));
+	if (fprintf (file, "#EXTM3U\r\n") < 0) {
+		error ("Error writing playlist: %s", strerror (errno));
 		fclose (file);
 		return 0;
 	}
 
-	if (save_serial && fprintf(file, "#MOCSERIAL: %d\r\n",
-				plist_get_serial(plist)) < 0) {
-		error ("Error writing playlist: %s", strerror(errno));
+	if (save_serial && fprintf (file, "#MOCSERIAL: %d\r\n",
+	                                  plist_get_serial (plist)) < 0) {
+		error ("Error writing playlist: %s", strerror (errno));
 		fclose (file);
 		return 0;
 	}
 
 	for (i = 0; i < plist->num; i++) {
-		if (!plist_deleted(plist, i)) {
+		if (!plist_deleted (plist, i)) {
 			int ret;
 
 			/* EXTM3U */
@@ -463,17 +450,15 @@ static int plist_save_m3u (struct plist *plist, const char *fname,
 						plist->items[i].title_file);
 
 			if (ret < 0) {
-				error ("Error writing playlist: %s",
-						strerror(errno));
+				error ("Error writing playlist: %s", strerror (errno));
 				fclose (file);
 				return 0;
 			}
 
 			/* file */
-			if (fprintf(file, "%s\r\n", plist->items[i].file
-						+ strip_path) < 0) {
-				error ("Error writing playlist: %s",
-						strerror(errno));
+			if (fprintf (file, "%s\r\n",
+			                   plist->items[i].file + strip_path) < 0) {
+				error ("Error writing playlist: %s", strerror (errno));
 				fclose (file);
 				return 0;
 			}
@@ -483,10 +468,11 @@ static int plist_save_m3u (struct plist *plist, const char *fname,
 	if (flock(fileno(file), LOCK_UN) == -1)
 		logit ("Can't flock() (unlock) the playlist file: %s",
 				strerror(errno));
-	if (fclose(file)) {
-		error ("Error writing playlist: %s", strerror(errno));
+	if (fclose (file)) {
+		error ("Error writing playlist: %s", strerror (errno));
 		return 0;
 	}
+
 	return 1;
 }
 
