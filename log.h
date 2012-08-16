@@ -13,11 +13,6 @@ extern "C" {
 # define debug fake_logit
 #endif
 
-/* __FUNCTION__ is a gcc extension */
-#ifndef HAVE__FUNCTION__
-# define __FUNCTION__ "UNKNOWN_FUNC"
-#endif
-
 #ifndef NDEBUG
 # define logit(format, ...) \
 	internal_logit (__FILE__, __LINE__, __FUNCTION__, format, \
