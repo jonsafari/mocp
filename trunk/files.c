@@ -202,25 +202,32 @@ void make_file_title (struct plist *plist, const int num,
 /* Make a title from the tags for the item. */
 void make_tags_title (struct plist *plist, const int num)
 {
+	int hide_extn;
+	char *title;
+
 	assert (plist != NULL);
 	assert (num >= 0 && num < plist->num);
-	assert (!plist_deleted(plist, num));
+	assert (!plist_deleted (plist, num));
 
-	if (file_type(plist->items[num].file) == F_URL)
+	if (file_type (plist->items[num].file) == F_URL) {
 		make_file_title (plist, num, 0);
-	else if (!plist->items[num].title_tags) {
-		char *title;
-		assert (plist->items[num].file != NULL);
-
-		if (plist->items[num].tags->title) {
-			title = build_title (plist->items[num].tags);
-			plist_set_title_tags (plist, num, title);
-			free (title);
-		}
-		else
-			make_file_title (plist, num,
-					options_get_int("HideFileExtension"));
+		return;
 	}
+
+	if (plist->items[num].title_tags)
+		return;
+
+	assert (plist->items[num].file != NULL);
+
+	if (plist->items[num].tags->title) {
+		title = build_title (plist->items[num].tags);
+		plist_set_title_tags (plist, num, title);
+		free (title);
+		return;
+	}
+
+	hide_extn = options_get_int ("HideFileExtension");
+	make_file_title (plist, num, hide_extn);
 }
 
 /* Switch playlist titles to title_file */

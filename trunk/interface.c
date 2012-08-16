@@ -1457,6 +1457,75 @@ static void use_server_queue ()
 	iface_set_status ("");
 }
 
+/* Process a single directory argument. */
+static void process_dir_arg (const char *dir)
+{
+	set_cwd (dir);
+	if (!go_to_dir (NULL, 0))
+		enter_first_dir ();
+}
+
+/* Process a single playlist argument. */
+static void process_plist_arg (const char *file)
+{
+	char path[PATH_MAX + 1];   /* the playlist's directory */
+	char *slash;
+
+	if (file[0] == '/')
+		strcpy (path, "/");
+	else if (!getcwd (path, sizeof (path)))
+		interface_fatal ("Can't get CWD: %s", strerror (errno));
+
+	resolve_path (path, sizeof (path), file);
+	slash = strrchr (path, '/');
+	assert (slash != NULL);
+	*slash = 0;
+
+	iface_set_status ("Loading playlist...");
+	plist_load (playlist, file, path, 0);
+	iface_set_status ("");
+}
+
+/* Process a list of arguments. */
+static void process_multiple_args (lists_t_strs *args)
+{
+	int size, ix;
+	const char *arg;
+	char this_cwd[PATH_MAX];
+
+	if (!getcwd (this_cwd, sizeof (cwd)))
+		interface_fatal ("Can't get CWD: %s", strerror (errno));
+
+	size = lists_strs_size (args);
+
+	for (ix = 0; ix < size; ix += 1) {
+		int dir;
+		char path[2 * PATH_MAX];
+
+		arg = lists_strs_at (args, ix);
+		dir = !is_url (arg) && isdir (arg);
+
+		if (is_url (arg)) {
+			strncpy (path, arg, sizeof (path));
+			path[sizeof(path) - 1] = 0;
+		}
+		else {
+			if (arg[0] == '/')
+				strcpy (path, "/");
+			else
+				strcpy (path, this_cwd);
+			resolve_path (path, sizeof (path), arg);
+		}
+
+		if (dir == 1)
+			read_directory_recurr (path, playlist);
+		else if (!dir && (is_sound_file (path) || is_url (path)))
+			plist_add (playlist, path);
+		else if (is_plist_file (path))
+			plist_load (playlist, path, NULL, 0);
+	}
+}
+
 /* Process file names passed as arguments. */
 static void process_args (lists_t_strs *args)
 {
@@ -1467,64 +1536,14 @@ static void process_args (lists_t_strs *args)
 	arg = lists_strs_at (args, 0);
 
 	if (size == 1 && !is_url (arg) && isdir (arg) == 1) {
-		set_cwd (arg);
-		if (!go_to_dir (NULL, 0))
-			enter_first_dir ();
+		process_dir_arg (arg);
 		return;
 	}
 
-	if (size == 1 && is_plist_file (arg)) {
-		char path[PATH_MAX + 1];   /* the playlist's directory */
-		char *slash;
-
-		if (arg[0] == '/')
-			strcpy (path, "/");
-		else if (!getcwd (path, sizeof (path)))
-			interface_fatal ("Can't get CWD: %s", strerror (errno));
-
-		resolve_path (path, sizeof (path), arg);
-		slash = strrchr (path, '/');
-		assert (slash != NULL);
-		*slash = 0;
-
-		iface_set_status ("Loading playlist...");
-		plist_load (playlist, arg, path, 0);
-		iface_set_status ("");
-	}
-	else {
-		int ix;
-		char this_cwd[PATH_MAX];
-
-		if (!getcwd (this_cwd, sizeof (cwd)))
-			interface_fatal ("Can't get CWD: %s", strerror (errno));
-
-		for (ix = 0; ix < size; ix += 1) {
-			int dir;
-			char path[2 * PATH_MAX];
-
-			arg = lists_strs_at (args, ix);
-			dir = !is_url (arg) && isdir (arg);
-
-			if (is_url (arg)) {
-				strncpy (path, arg, sizeof (path));
-				path[sizeof(path) - 1] = 0;
-			}
-			else {
-				if (arg[0] == '/')
-					strcpy (path, "/");
-				else
-					strcpy (path, this_cwd);
-				resolve_path (path, sizeof (path), arg);
-			}
-
-			if (dir == 1)
-				read_directory_recurr (path, playlist);
-			else if (!dir && (is_sound_file (path) || is_url (path)))
-				plist_add (playlist, path);
-			else if (is_plist_file (path))
-				plist_load (playlist, path, NULL, 0);
-		}
-	}
+	if (size == 1 && is_plist_file (arg))
+		process_plist_arg (arg);
+	else
+		process_multiple_args (args);
 
 	if (plist_count (playlist) && !options_get_int ("SyncPlaylist")) {
 		switch_titles_file (playlist);
@@ -2006,22 +2025,28 @@ static void cmd_clear_queue ()
 
 static void go_to_music_dir ()
 {
-	if (options_get_str("MusicDir")) {
-		char music_dir[PATH_MAX] = "/";
+	const char *musicdir_optn;
+	char music_dir[PATH_MAX] = "/";
 
-		resolve_path (music_dir, sizeof(music_dir),
-				options_get_str("MusicDir"));
+	musicdir_optn = options_get_str ("MusicDir");
 
-		if (file_type(music_dir) == F_DIR)
-			go_to_dir (music_dir, 0);
-		else if (file_type(music_dir) == F_PLAYLIST)
-			go_to_playlist (music_dir, 0);
-		else
-			error ("MusicDir is neither a directory nor a "
-					"playlist.");
-	}
-	else
+	if (!musicdir_optn) {
 		error ("MusicDir not defined");
+		return;
+	}
+
+	resolve_path (music_dir, sizeof(music_dir), musicdir_optn);
+
+	switch (file_type (music_dir)) {
+	case F_DIR:
+		go_to_dir (music_dir, 0);
+		break;
+	case F_PLAYLIST:
+		go_to_playlist (music_dir, 0);
+		break;
+	default:
+		error ("MusicDir is neither a directory nor a playlist!");
+	}
 }
 
 /* Make a directory from the string resolving ~, './' and '..'.
