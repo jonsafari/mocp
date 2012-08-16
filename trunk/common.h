@@ -65,6 +65,11 @@ typedef unsigned char _Bool;
 #define isblank(c) ((c) == ' ' || (c) == '\t')
 #endif
 
+/* __FUNCTION__ is a gcc extension */
+#ifndef HAVE__FUNCTION__
+# define __FUNCTION__ "UNKNOWN_FUNC"
+#endif
+
 #define ARRAY_SIZE(x)	(sizeof(x)/sizeof(x[0]))
 
 void *xmalloc (size_t size);
