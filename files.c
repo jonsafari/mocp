@@ -97,9 +97,12 @@ inline int is_url (const char *str)
 }
 
 /* Return 1 if the file is a directory, 0 if not, -1 on error. */
-int isdir (const char *file)
+int is_dir (const char *file)
 {
 	struct stat file_stat;
+
+	if (is_url (file))
+		return 0;
 
 	if (stat(file, &file_stat) == -1) {
 		error ("Can't stat %s: %s", file, strerror(errno));
@@ -630,7 +633,7 @@ char *find_match_dir (char *pattern)
 				&& !strncmp(entry->d_name, name, name_len)) {
 			char *path = add_dir_file (search_dir, entry->d_name);
 
-			if (isdir(path) == 1) {
+			if (is_dir(path) == 1) {
 				if (matching_dir) {
 
 					/* More matching directories - strip
