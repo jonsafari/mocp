@@ -30,8 +30,11 @@ automatically play the rest of the files in the directory.
 With no options and no file arguments the program begins in current
 directory, or in \fBMusicDir\fP if the \fBStartInMusicDir\fP option is set
 in the configuration file.  If you give a directory on the command line,
-MOC will try to go there.  With multiple files or directories, everything
-will be added to the playlist recursively.
+MOC will try to go there.  If a playlist is given, then it is loaded.
+With multiple files, playlists or directories, everything will be added to
+the playlist recursively (including the contents of any playlist given).
+(Note that relative paths in playlists are resolved with respect to the
+directory of the playlist, or of the symlink being used to reference it.)
 .LP
 .SH OPTIONS
 If an option can also be set in the configuration file the command line

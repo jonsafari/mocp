@@ -1521,8 +1521,23 @@ static void process_multiple_args (lists_t_strs *args)
 			read_directory_recurr (path, playlist);
 		else if (!dir && (is_sound_file (path) || is_url (path)))
 			plist_add (playlist, path);
-		else if (is_plist_file (path))
-			plist_load (playlist, path, NULL, 0);
+		else if (is_plist_file (path)) {
+			char *plist_dir, *slash;
+
+			/* Here we've chosen to resolve the playlist's relative paths
+			 * with respect to the directory of the playlist (or of the
+			 * symlink being used to reference it).  If some other base is
+			 * desired, then we probably need to introduce a new option. */
+
+			plist_dir = xstrdup (path);
+			slash = strrchr (plist_dir, '/');
+			assert (slash != NULL);
+			*slash = 0;
+
+			plist_load (playlist, path, plist_dir, 0);
+
+			free (plist_dir);
+		}
 	}
 }
 
