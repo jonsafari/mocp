@@ -79,7 +79,7 @@ static int plist_load_m3u (struct plist *plist, const char *fname,
 		const char *cwd, const int load_serial)
 {
 	FILE *file;
-	char *line;
+	char *line = NULL;
 	int last_added = -1;
 	int after_extinf = 0;
 	int added = 0;
@@ -90,6 +90,7 @@ static int plist_load_m3u (struct plist *plist, const char *fname,
 		return 0;
 	}
 
+	/* Lock gets released by fclose(). */
 	if (flock (fileno (file), LOCK_SH) == -1)
 		logit ("Can't flock() the playlist file: %s", strerror (errno));
 
@@ -101,17 +102,15 @@ static int plist_load_m3u (struct plist *plist, const char *fname,
 
 			if (after_extinf) {
 				error ("Broken M3U file: double #EXTINF!");
-				free (line);
 				plist_delete (plist, last_added);
-				return added;
+				goto err;
 			}
 
 			/* Find the comma */
 			comma = strchr (line + (sizeof("#EXTINF:") - 1), ',');
 			if (!comma) {
 				error ("Broken M3U file: no comma in #EXTINF!");
-				free (line);
-				return added;
+				goto err;
 			}
 
 			/* Get the time string */
@@ -121,16 +120,14 @@ static int plist_load_m3u (struct plist *plist, const char *fname,
 			         sizeof(time_text)));
 			if (time_text[sizeof(time_text) - 1]) {
 				error ("Broken M3U file: wrong time!");
-				free (line);
-				return added;
+				goto err;
 			}
 
 			/* Extract the time. */
 			time_sec = strtol (time_text, &num_err, 10);
 			if (*num_err) {
 				error ("Broken M3U file: time is not a number!");
-				free (line);
-				return added;
+				goto err;
 			}
 
 			after_extinf = 1;
@@ -181,11 +178,9 @@ static int plist_load_m3u (struct plist *plist, const char *fname,
 		free (line);
 	}
 
-	if (flock(fileno(file), LOCK_UN) == -1)
-		logit ("Can't flock() (unlock) the playlist file: %s",
-				strerror(errno));
+err:
+	free (line);
 	fclose (file);
-
 	return added;
 }
 
@@ -297,7 +292,7 @@ static int plist_load_pls (struct plist *plist, const char *fname,
 		const char *cwd)
 {
 	FILE *file;
-	char *e, *line;
+	char *e, *line = NULL;
 	long i, nitems, added = 0;
 
 	file = fopen (fname, "r");
@@ -318,10 +313,8 @@ static int plist_load_pls (struct plist *plist, const char *fname,
 	nitems = strtol (line, &e, 10);
 	if (*e) {
 		error ("Broken PLS file");
-		free (line);
-		return 0;
+		goto err;
 	}
-	free (line);
 
 	for (i = 1; i <= nitems; i++) {
 		int time, last_added;
@@ -332,7 +325,7 @@ static int plist_load_pls (struct plist *plist, const char *fname,
 		pls_file = read_ini_value (file, "playlist", key);
 		if (!pls_file) {
 			error ("Broken PLS file");
-			break;
+			goto err;
 		}
 
 		sprintf (key, "Title%ld", i);
@@ -373,8 +366,9 @@ static int plist_load_pls (struct plist *plist, const char *fname,
 		added += 1;
 	}
 
+err:
+	free (line);
 	fclose (file);
-
 	return added;
 }
 
@@ -407,8 +401,8 @@ int plist_load (struct plist *plist, const char *fname, const char *cwd,
 static int plist_save_m3u (struct plist *plist, const char *fname,
 		const int strip_path, const int save_serial)
 {
-	FILE *file;
-	int i, ret;
+	FILE *file = NULL;
+	int i, ret, result = 0;
 
 	debug ("Saving playlist to '%s'", fname);
 
@@ -418,20 +412,19 @@ static int plist_save_m3u (struct plist *plist, const char *fname,
 		return 0;
 	}
 
+	/* Lock gets released by fclose(). */
 	if (flock (fileno (file), LOCK_EX) == -1)
 		logit ("Can't flock() the playlist file: %s", strerror (errno));
 
 	if (fprintf (file, "#EXTM3U\r\n") < 0) {
 		error ("Error writing playlist: %s", strerror (errno));
-		fclose (file);
-		return 0;
+		goto err;
 	}
 
 	if (save_serial && fprintf (file, "#MOCSERIAL: %d\r\n",
 	                                  plist_get_serial (plist)) < 0) {
 		error ("Error writing playlist: %s", strerror (errno));
-		fclose (file);
-		return 0;
+		goto err;
 	}
 
 	for (i = 0; i < plist->num; i++) {
@@ -455,22 +448,22 @@ static int plist_save_m3u (struct plist *plist, const char *fname,
 
 			if (ret < 0) {
 				error ("Error writing playlist: %s", strerror (errno));
-				fclose (file);
-				return 0;
+				goto err;
 			}
 		}
 	}
 
-	if (flock(fileno(file), LOCK_UN) == -1)
-		logit ("Can't flock() (unlock) the playlist file: %s",
-				strerror(errno));
 	ret = fclose (file);
-	if (ret) {
+	file = NULL;
+	if (ret)
 		error ("Error writing playlist: %s", strerror (errno));
-		return 0;
-	}
+	else
+		result = 1;
 
-	return 1;
+err:
+	if (file)
+		fclose (file);
+	return result;
 }
 
 /* Save the playlist into the file. Return 0 on error. If cwd is NULL, use
