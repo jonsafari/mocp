@@ -299,7 +299,7 @@ static int send_tags_request (const char *file, const int tags_sel)
 	}
 }
 
-/* Send all items from this playlist to other clients */
+/* Send all items from this playlist to other clients. */
 static void send_items_to_clients (const struct plist *plist)
 {
 	int i;
@@ -480,7 +480,7 @@ static void update_mixer_name ()
 	update_mixer_value ();
 }
 
-/* Make new cwd path from CWD and this path */
+/* Make new cwd path from CWD and this path. */
 static void set_cwd (const char *path)
 {
 	if (path[0] == '/')
@@ -524,7 +524,7 @@ static int read_last_dir ()
 	return res;
 }
 
-/* Check if dir2 is in dir1 */
+/* Check if dir2 is in dir1. */
 static int is_subdir (const char *dir1, const char *dir2)
 {
 	return !strncmp(dir1, dir2, strlen(dir1)) ? 1 : 0;
@@ -608,7 +608,7 @@ static void update_item_tags (struct plist *plist, const int num,
 
 	plist_set_tags (plist, num, tags);
 
-	/* Get the time from the old tags if it's not presend in the new tags.
+	/* Get the time from the old tags if it's not present in the new tags.
 	 * FIXME: There is risk, that the file was modified and the time
 	 * from the old tags is not valid. */
 	if (!(tags->filled & TAGS_TIME) && old_tags && old_tags->time != -1)
@@ -732,7 +732,7 @@ static void update_curr_file ()
 
 	if (!file[0] || curr_file.state == STATE_STOP) {
 
-		/* Nothing is played/paused */
+		/* Nothing is played/paused. */
 
 		file_info_cleanup (&curr_file);
 		file_info_reset (&curr_file);
@@ -777,10 +777,9 @@ static void update_curr_file ()
 
 		iface_set_played_file (file);
 		iface_set_played_file_title (curr_file.title);
-		/* Try to load the lyrics of the new file */
+		/* Try to load the lyrics of the new file. */
 		iface_load_lyrics (file);
-		/* Silent seeking makes no sense if the playing file has
-		 * changed */
+		/* Silent seeking makes no sense if the playing file has changed. */
 		silent_seek_pos = -1;
 		iface_set_curr_time (curr_file.curr_time);
 
@@ -857,8 +856,8 @@ static void event_plist_add (const struct plist_item *item)
 		/* Just calling iface_update_queue_positions (queue, playlist,
 		 * NULL, NULL) is too slow in cases when we receive a large
 		 * number of items from server (e.g., loading playlist w/
-		 * SyncPlaylist on). Since we know the filename in question,
-		 * we try to find it in queue and eventually update the value
+		 * SyncPlaylist on).  Since we know the filename in question,
+		 * we try to find it in queue and eventually update the value.
 		 */
 		if ((i = plist_find_fname(queue, item->file)) != -1) {
 			playlist->items[item_num].queue_pos
@@ -972,7 +971,7 @@ static void recv_server_queue (struct plist *queue)
 	} while (!end_of_list);
 }
 
-/* Clear the playlist locally */
+/* Clear the playlist locally. */
 static void clear_playlist ()
 {
 	if (iface_in_plist_menu())
@@ -1033,7 +1032,7 @@ static void event_queue_del (char *file)
 
 		/* Free the deleted items occasionally.
 		 * QUEUE_CLEAR_THRESH is chosen to be two times
-		 * the initial size of the playlist */
+		 * the initial size of the playlist. */
 		if (plist_count(queue) == 0
 				&& queue->num >= QUEUE_CLEAR_THRESH)
 			plist_clear (queue);
@@ -1068,7 +1067,6 @@ static void event_plist_move (const struct move_ev_data *d)
 }
 
 /* Handle EV_QUEUE_MOVE. */
-/* Unused for now, might be useful later */
 static void event_queue_move (const struct move_ev_data *d)
 {
 	assert (d != NULL);
@@ -1188,8 +1186,7 @@ static void fill_tags (struct plist *plist, const int tags_sel,
 		int type;
 		void *data;
 
-		/* Event queue is not initialized if there is
-		 * no interface */
+		/* Event queue is not initialized if there is no interface. */
 		if (!no_iface && !event_queue_empty (&events)) {
 			struct event e = *event_get_first (&events);
 
@@ -1216,8 +1213,7 @@ static void fill_tags (struct plist *plist, const int tags_sel,
 			}
 		}
 		else if (no_iface)
-			abort (); /* can't handle other events without the
-				     interface */
+			abort (); /* can't handle other events without the interface */
 
 		if (!no_iface)
 			server_event (type, data);
@@ -1362,7 +1358,7 @@ static int go_to_playlist (const char *file, const int load_serial)
 			send_int_to_srv (CMD_UNLOCK);
 
 			/* We'll use the playlist received from the
-			 * server to be synchronized with other clients
+			 * server to be synchronized with other clients.
 			 */
 			plist_clear (playlist);
 		}
@@ -1419,8 +1415,8 @@ static void enter_first_dir ()
 	first_run = 0;
 }
 
-/* Request the playlist from the server (given by another client). Make the
- * titles. Return 0 if such a list doesn't exists. */
+/* Request the playlist from the server (given by another client).  Make
+ * the titles.  Return 0 if such a list doesn't exist. */
 static int get_server_playlist (struct plist *plist)
 {
 	iface_set_status ("Getting the playlist...");
@@ -1461,7 +1457,7 @@ static void use_server_queue ()
 	iface_set_status ("");
 }
 
-/* Process file names passwd as arguments. */
+/* Process file names passed as arguments. */
 static void process_args (lists_t_strs *args)
 {
 	int size;
@@ -1478,7 +1474,7 @@ static void process_args (lists_t_strs *args)
 	}
 
 	if (size == 1 && is_plist_file (arg)) {
-		char path[PATH_MAX + 1]; /* the directory where the playlist is */
+		char path[PATH_MAX + 1];   /* the playlist's directory */
 		char *slash;
 
 		if (arg[0] == '/')
@@ -1549,13 +1545,13 @@ static void load_playlist ()
 	if (file_type(plist_file) == F_PLAYLIST) {
 		go_to_playlist (plist_file, 1);
 
-		/* We don't want to swith to the playlist after loading. */
+		/* We don't want to switch to the playlist after loading. */
 		waiting_for_plist_load = 0;
 	}
 }
 
 #ifdef SIGWINCH
-/* Handle resizing xterm */
+/* Handle resizing xterm. */
 static void do_resize ()
 {
 	iface_resize ();
@@ -1592,8 +1588,8 @@ static void go_dir_up ()
 	free (dir);
 }
 
-/* Get (generate) a playlist serial from the server and make sure it's not
- * the same as our playlists' serial. */
+/* Return a generated playlist serial from the server and make sure
+ * it's not the same as our playlist's serial. */
 static int get_safe_serial ()
 {
 	int serial;
@@ -1603,8 +1599,7 @@ static int get_safe_serial ()
 		serial = get_data_int ();
 	} while (playlist &&
 			serial == plist_get_serial(playlist)); /* check only the
-							   playlist, because
-							   dir_plist has serial
+							   playlist, because dir_plist has serial
 							   -1 */
 
 	return serial;
@@ -1763,7 +1758,7 @@ static void add_dir_plist ()
 	plist_remove_common_items (&plist, playlist);
 
 	/* Add the new files to the server's playlist if the server has our
-	 * playlist */
+	 * playlist. */
 	if (get_server_plist_serial() == plist_get_serial(playlist))
 		send_playlist (&plist, 0);
 
@@ -1817,14 +1812,14 @@ static void remove_file_from_playlist (const char *file)
 	}
 
 	/* Delete this item from the server's playlist if it has our
-	 * playlist */
+	 * playlist. */
 	if (get_server_plist_serial() == plist_get_serial(playlist)) {
 		send_int_to_srv (CMD_DELETE);
 		send_str_to_srv (file);
 	}
 }
 
-/* Remove all dead entries (point to non-existent or unreadable) */
+/* Remove all dead entries (point to non-existent or unreadable). */
 static void remove_dead_entries_plist ()
 {
 	const char *file = NULL;
@@ -1889,7 +1884,7 @@ static void add_file_plist ()
 		}
 
 		/* Add to the server's playlist if the server has our
-		 * playlist */
+		 * playlist. */
 		if (get_server_plist_serial() == plist_get_serial(playlist)) {
 			send_int_to_srv (CMD_LIST_ADD);
 			send_str_to_srv (file);
@@ -1920,18 +1915,18 @@ static void queue_toggle_file ()
 		return;
 	}
 
-	/* check if the file is already in the queue; if it isn't, add it,
-	 * otherwise, remove it */
+	/* Check if the file is already in the queue; if it isn't, add it,
+	 * otherwise, remove it. */
 
 	if (plist_find_fname(queue, file) == -1) {
-		/* Add item to the server's queue */
+		/* Add item to the server's queue. */
 		send_int_to_srv (CMD_QUEUE_ADD);
 		send_str_to_srv (file);
 
 		logit ("Added to queue: %s", file);
 	}
 	else {
-		/* Delete this item from the server's queue */
+		/* Delete this item from the server's queue. */
 		send_int_to_srv (CMD_QUEUE_DEL);
 		send_str_to_srv (file);
 
@@ -2148,11 +2143,11 @@ static char *strip_white_spaces (const char *str)
 
 	n = strlen (str);
 
-	/* Strip trailing */
+	/* Strip trailing. */
 	while (isblank(str[n-1]))
 		n--;
 
-	/* Strip leading */
+	/* Strip leading whitespace. */
 	while (*str && isblank(*str)) {
 		str++;
 		n--;
@@ -2222,7 +2217,7 @@ static void add_url_to_plist (const char *url)
 		}
 
 		/* Add to the server's playlist if the server has our
-		 * playlist */
+		 * playlist. */
 		if (get_server_plist_serial() == plist_get_serial(playlist)) {
 			send_int_to_srv (CMD_LIST_ADD);
 			send_str_to_srv (url);
@@ -2660,7 +2655,7 @@ static int add_themes_to_menu (const char *themes_dir)
 		if (entry->d_name[0] == '.')
 			continue;
 
-		/* Filter out backup files (file~) */
+		/* Filter out backup files (*~). */
 		if (entry->d_name[strlen(entry->d_name)-1] == '~')
 			continue;
 
@@ -2939,12 +2934,12 @@ static void run_external_cmd (char **args, const int arg_num ATTR_UNUSED)
 	else {
 		int status;
 
-		if (child == 0) { /* I'm a child */
+		if (child == 0) { /* I'm a child. */
 
 			putchar ('\n');
 			execvp (args[0], args);
 
-			/* We have an error */
+			/* We have an error. */
 			fprintf (stderr, "\nError executing %s: %s\n", args[0],
 					strerror(errno));
 			sleep (2);
@@ -2978,7 +2973,7 @@ static void exec_custom_command (const char *option)
 		return;
 	}
 
-	/* Split into arguments */
+	/* Split into arguments. */
 	cmd_list = lists_strs_new (4);
 	arg_num = lists_strs_tokenise (cmd_list, cmd);
 	if (arg_num == 0) {
@@ -3039,7 +3034,7 @@ static void toggle_playlist_full_paths (void)
 	update_iface_menu (IFACE_MENU_PLIST, playlist);
 }
 
-/* Handle key */
+/* Handle key. */
 static void menu_key (const struct iface_key *k)
 {
 	if (iface_in_help ())

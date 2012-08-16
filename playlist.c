@@ -153,6 +153,7 @@ static int rb_fname_compare (const void *key, const void *data, void *adata)
 inline int plist_deleted (const struct plist *plist, const int num)
 {
 	assert (num >=0 && num < plist->num);
+
 	return plist->items[num].deleted;
 }
 
@@ -613,9 +614,9 @@ int plist_add_from_item (struct plist *plist, const struct plist_item *item)
 void plist_delete (struct plist *plist, const int num)
 {
 	assert (plist != NULL);
-
 	assert (!plist->items[num].deleted);
 	assert (plist->not_deleted > 0);
+
 	if (num < plist->num) {
 
 		/* Free every field except the file, it is needed in deleted
@@ -666,13 +667,15 @@ void plist_set_title_file (struct plist *plist, const int num,
 
 	if (plist->items[num].title_file)
 		free (plist->items[num].title_file);
+
 #ifdef  HAVE_RCC
-	if (options_get_int("UseRCCForFilesystem")) {
+	if (options_get_int ("UseRCCForFilesystem")) {
 		char *t_str = xstrdup (title);
 		plist->items[num].title_file = rcc_reencode (t_str);
 		return;
 	}
 #endif
+
 	plist->items[num].title_file = xstrdup (title);
 }
 
