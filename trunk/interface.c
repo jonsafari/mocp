@@ -1503,7 +1503,7 @@ static void process_multiple_args (lists_t_strs *args)
 		char path[2 * PATH_MAX];
 
 		arg = lists_strs_at (args, ix);
-		dir = !is_url (arg) && isdir (arg);
+			dir = is_dir (arg);
 
 		if (is_url (arg)) {
 			strncpy (path, arg, sizeof (path));
@@ -1535,7 +1535,7 @@ static void process_args (lists_t_strs *args)
 	size = lists_strs_size (args);
 	arg = lists_strs_at (args, 0);
 
-	if (size == 1 && !is_url (arg) && isdir (arg) == 1) {
+	if (size == 1 && is_dir (arg) == 1) {
 		process_dir_arg (arg);
 		return;
 	}
@@ -3686,7 +3686,7 @@ static void add_recursively (struct plist *plist, lists_t_strs *args)
 				resolve_path (path, sizeof (path), "");
 		}
 
-		dir = !is_url (path) && isdir (path);
+		dir = is_dir (path);
 
 		if (dir == 1)
 			read_directory_recurr (path, plist);
