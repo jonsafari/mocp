@@ -752,7 +752,7 @@ static void *locked_add_request (struct tags_cache *c, const char *file,
 			tags_response (client_id, file, rec.tags);
 			tags_free (rec.tags);
 			debug ("Tags are present in the cache");
-			return NULL;
+			return (void *)1;
 		}
 
 		tags_free (rec.tags);
@@ -766,6 +766,8 @@ static void *locked_add_request (struct tags_cache *c, const char *file,
 void tags_cache_add_request (struct tags_cache *c, const char *file,
                                         int tags_sel, int client_id)
 {
+	void *rc = NULL;
+
 	assert (c != NULL);
 	assert (file != NULL);
 	assert (client_id >= 0 && client_id < CLIENTS_MAX);
@@ -774,13 +776,15 @@ void tags_cache_add_request (struct tags_cache *c, const char *file,
 
 #ifdef HAVE_DB_H
 	if (c->max_items)
-		with_db_lock (locked_add_request, c, file, tags_sel, client_id);
+		rc = with_db_lock (locked_add_request, c, file, tags_sel, client_id);
 #endif
 
-	LOCK (c->mutex);
-	request_queue_add (&c->queues[client_id], file, tags_sel);
-	pthread_cond_signal (&c->request_cond);
-	UNLOCK (c->mutex);
+	if (!rc) {
+		LOCK (c->mutex);
+		request_queue_add (&c->queues[client_id], file, tags_sel);
+		pthread_cond_signal (&c->request_cond);
+		UNLOCK (c->mutex);
+	}
 }
 
 void tags_cache_clear_queue (struct tags_cache *c, int client_id)
