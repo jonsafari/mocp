@@ -189,7 +189,7 @@ static void softmixer_read_config()
     {
       if(sscanf(linebuffer, "%*s %i", &tmp)>0)
         {
-          if(tmp>=SOFTMIXER_MIN && tmp<=SOFTMIXER_MAX)
+          if(RANGE(SOFTMIXER_MIN, tmp, SOFTMIXER_MAX))
           {
             mixer_amp = tmp;
           }
@@ -210,7 +210,7 @@ static void softmixer_read_config()
     {
       if(sscanf(linebuffer, "%*s %i", &tmp)>0)
         {
-          if(tmp>=0 && tmp<=100)
+          if(RANGE(0, tmp, 100))
           {
             softmixer_set_value(tmp);
           }

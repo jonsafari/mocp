@@ -141,7 +141,7 @@ char *get_str (int sock)
 	if (!get_int(sock, &len))
 		return NULL;
 
-	if (len < 0 || len > MAX_SEND_STRING) {
+	if (!RANGE(0, len, MAX_SEND_STRING)) {
 		logit ("Bad string length.");
 		return NULL;
 	}

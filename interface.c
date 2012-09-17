@@ -3046,7 +3046,7 @@ static void go_to_fast_dir (const int num)
 {
 	char option_name[20];
 
-	assert (num >= 1 && num <= 10);
+	assert (RANGE(1, num, 10));
 
 	sprintf (option_name, "FastDir%d", num);
 

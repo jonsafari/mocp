@@ -127,7 +127,7 @@ static int find_extn_decoder (int *decoder_list, int count, const char *extn)
 	int ix;
 
 	assert (decoder_list);
-	assert (count >= 0 && count <= plugins_num);
+	assert (RANGE(0, count, plugins_num));
 	assert (extn && extn[0]);
 
 	for (ix = 0; ix < count; ix += 1) {
@@ -146,7 +146,7 @@ static int find_mime_decoder (int *decoder_list, int count, const char *mime)
 	int ix;
 
 	assert (decoder_list);
-	assert (count >= 0 && count <= plugins_num);
+	assert (RANGE(0, count, plugins_num));
 	assert (mime && mime[0]);
 
 	for (ix = 0; ix < count; ix += 1) {
@@ -586,7 +586,7 @@ static void load_decoders (decoder_t_preference *pref, lists_t_strs *tokens)
 		pref->decoder_list[asterisk_at + ix] = decoder[ix];
 	}
 
-	assert (pref->decoders >= 0 && pref->decoders <= plugins_num);
+	assert (RANGE(0, pref->decoders, plugins_num));
 }
 
 /* Add a new preference for an audio format. */
