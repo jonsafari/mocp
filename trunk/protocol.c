@@ -232,7 +232,7 @@ static void packet_buf_add_space (struct packet_buf *b, const size_t len)
 
 	if (b->allocated < b->len + len) {
 		b->allocated += len + 256; /* put some more space */
-		b->buf = (char *)xrealloc (b, b->allocated);
+		b->buf = (char *)xrealloc (b->buf, b->allocated);
 	}
 }
 
