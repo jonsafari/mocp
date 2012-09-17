@@ -46,6 +46,11 @@ extern "C" {
 #define RANGE(min, val, max) ((val) >= (min) && (val) <= (max))
 #endif
 
+#ifndef CLAMP
+#define CLAMP(min, val, max) ((val) < (min) ? (min) : \
+                              (val) > (max) ? (max) : (val))
+#endif
+
 #ifdef HAVE__ATTRIBUTE__
 # define ATTR_UNUSED __attribute__((unused))
 #else

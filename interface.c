@@ -1732,11 +1732,7 @@ static void switch_pause ()
 
 static void set_mixer (int val)
 {
-	if (val < 0)
-		val = 0;
-	else if (val > 100)
-		val = 100;
-
+	val = CLAMP(0, val, 100);
 	send_int_to_srv (CMD_SET_MIXER);
 	send_int_to_srv (val);
 }
@@ -2571,10 +2567,7 @@ static void seek_silent (const int sec)
 		else
 			silent_seek_pos += sec;
 
-		if (silent_seek_pos < 0)
-			silent_seek_pos = 0;
-		else if (silent_seek_pos > curr_file.total_time)
-			silent_seek_pos = curr_file.total_time;
+		silent_seek_pos = CLAMP(0, silent_seek_pos, curr_file.total_time);
 
 		silent_seek_key_last = rounded_time ();
 		iface_set_curr_time (silent_seek_pos);

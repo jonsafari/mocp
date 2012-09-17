@@ -779,13 +779,7 @@ static void equ_process_buffer_u8(uint8_t *buf, size_t size)
   for(i=0; i<size; i++)
   {
     tmp[i] = r_mixin_rate * tmp[i] + mixin_rate * buf[i];
-
-    if(tmp[i] > UINT8_MAX)
-      tmp[i] = UINT8_MAX;
-    else
-      if(tmp[i] < 0)
-        tmp[i] = 0;
-
+    tmp[i] = CLAMP(0, tmp[i], UINT8_MAX);
     buf[i] = (uint8_t)tmp[i];
   }
 
@@ -809,13 +803,7 @@ static void equ_process_buffer_s8(int8_t *buf, size_t size)
   for(i=0; i<size; i++)
   {
     tmp[i] = r_mixin_rate * tmp[i] + mixin_rate * buf[i];
-
-    if(tmp[i] > INT8_MAX)
-      tmp[i] = INT8_MAX;
-    else
-      if(tmp[i] < INT8_MIN)
-        tmp[i] = INT8_MIN;
-
+    tmp[i] = CLAMP(INT8_MIN, tmp[i], INT8_MAX);
     buf[i] = (int8_t)tmp[i];
   }
 
@@ -839,13 +827,7 @@ static void equ_process_buffer_u16(uint16_t *buf, size_t size)
   for(i=0; i<size; i++)
   {
     tmp[i] = r_mixin_rate * tmp[i] + mixin_rate * buf[i];
-
-    if(tmp[i] > UINT16_MAX)
-      tmp[i] = UINT16_MAX;
-    else
-      if(tmp[i] < 0)
-        tmp[i] = 0;
-
+    tmp[i] = CLAMP(0, tmp[i], UINT16_MAX);
     buf[i] = (uint16_t)tmp[i];
   }
 
@@ -869,13 +851,7 @@ static void equ_process_buffer_s16(int16_t *buf, size_t size)
   for(i=0; i<size; i++)
   {
     tmp[i] = r_mixin_rate * tmp[i] + mixin_rate * buf[i];
-
-    if(tmp[i] > INT16_MAX)
-      tmp[i] = INT16_MAX;
-    else
-      if(tmp[i] < INT16_MIN)
-        tmp[i] = INT16_MIN;
-
+    tmp[i] = CLAMP(INT16_MIN, tmp[i], INT16_MAX);
     buf[i] = (int16_t)tmp[i];
   }
 
@@ -899,13 +875,7 @@ static void equ_process_buffer_u32(uint32_t *buf, size_t size)
   for(i=0; i<size; i++)
   {
     tmp[i] = r_mixin_rate * tmp[i] + mixin_rate * buf[i];
-
-    if(tmp[i] > UINT32_MAX)
-      tmp[i] = UINT32_MAX;
-    else
-      if(tmp[i] < 0)
-        tmp[i] = 0;
-
+    tmp[i] = CLAMP(0, tmp[i], UINT32_MAX);
     buf[i] = (uint32_t)tmp[i];
   }
 
@@ -929,13 +899,7 @@ static void equ_process_buffer_s32(int32_t *buf, size_t size)
   for(i=0; i<size; i++)
   {
     tmp[i] = r_mixin_rate * tmp[i] + mixin_rate * buf[i];
-
-    if(tmp[i] > INT32_MAX)
-      tmp[i] = INT32_MAX;
-    else
-      if(tmp[i] < INT32_MIN)
-        tmp[i] = INT32_MIN;
-
+    tmp[i] = CLAMP(INT32_MIN, tmp[i], INT32_MAX);
     buf[i] = (int32_t)tmp[i];
   }
 
@@ -959,13 +923,7 @@ static void equ_process_buffer_float(float *buf, size_t size)
   for(i=0; i<size; i++)
   {
     tmp[i] = r_mixin_rate * tmp[i] + mixin_rate * buf[i];
-
-    if(tmp[i] > 1.0f)
-      tmp[i] = 1.0f;
-    else
-      if(tmp[i] < -1.0f)
-        tmp[i] = -1.0f;
-
+    tmp[i] = CLAMP(-1.0f, tmp[i], 1.0f);
     buf[i] = tmp[i];
   }
 
