@@ -1183,6 +1183,8 @@ static void ffmpeg_get_name (const char *file, char buf[4])
 
 	ext = ext_pos (file);
 	strncpy (buf, ext, 3);
+	if (strlen (ext) > 3)
+		buf[2] = ext[strlen (ext) - 1];
 	for (ix = 0; ix < strlen (buf); ix += 1)
 		buf[ix] = toupper (buf[ix]);
 }
