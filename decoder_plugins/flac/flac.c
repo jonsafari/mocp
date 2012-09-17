@@ -665,7 +665,7 @@ static int flac_get_duration (void *void_data)
 
 static void flac_get_name (const char *file ATTR_UNUSED, char buf[4])
 {
-	strcpy (buf, "FLA");
+	strcpy (buf, "FLC");
 }
 
 static int flac_our_format_ext (const char *ext)
