@@ -653,6 +653,7 @@ void options_init ()
 	                 "audio/aac(aac):audio/aacp(aac):audio/m4a(ffmpeg):"
 	                 "audio/wav(sndfile,*,modplug):"
 	                 "ogg(vorbis,ffmpeg):oga(vorbis,ffmpeg):ogv(ffmpeg):"
+	                 "opus(ffmpeg):"
 	                 "spx(speex):"
 	                 "application/ogg(vorbis):audio/ogg(vorbis)",
 	                 CHECK_FUNCTION);

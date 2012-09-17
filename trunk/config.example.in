@@ -350,6 +350,7 @@
 # be assessed on content (which may be either Vorbis or Speex).
 #
 #PreferredDecoders += ogg(vorbis,ffmpeg):oga(vorbis,ffmpeg):ogv(ffmpeg)
+#PreferredDecoders += opus(ffmpeg)
 #PreferredDecoders += spx(speex)
 #PreferredDecoders += application/ogg(vorbis):audio/ogg(vorbis)
 

@@ -74,6 +74,10 @@
 #define AV_SAMPLE_FMT_FLT  SAMPLE_FMT_FLT
 #endif
 
+#if !HAVE_DECL_CODEC_ID_OPUS && HAVE_DECL_AV_CODEC_ID_OPUS
+#define CODEC_ID_OPUS AV_CODEC_ID_OPUS
+#endif
+
 struct ffmpeg_data
 {
 	AVFormatContext *ic;
@@ -225,6 +229,10 @@ static void load_audio_extns (lists_t_strs *list)
 		lists_strs_append (list, "ogg");
 		if (avcodec_find_decoder (CODEC_ID_VORBIS))
 			lists_strs_append (list, "oga");
+#if HAVE_DECL_CODEC_ID_OPUS || HAVE_DECL_AV_CODEC_ID_OPUS
+		if (avcodec_find_decoder (CODEC_ID_OPUS))
+			lists_strs_append (list, "opus");
+#endif
 		if (avcodec_find_decoder (CODEC_ID_THEORA))
 			lists_strs_append (list, "ogv");
 	}
