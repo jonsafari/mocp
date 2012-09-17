@@ -630,6 +630,21 @@ static void update_item_tags (struct plist *plist, const int num,
 		tags_free (old_tags);
 }
 
+/* Truncate string at screen-upsetting whitespace. */
+static void sanitise_string (char *str)
+{
+	if (!str)
+		return;
+
+	while (*str) {
+		if (*str != ' ' && isspace (*str)) {
+			*str = 0x00;
+			break;
+		}
+		str++;
+	}
+}
+
 /* Handle EV_FILE_TAGS. */
 static void ev_file_tags (const struct tag_ev_response *data)
 {
@@ -640,6 +655,10 @@ static void ev_file_tags (const struct tag_ev_response *data)
 	assert (data->tags != NULL);
 
 	debug ("Received tags for %s", data->file);
+
+	sanitise_string (data->tags->title);
+	sanitise_string (data->tags->artist);
+	sanitise_string (data->tags->album);
 
 	if ((n = plist_find_fname(dir_plist, data->file)) != -1) {
 		update_item_tags (dir_plist, n, data->tags);
