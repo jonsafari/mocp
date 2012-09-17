@@ -418,7 +418,7 @@ static void equalizer_read_config()
     {
       if(sscanf(linebuffer, "%*s %f", &ftmp)>0)
         {
-          if(ftmp>=0.0f && ftmp<=1.0f)
+          if(RANGE(0.0f, ftmp, 1.0f))
           {
             mixin_rate = ftmp;
           }

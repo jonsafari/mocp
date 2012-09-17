@@ -403,7 +403,7 @@ static short parse_rgb_color_value (const int line_num,
 					"color value is not a valid number");
 		return -1;
 	}
-	if (color < 0 || color > 1000) {
+	if (!RANGE(0, color, 1000)) {
 		if (errors_are_fatal)
 			theme_parse_error (line_num,
 					"color value should be in range 0-1000");

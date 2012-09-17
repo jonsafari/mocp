@@ -42,6 +42,10 @@ extern "C" {
 #define LIMIT(val, lim) ((val) >= 0 && (val) < (lim))
 #endif
 
+#ifndef RANGE
+#define RANGE(min, val, max) ((val) >= (min) && (val) <= (max))
+#endif
+
 #ifdef HAVE__ATTRIBUTE__
 # define ATTR_UNUSED __attribute__((unused))
 #else

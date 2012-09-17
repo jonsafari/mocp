@@ -1102,7 +1102,7 @@ int audio_get_mixer ()
 
 void audio_set_mixer (const int val)
 {
-	if (val < 0 || val > 100) {
+	if (!RANGE(0, val, 100)) {
 		logit ("Tried to set mixer to volume out of range.");
 		return;
 	}

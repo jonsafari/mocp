@@ -880,7 +880,7 @@ static bool parse_layout_coordinate (const char *fmt, int *val, const int max)
 	else
 		*val = v;
 
-	if (*val < 0 || *val > max) {
+	if (!RANGE(0, *val, max)) {
 		logit ("Coordinate out of range - %d is not in (0, %d)", *val, max);
 		return false;
 	}
@@ -3005,8 +3005,8 @@ static void info_win_set_block_title (struct info_win *w)
 static void info_win_set_block (struct info_win *w, const int block_start, const int block_end)
 {
 	assert (w != NULL);
-	assert (block_start == -1 || (block_start >= 0 && block_start <= w->total_time));
-	assert (block_end == -1 || (block_end >= 0 && block_end <= w->total_time));
+	assert (block_start == -1 || RANGE(0, block_start, w->total_time));
+	assert (block_end == -1 || RANGE(0, block_end, w->total_time));
 
 	info_win.block_start = block_start;
 	info_win.block_end = block_end;
