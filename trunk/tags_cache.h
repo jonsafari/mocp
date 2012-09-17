@@ -6,11 +6,11 @@
 #include <db.h>
 #endif
 
-#include "playlist.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+struct file_tags;
 
 /* Requests queue. */
 struct request_queue_node;
