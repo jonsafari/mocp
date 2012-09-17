@@ -770,7 +770,7 @@ void tags_cache_add_request (struct tags_cache *c, const char *file,
 
 	assert (c != NULL);
 	assert (file != NULL);
-	assert (client_id >= 0 && client_id < CLIENTS_MAX);
+	assert (LIMIT(client_id, CLIENTS_MAX));
 
 	debug ("Request for tags for %s from client %d", file, client_id);
 
@@ -790,7 +790,7 @@ void tags_cache_add_request (struct tags_cache *c, const char *file,
 void tags_cache_clear_queue (struct tags_cache *c, int client_id)
 {
 	assert (c != NULL);
-	assert (client_id >= 0 && client_id < CLIENTS_MAX);
+	assert (LIMIT(client_id, CLIENTS_MAX));
 
 	LOCK (c->mutex);
 	request_queue_clear (&c->queues[client_id]);
@@ -804,7 +804,7 @@ void tags_cache_clear_up_to (struct tags_cache *c, const char *file,
                                                       int client_id)
 {
 	assert (c != NULL);
-	assert (client_id >= 0 && client_id < CLIENTS_MAX);
+	assert (LIMIT(client_id, CLIENTS_MAX));
 	assert (file != NULL);
 
 	LOCK (c->mutex);

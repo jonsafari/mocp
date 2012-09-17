@@ -92,7 +92,7 @@ bool lists_strs_empty (const lists_t_strs *list)
 char *lists_strs_at (const lists_t_strs *list, int index)
 {
 	assert (list);
-	assert (index >= 0 && index < list->size);
+	assert (LIMIT(index, list->size));
 
 	return list->strs[index];
 }
@@ -161,7 +161,7 @@ char *lists_strs_swap (lists_t_strs *list, int index, char *s)
 	char *result;
 
 	assert (list);
-	assert (index >= 0 && index < list->size);
+	assert (LIMIT(index, list->size));
 	assert (s);
 
 	result = list->strs[index];
@@ -201,7 +201,7 @@ void lists_strs_replace (lists_t_strs *list, int index, char *s)
 	char *str;
 
 	assert (list);
-	assert (index >= 0 && index < list->size);
+	assert (LIMIT(index, list->size));
 
 	str = xstrdup (s);
 	str = lists_strs_swap (list, index, str);

@@ -1755,7 +1755,7 @@ void tags_response (const int client_id, const char *file,
 {
 	assert (file != NULL);
 	assert (tags != NULL);
-	assert (client_id >= 0 && client_id < CLIENTS_MAX);
+	assert (LIMIT(client_id, CLIENTS_MAX));
 
 	if (clients[client_id].socket != -1) {
 		struct tag_ev_response *data

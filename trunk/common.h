@@ -38,6 +38,10 @@ extern "C" {
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #endif
 
+#ifndef LIMIT
+#define LIMIT(val, lim) ((val) >= 0 && (val) < (lim))
+#endif
+
 #ifdef HAVE__ATTRIBUTE__
 # define ATTR_UNUSED __attribute__((unused))
 #else

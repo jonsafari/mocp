@@ -321,7 +321,7 @@ static void entry_history_add (struct entry_history *h,	const char *text)
 static void entry_history_replace (struct entry_history *h, int num, const char *text)
 {
 	assert (h != NULL);
-	assert (num >= 0 && num < h->num);
+	assert (LIMIT(num, h->num));
 	assert (text != NULL);
 
 	if (strlen (text) != strspn (text, " ") &&
@@ -353,7 +353,7 @@ static int entry_history_nitems (const struct entry_history *h)
 static char *entry_history_get (const struct entry_history *h, const int num)
 {
 	assert (h != NULL);
-	assert (num >= 0 && num < h->num);
+	assert (LIMIT(num, h->num));
 
 	return xstrdup (h->items[num]);
 }
@@ -1466,7 +1466,7 @@ static int side_menu_update_item (struct side_menu *m,
 	assert (m->visible);
 	assert (m->type == MENU_DIR || m->type == MENU_PLAYLIST);
 	assert (plist != NULL);
-	assert (n >= 0 && n < plist->num);
+	assert (LIMIT(n, plist->num));
 
 	file = plist_get_file (plist, n);
 	assert (file != NULL);
@@ -2025,7 +2025,7 @@ static void main_win_update_item (struct main_win *w,
 
 	assert (w != NULL);
 	assert (plist != NULL);
-	assert (n >= 0 && n < plist->num);
+	assert (LIMIT(n, plist->num));
 
 	m = find_side_menu (w, iface_to_side_menu(iface_menu));
 
@@ -2594,8 +2594,8 @@ static void bar_draw (const struct bar *b, WINDOW *win, const int pos_x,
 
 	assert (b != NULL);
 	assert (win != NULL);
-	assert (pos_x >= 0 && pos_x < COLS - b->width);
-	assert (pos_y >= 0 && pos_y < LINES);
+	assert (LIMIT(pos_x, COLS - b->width));
+	assert (LIMIT(pos_y, LINES));
 
 	fill_chars = b->filled * b->width / 100.0;
 
