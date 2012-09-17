@@ -42,7 +42,7 @@ static void draw_item (const struct menu *menu, const struct menu_item *mi,
 		const int number_space, const int draw_selected)
 {
 	int title_width;
-	int j;
+	int ix, x, y;
 	char buf[32];
 	int queue_pos_len = 0;
 
@@ -87,15 +87,20 @@ static void draw_item (const struct menu *menu, const struct menu_item *mi,
 
 	title_width = strwidth (mi->title);
 
+	getyx (menu->win, y, x);
 	if (title_width <= title_space || mi->align == MENU_ALIGN_LEFT)
 		xwaddnstr (menu->win, mi->title, title_space);
 	else
 		xwaddstr (menu->win, mi->title + title_width - title_space);
 
 	/* Make blank line to the right side of the screen */
-	if (mi == menu->selected)
-		for (j = title_width + 1; j <= title_space; j++)
+	if (mi == menu->selected) {
+		getyx (menu->win, y, ix);
+		while (ix < x + title_space) {
 			waddch (menu->win, ' ');
+			ix += 1;
+		}
+	}
 
 	/* Description */
 	if (draw_selected && mi == menu->selected && mi == menu->marked)
