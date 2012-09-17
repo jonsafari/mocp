@@ -72,22 +72,9 @@ void softmixer_shutdown()
 
 void softmixer_set_value(const int val)
 {
-  mixer_val = val;
-
-  if(mixer_val<0)
-    mixer_val = 0;
-  else
-    if(mixer_val>100)
-      mixer_val = 100;
-
+  mixer_val = CLAMP(0, val, 100);
   mixer_real = (mixer_val * mixer_amp) / 100;
-
-  if(mixer_real < SOFTMIXER_MIN)
-    mixer_real = SOFTMIXER_MIN;
-
-  if(mixer_real > SOFTMIXER_MAX)
-    mixer_real=SOFTMIXER_MAX;
-
+  mixer_real = CLAMP(SOFTMIXER_MIN, mixer_real, SOFTMIXER_MAX);
   mixer_realf = ((float)mixer_real)/100.0f;
 }
 
@@ -375,10 +362,7 @@ static void process_buffer_u8(uint8_t *buf, size_t size)
     tmp *= mixer_real;
     tmp /= 100;
     tmp += (UINT8_MAX>>1);
-    if(tmp < 0)
-      tmp = 0;
-    if(tmp > UINT8_MAX)
-      tmp = UINT8_MAX;
+    tmp = CLAMP(0, tmp, UINT8_MAX);
     buf[i] = (uint8_t)tmp;
   }
 }
@@ -394,11 +378,7 @@ static void process_buffer_s8(int8_t *buf, size_t size)
     int16_t tmp = buf[i];
     tmp *= mixer_real;
     tmp /= 100;
-    if( (tmp > INT8_MAX) )
-      tmp = INT8_MAX;
-    else
-      if( (tmp < INT8_MIN ) )
-        tmp = INT8_MIN;
+    tmp = CLAMP(INT8_MIN, tmp, INT8_MAX);
     buf[i] = (int8_t)tmp;
   }
 }
@@ -416,10 +396,7 @@ static void process_buffer_u16(uint16_t *buf, size_t size)
     tmp *= mixer_real;
     tmp /= 100;
     tmp += (UINT16_MAX>>1);
-    if(tmp < 0)
-      tmp = 0;
-    if(tmp > UINT16_MAX)
-      tmp = UINT16_MAX;
+    tmp = CLAMP(0, tmp, UINT16_MAX);
     buf[i] = (uint16_t)tmp;
   }
 }
@@ -435,11 +412,7 @@ static void process_buffer_s16(int16_t *buf, size_t size)
     int32_t tmp = buf[i];
     tmp *= mixer_real;
     tmp /= 100;
-    if(tmp > INT16_MAX)
-      tmp = INT16_MAX;
-    else
-      if(tmp < INT16_MIN)
-        tmp = INT16_MIN;
+    tmp = CLAMP(INT16_MIN, tmp, INT16_MAX);
     buf[i] = (int16_t)tmp;
   }
 }
@@ -457,11 +430,7 @@ static void process_buffer_u32(uint32_t *buf, size_t size)
     tmp *= mixer_real;
     tmp /= 100;
     tmp += (UINT32_MAX>>1);
-
-    if(tmp < 0)
-      tmp = 0;
-    if(tmp > UINT32_MAX)
-      tmp = UINT32_MAX;
+    tmp = CLAMP(0, tmp, UINT32_MAX);
     buf[i] = (uint32_t)tmp;
   }
 }
@@ -477,11 +446,7 @@ static void process_buffer_s32(int32_t *buf, size_t size)
     int64_t tmp = buf[i];
     tmp *= mixer_real;
     tmp /= 100;
-    if(tmp > INT32_MAX)
-      tmp = INT32_MAX;
-    else
-      if(tmp < INT32_MIN)
-        tmp = INT32_MIN;
+    tmp = CLAMP(INT32_MIN, tmp, INT32_MAX);
     buf[i] = (int32_t)tmp;
   }
 }
@@ -496,11 +461,7 @@ static void process_buffer_float(float *buf, size_t size)
   {
     float tmp = buf[i];
     tmp *= mixer_realf;
-    if(tmp > 1.0f)
-      tmp = 1.0f;
-    else
-      if(tmp < -1.0f)
-        tmp = -1.0f;
+    tmp = CLAMP(-1.0f, tmp, 1.0f);
     buf[i] = tmp;
   }
 }
@@ -526,10 +487,7 @@ static void mix_mono_u8(uint8_t *buf, int channels, size_t size)
     buf-=channels;
 
     mono /= channels;
-
-    if(mono > UINT8_MAX)
-      mono = UINT8_MAX;
-    // can't be negative
+    mono = MIN(mono, UINT8_MAX);  // can't be negative
 
     for(c=0; c<channels; c++)
       *buf++ = (uint8_t)mono;
@@ -558,12 +516,7 @@ static void mix_mono_s8(int8_t *buf, int channels, size_t size)
     buf-=channels;
 
     mono /= channels;
-
-    if(mono > INT8_MAX)
-      mono = INT8_MAX;
-    else
-      if(mono < INT8_MIN)
-        mono = INT8_MIN;
+    mono = CLAMP(INT8_MIN, mono, INT8_MAX);
 
     for(c=0; c<channels; c++)
       *buf++ = (int8_t)mono;
@@ -592,10 +545,7 @@ static void mix_mono_u16(uint16_t *buf, int channels, size_t size)
     buf-=channels;
 
     mono /= channels;
-
-    if(mono > UINT16_MAX)
-      mono = UINT16_MAX;
-    // can't be negative
+    mono = MIN(mono, UINT16_MAX);  // can't be negative
 
     for(c=0; c<channels; c++)
       *buf++ = (uint16_t)mono;
@@ -624,12 +574,7 @@ static void mix_mono_s16(int16_t *buf, int channels, size_t size)
     buf-=channels;
 
     mono /= channels;
-
-    if(mono > INT16_MAX)
-      mono = INT16_MAX;
-    else
-      if(mono < INT16_MIN)
-        mono = INT16_MIN;
+    mono = CLAMP(INT16_MIN, mono, INT16_MAX);
 
     for(c=0; c<channels; c++)
       *buf++ = (int16_t)mono;
@@ -658,10 +603,7 @@ static void mix_mono_u32(uint32_t *buf, int channels, size_t size)
     buf-=channels;
 
     mono /= channels;
-
-    if(mono > UINT32_MAX)
-      mono = UINT32_MAX;
-    // can't be negative
+    mono = MIN(mono, UINT32_MAX);  // can't be negative
 
     for(c=0; c<channels; c++)
       *buf++ = (uint32_t)mono;
@@ -690,12 +632,7 @@ static void mix_mono_s32(int32_t *buf, int channels, size_t size)
     buf-=channels;
 
     mono /= channels;
-
-    if(mono > INT32_MAX)
-      mono = INT32_MAX;
-    else
-      if(mono < INT32_MIN)
-        mono = INT32_MIN;
+    mono = CLAMP(INT32_MIN, mono, INT32_MAX);
 
     for(c=0; c<channels; c++)
       *buf++ = (int32_t)mono;
@@ -724,12 +661,7 @@ static void mix_mono_float(float *buf, int channels, size_t size)
     buf-=channels;
 
     mono /= channels;
-
-    if(mono > 1.0f)
-      mono = 1.0f;
-    else
-      if(mono < -1.0f)
-        mono = -1.0f;
+    mono = CLAMP(-1.0f, mono, 1.0f);
 
     for(c=0; c<channels; c++)
       *buf++ = mono;

@@ -489,10 +489,7 @@ static inline int32_t round_sample (mad_fixed_t sample)
 {
 	sample = sample + (1L << (MAD_F_FRACBITS - 24));
 
-	if (sample > MAD_F_ONE - 1)
-		sample = MAD_F_ONE - 1;
-	else if (sample < -MAD_F_ONE)
-		sample = -MAD_F_ONE;
+	sample = CLAMP(-MAD_F_ONE, sample, MAD_F_ONE - 1);
 
 	return sample >> (MAD_F_FRACBITS + 1 - 24);
 }

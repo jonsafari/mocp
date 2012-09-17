@@ -356,8 +356,7 @@ static void oss_set_mixer (int vol)
 	if (dsp_fd != -1)
 #endif
 	{
-		vol = MIN(vol, 100);
-		vol = MAX(0, vol);
+		vol = CLAMP(0, vol, 100);
 		vol = vol | (vol << 8);
 #ifdef OSSv3_MIXER
 		if (ioctl (mixer_fd, MIXER_WRITE(mixer_channel_current), &vol) == -1)
