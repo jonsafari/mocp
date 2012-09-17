@@ -83,6 +83,10 @@ then
 		AC_SEARCH_LIBS(av_get_channel_layout_nb_channels, avutil,
 			[AC_DEFINE([HAVE_AV_GET_CHANNEL_LAYOUT_NB_CHANNELS], 1,
 				[Define to 1 if you have the `av_get_channel_layout_nb_channels' function.])])
+		AC_CHECK_DECLS([CODEC_ID_OPUS], , ,
+		                 [#include <libavcodec/avcodec.h>])
+		AC_CHECK_DECLS([AV_CODEC_ID_OPUS], , ,
+		                 [#include <libavcodec/avcodec.h>])
 		CPPFLAGS="$save_CPPFLAGS"
 		CFLAGS="$save_CFLAGS"
 		LIBS="$save_LIBS"
