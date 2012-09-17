@@ -11,6 +11,10 @@
 
 /*#define DEBUG*/
 
+/* Defining OUT_TEST causes the raw audio samples to be written
+ * to the file 'out_test' in the current directory for debugging. */
+/*#define OUT_TEST*/
+
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
@@ -20,11 +24,12 @@
 #include <string.h>
 #include <errno.h>
 #include <signal.h>
-
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
 #include <unistd.h>
+
+#ifdef OUT_TEST
+#include <sys/types.h>
+#include <fcntl.h>
+#endif
 
 #include "common.h"
 #include "audio.h"
@@ -38,7 +43,9 @@
 #define AUDIO_MAX_PLAY		0.1
 #define AUDIO_MAX_PLAY_BYTES	32768
 
-/*static int fd;*/
+#ifdef OUT_TEST
+static int fd;
+#endif
 
 static void set_realtime_prio ()
 {
@@ -162,11 +169,15 @@ static void *read_thread (void *arg)
 				played = audio_send_pcm (
 						play_buf + play_buf_pos,
 						play_buf_fill - play_buf_pos);
+
+#ifdef OUT_TEST
+				write (fd, play_buf + play_buf_pos, played);
+#endif
+
 				play_buf_pos += played;
 			}
 
 			/*logit ("done sending PCM");*/
-			/*write (fd, buf->buf + buf->pos, to_play);*/
 
 			LOCK (buf->mutex);
 
@@ -206,7 +217,9 @@ void out_buf_init (struct out_buf *buf, int size)
 	pthread_cond_init (&buf->play_cond, NULL);
 	pthread_cond_init (&buf->ready_cond, NULL);
 
-	/*fd = open ("out_test", O_CREAT | O_TRUNC | O_WRONLY, 0600);*/
+#ifdef OUT_TEST
+	fd = open ("out_test", O_CREAT | O_TRUNC | O_WRONLY, 0600);
+#endif
 
 	rc = pthread_create (&buf->tid, NULL, read_thread, buf);
 	if (rc != 0)
@@ -250,7 +263,9 @@ void out_buf_destroy (struct out_buf *buf)
 
 	logit ("buffer destroyed");
 
-	/*close (fd);*/
+#ifdef OUT_TEST
+	close (fd);
+#endif
 }
 
 /* Put data at the end of the buffer, return 0 if nothing was put. */
