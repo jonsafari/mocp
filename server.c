@@ -597,7 +597,7 @@ static int flush_events (struct client *cli)
 	return st != NB_IO_ERR ? 1 : 0;
 }
 
-/* Send events to clients that are ready to write. */
+/* Send events to clients whose sockets are ready to write. */
 static void send_events (fd_set *fds)
 {
 	int i;
@@ -606,7 +606,7 @@ static void send_events (fd_set *fds)
 		if (clients[i].socket != -1
 				&& FD_ISSET(clients[i].socket, fds)) {
 			debug ("Flushing events for client %d", i);
-			if (!flush_events(&clients[i])) {
+			if (!flush_events (&clients[i])) {
 				close (clients[i].socket);
 				del_client (&clients[i]);
 			}

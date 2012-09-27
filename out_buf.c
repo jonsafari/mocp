@@ -59,8 +59,8 @@ static void set_realtime_prio ()
 			logit ("Can't set realtime priority: %s", strerror (rc));
 	}
 #else
-	logit ("No sched_get_priority_max() function: realtime priority not "
-			"used.");
+	logit ("No sched_get_priority_max() function: "
+	                  "realtime priority not used.");
 #endif
 }
 

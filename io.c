@@ -297,6 +297,7 @@ void io_close (struct io_stream *s)
 		if (s->source == IO_SOURCE_CURL)
 			io_curl_close (s);
 #endif
+
 		if (s->source == IO_SOURCE_FD)
 			close (s->fd);
 
@@ -304,12 +305,10 @@ void io_close (struct io_stream *s)
 			fifo_buf_destroy (&s->buf);
 			rc = pthread_cond_destroy (&s->buf_free_cond);
 			if (rc != 0)
-				logit ("Destroying buf_free_cond failed: %s",
-						strerror (rc));
+				logit ("Destroying buf_free_cond failed: %s", strerror (rc));
 			rc = pthread_cond_destroy (&s->buf_fill_cond);
 			if (rc != 0)
-				logit ("Destroying buf_fill_cond failed: %s",
-						strerror (rc));
+				logit ("Destroying buf_fill_cond failed: %s", strerror (rc));
 		}
 
 		if (s->metadata.title)

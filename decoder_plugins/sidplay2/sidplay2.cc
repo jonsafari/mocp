@@ -365,8 +365,8 @@ extern "C" void sidplay2_info (const char *file_name, struct file_tags *info,
   )
   {
     info->title = trim(sti.infoString[STITLE],strlen(sti.infoString[STITLE]));
-	if (info->title)
-    	info->filled |= TAGS_COMMENTS;
+    if (info->title)
+      info->filled |= TAGS_COMMENTS;
   }
 
   if
@@ -377,8 +377,8 @@ extern "C" void sidplay2_info (const char *file_name, struct file_tags *info,
   )
   {
     info->artist = trim(sti.infoString[SAUTHOR],strlen(sti.infoString[SAUTHOR]));
-	if (info->artist)
-    	info->filled |= TAGS_COMMENTS;
+    if (info->artist)
+      info->filled |= TAGS_COMMENTS;
   }
 
   // Not really album - but close...
@@ -390,8 +390,8 @@ extern "C" void sidplay2_info (const char *file_name, struct file_tags *info,
   )
   {
     info->album = trim(sti.infoString[SCOPY],strlen(sti.infoString[SCOPY]));
-	if (info->album)
-    	info->filled |= TAGS_COMMENTS;
+    if (info->album)
+      info->filled |= TAGS_COMMENTS;
   }
 
   info->time = 0;

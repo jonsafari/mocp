@@ -267,7 +267,7 @@ static void show_version ()
 	printf (" DEBUG");
 #endif
 #ifdef HAVE_CURL
-	printf (" Internet streams");
+	printf (" Network streams");
 #endif
 #ifdef HAVE_SAMPLERATE
 	printf (" resample");
@@ -320,7 +320,7 @@ static void show_usage (const char *prg_name) {
 "-r --previous          Play previous song.\n"
 "-x --exit              Shutdown the server.\n"
 "-T --theme theme       Use selected theme file (read from ~/.moc/themes if\n"
-"                       the path is not absolute.\n"
+"                       the path is not absolute).\n"
 "-C --config FILE       Use the specified config file instead of the default.\n"
 "-O --set-option NAME=VALUE\n"
 "                       Override configuration option NAME with VALUE.\n"

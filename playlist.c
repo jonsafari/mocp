@@ -584,16 +584,16 @@ static void do_title_expn (char *dest, int size, const char *fmt,
 /* Build file title from struct file_tags. Returned memory is malloc()ed. */
 char *build_title_with_format (const struct file_tags *tags, const char *fmt)
 {
-        char title[512];
+	char title[512];
 
-        do_title_expn (title, sizeof(title), fmt, tags);
-        return xstrdup (title);
+	do_title_expn (title, sizeof(title), fmt, tags);
+	return xstrdup (title);
 }
 
 /* Build file title from struct file_tags. Returned memory is malloc()ed. */
 char *build_title (const struct file_tags *tags)
 {
-        return build_title_with_format (tags, options_get_str("FormatString"));
+	return build_title_with_format (tags, options_get_str ("FormatString"));
 }
 
 /* Copy the item to the playlist. Return the index of the added item. */

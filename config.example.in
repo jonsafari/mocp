@@ -232,10 +232,10 @@
 # that and applies appropriate conversion.
 #EnforceTagsEncoding = no
 
-# Enable the conversion of filenames from the local encoding to UTF8.
+# Enable the conversion of filenames from the local encoding to UTF-8.
 #FileNamesIconv = no
 
-# Enable the conversion of the xterm title from UTF8 to the local encoding.
+# Enable the conversion of the xterm title from UTF-8 to the local encoding.
 #NonUTFXterm = no
 
 # Remember the playlist after exit?
