@@ -695,6 +695,9 @@ void tags_cache_destroy (struct tags_cache *c)
 
 #ifdef HAVE_DB_H
 	if (c->db) {
+		c->db->set_errcall (c->db, NULL);
+		c->db->set_msgcall (c->db, NULL);
+		c->db->set_paniccall (c->db, NULL);
 		c->db->close (c->db, 0);
 		c->db = NULL;
 	}
@@ -703,7 +706,9 @@ void tags_cache_destroy (struct tags_cache *c)
 #ifdef HAVE_DB_H
 	if (c->db_env) {
 		c->db_env->lock_id_free (c->db_env, c->locker);
-
+		c->db_env->set_errcall (c->db_env, NULL);
+		c->db_env->set_msgcall (c->db_env, NULL);
+		c->db_env->set_paniccall (c->db_env, NULL);
 		c->db_env->close (c->db_env, 0);
 		c->db_env = NULL;
 	}
@@ -822,6 +827,35 @@ void tags_cache_save (struct tags_cache *c ATTR_UNUSED,
 	assert (c != NULL);
 	assert (cache_dir != NULL);
 }
+
+#ifdef HAVE_DB_H
+static void db_err_cb (const DB_ENV *dbenv ATTR_UNUSED, const char *errpfx,
+                                                        const char *msg)
+{
+	assert (msg);
+
+	if (errpfx && strlen (errpfx))
+		logit ("BDB said: %s: %s", errpfx, msg);
+	else
+		logit ("BDB said: %s", msg);
+}
+#endif
+
+#ifdef HAVE_DB_H
+static void db_msg_cb (const DB_ENV *dbenv ATTR_UNUSED, const char *msg)
+{
+	assert (msg);
+
+	logit ("BDB said: %s", msg);
+}
+#endif
+
+#ifdef HAVE_DB_H
+static void db_panic_cb (DB_ENV *dbenv ATTR_UNUSED, int errval)
+{
+	logit ("BDB said: %s", db_strerror (errval));
+}
+#endif
 
 /* Purge content of a directory. */
 #ifdef HAVE_DB_H
@@ -1046,6 +1080,12 @@ void tags_cache_load (struct tags_cache *c, const char *cache_dir)
 		goto err;
 	}
 
+	c->db_env->set_errcall (c->db_env, db_err_cb);
+	c->db_env->set_msgcall (c->db_env, db_msg_cb);
+	ret = c->db_env->set_paniccall (c->db_env, db_panic_cb);
+	if (ret)
+		logit ("Could not set DB panic callback");
+
 	ret = c->db_env->open (c->db_env, cache_dir,
 			DB_CREATE  | DB_INIT_MPOOL | DB_THREAD | DB_INIT_LOCK, 0);
 	if (ret) {
@@ -1066,16 +1106,33 @@ void tags_cache_load (struct tags_cache *c, const char *cache_dir)
 		goto err;
 	}
 
-	ret = c->db->open (c->db, NULL, TAGS_DB, NULL, DB_BTREE, DB_CREATE, 0);
-	if (!ret)
-		return;
+	c->db->set_errcall (c->db, db_err_cb);
+	c->db->set_msgcall (c->db, db_msg_cb);
+	ret = c->db->set_paniccall (c->db, db_panic_cb);
+	if (ret)
+		logit ("Could not set DB panic callback");
 
-	error ("Failed to open (or create) tags cache db: %s", db_strerror (ret));
-	c->db->close (c->db, 0);
+	ret = c->db->open (c->db, NULL, TAGS_DB, NULL, DB_BTREE, DB_CREATE, 0);
+	if (ret) {
+		error ("Failed to open (or create) tags cache db: %s",
+		        db_strerror (ret));
+		goto err;
+	}
+
+	return;
 
 err:
-	c->db = NULL;
+	if (c->db) {
+		c->db->set_errcall (c->db, NULL);
+		c->db->set_msgcall (c->db, NULL);
+		c->db->set_paniccall (c->db, NULL);
+		c->db->close (c->db, 0);
+		c->db = NULL;
+	}
 	if (c->db_env) {
+		c->db_env->set_errcall (c->db_env, NULL);
+		c->db_env->set_msgcall (c->db_env, NULL);
+		c->db_env->set_paniccall (c->db_env, NULL);
 		c->db_env->close (c->db_env, 0);
 		c->db_env = NULL;
 	}
