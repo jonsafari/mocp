@@ -948,6 +948,41 @@ static int purge_directory (const char *dir_path)
 }
 #endif
 
+/* Remove the old Berkley DB backing files from the cache directory. */
+#ifdef HAVE_DB_H
+static void vacuum_old_db_files (const char *dir_path)
+{
+	DIR *dir;
+	struct dirent *d;
+
+	dir = opendir (dir_path);
+	if (!dir) {
+		logit ("Can't open directory %s: %s", dir_path, strerror (errno));
+		return;
+	}
+
+	while ((d = readdir (dir))) {
+		if (!strncmp (d->d_name, "__db.", 5)) {
+			char *fpath;
+			int len;
+
+			len = strlen (dir_path) + strlen (d->d_name) + 2;
+			fpath = (char *)xmalloc (len);
+			snprintf (fpath, len, "%s/%s", dir_path, d->d_name);
+
+			logit ("Vacuuming file: %s", fpath);
+
+			if (unlink (fpath) < 0)
+				logit ("Can't remove %s: %s", fpath, strerror (errno));
+
+			free (fpath);
+		}
+	}
+
+	closedir (dir);
+}
+#endif
+
 /* Create a MOC/db version string.
  *
  * @param buf Output buffer (at least VERSION_TAG_MAX chars long)
@@ -1076,6 +1111,8 @@ static int prepare_cache_dir (const char *cache_dir)
 			return 0;
 		write_cache_version (cache_dir);
 	}
+	else
+		vacuum_old_db_files (cache_dir);
 
 	return 1;
 }
