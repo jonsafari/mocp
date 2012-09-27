@@ -23,8 +23,6 @@
 #include <pthread.h>
 #include <string.h>
 #include <errno.h>
-#include <signal.h>
-#include <unistd.h>
 
 #ifdef OUT_TEST
 #include <sys/types.h>

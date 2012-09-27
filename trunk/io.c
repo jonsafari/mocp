@@ -27,7 +27,7 @@
 #include <strings.h>
 #include <assert.h>
 #include <pthread.h>
-#include <signal.h>
+
 #ifdef HAVE_MMAP
 # include <sys/mman.h>
 #endif
