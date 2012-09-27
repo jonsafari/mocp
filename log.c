@@ -41,6 +41,7 @@ void internal_logit (const char *file, const int line, const char *function,
 	int len;
 	char *msg, time_str[20];
 	struct timeval utc_time;
+	time_t tv_sec;
 	va_list va;
 	struct tm tm_time;
 	const char fmt[] = "%s.%06u: %s:%d %s(): %s\n";
@@ -73,7 +74,8 @@ void internal_logit (const char *file, const int line, const char *function,
 	va_end (va);
 
 	gettimeofday (&utc_time, NULL);
-	localtime_r (&utc_time.tv_sec, &tm_time);
+	tv_sec = utc_time.tv_sec;
+	localtime_r (&tv_sec, &tm_time);
 	strftime (time_str, sizeof (time_str), "%b %e %T", &tm_time);
 
 	if (logfp) {

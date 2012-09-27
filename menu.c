@@ -41,10 +41,10 @@ static void draw_item (const struct menu *menu, const struct menu_item *mi,
 		const int pos, const int item_info_pos, int title_space,
 		const int number_space, const int draw_selected)
 {
-	int title_width;
-	int ix, x, y;
+	int title_width, queue_pos_len = 0;
+	int ix, x;
+	int y ATTR_UNUSED;
 	char buf[32];
-	int queue_pos_len = 0;
 
 	assert (menu != NULL);
 	assert (mi != NULL);
