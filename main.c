@@ -24,10 +24,8 @@
 #include <sys/un.h>
 #include <unistd.h>
 #include <signal.h>
-#define _GNU_SOURCE
 #include <getopt.h>
 #include <errno.h>
-#include <unistd.h>
 #include <time.h>
 #include <locale.h>
 #include <assert.h>

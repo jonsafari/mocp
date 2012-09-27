@@ -95,7 +95,6 @@ static sidplay2_data * make_data()
   else
   {
     fatal("sidplay2: Cannot create ReSID-Builder!");
-    return NULL;
   }
 
   s2d->cfg.sidEmulation = s2d->builder;
