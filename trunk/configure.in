@@ -416,18 +416,15 @@ echo
 echo "-----------------------------------------------------------------------"
 echo "MOC will be compiled with:"
 echo
-DECODERS_LEN=`expr length "$DECODER_PLUGINS"`
-if test $DECODERS_LEN -lt 48
+if test `echo $DECODER_PLUGINS | $AWK '{print(length)}'` -le 50
 then
-	echo "Decoder plugins:  "$DECODER_PLUGINS
+	echo "Decoder plugins:  $DECODER_PLUGINS"
 else
-	DECODERS_2=`expr substr "$DECODER_PLUGINS" 48 999`
-	DECODERS_IX=`expr index "$DECODERS_2" ' '`
-	DECODERS_2=`expr substr "$DECODERS_2" $DECODERS_IX 999`
-	DECODERS_IX=`expr $DECODERS_IX + 46`
-	DECODERS_1=`expr substr "$DECODER_PLUGINS" 1 $DECODERS_IX`
-	echo "Decoder plugins:  $DECODERS_1"
-	echo "                  $DECODERS_2"
+	DECODERS_IX=`echo $DECODER_PLUGINS | $AWK '{match(substr($0, 1, 51), /.* /);print(RLENGTH)}'`
+	DECODERS_1=`echo $DECODER_PLUGINS | $AWK "{print(substr(\\$0, 1, $DECODERS_IX - 1))}"`
+	DECODERS_2=`echo $DECODER_PLUGINS | $AWK "{print(substr(\\$0, $DECODERS_IX + 1))}"`
+	echo "Decoder plugins:   $DECODERS_1"
+	echo "                   $DECODERS_2"
 fi
 echo "Sound Drivers:    "$SOUND_DRIVERS
 echo "DEBUG:             "$COMPILE_DEBUG
