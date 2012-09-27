@@ -423,8 +423,7 @@ static void ffmpeg_info (const char *file_name,
 
 	if (tags_sel & TAGS_TIME) {
 		info->time = -1;
-		if ((uint64_t)ic->duration != AV_NOPTS_VALUE &&
-		              ic->duration >= 0)
+		if (ic->duration != (int64_t)AV_NOPTS_VALUE && ic->duration >= 0)
 			info->time = ic->duration / AV_TIME_BASE;
 	}
 
@@ -999,7 +998,7 @@ static bool seek_in_stream (struct ffmpeg_data *data, int sec)
 	seek_ts = av_rescale (sec, data->stream->time_base.den,
 	                           data->stream->time_base.num);
 
-	if ((uint64_t)data->stream->start_time != AV_NOPTS_VALUE) {
+	if (data->stream->start_time != (int64_t)AV_NOPTS_VALUE) {
 		if (seek_ts > INT64_MAX - data->stream->start_time) {
 			logit ("Seek value too large");
 			return false;
@@ -1174,7 +1173,7 @@ static int ffmpeg_get_duration (void *prv_data)
 	if (!data->stream)
 		return -1;
 
-	if ((uint64_t)data->stream->duration == AV_NOPTS_VALUE)
+	if (data->stream->duration == (int64_t)AV_NOPTS_VALUE)
 		return -1;
 
 	if (data->stream->duration < 0)
