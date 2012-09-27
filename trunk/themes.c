@@ -107,7 +107,7 @@ static void set_default_colors ()
 	make_color (CLR_PLIST_TIME, COLOR_WHITE, COLOR_BLUE, A_NORMAL);
 }
 
-/* Set default colors for black and white terminal .*/
+/* Set default colors for black and white terminal. */
 static void set_bw_colors ()
 {
 	colors[CLR_BACKGROUND] = A_NORMAL;
@@ -325,8 +325,7 @@ static int parse_theme_element (const int line_num, const char *name,
 		if ((tmp = strtok(NULL, " \t"))) {
 			if (errors_are_fatal)
 				theme_parse_error (line_num,
-					"unexpected chars at the end "
-					"of line");
+					"unexpected chars at the end of line");
 			return 0;
 		}
 

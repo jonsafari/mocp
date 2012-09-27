@@ -282,8 +282,7 @@ void packet_buf_add_tags (struct packet_buf *b, const struct file_tags *tags)
 		packet_buf_add_str (b, tags->artist ? tags->artist : "");
 		packet_buf_add_str (b, tags->album ? tags->album : "");
 		packet_buf_add_int (b, tags->track);
-		packet_buf_add_int (b, tags->filled & TAGS_TIME ?
-				tags->time : -1);
+		packet_buf_add_int (b, tags->filled & TAGS_TIME ? tags->time : -1);
 		packet_buf_add_int (b, tags->filled);
 	}
 	else {
@@ -481,13 +480,13 @@ struct move_ev_data *recv_move_ev_data (int sock)
 	d = (struct move_ev_data *)xmalloc (sizeof(struct move_ev_data));
 
 	if (!(d->from = get_str(sock))) {
-		logit ("Error while reveivind 'from' data");
+		logit ("Error while receiving 'from' data");
 		free (d);
 		return NULL;
 	}
 
 	if (!(d->to = get_str(sock))) {
-		logit ("Error while reveivind 'to' data");
+		logit ("Error while receiving 'to' data");
 		free (d->from);
 		free (d);
 		return NULL;
@@ -694,8 +693,8 @@ static struct packet_buf *make_event_packet (const struct event *e)
 	return b;
 }
 
-/* Send the first event from the queue an remove it on success. If the
- * operation woulb block return NB_IO_BLOCK. Return NB_IO_ERR on error
+/* Send the first event from the queue an remove it on success.  If the
+ * operation would block return NB_IO_BLOCK.  Return NB_IO_ERR on error
  * or NB_IO_OK on success. */
 enum noblock_io_status event_send_noblock (int sock, struct event_queue *q)
 {

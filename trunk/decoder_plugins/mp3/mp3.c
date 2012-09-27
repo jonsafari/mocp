@@ -46,7 +46,6 @@
 #include "files.h"
 #include "utf8.h"
 #include "rcc.h"
-#include "options.h"
 
 #define INPUT_BUFFER	(32 * 1024)
 
@@ -60,8 +59,8 @@ struct mp3_data
 
 	unsigned int freq;
 	short channels;
-	signed long duration; /* Total time of the file in seconds.
-				 used for seeking. */
+	signed long duration; /* Total time of the file in seconds
+	                         (used for seeking). */
 	off_t size; /* Size of the file */
 
 	unsigned char in_buff[INPUT_BUFFER + MAD_BUFFER_GUARD];
@@ -428,8 +427,8 @@ static void mp3_close (void *void_data)
 	free (data);
 }
 
-/* Get the time for mp3 file, return -1 on error. */
-/* Adapted from mpg321. */
+/* Get the time for mp3 file, return -1 on error.
+ * Adapted from mpg321. */
 static int count_time (const char *file)
 {
 	struct mp3_data *data;
@@ -487,7 +486,7 @@ static void mp3_info (const char *file_name, struct file_tags *info,
 
 static inline int32_t round_sample (mad_fixed_t sample)
 {
-	sample = sample + (1L << (MAD_F_FRACBITS - 24));
+	sample += 1L << (MAD_F_FRACBITS - 24);
 
 	sample = CLAMP(-MAD_F_ONE, sample, MAD_F_ONE - 1);
 
@@ -647,7 +646,7 @@ static int mp3_seek (void *void_data, int sec)
 	new_position = ((double) sec /
 			(double) data->duration) * data->size;
 
-	debug ("Seeking to %d (%d byte)", sec, new_position);
+	debug ("Seeking to %d (byte %d)", sec, new_position);
 
 	if (new_position < 0)
 		new_position = 0;

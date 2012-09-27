@@ -92,7 +92,7 @@ struct side_menu
 	WINDOW *win; 	/* window for the menu */
 	char *title;	/* title of the window */
 
-	/* Position and size of tme menu in the window */
+	/* Position and size of the menu in the window. */
 	int posx;
 	int posy;
 	int width;
@@ -105,16 +105,15 @@ struct side_menu
 	{
 		struct {
 			struct menu *main;    /* visible menu */
-			struct menu *copy;    /* copy of the menu when we
-			                         display matching items
-			                         when searching */
+			struct menu *copy;    /* copy of the menu when we display
+			                         matching items while searching */
 		} list;
 		/* struct menu_tree *tree;*/
 	} menu;
 };
 
-/* State of the side menu that can be read/restored. It remembers the state
- * (position of the view, which file is selected etc.) of the menu. */
+/* State of the side menu that can be read/restored.  It remembers the state
+ * (position of the view, which file is selected, etc) of the menu. */
 struct side_menu_state
 {
 	struct menu_state menu_state;
@@ -1625,9 +1624,9 @@ static void side_menu_set_plist_time (struct side_menu *m, const int time,
 	m->total_time_for_all = time_for_all;
 }
 
-/* Replace the menu with a menu cantaining only items that contain the pattern.
- * If no items matched, don't do anything.
- * Return the number of items matching. */
+/* Replace the menu with one having only those items which contain 'pattern'.
+ * If no items match, don't do anything.
+ * Return the number of matching items. */
 static int side_menu_filter (struct side_menu *m, const char *pattern)
 {
 	struct menu *filtered_menu;
@@ -1825,10 +1824,8 @@ static void main_win_draw (struct main_win *w)
 	else {
 		werase (w->win);
 
-		/* Draw all visible menus, draw the selected menu as the last
-		 * menu. */
-		for (i = 0; i < (int)ARRAY_SIZE(w->menus);
-				i++)
+		/* Draw all visible menus.  Draw the selected menu last. */
+		for (i = 0; i < (int)ARRAY_SIZE(w->menus); i++)
 			if (w->menus[i].visible && i != w->selected_menu)
 				side_menu_draw (&w->menus[i], 0);
 
@@ -3803,7 +3800,7 @@ void iface_update_item (const enum iface_menu menu,
 	iface_refresh_screen ();
 }
 
-/* Chenge the current item in the directory menu to this item. */
+/* Change the current item in the directory menu to this item. */
 void iface_set_curr_item_title (const char *title)
 {
 	assert (title != NULL);

@@ -61,7 +61,7 @@ static struct option options[OPTIONS_MAX];
 static int options_num = 0;
 
 
-/* Returns the str's hash using djb2 algorithm */
+/* Returns the str's hash using djb2 algorithm. */
 static unsigned int hash(const char * str)
 {
 	unsigned int hash = 5381;
@@ -71,8 +71,8 @@ static unsigned int hash(const char * str)
 	return hash;
 }
 
-/* Return an index to an option in the options hashtable. If there is no such
- * option return -1. */
+/* Return an index to an option in the options hashtable.
+ * If there is no such option return -1. */
 static int find_option (const char *name, enum option_type type)
 {
 	unsigned int h=hash(name),i,init_pos=h%OPTIONS_MAX;
@@ -94,8 +94,8 @@ static int find_option (const char *name, enum option_type type)
 	return -1;
 }
 
-/* Return an index on a free slot in the options hashtable. If there is no such
- * slot return -1. */
+/* Return an index of a free slot in the options hashtable.
+ * If there is no such slot return -1. */
 static int find_free (unsigned int h)
 {
 	unsigned int i;

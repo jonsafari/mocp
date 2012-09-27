@@ -371,7 +371,7 @@ m4_include(decoder_plugins/decoders.m4)
 dnl curl
 COMPILE_CURL="no"
 AC_ARG_WITH(curl, AS_HELP_STRING([--without-curl],
-                                 [Compile without Internet streams support]))
+                                 [Compile without Network streams support]))
 if test "x$with_curl" != "xno"
 then
 	dnl FIXME: make a better curl test
@@ -379,12 +379,12 @@ then
 	if test "x$CURL_CONFIG" = "xyes"
 	then
 		AC_MSG_CHECKING([libcurl version])
-		curl_ver=`curl-config --version | awk '{print $2}'`
-		curl_ver_major=`echo $curl_ver | awk -F. '{print $1}'`
-		curl_ver_minor=`echo $curl_ver | awk -F. '{print $2}'`
-		curl_ver_fix=`echo $curl_ver | awk -F. '{print $3}'`
+		curl_ver=`curl-config --version | $AWK '{print $2}'`
+		curl_ver_major=`echo $curl_ver | $AWK -F. '{print $1}'`
+		curl_ver_minor=`echo $curl_ver | $AWK -F. '{print $2}'`
+		curl_ver_fix=`echo $curl_ver | $AWK -F. '{print $3}'`
 
-		# make 071201 from 7.12.1
+		# make 071202 from 7.12.2
 		curl_ver_number=`printf "%02d%02d%02d" $curl_ver_major \
 			$curl_ver_minor $curl_ver_fix`
 

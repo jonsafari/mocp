@@ -93,7 +93,7 @@ static void draw_item (const struct menu *menu, const struct menu_item *mi,
 	else
 		xwaddstr (menu->win, mi->title + title_width - title_space);
 
-	/* Make blank line to the right side of the screen */
+	/* Fill the remainder of the title field with spaces. */
 	if (mi == menu->selected) {
 		getyx (menu->win, y, ix);
 		while (ix < x + title_space) {
@@ -102,7 +102,7 @@ static void draw_item (const struct menu *menu, const struct menu_item *mi,
 		}
 	}
 
-	/* Description */
+	/* Description. */
 	if (draw_selected && mi == menu->selected && mi == menu->marked)
 		wattrset (menu->win, menu->info_attr_sel_marked);
 	else if (draw_selected && mi == menu->selected)
@@ -113,7 +113,7 @@ static void draw_item (const struct menu *menu, const struct menu_item *mi,
 		wattrset (menu->win, menu->info_attr_normal);
 	wmove (menu->win, pos, item_info_pos - queue_pos_len);
 
-	/* Position in queue */
+	/* Position in queue. */
 	if (mi->queue_pos) {
 		xwaddstr (menu->win, "[");
 		xwaddstr (menu->win, buf);
@@ -182,8 +182,7 @@ void menu_set_cursor (const struct menu *m)
 	assert (m != NULL);
 
 	if (m->selected)
-		wmove (m->win, m->selected->num - m->top->num + m->posy,
-				m->posx);
+		wmove (m->win, m->selected->num - m->top->num + m->posy, m->posx);
 }
 
 static int rb_compare (const void *a, const void *b, void *adata ATTR_UNUSED)
