@@ -1087,7 +1087,8 @@ void tags_cache_load (struct tags_cache *c, const char *cache_dir)
 		logit ("Could not set DB panic callback");
 
 	ret = c->db_env->open (c->db_env, cache_dir,
-			DB_CREATE  | DB_INIT_MPOOL | DB_THREAD | DB_INIT_LOCK, 0);
+	                       DB_CREATE | DB_PRIVATE | DB_INIT_MPOOL |
+	                       DB_THREAD | DB_INIT_LOCK, 0);
 	if (ret) {
 		error ("Can't open DB environment (%s): %s",
 				cache_dir, db_strerror (ret));
@@ -1112,7 +1113,8 @@ void tags_cache_load (struct tags_cache *c, const char *cache_dir)
 	if (ret)
 		logit ("Could not set DB panic callback");
 
-	ret = c->db->open (c->db, NULL, TAGS_DB, NULL, DB_BTREE, DB_CREATE, 0);
+	ret = c->db->open (c->db, NULL, TAGS_DB, NULL, DB_BTREE,
+	                                DB_CREATE | DB_THREAD, 0);
 	if (ret) {
 		error ("Failed to open (or create) tags cache db: %s",
 		        db_strerror (ret));

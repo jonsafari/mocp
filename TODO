@@ -18,12 +18,15 @@ Known bugs:
   http://moc.daper.net/node/240
 - MOC needs to be restarted (when switching themes) in order to understand the
   ATTRIBUTE correctly.
-- db lock timeout in tags_cache.
 - Seeking in some formats does not work in the FFmpeg decoder because of
   the limitations of the FFmpeg libraries (and seeking is disabled for them).
   FLV also has seeking issues and is disabled but will be enabled if
   SEEK_IN_DECODER is set in the FFmpeg decoder plug-in.  (This may be
   parameterised in due course.)
+- Using DB_THREAD in combination with DB_CREATE and DB_PRIVATE seems to
+  cause a segfault on OpenWRT.  The circumvention is to configure MOC on
+  OpenWRT with '--disable-cache' or set the MOC configuration option
+  'TagsCacheSize' to zero.
 
 Before 2.5:
 
