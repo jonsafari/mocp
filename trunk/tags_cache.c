@@ -67,6 +67,10 @@
  */
 #define CACHE_DB_FORMAT_VERSION	1
 
+/* How frequently to flush the tags database to disk.  A value of zero
+ * disables flushing. */
+#define DB_SYNC_COUNT 5
+
 /* Element of a requests queue. */
 struct request_queue_node
 {
@@ -456,6 +460,23 @@ static void tags_cache_gc (struct tags_cache *c)
 }
 #endif
 
+/* Remove the one element of the cache based on it's access time. */
+#ifdef HAVE_DB_H
+static void tags_cache_sync (struct tags_cache *c)
+{
+	static int sync_count = 0;
+
+	if (DB_SYNC_COUNT == 0)
+		return;
+
+	sync_count += 1;
+	if (sync_count >= DB_SYNC_COUNT) {
+		sync_count = 0;
+		c->db->sync (c->db, 0);
+	}
+}
+#endif
+
 /* Add this tags object for the file to the cache. */
 #ifdef HAVE_DB_H
 static void tags_cache_add (struct tags_cache *c, const char *file,
@@ -488,6 +509,8 @@ static void tags_cache_add (struct tags_cache *c, const char *file,
 	ret = c->db->put (c->db, NULL, key, &data, 0);
 	if (ret)
 		error ("DB put error: %s", db_strerror (ret));
+
+	tags_cache_sync (c);
 
 	free (serialized_cache_rec);
 }
