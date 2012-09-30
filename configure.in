@@ -340,6 +340,9 @@ then
 		AC_MSG_ERROR([You need curses/ncurses library and header files.])
 fi
 
+dnl popt
+AC_SEARCH_LIBS([poptGetContext], [popt], , [POPT_MISSING="yes"])
+
 dnl getopt
 AC_CHECK_FUNC(getopt_long,
 	      [AC_CHECK_HEADERS([getopt.h],,[AC_MSG_ERROR([You need getopt.h.])])],
@@ -466,6 +469,13 @@ if test "x$FFMPEG_DEPRECATED" = "xyes"
 then
 	echo "WARNING: After release 2.5 MOC will require FFmpeg/LibAV release"
 	echo "         0.7 or later.  Plan to upgrade your libraries soon."
+	echo
+fi
+
+if test "x$POPT_MISSING" = "xyes"
+then
+	echo "WARNING: After release 2.5 MOC will require libpopt.  Plan"
+	echo "         to install it before moving on from release 2.5."
 	echo
 fi
 
