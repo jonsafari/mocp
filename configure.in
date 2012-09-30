@@ -479,6 +479,14 @@ then
 	echo
 fi
 
+if test "x$enable_debug" = "x"
+then
+	echo "WARNING: After release 2.5 MOC debugging code will be disabled"
+	echo "         by default.  You should explicitly set the configure"
+	echo "         '--enable-debug' option now."
+	echo
+fi
+
 if test "x$DECODER_PLUGINS" = "x"
 then
 	echo "WARNING: No decoder plugins are to be compiled;"
