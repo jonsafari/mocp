@@ -46,6 +46,7 @@ Transitional code removal (after 2.5):
 * Remove changed option format for Layouts.
 * Remove deprecated autogen.sh file.
 * Remove Berkeley DB version 4.1 requirement warning.
+* Remove libcurl version 7.15.1 requirement warning.
 
 FFmpeg/LibAV support changes (after 2.5):
 
@@ -56,6 +57,7 @@ FFmpeg/LibAV support changes (after 2.5):
 Pending 2.6 changes:
 
 * Require at least Berkeley DB version 4.1.
+* Require at least libcurl version 7.15.1.
 
 In future:
 
