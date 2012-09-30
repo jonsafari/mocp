@@ -2,43 +2,60 @@ Items marked with $ are bigger changes requiring more time.
 
 Known bugs:
 
-- Do we assume filesystem in UTF-8?  It's incorrect.
-- I have a problem with MOC 2.4.0 on FreeBSD 6.1-PRERELEASE.  When I build
-  MOC with musepack (libmpcdec) support MOC always core dumps on exit.
-- Crash on FreeBSD 5.5 (http://moc.daper.net/node/148).
-- When sorting by file name (directories), put files beginning with a
-  non-alphanumeric character at the top.
-- id3tags v2.3 with UTF-16 are not properly handled by libid3tag, taglib has
-  no problems.  Need to use libtag here?
-  NEW: recognition of ID3 tags v1 is broken (example: small.mp3).
-  Thanks for the patch.  It works.  Perhaps MOC can add support for the frame
-  field_type to differentiate between ID3_FIELD_TYPE_LATIN1 and
-  ID3_FIELD_TYPE_STRING.
-- mocp -a playlist.pls should not sort added files.
-  http://moc.daper.net/node/240
-- MOC needs to be restarted (when switching themes) in order to understand the
-  ATTRIBUTE correctly.
-- Seeking in some formats does not work in the FFmpeg decoder because of
-  the limitations of the FFmpeg libraries (and seeking is disabled for them).
-  FLV also has seeking issues and is disabled but will be enabled if
-  SEEK_IN_DECODER is set in the FFmpeg decoder plug-in.  (This may be
-  parameterised in due course.)
-- Using DB_THREAD in combination with DB_CREATE and DB_PRIVATE seems to
-  cause a segfault on OpenWRT.  The circumvention is to configure MOC on
-  OpenWRT with '--disable-cache' or set the MOC configuration option
-  'TagsCacheSize' to zero.
-
-Before 2.5:
-
-* Move TODO to moc.daper.net/roadmap .
-* A string-valued variable "TitleFormatString", similar to "FormatString".
-  I'd suggest all the same %-escapes, plus:
-  %F -- expands to (the expansion of) the current FormatString
-  if there is a song playing or paused, and empty string if stopped.
-  %S -- expands to play/stop/pause.
+* Character set problems:
+  - Do we assume filesystem in UTF-8?  It's incorrect.
+  - id3tags v2.3 with UTF-16 are not properly handled by libid3tag, taglib
+    has no problems.  Need to use libtag here?
+  - Recognition of ID3 tags v1 is broken (example: small.mp3).  [node/234]
+  - Perhaps MOC can add support for the frame field_type to differentiate
+    between ID3_FIELD_TYPE_LATIN1 and ID3_FIELD_TYPE_STRING.  [node/234]
+  - Characters which are represented in more than one screen column cause
+    the text to overflow its field.  [node/82, 99 and 788]
+  - Some Cyrillic characters in file and directory names don't get displayed
+    correctly.
+* Program crashes:
+  - I have a problem with MOC 2.4.0 on FreeBSD 6.1-PRERELEASE.  When I build
+    MOC with musepack (libmpcdec) support MOC always core dumps on exit.
+    (This may have been fixed by other storage-related patches and will be
+    removed in MOC 2.7 if no one has confirmed it still exists.)
+  - Assertion failure on FreeBSD 5.5.  [node/148]
+  - Using DB_THREAD in combination with DB_CREATE and DB_PRIVATE seems to
+    cause a segfault on OpenWRT.  The circumvention is to configure MOC on
+    OpenWRT with '--disable-cache' or set the MOC configuration option
+    'TagsCacheSize' to zero.
+* Valgrind-detected memory problems:
+  - libasound: memory leaks
+  - libdb: uninitialised parameter storage
+  - libmagic: uninitialised storage in reads
+  - librcc: uninitialised storage in conditions
+  - libspeex: uninitialised storage in conditions and reads
+* Directory and playlists:
+  - When sorting by file name (directories), put files beginning with a
+    non-alphanumeric character at the top.
+  - mocp -a playlist.pls should not sort added files.  [node/240]
+  - Client does not show changes when a file's tags are updated by another
+    program.
+  - Client continues to show file names after ReadTags is toggled when
+    MOC is started with 'ShowTime=yes' and 'ReadTags=no'.
+* Themes problems:
+  - MOC needs to be restarted (when switching themes) in order to understand
+    the ATTRIBUTE correctly.
+* Decoder problems:
+  - Seeking in some formats does not work in the FFmpeg decoder because of
+    the limitations of the FFmpeg libraries (and seeking is disabled for
+    them).  FLV also has seeking issues and is disabled but will be enabled
+    if SEEK_IN_DECODER is set in the FFmpeg decoder plug-in.  (This may be
+    parameterised in due course.)
+  - Some decoders do not currently pass the MD5 sum or sample count checks.
+  - The duration of some AAC audios is incorrectly reported.
+* Sound driver problems:
+  - ALSA is not playing the entire buffer before closing.  [node/817]
 
 Transitional code removal (after 2.5):
 
+* Remove deprecated option TagsIconv.
+* Remove changed option name for OSSMixerChannel.
+* Remove changed option name for ALSAMixer.
 * Remove changed option type for SidPlay2_StartAtStart.
 * Remove changed option type for SidPlay2_PlaySubTunes.
 * Remove changed option type for QueueNextSongReturn.
@@ -65,16 +82,25 @@ Pending 2.6 changes:
 * Make '--enable-debug' configuration option default to 'no'.
 * Make XZ the default compression for the 'make dist' target.
 
+Pending 2.7 changes:
+
+* Remove FreeBSD program crash bug if no one has confirmed it still exists.
+
 In future:
 
+* Move TODO to moc.daper.net/roadmap .
+* A string-valued variable "TitleFormatString", similar to "FormatString".
+  I'd suggest all the same %-escapes, plus:
+  %F -- expands to (the expansion of) the current FormatString
+  if there is a song playing or paused, and empty string if stopped.
+  %S -- expands to play/stop/pause.
 * Command line option to play from a specified file/first from the last
-  added files.
-* Multiple file selection to move many files at once up and down.
-  http://moc.daper.net/node/288
+  added files.  [node/286]
+* Multiple file selection to move many files at once up and down.  [node/288]
 * Review strcat()/strcpy()/sprintf() usage, change to
   strncat()/strncpy()/snprintf() where possible.
 * More side menus: many directory/playlist views.
-* LADSPA
+* LADSPA/LV2
 * Editing the title of an item on the playlist (for Internet streams).
 *$ Media library: tree-like menu for artists and albums.
 * Seek by a % value (also using keys for 10%, 20%, etc).
@@ -84,7 +110,7 @@ In future:
 * FastGo instead of FastDir: go to a directory, URL or a playlist.
 * Read tags for sndfile formats.
 *$ http://www.peercast.org/
-* Crossfeed.
+* Crossfade.
 * Command to see all information about a file with all tags, also all
   information about an internet stream (from IceCast headers like icy-url,
   icy-pub).
@@ -105,7 +131,6 @@ In future:
 *$ CUE-sheet.
 * Command line option to delete the currently played item from the playlist.
 * Scripting.
-* APE (http://sourceforge.net/projects/mac-port/).
 * Some options can be changed at run-time using a menu.
 * posix_fadvise() with POSIX_FADV_WILLNEED instead of the input buffer thread
   for files.
