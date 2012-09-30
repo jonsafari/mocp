@@ -1,20 +1,225 @@
-Thanks for all people who have helped me make MOC better, suggesting changes
-or notifing about bugs:
+Thanks to all people who have helped us make MOC better, suggesting
+changes or notifing about bugs:
 
-Maciej Kubiak <aze@daper.net> - Suggestions and bug reports.
-Kari Karvonen <gabo@haisee.com> - Suggested code for the autonext option.
-Florian Kriener <me@leflo.de> - Title building code, many typos and bugs fixed.
-Marcin Michałowski <marcin.mi@gmail.com> - Added default and grey colors, made
-	first nice theme.
-Elimar Riesebieter <riesebie@lxtec.de> - Tests on PPC (made to work on big
-	endian architectures), maintainer of the official Debian package.
-Wim Speekenbrink <w.speek@wanadoo.nl> - Author of nightly_theme.
-Kamil Tarkowski <kamilt@interia.pl> - 'back' command, some fixes and small
-	improvements.
-Jacek Lehmann <vonschlager@wp.pl> - Green theme and fixes for a few terminals.
-Morten Grunnet Buhl - Yellow/Red theme.
-Alex Norman <alex@neisis.net> - JACK output, FastDir option, other improvements.
-Adam Kowalski - Many bug reports (also tests).
-Joseph Dunn - Bug reports. He gave me access to his FreeBSD box that allowed
-	me to fix a bug.
-Alexander Polakov - For the OpenBSD SNDIO sound driver.
+Alexis Ballier:
+	* Adapt to FFmpeg's changed include directory layout.
+
+Daniel T. Borelli:
+	* Added support for key to switch on/off the display of percent played.
+	* Added a configuration option to set the initial percent played state.
+	* Fixed miscellaneous coding errors.
+	* Assisted with testing.
+
+Morten Grunnet Buhl:
+	* Provided Yellow/Red theme.
+
+Nuno Cardoso:
+	* Options in a hash table.
+	* Added -j command line option to jump to a given position.
+
+Josh Coalson:
+	* Fixes for compilation with FLAC 1.1.3.
+
+Niels Aan de Brugh:
+	* Improved error detection for terminal height limits.
+
+Jonathan Derque:
+	* Support for GNU screen title.
+
+Joseph Dunn:
+	* Bug reports.
+	* He gave me access to his FreeBSD box that allowed me to fix a bug.
+
+Dennis Felsing:
+	* Fixed compilation of sidplay2.
+
+Filippo Giunchedi:
+	* Added directories to the 'a' command.
+
+Alexey Gladkov:
+	* Support for filenames and directory names recoding using librcc.
+
+Tomasz Golinski:
+	* Assisted greatly with testing and debugging.
+	* Headed the effort to port MOC to OpenWRT.
+	* Provided signficant information on DTS, AAC and other formats.
+	* Also contributed much time in the refinement of feature ideas.
+
+Juho Hämäläinen:
+	* Added -Q (--format) FORMAT_STRING option to display file information.
+
+Hendrik Iben:
+	* Added TiMidity decoder for MIDI.
+	* Added SidPlay2 decoder for SID.
+	* Added Modplug decoder.
+	* Added check for newer faad2-library (AAC).
+	* Added software mixer.
+	* Added parametric equalizer.
+	* Merged parametric equalizer and mono-mixing code.
+	* Assisted with testing.
+
+Daniel Kalør:
+	* Provided spelling fixes.
+	* Fixed clearing chars when displaying file information.
+	* Fixed field overflow when fast-forwarding yields very large bit rates.
+	* Repositioned selected track to middle after scrolling off screen.
+	* Fixed the symbol for "kilo", use "k" (lowercase).
+	* Allowed seeking to beginning of a file in Vorbis/FLAC.
+
+Kari Karvonen:
+	* Suggested code for the AutoNext option.
+
+Hasan Keler:
+	* Assisted with testing.
+	* Also assisted by commenting on feature ideas.
+
+Max Klinger:
+	* Silenced compiler warnings on various platforms.
+	* Migrated AAC decoder to later FAAD2 API.
+	* Replaced GNU-specific getline() with read_line().
+	* Resolved JACK deprecation warnings.
+	* Prompted option to autostart JACK if the server isn't running.
+	* Assisted with testing.
+	* Also assisted by commenting on feature ideas.
+
+Adam Kowalski:
+	* Many bug reports (also tests).
+
+Florian Kriener:
+	* Provided title building code.
+	* Corrected many typos and fixed many bugs.
+
+Maciej Kubiak:
+	* Suggestions and bug reports.
+
+Géraud Le Falher:
+	* Fixed crash in lyrics code with overly long filenames.
+	* Display lyrics saved in files together with music.
+
+Jacek Lehmann:
+	* Provided Green theme and fixes for a few terminals.
+
+Tero Marttila:
+	* Changed minimum screen height to 7 lines.
+
+Marcin Michałowski:
+	* Added default and grey colours, and made first nice theme.
+
+Martin Milata:
+	* Resolved Clang Static Analyzer warnings.
+	* Dead code removal.
+	* Miscellaneous code fixes.
+	* Fix segfault when using -k command line option.
+	* Added -q option to queue files from command line.
+	* Provided play queue feature.
+	* Fixed race condition between two clients and playlist request servicing.
+
+Jack Miller:
+	* Added average bitrate field to the output of mocp -i.
+	* Provided command line option to toggle/on/off playback options.
+	* Provided command line option for setting the volume.
+	* Added OnSongChange option which runs a command when song is changed.
+
+Alex Norman:
+	* Added JACK output.
+	* Added FastDir option.
+	* Other improvements.
+
+Sebastian Parborg:
+	* Silenced compiler warnings on various platforms.
+	* Fixed bug attempting to read from unopened OSS mixer.
+	* Assisted with testing.
+	* Also assisted by commenting on feature ideas.
+
+Ted Phelps:
+	* Fixed incorrect referencing of ALSA mixer channels.
+
+Petr Pisar:
+	* Provided patch upon which the initial locale support was based.
+
+Alexander Polakov:
+	* Fixed miscoloured frame when switching themes.
+	* Provided SNDIO sound driver for OpenBSD systems.
+	* Fixed call for bit rate after file open has failed.
+	* Assisted with testing.
+
+Elimar Riesebieter:
+	* Tested on PPC (made to work on big endian architectures).
+	* Builder of the official Debian package.
+	* Described --seek option in the manpage.
+	* Added JACK to '-R' option sound drivers on manpage.
+
+Alexandrov Sergey:
+	* Added Wavpack decoder.
+	* Fixed 8-, 24- and 32-bit decoding in Wavpack decoder.
+
+Aleks Sherikov:
+	* Added EnforceTagsEncoding, FileNamesIconv, and FileNamesIconv options.
+
+Joerg Sonnenberger:
+	* Fixed using ncurses on NetBSD.
+	* Fixed detecting curses if ncurses is not present.
+
+Wim Speekenbrink:
+	* Author of nightly_theme.
+
+Daniel Stenberg:
+	* Fixed CURL timeout so internet streaming errors don't hang MOC.
+
+Ondřej Svoboda:
+	* Fixed a fatal error when opening an MP3 file.
+	* Fixed a compilation warning in the FFmpeg plugin.
+	* Spelling fixes.
+	* Source files encoding fixes.
+
+Kamil Tarkowski:
+	* Provided 'back' command.
+	* Some fixes and small improvements.
+
+Reuben Thomas:
+	* Fixed typos in documentation.
+	* Fixed and simplify parameters substitution in --format command.
+	* Don't run the server if the user doesn't really want to do that when
+	  using few commands from command line like --info.
+	* Reorganised code that parses command line options.
+	* Allowed the use of FormatString tags in --format arguments.
+
+Richard Toohey:
+	* Assisted with testing on OpenBSD.
+
+Antonio Trande:
+	* Assisted with testing.
+	* Also assisted by commenting on feature ideas.
+	* Fedora's MOC package builder.
+
+Marc Tschiesche:
+	* Provided highlighted playlist numbers and file times.
+
+Marien Zwart:
+	* Assisted with testing.
+
+"cbass":
+	* Fixed segfault when trying to play a file using FFmpeg.
+	* Migrated to newer FFmpeg API.
+
+"fluxid":
+	* Fixed incorrect setting for themes red channel value.
+
+"meh":
+	* Provided code to prefer reading ID3 tags v2 over v1.
+
+"scorched":
+	* Assisted with testing.
+
+"thotypous":
+	* Provided code to allow use of the OSSv4 per-application mixer API.
+
+"tyranix":
+	* Provided new command 'Y' to prune unreadable files from the playlist.
+
+"zaphod":
+	* Some strcpy() to strncpy() changes.
+
+There are many people who have contributed in various ways to the
+development of MOC.  I hope I've listed all who deserve thanks, but if
+not then I apologise and you should remind me so I can include you.
