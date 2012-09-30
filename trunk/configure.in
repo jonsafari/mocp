@@ -389,6 +389,10 @@ then
 		curl_ver_number=`printf "%02d%02d%02d" $curl_ver_major \
 			$curl_ver_minor $curl_ver_fix`
 
+		if test "$curl_ver_number" -lt "071501"
+		then
+			CURL_DEPRECATED="yes"
+		fi
 
 		if test "$curl_ver_number" -ge "071202"
 		then
@@ -448,6 +452,13 @@ if test "x$BDB4_DEPRECATED" = "xyes"
 then
 	echo "WARNING: After release 2.5 MOC will require Berkeley DB release"
 	echo "         4.1 or later.  Plan to upgrade your libraries soon."
+	echo
+fi
+
+if test "x$CURL_DEPRECATED" = "xyes"
+then
+	echo "WARNING: After release 2.5 MOC will require libcurl version"
+	echo "         7.15.1 or later.  Plan to upgrade your libraries soon."
 	echo
 fi
 
