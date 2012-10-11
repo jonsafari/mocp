@@ -19,6 +19,9 @@
 # include <sys/select.h>
 #endif
 #include <sys/time.h>
+#ifdef HAVE_GETRLIMIT
+# include <sys/resource.h>
+#endif
 #include <sys/un.h>
 #include <time.h>
 #include <stdlib.h>
@@ -284,6 +287,37 @@ static void redirect_output (FILE *stream)
 		fatal ("Can't open /dev/null: %s", strerror (errno));
 }
 
+static void log_process_stack_size ()
+{
+#ifdef HAVE_GETRLIMIT
+	int rc;
+	struct rlimit limits;
+
+	rc = getrlimit (RLIMIT_STACK, &limits);
+	if (rc == 0)
+		logit ("Process's stack size: %u", (unsigned int)limits.rlim_cur);
+#endif
+}
+
+static void log_pthread_stack_size ()
+{
+#ifdef HAVE_PTHREAD_ATTR_GETSTACKSIZE
+	int rc;
+	size_t stack_size;
+	pthread_attr_t attr;
+
+	rc = pthread_attr_init (&attr);
+	if (rc)
+		return;
+
+	rc = pthread_attr_getstacksize (&attr, &stack_size);
+	if (rc == 0)
+		logit ("PThread's stack size: %u", (unsigned int)stack_size);
+
+	pthread_attr_destroy (&attr);
+#endif
+}
+
 /* Initialize the server - return fd of the listening socket or -1 on error */
 int server_init (int debugging, int foreground)
 {
@@ -334,6 +368,10 @@ int server_init (int debugging, int foreground)
 
 	if (listen(server_sock, 1) == -1)
 		fatal ("listen() failed: %s", strerror(errno));
+
+	/* Log stack sizes so stack overflows can be debugged. */
+	log_process_stack_size ();
+	log_pthread_stack_size ();
 
 	audio_initialize ();
 	tags_cache_init (&tags_cache, options_get_int("TagsCacheSize"));
