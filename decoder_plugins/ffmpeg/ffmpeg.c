@@ -85,6 +85,11 @@ struct ffmpeg_data
 	AVCodecContext *enc;
 	AVCodec *codec;
 
+#ifndef HAVE_AVCODEC_DECODE_AUDIO4
+	int avbuf_size;
+	char *avbuf;
+#endif
+
 	char *remain_buf;
 	int remain_buf_len;
 	bool delay;             /* FFmpeg may buffer samples */
@@ -594,6 +599,21 @@ static void *ffmpeg_open (const char *file)
 	data->codec = NULL;
 	data->bitrate = 0;
 	data->avg_bitrate = 0;
+
+#if !defined(HAVE_AVCODEC_DECODE_AUDIO4) && defined(HAVE_POSIX_MEMALIGN)
+	/* The sample buffer should be 16 byte aligned (because of SSE); a
+	 * segmentation fault may occur otherwise.  We allocate it dynamically
+	 * (to avoid overflowing OpenBSD's default pthread stack size) and once
+	 * at open (to avoid delays on each decode call).
+	 *
+	 * See: avcodec.h in ffmpeg
+	 */
+	data->avbuf_size = AVCODEC_MAX_AUDIO_FRAME_SIZE * 3 / 2;
+	err = posix_memalign ((void **)&data->avbuf, 16, data->avbuf_size);
+	if (err)
+		fatal ("Can't allocate memory!");
+#endif
+
 	data->remain_buf = NULL;
 	data->remain_buf_len = 0;
 	data->delay = false;
@@ -862,6 +882,7 @@ static int decode_packet (struct ffmpeg_data *data, AVPacket *pkt,
 {
 	int filled = 0, len, data_size, copied;
 
+#ifndef HAVE_POSIX_MEMALIGN
 	/* The sample buffer should be 16 byte aligned (because SSE), a segmentation
 	 * fault may occur otherwise.
 	 *
@@ -869,17 +890,21 @@ static int decode_packet (struct ffmpeg_data *data, AVPacket *pkt,
 	 */
 	char avbuf[(AVCODEC_MAX_AUDIO_FRAME_SIZE * 3) / 2] __attribute__((aligned(16)));
 
+	data->avbuf_size = sizeof(avbuf);
+	data->avbuf = avbuf;
+#endif
+
 	do {
-		data_size = sizeof (avbuf);
+		data_size = data->avbuf_size;
 
 #if defined(HAVE_AVCODEC_DECODE_AUDIO3)
-		len = avcodec_decode_audio3 (data->enc, (int16_t *)avbuf,
+		len = avcodec_decode_audio3 (data->enc, (int16_t *)data->avbuf,
 		                             &data_size, pkt);
 #elif defined(HAVE_AVCODEC_DECODE_AUDIO2)
-		len = avcodec_decode_audio2 (data->enc, (int16_t *)avbuf,
+		len = avcodec_decode_audio2 (data->enc, (int16_t *)data->avbuf,
 		                             &data_size, pkt->data, pkt->size);
 #else
-		len = avcodec_decode_audio (data->enc, (int16_t *)avbuf,
+		len = avcodec_decode_audio (data->enc, (int16_t *)data->avbuf,
 		                            &data_size, pkt->data, pkt->size);
 #endif
 
@@ -899,7 +924,7 @@ static int decode_packet (struct ffmpeg_data *data, AVPacket *pkt,
 		pkt->data += len;
 		pkt->size -= len;
 
-		copied = copy_or_buffer (data, avbuf, data_size, buf, buf_len);
+		copied = copy_or_buffer (data, data->avbuf, data_size, buf, buf_len);
 
 		buf += copied;
 		filled += copied;
@@ -1147,6 +1172,10 @@ static void ffmpeg_close (void *prv_data)
 		free_remain_buf (data);
 	}
 
+#if !defined(HAVE_AVCODEC_DECODE_AUDIO4) && defined(HAVE_POSIX_MEMALIGN)
+	free (data->avbuf);
+#endif
+
 	ffmpeg_log_repeats (NULL);
 	decoder_error_clear (&data->error);
 	free (data);
@@ -1232,5 +1261,13 @@ static struct decoder ffmpeg_decoder = {
 
 struct decoder *plugin_init ()
 {
+#if defined(HAVE_AVCODEC_DECODE_AUDIO4)
+	logit ("Using avcodec_decode_audio4()");
+#elif defined(HAVE_POSIX_MEMALIGN)
+	logit ("Using posix_memalign()");
+#else
+	logit ("Using stack-based avbuf");
+#endif
+
 	return &ffmpeg_decoder;
 }
