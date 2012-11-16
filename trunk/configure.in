@@ -142,7 +142,7 @@ AX_CFLAGS_GCC_OPTION(-W)
 
 PKG_PROG_PKG_CONFIG([0.20])
 
-if test "x$PKG_CONFIG" == "x"
+if test "x$PKG_CONFIG" = "x"
 then
 	AC_MSG_WARN([No pkg-config utility found or it's too old, I will have trouble finding installed libraries.])
 fi
