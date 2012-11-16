@@ -342,7 +342,7 @@ then
 fi
 
 dnl popt
-AC_SEARCH_LIBS([poptGetContext], [popt], , [POPT_MISSING="yes"])
+AC_CHECK_LIB([popt], [poptGetContext], [true], [POPT_MISSING="yes"])
 
 dnl getopt
 AC_CHECK_FUNC(getopt_long,
