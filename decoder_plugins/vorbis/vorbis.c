@@ -283,9 +283,9 @@ static void *vorbis_open (const char *file)
 
 static int vorbis_can_decode (struct io_stream *stream)
 {
-	char buf[34];
+	char buf[35];
 
-	if (io_peek (stream, buf, 34) == 34 && !memcmp (buf, "OggS", 4)
+	if (io_peek (stream, buf, 35) == 35 && !memcmp (buf, "OggS", 4)
 			&& !memcmp (buf + 28, "\01vorbis", 7))
 		return 1;
 
