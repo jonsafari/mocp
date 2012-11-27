@@ -169,7 +169,7 @@ int sfmt_same_bps (const long fmt1, const long fmt2)
 	if (fmt1 & (SFMT_S16 | SFMT_U16)
 			&& fmt2 & (SFMT_S16 | SFMT_U16))
 		return 1;
-	if (fmt1 & (SFMT_S8 | SFMT_U8)
+	if (fmt1 & (SFMT_S32 | SFMT_U32)
 			&& fmt2 & (SFMT_S32 | SFMT_U32))
 		return 1;
 	if (fmt1 & fmt2 & SFMT_FLOAT)
