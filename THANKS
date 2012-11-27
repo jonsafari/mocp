@@ -44,6 +44,7 @@ Tomasz Golinski:
 	* Headed the effort to port MOC to OpenWRT.
 	* Provided signficant information on DTS, AAC and other formats.
 	* Also contributed much time in the refinement of feature ideas.
+	* Provided 24-bit format conversion bug fixes.
 
 Juho Hämäläinen:
 	* Added -Q (--format) FORMAT_STRING option to display file information.

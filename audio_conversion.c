@@ -189,7 +189,7 @@ static void float_to_u32 (const float *in, unsigned char *out,
 	size_t i;
 
 	/* maximum and minimum values of 32-bit samples */
-	const unsigned int U32_MAX = (1 << 24);
+	const unsigned int U32_MAX = (1 << 24) - 1;
 	const int S32_MAX = (1 << 23) - 1;
 	const int S32_MIN = -(1 << 23);
 
@@ -201,7 +201,7 @@ static void float_to_u32 (const float *in, unsigned char *out,
 		float f = in[i] * S32_MAX;
 
 		if (f >= S32_MAX)
-			*out_val = U32_MAX;
+			*out_val = U32_MAX << 8;
 		else if (f <= S32_MIN)
 			*out_val = 0;
 		else {
@@ -231,9 +231,9 @@ static void float_to_s32 (const float *in, char *out,
 		float f = in[i] * S32_MAX;
 
 		if (f >= S32_MAX)
-			*out_val = S32_MAX;
+			*out_val = S32_MAX << 8;
 		else if (f <= S32_MIN)
-			*out_val = S32_MIN;
+			*out_val = S32_MIN << 8;
 		else {
 #ifdef HAVE_LRINTF
 			*out_val = lrintf(f) << 8;
