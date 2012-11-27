@@ -47,9 +47,9 @@ static ov_callbacks *vorbis_unused[] ATTR_UNUSED = {
 
 /* Tremor defines time as 64-bit integer milliseconds. */
 #ifndef HAVE_TREMOR
-static const double time_scaler = 1;
+static const int64_t time_scaler = 1;
 #else
-static const ogg_int64_t time_scaler = 1000;
+static const int64_t time_scaler = 1000;
 #endif
 
 struct vorbis_data
@@ -171,11 +171,11 @@ static void vorbis_tags (const char *file_name, struct file_tags *info,
 		get_comment_tags (&vf, info);
 
 	if (tags_sel & TAGS_TIME) {
-		int vorbis_time;
+		int64_t vorbis_time;
 
-	    vorbis_time = ov_time_total (&vf, -1) / time_scaler;
-	    if (vorbis_time >= 0)
-			info->time = vorbis_time;
+		vorbis_time = ov_time_total (&vf, -1);
+		if (vorbis_time >= 0)
+			info->time = vorbis_time / time_scaler;
 	}
 
 	ov_clear (&vf);
@@ -244,12 +244,15 @@ static void vorbis_open_stream_internal (struct vorbis_data *data)
 		io_close (data->stream);
 	}
 	else {
+		int64_t duration;
+
 		data->last_section = -1;
 		data->avg_bitrate = ov_bitrate (&data->vf, -1) / 1000;
 		data->bitrate = data->avg_bitrate;
-		data->duration = ov_time_total (&data->vf, -1) / time_scaler;
-		if (data->duration == OV_EINVAL)
-			data->duration = -1;
+		data->duration = -1;
+		duration = ov_time_total (&data->vf, -1);
+		if (duration >= 0)
+			data->duration = duration / time_scaler;
 		data->ok = 1;
 		get_comment_tags (&data->vf, data->tags);
 	}
