@@ -343,7 +343,7 @@ static void ffmpeg_info (const char *file_name,
 
 	if (tags_sel & TAGS_TIME) {
 		info->time = -1;
-		if (ic->duration >= 0)
+		if (ic->duration != (int64_t)AV_NOPTS_VALUE && ic->duration >= 0)
 			info->time = ic->duration / AV_TIME_BASE;
 	}
 
@@ -425,12 +425,6 @@ static void ffmpeg_info (const char *file_name,
 		info->album = xstrdup (ic->album);
 
 #endif
-
-	if (tags_sel & TAGS_TIME) {
-		info->time = -1;
-		if (ic->duration != (int64_t)AV_NOPTS_VALUE && ic->duration >= 0)
-			info->time = ic->duration / AV_TIME_BASE;
-	}
 
 end:
 #ifdef HAVE_AVFORMAT_CLOSE_INPUT
