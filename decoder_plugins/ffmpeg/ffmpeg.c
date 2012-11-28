@@ -106,6 +106,7 @@ struct ffmpeg_data
 	int seek_sec;           /* second to which to seek */
 #endif
 	bool seek_broken;       /* FFmpeg seeking is broken */
+	bool timing_broken;     /* FFmpeg trashes duration and bit_rate */
 #if SEEK_IN_DECODER && defined(DEBUG)
 	pthread_t thread_id;
 #endif
@@ -277,6 +278,38 @@ static void load_video_extns (lists_t_strs *list)
 	}
 }
 
+/* Here we attempt to determine if FFmpeg/LibAV has trashed the 'duration'
+ * and 'bit_rate' fields in AVFormatContext for large files.  Determining
+ * whether or not they are likely to be valid is imprecise and will vary
+ * depending (at least) on:
+ *
+ * - The file's size,
+ * - The file's codec,
+ * - The number and size of tags,
+ * - The version of FFmpeg/LibAV, and
+ * - Whether it's FFmpeg or LibAV.
+ *
+ * This function represents a best guess.
+*/
+static bool is_timing_broken (AVFormatContext *ic)
+{
+	int64_t file_size;
+
+	if (ic->duration < 0 || ic->bit_rate < 0)
+		return true;
+
+#ifdef HAVE_AVIO_SIZE
+	file_size = avio_size (ic->pb);
+#else
+	file_size = ic->file_size;
+#endif
+
+	if (file_size < UINT32_MAX)
+		return false;
+
+	return true;
+}
+
 static void ffmpeg_init ()
 {
 #ifdef DEBUG
@@ -341,7 +374,7 @@ static void ffmpeg_info (const char *file_name,
 	}
 #endif
 
-	if (tags_sel & TAGS_TIME) {
+	if (!is_timing_broken (ic) && tags_sel & TAGS_TIME) {
 		info->time = -1;
 		if (ic->duration != (int64_t)AV_NOPTS_VALUE && ic->duration >= 0)
 			info->time = ic->duration / AV_TIME_BASE;
@@ -618,6 +651,7 @@ static void *ffmpeg_open (const char *file)
 	data->seek_sec = 0;
 #endif
 	data->seek_broken = false;
+	data->timing_broken = false;
 
 	decoder_error_init (&data->error);
 
@@ -703,19 +737,22 @@ static void *ffmpeg_open (const char *file)
 	if (data->codec->capabilities & CODEC_CAP_DELAY)
 		data->delay = true;
 	data->seek_broken = is_seek_broken (data);
+	data->timing_broken = is_timing_broken (data->ic);
 
 	data->okay = true;
 
-	if (data->ic->duration >= AV_TIME_BASE) {
+	if (!data->timing_broken && data->ic->duration >= AV_TIME_BASE) {
 #ifdef HAVE_AVIO_SIZE
 		data->avg_bitrate = (int) (avio_size (data->ic->pb) /
-		                          (data->ic->duration / AV_TIME_BASE) * 8);
+		                           (data->ic->duration / AV_TIME_BASE) * 8);
 #else
 		data->avg_bitrate = (int) (data->ic->file_size /
-		                          (data->ic->duration / AV_TIME_BASE) * 8);
+		                           (data->ic->duration / AV_TIME_BASE) * 8);
 #endif
 	}
-	data->bitrate = data->ic->bit_rate;
+
+	if (!data->timing_broken && data->ic->bit_rate > 0)
+		data->bitrate = data->ic->bit_rate;
 
 	return data;
 
@@ -1116,9 +1153,10 @@ static int ffmpeg_decode (void *prv_data, char *buf, int buf_len,
 		free_packet (pkt);
 	} while (!bytes_produced && !data->eos);
 
-	data->bitrate = compute_bitrate (sound_params, bytes_used,
-	                                 bytes_produced + data->remain_buf_len,
-	                                 data->bitrate);
+	if (!data->timing_broken)
+		data->bitrate = compute_bitrate (sound_params, bytes_used,
+		                                 bytes_produced + data->remain_buf_len,
+		                                 data->bitrate);
 
 	return bytes_produced;
 }
@@ -1179,19 +1217,22 @@ static int ffmpeg_get_bitrate (void *prv_data)
 {
 	struct ffmpeg_data *data = (struct ffmpeg_data *)prv_data;
 
-	return data->bitrate / 1000;
+	return data->timing_broken ? -1 : data->bitrate / 1000;
 }
 
 static int ffmpeg_get_avg_bitrate (void *prv_data)
 {
 	struct ffmpeg_data *data = (struct ffmpeg_data *)prv_data;
 
-	return data->avg_bitrate / 1000;
+	return data->timing_broken ? -1 : data->avg_bitrate / 1000;
 }
 
 static int ffmpeg_get_duration (void *prv_data)
 {
 	struct ffmpeg_data *data = (struct ffmpeg_data *)prv_data;
+
+	if (data->timing_broken)
+		return -1;
 
 	if (!data->stream)
 		return -1;
