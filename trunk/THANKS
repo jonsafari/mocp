@@ -206,6 +206,9 @@ Marien Zwart:
 	* Fixed segfault when trying to play a file using FFmpeg.
 	* Migrated to newer FFmpeg API.
 
+"firejox"
+	* Fixed screen upsets due to UTF-8 character handing.
+
 "fluxid":
 	* Fixed incorrect setting for themes red channel value.
 
