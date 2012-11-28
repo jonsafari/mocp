@@ -199,47 +199,50 @@ static size_t xmbstowcs (wchar_t *dest, const char *src, size_t len,
 
 int xwaddnstr (WINDOW *win, const char *str, const int n)
 {
-	int res;
+	int res, width, inv_char;
+	wchar_t *ucs;
+	char *mstr, *lstr;
+	size_t size, num_chars;
 
 	assert (n > 0);
 	assert (str != NULL);
 
-	if (using_utf8) {
+	mstr = iconv_str (iconv_desc, str);
 
-		/* This nasty hack is because we need to count n in chars, but
-		 * [w]addnstr() takes arguments in bytes (in UTF-8 a char can be
-		 * longer than 1 byte).  There are also problems with [w]addnwstr()
-		 * (screen garbled).  I have no better idea. */
+	size = xmbstowcs (NULL, mstr, -1, NULL) + 1;
+	ucs = (wchar_t *)xmalloc (sizeof(wchar_t) * size);
+	xmbstowcs (ucs, mstr, size, &inv_char);
+	width = wcswidth (ucs, WIDTH_MAX);
 
-		wchar_t *ucs;
-		size_t size;
-		size_t utf_num_chars;
-		int inv_char;
-
-		size = xmbstowcs (NULL, str, -1, NULL) + 1;
-		ucs = (wchar_t *)xmalloc (sizeof(wchar_t) * size);
-		xmbstowcs (ucs, str, size, &inv_char);
-		if ((size_t)n < size - 1)
-			ucs[n] = L'\0';
-		utf_num_chars = wcstombs (NULL, ucs, 0);
-		if (inv_char) {
-			char *utf8 = (char *)xmalloc (utf_num_chars + 1);
-
-			wcstombs (utf8, ucs, utf_num_chars + 1);
-			res = waddstr (win, utf8);
-			free (utf8);
+	if (width == -1) {
+		size_t clidx;
+		for (clidx = 0; clidx < size - 1; clidx++) {
+			if (wcwidth (ucs[clidx]) == -1)
+				ucs[clidx] = L'?';
 		}
-		else
-			res = waddnstr (win, str, utf_num_chars);
-		free (ucs);
-	}
-	else {
-		char *lstr = iconv_str (iconv_desc, str);
-
-		res = waddnstr (win, lstr, n);
-		free (lstr);
+		width = wcswidth (ucs, WIDTH_MAX);
+		inv_char = 1;
 	}
 
+	if (width > n) {
+		while (width > n)
+			width -= wcwidth (ucs[--size]);
+		ucs[size] = L'\0';
+	}
+
+	num_chars = wcstombs (NULL, ucs, 0);
+	lstr = (char *)xmalloc (num_chars + 1);
+
+	if (inv_char)
+		wcstombs (lstr, ucs, num_chars + 1);
+	else
+		snprintf (lstr, num_chars + 1, "%s", mstr);
+
+	res = waddstr (win, lstr);
+
+	free (ucs);
+	free (lstr);
+	free (mstr);
 	return res;
 }
 

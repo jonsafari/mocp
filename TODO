@@ -9,8 +9,6 @@ Known bugs:
   - Recognition of ID3 tags v1 is broken (example: small.mp3).  [node/234]
   - Perhaps MOC can add support for the frame field_type to differentiate
     between ID3_FIELD_TYPE_LATIN1 and ID3_FIELD_TYPE_STRING.  [node/234]
-  - Characters which are represented in more than one screen column cause
-    the text to overflow its field.  [node/82, 99 and 788]
   - Some Cyrillic characters in file and directory names don't get displayed
     correctly.
 * Program crashes:
