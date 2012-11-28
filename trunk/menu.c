@@ -90,8 +90,13 @@ static void draw_item (const struct menu *menu, const struct menu_item *mi,
 	getyx (menu->win, y, x);
 	if (title_width <= title_space || mi->align == MENU_ALIGN_LEFT)
 		xwaddnstr (menu->win, mi->title, title_space);
-	else
-		xwaddstr (menu->win, mi->title + title_width - title_space);
+	else {
+		char *ptr;
+
+		ptr = xstrtail (mi->title, title_space);
+		xwaddstr (menu->win, ptr);
+		free (ptr);
+	}
 
 	/* Fill the remainder of the title field with spaces. */
 	if (mi == menu->selected) {
