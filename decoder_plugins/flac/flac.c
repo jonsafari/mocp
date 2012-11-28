@@ -54,7 +54,7 @@ struct flac_data
 	int abort; /* abort playing (due to an error) */
 
 	unsigned length;
-	unsigned total_samples;
+	FLAC__uint64 total_samples;
 
 	FLAC__byte sample_buffer[SAMPLE_BUFFER_SIZE];
 	unsigned sample_buffer_fill;
@@ -156,11 +156,8 @@ static void metadata_callback (
 	if (metadata->type == FLAC__METADATA_TYPE_STREAMINFO) {
 		debug ("Got metadata info");
 
-		data->total_samples =
-			(unsigned)(metadata->data.stream_info.total_samples
-				   & 0xffffffff);
-		data->bits_per_sample =
-			metadata->data.stream_info.bits_per_sample;
+		data->total_samples = metadata->data.stream_info.total_samples;
+		data->bits_per_sample = metadata->data.stream_info.bits_per_sample;
 		data->channels = metadata->data.stream_info.channels;
 		data->sample_rate = metadata->data.stream_info.sample_rate;
 		data->length = data->total_samples / data->sample_rate;
@@ -536,8 +533,9 @@ static int flac_seek (void *void_data, int sec)
 	if ((unsigned)sec > data->length)
 		return -1;
 
-	target_sample = (FLAC__uint64)((sec/(double)data->length) *
-			(double)data->total_samples);
+	target_sample = (FLAC__uint64)(((double)sec / (double)data->length) *
+	                               (double)data->total_samples);
+
 
 #ifdef LEGACY_FLAC
 	if (FLAC__seekable_stream_decoder_seek_absolute(data->decoder,
