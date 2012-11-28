@@ -141,20 +141,20 @@ static ssize_t io_internal_read (struct io_stream *s, const int dont_move,
 }
 
 #ifdef HAVE_MMAP
-static off_t io_seek_mmap (struct io_stream *s, const long where)
+static off_t io_seek_mmap (struct io_stream *s, const off_t where)
 {
-	assert (RANGE(0, where, (long)s->size));
+	assert (RANGE(0, where, (off_t)s->size));
 
 	return (s->mem_pos = where);
 }
 #endif
 
-static off_t io_seek_fd (struct io_stream *s, const int where)
+static off_t io_seek_fd (struct io_stream *s, const off_t where)
 {
 	return lseek (s->fd, where, SEEK_SET);
 }
 
-static off_t io_seek_buffered (struct io_stream *s, const long where)
+static off_t io_seek_buffered (struct io_stream *s, const off_t where)
 {
 	off_t res = -1;
 
@@ -180,7 +180,7 @@ static off_t io_seek_buffered (struct io_stream *s, const long where)
 	return res;
 }
 
-static off_t io_seek_unbuffered (struct io_stream *s, const long where)
+static off_t io_seek_unbuffered (struct io_stream *s, const off_t where)
 {
 	off_t res = -1;
 

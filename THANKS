@@ -10,6 +10,9 @@ Daniel T. Borelli:
 	* Fixed miscellaneous coding errors.
 	* Assisted with testing.
 
+Gregory Maxwell:
+	* Provided patch for off_t in io_* functions.
+
 Morten Grunnet Buhl:
 	* Provided Yellow/Red theme.
 
