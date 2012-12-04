@@ -696,17 +696,19 @@ static void mp3_get_name (const char *file, char buf[4])
 {
 	char *ext;
 
+	strcpy (buf, "MPx");
+
 	ext = ext_pos (file);
-	if (!strcasecmp (ext, "mp3"))
-		strcpy (buf, "MP3");
-	else if (!strcasecmp (ext, "mp2"))
-		strcpy (buf, "MP2");
-	else if (!strcasecmp (ext, "mp1"))
-		strcpy (buf, "MP1");
-	else if (!strcasecmp (ext, "mpga"))
-		strcpy (buf, "MPG");
-	else
-		strcpy (buf, "MPx");
+	if (ext) {
+		if (!strcasecmp (ext, "mp3"))
+			strcpy (buf, "MP3");
+		else if (!strcasecmp (ext, "mp2"))
+			strcpy (buf, "MP2");
+		else if (!strcasecmp (ext, "mp1"))
+			strcpy (buf, "MP1");
+		else if (!strcasecmp (ext, "mpga"))
+			strcpy (buf, "MPG");
+	}
 }
 
 static int mp3_our_format_ext (const char *ext)
