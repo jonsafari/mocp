@@ -293,7 +293,6 @@ AC_CHECK_FUNC([sinh], ,
 
 dnl optional functions
 AC_CHECK_FUNCS([strcasestr strerror_r syslog])
-AC_CHECK_FUNCS([getrlimit pthread_attr_getstacksize])
 AX_CHECK_UNAME_SYSCALL
 
 dnl MIME magic
@@ -322,6 +321,7 @@ fi
 CC="$PTHREAD_CC"
 CFLAGS="$PTHREAD_CFLAGS $CFLAGS"
 EXTRA_LIBS="$EXTRA_LIBS $PTHREAD_LIBS"
+AC_CHECK_FUNCS([getrlimit pthread_attr_getstacksize])
 
 dnl __FUNCTION__
 AC_TRY_COMPILE(,[printf(__FUNCTION__);], [AC_DEFINE([HAVE__FUNCTION__], 1,
