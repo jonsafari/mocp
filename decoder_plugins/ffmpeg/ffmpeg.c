@@ -279,6 +279,34 @@ static void load_video_extns (lists_t_strs *list)
 	}
 }
 
+/* Handle FFmpeg's locking requirements. */
+#ifdef HAVE_LOCKMGR_REGISTER
+static int locking_cb (void **mutex, enum AVLockOp op)
+{
+	int result;
+
+	switch (op) {
+	case AV_LOCK_CREATE:
+		*mutex = xmalloc (sizeof (pthread_mutex_t));
+		result = pthread_mutex_init (*mutex, NULL);
+		break;
+	case AV_LOCK_OBTAIN:
+		result = pthread_mutex_lock (*mutex);
+		break;
+	case AV_LOCK_RELEASE:
+		result = pthread_mutex_unlock (*mutex);
+		break;
+	case AV_LOCK_DESTROY:
+		result = pthread_mutex_destroy (*mutex);
+		free (*mutex);
+		*mutex = NULL;
+		break;
+	}
+
+	return result;
+}
+#endif
+
 /* Here we attempt to determine if FFmpeg/LibAV has trashed the 'duration'
  * and 'bit_rate' fields in AVFormatContext for large files.  Determining
  * whether or not they are likely to be valid is imprecise and will vary
@@ -313,6 +341,10 @@ static bool is_timing_broken (AVFormatContext *ic)
 
 static void ffmpeg_init ()
 {
+#ifdef HAVE_LOCKMGR_REGISTER
+	int rc;
+#endif
+
 #ifdef DEBUG
 	av_log_set_level (AV_LOG_INFO);
 #else
@@ -325,10 +357,20 @@ static void ffmpeg_init ()
 	supported_extns = lists_strs_new (16);
 	load_audio_extns (supported_extns);
 	load_video_extns (supported_extns);
+
+#ifdef HAVE_LOCKMGR_REGISTER
+	rc = av_lockmgr_register (locking_cb);
+	if (rc < 0)
+		fatal ("Lock manager initialisation failed");
+#endif
 }
 
 static void ffmpeg_destroy ()
 {
+#ifdef HAVE_LOCKMGR_REGISTER
+	av_lockmgr_register (NULL);
+#endif
+
 	av_log_set_level (AV_LOG_QUIET);
 	ffmpeg_log_repeats (NULL);
 
