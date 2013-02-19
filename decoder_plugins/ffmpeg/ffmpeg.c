@@ -748,8 +748,15 @@ static void *ffmpeg_open (const char *file)
 	if (data->fmt == 0)
 		data->fmt = fmt_from_sample_fmt (data);
 	if (data->fmt == 0) {
+#ifdef HAVE_AV_GET_SAMPLE_FMT_NAME
+		decoder_error (&data->error, ERROR_FATAL, 0,
+		               "Cannot get sample size from unknown sample format: %s",
+		               av_get_sample_fmt_name (data->enc->sample_fmt));
+#else
 		decoder_error (&data->error, ERROR_FATAL, 0,
 		               "Unsupported sample size!");
+#endif
+		avcodec_close (data->enc);
 		goto end;
 	}
 	data->sample_width = sfmt_Bps (data->fmt);
