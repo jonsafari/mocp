@@ -88,6 +88,9 @@ then
 		                 [#include <libavcodec/avcodec.h>])
 		AC_CHECK_DECLS([AV_CODEC_ID_OPUS], , ,
 		                 [#include <libavcodec/avcodec.h>])
+		AC_SEARCH_LIBS(avcodec_free_frame, avcodec,
+			[AC_DEFINE([HAVE_AVCODEC_FREE_FRAME], 1,
+				[Define to 1 if you have the `avcodec_free_frame' function.])])
 		CPPFLAGS="$save_CPPFLAGS"
 		CFLAGS="$save_CFLAGS"
 		LIBS="$save_LIBS"
