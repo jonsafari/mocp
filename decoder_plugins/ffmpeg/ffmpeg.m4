@@ -91,6 +91,16 @@ then
 		AC_SEARCH_LIBS(avcodec_free_frame, avcodec,
 			[AC_DEFINE([HAVE_AVCODEC_FREE_FRAME], 1,
 				[Define to 1 if you have the `avcodec_free_frame' function.])])
+		AC_CHECK_DECLS([CODEC_ID_PCM_S8_PLANAR], , ,
+		                 [#include <libavcodec/avcodec.h>])
+		AC_CHECK_DECLS([AV_SAMPLE_FMT_U8P], , ,
+		                 [#include <libavcodec/avcodec.h>])
+		AC_CHECK_DECLS([AV_SAMPLE_FMT_S16P], , ,
+		                 [#include <libavcodec/avcodec.h>])
+		AC_CHECK_DECLS([AV_SAMPLE_FMT_S32P], , ,
+		                 [#include <libavcodec/avcodec.h>])
+		AC_CHECK_DECLS([AV_SAMPLE_FMT_FLTP], , ,
+		                 [#include <libavcodec/avcodec.h>])
 		CPPFLAGS="$save_CPPFLAGS"
 		CFLAGS="$save_CFLAGS"
 		LIBS="$save_LIBS"
