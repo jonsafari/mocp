@@ -101,6 +101,9 @@ then
 		                 [#include <libavcodec/avcodec.h>])
 		AC_CHECK_DECLS([AV_SAMPLE_FMT_FLTP], , ,
 		                 [#include <libavcodec/avcodec.h>])
+		AC_SEARCH_LIBS(av_get_sample_fmt_name, avutil,
+			[AC_DEFINE([HAVE_AV_GET_SAMPLE_FMT_NAME], 1,
+				[Define to 1 if you have the `av_get_sample_fmt_name' function.])])
 		CPPFLAGS="$save_CPPFLAGS"
 		CFLAGS="$save_CFLAGS"
 		LIBS="$save_LIBS"
