@@ -974,12 +974,14 @@ static int decode_packet (struct ffmpeg_data *data, AVPacket *pkt,
                           char *buf, int buf_len)
 {
 	int filled = 0;
+	AVFrame *frame;
+
+	frame = avcodec_alloc_frame ();
 
 	do {
 		int len, got_frame, is_planar, plane_size, data_size, copied;
-		AVFrame frame;
 
-		len = avcodec_decode_audio4 (data->enc, &frame, &got_frame, pkt);
+		len = avcodec_decode_audio4 (data->enc, frame, &got_frame, pkt);
 
 		if (len < 0)  {
 			/* skip frame */
@@ -999,13 +1001,14 @@ static int decode_packet (struct ffmpeg_data *data, AVPacket *pkt,
 
 		is_planar = av_sample_fmt_is_planar (data->enc->sample_fmt);
 		data_size = av_samples_get_buffer_size (&plane_size,
-		                                        data->enc->channels,                                                   frame.nb_samples,
+		                                        data->enc->channels,
+		                                        frame->nb_samples,
 		                                        data->enc->sample_fmt, 1);
 
 		if (data_size == 0)
 			continue;
 
-		copied = copy_or_buffer (data, (char *)frame.extended_data[0],
+		copied = copy_or_buffer (data, (char *)frame->extended_data[0],
 		                         plane_size, buf, buf_len);
 		buf += copied;
 		filled += copied;
@@ -1015,7 +1018,7 @@ static int decode_packet (struct ffmpeg_data *data, AVPacket *pkt,
 			int ch;
 
             for (ch = 1; ch < data->enc->channels; ch += 1) {
-				copied = copy_or_buffer (data, (char *)frame.extended_data[ch],
+				copied = copy_or_buffer (data, (char *)frame->extended_data[ch],
 				                         plane_size, buf, buf_len);
 				buf += copied;
 				filled += copied;
@@ -1025,6 +1028,13 @@ static int decode_packet (struct ffmpeg_data *data, AVPacket *pkt,
 
 		debug ("Copying %dB (%dB filled)", data_size, filled);
 	} while (pkt->size > 0);
+
+	avcodec_get_frame_defaults (frame);
+#ifdef HAVE_AVCODEC_FREE_FRAME
+	avcodec_free_frame (&frame);
+#else
+	av_freep (&frame);
+#endif
 
 	return filled;
 }
