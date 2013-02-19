@@ -99,6 +99,7 @@ struct ffmpeg_data
 	bool okay; /* was this stream successfully opened? */
 	struct decoder_error error;
 	long fmt;
+	int sample_width;
 	int bitrate;            /* in bits per second */
 	int avg_bitrate;        /* in bits per second */
 #if SEEK_IN_DECODER
@@ -477,12 +478,16 @@ static long fmt_from_codec (struct ffmpeg_data *data)
 		if (!strcmp (data->ic->iformat->name, "wav")) {
 			switch (data->enc->codec_id) {
 			case CODEC_ID_PCM_S8:
+#if HAVE_DECL_CODEC_ID_PCM_S8_PLANAR
+			case CODEC_ID_PCM_S8_PLANAR:
+#endif
 				result = SFMT_S8;
 				break;
 			case CODEC_ID_PCM_U8:
 				result = SFMT_U8;
 				break;
 			case CODEC_ID_PCM_S16LE:
+			case CODEC_ID_PCM_S16LE_PLANAR:
 			case CODEC_ID_PCM_S16BE:
 				result = SFMT_S16;
 				break;
@@ -517,15 +522,27 @@ static long fmt_from_sample_fmt (struct ffmpeg_data *data)
 
 	switch (data->enc->sample_fmt) {
 	case AV_SAMPLE_FMT_U8:
+#if HAVE_DECL_AV_SAMPLE_FMT_U8P
+	case AV_SAMPLE_FMT_U8P:
+#endif
 		result = SFMT_U8;
 		break;
 	case AV_SAMPLE_FMT_S16:
+#if HAVE_DECL_AV_SAMPLE_FMT_S16P
+	case AV_SAMPLE_FMT_S16P:
+#endif
 		result = SFMT_S16;
 		break;
 	case AV_SAMPLE_FMT_S32:
+#if HAVE_DECL_AV_SAMPLE_FMT_S32P
+	case AV_SAMPLE_FMT_S32P:
+#endif
 		result = SFMT_S32;
 		break;
 	case AV_SAMPLE_FMT_FLT:
+#if HAVE_DECL_AV_SAMPLE_FMT_FLTP
+	case AV_SAMPLE_FMT_FLTP:
+#endif
 		result = SFMT_FLOAT;
 		break;
 	default:
@@ -624,6 +641,7 @@ static void *ffmpeg_open (const char *file)
 	data->stream = NULL;
 	data->enc = NULL;
 	data->codec = NULL;
+	data->sample_width = 0;
 	data->bitrate = 0;
 	data->avg_bitrate = 0;
 
@@ -734,6 +752,7 @@ static void *ffmpeg_open (const char *file)
 		               "Unsupported sample size!");
 		goto end;
 	}
+	data->sample_width = sfmt_Bps (data->fmt);
 	if (data->codec->capabilities & CODEC_CAP_DELAY)
 		data->delay = true;
 	data->seek_broken = is_seek_broken (data);
@@ -1008,23 +1027,28 @@ static int decode_packet (struct ffmpeg_data *data, AVPacket *pkt,
 		if (data_size == 0)
 			continue;
 
-		copied = copy_or_buffer (data, (char *)frame->extended_data[0],
-		                         plane_size, buf, buf_len);
-		buf += copied;
-		filled += copied;
-		buf_len -= copied;
+		if (is_planar && data->enc->channels > 1) {
+			int offset, ch;
 
-        if (is_planar && data->enc->channels > 1) {
-			int ch;
-
-            for (ch = 1; ch < data->enc->channels; ch += 1) {
-				copied = copy_or_buffer (data, (char *)frame->extended_data[ch],
-				                         plane_size, buf, buf_len);
-				buf += copied;
-				filled += copied;
-				buf_len -= copied;
-            }
-        }
+			for (offset = 0; offset < plane_size; offset += data->sample_width) {
+				for (ch = 0; ch < data->enc->channels; ch += 1) {
+					copied = copy_or_buffer (data,
+					                         (char *)frame->extended_data[ch]
+					                                               + offset,
+				                             data->sample_width, buf, buf_len);
+					buf += copied;
+					filled += copied;
+					buf_len -= copied;
+				}
+			}
+		}
+		else {
+			copied = copy_or_buffer (data, (char *)frame->extended_data[0],
+		                             plane_size, buf, buf_len);
+			buf += copied;
+			filled += copied;
+			buf_len -= copied;
+		}
 
 		debug ("Copying %dB (%dB filled)", data_size, filled);
 	} while (pkt->size > 0);
