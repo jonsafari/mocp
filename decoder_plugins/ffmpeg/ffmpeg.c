@@ -743,6 +743,9 @@ static void *ffmpeg_open (const char *file)
 	err = av_find_stream_info (data->ic);
 #endif
 	if (err < 0) {
+		/* Depending on the particular FFmpeg/LibAV version in use, this
+		 * may misreport experimental codecs.  Given we don't know the
+		 * codec at this time, we will have to live with it. */
 		decoder_error (&data->error, ERROR_FATAL, 0,
 				"Could not find codec parameters (err %d)",
 				err);
@@ -770,6 +773,19 @@ static void *ffmpeg_open (const char *file)
 	fn = fn ? fn + 1 : file;
 	debug ("FFmpeg thinks '%s' is format(codec) '%s(%s)'",
 	        fn, data->ic->iformat->name, data->codec->name);
+
+#if HAVE_DECL_CODEC_CAP_EXPERIMENTAL
+	/* This may or may not work depending on the particular version of
+	 * FFmpeg/LibAV in use.  For some versions this will be caught in
+	 * *_find_stream_info() above and misreported as an unfound codec
+	 * parameters error. */
+	if (data->codec->capabilities & CODEC_CAP_EXPERIMENTAL) {
+		decoder_error (&data->error, ERROR_FATAL, 0,
+				"The codec is experimental and may damage MOC: %s",
+				data->codec->name);
+		goto end;
+	}
+#endif
 
 	set_downmixing (data);
 	if (data->codec->capabilities & CODEC_CAP_TRUNCATED)
