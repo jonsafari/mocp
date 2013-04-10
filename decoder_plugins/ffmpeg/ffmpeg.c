@@ -1023,21 +1023,21 @@ static int decode_packet (struct ffmpeg_data *data, AVPacket *pkt,
 		                            &data_size, pkt->data, pkt->size);
 #endif
 
-		debug ("Decoded %dB", data_size);
-
 		if (len < 0)  {
 			/* skip frame */
 			decoder_error (&data->error, ERROR_STREAM, 0, "Error in the stream!");
 			break;
 		}
 
+		debug ("Decoded %dB", data_size);
+
+		pkt->data += len;
+		pkt->size -= len;
+
 		if (data->eof && data_size == 0) {
 			data->eos = true;
 			break;
 		}
-
-		pkt->data += len;
-		pkt->size -= len;
 
 		copied = copy_or_buffer (data, data->avbuf, data_size, buf, buf_len);
 
@@ -1073,15 +1073,15 @@ static int decode_packet (struct ffmpeg_data *data, AVPacket *pkt,
 			break;
 		}
 
-		if (!got_frame) {
-			data->eos = data->eof;
-			break;
-		}
-
 		debug ("Decoded %dB", len);
 
 		pkt->data += len;
 		pkt->size -= len;
+
+		if (!got_frame) {
+			data->eos = data->eof && (pkt->size == 0);
+			continue;
+		}
 
 		is_planar = av_sample_fmt_is_planar (data->enc->sample_fmt);
 		data_size = av_samples_get_buffer_size (&plane_size,
@@ -1090,6 +1090,8 @@ static int decode_packet (struct ffmpeg_data *data, AVPacket *pkt,
 		                                        data->enc->sample_fmt, 1);
 
 		if (data_size == 0)
+			continue;
+		if (data_size < 0)
 			continue;
 
 		if (is_planar && data->enc->channels > 1) {
