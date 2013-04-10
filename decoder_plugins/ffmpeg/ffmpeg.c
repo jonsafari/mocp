@@ -1058,12 +1058,13 @@ static int decode_packet (struct ffmpeg_data *data, AVPacket *pkt,
                           char *buf, int buf_len)
 {
 	int filled = 0;
+	char *packed;
 	AVFrame *frame;
 
 	frame = avcodec_alloc_frame ();
 
 	do {
-		int len, got_frame, is_planar, plane_size, data_size, copied;
+		int len, got_frame, is_planar, packed_size, copied;
 
 		len = avcodec_decode_audio4 (data->enc, frame, &got_frame, pkt);
 
@@ -1083,41 +1084,37 @@ static int decode_packet (struct ffmpeg_data *data, AVPacket *pkt,
 			continue;
 		}
 
-		is_planar = av_sample_fmt_is_planar (data->enc->sample_fmt);
-		data_size = av_samples_get_buffer_size (&plane_size,
-		                                        data->enc->channels,
-		                                        frame->nb_samples,
-		                                        data->enc->sample_fmt, 1);
+		if (frame->nb_samples == 0)
+			continue;
 
-		if (data_size == 0)
-			continue;
-		if (data_size < 0)
-			continue;
+		is_planar = av_sample_fmt_is_planar (data->enc->sample_fmt);
+		packed = (char *)frame->extended_data[0];
+		packed_size = frame->nb_samples * data->sample_width
+		                                * data->enc->channels;
 
 		if (is_planar && data->enc->channels > 1) {
-			int offset, ch;
+			int sample, ch;
 
-			for (offset = 0; offset < plane_size; offset += data->sample_width) {
-				for (ch = 0; ch < data->enc->channels; ch += 1) {
-					copied = copy_or_buffer (data,
-					                         (char *)frame->extended_data[ch]
-					                                               + offset,
-				                             data->sample_width, buf, buf_len);
-					buf += copied;
-					filled += copied;
-					buf_len -= copied;
-				}
+			packed = xmalloc (packed_size);
+
+			for (sample = 0; sample < frame->nb_samples; sample += 1) {
+				for (ch = 0; ch < data->enc->channels; ch += 1)
+					memcpy (packed + (sample * data->enc->channels + ch)
+					                         * data->sample_width,
+					        (char *)frame->extended_data[ch] + sample * data->sample_width,
+					        data->sample_width);
 			}
 		}
-		else {
-			copied = copy_or_buffer (data, (char *)frame->extended_data[0],
-		                             plane_size, buf, buf_len);
-			buf += copied;
-			filled += copied;
-			buf_len -= copied;
-		}
 
-		debug ("Copying %dB (%dB filled)", data_size, filled);
+		copied = copy_or_buffer (data, packed, packed_size, buf, buf_len);
+		buf += copied;
+		filled += copied;
+		buf_len -= copied;
+
+		debug ("Copying %dB (%dB filled)", packed_size, filled);
+
+		if (packed != (char *)frame->extended_data[0])
+			free (packed);
 	} while (pkt->size > 0);
 
 	avcodec_get_frame_defaults (frame);
