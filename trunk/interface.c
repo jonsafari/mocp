@@ -720,6 +720,8 @@ static void update_curr_tags ()
 		curr_file.tags = get_data_tags ();
 
 		if (curr_file.tags->title) {
+			if (curr_file.title)
+				free (curr_file.title);
 			curr_file.title = build_title (curr_file.tags);
 			iface_set_played_file_title (curr_file.title);
 		}
