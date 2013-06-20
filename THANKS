@@ -212,6 +212,9 @@ Marien Zwart:
 "fluxid":
 	* Fixed incorrect setting for themes red channel value.
 
+"GenghisKhan":
+	* Reported bugs and significantly helped debugging them.
+
 "meh":
 	* Provided code to prefer reading ID3 tags v2 over v1.
 
