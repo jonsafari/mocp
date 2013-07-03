@@ -883,7 +883,7 @@ static void find_working_driver (lists_t_strs *drivers, struct hw_funcs *funcs)
 {
 	int ix;
 
-	memset (funcs, 0, sizeof(funcs));
+	memset (funcs, 0, sizeof(*funcs));
 
 	for (ix = 0; ix < lists_strs_size (drivers); ix += 1) {
 		const char *name;
