@@ -2216,7 +2216,7 @@ static char *strip_white_spaces (const char *str)
 		clean[n] = 0;
 	}
 	else
-		clean = strdup ("");
+		clean = xstrdup ("");
 
 	return clean;
 }
