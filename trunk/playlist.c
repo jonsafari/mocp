@@ -445,7 +445,7 @@ const char *plist_get_next_dead_entry (const struct plist *plist,
 	return NULL;
 }
 
-#define if_not_empty(str)	((str) && (*str) ? (str) : NULL)
+#define if_not_empty(str)	(tags && (str) && (*str) ? (str) : NULL)
 
 static char *title_expn_subs(char fmt, const struct file_tags *tags)
 {
@@ -453,7 +453,7 @@ static char *title_expn_subs(char fmt, const struct file_tags *tags)
 
 	switch (fmt) {
 		case 'n':
-			if (tags->track != -1) {
+			if (tags && tags->track != -1) {
 				snprintf (track, sizeof(track), "%d", tags->track);
 				return track;
 			}
