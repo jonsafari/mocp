@@ -2201,7 +2201,7 @@ static char *strip_white_spaces (const char *str)
 	n = strlen (str);
 
 	/* Strip trailing. */
-	while (isblank(str[n-1]))
+	while (n > 0 && isblank(str[n-1]))
 		n--;
 
 	/* Strip leading whitespace. */
