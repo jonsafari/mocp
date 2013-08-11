@@ -2674,7 +2674,7 @@ static void set_startup_message (struct info_win *w)
 	w->current_message->timeout = time (NULL);
 	w->current_message->timeout += options_get_int ("MessageLingerTime");
 
-	if (!key_was_redefined (KEY_CMD_HELP)) {
+	if (is_help_still_h ()) {
 		struct queued_message *msg;
 
 		msg = queued_message_create (NORMAL_MSG);
