@@ -1385,7 +1385,7 @@ static int go_to_playlist (const char *file, const int load_serial)
 		}
 		else {
 			toggle_menu ();
-			/* Shouldn't we set menu content here? */
+			iface_set_dir_content (IFACE_MENU_PLIST, playlist, NULL, NULL);
 			iface_update_queue_positions (queue, playlist, NULL, NULL);
 		}
 
