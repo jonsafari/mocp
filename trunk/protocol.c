@@ -442,6 +442,7 @@ struct plist_item *recv_item (int sock)
 			logit ("Error while receiving tags title");
 			free (item->file);
 			free (item);
+			return NULL;
 		}
 
 		item->type = file_type (item->file);
@@ -457,6 +458,7 @@ struct plist_item *recv_item (int sock)
 			if (item->title_tags)
 				free (item->title_tags);
 			free (item);
+			return NULL;
 		}
 
 		if (!get_time(sock, &item->mtime)) {
@@ -465,6 +467,7 @@ struct plist_item *recv_item (int sock)
 				free (item->title_tags);
 			free (item->file);
 			tags_free (item->tags);
+			free (item);
 			return NULL;
 		}
 
