@@ -53,6 +53,7 @@
 	  - Introduced variable substitution
 	  - Introduced symbol and boolean option types
 	  - Improved security of the configuration file
+	  - Automatic clearing of an overridden default key binding
 	* Changed configuration file options:
 	  - Layout# options moved to a list and function-like syntax
 	  - SoundDriver option moved to a list syntax

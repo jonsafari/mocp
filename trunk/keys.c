@@ -50,7 +50,7 @@ struct command
 	char *help;		/* help string for the command */
 	enum key_context context; /* context - where the command isused */
 	int keys[6];		/* array of keys ended with -1 */
-	int default_keys_set;	/* are the keys default? */
+	int default_keys;	/* number of default keys */
 };
 
 /* Array of commands - each element is a list of keys for this command. */
@@ -157,7 +157,7 @@ static struct command commands[] = {
 		"Pause",
 		CON_MENU,
 		{ 'p', ' ', -1 },
-		1
+		2
 	},
 	{
 		KEY_CMD_TOGGLE_READ_TAGS,
@@ -213,7 +213,7 @@ static struct command commands[] = {
 		"Switch on/off play time percentage",
 		CON_MENU,
 		{ -1 },
-		1
+		0
 	},
 	{
 		KEY_CMD_PLIST_ADD_FILE,
@@ -301,7 +301,7 @@ static struct command commands[] = {
 		"Show the help screen",
 		CON_MENU,
 		{ 'h', '?', -1 },
-		1
+		2
 	},
 	{
 		KEY_CMD_HIDE_MESSAGE,
@@ -317,7 +317,7 @@ static struct command commands[] = {
 		"Refresh the screen",
 		CON_MENU,
 		{ CTRL('r'), CTRL('l'), -1},
-		1
+		2
 	},
 	{
 		KEY_CMD_RELOAD,
@@ -357,7 +357,7 @@ static struct command commands[] = {
 		"Search the menu",
 		CON_MENU,
 		{ 'g', '/', -1 },
-		1
+		2
 	},
 	{
 		KEY_CMD_PLIST_SAVE,
@@ -421,7 +421,7 @@ static struct command commands[] = {
 		"Find the next matching item",
 		CON_ENTRY_SEARCH,
 		{ CTRL('g'), CTRL('n'), -1 },
-		1
+		2
 	},
 	{
 		KEY_CMD_CANCEL,
@@ -429,7 +429,7 @@ static struct command commands[] = {
 		"Exit from an entry",
 		CON_ENTRY,
 		{ CTRL('x'), KEY_ESCAPE, -1 },
-		1
+		2
 	},
 	{
 		KEY_CMD_SEEK_FORWARD_5,
@@ -980,6 +980,33 @@ static int parse_key (const char *symbol)
 	return -1;
 }
 
+/* Remove a single key from the default key definition for a command. */
+static void clear_default_key (int key)
+{
+	unsigned int cmd_ix;
+
+	for (cmd_ix = 0; cmd_ix < COMMANDS_NUM; cmd_ix++) {
+		int key_ix;
+
+		for (key_ix = 0; key_ix < commands[cmd_ix].default_keys; key_ix++) {
+			if (commands[cmd_ix].keys[key_ix] == key)
+				break;
+		}
+
+		if (key_ix == commands[cmd_ix].default_keys)
+				continue;
+
+		while (key_ix < commands[cmd_ix].default_keys) {
+			commands[cmd_ix].keys[key_ix] = commands[cmd_ix].keys[key_ix + 1];
+			key_ix += 1;
+		}
+
+		commands[cmd_ix].default_keys -= 1;
+
+		break;
+	}
+}
+
 /* Remove default keys definition for a command. Return 0 on error. */
 static int clear_default_keys (const char *command)
 {
@@ -993,7 +1020,7 @@ static int clear_default_keys (const char *command)
 	if (cmd_idx == COMMANDS_NUM)
 		return 0;
 
-	commands[cmd_idx].default_keys_set = 0;
+	commands[cmd_idx].default_keys = 0;
 	commands[cmd_idx].keys[0] = -1;
 
 	return 1;
@@ -1027,6 +1054,7 @@ static void add_key (const int line_num, const char *command,
 	if ((key = parse_key(key_symbol)) == -1)
 		keymap_parse_error (line_num, "bad key sequence");
 
+	clear_default_key (key);
 	commands[cmd_idx].keys[i] = key;
 	commands[cmd_idx].keys[i+1] = -1;
 }
@@ -1220,13 +1248,12 @@ static int find_command (const enum key_cmd cmd)
 	return -1;
 }
 
-/* Return non-zero value if the key for the command was redefined (using
- * custom keymap). */
-int key_was_redefined (const enum key_cmd cmd)
+/* Return true iff the help key is still 'h'. */
+bool is_help_still_h ()
 {
-	int i = find_command (cmd);
+	int i = find_command (KEY_CMD_HELP);
 
 	assert (i != -1);
 
-	return !commands[i].default_keys_set;
+	return commands[i].keys[0] == 'h';
 }

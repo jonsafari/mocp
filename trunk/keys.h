@@ -130,7 +130,7 @@ enum key_cmd get_key_cmd (const enum key_context context, const struct iface_key
 void keys_init ();
 void keys_cleanup ();
 char **get_keys_help (int *num);
-int key_was_redefined (const enum key_cmd cmd);
+bool is_help_still_h ();
 
 #ifdef __cplusplus
 }
