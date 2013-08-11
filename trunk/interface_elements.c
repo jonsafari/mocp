@@ -3619,6 +3619,14 @@ static void info_win_resize (struct info_win *w)
 
 void windows_init ()
 {
+	if (getenv ("ESCDELAY") == NULL) {
+#ifdef HAVE_SET_ESCDELAY
+		set_escdelay (25);
+#else
+		setenv ("ESCDELAY", "25", 0);
+#endif
+	}
+
 	utf8_init ();
 	if (!initscr ())
 		fatal ("Can't initialize terminal!");

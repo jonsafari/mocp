@@ -14,7 +14,7 @@
 #
 #     - Just a char, like i, L, ", *
 #     - CTRL-KEY sequence: ^k (CTRL-k), ^4
-#     - ALT-KEY (meta sequence): M-j (ALT-j), M-%
+#     - ALT-KEY (meta) sequence: M-j (ALT-j), M-/
 #     - Special keys: DOWN, UP
 #                     LEFT, RIGHT
 #                     HOME, END
@@ -30,6 +30,17 @@
 # Maximum number of KEYs for one COMMAND is 5.
 #
 # Omitting the KEY for a command will disassociate the KEY from the COMMAND.
+#
+# Meta-key detection is sensitive to the ESCDELAY environment variable (see
+# the manpage for ncurses(3)).  In its absence, MOC resets the default
+# delay to 25ms.  If you need to emulate meta-key sequences using the ESC
+# key, then you may need to set the value of ESCDELAY back to its ncurses
+# default of 1000ms (but doing so will make the response to the ESC key
+# sluggish).
+#
+# If MOC's keypresses are being filtered through some other program (in a
+# GUI environment, for example) which also does meta-key detection, then
+# MOC is at the mercy of the timings with which that program presents them.
 #
 # Default key configuration for MOC (and a list of all available commands):
 
