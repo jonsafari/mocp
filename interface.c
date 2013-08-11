@@ -1354,7 +1354,8 @@ static void toggle_menu ()
 }
 
 /* Load the playlist file and switch the menu to it. Return 1 on success. */
-static int go_to_playlist (const char *file, const int load_serial)
+static int go_to_playlist (const char *file, const int load_serial,
+                           bool default_playlist)
 {
 	if (plist_count(playlist)) {
 		error ("Please clear the playlist, because "
@@ -1384,7 +1385,8 @@ static int go_to_playlist (const char *file, const int load_serial)
 			plist_clear (playlist);
 		}
 		else {
-			toggle_menu ();
+			if (!default_playlist)
+				toggle_menu ();
 			iface_set_dir_content (IFACE_MENU_PLIST, playlist, NULL, NULL);
 			iface_update_queue_positions (queue, playlist, NULL, NULL);
 		}
@@ -1413,7 +1415,7 @@ static void enter_first_dir ()
 			set_cwd (music_dir);
 			if (first_run && file_type(music_dir) == F_PLAYLIST
 					&& plist_count(playlist) == 0
-					&& go_to_playlist(music_dir, 0)) {
+					&& go_to_playlist(music_dir, 0, false)) {
 				cwd[0] = 0;
 				first_run = 0;
 			}
@@ -1598,7 +1600,7 @@ static void load_playlist ()
 	char *plist_file = create_file_name (PLAYLIST_FILE);
 
 	if (file_type(plist_file) == F_PLAYLIST) {
-		go_to_playlist (plist_file, 1);
+		go_to_playlist (plist_file, 1, true);
 
 		/* We don't want to switch to the playlist after loading. */
 		waiting_for_plist_load = 0;
@@ -1731,7 +1733,7 @@ static void go_file ()
 			go_to_dir (file, 0);
 	}
 	else if (type == F_PLAYLIST)
-		go_to_playlist (file, 0);
+		go_to_playlist (file, 0, false);
 
 	free (file);
 }
@@ -2074,7 +2076,7 @@ static void go_to_music_dir ()
 		go_to_dir (music_dir, 0);
 		break;
 	case F_PLAYLIST:
-		go_to_playlist (music_dir, 0);
+		go_to_playlist (music_dir, 0, false);
 		break;
 	default:
 		error ("MusicDir is neither a directory nor a playlist!");
@@ -2330,7 +2332,7 @@ static void entry_key_search (const struct iface_key *k)
 			else if (file_type(file) == F_DIR)
 				go_to_dir (file, 0);
 			else if (file_type(file) == F_PLAYLIST)
-				go_to_playlist (file, 0);
+				go_to_playlist (file, 0, false);
 			else
 				play_it (file);
 		}
