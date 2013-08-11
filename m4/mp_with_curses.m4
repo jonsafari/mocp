@@ -14,6 +14,7 @@ dnl @version $Id: mp_with_curses.m4,v 1.2 2002/09/12 21:48:39 guidod Exp $
 dnl @author Mark Pulford <mark@kyne.com.au>
 dnl
 dnl Modified by Damian Pietras <daper@daper.net> to detect ncursesw.
+dnl Modified by John Fitzgerald to remove "-l" prefix from libraries.
 dnl
 AC_DEFUN([MP_WITH_CURSES],
   [AC_ARG_WITH(ncurses, [  --with-ncurses          Force the use of ncurses over curses],,)
@@ -38,7 +39,7 @@ AC_DEFUN([MP_WITH_CURSES],
 	     	[Define if you have ncursesw.h]))
 	     AC_DEFINE(HAVE_NCURSES_H, 1, [Define if you have ncursesw/curses.h])
 	     AC_DEFINE(HAVE_NCURSESW, 1, [Define if you have libncursesw])
-	     CURSES_LIB="-lncursesw"
+	     CURSES_LIB="ncursesw"
 	   fi
    fi
 
@@ -53,7 +54,7 @@ AC_DEFUN([MP_WITH_CURSES],
      if test "$mp_cv_curses" = yes
      then
        AC_DEFINE(HAVE_CURSES_H, 1, [Define if you have curses.h])
-       CURSES_LIB="-lcurses"
+       CURSES_LIB="curses"
      fi
    fi
    if test ! "$CURSES_LIB"
@@ -67,7 +68,7 @@ AC_DEFUN([MP_WITH_CURSES],
      if test "$mp_cv_ncurses" = yes
      then
        AC_DEFINE(HAVE_NCURSES_H, 1, [Define if you have ncurses.h])
-       CURSES_LIB="-lncurses"
+       CURSES_LIB="ncurses"
      fi
    fi
    LIBS="$mp_save_LIBS"

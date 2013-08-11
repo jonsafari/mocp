@@ -338,7 +338,13 @@ dnl ncurses
 MP_WITH_CURSES
 if test -z "$CURSES_LIB"
 then
-		AC_MSG_ERROR([You need curses/ncurses library and header files.])
+	AC_MSG_ERROR([You need curses/ncurses library and header files.])
+else
+	AC_CHECK_LIB([$CURSES_LIB], [set_escdelay],
+		AC_DEFINE([HAVE_SET_ESCDELAY], 1, [Define if you have set_escdelay.]),
+		[AC_CHECK_FUNC([setenv], ,
+			AC_MSG_ERROR([Required function setenv not found.]))])
+	EXTRA_LIBS="$EXTRA_LIBS -l$CURSES_LIB"
 fi
 
 dnl popt
@@ -415,7 +421,6 @@ fi
 dnl Check for XZ.
 AC_CHECK_PROG([XZ_MISSING], [xz], [no], [yes])
 
-EXTRA_LIBS="$EXTRA_LIBS $CURSES_LIB"
 AC_SUBST(EXTRA_LIBS)
 AC_SUBST(EXTRA_DISTS)
 

@@ -121,6 +121,7 @@
 	  - Fixed Ogg/Vorbis stream detection in the Vorbis decoder
 	  - Fixed 'LRINTF error' raised when reconfiguring MOC
 	  - Handle backspace key properly
+	  - Fixed client interface meta-key handling
 	  - Fixed pthread stack overflow segfault on OpenBSD.
 	  - Fixed segfault when text entry history becomes full
 	  - Fixed segfault processing playlists with relative paths
