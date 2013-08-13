@@ -82,6 +82,7 @@ previous              = b
 toggle_shuffle        = S
 toggle_repeat         = R
 toggle_auto_next      = X
+toggle_mixer          = x
 go_url                = o
 
 # Volume control keys:
@@ -141,15 +142,14 @@ cancel                = ^x ESCAPE
 hide_message          = M
 
 # Softmixer specific keys:
-toggle_mixer          = x
 toggle_softmixer      = w
+toggle_make_mono      = J
 
 # Equalizer specific keys:
 toggle_equalizer      = E
 equalizer_refresh     = e
 equalizer_prev        = K
 equalizer_next        = k
-toggle_make_mono      = J
 
 # External commands:
 mark_start            = '
