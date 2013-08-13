@@ -461,8 +461,8 @@
 
 2.2.0
 	* Added support for FLAC audio format.
-	* Added suport for various file formats like au, aiff, voc, and more
-	  using libsndfile. This also provides better support for waves.
+	* Added support for various file formats like au, aiff, voc and more
+	  using libsndfile. This also provides better support for wav files.
 	* Custom keymaps can be used.
 	* Synchronizing the playlist between clients (interface instances).
 	* Going to a directory by typing the path with file-name completion

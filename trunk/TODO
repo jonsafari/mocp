@@ -9,7 +9,7 @@ Known bugs:
   - Recognition of ID3 tags v1 is broken (example: small.mp3).  [node/234]
   - Perhaps MOC can add support for the frame field_type to differentiate
     between ID3_FIELD_TYPE_LATIN1 and ID3_FIELD_TYPE_STRING.  [node/234]
-  - Some Cyrillic characters in file and directory names don't get displayed
+  - Some national characters in file and directory names don't get displayed
     correctly.
 * Program crashes:
   - I have a problem with MOC 2.4.0 on FreeBSD 6.1-PRERELEASE.  When I build
@@ -17,6 +17,8 @@ Known bugs:
     (This may have been fixed by other storage-related patches and will be
     removed in MOC 2.7 if no one has confirmed it still exists.)
   - Assertion failure on FreeBSD 5.5.  [node/148]
+    (This may have been fixed by other storage-related patches and will be
+    removed in MOC 2.7 if no one has confirmed it still exists.)
   - Using DB_THREAD in combination with DB_CREATE and DB_PRIVATE seems to
     cause a segfault on OpenWRT.  The circumvention is to configure MOC on
     OpenWRT with '--disable-cache' or set the MOC configuration option
@@ -83,6 +85,7 @@ Pending 2.6 changes:
 Pending 2.7 changes:
 
 * Remove FreeBSD program crash bug if no one has confirmed it still exists.
+* Remove FreeBSD assertion failure if no one has confirmed it still exists.
 
 In future:
 

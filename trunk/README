@@ -1,7 +1,7 @@
                                  MOC
                       m u s i c  o n  c o n s o l e
 
-                           http://moc.daper.net
+                          http://moc.daper.net/
 
 
 --------------------------------------------------------------------------------
@@ -13,45 +13,45 @@ powerful and easy to use.
 
 You just need to select a file from some directory using the menu similar to
 Midnight Commander, and MOC will start playing all files in this directory
-beginning from the chosen file. There is no need to create playlists as in
+beginning from the chosen file.  There is no need to create playlists as in
 other players.
 
 If you want to combine some files from one or more directories in one playlist,
-you can do this. The playlist will be remembered between runs or you can save
+you can do this.  The playlist will be remembered between runs or you can save
 it as an m3u file to load it whenever you want.
 
-Need the console where MOC is running for more important things? Need to close
-the X terminal emulator? You don't have to stop playing - just press q and the
-interface will be detached leaving the server running. You can attach it later,
+Need the console where MOC is running for more important things?  Need to close
+the X terminal emulator?  You don't have to stop playing - just press q and the
+interface will be detached leaving the server running.  You can attach it later,
 or you can attach one interface in the console, and another in the X terminal
 emulator, no need to switch just to play another file.
 
 MOC plays smoothly, regardless of system or I/O load because it uses the output
-buffer in a separate thread. The transition between files is gapless, because
+buffer in a separate thread.  The transition between files is gapless, because
 the next file to be played is precached while the current file is playing.
 
-Supported file formats are: mp3, Ogg Vorbis, FLAC, Musepack (mpc), Speex, WAVE,
-those supported by FFmpeg/LibAV (e.g., WMA, RealAudio, AAC, MP4), AIFF, AU, SVX,
-Sphere Nist WAV, IRCAM SF, Creative VOC, SID, wavpack, MIDI and modplug.
+Supported file formats are: MP3, Ogg Vorbis, FLAC, Musepack (mpc), Speex, Opus,
+WAVE, those supported by FFmpeg/LibAV (e.g., WMA, RealAudio, AAC, MP4), AIFF,
+AU, SVX, Sphere Nist WAV, IRCAM SF, Creative VOC, SID, wavpack, MIDI and
+modplug.
 
 Other features:
 
- - Simple mixer.
- - Color themes.
- - Searching the menu (the playlist or a directory) like M-s in Midnight
-   Commander.
- - The way MOC creates titles from tags is configurable.
- - Optional character set conversion for file tags using iconv().
- - OSS, ALSA, SNDIO and JACK output.
- - User defined keys.
- - Cache for files' tags.
+  - Simple mixer
+  - Color themes
+  - Menu searching (playlist or directory) like M-s in Midnight Commander
+  - The way MOC creates titles from tags is configurable
+  - Optional character set conversion for file tags using iconv()
+  - OSS, ALSA, SNDIO and JACK output
+  - User defined keys
+  - Cache for files' tags
 
 --------------------------------------------------------------------------------
-Documentation, how to get help.
+Documentation and how to get help
 --------------------------------------------------------------------------------
 
-This file is only a brief description of MOC, for more information is available
-on the home page (http://moc.daper.net/documentation).
+This file is only a brief description of MOC, for more information is
+available on the home page (http://moc.daper.net/documentation).
 
 You can also find a discussion forum on the MOC home page.
 
@@ -59,59 +59,71 @@ You can also find a discussion forum on the MOC home page.
 What software is required to compile it?
 --------------------------------------------------------------------------------
 
- - UNIX system with POSIX threads (e.g., Linux or FreeBSD)
- - ncurses (probably already installed in your system)
- - C and C++ compilers (MOC is written in C, but libtool and some decoder
-   plugins require a C++ compiler)
- - libdb version 4 or later (unless configured with --disable-cache)
+You will need:
+
+  - UNIX system with POSIX threads (e.g., Linux or FreeBSD)
+  - ncurses (probably already installed in your system)
+  - C and C++ compilers (MOC is written in C, but libtool and some
+    decoder plugins require a C++ compiler)
+  - Berkeley DB (libdb) version 4 or later (unless configured with
+    --disable-cache)
 
 To support audio formats you need:
- - Ogg Vorbis - libvorbis (http://www.xiph.org/ogg/vorbis/download/), or
-                libvorbisidec (http://svn.xiph.org/trunk/Tremor).
- - mp3 - libmad with libid3tag (ftp://ftp.mars.org/pub/mpeg/)
- - FLAC - (http://flac.sourceforge.net/)
- - WAVE, AU, AIFF, SVX, SPH, IRC, VOC - libsndfile
-     (http://www.mega-nerd.com/libsndfile/)
- - Speex - libspeex (http://www.speex.org/)
- - Musepack (mpc) - libmpcdec and taglib
-     (http://www.musepack.net/)
-     (http://developer.kde.org/~wheeler/taglib.html)
- - WMA, RealAudio (.ra), MP4 - FFmpeg version 0.5 or later
-                               (http://www.ffmpeg.org/), or
-                             - LibAV 0.6.3 or later
-                               (http://www.libav.org/)
- - modplug - libmodplug (http://modplug-xmms.sourceforge.net)
- - MIDI - libtimidity (http://timidity.sourceforge.net/)
- - SID - sidplay2 (sidplay2.sourceforge.net/)
- - wavpack - libwavpack (http://www.wavpack.com/)
- - AAC - libfaad2 version 2.7 or later (http://www.audiocoding.com/), and
-         libid3tag (http://www.underbit.com/products/mad/)
+
+  - Ogg Vorbis - libvorbis (http://www.xiph.org/ogg/vorbis/download/), or
+                 libvorbisidec (http://svn.xiph.org/trunk/Tremor).
+  - MP3 - libmad with libid3tag (ftp://ftp.mars.org/pub/mpeg/)
+  - FLAC - (http://flac.sourceforge.net/)
+  - WAVE, AU, AIFF, SVX, SPH, IRC, VOC - libsndfile
+      (http://www.mega-nerd.com/libsndfile/)
+  - Speex - libspeex (http://www.speex.org/)
+  - Musepack (mpc) - libmpcdec and taglib
+      (http://www.musepack.net/)
+      (http://developer.kde.org/~wheeler/taglib.html)
+  - WMA, RealAudio (.ra), MP4 - FFmpeg version 0.5 or later
+                                (http://www.ffmpeg.org/), or
+                              - LibAV 0.6.3 or later
+                                (http://www.libav.org/)
+  - modplug - libmodplug (http://modplug-xmms.sourceforge.net/)
+  - MIDI - libtimidity (http://timidity.sourceforge.net/)
+  - SID - sidplay2 (http://sidplay2.sourceforge.net/)
+  - wavpack - libwavpack (http://www.wavpack.com/)
+  - AAC - libfaad2 version 2.7 or later (http://www.audiocoding.com/), and
+          libid3tag (http://www.underbit.com/products/mad/)
 
 For network streams:
- - libcurl 7.12.2 or later (http://curl.haxx.se)
 
-For resampling (playing files with sample rate not supported by your hardware):
- - libresamplerate 0.1.2 or newer (http://www.mega-nerd.com/SRC/index.html)
+  - libcurl 7.12.2 or later (http://curl.haxx.se/)
+
+For resampling (playing files with sample rate not supported by your
+hardware):
+
+  - libresamplerate 0.1.2 or newer (http://www.mega-nerd.com/SRC/)
 
 For JACK (low-latency audio server):
- - http://jackit.sourceforge.net/
+
+  - http://jackit.sourceforge.net/
 
 For librcc (fixes encoding in broken mp3 tags):
- - http://rusxmms.sourceforge.net/
+
+  - http://rusxmms.sourceforge.net/
+
+Note that for Debian-based distributions, you will also require any '-dev'
+suffixed versions of the packages above if building from source.
 
 --------------------------------------------------------------------------------
 Which systems is MOC running on?
 --------------------------------------------------------------------------------
 
-I develop and test MOC under GNU/Linux. Sometimes I try to run it on other
+I develop and test MOC under GNU/Linux.  Sometimes I try to run it on other
 operating systems, and I know it compiles and possibly works under:
 
-- FreeBSD
-- NetBSD
-- OpenBSD
+  - FreeBSD
+  - NetBSD
+  - OpenBSD
 
 Not every release is extensively tested under other systems by me, so don't
-expect it to run perfectly under your OS. If you have any problems, please
+expect it to run perfectly under your OS.  If you have any problems, please
 contact me, I'm interested where MOC can and cannot be used.
 
 --------------------------------------------------------------------------------
@@ -169,9 +181,9 @@ file, there are some MOC-specific options:
 How to use it?
 --------------------------------------------------------------------------------
 
-Run program with the 'mocp' command. The usage is simple; if you need help,
-press 'h' and/or read man mocp. There is no complicated command line or
-cryptic commands. Using MOC is as easy as using basic functions of Midnight
+Run program with the 'mocp' command.  The usage is simple; if you need help,
+press 'h' and/or read mocp manpage.  There is no complicated command line or
+cryptic commands.  Using MOC is as easy as using basic functions of Midnight
 Commander.
 
 You can use a configuration file placed in ~/.moc/config, but it's not required.
@@ -183,14 +195,14 @@ Themes
 
 Yes, there are themes, because people wanted them. :)
 
-Themes can change all colors and only colors. An example theme file with a
+Themes can change all colors and only colors.  An example theme file with a
 exhaustive description is included (themes/example_theme) and is the
 default MOC appearance.
 
 Theme files should be placed in ~/.moc/themes/ or $(datadir)/moc/themes/
 (e.g., /usr/local/share/moc/themes) directory, and can be selected
-with the Theme configuration options or the -T command line option (see the man
-page and the example configuration file).
+with the Theme configuration options or the -T command line option (see the
+manpage and the example configuration file).
 
 Please send me themes you have created.
 
@@ -198,39 +210,44 @@ Please send me themes you have created.
 Defining keys
 --------------------------------------------------------------------------------
 
-You can redefine standard keys. See the instructions in the keymap.example
+You can redefine standard keys.  See the instructions in the keymap.example
 file.
 
 --------------------------------------------------------------------------------
 Hacking
 --------------------------------------------------------------------------------
 
-Want to modify MOC? You are welcome, I'd love to see patches.
+Want to modify MOC?  You are welcome, I'd love to see patches.
 
 MOC is written in C, so you must at least know this language to make simple
-changes. It is multi-threaded program, but there are places where you don't
-need to worry about that (the interface is only a single thread process). It
+changes.  It is multi-threaded program, but there are places where you don't
+need to worry about that (the interface is only a single thread process).  It
 uses autoconf, automake, and libtool chain to generate configuration/compilation
 stuff, so you must know how to use it, for example, if you need to link to an
 additional library.
 
 The documentation for some parts of the internal API for creating decoder
 plugins (file format support) and sound output drivers can be generated using
-Doxygen (http://www.doxygen.org). Just run the doxygen command from the MOC
+Doxygen (http://www.doxygen.org/).  Just run the doxygen command from the MOC
 source directory.
 
 Before you change anything it is a good idea to check for the latest development
-version (check out from the Subversion repository is the best). Your changes
+version (check out from the Subversion repository is the best).  Your changes
 might conflict with changes already made to the source or your feature might be
-already implemented. See also the TODO file as it is updated regularly and
+already implemented.  See also the TODO file as it is updated regularly and
 contains quite detailed information on future plans.
 
-If you need help, just mail or contact me using Jabber.
+If you need help, just contact me using e-mail or Jabber.
 
 --------------------------------------------------------------------------------
-Who wrote that? Where can I send bug reports, questions or comments?
+Who wrote that?  Where can I send bug reports, questions or comments?
 --------------------------------------------------------------------------------
+
 	* Original author is Damian Pietras
 	* Current maintainer is John Fitzgerald
-	* For comments and questions see the official forum http://moc.daper.net/forum
-	* Found a bug? You can reach maintainer(s) at mocmaint@daper.net
+	* For comments and questions see the official forum:
+	              http://moc.daper.net/forum
+	* Found a bug?  You can reach maintainer(s) at:
+	                 <mocmaint@daper.net>
+
+--------------------------------------------------------------------------------
