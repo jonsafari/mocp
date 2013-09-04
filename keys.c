@@ -1186,7 +1186,8 @@ static char *get_command_keys (const int idx)
 	}
 
 	/* strip the last space */
-	keys[strlen(keys)-1] = 0;
+	if (keys[0] != 0)
+		keys[strlen (keys) - 1] = 0;
 
 	return keys;
 }
