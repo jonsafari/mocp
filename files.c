@@ -182,10 +182,11 @@ void make_file_title (struct plist *plist, const int num,
 		char *file = xstrdup (plist->items[num].file);
 
 		if (hide_extension) {
-			char *dot = strrchr (file, '.');
+			char *extn;
 
-			if (dot)
-				*dot = 0;
+			extn = ext_pos (file);
+			if (extn)
+				*(extn - 1) = 0;
 		}
 
 		if (options_get_int ("FileNamesIconv"))
