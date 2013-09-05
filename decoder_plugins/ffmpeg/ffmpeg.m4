@@ -10,8 +10,7 @@ then
 		 AC_SUBST(ffmpeg_CPPFLAGS)
 		 AC_SUBST(ffmpeg_CFLAGS)
 		 AC_SUBST(ffmpeg_LIBS)
-		 want_ffmpeg="yes"
-		 DECODER_PLUGINS="$DECODER_PLUGINS ffmpeg/libav"],
+		 want_ffmpeg="yes"],
 		[AC_CHECK_PROG([FFMPEG_CONFIG], [ffmpeg-config], [yes])
 		 if test "x$FFMPEG_CONFIG" = "xyes"
 		 then
@@ -25,10 +24,22 @@ then
 			 AC_SUBST(ffmpeg_CFLAGS)
 			 AC_SUBST(ffmpeg_LIBS)
 			 want_ffmpeg="yes"
-			 DECODER_PLUGINS="$DECODER_PLUGINS ffmpeg/libav"
 		 fi])
 	if test "x$want_ffmpeg" = "xyes"
 	then
+		if $PKG_CONFIG --max-version 53.47.99 libavcodec
+		then
+			 DECODER_PLUGINS="$DECODER_PLUGINS ffmpeg/libav"
+		elif test "`$PKG_CONFIG --modversion libavcodec | awk -F. '{ print $3; }'`" -gt 99
+		then
+			 DECODER_PLUGINS="$DECODER_PLUGINS ffmpeg"
+			 AC_DEFINE([HAVE_FFMPEG], 1,
+				[Define to 1 if you know you have FFmpeg.])
+		else
+			 DECODER_PLUGINS="$DECODER_PLUGINS ffmpeg(libav)"
+			 AC_DEFINE([HAVE_LIBAV], 1,
+				[Define to 1 if you know you have LibAV.])
+		fi
 		if ! $PKG_CONFIG --atleast-version 52.110.0 libavformat
 		then
 			FFMPEG_DEPRECATED="yes"
