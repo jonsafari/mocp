@@ -11,6 +11,14 @@
  *
  */
 
+/*
+ *		"The main problem is that external projects who want to
+ *		 support both FFmpeg and LibAV are just fucked, and this
+ *		 only because LibAV doesn't care a second about their users."
+ *
+ *		-- http://blog.pkh.me/p/13-the-ffmpeg-libav-situation.html
+*/
+
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
@@ -237,8 +245,11 @@ static void load_audio_extns (lists_t_strs *list)
 		if (avcodec_find_decoder (CODEC_ID_VORBIS))
 			lists_strs_append (list, "oga");
 #if HAVE_DECL_CODEC_ID_OPUS || HAVE_DECL_AV_CODEC_ID_OPUS
+  /* The LibAV libraries will tell us they support Opus... but they lie. */
+  #if defined(HAVE_FFMPEG)
 		if (avcodec_find_decoder (CODEC_ID_OPUS))
 			lists_strs_append (list, "opus");
+  #endif
 #endif
 		if (avcodec_find_decoder (CODEC_ID_THEORA))
 			lists_strs_append (list, "ogv");
