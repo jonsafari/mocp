@@ -1446,7 +1446,10 @@ static int get_server_playlist (struct plist *plist)
 	debug ("Getting the playlist...");
 	if (recv_server_plist(plist)) {
 		ask_for_tags (plist, get_tags_setting());
-		switch_titles_tags (plist);
+		if (options_get_bool ("ReadTags"))
+			switch_titles_tags (plist);
+		else
+			switch_titles_file (plist);
 		iface_set_status ("");
 		return 1;
 	}
