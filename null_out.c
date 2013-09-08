@@ -15,6 +15,11 @@
 # include "config.h"
 #endif
 
+/* _XOPEN_SOURCE is known to break compilation under OpenBSD. */
+#ifndef OPENBSD
+# define _XOPEN_SOURCE  500 /* for usleep() */
+#endif
+
 #include <unistd.h>
 
 #include "common.h"

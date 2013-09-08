@@ -241,7 +241,8 @@ then
 			   CFLAGS="$CFLAGS $JACK_CFLAGS"
 			   AC_SEARCH_LIBS(jack_client_open, jack,
 			       [AC_DEFINE([HAVE_JACK_CLIENT_OPEN], 1,
-			           [Define to 1 if you have the `jack_client_open' function.])])],
+			           [Define to 1 if you have the `jack_client_open' function.])])
+			   need_usleep="yes"],
 			  [true])
 fi
 
@@ -271,6 +272,7 @@ else
 		COMPILE_DEBUG='yes'
 	fi
 	EXTRA_OBJS="$EXTRA_OBJS null_out.o md5.o"
+	need_usleep="yes"
 fi
 
 AC_FUNC_MALLOC
@@ -294,6 +296,10 @@ AC_CHECK_FUNC([sinh], ,
 dnl optional functions
 AC_CHECK_FUNCS([strcasestr strerror_r syslog])
 AX_CHECK_UNAME_SYSCALL
+if test "x$need_usleep" = "xyes"
+then
+	AC_CHECK_FUNC([usleep], , AC_MSG_ERROR([No usleep() function found.]))
+fi
 
 dnl MIME magic
 AC_ARG_WITH(magic, AS_HELP_STRING([--without-magic],
