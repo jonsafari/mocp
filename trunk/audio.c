@@ -845,7 +845,7 @@ int audio_send_pcm (const char *buf, const size_t size)
 
 	played = hw.play (buf, size);
 
-	if (played == 0)
+	if (played < 0)
 		fatal ("Audio output error!");
 
 	if (softmixed && !equalized)
