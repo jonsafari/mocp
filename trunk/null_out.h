@@ -1,8 +1,6 @@
 #ifndef NULL_OUT_H
 #define NULL_OUT_H
 
-#include "audio.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
