@@ -224,8 +224,7 @@ then
 	      EXTRA_OBJS="$EXTRA_OBJS alsa.o"
 	      AC_DEFINE([HAVE_ALSA], 1, [Define if you have ALSA.])
 	      EXTRA_LIBS="$EXTRA_LIBS $ALSA_LIBS"
-	      CFLAGS="$CFLAGS $ALSA_CFLAGS"
-	      need_usleep="yes"],
+	      CFLAGS="$CFLAGS $ALSA_CFLAGS"],
 	     [true])
 fi
 
