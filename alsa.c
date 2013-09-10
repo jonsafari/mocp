@@ -15,11 +15,6 @@
 # include "config.h"
 #endif
 
-/* _XOPEN_SOURCE is known to break compilation under OpenBSD. */
-#ifndef OPENBSD
-# define _XOPEN_SOURCE  500 /* for usleep() */
-#endif
-
 #define DEBUG
 
 #include <stdlib.h>
@@ -570,13 +565,11 @@ static void alsa_close ()
 	}
 
 	/* Wait for ALSA buffers to empty.
-	 * Do not be tempted to use snd_pcm_nonblock() here; there are
-	 * two bugs in ALSA which make it a bad idea (see the SVN commit
-	 * log for r2550).  Instead we loop until snd_pcm_avail() returns
-	 * -EPIPE.  This is a little kludgy but seems the best we can do. */
+	 * If users report a delay between audio files then it is this
+	 * snd_pcm_nonblock(), snd_pcm_drain() sequence triggering bugs
+	 * in ALSA which is to blame.  (See commit log for r2553.) */
+	snd_pcm_nonblock (handle, 0);
 	snd_pcm_drain (handle);
-	while (snd_pcm_avail (handle) > 0)
-		usleep (10000);
 	snd_pcm_close (handle);
 	logit ("ALSA device closed");
 
