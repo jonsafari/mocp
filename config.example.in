@@ -338,10 +338,10 @@
 #PreferredDecoders  = aac(aac,ffmpeg):m4a(ffmpeg)
 #PreferredDecoders += mpc(musepack,*,ffmpeg):mpc8(musepack,*,ffmpeg)
 #PreferredDecoders += sid(sidplay2):mus(sidplay2)
-#PreferredDecoders += wav(sndfile,*,modplug,ffmpeg)
+#PreferredDecoders += wav(sndfile,*,ffmpeg)
 #PreferredDecoders += wv(wavpack,*,ffmpeg)
 #PreferredDecoders += audio/aac(aac):audio/aacp(aac):audio/m4a(ffmpeg)
-#PreferredDecoders += audio/wav(sndfile,*,modplug)
+#PreferredDecoders += audio/wav(sndfile,*)
 
 # The following PreferredDecoders attempt to handle the ambiguity surrounding
 # container types such as OGG for files.  The first two entries will force
