@@ -254,6 +254,9 @@ static void modplug_get_name (const char *file, char buf[4])
 
 static int modplug_our_format_ext(const char *ext)
 {
+  // Do not include non-module formats in this list (even if
+  // ModPlug supports them).  Doing so may cause memory exhaustion
+  // in make_modplug_data().
   return
     !strcasecmp (ext, "NONE") ||
     !strcasecmp (ext, "MOD") ||
@@ -266,7 +269,6 @@ static int modplug_our_format_ext(const char *ext)
     !strcasecmp (ext, "ULT") ||
     !strcasecmp (ext, "STM") ||
     !strcasecmp (ext, "FAR") ||
-    !strcasecmp (ext, "WAV") ||
     !strcasecmp (ext, "AMF") ||
     !strcasecmp (ext, "AMS") ||
     !strcasecmp (ext, "DSM") ||
