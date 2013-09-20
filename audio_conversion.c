@@ -763,7 +763,7 @@ char *audio_conv (struct audio_conversion *conv, const char *buf,
 	if ((conv->from.rate != conv->to.rate
 				|| (conv->to.fmt & SFMT_MASK_FORMAT) == SFMT_FLOAT
 				|| !sfmt_same_bps(conv->to.fmt, curr_sfmt))
-			&& (conv->from.fmt & SFMT_MASK_FORMAT) != SFMT_FLOAT) {
+			&& (curr_sfmt & SFMT_MASK_FORMAT) != SFMT_FLOAT) {
 		char *new_sound;
 
 		new_sound = (char *)fixed_to_float (curr_sound, *conv_len,
@@ -819,8 +819,7 @@ char *audio_conv (struct audio_conversion *conv, const char *buf,
 	if (conv->from.channels == 1 && conv->to.channels == 2) {
 		char *new_sound;
 
-		new_sound = mono_to_stereo (curr_sound, *conv_len,
-				conv->from.fmt);
+		new_sound = mono_to_stereo (curr_sound, *conv_len, curr_sfmt);
 		*conv_len *= 2;
 
 		if (curr_sound != buf)
