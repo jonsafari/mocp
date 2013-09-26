@@ -18,7 +18,7 @@
 
 AUDIO=false
 VIDEO=false
-FFMPEG="$(which sox 2>/dev/null)"
+FFMPEG="$(which avconv 2>/dev/null || which ffmpeg 2>/dev/null)"
 SOX="$(which sox 2>/dev/null)"
 SYNTH="synth 10 sine 440 vol 0.5"
 
@@ -91,12 +91,12 @@ function vob {
   do
     for c in 1 2
     do
-      ffmpeg -f rawvideo -pix_fmt yuv420p -s 320x240 -r 30000/1001 \
-             -i /dev/zero \
-             -f s16le -c pcm_s16le -ac 2 -ar 48000 \
-             -i <($SOX -q -b16 -c2 -r 48000 -e signed -n -L -t s16 - $SYNTH) \
-             -vcodec mpeg2video -acodec mp2 -shortest -ac $c -ar $r \
-             -y sinewave-s16le-$c-$r.vob > /dev/null  2>&1
+      $FFMPEG -f rawvideo -pix_fmt yuv420p -s 320x240 -r 30000/1001 \
+              -i /dev/zero \
+              -f s16le -c pcm_s16le -ac 2 -ar 48000 \
+              -i <($SOX -q -b16 -c2 -r 48000 -e signed -n -L -t s16 - $SYNTH) \
+              -vcodec mpeg2video -acodec mp2 -shortest -ac $c -ar $r \
+              -y sinewave-s16le-$c-$r.vob > /dev/null  2>&1
     done
   done
 }
