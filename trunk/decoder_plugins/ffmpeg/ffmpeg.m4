@@ -95,20 +95,84 @@ then
 		AC_SEARCH_LIBS(av_get_channel_layout_nb_channels, avutil,
 			[AC_DEFINE([HAVE_AV_GET_CHANNEL_LAYOUT_NB_CHANNELS], 1,
 				[Define to 1 if you have the `av_get_channel_layout_nb_channels' function.])])
+		AC_CHECK_DECLS([CODEC_ID_MP2], , ,
+		                 [#include <libavcodec/avcodec.h>])
+		AC_CHECK_DECLS([AV_CODEC_ID_MP2], , ,
+		                 [#include <libavcodec/avcodec.h>])
 		AC_CHECK_DECLS([CODEC_ID_OPUS], , ,
 		                 [#include <libavcodec/avcodec.h>])
 		AC_CHECK_DECLS([AV_CODEC_ID_OPUS], , ,
 		                 [#include <libavcodec/avcodec.h>])
+		AC_CHECK_DECLS([CODEC_ID_SPEEX], , ,
+		                 [#include <libavcodec/avcodec.h>])
+		AC_CHECK_DECLS([AV_CODEC_ID_SPEEX], , ,
+		                 [#include <libavcodec/avcodec.h>])
+		AC_CHECK_DECLS([CODEC_ID_THEORA], , ,
+		                 [#include <libavcodec/avcodec.h>])
+		AC_CHECK_DECLS([AV_CODEC_ID_THEORA], , ,
+		                 [#include <libavcodec/avcodec.h>])
+		AC_CHECK_DECLS([CODEC_ID_VORBIS], , ,
+		                 [#include <libavcodec/avcodec.h>])
+		AC_CHECK_DECLS([AV_CODEC_ID_VORBIS], , ,
+		                 [#include <libavcodec/avcodec.h>])
 		AC_SEARCH_LIBS(avcodec_free_frame, avcodec,
 			[AC_DEFINE([HAVE_AVCODEC_FREE_FRAME], 1,
 				[Define to 1 if you have the `avcodec_free_frame' function.])])
+		AC_CHECK_DECLS([CODEC_ID_PCM_S8], , ,
+		                 [#include <libavcodec/avcodec.h>])
 		AC_CHECK_DECLS([CODEC_ID_PCM_S8_PLANAR], , ,
+		                 [#include <libavcodec/avcodec.h>])
+		AC_CHECK_DECLS([AV_CODEC_ID_PCM_S8_PLANAR], , ,
+		                 [#include <libavcodec/avcodec.h>])
+		AC_CHECK_DECLS([CODEC_ID_PCM_U8], , ,
+		                 [#include <libavcodec/avcodec.h>])
+		AC_CHECK_DECLS([CODEC_ID_PCM_S16LE], , ,
+		                 [#include <libavcodec/avcodec.h>])
+		AC_CHECK_DECLS([CODEC_ID_PCM_S16LE_PLANAR], , ,
+		                 [#include <libavcodec/avcodec.h>])
+		AC_CHECK_DECLS([AV_CODEC_ID_PCM_S16LE_PLANAR], , ,
+		                 [#include <libavcodec/avcodec.h>])
+		AC_CHECK_DECLS([CODEC_ID_PCM_S16BE], , ,
+		                 [#include <libavcodec/avcodec.h>])
+		AC_CHECK_DECLS([CODEC_ID_PCM_U16LE], , ,
+		                 [#include <libavcodec/avcodec.h>])
+		AC_CHECK_DECLS([CODEC_ID_PCM_U16BE], , ,
+		                 [#include <libavcodec/avcodec.h>])
+		AC_CHECK_DECLS([CODEC_ID_PCM_S24LE], , ,
+		                 [#include <libavcodec/avcodec.h>])
+		AC_CHECK_DECLS([CODEC_ID_PCM_S24BE], , ,
+		                 [#include <libavcodec/avcodec.h>])
+		AC_CHECK_DECLS([CODEC_ID_PCM_U24LE], , ,
+		                 [#include <libavcodec/avcodec.h>])
+		AC_CHECK_DECLS([CODEC_ID_PCM_U24BE], , ,
+		                 [#include <libavcodec/avcodec.h>])
+		AC_CHECK_DECLS([CODEC_ID_PCM_S32LE], , ,
+		                 [#include <libavcodec/avcodec.h>])
+		AC_CHECK_DECLS([CODEC_ID_PCM_S32BE], , ,
+		                 [#include <libavcodec/avcodec.h>])
+		AC_CHECK_DECLS([CODEC_ID_PCM_U32LE], , ,
+		                 [#include <libavcodec/avcodec.h>])
+		AC_CHECK_DECLS([CODEC_ID_PCM_U32BE], , ,
+		                 [#include <libavcodec/avcodec.h>])
+		AC_CHECK_DECLS([AV_SAMPLE_FMT_U8], , ,
 		                 [#include <libavcodec/avcodec.h>])
 		AC_CHECK_DECLS([AV_SAMPLE_FMT_U8P], , ,
 		                 [#include <libavcodec/avcodec.h>])
 		AC_CHECK_DECLS([AV_SAMPLE_FMT_S16P], , ,
 		                 [#include <libavcodec/avcodec.h>])
+		AC_CHECK_DECLS([AV_SAMPLE_FMT_U16LE], , ,
+		                 [#include <libavcodec/avcodec.h>])
+		AC_CHECK_DECLS([AV_SAMPLE_FMT_U16BE], , ,
+		                 [#include <libavcodec/avcodec.h>])
+		AC_CHECK_DECLS([AV_SAMPLE_FMT_U24LE], , ,
+		                 [#include <libavcodec/avcodec.h>])
+		AC_CHECK_DECLS([AV_SAMPLE_FMT_U24BE], , ,
+		                 [#include <libavcodec/avcodec.h>])
 		AC_CHECK_DECLS([AV_SAMPLE_FMT_S32P], , ,
+		                 [#include <libavcodec/avcodec.h>])
+		AC_CHECK_DECLS([AV_SAMPLE_FMT_U32LE], , ,
+		                 [#include <libavcodec/avcodec.h>])
+		AC_CHECK_DECLS([AV_SAMPLE_FMT_U32BE], , ,
 		                 [#include <libavcodec/avcodec.h>])
 		AC_CHECK_DECLS([AV_SAMPLE_FMT_FLTP], , ,
 		                 [#include <libavcodec/avcodec.h>])
