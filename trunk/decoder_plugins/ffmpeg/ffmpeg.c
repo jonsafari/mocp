@@ -724,6 +724,21 @@ static bool is_seek_broken (struct ffmpeg_data *data)
 	return false;
 }
 
+#ifdef HAVE_STRUCT_AVCODECCONTEXT_REQUEST_CHANNELS
+/* This warning reset suppresses a deprecation warning message
+ * for the AVCodecContext's 'request_channels' field. */
+#ifdef __GNUC__
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
+static inline void set_request_channels (AVCodecContext *enc, int channels)
+{
+	enc->request_channels = channels;
+}
+#ifdef __GNUC__
+#pragma GCC diagnostic warning "-Wdeprecated-declarations"
+#endif
+#endif
+
 /* Downmix multi-channel audios to stereo. */
 static void set_downmixing (struct ffmpeg_data *data)
 {
@@ -752,7 +767,7 @@ static void set_downmixing (struct ffmpeg_data *data)
 	 * help (in the absence of proper documentation).
 	 */
 
-	data->enc->request_channels = 2;
+	set_request_channels (data->enc, 2);
 
 #ifdef AV_CH_LAYOUT_STEREO_DOWNMIX
 	data->enc->request_channel_layout = AV_CH_LAYOUT_STEREO_DOWNMIX;
