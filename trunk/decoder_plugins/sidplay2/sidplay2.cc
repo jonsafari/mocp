@@ -342,7 +342,7 @@ extern "C" void sidplay2_get_error (void *prv_data, struct decoder_error *error)
 }
 
 extern "C" void sidplay2_info (const char *file_name, struct file_tags *info,
-		const int tags_sel)
+		const int)
 {
   if(init_db)
     init_database();
@@ -442,10 +442,8 @@ extern "C" void sidplay2_info (const char *file_name, struct file_tags *info,
  * Generic seeking can't be done because the whole audio would have to be
  * replayed until the position is reached (which would introduce a delay).
  * */
-extern "C" int sidplay2_seek (void *void_data ATTR_UNUSED, int sec ATTR_UNUSED)
+extern "C" int sidplay2_seek (void *, int)
 {
-  assert (sec >= 0);
-
   return -1;
 }
 
@@ -479,7 +477,7 @@ extern "C" int sidplay2_decode (void *void_data, char *buf, int buf_len,
   return data->player->play((void *)buf, buf_len);
 }
 
-extern "C" int sidplay2_get_bitrate (void *void_data ATTR_UNUSED)
+extern "C" int sidplay2_get_bitrate (void *)
 {
   return -1;
 }
