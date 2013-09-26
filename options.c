@@ -926,7 +926,7 @@ static char *substitute_variable (const char *name_in, const char *value_in)
 				break;
 			}
 		}
-		if (value && strlen (value))
+		if (value && value[0])
 			lists_strs_append (strs, value);
 		else if (dflt)
 			lists_strs_append (strs, dflt);

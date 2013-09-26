@@ -3027,7 +3027,7 @@ static void exec_custom_command (const char *option)
 	assert (option != NULL);
 
 	cmd = options_get_str (option);
-	if (!cmd || strlen (cmd) == 0) {
+	if (!cmd || !cmd[0]) {
 		error ("%s is not set", option);
 		return;
 	}
