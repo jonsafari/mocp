@@ -377,11 +377,24 @@ static char *list_decoder_names (int *decoder_list, int count)
 	names = lists_strs_new (count);
 	for (ix = 0; ix < count; ix += 1)
 		lists_strs_append (names, plugins[decoder_list[ix]].name);
+
 	if (have_tremor) {
 		ix = lists_strs_find (names, "vorbis");
 		if (ix < lists_strs_size (names))
 			lists_strs_replace (names, ix, "vorbis(tremor)");
 	}
+
+	ix = lists_strs_find (names, "ffmpeg");
+	if (ix < lists_strs_size (names)) {
+#if defined(HAVE_FFMPEG)
+			lists_strs_replace (names, ix, "ffmpeg");
+#elif defined(HAVE_LIBAV)
+			lists_strs_replace (names, ix, "ffmpeg(libav)");
+#else
+			lists_strs_replace (names, ix, "ffmpeg/libav");
+#endif
+	}
+
 	result = lists_strs_fmt (names, " %s");
 	lists_strs_free (names);
 
