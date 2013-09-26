@@ -392,6 +392,12 @@ static int locking_cb (void **mutex, enum AVLockOp op)
 		free (*mutex);
 		*mutex = NULL;
 		break;
+	default:
+		/* We could return -1 here, but examination of the FFmpeg
+		 * code shows that return code testing is erratic, so we'll
+		 * take charge and complain loudly if FFmpeg/LibAV's API
+		 * changes.  This way we don't end up chasing phantoms. */
+		fatal ("Unexpected FFmpeg lock request received: %d", op);
 	}
 
 	return result;
