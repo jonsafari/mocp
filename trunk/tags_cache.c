@@ -857,7 +857,7 @@ static void db_err_cb (const DB_ENV *dbenv ATTR_UNUSED, const char *errpfx,
 {
 	assert (msg);
 
-	if (errpfx && strlen (errpfx))
+	if (errpfx && errpfx[0])
 		logit ("BDB said: %s: %s", errpfx, msg);
 	else
 		logit ("BDB said: %s", msg);

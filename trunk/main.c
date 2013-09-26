@@ -490,7 +490,7 @@ static void override_config_option (const char *optarg, lists_t_strs *deferred)
 	append = (ptr > optarg && *(ptr - 1) == '+');
 
 	name = trim (optarg, ptr - optarg - (append ? 1 : 0));
-	if (!name || strlen (name) == 0)
+	if (!name || !name[0])
 		goto error;
 	type = options_get_type (name);
 
@@ -505,7 +505,7 @@ static void override_config_option (const char *optarg, lists_t_strs *deferred)
 		goto error;
 
 	value = trim (ptr + 1, strlen (ptr + 1));
-	if (!value || strlen (value) == 0)
+	if (!value || !value[0])
 		goto error;
 
 	if (value[0] == '\'' || value[0] == '"') {
