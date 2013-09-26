@@ -75,10 +75,10 @@ function ffmpeg () {
   [[ "${FMT:0:1}" = "f" ]] && ENDIAN=le
   OPTS="-ac $CHANS -ar $RATE -f $FMT$ENDIAN"
 
-  SUM2="$($FFMPEG -i $FILE $OPTS - </dev/null 2>/dev/null | md5sum)"
-  LEN2=$($FFMPEG -i $FILE $OPTS - </dev/null 2>/dev/null | wc -c)
+  SUM2="$($FFMPEG -i "$FILE" $OPTS - </dev/null 2>/dev/null | md5sum)"
+  LEN2=$($FFMPEG -i "$FILE" $OPTS - </dev/null 2>/dev/null | wc -c)
 
-  [[ "$($FFMPEG -i $FILE </dev/null 2>&1)" =~ Audio:\ .*\ (mono|stereo) ]] || \
+  [[ "$($FFMPEG -i "$FILE" </dev/null 2>&1)" =~ Audio:\ .*\ (mono|stereo) ]] || \
     IGNORE_SUM=$IGNORE
 }
 
@@ -98,16 +98,16 @@ function flac () {
   [[ "$FMT" =~ "be" ]] && OPTS="$OPTS -B"
   OPTS="$OPTS -r$RATE -c$CHANS"
 
-  SUM2=$($SOX $FILE $OPTS -t raw - | md5sum)
-  LEN2=$($SOX $FILE $OPTS -t raw - | wc -c)
+  SUM2=$($SOX "$FILE" $OPTS -t raw - | md5sum)
+  LEN2=$($SOX "$FILE" $OPTS -t raw - | wc -c)
 }
 
 # Check the Ogg/Vorbis decoder's samples.
 OGGDEC=$(which oggdec 2>/dev/null)
 function vorbis () {
   [[ -x "$OGGDEC" ]] || die oggdec not installed
-  SUM2="$($OGGDEC -RQ -o - $FILE | md5sum)"
-  LEN2=$($OGGDEC -RQ -o - $FILE | wc -c)
+  SUM2="$($OGGDEC -RQ -o - "$FILE" | md5sum)"
+  LEN2=$($OGGDEC -RQ -o - "$FILE" | wc -c)
 }
 
 # Check the LibSndfile decoder's samples.
@@ -115,8 +115,8 @@ SOX=$(which sox 2>/dev/null)
 function sndfile () {
   # LibSndfile doesn't have a decoder, use SoX.
   [[ -x "$SOX" ]] || die "sox (for sndfile) not installed"
-  SUM2="$($SOX $FILE -t f32 - | md5sum)"
-  LEN2=$($SOX $FILE -t f32 - | wc -c)
+  SUM2="$($SOX "$FILE" -t f32 - | md5sum)"
+  LEN2=$($SOX "$FILE" -t f32 - | wc -c)
   [[ "$NAME" == *-s32le-* ]] && IGNORE_SUM=$IGNORE
 }
 
@@ -125,8 +125,8 @@ SOX=$(which sox 2>/dev/null)
 function mp3 () {
   # Lame's decoder only does 16-bit, use SoX.
   [[ -x "$SOX" ]] || die "sox (for mp3) not installed"
-  SUM2="$($SOX $FILE -t s32 - | md5sum)"
-  LEN2=$($SOX $FILE -t s32 - | wc -c)
+  SUM2="$($SOX "$FILE" -t s32 - | md5sum)"
+  LEN2=$($SOX "$FILE" -t s32 - | wc -c)
   IGNORE_SUM=$IGNORE
   IGNORE_LEN=$IGNORE
 }
@@ -135,8 +135,8 @@ function mp3 () {
 SPEEX=$(which speexdec 2>/dev/null)
 function speex () {
   [[ -x "$SPEEX" ]] || die speexdec not installed
-  SUM2="$($SPEEX $FILE - 2>/dev/null | md5sum)"
-  LEN2=$($SPEEX $FILE - 2>/dev/null | wc -c)
+  SUM2="$($SPEEX "$FILE" - 2>/dev/null | md5sum)"
+  LEN2=$($SPEEX "$FILE" - 2>/dev/null | wc -c)
   IGNORE_SUM=$IGNORE
   IGNORE_LEN=$IGNORE
 }
@@ -197,19 +197,19 @@ do
   [[ "$REPLY" =~ "MD5" ]] || continue
 
   # Extract fields of interest.
-  REST="$(echo "$REPLY" | sed 's/^.*MD5(\([^)]*\)) = \(.*\)$/\1 \2/')"
-  NAME=$(echo $REST | cut -f1 -d' ')
-  SUM=$(echo $REST | cut -f2 -d' ')
-  LEN=$(echo $REST | cut -f3 -d' ')
-  DEC=$(echo $REST | cut -f4 -d' ')
+  NAME="$(echo "$REPLY" | sed 's/^.*MD5(\([^)]*\)) = .*$/\1/')"
+  REST="$(echo "$REPLY" | sed 's/^.*MD5([^)]*) = \(.*\)$/\1/')"
+  SUM=$(echo $REST | cut -f1 -d' ')
+  LEN=$(echo $REST | cut -f2 -d' ')
+  DEC=$(echo $REST | cut -f3 -d' ')
   $TREMOR && [[ "$DEC" = "vorbis" ]] && DEC=tremor
-  FMT=$(echo $REST | cut -f5 -d' ')
-  CHANS=$(echo $REST | cut -f6 -d' ')
-  RATE=$(echo $REST | cut -f7 -d' ')
+  FMT=$(echo $REST | cut -f4 -d' ')
+  CHANS=$(echo $REST | cut -f5 -d' ')
+  RATE=$(echo $REST | cut -f6 -d' ')
 
   # Check that we have the full pathname and it's not a dangling symlink.
-  [[ "$NAME" = "$(basename $FILE)" ]] || die Filename mismatch
-  [[ -L $FILE && ! -f $FILE ]] && continue
+  [[ "$NAME" = "$(basename "$FILE")" ]] || die Filename mismatch
+  [[ -L "$FILE" && ! -f "$FILE" ]] && continue
 
   # Get the independant MD5 sum and length of audio file.
   case $DEC in
