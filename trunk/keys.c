@@ -1000,7 +1000,7 @@ static void clear_default_key (int key)
 		if (key_ix == commands[cmd_ix].default_keys)
 				continue;
 
-		while (key_ix < commands[cmd_ix].default_keys) {
+		while (commands[cmd_ix].keys[key_ix] != -1) {
 			commands[cmd_ix].keys[key_ix] = commands[cmd_ix].keys[key_ix + 1];
 			key_ix += 1;
 		}
@@ -1032,7 +1032,11 @@ static void add_key (const int line_num, size_t cmd_ix, const char *key_symbol)
 	if (key == -1)
 		keymap_parse_error (line_num, "bad key sequence");
 
-	for (i = 0; commands[cmd_ix].keys[i] != -1; i += 1) {
+	clear_default_key (key);
+
+	for (i = commands[cmd_ix].default_keys;
+	     commands[cmd_ix].keys[i] != -1;
+	     i += 1) {
 		if (commands[cmd_ix].keys[i] == key)
 			return;
 	}
@@ -1041,7 +1045,6 @@ static void add_key (const int line_num, size_t cmd_ix, const char *key_symbol)
 			/sizeof(commands[cmd_ix].keys[0]) - 1)
 		keymap_parse_error (line_num, "too many keys defined");
 
-	clear_default_key (key);
 	commands[cmd_ix].keys[i] = key;
 	commands[cmd_ix].keys[i + 1] = -1;
 }
@@ -1089,13 +1092,14 @@ static void load_key_map (const char *file_name)
 			keymap_parse_error (line_num, "unknown command");
 
 		tmp = strtok(NULL, " \t");
-		if (!tmp || strcmp(tmp, "="))
-			keymap_parse_error (line_num, "expected '='");
+		if (!tmp || (strcmp(tmp, "=") && strcmp(tmp, "+=")))
+			keymap_parse_error (line_num, "expected '=' or '+='");
 
-		if (commands[cmd_ix].keys[commands[cmd_ix].default_keys] != -1)
-			keymap_parse_error (line_num, "command previously bound");
-
-		clear_default_keys (cmd_ix);
+		if (strcmp(tmp, "+=")) {
+			if (commands[cmd_ix].keys[commands[cmd_ix].default_keys] != -1)
+				keymap_parse_error (line_num, "command previously bound");
+			clear_default_keys (cmd_ix);
+		}
 
 		while ((key = strtok(NULL, " \t")))
 			add_key (line_num, cmd_ix, key);
