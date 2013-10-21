@@ -1091,6 +1091,9 @@ static void load_key_map (const char *file_name)
 		if (!tmp || strcmp(tmp, "="))
 			keymap_parse_error (line_num, "expected '='");
 
+		if (commands[cmd_ix].keys[commands[cmd_ix].default_keys] != -1)
+			keymap_parse_error (line_num, "command previously bound");
+
 		clear_default_keys (cmd_ix);
 
 		while ((key = strtok(NULL, " \t")))

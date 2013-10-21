@@ -34,6 +34,10 @@
 # default KEYs will be automatically unbound when they are explicitly bound
 # to some other COMMAND.
 #
+# Only one binding for any given COMMAND can appear in the keymap file.  The
+# exception to this is that if the default keys for a COMMAND are explicitly
+# unbound then a subsequent binding may appear for it.
+#
 # Meta-key detection is sensitive to the ESCDELAY environment variable (see
 # the manpage for ncurses(3)).  In its absence, MOC resets the default
 # delay to 25ms.  If you need to emulate meta-key sequences using the ESC
