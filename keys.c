@@ -1028,17 +1028,18 @@ static void add_key (const int line_num, size_t cmd_ix, const char *key_symbol)
 
 	assert (cmd_ix < COMMANDS_NUM);
 
-	/* Go to the last key */
-	for (i = 0; commands[cmd_ix].keys[i] != -1; i += 1)
-		;
+	key = parse_key (key_symbol);
+	if (key == -1)
+		keymap_parse_error (line_num, "bad key sequence");
+
+	for (i = 0; commands[cmd_ix].keys[i] != -1; i += 1) {
+		if (commands[cmd_ix].keys[i] == key)
+			return;
+	}
 
 	if (i == sizeof(commands[cmd_ix].keys)
 			/sizeof(commands[cmd_ix].keys[0]) - 1)
 		keymap_parse_error (line_num, "too many keys defined");
-
-	key = parse_key (key_symbol);
-	if (key == -1)
-		keymap_parse_error (line_num, "bad key sequence");
 
 	clear_default_key (key);
 	commands[cmd_ix].keys[i] = key;
