@@ -1033,7 +1033,7 @@ static void add_key (const int line_num, size_t cmd_ix, const char *key_symbol)
 		;
 
 	if (i == sizeof(commands[cmd_ix].keys)
-			/sizeof(commands[cmd_ix].keys[0]) - 2)
+			/sizeof(commands[cmd_ix].keys[0]) - 1)
 		keymap_parse_error (line_num, "too many keys defined");
 
 	key = parse_key (key_symbol);
