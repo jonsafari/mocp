@@ -1012,41 +1012,21 @@ static void clear_default_key (int key)
 }
 
 /* Remove default keys definition for a command. Return 0 on error. */
-static int clear_default_keys (const char *command)
+static void clear_default_keys (size_t cmd_ix)
 {
-	size_t cmd_ix;
-
-	/* Find the command */
-	for (cmd_ix = 0; cmd_ix < COMMANDS_NUM; cmd_ix += 1) {
-		if (!(strcasecmp(commands[cmd_ix].name, command)))
-			break;
-	}
-
-	if (cmd_ix == COMMANDS_NUM)
-		return 0;
+	assert (cmd_ix < COMMANDS_NUM);
 
 	commands[cmd_ix].default_keys = 0;
 	commands[cmd_ix].keys[0] = -1;
-
-	return 1;
 }
 
 /* Add a key to the command defined in the keymap file in line
  * line_num (used only when reporting an error). */
-static void add_key (const int line_num, const char *command,
-                     const char *key_symbol)
+static void add_key (const int line_num, size_t cmd_ix, const char *key_symbol)
 {
 	int i, key;
-	size_t cmd_ix;
 
-	/* Find the command */
-	for (cmd_ix = 0; cmd_ix < COMMANDS_NUM; cmd_ix += 1) {
-		if (!(strcasecmp(commands[cmd_ix].name, command)))
-			break;
-	}
-
-	if (cmd_ix == COMMANDS_NUM)
-		keymap_parse_error (line_num, "unknown command");
+	assert (cmd_ix < COMMANDS_NUM);
 
 	/* Go to the last key */
 	for (i = 0; commands[cmd_ix].keys[i] != -1; i += 1)
@@ -1065,12 +1045,26 @@ static void add_key (const int line_num, const char *command,
 	commands[cmd_ix].keys[i + 1] = -1;
 }
 
+/* Find command entry by command name; return COMMANDS_NUM if not found. */
+static size_t find_command_name (const char *command)
+{
+	size_t result;
+
+	for (result = 0; result < COMMANDS_NUM; result += 1) {
+		if (!(strcasecmp(commands[result].name, command)))
+			break;
+	}
+
+	return result;
+}
+
 /* Load a key map from the file. */
 static void load_key_map (const char *file_name)
 {
 	FILE *file;
 	char *line;
 	int line_num = 0;
+	size_t cmd_ix;
 
 	if (!(file = fopen(file_name, "r")))
 		fatal ("Can't open keymap file: %s", strerror(errno));
@@ -1089,15 +1083,18 @@ static void load_key_map (const char *file_name)
 			continue;
 		}
 
+		cmd_ix = find_command_name (command);
+		if (cmd_ix == COMMANDS_NUM)
+			keymap_parse_error (line_num, "unknown command");
+
 		tmp = strtok(NULL, " \t");
 		if (!tmp || strcmp(tmp, "="))
 			keymap_parse_error (line_num, "expected '='");
 
-		if (!clear_default_keys(command))
-			keymap_parse_error (line_num, "unknown command");
+		clear_default_keys (cmd_ix);
 
 		while ((key = strtok(NULL, " \t")))
-			add_key (line_num, command, key);
+			add_key (line_num, cmd_ix, key);
 
 		free (line);
 	}
@@ -1243,7 +1240,8 @@ char **get_keys_help (int *num)
 	return help;
 }
 
-static size_t find_command (const enum key_cmd cmd)
+/* Find command entry by key command; return COMMANDS_NUM if not found. */
+static size_t find_command_cmd (const enum key_cmd cmd)
 {
 	size_t result;
 
@@ -1260,7 +1258,7 @@ bool is_help_still_h ()
 {
 	size_t cmd_ix;
 
-	cmd_ix = find_command (KEY_CMD_HELP);
+	cmd_ix = find_command_cmd (KEY_CMD_HELP);
 
 	assert (cmd_ix < COMMANDS_NUM);
 
