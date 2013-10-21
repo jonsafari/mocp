@@ -1,5 +1,5 @@
-# This is the example kepmap file for MOC.  You can define your own key
-# mappings for MOC commands by creating your own keymap file and setting
+# This is the example keymap file for MOC.  You can define your own key
+# bindings for MOC commands by creating your own keymap file and setting
 # the 'Keymap' option in ~/.moc/config.
 #
 # The format of this file is:
@@ -29,7 +29,10 @@
 #
 # Maximum number of KEYs for one COMMAND is 5.
 #
-# Omitting the KEY for a command will disassociate the KEY from the COMMAND.
+# Omitting the KEY for a COMMAND will unbind all its default keys.  They
+# will also be automatically unbound when you bind new KEYs to it. Individual
+# default KEYs will be automatically unbound when they are explicitly bound
+# to some other COMMAND.
 #
 # Meta-key detection is sensitive to the ESCDELAY environment variable (see
 # the manpage for ncurses(3)).  In its absence, MOC resets the default
