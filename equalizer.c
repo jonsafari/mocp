@@ -706,7 +706,7 @@ void equalizer_process_buffer(char *buf, size_t size, const struct sound_params 
   long sound_endianness = sound_params->fmt & SFMT_MASK_ENDIANNESS;
   long sound_format = sound_params->fmt & SFMT_MASK_FORMAT;
 
-  int samplesize = sample_size(sound_format);
+  int samplesize = sfmt_Bps(sound_format);
   int is_float = (sound_params->fmt & SFMT_MASK_FORMAT) == SFMT_FLOAT;
 
   int need_endianness_swap = 0;

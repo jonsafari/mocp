@@ -1,9 +1,6 @@
 #ifndef SOFTMIXER_H
 #define SOFTMIXER_H
 
-#include "common.h"
-#include "audio.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
