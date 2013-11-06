@@ -53,28 +53,16 @@
 #include "options.h"
 #include "compat.h"
 
-/* Byte order conversion */
-/* TODO: use functions from byteswap.h if available */
-#define SWAP_INT16(l) ((int16_t) \
-			( (l & 0xff) << 8) | (((l) >> 8) & 0xff))
-#define SWAP_INT32(l) ((int32_t) (\
-			(((l) & 0x000000ff) << 24) | \
-			(((l) & 0x0000ff00) << 8) | \
-			(((l) & 0x00ff0000) >> 8) | \
-			(((l) & 0xff000000) >> 24) \
-			) \
-		)
-
 #if 0
 #ifdef WORDS_BIGENDIAN
 # define INT16_BE_TO_NE(l)	(l)
-# define INT16_LE_TO_NE(l)	SWAP_INT16 (l)
+# define INT16_LE_TO_NE(l)	bswap_16 (l)
 # define INT32_BE_TO_NE(l)	(l)
-# define INT32_LE_TO_NE(l)	SWAP_INT32 (l)
+# define INT32_LE_TO_NE(l)	bswap_32 (l)
 #else
-# define INT16_BE_TO_NE(l)	SWAP_INT16 (l)
+# define INT16_BE_TO_NE(l)	bswap_16 (l)
 # define INT16_LE_TO_NE(l)	(l)
-# define INT32_BE_TO_NE(l)	SWAP_INT32 (l)
+# define INT32_BE_TO_NE(l)	bswap_32 (l)
 # define INT32_LE_TO_NE(l)	(l)
 #endif
 
@@ -486,7 +474,7 @@ void audio_conv_bswap_16 (int16_t *buf, const size_t num)
 	size_t i;
 
 	for (i = 0; i < num; i++)
-		buf[i] = SWAP_INT16 (buf[i]);
+		buf[i] = bswap_16 (buf[i]);
 }
 
 void audio_conv_bswap_32 (int32_t *buf, const size_t num)
@@ -494,7 +482,7 @@ void audio_conv_bswap_32 (int32_t *buf, const size_t num)
 	size_t i;
 
 	for (i = 0; i < num; i++)
-		buf[i] = SWAP_INT32 (buf[i]);
+		buf[i] = bswap_32 (buf[i]);
 }
 
 /* Swap endianness of fixed point samples. */
