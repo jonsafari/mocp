@@ -53,24 +53,6 @@
 #include "options.h"
 #include "compat.h"
 
-#if 0
-#ifdef WORDS_BIGENDIAN
-# define INT16_BE_TO_NE(l)	(l)
-# define INT16_LE_TO_NE(l)	bswap_16 (l)
-# define INT32_BE_TO_NE(l)	(l)
-# define INT32_LE_TO_NE(l)	bswap_32 (l)
-#else
-# define INT16_BE_TO_NE(l)	bswap_16 (l)
-# define INT16_LE_TO_NE(l)	(l)
-# define INT32_BE_TO_NE(l)	bswap_32 (l)
-# define INT32_LE_TO_NE(l)	(l)
-#endif
-
-/* The byte order conversion is symetric, so this is true: */
-#define INT16_NE_TO_LE		INT16_LE_TO_NE (l)
-#define INT32_NE_TO_BE		INT32_BE_TO_NE (l)
-#endif
-
 static void float_to_u8 (const float *in, unsigned char *out, const size_t samples)
 {
 	size_t i;
