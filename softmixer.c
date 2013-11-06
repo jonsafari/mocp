@@ -31,7 +31,7 @@
 
 #include "common.h"
 #include "audio.h"
-#include "audio_helper.h"
+#include "audio_conversion.h"
 #include "softmixer.h"
 #include "options.h"
 #include "files.h"
@@ -287,9 +287,9 @@ void softmixer_process_buffer(char *buf, size_t size, const struct sound_params 
     debug ("Converting endianness before mixing");
 
     if(samplesize == 4)
-      swap_endianness_32((int32_t *)buf, size / sizeof(int32_t));
+      audio_conv_bswap_32((int32_t *)buf, size / sizeof(int32_t));
     else
-      swap_endianness_16((int16_t *)buf, size / sizeof(int16_t));
+      audio_conv_bswap_16((int16_t *)buf, size / sizeof(int16_t));
   }
 
   switch(sound_format)
@@ -344,9 +344,9 @@ void softmixer_process_buffer(char *buf, size_t size, const struct sound_params 
     debug ("Restoring endianness after mixing");
 
     if(samplesize == 4)
-      swap_endianness_32((int32_t *)buf, size / sizeof(int32_t));
+      audio_conv_bswap_32((int32_t *)buf, size / sizeof(int32_t));
     else
-      swap_endianness_16((int16_t *)buf, size / sizeof(int16_t));
+      audio_conv_bswap_16((int16_t *)buf, size / sizeof(int16_t));
   }
 }
 

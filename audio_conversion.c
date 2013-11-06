@@ -481,7 +481,7 @@ static void change_sign (char *buf, const size_t size, long *fmt)
 	}
 }
 
-static void int16_bswap_array (int16_t *buf, const size_t num)
+void audio_conv_bswap_16 (int16_t *buf, const size_t num)
 {
 	size_t i;
 
@@ -489,7 +489,7 @@ static void int16_bswap_array (int16_t *buf, const size_t num)
 		buf[i] = SWAP_INT16 (buf[i]);
 }
 
-static void int32_bswap_array (int32_t *buf, const size_t num)
+void audio_conv_bswap_32 (int32_t *buf, const size_t num)
 {
 	size_t i;
 
@@ -506,11 +506,11 @@ static void swap_endian (char *buf, const size_t size, const long fmt)
 	switch (fmt & SFMT_MASK_FORMAT) {
 		case SFMT_S16:
 		case SFMT_U16:
-			int16_bswap_array ((int16_t *)buf, size / 2);
+			audio_conv_bswap_16 ((int16_t *)buf, size / 2);
 			break;
 		case SFMT_S32:
 		case SFMT_U32:
-			int32_bswap_array ((int32_t *)buf, size / 4);
+			audio_conv_bswap_32 ((int32_t *)buf, size / 4);
 			break;
 		default:
 			error ("Can't convert to native endian!");
