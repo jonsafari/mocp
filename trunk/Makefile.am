@@ -55,8 +55,6 @@ mocp_SOURCES = log.c \
 	       utf8.h \
 	       rcc.c \
 	       rcc.h \
-	       audio_helper.h \
-	       audio_helper.c \
 	       softmixer.c \
 	       softmixer.h \
 	       lyrics.h \

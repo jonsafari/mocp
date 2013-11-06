@@ -1,6 +1,10 @@
 #ifndef AUDIO_CONVERSION_H
 #define AUDIO_CONVERSION_H
 
+#ifdef HAVE_STDINT_H
+# include <stdint.h>
+#endif
+
 #include <sys/types.h>
 
 #ifdef HAVE_SAMPLERATE
@@ -32,6 +36,9 @@ int audio_conv_new (struct audio_conversion *conv,
 char *audio_conv (struct audio_conversion *conv,
 		const char *buf, const size_t size, size_t *conv_len);
 void audio_conv_destroy (struct audio_conversion *conv);
+
+void audio_conv_bswap_16 (int16_t *buf, const size_t num);
+void audio_conv_bswap_32 (int32_t *buf, const size_t num);
 
 #ifdef __cplusplus
 }
