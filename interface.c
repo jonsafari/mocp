@@ -1529,7 +1529,7 @@ static void process_multiple_args (lists_t_strs *args)
 		char path[2 * PATH_MAX];
 
 		arg = lists_strs_at (args, ix);
-			dir = is_dir (arg);
+		dir = is_dir (arg);
 
 		if (is_url (arg)) {
 			strncpy (path, arg, sizeof (path));

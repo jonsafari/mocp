@@ -470,7 +470,6 @@ struct plist_item *recv_item (int sock)
 			free (item);
 			return NULL;
 		}
-
 	}
 
 	return item;

@@ -313,7 +313,6 @@ static int cache_record_deserialize (struct cache_record *rec,
 			if (rec->tags->album)
 				free (rec->tags->album);
 			rec->tags->album = NULL;
-
 		}
 
 		if (rec->tags->time >= 0)

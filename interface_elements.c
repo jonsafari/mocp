@@ -1041,7 +1041,7 @@ static char *make_menu_title (const char *plist_title,
 				char *old_title = title;
 
 				title = xstrdup (slash + 1);
-		                free (old_title);
+				free (old_title);
 			}
 		}
 	}
@@ -3870,6 +3870,7 @@ void iface_get_key (struct iface_key *k)
 		if (wget_wch(main_win.win, &ch) == ERR)
 			interface_fatal ("wget_wch() failed!");
 #endif
+
 		/* Recognize meta sequences */
 		if (ch == KEY_ESCAPE) {
 			if((meta = wgetch(main_win.win)) != ERR)

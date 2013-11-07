@@ -609,7 +609,6 @@ static void add_event_all (const int event, const void *data)
 					logit ("Unhandled data!");
 			}
 
-
 			add_event (&clients[i], event, data_copy);
 			added++;
 		}

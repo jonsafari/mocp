@@ -349,7 +349,6 @@ void utf8_init ()
 	{
 		xterm_iconv_desc = iconv_open ("", "UTF-8");
 	}
-
 }
 
 void utf8_cleanup ()

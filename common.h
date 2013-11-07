@@ -24,6 +24,7 @@ extern "C" {
 #  define PATH_MAX	4096             /* Suppose, we have 4096 */
 # endif
 #endif
+
 /* Exit status on fatal exit. */
 #define EXIT_FATAL	2
 
