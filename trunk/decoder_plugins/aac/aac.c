@@ -56,7 +56,6 @@ struct aac_data
 	int ok; /* was this stream successfully opened? */
 	struct decoder_error error;
 
-	int in_bytes_counter;
 	int bitrate;
 	int avg_bitrate;
 	int duration;
@@ -91,7 +90,6 @@ static int buffer_fill (struct aac_data *data)
 	if (n == 0)
 		return 0;
 
-	data->in_bytes_counter += n;
 	data->rbuf_len += n;
 	return 1;
 }
@@ -448,8 +446,6 @@ static int decode_one_frame (struct aac_data *data, void *buffer, int count)
 	char *sample_buf;
 	int bytes, rc;
 
-	data->in_bytes_counter = 0;
-
 	rc = buffer_fill_frame (data);
 	if (rc <= 0)
 		return rc;
@@ -553,8 +549,6 @@ static int aac_get_duration (void *prv_data)
 	struct aac_data *data = (struct aac_data *)prv_data;
 
 	return data->duration;
-
-	return -1;
 }
 
 static void aac_get_name (const char *file ATTR_UNUSED, char buf[4])
