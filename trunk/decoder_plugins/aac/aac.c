@@ -409,9 +409,8 @@ static void aac_info (const char *file_name,
 		struct aac_data *data;
 
 		data = aac_open_internal (NULL, file_name);
-		if (data->ok) {
+		if (data->ok)
 			info->time = aac_count_time (data);
-		}
 		aac_close (data);
 	}
 }
@@ -518,10 +517,9 @@ static int aac_decode (void *prv_data, char *buf, int buf_len,
 
 	/* use overflow from previous call (if any) */
 	if (data->overflow_buf_len) {
-		int len = data->overflow_buf_len;
+		int len;
 
-		if (len > buf_len)
-			len = buf_len;
+		len = MIN(data->overflow_buf_len, buf_len);
 
 		memcpy (buf, data->overflow_buf, len);
 		data->overflow_buf += len;

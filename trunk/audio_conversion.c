@@ -53,7 +53,8 @@
 #include "options.h"
 #include "compat.h"
 
-static void float_to_u8 (const float *in, unsigned char *out, const size_t samples)
+static void float_to_u8 (const float *in, unsigned char *out,
+		const size_t samples)
 {
 	size_t i;
 
@@ -127,8 +128,7 @@ static void float_to_u16 (const float *in, unsigned char *out,
 	}
 }
 
-static void float_to_s16 (const float *in, char *out,
-		const size_t samples)
+static void float_to_s16 (const float *in, char *out, const size_t samples)
 {
 	size_t i;
 
@@ -184,8 +184,7 @@ static void float_to_u32 (const float *in, unsigned char *out,
 	}
 }
 
-static void float_to_s32 (const float *in, char *out,
-		const size_t samples)
+static void float_to_s32 (const float *in, char *out, const size_t samples)
 {
 	size_t i;
 
@@ -226,8 +225,7 @@ static void u8_to_float (const unsigned char *in, float *out,
 		out[i] = (((int)*in++) + INT8_MIN) / (float)(INT8_MAX + 1);
 }
 
-static void s8_to_float (const char *in, float *out,
-		const size_t samples)
+static void s8_to_float (const char *in, float *out, const size_t samples)
 {
 	size_t i;
 
@@ -251,8 +249,7 @@ static void u16_to_float (const unsigned char *in, float *out,
 		out[i] = ((int)*in_16++ + INT16_MIN) / (float)(INT16_MAX + 1);
 }
 
-static void s16_to_float (const char *in, float *out,
-		const size_t samples)
+static void s16_to_float (const char *in, float *out, const size_t samples)
 {
 	size_t i;
 	const int16_t *in_16 = (int16_t *)in;
@@ -277,8 +274,7 @@ static void u32_to_float (const unsigned char *in, float *out,
 		out[i] = ((float)*in_32++ + (float)INT32_MIN) / ((float)INT32_MAX + 1.0);
 }
 
-static void s32_to_float (const char *in, float *out,
-		const size_t samples)
+static void s32_to_float (const char *in, float *out, const size_t samples)
 {
 	size_t i;
 	const int32_t *in_32 = (int32_t *)in;
@@ -556,8 +552,7 @@ int audio_conv_new (struct audio_conversion *conv,
 
 #ifdef HAVE_SAMPLERATE
 static float *resample_sound (struct audio_conversion *conv, const float *buf,
-		const size_t samples, const int nchannels,
-		size_t *resampled_samples)
+		const size_t samples, const int nchannels, size_t *resampled_samples)
 {
 	SRC_DATA resample_data;
 	float *output;

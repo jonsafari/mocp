@@ -954,8 +954,7 @@ static bool parse_layout (struct main_win_layout *l, lists_t_strs *fmt)
 			goto err;
 		}
 		if (p.y + p.height > LINES - 4) {
-			logit ("Y + height is more than LINES - 4 (%d)",
-					LINES - 4);
+			logit ("Y + height is more than LINES - 4 (%d)", LINES - 4);
 			goto err;
 		}
 
@@ -3873,7 +3872,8 @@ void iface_get_key (struct iface_key *k)
 
 		/* Recognize meta sequences */
 		if (ch == KEY_ESCAPE) {
-			if((meta = wgetch(main_win.win)) != ERR)
+			meta = wgetch (main_win.win);
+			if (meta != ERR)
 				ch = meta | META_KEY_FLAG;
 			k->type = IFACE_KEY_FUNCTION;
 			k->key.func = ch;

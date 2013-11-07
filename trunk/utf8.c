@@ -322,8 +322,7 @@ void utf8_init ()
 		using_utf8 = 1;
 #else /* HAVE_NCURSESW */
 		terminal_charset = xstrdup ("US-ASCII");
-		logit ("Using US-ASCII conversion - compiled without "
-				"libncursesw");
+		logit ("Using US-ASCII conversion - compiled without libncursesw");
 #endif /* HAVE_NCURSESW */
 	}
 	else
@@ -341,14 +340,10 @@ void utf8_init ()
 	}
 
 	if (options_get_int ("FileNamesIconv"))
-	{
 		files_iconv_desc = iconv_open ("UTF-8", "");
-	}
 
 	if (options_get_int ("NonUTFXterm"))
-	{
 		xterm_iconv_desc = iconv_open ("", "UTF-8");
-	}
 }
 
 void utf8_cleanup ()
