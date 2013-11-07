@@ -263,7 +263,7 @@ static void *spx_open (const char *file)
 		decoder_error (&data->error, ERROR_STREAM, 0,
 				"Can't open file: %s",
 				io_strerror(stream));
-        io_close (stream);
+		io_close (stream);
 		data->ok = 0;
 	}
 

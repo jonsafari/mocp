@@ -451,7 +451,7 @@ static void decode_loop (const struct decoder *f, void *decoder_data,
 	struct sound_params new_sound_params;
 	bool sound_params_change = false;
 	float decode_time = already_decoded_sec; /* the position of the decoder
-						    (in seconds) */
+	                                            (in seconds) */
 
 	out_buf_set_free_callback (out_buf, buf_free_callback);
 
@@ -739,7 +739,7 @@ static void play_file (const char *file, const struct decoder *f,
 		if (err.type != ERROR_OK) {
 			md5.okay = false;
 			if (err.type != ERROR_STREAM ||
-			    options_get_bool ( "ShowStreamErrors"))
+			    options_get_bool ("ShowStreamErrors"))
 				error ("%s", err.err);
 			decoder_error_clear (&err);
 		}

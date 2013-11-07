@@ -397,6 +397,7 @@ static void change_sign_8 (uint8_t *buf, const size_t samples)
 	for (i = 0; i < samples; i++)
 		*buf++ ^= 1 << 7;
 }
+
 static void change_sign_16 (uint16_t *buf, const size_t samples)
 {
 	size_t i;
