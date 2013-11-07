@@ -62,9 +62,9 @@ typedef void (*buf_fill_callback_t) (struct io_stream *s, size_t fill,
 
 struct io_stream
 {
-	enum io_source source;
+	enum io_source source;	/* source of the file */
 	int fd;
-	size_t size;	/* source of the file if needed */
+	size_t size;	/* size of the file */
 	int errno_val;	/* errno value of the last operation  - 0 if ok */
 	int read_error; /* set to != 0 if the last read operation dailed */
 	char *strerror;	/* error string */

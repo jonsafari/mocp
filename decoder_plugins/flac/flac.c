@@ -29,7 +29,8 @@
 #include "log.h"
 #include "io.h"
 
-/* by LEGACY_FLAC we mean pre-1.1.3, before FLAC__SeekableStreamDecoder was merged into FLAC__StreamDecoder */
+/* By LEGACY_FLAC we mean pre-1.1.3, before FLAC__SeekableStreamDecoder
+ * was merged into FLAC__StreamDecoder. */
 #if !defined(FLAC_API_VERSION_CURRENT) || FLAC_API_VERSION_CURRENT < 8
 #define LEGACY_FLAC
 #else
@@ -115,8 +116,7 @@ static size_t pack_pcm_signed (FLAC__byte *data,
 		}
 	}
 
-	debug ("Converted %d bytes",
-			wide_samples * channels * bytes_per_sample);
+	debug ("Converted %d bytes", wide_samples * channels * bytes_per_sample);
 
 	return wide_samples * channels * bytes_per_sample;
 }
@@ -393,7 +393,7 @@ static void *flac_open_internal (const char *file, const int buffered)
 #endif
 
 	data->ok = 1;
-	data->avg_bitrate = (data->bits_per_sample) * data->sample_rate;
+	data->avg_bitrate = data->bits_per_sample * data->sample_rate;
 
 	return data;
 }

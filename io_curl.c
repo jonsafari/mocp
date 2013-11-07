@@ -80,7 +80,7 @@ static size_t header_callback (void *data, size_t size, size_t nmemb,
 	/* we dont need '\r\n', so cut it. */
 	header_size = sizeof(char) * (size * nmemb + 1 - 2);
 
-	/* copy the header to char* array*/
+	/* copy the header to char* array */
 	header = (char *)xmalloc (header_size);
 	memcpy (header, data, size * nmemb - 2);
 	header[header_size-1] = 0;
@@ -196,8 +196,7 @@ static int check_curl_stream (struct io_stream *s)
 				debug ("Read error");
 				res = 0;
 			}
-			curl_multi_remove_handle (s->curl.multi_handle,
-					s->curl.handle);
+			curl_multi_remove_handle (s->curl.multi_handle, s->curl.handle);
 			curl_easy_cleanup (s->curl.handle);
 			s->curl.handle = NULL;
 			debug ("EOF");

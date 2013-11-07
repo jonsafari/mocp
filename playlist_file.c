@@ -377,10 +377,11 @@ err:
 int plist_load (struct plist *plist, const char *fname, const char *cwd,
 		const int load_serial)
 {
-	int num;
-	int read_tags = options_get_int ("ReadTags");
-	const char *ext = ext_pos (fname);
+	int num, read_tags;
+	const char *ext;
 
+	read_tags = options_get_int ("ReadTags");
+	ext = ext_pos (fname);
 
 	if (ext && !strcasecmp(ext, "pls"))
 		num = plist_load_pls (plist, fname, cwd);
