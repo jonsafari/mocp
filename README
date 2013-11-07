@@ -71,7 +71,7 @@ You will need:
 To support audio formats you need:
 
   - Ogg Vorbis - libvorbis (http://www.xiph.org/ogg/vorbis/download/), or
-                 libvorbisidec (http://svn.xiph.org/trunk/Tremor).
+                 libvorbisidec (http://svn.xiph.org/trunk/Tremor)
   - MP3 - libmad with libid3tag (ftp://ftp.mars.org/pub/mpeg/)
   - FLAC - (http://flac.sourceforge.net/)
   - WAVE, AU, AIFF, SVX, SPH, IRC, VOC - libsndfile
