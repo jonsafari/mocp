@@ -69,13 +69,13 @@ static ssize_t io_read_mmap (struct io_stream *s, const int dont_move,
 		s->size = file_stat.st_size;
 		if ((s->mem = mmap(0, s->size, PROT_READ, MAP_SHARED, s->fd, 0))
 					== MAP_FAILED) {
-			logit ("mmap() filed: %s", strerror(errno));
+			logit ("mmap() failed: %s", strerror(errno));
 			return -1;
 		}
 
 		logit ("mmap()ed %lu bytes", (unsigned long)s->size);
 		if (s->mem_pos > s->size) {
-			logit ("File shrinked");
+			logit ("File shrunk");
 			return 0;
 		}
 	}
@@ -723,7 +723,7 @@ long io_tell (struct io_stream *s)
 	else
 		res = s->pos;
 
-	debug ("We are at %ld byte", res);
+	debug ("We are at byte %ld", res);
 
 	return res;
 }

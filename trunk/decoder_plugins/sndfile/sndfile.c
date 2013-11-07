@@ -49,7 +49,7 @@ static void *sndfile_open (const char *file)
 	if (!(data->sndfile = sf_open(file, SFM_READ,
 					&data->snd_info))) {
 
-		/* FIXME: sf_strerror is not thread save with NULL argument */
+		/* FIXME: sf_strerror is not thread safe with NULL argument */
 		decoder_error (&data->error, ERROR_FATAL, 0,
 				"Can't open file: %s", sf_strerror(NULL));
 		return data;

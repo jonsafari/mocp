@@ -132,7 +132,7 @@ size_t fifo_buf_get (struct fifo_buf *b, char *user_buf,
 	return written;
 }
 
-/* Get the amount of free spaace in the buffer. */
+/* Get the amount of free space in the buffer. */
 size_t fifo_buf_get_space (const struct fifo_buf *b)
 {
 	assert (b != NULL);

@@ -226,7 +226,7 @@ static int aac_count_time (struct aac_data *data)
 	}
 
 	if (io_seek(data->stream, saved_pos, SEEK_SET) == (off_t)-1) {
-		logit ("Can't seek after couting time");
+		logit ("Can't seek after counting time");
 		return -1;
 	}
 

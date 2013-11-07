@@ -2,7 +2,7 @@
 # 'config' and placed in the ~/.moc directory.  As this file can specify
 # commands which invoke other applications, MOC will refuse to start if it
 # is not owned by either root or the current user, or if it is writable by
-# anyone other than it's owner.  All options are given with their default
+# anyone other than its owner.  All options are given with their default
 # values, and therefore commented.
 
 # Comments begin with '#'.
@@ -104,7 +104,7 @@
 #
 #FormatString = "%(n:%n :)%(a:%a - :)%(t:%t:)%(A: \(%A\):)"
 
-# Input and ouput buffer sizes (in kilobytes).
+# Input and output buffer sizes (in kilobytes).
 #InputBuffer = 512                  # Minimum value is 32KB
 #OutputBuffer = 512                 # Minimum value is 128KB
 

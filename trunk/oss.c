@@ -67,7 +67,7 @@ static const struct {
 static int open_dev ()
 {
 	if ((dsp_fd = open (options_get_str ("OSSDevice"), O_WRONLY)) == -1) {
-		error ("Can't open %s, %s", options_get_str ("OSSDevice"),
+		error ("Can't open %s: %s", options_get_str ("OSSDevice"),
 		        strerror (errno));
 		return 0;
 	}
@@ -272,7 +272,7 @@ static int oss_set_params ()
 				req_format = AFMT_S16_BE;
 			break;
 		default:
-			error ("format %s is not supported by the device",
+			error ("Format %s is not supported by the device",
 			        sfmt_str (params.fmt, fmt_name, sizeof (fmt_name)));
 			return 0;
 	}
@@ -286,7 +286,7 @@ static int oss_set_params ()
 	/* Set number of channels */
 	req_channels = params.channels;
 	if (ioctl (dsp_fd, SNDCTL_DSP_CHANNELS, &req_channels) == -1) {
-		error ("Can't set number of channels to %d, %s",
+		error ("Can't set number of channels to %d: %s",
 		        params.channels, strerror (errno));
 		oss_close ();
 		return 0;
@@ -301,7 +301,7 @@ static int oss_set_params ()
 
 	/* Set sample rate */
 	if (ioctl (dsp_fd, SNDCTL_DSP_SPEED, &params.rate) == -1) {
-		error ("Can't set sampling rate to %d, %s", params.rate,
+		error ("Can't set sampling rate to %d: %s", params.rate,
 		        strerror (errno));
 		oss_close ();
 		return 0;
@@ -337,7 +337,7 @@ static int oss_play (const char *buff, const size_t size)
 {
 	int res;
 	if (dsp_fd == -1)
-		error ("Can't play, audio device isn't opened!");
+		error ("Can't play: audio device isn't opened!");
 
 	res = write (dsp_fd, buff, size);
 
@@ -364,7 +364,7 @@ static void oss_set_mixer (int vol)
 		if (ioctl (dsp_fd, SNDCTL_DSP_SETPLAYVOL, &vol) == -1)
 #endif
 		{
-			error ("Can't set mixer, ioctl failed");
+			error ("Can't set mixer: ioctl() failed");
 		}
 	}
 }
@@ -389,18 +389,18 @@ static int oss_get_buff_fill ()
 static int oss_reset ()
 {
 	if (dsp_fd == -1) {
-		logit ("reset when audio device is not opened");
+		logit ("Reset when audio device is not opened");
 		return 0;
 	}
 
-	logit ("Reseting audio device");
+	logit ("Resetting audio device");
 
 	if (ioctl (dsp_fd, SNDCTL_DSP_RESET, NULL) == -1)
-		error ("Reseting audio device failed");
+		error ("Resetting audio device failed");
 	close (dsp_fd);
 	dsp_fd = -1;
 	if (!open_dev () || !oss_set_params ()) {
-		error ("Failed to open audio device after reseting");
+		error ("Failed to open audio device after resetting");
 		return 0;
 	}
 

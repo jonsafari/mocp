@@ -9,7 +9,7 @@
 #ifdef HAVE_SYS_SELECT_H
 # include <sys/select.h>
 #endif
-#include <unistd.h> /* fot [s]size_t */
+#include <unistd.h> /* for [s]size_t */
 #include <pthread.h>
 #ifdef HAVE_CURL
 # include <curl/curl.h>
@@ -51,7 +51,7 @@ struct io_stream_curl
 	size_t icy_meta_int;	/* how often are icy metadata sent?
 				   0 - disabled, in bytes */
 	size_t icy_meta_count;	/* how many bytes was read from the last
-				   metadate packet */
+				   metadata packet */
 };
 #endif
 
