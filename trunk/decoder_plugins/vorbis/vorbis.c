@@ -101,32 +101,32 @@ static void get_comment_tags (OggVorbis_File *vf, struct file_tags *info)
 	}
 }
 
-/* Return a malloc()ed description of an ov_*() error. */
-static char *vorbis_strerror (const int code)
+/* Return a description of an ov_*() error. */
+static const char *vorbis_strerror (const int code)
 {
-	char *err;
+	const char *result;
 
 	switch (code) {
 		case OV_EREAD:
-			err = "read error";
+			result = "read error";
 			break;
 		case OV_ENOTVORBIS:
-			err = "not a vorbis file";
+			result = "not a vorbis file";
 			break;
 		case OV_EVERSION:
-			err = "vorbis version mismatch";
+			result = "vorbis version mismatch";
 			break;
 		case OV_EBADHEADER:
-			err = "invalid Vorbis bitstream header";
+			result = "invalid Vorbis bitstream header";
 			break;
 		case OV_EFAULT:
-			err = "internal (vorbis) logic fault";
+			result = "internal (vorbis) logic fault";
 			break;
 		default:
-			err = "unknown error";
+			result = "unknown error";
 	}
 
-	return xstrdup (err);
+	return result;
 }
 
 /* Fill info structure with data from ogg comments */
@@ -146,23 +146,14 @@ static void vorbis_tags (const char *file_name, struct file_tags *info,
 	 * with it. */
 	if (tags_sel & TAGS_TIME) {
 		if ((err_code = ov_open(file, &vf, NULL, 0)) < 0) {
-			char *vorbis_err = vorbis_strerror (err_code);
-
-			logit ("Can't open %s: %s", file_name, vorbis_err);
-			free (vorbis_err);
+			logit ("Can't open %s: %s", file_name, vorbis_strerror (err_code));
 			fclose (file);
-
 			return;
 		}
 	}
 	else {
 		if ((err_code = ov_test(file, &vf, NULL, 0)) < 0) {
-			char *vorbis_err = vorbis_strerror (err_code);
-
-			logit ("Can't open %s: %s", file_name, vorbis_err);
-			free (vorbis_err);
-			fclose (file);
-
+			logit ("Can't open %s: %s", file_name, vorbis_strerror (err_code));
 			return;
 		}
 	}
@@ -234,12 +225,10 @@ static void vorbis_open_stream_internal (struct vorbis_data *data)
 
 	if ((res = ov_open_callbacks(data->stream, &data->vf, NULL, 0,
 					callbacks)) < 0) {
-		char *vorbis_err = vorbis_strerror (res);
+		const char *vorbis_err = vorbis_strerror (res);
 
-		decoder_error (&data->error, ERROR_FATAL, 0, "%s",
-				vorbis_err);
+		decoder_error (&data->error, ERROR_FATAL, 0, "%s", vorbis_err);
 		debug ("ov_open error: %s", vorbis_err);
-		free (vorbis_err);
 
 		io_close (data->stream);
 	}
