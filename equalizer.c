@@ -28,6 +28,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <assert.h>
 #ifdef HAVE_STDINT_H
 # include <stdint.h>
 #endif
@@ -715,6 +716,8 @@ void equalizer_process_buffer(char *buf, size_t size, const struct sound_params 
   {
     need_endianness_swap = 1;
   }
+
+  assert (size % (samplesize * sound_params->channels) == 0);
 
   /* setup samples to perform arithmetic */
   if(need_endianness_swap)

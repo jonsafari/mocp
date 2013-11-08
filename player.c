@@ -32,8 +32,8 @@
 #include "playlist.h"
 #include "md5.h"
 
-#define PCM_BUF_SIZE		(32 * 1024)
-#define PREBUFFER_THRESHOLD	(16 * 1024)
+#define PCM_BUF_SIZE		(36 * 1024)
+#define PREBUFFER_THRESHOLD	(18 * 1024)
 
 enum request
 {
