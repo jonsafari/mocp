@@ -843,7 +843,7 @@ static void *ffmpeg_open (const char *file)
 	/* When FFmpeg and LibAV misidentify a file's codec (and they do)
 	 * then hopefully this will save MOC from wanton destruction. */
 	extn = ext_pos (file);
-	if (extn && !strcmp (extn, "wav")
+	if (extn && !strcasecmp (extn, "wav")
 	         && strcmp (data->ic->iformat->name, "wav")) {
 		decoder_error (&data->error, ERROR_FATAL, 0,
 		               "Format possibly misidentified as '%s' by FFmpeg/LibAV",
