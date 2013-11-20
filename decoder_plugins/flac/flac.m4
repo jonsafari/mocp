@@ -5,7 +5,7 @@ AC_ARG_WITH(flac, AS_HELP_STRING([--without-flac],
 
 if test "x$with_flac" != "xno"
 then
-	if ! $PKG_CONFIG --atleast-version 1.5.3 flac
+	if ! $PKG_CONFIG --atleast-version 1.1.3 flac
 	then
 		FLAC_DEPRECATED="yes"
 	fi
