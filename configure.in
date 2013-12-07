@@ -9,6 +9,8 @@ AM_INIT_AUTOMAKE
 
 AC_PREREQ(2.60)
 
+m4_version_prereq([2.64], , [AUTOCONF_DEPRECATED='yes'])
+
 dnl This can be removed when AC_PREREQ reaches 2.64.
 if test -z "$PACKAGE_URL"
 then
@@ -458,6 +460,13 @@ echo "Resampling:        "$COMPILE_SAMPLERATE
 echo "MIME magic:        "$COMPILE_MAGIC
 echo "-----------------------------------------------------------------------"
 echo
+
+if test "x$AUTOCONF_DEPRECATED" = "xyes"
+then
+	echo "WARNING: After release 2.5 MOC will require Autoconf version"
+	echo "         2.64 or later.  Plan to upgrade your Autoconf soon."
+	echo
+fi
 
 if test "x$FFMPEG_CONFIG" = "xyes"
 then
