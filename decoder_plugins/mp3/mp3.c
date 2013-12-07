@@ -278,6 +278,11 @@ static int count_time_internal (struct mp3_data *data)
 	if (!good_header)
 		return -1;
 
+	if (data->size == -1) {
+		mad_header_finish(&header);
+		return -1;
+	}
+
 	if (!is_vbr) {
 		/* time in seconds */
 		double time = (data->size * 8.0) / (header.bitrate);
@@ -639,6 +644,9 @@ static int mp3_seek (void *void_data, int sec)
 	int new_position;
 
 	assert (sec >= 0);
+
+	if (data->size == -1)
+		return -1;
 
 	if (sec >= data->duration)
 		return -1;

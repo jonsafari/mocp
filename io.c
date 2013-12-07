@@ -484,6 +484,7 @@ struct io_stream *io_open (const char *file, const int buffered)
 	s->read_error = 0;
 	s->strerror = NULL;
 	s->opened = 0;
+	s->size = -1;
 	s->buf_fill_callback = NULL;
 	memset (&s->metadata, 0, sizeof(s->metadata));
 

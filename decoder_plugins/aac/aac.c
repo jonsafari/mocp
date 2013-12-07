@@ -318,13 +318,13 @@ static void *aac_open_internal (struct io_stream *stream, const char *fname)
 	/*NeAACDecInitDRM(data->decoder, data->sample_rate, data->channels);*/
 
 	if (fname) {
+		ssize_t file_size;
+
 		data->duration = aac_count_time (data);
-		if (data->duration > 0) {
-			data->avg_bitrate = io_file_size (data->stream)
-				/ data->duration * 8;
-		}
-		else
-			data->avg_bitrate = -1;
+		file_size = io_file_size (data->stream);
+		data->avg_bitrate = -1;
+		if (data->duration > 0 && file_size != -1)
+			data->avg_bitrate = file_size / data->duration * 8;
 	}
 
 	data->ok = 1;

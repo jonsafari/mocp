@@ -120,6 +120,11 @@ static struct modplug_data *make_modplug_data(const char *file) {
 
   ssize_t size = io_file_size(s);
 
+  if (size == -1) {
+    decoder_error(&data->error, ERROR_FATAL, 0, "Can't load module: %s", file);
+    return data;
+  }
+
 //  if(size>MAXMODSIZE) {
 //    io_close(s);
 //    decoder_error(&data->error, ERROR_FATAL, 0, "Module to big! 42M ain't enough ? (%s)", file);
