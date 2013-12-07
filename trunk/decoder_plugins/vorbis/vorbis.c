@@ -144,18 +144,15 @@ static void vorbis_tags (const char *file_name, struct file_tags *info,
 
 	/* ov_test() is faster than ov_open(), but we can't read file time
 	 * with it. */
-	if (tags_sel & TAGS_TIME) {
-		if ((err_code = ov_open(file, &vf, NULL, 0)) < 0) {
-			logit ("Can't open %s: %s", file_name, vorbis_strerror (err_code));
-			fclose (file);
-			return;
-		}
-	}
-	else {
-		if ((err_code = ov_test(file, &vf, NULL, 0)) < 0) {
-			logit ("Can't open %s: %s", file_name, vorbis_strerror (err_code));
-			return;
-		}
+	if (tags_sel & TAGS_TIME)
+		err_code = ov_open(file, &vf, NULL, 0);
+	else
+		err_code = ov_test(file, &vf, NULL, 0);
+
+	if (err_code < 0) {
+		logit ("Can't open %s: %s", file_name, vorbis_strerror (err_code));
+		fclose (file);
+		return;
 	}
 
 	if (tags_sel & TAGS_COMMENTS)
