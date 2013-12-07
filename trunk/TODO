@@ -62,6 +62,7 @@ Transitional code removal (after 2.5):
 * Remove changed option type for SoundDriver.
 * Remove changed option format for Layouts.
 * Remove deprecated autogen.sh file.
+* Remove Autoconf version 2.64 requirement warning.
 * Remove Berkeley DB version 4.1 requirement warning.
 * Remove libcurl version 7.15.1 requirement warning.
 * Remove POPT requirement warning.
@@ -76,6 +77,7 @@ FFmpeg/LibAV support changes (after 2.5):
 
 Pending 2.6 changes:
 
+* Require at least Autoconf version 2.64.
 * Require at least Berkeley DB version 4.1.
 * Require at least libcurl version 7.15.1.
 * Require the POPT library (libpopt).
