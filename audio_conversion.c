@@ -30,9 +30,6 @@
 #ifdef HAVE_STDINT_H
 # include <stdint.h>
 #endif
-#ifdef HAVE_LIMITS_H
-# include <limits.h>
-#endif
 #ifdef HAVE_INTTYPES_H
 # include <inttypes.h>
 #endif
