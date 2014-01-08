@@ -27,12 +27,6 @@
 #define __USE_ISOC99    1
 
 #include <assert.h>
-#ifdef HAVE_STDINT_H
-# include <stdint.h>
-#endif
-#ifdef HAVE_INTTYPES_H
-# include <inttypes.h>
-#endif
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>

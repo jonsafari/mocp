@@ -29,13 +29,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
-#ifdef HAVE_STDINT_H
-# include <stdint.h>
-#endif
-#ifdef HAVE_INTTYPES_H
-# include <inttypes.h>
-#endif
-
+#include <stdint.h>
 #include <math.h>
 #include <stdlib.h>
 #include <errno.h>

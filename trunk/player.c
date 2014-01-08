@@ -15,6 +15,7 @@
 
 #include <pthread.h>
 #include <string.h>
+#include <stdint.h>
 #include <errno.h>
 #include <assert.h>
 
