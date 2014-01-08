@@ -18,7 +18,7 @@
 
 #include <string.h>
 #include <strings.h>
-#include <stdint.h>
+#include <inttypes.h>
 #include <assert.h>
 #include <speex/speex.h>
 #include <speex/speex_header.h>
@@ -402,7 +402,7 @@ static void get_more_data (struct spx_data *data)
 
 static int count_time (struct spx_data *data)
 {
-	unsigned long last_granulepos = 0;
+	ogg_int64_t last_granulepos = 0;
 
 	/* Seek to somewhere near the last page */
 	if (io_file_size(data->stream) > 10000) {
@@ -464,8 +464,7 @@ static void spx_info (const char *file_name, struct file_tags *tags,
 static int spx_seek (void *prv_data ATTR_UNUSED, int sec)
 {
 	struct spx_data *data = (struct spx_data *)prv_data;
-	ssize_t begin = 0, end;
-	size_t old_pos;
+	off_t begin = 0, end, old_pos;
 
 	assert (sec >= 0);
 
@@ -477,11 +476,11 @@ static int spx_seek (void *prv_data ATTR_UNUSED, int sec)
 	debug ("Seek request to %ds", sec);
 
 	while (1) {
-		ssize_t middle = (end + begin) / 2;
-		size_t granule_pos;
+		off_t middle = (end + begin) / 2;
+		ogg_int64_t granule_pos;
 		int position_seconds;
 
-		debug ("Seek to %ld", (long)middle);
+		debug ("Seek to %"PRId64, middle);
 
 		if (io_seek(data->stream, middle, SEEK_SET) == -1) {
 			io_seek (data->stream, old_pos, SEEK_SET);
@@ -518,8 +517,7 @@ static int spx_seek (void *prv_data ATTR_UNUSED, int sec)
 
 		if (position_seconds == sec) {
 			ogg_stream_pagein (&data->os, &data->og);
-			debug ("We have it at granulepos %ld",
-					(long)granule_pos);
+			debug ("We have it at granulepos %"PRId64, granule_pos);
 			break;
 		}
 		else if (sec < position_seconds) {
@@ -531,7 +529,7 @@ static int spx_seek (void *prv_data ATTR_UNUSED, int sec)
 			debug ("going forward");
 		}
 
-		debug ("begin - end %ld - %ld", (long)begin, (long)end);
+		debug ("begin - end %"PRId64" - %"PRId64, begin, end);
 
 		if (end - begin <= 200) {
 
@@ -616,7 +614,7 @@ static int spx_decode (void *prv_data, char *sound_buf, int nbytes,
 
 			/* Read in another ogg page */
 			ogg_stream_pagein (&data->os, &data->og);
-			debug ("Granulepos: %d", (int)ogg_page_granulepos(&data->og));
+			debug ("Granulepos: %"PRId64, ogg_page_granulepos(&data->og));
 
 		}
 		else if (!io_eof(data->stream)) {

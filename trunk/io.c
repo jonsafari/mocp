@@ -27,6 +27,7 @@
 #include <strings.h>
 #include <assert.h>
 #include <pthread.h>
+#include <inttypes.h>
 
 #ifdef HAVE_MMAP
 # include <sys/mman.h>
@@ -58,22 +59,22 @@ static ssize_t io_read_mmap (struct io_stream *s, const int dont_move,
 		return -1;
 	}
 
-	if (s->size != (size_t)file_stat.st_size) {
+	if (s->size != file_stat.st_size) {
 		logit ("File size has changed");
 
-		if (munmap(s->mem, s->size)) {
+		if (munmap (s->mem, (size_t)s->size)) {
 			logit ("munmap() failed: %s", strerror(errno));
 			return -1;
 		}
 
 		s->size = file_stat.st_size;
-		if ((s->mem = mmap(0, s->size, PROT_READ, MAP_SHARED, s->fd, 0))
-					== MAP_FAILED) {
+		s->mem = mmap (0, (size_t)s->size, PROT_READ, MAP_SHARED, s->fd, 0);
+		if (s->mem == MAP_FAILED) {
 			logit ("mmap() failed: %s", strerror(errno));
 			return -1;
 		}
 
-		logit ("mmap()ed %lu bytes", (unsigned long)s->size);
+		logit ("mmap()ed %"PRId64" bytes", s->size);
 		if (s->mem_pos > s->size) {
 			logit ("File shrunk");
 			return 0;
@@ -83,7 +84,7 @@ static ssize_t io_read_mmap (struct io_stream *s, const int dont_move,
 	if (s->mem_pos >= s->size)
 		return 0;
 
-	to_read = MIN(count, s->size - s->mem_pos);
+	to_read = MIN(count, (size_t) (s->size - s->mem_pos));
 	memcpy (buf, s->mem + s->mem_pos, to_read);
 
 	if (!dont_move)
@@ -143,7 +144,7 @@ static ssize_t io_internal_read (struct io_stream *s, const int dont_move,
 #ifdef HAVE_MMAP
 static off_t io_seek_mmap (struct io_stream *s, const off_t where)
 {
-	assert (RANGE(0, where, (off_t)s->size));
+	assert (LIMIT(where, s->size));
 
 	return (s->mem_pos = where);
 }
@@ -207,16 +208,16 @@ off_t io_seek (struct io_stream *s, off_t offset, int whence)
 	LOCK (s->io_mutex);
 	switch (whence) {
 		case SEEK_SET:
-			if (LIMIT(offset, (off_t)s->size))
+			if (LIMIT(offset, s->size))
 				new_pos = offset;
 			break;
 		case SEEK_CUR:
-			if ((ssize_t)s->pos + offset >= 0
-					&& s->pos + offset < s->size)
+			if (LIMIT(s->pos + offset, s->size))
 				new_pos = s->pos + offset;
 			break;
 		case SEEK_END:
-			new_pos = s->size + offset;
+			if (offset == 0 || LIMIT(s->size + offset, s->size))
+				new_pos = s->size + offset;
 			break;
 		default:
 			fatal ("Bad whence value: %d", whence);
@@ -232,7 +233,7 @@ off_t io_seek (struct io_stream *s, off_t offset, int whence)
 	UNLOCK (s->io_mutex);
 
 	if (res != -1)
-		debug ("Seek to: %lu", (unsigned long)res);
+		debug ("Seek to: %"PRId64, res);
 	else
 		logit ("Seek error");
 
@@ -286,7 +287,7 @@ void io_close (struct io_stream *s)
 
 #ifdef HAVE_MMAP
 		if (s->source == IO_SOURCE_MMAP) {
-			if (s->mem && munmap(s->mem, s->size))
+			if (s->mem && munmap (s->mem, (size_t)s->size))
 				logit ("munmap() failed: %s", strerror(errno));
 			close (s->fd);
 		}
@@ -353,7 +354,7 @@ static void *io_read_thread (void *data)
 
 		read_buf_fill = io_internal_read (s, 0, read_buf, sizeof(read_buf));
 		UNLOCK (s->io_mutex);
-		debug ("Read %d bytes", (int)read_buf_fill);
+		debug ("Read %d bytes", read_buf_fill);
 
 		LOCK (s->buf_mutex);
 
@@ -441,16 +442,14 @@ static void io_open_file (struct io_stream *s, const char *file)
 
 #ifdef HAVE_MMAP
 		if (options_get_int("UseMmap") && s->size > 0) {
-			if ((s->mem = mmap(0, s->size, PROT_READ, MAP_SHARED,
-							s->fd, 0))
-					== MAP_FAILED) {
+			s->mem = mmap (0, (size_t)s->size, PROT_READ, MAP_SHARED, s->fd, 0);
+			if (s->mem == MAP_FAILED) {
 				s->mem = NULL;
 				logit ("mmap() failed: %s", strerror(errno));
 				s->source = IO_SOURCE_FD;
 			}
 			else {
-				logit ("mmap()ed %lu bytes",
-						(unsigned long)s->size);
+				logit ("mmap()ed %"PRId64" bytes", s->size);
 				s->source = IO_SOURCE_MMAP;
 				s->mem_pos = 0;
 			}
@@ -697,7 +696,7 @@ char *io_strerror (struct io_stream *s)
 }
 
 /* Get the file size if available or -1. */
-ssize_t io_file_size (const struct io_stream *s)
+off_t io_file_size (const struct io_stream *s)
 {
 	assert (s != NULL);
 
@@ -705,9 +704,9 @@ ssize_t io_file_size (const struct io_stream *s)
 }
 
 /* Return the stream position. */
-long io_tell (struct io_stream *s)
+off_t io_tell (struct io_stream *s)
 {
-	long res = -1;
+	off_t res = -1;
 
 	assert (s != NULL);
 
@@ -719,7 +718,7 @@ long io_tell (struct io_stream *s)
 	else
 		res = s->pos;
 
-	debug ("We are at byte %ld", res);
+	debug ("We are at byte %"PRId64, res);
 
 	return res;
 }

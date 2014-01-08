@@ -274,7 +274,7 @@ static FLAC__StreamDecoderLengthStatus length_callback (
 		FLAC__uint64 *stream_length, void *client_data)
 #endif
 {
-	ssize_t file_size;
+	off_t file_size;
 	struct flac_data *data = (struct flac_data *)client_data;
 
 	file_size = io_file_size (data->stream);
