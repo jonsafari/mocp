@@ -3002,7 +3002,7 @@ static void run_external_cmd (char **args, const int arg_num ATTR_UNUSED)
 			fprintf (stderr, "\nError executing %s: %s\n", args[0],
 					strerror(errno));
 			sleep (2);
-			exit (1);
+			exit (EXIT_FAILURE);
 		}
 
 		/* parent */
