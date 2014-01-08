@@ -53,7 +53,7 @@ static size_t write_callback (void *data, size_t size, size_t nmemb,
 	size_t data_size = size * nmemb;
 
 	s->curl.buf_fill += data_size;
-	debug ("Got %lu bytes", (unsigned long)data_size);
+	debug ("Got %zu bytes", data_size);
 	s->curl.buf = (char *)xrealloc (s->curl.buf, s->curl.buf_fill);
 	memcpy (s->curl.buf + buf_start, data, data_size);
 
@@ -133,8 +133,7 @@ static size_t header_callback (void *data, size_t size, size_t nmemb,
 			logit ("Bad icy-metaint value");
 		}
 		else
-			debug ("Icy metadata interval: %ld",
-					(long)s->curl.icy_meta_int);
+			debug ("Icy metadata interval: %zu", s->curl.icy_meta_int);
 	}
 
 	free (header);
@@ -585,8 +584,7 @@ ssize_t io_curl_read (struct io_stream *s, char *buf, size_t count)
 		if (s->curl.icy_meta_int)
 			s->curl.icy_meta_count += res;
 		nread += res;
-		debug ("Read %d bytes from the buffer (%d bytes full)",
-				(int)res, (int)nread);
+		debug ("Read %zu bytes from the buffer (%zu bytes full)", res, nread);
 
 		if (nread < count && !curl_read_internal(s))
 			return -1;

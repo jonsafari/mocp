@@ -79,73 +79,26 @@ struct sidplay2_data
 
 #endif
 
-
 #ifdef __cplusplus
-  extern "C"
+extern "C" {
 #endif
-void *sidplay2_open(const char *file);
 
-
-#ifdef __cplusplus
-  extern "C"
-#endif
-void sidplay2_close(void *void_data);
-
-#ifdef __cplusplus
-  extern "C"
-#endif
+void *sidplay2_open (const char *file);
+void sidplay2_close (void *void_data);
 void sidplay2_get_error (void *prv_data, struct decoder_error *error);
-
-
-#ifdef __cplusplus
-  extern "C"
-#endif
 void sidplay2_info (const char *file_name, struct file_tags *info,
 		const int tags_sel);
-
-#ifdef __cplusplus
-  extern "C"
-#endif
 int sidplay2_seek (void *void_data ATTR_UNUSED, int sec ATTR_UNUSED);
-
-#ifdef __cplusplus
-  extern "C"
-#endif
 int sidplay2_decode (void *void_data, char *buf, int buf_len,
 		struct sound_params *sound_params);
-
-#ifdef __cplusplus
-  extern "C"
-#endif
 int sidplay2_get_bitrate (void *void_data ATTR_UNUSED);
-
-#ifdef __cplusplus
-  extern "C"
-#endif
 int sidplay2_get_duration (void *void_data);
-
-#ifdef __cplusplus
-  extern "C"
-#endif
 void sidplay2_get_name (const char *file, char buf[4]);
-
-#ifdef __cplusplus
-  extern "C"
-#endif
-int sidplay2_our_format_ext(const char *ext);
-
-#ifdef __cplusplus
-  extern "C"
-#endif
-void destroy();
-
-#ifdef __cplusplus
-  extern "C"
-#endif
-void init();
-
-#ifdef __cplusplus
-  extern "C"
-#endif
+int sidplay2_our_format_ext (const char *ext);
+void destroy ();
+void init ();
 decoder *plugin_init ();
 
+#ifdef __cplusplus
+}
+#endif

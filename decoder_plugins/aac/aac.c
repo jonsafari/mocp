@@ -67,7 +67,7 @@ static void *buffer_data (struct aac_data *data)
 
 static int buffer_fill (struct aac_data *data)
 {
-	int32_t n;
+	ssize_t n;
 
 	if (data->rbuf_pos > 0) {
 		data->rbuf_len = buffer_length (data);
@@ -157,7 +157,7 @@ static int buffer_fill_frame(struct aac_data *data)
 		for (n = 0; n < len - 5; n++) {
 			/* give up after 32KB */
 			if (max-- == 0) {
-				logit ("no frame found!\n");
+				logit ("no frame found!");
 				/* FIXME: set errno? */
 				return -1;
 			}

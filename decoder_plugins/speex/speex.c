@@ -124,7 +124,7 @@ static int read_speex_header (struct spx_data *data)
 	int packet_count = 0;
 	int stream_init = 0;
 	char *buf;
-	int nb_read;
+	ssize_t nb_read;
 	int header_packets = 2;
 
 	while (packet_count < header_packets) {
@@ -163,8 +163,7 @@ static int read_speex_header (struct spx_data *data)
 			ogg_stream_pagein (&data->os, &data->og);
 
 			/* Extract all available packets FIXME: EOS! */
-			while (ogg_stream_packetout(&data->os, &data->op)
-					== 1) {
+			while (ogg_stream_packetout(&data->os, &data->op) == 1) {
 
 				/* If first packet, process as Speex header */
 				if (packet_count == 0) {
@@ -391,6 +390,16 @@ static void get_comments (struct spx_data *data, struct file_tags *tags)
 	}
 }
 
+static void get_more_data (struct spx_data *data)
+{
+	char *buf;
+	ssize_t nb_read;
+
+	buf = ogg_sync_buffer (&data->oy, 200);
+	nb_read = io_read (data->stream, buf, 200);
+	ogg_sync_wrote (&data->oy, nb_read);
+}
+
 static int count_time (struct spx_data *data)
 {
 	unsigned long last_granulepos = 0;
@@ -408,18 +417,14 @@ static int count_time (struct spx_data *data)
 
 		/* Sync to page and read it */
 		while (!io_eof(data->stream)) {
-			char *buf;
-			int nb_read;
-
 			if (ogg_sync_pageout(&data->oy, &data->og) == 1) {
 				debug ("Sync");
 				break;
 			}
-			else if (!io_eof(data->stream)) {
+
+			if (!io_eof(data->stream)) {
 				debug ("Need more data");
-				buf = ogg_sync_buffer (&data->oy, 200);
-				nb_read = io_read (data->stream, buf, 200);
-				ogg_sync_wrote (&data->oy, nb_read);
+				get_more_data (data);
 			}
 		}
 
@@ -490,18 +495,14 @@ static int spx_seek (void *prv_data ATTR_UNUSED, int sec)
 		/* Sync to page and read it */
 		ogg_sync_reset (&data->oy);
 		while (!io_eof(data->stream)) {
-			char *buf;
-			int nb_read;
-
 			if (ogg_sync_pageout(&data->oy, &data->og) == 1) {
 				debug ("Sync");
 				break;
 			}
-			else if (!io_eof(data->stream)) {
+
+			if (!io_eof(data->stream)) {
 				debug ("Need more data");
-				buf = ogg_sync_buffer (&data->oy, 200);
-				nb_read = io_read (data->stream, buf, 200);
-				ogg_sync_wrote (&data->oy, nb_read);
+				get_more_data (data);
 			}
 		}
 
@@ -558,8 +559,7 @@ static int spx_decode (void *prv_data, char *sound_buf, int nbytes,
 	sound_params->fmt = SFMT_S16 | SFMT_NE;
 
 	while (nbytes) {
-		char *buf;
-		int j, nb_read;
+		int j;
 
 		/* First see if there is anything left in the output buffer and
 		 * empty it out */
@@ -620,18 +620,8 @@ static int spx_decode (void *prv_data, char *sound_buf, int nbytes,
 
 		}
 		else if (!io_eof(data->stream)) {
-
-			/* Finally, pull in some more data and try again on the
-			 * next pass */
-
-			/* Get the ogg buffer for writing */
-			buf = ogg_sync_buffer (&data->oy, 200);
-
-			/* Read bitstream from input file */
-			nb_read = io_read (data->stream, buf, 200);
-
-			ogg_sync_wrote (&data->oy, nb_read);
-			/*data->bytes_read += nb_read;*/
+			/* Finally, pull in some more data and try again on the next pass */
+			get_more_data (data);
 		}
 		else
 			break;
