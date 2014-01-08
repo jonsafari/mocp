@@ -155,7 +155,7 @@ static void theme_parse_error (const int line, const char *msg)
 /* Find the index of a color element by name. Return CLR_WRONG if not found. */
 static enum color_index find_color_element_name (const char *name)
 {
-	unsigned int i;
+	size_t ix;
 	static struct
 	{
 		char *name;
@@ -200,9 +200,9 @@ static enum color_index find_color_element_name (const char *name)
 
 	assert (name != NULL);
 
-	for (i = 0; i < (sizeof(color_tab)/sizeof(color_tab[0])); i++) {
-		if (!strcasecmp(color_tab[i].name, name))
-			return color_tab[i].idx;
+	for (ix = 0; ix < ARRAY_SIZE(color_tab); ix += 1) {
+		if (!strcasecmp(color_tab[ix].name, name))
+			return color_tab[ix].idx;
 	}
 
 	return CLR_WRONG;
@@ -211,7 +211,7 @@ static enum color_index find_color_element_name (const char *name)
 /* Find the curses color by name. Return -1 if the color is unknown. */
 static short find_color_name (const char *name)
 {
-	unsigned int i;
+	size_t ix;
 	static struct
 	{
 		char *name;
@@ -229,9 +229,9 @@ static short find_color_name (const char *name)
 		{ "grey",	COLOR_GREY }
 	};
 
-	for (i = 0; i < (sizeof(color_tab)/sizeof(color_tab[0])); i++) {
-		if (!strcasecmp(color_tab[i].name, name))
-			return color_tab[i].color;
+	for (ix = 0; ix < ARRAY_SIZE(color_tab); ix += 1) {
+		if (!strcasecmp(color_tab[ix].name, name))
+			return color_tab[ix].color;
 	}
 
 	return -1;

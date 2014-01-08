@@ -62,7 +62,7 @@ static const struct {
 	{ "speaker", SOUND_MIXER_SPEAKER }
 };
 
-#define MIXER_CHANNELS_NUM	(sizeof(mixer_channels)/sizeof(mixer_channels[0]))
+#define MIXER_CHANNELS_NUM	(ARRAY_SIZE(mixer_channels))
 
 static int open_dev ()
 {
@@ -178,11 +178,11 @@ static int oss_read_mixer ()
 
 static int oss_mixer_name_to_channel (const char *name)
 {
-	unsigned int i;
+	size_t ix;
 
-	for (i = 0; i < MIXER_CHANNELS_NUM; i++) {
-		if (!strcasecmp (mixer_channels[i].name, name))
-			return i;
+	for (ix = 0; ix < MIXER_CHANNELS_NUM; ix += 1) {
+		if (!strcasecmp (mixer_channels[ix].name, name))
+			return ix;
 	}
 
 	return -1;

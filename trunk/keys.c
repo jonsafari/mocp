@@ -884,8 +884,8 @@ static struct special_keys
 	{ "F12",		KEY_F(12) }
 };
 
-#define COMMANDS_NUM		(sizeof(commands)/sizeof(commands[0]))
-#define SPECIAL_KEYS_NUM	(sizeof(special_keys)/sizeof(special_keys[0]))
+#define COMMANDS_NUM		(ARRAY_SIZE(commands))
+#define SPECIAL_KEYS_NUM	(ARRAY_SIZE(special_keys))
 
 /* Number of chars from the left where the help message starts
  * (skipping the key list). */
@@ -1041,8 +1041,7 @@ static void add_key (const int line_num, size_t cmd_ix, const char *key_symbol)
 			return;
 	}
 
-	if (i == sizeof(commands[cmd_ix].keys)
-			/sizeof(commands[cmd_ix].keys[0]) - 1)
+	if (i == ARRAY_SIZE(commands[cmd_ix].keys) - 1)
 		keymap_parse_error (line_num, "too many keys defined");
 
 	commands[cmd_ix].keys[i] = key;

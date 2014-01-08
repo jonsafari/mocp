@@ -1384,12 +1384,12 @@ static char *side_menu_get_curr_file (const struct side_menu *m)
 static struct side_menu *find_side_menu (struct main_win *w,
 		const enum side_menu_type type)
 {
-	int i;
+	size_t ix;
 
 	assert (w != NULL);
 
-	for (i = 0; i < (int)ARRAY_SIZE(w->menus); i++) {
-		struct side_menu *m = &w->menus[i];
+	for (ix = 0; ix < ARRAY_SIZE(w->menus); ix += 1) {
+		struct side_menu *m = &w->menus[ix];
 
 		if (m->visible && m->type == type)
 			return m;
@@ -1813,7 +1813,7 @@ static void main_win_draw_lyrics_screen (const struct main_win *w)
 
 static void main_win_draw (struct main_win *w)
 {
-	int i;
+	size_t ix;
 
 	if (w->in_help)
 		main_win_draw_help_screen (w);
@@ -1825,9 +1825,9 @@ static void main_win_draw (struct main_win *w)
 		werase (w->win);
 
 		/* Draw all visible menus.  Draw the selected menu last. */
-		for (i = 0; i < (int)ARRAY_SIZE(w->menus); i++)
-			if (w->menus[i].visible && i != w->selected_menu)
-				side_menu_draw (&w->menus[i], 0);
+		for (ix = 0; ix < ARRAY_SIZE(w->menus); ix += 1)
+			if (w->menus[ix].visible && ix != (size_t)w->selected_menu)
+				side_menu_draw (&w->menus[ix], 0);
 
 		side_menu_draw (&w->menus[w->selected_menu], 1);
 	}
@@ -1899,20 +1899,20 @@ static void main_win_update_dir_content (struct main_win *w,
 static void main_win_switch_to (struct main_win *w,
 		const enum side_menu_type menu)
 {
-	int i;
+	size_t ix;
 
 	assert (w != NULL);
 
 	if (w->selected_menu == 2) /* if the themes menu is selected */
 		side_menu_destroy (&w->menus[2]);
 
-	for (i = 0; i < (int)ARRAY_SIZE(w->menus); i++)
-		if (w->menus[i].type == menu) {
-			w->selected_menu = i;
+	for (ix = 0; ix < ARRAY_SIZE(w->menus); ix += 1)
+		if (w->menus[ix].type == menu) {
+			w->selected_menu = ix;
 			break;
 		}
 
-	assert (i < (int)ARRAY_SIZE(w->menus));
+	assert (ix < ARRAY_SIZE(w->menus));
 
 	main_win_draw (w);
 }
@@ -2034,7 +2034,7 @@ static void main_win_update_item (struct main_win *w,
 /* Mark the played file on all lists of files or unmark it when file is NULL. */
 static void main_win_set_played_file (struct main_win *w, const char *file)
 {
-	int i;
+	size_t ix;
 
 	assert (w != NULL);
 
@@ -2042,8 +2042,8 @@ static void main_win_set_played_file (struct main_win *w, const char *file)
 		free (w->curr_file);
 	w->curr_file = xstrdup (file);
 
-	for (i = 0; i < (int)ARRAY_SIZE(w->menus); i++) {
-		struct side_menu *m = &w->menus[i];
+	for (ix = 0; ix < ARRAY_SIZE(w->menus); ix += 1) {
+		struct side_menu *m = &w->menus[ix];
 
 		if (m->visible && (m->type == MENU_DIR
 					|| m->type == MENU_PLAYLIST)) {
@@ -2315,16 +2315,16 @@ static void main_win_make_visible (struct main_win *w,
 
 static void main_win_update_show_time (struct main_win *w)
 {
-	int i;
+	size_t ix;
 
 	assert (w != NULL);
 
-	for (i = 0; i < (int)ARRAY_SIZE(w->menus); i++) {
-		struct side_menu *m = &w->menus[i];
+	for (ix = 0; ix < ARRAY_SIZE(w->menus); ix += 1) {
+		struct side_menu *m = &w->menus[ix];
 
 		if (m->visible && (m->type == MENU_DIR
 					|| m->type == MENU_PLAYLIST))
-			side_menu_update_show_time (&w->menus[i]);
+			side_menu_update_show_time (&w->menus[ix]);
 	}
 
 	main_win_draw (w);
@@ -2341,16 +2341,16 @@ static void main_win_select_file (struct main_win *w, const char *file)
 
 static void main_win_update_show_format (struct main_win *w)
 {
-	int i;
+	size_t ix;
 
 	assert (w != NULL);
 
-	for (i = 0; i < (int)ARRAY_SIZE(w->menus); i++) {
-		struct side_menu *m = &w->menus[i];
+	for (ix = 0; ix < ARRAY_SIZE(w->menus); ix += 1) {
+		struct side_menu *m = &w->menus[ix];
 
 		if (m->visible && (m->type == MENU_DIR
 					|| m->type == MENU_PLAYLIST))
-			side_menu_update_show_format (&w->menus[i]);
+			side_menu_update_show_format (&w->menus[ix]);
 	}
 
 	main_win_draw (w);
