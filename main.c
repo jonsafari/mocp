@@ -183,7 +183,7 @@ static void start_moc (const struct parameters *params, lists_t_strs *args)
 				files_cleanup ();
 				rcc_cleanup ();
 				compat_cleanup ();
-				exit (0);
+				exit (EXIT_SUCCESS);
 			case -1:
 				fatal ("fork() failed: %s", strerror(errno));
 			default:
@@ -628,10 +628,10 @@ static lists_t_strs *process_command_line (int argc, char *argv[],
 		switch (ret) {
 			case 'V':
 				show_version ();
-				exit (0);
+				exit (EXIT_SUCCESS);
 			case 'h':
 				show_usage (argv[0]);
-				exit (0);
+				exit (EXIT_SUCCESS);
 #ifndef NDEBUG
 			case 'D':
 				params->debug = 1;
@@ -747,7 +747,7 @@ static lists_t_strs *process_command_line (int argc, char *argv[],
 						}
 				//TODO: Add message explaining the error
 				show_usage (argv[0]);
-				exit (1);
+				exit (EXIT_FAILURE);
 			case 'v' :
 				params->adj_volume = optarg;
 				params->dont_run_iface = 1;
@@ -771,7 +771,7 @@ static lists_t_strs *process_command_line (int argc, char *argv[],
 				break;
 			default:
 				show_usage (argv[0]);
-				exit (1);
+				exit (EXIT_FAILURE);
 		}
 	}
 
@@ -859,5 +859,5 @@ int main (int argc, char *argv[])
 	files_cleanup ();
 	compat_cleanup ();
 
-	return 0;
+	exit (EXIT_SUCCESS);
 }
