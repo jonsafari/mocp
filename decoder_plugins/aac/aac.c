@@ -190,8 +190,7 @@ static int aac_count_time (struct aac_data *data)
 {
 	NeAACDecFrameInfo frame_info;
 	int samples = 0, bytes = 0, frames = 0;
-	off_t file_size;
-	long saved_pos;
+	off_t file_size, saved_pos;
 
 	file_size = io_file_size (data->stream);
 	if (file_size == -1)
@@ -217,7 +216,7 @@ static int aac_count_time (struct aac_data *data)
 		buffer_consume (data, frame_info.bytesconsumed);
 	}
 
-	if (io_seek(data->stream, saved_pos, SEEK_SET) == (off_t)-1) {
+	if (io_seek(data->stream, saved_pos, SEEK_SET) == -1) {
 		logit ("Can't seek after counting time");
 		return -1;
 	}
@@ -312,7 +311,7 @@ static void *aac_open_internal (struct io_stream *stream, const char *fname)
 	/*NeAACDecInitDRM(data->decoder, data->sample_rate, data->channels);*/
 
 	if (fname) {
-		ssize_t file_size;
+		off_t file_size;
 
 		data->duration = aac_count_time (data);
 		file_size = io_file_size (data->stream);

@@ -110,7 +110,7 @@ static mpc_int32_t tell_callback (mpc_reader *t)
 
 	debug ("tell callback");
 
-	return io_tell (data->stream);
+	return (mpc_int32_t)io_tell (data->stream);
 }
 
 #ifdef MPC_IS_OLD_API
@@ -127,7 +127,7 @@ static mpc_int32_t get_size_callback (mpc_reader *t)
 
 	debug ("size callback");
 
-	return io_file_size (data->stream);
+	return (mpc_int32_t)io_file_size (data->stream);
 }
 
 #ifdef MPC_IS_OLD_API

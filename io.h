@@ -64,7 +64,7 @@ struct io_stream
 {
 	enum io_source source;	/* source of the file */
 	int fd;
-	size_t size;	/* size of the file */
+	off_t size;	/* size of the file */
 	int errno_val;	/* errno value of the last operation  - 0 if ok */
 	int read_error; /* set to != 0 if the last read operation dailed */
 	char *strerror;	/* error string */
@@ -72,14 +72,14 @@ struct io_stream
 	int eof;	/* was the end of file reached? */
 	int after_seek;	/* are we after seek and need to do fresh read()? */
 	int buffered;	/* are we using the buffer? */
-	size_t pos;	/* current position in the file from the user point of
+	off_t pos;	/* current position in the file from the user point of
 			   view */
 	size_t prebuffer;	/* number of bytes left to prebuffer */
 	pthread_mutex_t io_mutex;	/* mutex for IO operations */
 
 #ifdef HAVE_MMAP
 	void *mem;
-	size_t mem_pos;
+	off_t mem_pos;
 #endif
 
 #ifdef HAVE_CURL
@@ -113,8 +113,8 @@ off_t io_seek (struct io_stream *s, off_t offset, int whence);
 void io_close (struct io_stream *s);
 int io_ok (struct io_stream *s);
 char *io_strerror (struct io_stream *s);
-ssize_t io_file_size (const struct io_stream *s);
-long io_tell (struct io_stream *s);
+off_t io_file_size (const struct io_stream *s);
+off_t io_tell (struct io_stream *s);
 int io_eof (struct io_stream *s);
 void io_init ();
 void io_cleanup ();
