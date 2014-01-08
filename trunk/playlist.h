@@ -9,13 +9,6 @@
 extern "C" {
 #endif
 
-/* Allow for 32-bit and 64-bit machines. */
-#if SIZEOF_VOID_P == 8
-typedef long plist_t_item_ix;
-#else
-typedef int plist_t_item_ix;
-#endif
-
 /* Flags for the info decoder function. */
 enum tags_select
 {
@@ -57,7 +50,7 @@ struct plist_item
 
 struct plist
 {
-	plist_t_item_ix num;	/* Number of elements on the list */
+	int num;			/* Number of elements on the list */
 	int allocated;		/* Number of allocated elements */
 	int not_deleted;	/* Number of non-deleted items */
 	struct plist_item *items;
@@ -92,8 +85,7 @@ void plist_set_title_tags (struct plist *plist, const int num,
 		const char *title);
 void plist_set_title_file (struct plist *plist, const int num,
 		const char *title);
-void plist_set_file (struct plist *plist, const plist_t_item_ix num,
-		const char *file);
+void plist_set_file (struct plist *plist, const int num, const char *file);
 int plist_deleted (const struct plist *plist, const int num);
 void plist_cat (struct plist *a, struct plist *b);
 void update_file (struct plist_item *item);
