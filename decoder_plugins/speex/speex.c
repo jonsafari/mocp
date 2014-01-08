@@ -18,12 +18,7 @@
 
 #include <string.h>
 #include <strings.h>
-#ifdef HAVE_STDINT_H
-# include <stdint.h>
-#endif
-#ifdef HAVE_INTTYPES_H
-# include <inttypes.h>
-#endif
+#include <stdint.h>
 #include <assert.h>
 #include <speex/speex.h>
 #include <speex/speex_header.h>
