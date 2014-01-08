@@ -34,7 +34,7 @@ static struct plugin {
 	struct decoder *decoder;
 } plugins[16];
 
-#define PLUGINS_NUM			(sizeof(plugins)/sizeof(plugins[0]))
+#define PLUGINS_NUM			(ARRAY_SIZE(plugins))
 
 static int plugins_num = 0;
 
