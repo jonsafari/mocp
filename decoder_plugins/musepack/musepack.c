@@ -207,9 +207,17 @@ static void *musepack_open (const char *file)
 				"Can't open file: %s",
 				io_strerror(data->stream));
 		io_close (data->stream);
+		return data;
 	}
-	else
-		musepack_open_stream_internal (data);
+
+	/* This a restriction placed on us by the Musepack API. */
+	if (io_file_size (data->stream) > INT32_MAX) {
+		decoder_error (&data->error, ERROR_FATAL, 0, "File too large!");
+		io_close (data->stream);
+		return data;
+	}
+
+	musepack_open_stream_internal (data);
 
 	return data;
 }

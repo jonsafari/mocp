@@ -24,6 +24,7 @@
 
 #include <ctype.h> // for toupper
 #include <string.h>
+#include <limits.h>
 #include <assert.h>
 #include <libmodplug/modplug.h>
 
@@ -120,8 +121,9 @@ static struct modplug_data *make_modplug_data(const char *file) {
 
   off_t size = io_file_size(s);
 
-  if (size == -1) {
-    decoder_error(&data->error, ERROR_FATAL, 0, "Can't load module: %s", file);
+  if (!RANGE(1, size, INT_MAX)) {
+    decoder_error(&data->error, ERROR_FATAL, 0,
+                  "Module size unsuitable for loading: %s", file);
     return data;
   }
 

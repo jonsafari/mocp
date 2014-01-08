@@ -13,6 +13,7 @@
 #include "config.h"
 #endif
 
+#include <limits.h>
 #include <inttypes.h>
 #include <string.h>
 #include <strings.h>
@@ -260,9 +261,17 @@ static void *vorbis_open (const char *file)
 		decoder_error (&data->error, ERROR_FATAL, 0,
 		               "Can't load OGG: %s", io_strerror(data->stream));
 		io_close (data->stream);
+		return data;
 	}
-	else
-		vorbis_open_stream_internal (data);
+
+	/* This a restriction placed on us by the vorbisfile API. */
+	if (io_file_size (data->stream) > LONG_MAX) {
+		decoder_error (&data->error, ERROR_FATAL, 0, "File too large!");
+		io_close (data->stream);
+		return data;
+	}
+
+	vorbis_open_stream_internal (data);
 
 	return data;
 }
