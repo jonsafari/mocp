@@ -366,14 +366,15 @@ void plist_sort_fname (struct plist *plist)
 		x = rb_next (x);
 
 	sorted[0] = plist->items[(plist_t_item_ix)x->data];
-	x->data = (void *)0;
+	x->data = NULL;
 
 	n = 1;
-	while (!rb_is_null(x = rb_next(x)))
+	while (!rb_is_null(x = rb_next(x))) {
 		if (!plist_deleted(plist, (plist_t_item_ix)x->data)) {
 			sorted[n] = plist->items[(plist_t_item_ix)x->data];
 			x->data = (void *)n++;
 		}
+	}
 
 	plist->num = n;
 	plist->not_deleted = n;
@@ -812,7 +813,7 @@ void plist_swap_first_fname (struct plist *plist, const char *fname)
 		rb_delete (&plist->search_tree, fname);
 		rb_delete (&plist->search_tree, plist->items[0].file);
 		plist_swap (plist, 0, i);
-		rb_insert (&plist->search_tree, (void *)0);
+		rb_insert (&plist->search_tree, NULL);
 		rb_insert (&plist->search_tree, (void *)i);
 	}
 }

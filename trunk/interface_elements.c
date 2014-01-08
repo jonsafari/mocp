@@ -1810,6 +1810,7 @@ static void main_win_draw_lyrics_screen (const struct main_win *w)
 	}
 	lists_strs_free (lyrics_array);
 }
+
 static void main_win_draw (struct main_win *w)
 {
 	int i;

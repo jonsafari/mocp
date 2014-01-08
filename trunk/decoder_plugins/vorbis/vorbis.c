@@ -257,8 +257,7 @@ static void *vorbis_open (const char *file)
 	data->stream = io_open (file, 1);
 	if (!io_ok(data->stream)) {
 		decoder_error (&data->error, ERROR_FATAL, 0,
-				"Can't load OGG: %s",
-				io_strerror(data->stream));
+		               "Can't load OGG: %s", io_strerror(data->stream));
 		io_close (data->stream);
 	}
 	else
@@ -339,7 +338,7 @@ static int vorbis_decode (void *prv_data, char *buf, int buf_len,
 			return 0;
 		if (ret < 0) {
 			decoder_error (&data->error, ERROR_STREAM, 0,
-					"Error in the stream!");
+			               "Error in the stream!");
 			continue;
 		}
 

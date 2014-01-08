@@ -54,7 +54,7 @@ static ssize_t io_read_mmap (struct io_stream *s, const int dont_move,
 	assert (s->mem != NULL);
 
 	if (fstat(s->fd, &file_stat) == -1) {
-		logit ("stat() failed: %s", strerror(errno));
+		logit ("fstat() failed: %s", strerror(errno));
 		return -1;
 	}
 
@@ -196,8 +196,7 @@ static off_t io_seek_unbuffered (struct io_stream *s, const off_t where)
 
 off_t io_seek (struct io_stream *s, off_t offset, int whence)
 {
-	off_t res;
-	off_t new_pos = 0;
+	off_t res, new_pos = 0;
 
 	assert (s != NULL);
 	assert (s->opened);
@@ -352,8 +351,7 @@ static void *io_read_thread (void *data)
 		s->after_seek = 0;
 		UNLOCK (s->buf_mutex);
 
-		read_buf_fill = io_internal_read (s, 0, read_buf,
-				sizeof(read_buf));
+		read_buf_fill = io_internal_read (s, 0, read_buf, sizeof(read_buf));
 		UNLOCK (s->io_mutex);
 		debug ("Read %d bytes", (int)read_buf_fill);
 
@@ -365,7 +363,6 @@ static void *io_read_thread (void *data)
 		}
 
 		if (read_buf_fill < 0) {
-
 			s->errno_val = errno;
 			s->read_error = 1;
 			logit ("Exiting due to read error.");
@@ -387,10 +384,9 @@ static void *io_read_thread (void *data)
 		s->eof = 0;
 
 		while (read_buf_pos < read_buf_fill && !s->after_seek) {
-			int put;
+			size_t put;
 
-			debug ("Buffer fill: %lu", (unsigned long)
-					fifo_buf_get_fill(&s->buf));
+			debug ("Buffer fill: %zu", fifo_buf_get_fill (&s->buf));
 
 			put = fifo_buf_put (&s->buf,
 					read_buf + read_buf_pos,
@@ -400,7 +396,7 @@ static void *io_read_thread (void *data)
 				break;
 
 			if (put > 0) {
-				debug ("Put %d bytes into the buffer", put);
+				debug ("Put %zu bytes into the buffer", put);
 				if (s->buf_fill_callback) {
 					UNLOCK (s->buf_mutex);
 					s->buf_fill_callback (s,
@@ -562,7 +558,7 @@ static ssize_t io_peek_internal (struct io_stream *s, void *buf, size_t count)
 	}
 
 	received = fifo_buf_peek (&s->buf, buf, count);
-	debug ("Read %d bytes", (int)received);
+	debug ("Read %zd bytes", received);
 
 	UNLOCK (s->buf_mutex);
 
@@ -573,13 +569,12 @@ static ssize_t io_peek_internal (struct io_stream *s, void *buf, size_t count)
  * occurs which prevents prebuffering. */
 void io_prebuffer (struct io_stream *s, const size_t to_fill)
 {
-	logit ("prebuffering to %lu bytes...", (unsigned long)to_fill);
+	logit ("prebuffering to %zu bytes...", to_fill);
 
 	LOCK (s->buf_mutex);
 	while (io_ok_nolock(s) && !s->stop_read_thread && !s->eof
-			&& to_fill > fifo_buf_get_fill(&s->buf)) {
-		debug ("waiting (buffer %lu bytes full)",
-				(unsigned long)fifo_buf_get_fill(&s->buf));
+	                       && to_fill > fifo_buf_get_fill(&s->buf)) {
+		debug ("waiting (buffer %zu bytes full)", fifo_buf_get_fill (&s->buf));
 		pthread_cond_wait (&s->buf_fill_cond, &s->buf_mutex);
 	}
 	UNLOCK (s->buf_mutex);
@@ -599,7 +594,7 @@ static ssize_t io_read_buffered (struct io_stream *s, void *buf, size_t count)
 		if (fifo_buf_get_fill(&s->buf)) {
 			received += fifo_buf_get (&s->buf, buf + received,
 					count - received);
-			debug ("Read %d bytes so far", (int)received);
+			debug ("Read %zd bytes so far", received);
 			pthread_cond_signal (&s->buf_free_cond);
 		}
 		else {
