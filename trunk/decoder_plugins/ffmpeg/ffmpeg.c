@@ -1173,7 +1173,11 @@ static int decode_packet (struct ffmpeg_data *data, AVPacket *pkt,
 	char *packed;
 	AVFrame *frame;
 
+#ifdef HAVE_AV_FRAME_ALLOC
+	frame = av_frame_alloc ();
+#else
 	frame = avcodec_alloc_frame ();
+#endif
 
 	do {
 		int len, got_frame, is_planar, packed_size, copied;
@@ -1229,8 +1233,15 @@ static int decode_packet (struct ffmpeg_data *data, AVPacket *pkt,
 			free (packed);
 	} while (pkt->size > 0);
 
+#ifdef HAVE_AV_FRAME_UNREF
+	av_frame_unref (frame);
+#else
 	avcodec_get_frame_defaults (frame);
-#ifdef HAVE_AVCODEC_FREE_FRAME
+#endif
+
+#if defined(HAVE_AV_FRAME_FREE)
+	av_frame_free (&frame);
+#elif defined(HAVE_AVCODEC_FREE_FRAME)
 	avcodec_free_frame (&frame);
 #else
 	av_freep (&frame);

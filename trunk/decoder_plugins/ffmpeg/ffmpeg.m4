@@ -115,6 +115,15 @@ then
 		                 [#include <libavcodec/avcodec.h>])
 		AC_CHECK_DECLS([AV_CODEC_ID_VORBIS], , ,
 		                 [#include <libavcodec/avcodec.h>])
+		AC_SEARCH_LIBS(av_frame_alloc, avutil,
+			[AC_DEFINE([HAVE_AV_FRAME_ALLOC], 1,
+				[Define to 1 if you have the `av_frame_alloc' function.])])
+		AC_SEARCH_LIBS(av_frame_unref, avutil,
+			[AC_DEFINE([HAVE_AV_FRAME_UNREF], 1,
+				[Define to 1 if you have the `av_frame_unref' function.])])
+		AC_SEARCH_LIBS(av_frame_free, avutil,
+			[AC_DEFINE([HAVE_AV_FRAME_FREE], 1,
+				[Define to 1 if you have the `av_frame_free' function.])])
 		AC_SEARCH_LIBS(avcodec_free_frame, avcodec,
 			[AC_DEFINE([HAVE_AVCODEC_FREE_FRAME], 1,
 				[Define to 1 if you have the `avcodec_free_frame' function.])])
