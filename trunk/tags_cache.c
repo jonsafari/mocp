@@ -416,9 +416,17 @@ static void tags_cache_gc (struct tags_cache *c)
 	key.flags = DB_DBT_MALLOC;
 	serialized_cache_rec.flags = DB_DBT_MALLOC;
 
-	while ((ret = cur->c_get (cur, &key, &serialized_cache_rec, DB_NEXT))
-			== 0) {
+	while (true) {
 		struct cache_record rec;
+
+#if DB_VERSION_MAJOR == 4 && DB_VERSION_MINOR < 6
+		ret = cur->c_get (cur, &key, &serialized_cache_rec, DB_NEXT);
+#else
+		ret = cur->get (cur, &key, &serialized_cache_rec, DB_NEXT);
+#endif
+
+		if (ret != 0)
+			break;
 
 		if (cache_record_deserialize (&rec, serialized_cache_rec.data,
 					serialized_cache_rec.size, 1)
@@ -444,7 +452,11 @@ static void tags_cache_gc (struct tags_cache *c)
 		logit ("Searching for element to remove failed (cursor): %s",
 				db_strerror (ret));
 
+#if DB_VERSION_MAJOR == 4 && DB_VERSION_MINOR < 6
 	cur->c_close (cur);
+#else
+	cur->close (cur);
+#endif
 
 	debug ("Elements in cache: %d (limit %d)", nitems, c->max_items);
 
