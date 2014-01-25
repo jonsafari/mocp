@@ -108,9 +108,9 @@ void fake_logit (const char *format ATTR_UNUSED, ...)
 /* Initialize logging stream */
 void log_init_stream (FILE *f, const char *fn)
 {
-	logfp = f;
-
 	LOCK(logging_mutex);
+
+	logfp = f;
 
 	if (logging_state == BUFFERING) {
 		if (logfp) {
