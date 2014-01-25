@@ -27,6 +27,8 @@
 
 #include <stdio.h>
 #include <errno.h>
+#include <unistd.h>
+#include <ctype.h>
 
 #define DEBUG
 
@@ -952,10 +954,18 @@ static int parse_key (const char *symbol)
 {
 	size_t i;
 
-	if (strlen(symbol) == 1)
-
+	if (strlen(symbol) == 1) {
 		/* Just a regular char */
+		static bool digit_key_warned = false;
+		if (!digit_key_warned && isdigit (symbol[0])) {
+			fprintf (stderr,
+			         "\n\tUsing digits as keys is deprecated as they may"
+			         "\n\tbe used for specific purposes in release 2.6.\n");
+			sleep (5);
+			digit_key_warned = true;
+		}
 		return symbol[0];
+	}
 
 	if (symbol[0] == '^') {
 
