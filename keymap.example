@@ -28,6 +28,8 @@
 #                     ESCAPE
 #                     F1 - F12
 #
+# Note that the use of a digit as a KEY is deprecated.
+#
 # Maximum number of KEYs for one COMMAND is 5.
 #
 # Omitting the KEY for a COMMAND will unbind all its default keys.  They

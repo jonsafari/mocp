@@ -115,7 +115,7 @@ static int parse_frame (const unsigned char data[6])
 {
 	int len;
 
-	/* http://www.audiocoding.com/modules/wiki/?page=ADTS */
+	/* http://wiki.multimedia.cx/index.php?title=ADTS */
 
 	/* first 12 bits must be set */
 	if (data[0] != 0xFF)

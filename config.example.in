@@ -138,7 +138,12 @@
 #OSSMixerChannel1 = pcm             # 'pcm', 'master' or 'speaker'
 #OSSMixerChannel2 = master          # 'pcm', 'master' or 'speaker'
 
-# ALSA output settings.
+# ALSA output settings.  If you need to dump the audio produced by MOC
+# to a file for diagnostic purposes, the following setting of 'ALSADevice'
+# should do that:
+#
+#    ALSADevice=tee:hw,'/tmp/out.wav',wav
+#
 #ALSADevice = default
 #ALSAMixer1 = PCM
 #ALSAMixer2 = Master
