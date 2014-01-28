@@ -145,6 +145,8 @@ static void sndfile_get_name (const char *file, char buf[4])
 		strcpy (buf, "AU");
 	else if (!strcasecmp (ext, "wav"))
 		strcpy (buf, "WAV");
+	else if (!strcasecmp (ext, "w64"))
+		strcpy (buf, "W64");
 	else if (!strcasecmp (ext, "aif") || !strcasecmp (ext, "aiff"))
 		strcpy (buf, "AIF");
 	else if (!strcasecmp (ext, "8svx"))
@@ -162,6 +164,7 @@ static int sndfile_our_format_ext (const char *ext)
 	return !strcasecmp (ext, "au")
 		|| !strcasecmp (ext, "snd")
 		|| !strcasecmp (ext, "wav")
+		|| !strcasecmp (ext, "w64")
 		|| !strcasecmp (ext, "aif")
 		|| !strcasecmp (ext, "aiff")
 		|| !strcasecmp (ext, "8svx")
