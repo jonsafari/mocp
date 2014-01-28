@@ -72,8 +72,7 @@ struct io_stream
 	int eof;	/* was the end of file reached? */
 	int after_seek;	/* are we after seek and need to do fresh read()? */
 	int buffered;	/* are we using the buffer? */
-	off_t pos;	/* current position in the file from the user point of
-			   view */
+	off_t pos;	/* current position in the file from the user point of view */
 	size_t prebuffer;	/* number of bytes left to prebuffer */
 	pthread_mutex_t io_mutex;	/* mutex for IO operations */
 

@@ -80,8 +80,7 @@ static void sndfile_info (const char *file_name, struct file_tags *info,
 
 		if (data->sndfile) {
 
-			/* I don't know why, but this condition is in the
-			 * examples. */
+			/* I don't know why, but this condition is in the examples. */
 			if (data->snd_info.frames <= 0x7FFFFFFF) {
 				info->time = data->snd_info.frames
 					/ data->snd_info.samplerate;

@@ -66,7 +66,7 @@ struct vorbis_data
 	int ok; /* was this stream successfully opened? */
 
 	int tags_change; /* the tags were changed from the last call of
-			    ogg_current_tags */
+	                    ogg_current_tags() */
 	struct file_tags *tags;
 };
 
