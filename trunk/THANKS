@@ -199,6 +199,9 @@ Antonio Trande:
 Marc Tschiesche:
 	* Provided highlighted playlist numbers and file times.
 
+Jenny Wong:
+	* Provided minor memory corruption patch.
+
 Marien Zwart:
 	* Assisted with testing.
 
