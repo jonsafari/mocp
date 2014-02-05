@@ -26,6 +26,8 @@ Known bugs:
 * Valgrind-detected memory problems:
   - libasound: memory leaks
   - libdb: uninitialised parameter storage
+  - libffmpeg: uninitialised storage in conditions and reads
+  - libgme: uninitialised storage in conditions and reads
   - libmagic: uninitialised storage in reads
   - librcc: uninitialised storage in conditions
   - libspeex: uninitialised storage in conditions and reads
@@ -48,8 +50,9 @@ Known bugs:
     parameterised in due course.)
   - Some decoders do not currently pass the MD5 sum or sample count checks.
   - The duration of some AAC audios is incorrectly reported.
-* Sound driver problems:
-  - ALSA is not playing the entire buffer before closing.  [node/817]
+* Bugs of unknown origin:
+  - After many hours of playing an Internet stream, the audio can being
+    to stutter.  [node/692]
 
 Transitional code removal (after 2.5):
 
@@ -63,6 +66,7 @@ Transitional code removal (after 2.5):
 * Remove changed option format for Layouts.
 * Remove deprecated autogen.sh file.
 * Remove Autoconf version 2.64 requirement warning.
+* Remove FLAC version 1.1.3 requirement warning.
 * Remove Berkeley DB version 4.1 requirement warning.
 * Remove libcurl version 7.15.1 requirement warning.
 * Remove POPT requirement warning.
@@ -77,6 +81,7 @@ FFmpeg/LibAV support changes (after 2.5):
 
 Pending 2.6 changes:
 
+* Require at least FLAC version 1.1.3.
 * Require at least Autoconf version 2.64.
 * Require at least Berkeley DB version 4.1.
 * Require at least libcurl version 7.15.1.

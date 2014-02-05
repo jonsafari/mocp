@@ -12,6 +12,7 @@
 	  - Minor reformatting of the configure summary
 	  - Added warnings for various deprecations and potential problems
 	  - Added warnings for unmet future package requirements
+	  - Updated GNU boilerplate text
 	* Improved support for embedded systems:
 	  - Refined FFmpeg decoder configuration for use with cross-compilation
 	  - Provided use of Tremor with the Vorbis decoder
@@ -29,24 +30,32 @@
 	  - New WavPack decoder (Alexandrov Sergey)
 	  - Renamed SndFile plugin for consistancy
 	  - Removed M4A format support from AAC decoder plugin
+	  - Removed WAV format support from ModPlug decoder plugin
 	* Overhauled FFmpeg/LibAV decoder:
 	  - Resolved FFmpeg API deprecations
 	  - Provided LibAV compatibility
 	  - Provided proper stereo downmixing
+	  - Provided locking support for non-thread-safe library functions
+	  - Provided better FFmpeg or LibAV discrimination
+	  - Provided better audio duration reliability determination
 	  - Increased number of decodable formats (including Xiph Opus)
 	  - Added decoding of audio from video formats
 	  - Added logging of FFmpeg/LibAV messages
 	  - Added seeking in most (but not all) formats
+	  - Added handling for "planar" codecs
+	  - Excluded experimental codecs from decoding
 	  - Fixed misreporting of tags, duration and bitrates
 	  - Fixed memory and file descriptor leakages
 	  - Fixed severe distortion on 8-bit samples
 	  - Fixed loop playing FLAC files
+	  - Fixed many FFmpeg/LibAV API breakages
 	  - Fixed many miscellaneous bugs
 	* Audio reproduction changes:
 	  - Improved support for 8-bit sample size
 	  - Added software mixer (Hendrik Iben)
 	  - Added parametric equalizer (Hendrik Iben)
 	  - Fixed many bugs which produced distorted sound
+	  - Fixed bugs in 24-bit sample handling (Tomasz Golinski)
 	* General configuration file changes:
 	  - Reconciled and regularised example config and keymap files
 	  - Introduced lists and function-like syntax
@@ -54,6 +63,7 @@
 	  - Introduced symbol and boolean option types
 	  - Improved security of the configuration file
 	  - Automatic clearing of an overridden default key binding
+	  - Made processing of keymap file consistant with that of config file
 	* Changed configuration file options:
 	  - Layout# options moved to a list and function-like syntax
 	  - SoundDriver option moved to a list syntax
@@ -66,7 +76,7 @@
 	  - RepeatSongChange: govern the running of the OnSongChange command
 	  - OnStop: run an external command on stopping
 	  - EnforceTagsEncoding: substitutes ID3v1TagsEncoding for ISO-8859-1
-	    encoding in id3v2 tags (Aleks Sherikov)
+	    encoding in ID3v2 tags (Aleks Sherikov)
 	  - FileNamesIconv: converts from local to UTF8 encoding for file names
 	    (Aleks Sherikov)
 	  - NonUTFXterm: converts UTF8 to local encoding for X-Term titles
@@ -79,22 +89,25 @@
 	  - ShowTimePercent: set the percent played state (Daniel T. Borelli)
 	  - Various options for SidPlay2, Modplug and TiMidity support
 	* New command line options:
-	  - '-O' to override configuration file settings
-	  - '-q' to queue files from command line (Martin Milata)
 	  - '-j' to jump to some position in the current track (Nuno Cardoso)
+	  - '-O' to override configuration file settings
 	  - '-Q' to display user formatted information (Juho Hämäläinen)
-	  - '-v' to set the volume (Jack Miller)
+	  - '-q' to queue files from command line (Martin Milata)
 	  - '-t' and '--on/off' to toggle or set playback options (Jack Miller)
+	  - '-v' to set the volume (Jack Miller)
 	* Screen handling changes:
 	  - Changed minimum screen height to 7 lines (Tero Marttila)
 	  - Added support for GNU screen title (Jonathan Derque)
-	  - Restore screen to console mode after reporting fatal errors
+	  - Restored screen to console mode after reporting fatal errors
+	  - Populated playlist panel when loading default playlist file
+	  - Removed default playlist autofocus at start
 	  - Fixed overlength highlight bar
 	  - Fixed screen upset when tags contain control characters
+	  - Fixed some screen upsets when tags contain UTF-8 characters (firejox)
 	* New and updated client interaction features:
 	  - 'a' command: also add a directory to the playlist (Filippo Giunchedi)
-	  - 'Y' command: prune unreadable files from the playlist (tyranix)
 	  - 'L' command: display music lyrics (Géraud Le Falher)
+	  - 'Y' command: prune unreadable files from the playlist (tyranix)
 	  - Queued messages for display in the message area
 	  - Added play queue (Martin Milata)
 	  - Mark a fragment of a file which can be passed to external commands
@@ -121,19 +134,25 @@
 	  - Fixed false positive stream detection in the MP3 decoder
 	  - Fixed Ogg/Vorbis stream detection in the Vorbis decoder
 	  - Fixed 'LRINTF error' raised when reconfiguring MOC
-	  - Handle backspace key properly
+	  - Fixed backspace key mishandling
 	  - Fixed client interface meta-key handling
 	  - Fixed pthread stack overflow segfault on OpenBSD.
 	  - Fixed segfault when text entry history becomes full
 	  - Fixed segfault processing playlists with relative paths
 	  - Fixed memory corruptions when toggling tag reading
+	  - Fixed assertion when a second client is started
+	  - Fixed slow memory leak in client on long-playing streams
 	  - Fixed severe distortion on 11025Hz 16-bit mono audios
 	  - Fixed freeze at end of playing audio file
 	  - Fixed server crash when attempting to play a deleted file
 	  - Fixed MIME type detection on HTTP redirection
 	  - Fixed crash when mixer value is above 100%
+	  - Fixed handling of huge (greater than 2 GiB) files
+	  - Fixed sub-second audio truncation on ALSA
+	  - Fixed segfault when MIME-detected MP3 file has no "extension"
+	  - Fixed segfault when using '--format' without an audio playing
 	  - Workaround for streams that have the actual title as tags/comments
-	  - Indentified cause of "undefined symbol" build errors (node/701)
+	  - Indentified cause of "undefined symbol" build errors
 	  - Plugged all known memory and file descriptor leaks
 	* Miscellaneous:
 	  - Updated and reformatted mocp manpage and equalizer README file
