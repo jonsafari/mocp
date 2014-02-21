@@ -838,8 +838,8 @@ static void fill_callback (struct io_stream *s ATTR_UNUSED, size_t fill,
 	if (prebuffering) {
 		char msg[32];
 
-		sprintf (msg, "Prebuffering %d/%d KB", (int)(fill / 1024),
-				options_get_int("Prebuffering"));
+		sprintf (msg, "Prebuffering %zu/%d KB", fill / 1024U,
+		              options_get_int("Prebuffering"));
 		status_msg (msg);
 	}
 }

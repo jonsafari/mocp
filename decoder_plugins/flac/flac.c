@@ -116,7 +116,7 @@ static size_t pack_pcm_signed (FLAC__byte *data,
 		}
 	}
 
-	debug ("Converted %d bytes", wide_samples * channels * bytes_per_sample);
+	debug ("Converted %u bytes", wide_samples * channels * bytes_per_sample);
 
 	return wide_samples * channels * bytes_per_sample;
 }

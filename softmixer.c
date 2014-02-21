@@ -254,7 +254,7 @@ static void softmixer_write_config()
 
 void softmixer_process_buffer(char *buf, size_t size, const struct sound_params *sound_params)
 {
-  debug ("Processing %u bytes...", size);
+  debug ("Processing %zu bytes...", size);
 
   if(mixer_real==100 && !mix_mono)
     return;
