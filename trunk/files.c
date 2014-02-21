@@ -483,16 +483,14 @@ static int read_directory_recurr_internal (const char *directory, struct plist *
 
 		if (!strcmp(entry->d_name, ".") || !strcmp(entry->d_name, ".."))
 			continue;
-		if (snprintf(file, sizeof(file), "%s/%s", directory,
-					entry->d_name)
+		if (snprintf(file, sizeof(file), "%s/%s", directory, entry->d_name)
 				>= (int)sizeof(file)) {
 			error ("Path too long!");
 			continue;
 		}
 		type = file_type (file);
 		if (type == F_DIR)
-			read_directory_recurr_internal(file, plist, dir_stack,
-					depth);
+			read_directory_recurr_internal(file, plist, dir_stack, depth);
 		else if (type == F_SOUND && plist_find_fname(plist, file) == -1)
 			plist_add (plist, file);
 	}
@@ -550,8 +548,7 @@ char *read_line (FILE *file)
 		if (line[len-1] == '\n')
 			break;
 
-		/* If we are here, it means that line is longer than the
-		 * buffer. */
+		/* If we are here, it means that line is longer than the buffer. */
 		line_alloc *= 2;
 		line = (char *)xrealloc (line, sizeof(char) * line_alloc);
 	}
@@ -610,7 +607,6 @@ char *find_match_dir (char *pattern)
 	if (!slash)
 		return NULL;
 	if (slash == pattern) {
-
 		/* only '/dir' */
 		search_dir = xstrdup ("/");
 	}

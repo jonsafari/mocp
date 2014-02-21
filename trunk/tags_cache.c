@@ -205,7 +205,6 @@ static char *cache_record_serialize (const struct cache_record *rec, int *len)
 	size_t album_len;
 	size_t title_len;
 
-
 	artist_len = strlen_null (rec->tags->artist);
 	album_len = strlen_null (rec->tags->album);
 	title_len = strlen_null (rec->tags->title);

@@ -158,8 +158,7 @@ static void musepack_open_stream_internal (struct musepack_data *data)
 	mpc_streaminfo_init (&data->info);
 
 	if (mpc_streaminfo_read(&data->info, &data->reader) != ERROR_CODE_OK) {
-		decoder_error (&data->error, ERROR_FATAL, 0,
-				"Not a valid MPC file.");
+		decoder_error (&data->error, ERROR_FATAL, 0, "Not a valid MPC file.");
 		io_close (data->stream);
 		return;
 	}
@@ -175,8 +174,7 @@ static void musepack_open_stream_internal (struct musepack_data *data)
 #else
 	data->demux = mpc_demux_init (&data->reader);
 	if (!data->demux) {
-		decoder_error (&data->error, ERROR_FATAL, 0,
-				"Not a valid MPC file.");
+		decoder_error (&data->error, ERROR_FATAL, 0, "Not a valid MPC file.");
 		io_close (data->stream);
 		return;
 	}
@@ -204,8 +202,7 @@ static void *musepack_open (const char *file)
 	data->stream = io_open (file, 1);
 	if (!io_ok(data->stream)) {
 		decoder_error (&data->error, ERROR_FATAL, 0,
-				"Can't open file: %s",
-				io_strerror(data->stream));
+				"Can't open file: %s", io_strerror(data->stream));
 		io_close (data->stream);
 		return data;
 	}
@@ -372,8 +369,7 @@ static int musepack_decode (void *prv_data, char *buf, int buf_len,
 	}
 
 	if (ret < 0) {
-		decoder_error (&data->error, ERROR_FATAL, 0,
-				"Error in the stream!");
+		decoder_error (&data->error, ERROR_FATAL, 0, "Error in the stream!");
 		return 0;
 	}
 
@@ -390,8 +386,7 @@ static int musepack_decode (void *prv_data, char *buf, int buf_len,
 				return 0;
 			}
 
-			decoder_error (&data->error, ERROR_STREAM, 0,
-					"Broken frame.");
+			decoder_error (&data->error, ERROR_STREAM, 0, "Broken frame.");
 		}
 
 	} while (err != MPC_STATUS_OK);

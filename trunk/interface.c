@@ -1901,8 +1901,7 @@ static void add_file_plist ()
 	char *file;
 
 	if (iface_in_plist_menu()) {
-		error ("Can't add to the playlist a file from the "
-				"playlist.");
+		error ("Can't add to the playlist a file from the playlist.");
 		return;
 	}
 
@@ -2520,8 +2519,7 @@ static void delete_item ()
 	char *file;
 
 	if (!iface_in_plist_menu()) {
-		error ("You can only delete an item from the "
-				"playlist.");
+		error ("You can only delete an item from the playlist.");
 		return;
 	}
 
@@ -3008,8 +3006,8 @@ static void run_external_cmd (char **args, const int arg_num ATTR_UNUSED)
 		/* parent */
 		waitpid (child, &status, 0);
 		if (WIFEXITED(status) && WEXITSTATUS(status) != 0) {
-			fprintf (stderr, "\nCommand exited with error "
-					"(status %d).\n", WEXITSTATUS(status));
+			fprintf (stderr, "\nCommand exited with error (status %d).\n",
+			                 WEXITSTATUS(status));
 			sleep (2);
 		}
 		iface_restore ();
@@ -3595,8 +3593,7 @@ static void save_curr_dir ()
 	FILE *dir_file;
 
 	if (!(dir_file = fopen(create_file_name("last_directory"), "w"))) {
-		error ("Can't save current directory: %s",
-				strerror(errno));
+		error ("Can't save current directory: %s", strerror(errno));
 		return;
 	}
 

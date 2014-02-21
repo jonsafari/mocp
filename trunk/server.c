@@ -1710,8 +1710,7 @@ void server_loop (int list_sock)
 					&name_len);
 
 				if (client_sock == -1)
-					fatal ("accept() failed: %s",
-							strerror(errno));
+					fatal ("accept() failed: %s", strerror(errno));
 				logit ("Incoming connection");
 				if (!add_client(client_sock))
 					busy (client_sock);
@@ -1723,8 +1722,7 @@ void server_loop (int list_sock)
 				logit ("Got 'wake up'");
 
 				if (read(wake_up_pipe[0], &w, sizeof(w)) < 0)
-					fatal ("Can't read wake up signal: %s",
-							strerror(errno));
+					fatal ("Can't read wake up signal: %s", strerror(errno));
 			}
 
 			send_events (&fds_write);

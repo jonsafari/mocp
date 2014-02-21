@@ -252,12 +252,10 @@ void out_buf_destroy (struct out_buf *buf)
 		logit ("Destroying buffer mutex failed: %s", strerror (rc));
 	rc = pthread_cond_destroy (&buf->play_cond);
 	if (rc != 0)
-		logit ("Destroying buffer play condition failed: %s",
-				strerror (rc));
+		logit ("Destroying buffer play condition failed: %s", strerror (rc));
 	rc = pthread_cond_destroy (&buf->ready_cond);
 	if (rc != 0)
-		logit ("Destroying buffer ready condition failed: %s",
-				strerror (rc));
+		logit ("Destroying buffer ready condition failed: %s", strerror (rc));
 
 	logit ("buffer destroyed");
 

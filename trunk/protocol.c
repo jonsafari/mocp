@@ -80,8 +80,7 @@ enum noblock_io_status get_int_noblock (int sock, int *i)
 	res = recv (sock, i, sizeof(int), 0);
 	flags &= ~O_NONBLOCK;
 	if (fcntl(sock, F_SETFL, flags) == -1)
-		fatal ("Restoring flags for socket failed: %s",
-				strerror(errno));
+		fatal ("Restoring flags for socket failed: %s", strerror(errno));
 
 	if (res == sizeof(int))
 		return NB_IO_OK;

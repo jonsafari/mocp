@@ -186,8 +186,7 @@ static void handle_mixer_events (snd_mixer_t *mixer_handle)
 				debug ("Mixer event");
 				if ((err = snd_mixer_handle_events(mixer_handle)
 							) < 0)
-					logit ("snd_mixer_handle_events() "
-							"failed: %s",
+					logit ("snd_mixer_handle_events() failed: %s",
 							snd_strerror(err));
 			}
 
@@ -370,8 +369,7 @@ static int alsa_open (struct sound_params *sound_params)
 			break;
 		default:
 			error ("Unknown sample format: %s",
-					sfmt_str(sound_params->fmt, fmt_name,
-						sizeof(fmt_name)));
+					sfmt_str(sound_params->fmt, fmt_name, sizeof(fmt_name)));
 			params.format = SND_PCM_FORMAT_UNKNOWN;
 			return 0;
 	}
@@ -525,8 +523,7 @@ static int play_buf_chunks ()
 				logit ("Failed, restarting");
 				if ((err = snd_pcm_prepare(handle))
 						< 0) {
-					error ("Failed to restart "
-							"device: %s.",
+					error ("Failed to restart device: %s",
 							snd_strerror(err));
 					return -1;
 				}
@@ -604,8 +601,8 @@ static int alsa_play (const char *buff, const size_t size)
 		buf_pos += to_copy;
 		alsa_buf_fill += to_copy;
 
-		debug ("Copied %d bytes to alsa_buf (now is filled with %d "
-				"bytes)", to_copy, alsa_buf_fill);
+		debug ("Copied %d bytes to alsa_buf (now filled with %d bytes)",
+				to_copy, alsa_buf_fill);
 
 		if (play_buf_chunks() < 0)
 			return -1;
@@ -697,13 +694,11 @@ static int alsa_reset ()
 		int err;
 
 		if ((err = snd_pcm_drop(handle)) < 0) {
-			error ("Can't reset the device: %s",
-			        snd_strerror(err));
+			error ("Can't reset the device: %s", snd_strerror(err));
 			return 0;
 		}
 		if ((err = snd_pcm_prepare(handle)) < 0) {
-			error ("Can't prepare after reset: %s",
-			        snd_strerror(err));
+			error ("Can't prepare after reset: %s", snd_strerror(err));
 			return 0;
 		}
 

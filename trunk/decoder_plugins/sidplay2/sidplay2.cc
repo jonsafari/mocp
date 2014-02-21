@@ -298,7 +298,8 @@ extern "C" void *sidplay2_open(const char *file)
 
   if(!(*st))
   {
-    decoder_error(&s2d->error, ERROR_FATAL, 0, "Cannot select first song in %s", file);
+    decoder_error(&s2d->error, ERROR_FATAL, 0,
+                  "Cannot select first song in %s", file);
     delete st;
     return s2d;
   }

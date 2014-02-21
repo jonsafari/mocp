@@ -130,8 +130,8 @@ static void check_moc_dir ()
 						dir_name, strerror (errno));
 		}
 		else
-			fatal ("Error trying to check for "CONFIG_DIR
-					" directory: %s", strerror (errno));
+			fatal ("Error trying to check for "CONFIG_DIR" directory: %s",
+			        strerror (errno));
 	}
 	else {
 		if (!S_ISDIR(file_stat.st_mode) || access (dir_name, W_OK))

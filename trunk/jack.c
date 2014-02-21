@@ -213,8 +213,7 @@ static int moc_jack_open (struct sound_params *sound_params)
 		char fmt_name[SFMT_STR_MAX];
 
 		error ("Unsupported sound format: %s.",
-				sfmt_str(sound_params->fmt, fmt_name,
-					sizeof(fmt_name)));
+				sfmt_str(sound_params->fmt, fmt_name, sizeof(fmt_name)));
 		return 0;
 	}
 	if (sound_params->channels != 2) {

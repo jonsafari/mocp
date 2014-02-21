@@ -52,7 +52,8 @@ static struct timidity_data *make_timidity_data(const char *file) {
   MidIStream *midistream = mid_istream_open_file(file);
 
   if(midistream==NULL) {
-    decoder_error(&data->error, ERROR_FATAL, 0, "Can't open midifile: %s", file);
+    decoder_error(&data->error, ERROR_FATAL, 0,
+                  "Can't open midifile: %s", file);
     return data;
   }
 
@@ -60,7 +61,8 @@ static struct timidity_data *make_timidity_data(const char *file) {
   mid_istream_close(midistream);
 
   if(data->midisong==NULL) {
-    decoder_error(&data->error, ERROR_FATAL, 0, "Can't load midifile: %s", file);
+    decoder_error(&data->error, ERROR_FATAL, 0,
+                  "Can't load midifile: %s", file);
     return data;
   }
 

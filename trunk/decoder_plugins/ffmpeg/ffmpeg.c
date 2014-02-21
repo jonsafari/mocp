@@ -914,8 +914,7 @@ static void *ffmpeg_open (const char *file)
 		 * may misreport experimental codecs.  Given we don't know the
 		 * codec at this time, we will have to live with it. */
 		decoder_error (&data->error, ERROR_FATAL, 0,
-				"Could not find codec parameters (err %d)",
-				err);
+				"Could not find codec parameters (err %d)", err);
 		goto end;
 	}
 
@@ -1194,7 +1193,8 @@ static int decode_packet (struct ffmpeg_data *data, AVPacket *pkt,
 
 		if (len < 0) {
 			/* skip frame */
-			decoder_error (&data->error, ERROR_STREAM, 0, "Error in the stream!");
+			decoder_error (&data->error, ERROR_STREAM, 0,
+			               "Error in the stream!");
 			break;
 		}
 
@@ -1243,7 +1243,8 @@ static int decode_packet (struct ffmpeg_data *data, AVPacket *pkt,
 
 		if (len < 0) {
 			/* skip frame */
-			decoder_error (&data->error, ERROR_STREAM, 0, "Error in the stream!");
+			decoder_error (&data->error, ERROR_STREAM, 0,
+			               "Error in the stream!");
 			break;
 		}
 
