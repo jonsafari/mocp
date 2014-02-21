@@ -577,12 +577,9 @@ static int mp3_decode (void *void_data, char *buf, int buf_len,
 					continue;
 
 				if (!data->skip_frames)
-					decoder_error (&data->error,
-							ERROR_STREAM, 0,
+					decoder_error (&data->error, ERROR_STREAM, 0,
 							"Broken frame: %s",
-							mad_stream_errorstr(
-								&data->stream)
-							);
+							mad_stream_errorstr(&data->stream));
 				continue;
 			}
 			else if (data->stream.error == MAD_ERROR_BUFLEN)
@@ -590,9 +587,7 @@ static int mp3_decode (void *void_data, char *buf, int buf_len,
 			else {
 				decoder_error (&data->error, ERROR_FATAL, 0,
 						"Broken frame: %s",
-						mad_stream_errorstr(
-							&data->stream)
-						);
+						mad_stream_errorstr(&data->stream));
 				return 0;
 			}
 		}
@@ -617,9 +612,8 @@ static int mp3_decode (void *void_data, char *buf, int buf_len,
 		if (data->frame.header.bitrate != data->bitrate) {
 			if ((data->bitrate = data->frame.header.bitrate) == 0) {
 				decoder_error (&data->error, ERROR_FATAL, 0,
-						"Broken file: information"
-						" about the bitrate couldn't"
-						" be read.");
+						"Broken file: information about the"
+						" bitrate couldn't be read.");
 				return 0;
 			}
 		}

@@ -258,8 +258,7 @@ static void *aac_open_internal (struct io_stream *stream, const char *fname)
 		data->stream = io_open (fname, 1);
 		if (!io_ok(data->stream)) {
 			decoder_error (&data->error, ERROR_FATAL, 0,
-					"Can't open AAC file: %s",
-					io_strerror(data->stream));
+					"Can't open AAC file: %s", io_strerror(data->stream));
 			io_close (data->stream);
 			return data;
 		}
@@ -445,7 +444,8 @@ static int decode_one_frame (struct aac_data *data, void *buffer, int count)
 	aac_data_size = buffer_length (data);
 
 	/* aac data -> raw pcm */
-	sample_buf = NeAACDecDecode (data->decoder, &frame_info, aac_data, aac_data_size);
+	sample_buf = NeAACDecDecode (data->decoder, &frame_info,
+	                             aac_data, aac_data_size);
 
 	buffer_consume (data, frame_info.bytesconsumed);
 
@@ -480,9 +480,9 @@ static int decode_one_frame (struct aac_data *data, void *buffer, int count)
 		data->overflow_buf_len = bytes - count;
 		memcpy (buffer, sample_buf, count);
 		return count;
-	} else {
-		memcpy (buffer, sample_buf, bytes);
 	}
+
+	memcpy (buffer, sample_buf, bytes);
 
 	data->bitrate = frame_info.bytesconsumed * 8 / (bytes / 2.0 /
 			data->channels / data->sample_rate) / 1000;

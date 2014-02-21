@@ -265,8 +265,7 @@ static char *read_ini_value (FILE *file, const char *section, const char *key)
 					char *q = strchr (value + 1, '"');
 
 					if (!q) {
-						error ("Parse error in the INI"
-								" file");
+						error ("Parse error in the INI file");
 						free (line);
 						break;
 					}

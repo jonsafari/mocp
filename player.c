@@ -188,8 +188,7 @@ static void bitrate_list_add (struct bitrate_list *b, const int time,
 				" hasn't changed", bitrate, time);
 	else
 		debug ("Not adding bitrate %d at time %d because it is for"
-				" the same time as the last bitrate", bitrate,
-				time);
+				" the same time as the last bitrate", bitrate, time);
 	UNLOCK (b->mutex);
 }
 
@@ -205,8 +204,7 @@ static int bitrate_list_get (struct bitrate_list *b, const int time)
 			struct bitrate_list_node *o = b->head;
 
 			b->head = o->next;
-			debug ("Removing old bitrate %d for time %d",
-					o->bitrate, o->time);
+			debug ("Removing old bitrate %d for time %d", o->bitrate, o->time);
 			free (o);
 		}
 
@@ -214,8 +212,7 @@ static int bitrate_list_get (struct bitrate_list *b, const int time)
 		debug ("Getting bitrate for time %d (%d)", time, bitrate);
 	}
 	else {
-		debug ("Getting bitrate for time %d (no bitrate information)",
-				time);
+		debug ("Getting bitrate for time %d (no bitrate information)", time);
 		bitrate = -1;
 	}
 	UNLOCK (b->mutex);
@@ -856,8 +853,7 @@ void player (const char *file, const char *next_file, struct out_buf *out_buf)
 		LOCK (decoder_stream_mut);
 		decoder_stream = io_open (file, 1);
 		if (!io_ok(decoder_stream)) {
-			error ("Could not open URL: %s",
-					io_strerror(decoder_stream));
+			error ("Could not open URL: %s", io_strerror(decoder_stream));
 			io_close (decoder_stream);
 			decoder_stream = NULL;
 			UNLOCK (decoder_stream_mut);

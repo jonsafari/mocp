@@ -325,8 +325,7 @@ static void *flac_open_internal (const char *file, const int buffered)
 	data->stream = io_open (file, buffered);
 	if (!io_ok(data->stream)) {
 		decoder_error (&data->error, ERROR_FATAL, 0,
-				"Can't load file: %s",
-				io_strerror(data->stream));
+				"Can't load file: %s", io_strerror(data->stream));
 		return data;
 	}
 
@@ -396,8 +395,7 @@ static void *flac_open_internal (const char *file, const int buffered)
 
 	if (!FLAC__stream_decoder_process_until_end_of_metadata(data->decoder)) {
 		decoder_error (&data->error, ERROR_FATAL, 0,
-				"FLAC__stream_decoder_process_until_end_of_metadata()"
-				" failed.");
+				"FLAC__stream_decoder_process_until_end_of_metadata() failed.");
 		return data;
 	}
 #endif

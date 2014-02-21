@@ -255,8 +255,7 @@ static void *spx_open (const char *file)
 		data->stream = NULL;
 		decoder_error_init (&data->error);
 		decoder_error (&data->error, ERROR_STREAM, 0,
-				"Can't open file: %s",
-				io_strerror(stream));
+				"Can't open file: %s", io_strerror(stream));
 		io_close (stream);
 		data->ok = 0;
 	}
