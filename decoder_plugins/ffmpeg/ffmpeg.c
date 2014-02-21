@@ -333,8 +333,8 @@ static void load_audio_extns (lists_t_strs *list)
 		if (avcodec_find_decoder (CODEC_ID_VORBIS))
 			lists_strs_append (list, "oga");
 #if HAVE_DECL_CODEC_ID_OPUS || HAVE_DECL_AV_CODEC_ID_OPUS
-  /* The LibAV libraries will tell us they support Opus... but they lie. */
-  #if defined(HAVE_FFMPEG)
+  /* The Opus support in LibAV libraries is feeling better now. */
+  #if !defined(HAVE_LIBAV) || LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(55,6,0)
 		if (avcodec_find_decoder (CODEC_ID_OPUS))
 			lists_strs_append (list, "opus");
   #endif
