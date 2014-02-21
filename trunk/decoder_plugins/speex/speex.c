@@ -82,8 +82,8 @@ static void *process_header (struct spx_data *data)
 
 	if (data->header->mode >= SPEEX_NB_MODES) {
 		decoder_error (&data->error, ERROR_FATAL, 0,
-				"Can't open speex file: Mode number %d does "
-				"not (any longer) exist in this version",
+				"Can't open speex file: Mode number %"PRId32
+				" does not exist in this version",
 				data->header->mode);
 		return NULL;
 	}

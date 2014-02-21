@@ -244,7 +244,7 @@ static int moc_jack_play (const char *buff, const size_t size)
 		return 0;
 	}
 
-	debug ("Playing %luB", (unsigned long)size);
+	debug ("Playing %zu bytes", size);
 
 	if (our_xrun) {
 		logit ("xrun");
@@ -261,8 +261,7 @@ static int moc_jack_play (const char *buff, const size_t size)
 			size_t to_write;
 
 			space *= 2; /* we have 2 channels */
-			debug ("Space in the ringbuffer: %luB",
-					(unsigned long)space);
+			debug ("Space in the ringbuffer: %zu bytes", space);
 
 			to_write = MIN (space, remain);
 

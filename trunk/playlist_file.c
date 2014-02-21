@@ -170,8 +170,7 @@ static int plist_load_m3u (struct plist *plist, const char *fname,
 				serial = strtol (serial_str, &err, 0);
 				if (!*err) {
 					plist_set_serial (plist, serial);
-					logit ("Got MOCSERIAL tag with serial %d",
-							(int)serial);
+					logit ("Got MOCSERIAL tag with serial %ld", serial);
 				}
 			}
 		}

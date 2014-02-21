@@ -296,8 +296,7 @@ static void *aac_open_internal (struct io_stream *stream, const char *fname)
 		return data;
 	}
 
-	logit ("sample rate %uHz, channels %d", (unsigned)data->sample_rate,
-			(int)data->channels);
+	logit ("sample rate %dHz, channels %d", data->sample_rate, data->channels);
 	if (!data->sample_rate || !data->channels) {
 		decoder_error (&data->error, ERROR_FATAL, 0,
 				"Invalid AAC sound parameters");

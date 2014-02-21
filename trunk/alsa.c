@@ -417,7 +417,7 @@ static int alsa_open (struct sound_params *sound_params)
 		return 0;
 	}
 
-	logit ("Set rate to %d", params.rate);
+	logit ("Set rate to %u", params.rate);
 
 	if ((err = snd_pcm_hw_params_set_channels (handle, hw_params,
 					sound_params->channels)) < 0) {
@@ -593,7 +593,7 @@ static int alsa_play (const char *buff, const size_t size)
 
 	assert (chunk_size > 0);
 
-	debug ("Got %d bytes to play", (int)size);
+	debug ("Got %zu bytes to play", size);
 
 	while (to_write) {
 		int to_copy = MIN((size_t)to_write,
