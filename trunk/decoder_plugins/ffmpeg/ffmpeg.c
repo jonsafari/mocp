@@ -29,6 +29,32 @@
 #include <assert.h>
 #include <stdint.h>
 
+#ifndef GCC_VERSION
+#define GCC_VERSION (__GNUC__ * 10000 + \
+                     __GNUC_MINOR__ * 100 + \
+                     __GNUC_PATCHLEVEL__)
+#endif
+
+/* These macros allow us to use the appropriate method for manipulating
+ * GCC's diagnostic pragmas depending on the compiler's version. */
+#if GCC_VERSION >= 40200
+# define GCC_DIAG_STR(s) #s
+# define GCC_DIAG_JOINSTR(x,y) GCC_DIAG_STR(x ## y)
+# define GCC_DIAG_DO_PRAGMA(x) _Pragma (#x)
+# define GCC_DIAG_PRAGMA(x) GCC_DIAG_DO_PRAGMA(GCC diagnostic x)
+# if GCC_VERSION >= 40600
+#  define GCC_DIAG_OFF(x) GCC_DIAG_PRAGMA(push) \
+                          GCC_DIAG_PRAGMA(ignored GCC_DIAG_JOINSTR(-W,x))
+#  define GCC_DIAG_ON(x)  GCC_DIAG_PRAGMA(pop)
+# else
+#  define GCC_DIAG_OFF(x) GCC_DIAG_PRAGMA(ignored GCC_DIAG_JOINSTR(-W,x))
+#  define GCC_DIAG_ON(x)  GCC_DIAG_PRAGMA(warning GCC_DIAG_JOINSTR(-W,x))
+# endif
+#else
+# define GCC_DIAG_OFF(x)
+# define GCC_DIAG_ON(x)
+#endif
+
 #if HAVE_LIBAVFORMAT_AVFORMAT_H
 /* This warning reset suppresses a deprecation warning message for
  * av_metadata_set()'s use of an AVMetadata parameter.  Although it
@@ -36,13 +62,9 @@
  * that library makes it impossible to limit the suppression to that
  * particular release as it seems to have been introduced in avformat
  * version 53.1.0 and resolved in version 52.108.0. */
-#ifdef __GNUC__
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-#endif
+GCC_DIAG_OFF(deprecated-declarations)
 #include <libavformat/avformat.h>
-#ifdef __GNUC__
-#pragma GCC diagnostic warning "-Wdeprecated-declarations"
-#endif
+GCC_DIAG_ON(deprecated-declarations)
 #include <libavutil/mathematics.h>
 #ifdef HAVE_AV_GET_CHANNEL_LAYOUT_NB_CHANNELS
 #include <libavutil/audioconvert.h>
@@ -705,18 +727,14 @@ static long fmt_from_sample_fmt (struct ffmpeg_data *data)
 #if 0
 /* The AVInputFormat.read_seek field was deprecated then later undeprecated
  * again, so we humbly ask the compiler to forgive the interim deprecation. */
-#ifdef __GNUC__
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-#endif
+GCC_DIAG_OFF(deprecated-declarations)
 static bool deprecated_read_seek (struct ffmpeg_data *data)
 {
 	if (!data->ic->iformat->read_seek)
 		return true;
 	return false;
 }
-#ifdef __GNUC__
-#pragma GCC diagnostic warning "-Wdeprecated-declarations"
-#endif
+GCC_DIAG_ON(deprecated-declarations)
 #endif
 
 /* Try to figure out if seeking is broken for this format.
@@ -786,16 +804,12 @@ static bool is_seek_broken (struct ffmpeg_data *data)
 #ifdef HAVE_STRUCT_AVCODECCONTEXT_REQUEST_CHANNELS
 /* This warning reset suppresses a deprecation warning message
  * for the AVCodecContext's 'request_channels' field. */
-#ifdef __GNUC__
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-#endif
+GCC_DIAG_OFF(deprecated-declarations)
 static inline void set_request_channels (AVCodecContext *enc, int channels)
 {
 	enc->request_channels = channels;
 }
-#ifdef __GNUC__
-#pragma GCC diagnostic warning "-Wdeprecated-declarations"
-#endif
+GCC_DIAG_ON(deprecated-declarations)
 #endif
 
 /* Downmix multi-channel audios to stereo. */
