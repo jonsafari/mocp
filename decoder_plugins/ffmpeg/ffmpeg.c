@@ -460,16 +460,28 @@ static bool is_timing_broken (AVFormatContext *ic)
 	if (ic->duration < AV_TIME_BASE && !strcmp (ic->iformat->name, "libgme"))
 		return true;
 
+	/* AAC timing is inaccurate. */
+	if (!strcmp (ic->iformat->name, "aac"))
+		return true;
+
 #ifdef HAVE_AVIO_SIZE
 	file_size = avio_size (ic->pb);
 #else
 	file_size = ic->file_size;
 #endif
 
+	/* Formats less than 4 GiB should be okay, except those excluded above. */
 	if (file_size < UINT32_MAX)
 		return false;
 
-	return true;
+	/* WAV files are limited to 4 GiB but that doesn't stop some encoders. */
+	if (!strcmp (ic->iformat->name, "wav"))
+		return true;
+
+	if (!strcmp (ic->iformat->name, "au"))
+		return true;
+
+	return false;
 }
 
 static void ffmpeg_init ()
