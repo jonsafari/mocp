@@ -65,6 +65,24 @@ function help () {
   echo
 }
 
+# Check the FAAD decoder's samples.
+FAAD=$(which faad 2>/dev/null)
+function aac () {
+  local ENDIAN OPTS
+
+  [[ -x "$FAAD" ]] || die faad2 not installed
+
+  [[ "${FMT:0:1}" = "f" ]] && ENDIAN=le
+  OPTS="-w -q -f2"
+
+  [[ "${FMT:1:2}" = "16" ]] && OPTS="$OPTS -b1"
+  [[ "${FMT:1:2}" = "24" ]] && OPTS="$OPTS -b2"
+  [[ "${FMT:1:2}" = "32" ]] && OPTS="$OPTS -b3"
+
+  SUM2=$($FAAD $OPTS "$FILE" | md5sum)
+  LEN2=$($FAAD $OPTS "$FILE" | wc -c)
+}
+
 # Check the FFmpeg decoder's samples.
 FFMPEG=$(which avconv 2>/dev/null || which ffmpeg 2>/dev/null)
 function ffmpeg () {
@@ -213,13 +231,13 @@ do
 
   # Get the independant MD5 sum and length of audio file.
   case $DEC in
-  ffmpeg|flac|mp3|sndfile|speex|vorbis)
+  aac|ffmpeg|flac|mp3|sndfile|speex|vorbis)
       IGNORE_LEN=false
       IGNORE_SUM=false
       $DEC
       SUM2=$(echo "$SUM2" | cut -f1 -d' ')
       ;;
-  aac|modplug|musepack|sidplay2|timidity|tremor|wavpack)
+  modplug|musepack|sidplay2|timidity|tremor|wavpack)
       $IGNORE && continue
       [[ "${UNSUPPORTED[$DEC]}" ]] || {
         echo -e "*** Decoder not yet supported: $DEC\n" > /dev/stderr
