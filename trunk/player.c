@@ -855,6 +855,7 @@ void player (const char *file, const char *next_file, struct out_buf *out_buf)
 		if (!io_ok(decoder_stream)) {
 			error ("Could not open URL: %s", io_strerror(decoder_stream));
 			io_close (decoder_stream);
+			status_msg ("");
 			decoder_stream = NULL;
 			UNLOCK (decoder_stream_mut);
 			return;
