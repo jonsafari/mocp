@@ -455,6 +455,11 @@ static bool is_timing_broken (AVFormatContext *ic)
 	if (ic->duration < 0 || ic->bit_rate < 0)
 		return true;
 
+	/* If and when FFmpeg uses the right field for its calculation this
+	 * should be self-correcting. */
+	if (ic->duration < AV_TIME_BASE && !strcmp (ic->iformat->name, "libgme"))
+		return true;
+
 #ifdef HAVE_AVIO_SIZE
 	file_size = avio_size (ic->pb);
 #else
