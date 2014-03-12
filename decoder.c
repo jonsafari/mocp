@@ -771,3 +771,9 @@ void decoder_error_copy (struct decoder_error *dst,
 	dst->type = src->type;
 	dst->err = xstrdup (src->err);
 }
+
+/* Return the error text from the decoder_error variable. */
+const char *decoder_error_text (const struct decoder_error *error)
+{
+	return error->err;
+}

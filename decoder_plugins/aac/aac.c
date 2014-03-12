@@ -16,6 +16,7 @@
 #endif
 
 #include <stdio.h>
+#include <stdint.h>
 #include <string.h>
 #include <assert.h>
 
@@ -88,7 +89,13 @@ static int buffer_fill (struct aac_data *data)
 	return 1;
 }
 
-static inline void buffer_consume(struct aac_data *data, int n)
+static inline void buffer_flush (struct aac_data *data)
+{
+	data->rbuf_len = 0;
+	data->rbuf_pos = 0;
+}
+
+static inline void buffer_consume (struct aac_data *data, int n)
 {
 	assert (n <= buffer_length(data));
 
@@ -186,39 +193,54 @@ end:
 	return rc;
 }
 
+/* This should be called with a unique decoder instance as the seeking
+ * it does triggers an FAAD bug which results in distorted audio due to
+ * retained state being corrupted.  (One suspects NeAACDecPostSeekReset()
+ * should resolve the problem but experimentation suggests not and no
+ * documentation exists describing its use.) */
 static int aac_count_time (struct aac_data *data)
 {
 	NeAACDecFrameInfo frame_info;
 	int samples = 0, bytes = 0, frames = 0;
-	off_t file_size, saved_pos;
+	off_t file_size;
+	int16_t *sample_buf;
 
 	file_size = io_file_size (data->stream);
 	if (file_size == -1)
 		return -1;
 
-	saved_pos = io_tell (data->stream);
+	if (io_seek(data->stream, file_size / 2, SEEK_SET) == -1)
+		return -1;
+	buffer_flush (data);
 
-	/* guess track length by decoding the first 10 frames */
-	while (frames < 10) {
-		if (buffer_fill_frame(data) <= 0)
+	/* Guess track length by decoding the middle 50 frames which have
+	 * more than 25% of samples having absolute values greater than 16. */
+	while (frames < 50) {
+		if (buffer_fill_frame (data) <= 0)
 			break;
 
-		NeAACDecDecode (data->decoder, &frame_info,
-		                buffer_data (data), buffer_length (data));
+		sample_buf = NeAACDecDecode (data->decoder, &frame_info,
+		                             buffer_data (data), buffer_length (data));
+
 		if (frame_info.error == 0 && frame_info.samples > 0) {
-			samples += frame_info.samples;
-			bytes += frame_info.bytesconsumed;
-			frames++;
+			unsigned int ix, zeroes = 0;
+
+			for (ix = 0; ix < frame_info.samples; ix += 1) {
+				if (RANGE(-16, sample_buf[ix], 16))
+					zeroes += 1;
+			}
+
+			if (zeroes * 4 < frame_info.samples) {
+				samples += frame_info.samples;
+				bytes += frame_info.bytesconsumed;
+				frames += 1;
+			}
 		}
+
 		if (frame_info.bytesconsumed == 0)
 			break;
 
 		buffer_consume (data, frame_info.bytesconsumed);
-	}
-
-	if (io_seek(data->stream, saved_pos, SEEK_SET) == -1) {
-		logit ("Can't seek after counting time");
-		return -1;
 	}
 
 	if (frames == 0)
@@ -275,7 +297,6 @@ static void *aac_open_internal (struct io_stream *stream, const char *fname)
 	 * in the buffer for NeAACDecInit() to work with.
 	 */
 	if (buffer_fill_min(data, 256) <= 0) {
-		logit ("not enough data");
 		decoder_error (&data->error, ERROR_FATAL, 0,
 				"AAC file/stream too short");
 		return data;
@@ -289,7 +310,6 @@ static void *aac_open_internal (struct io_stream *stream, const char *fname)
 	data->channels = channels;
 	data->sample_rate = (int)sample_rate;
 	if (n < 0) {
-		logit ("NeAACDecInit failed");
 		decoder_error (&data->error, ERROR_FATAL, 0,
 				"libfaad can't open this stream");
 		return data;
@@ -308,30 +328,8 @@ static void *aac_open_internal (struct io_stream *stream, const char *fname)
 
 	/*NeAACDecInitDRM(data->decoder, data->sample_rate, data->channels);*/
 
-	if (fname) {
-		off_t file_size;
-
-		data->duration = aac_count_time (data);
-		file_size = io_file_size (data->stream);
-		data->avg_bitrate = -1;
-		if (data->duration > 0 && file_size != -1)
-			data->avg_bitrate = file_size / data->duration * 8;
-	}
-
 	data->ok = 1;
 	return data;
-}
-
-static void *aac_open (const char *file)
-{
-	return aac_open_internal (NULL, file);
-}
-
-static void *aac_open_stream (struct io_stream *stream)
-{
-	assert (stream != NULL);
-
-	return aac_open_internal (stream, NULL);
 }
 
 static void aac_close (void *prv_data)
@@ -342,6 +340,38 @@ static void aac_close (void *prv_data)
 	io_close (data->stream);
 	decoder_error_clear (&data->error);
 	free (data);
+}
+
+
+static void *aac_open (const char *file)
+{
+	struct aac_data *data;
+
+	data = aac_open_internal (NULL, file);
+
+	if (data->ok) {
+		int duration = -1;
+		int avg_bitrate = -1;
+		off_t file_size;
+
+		duration = aac_count_time (data);
+		file_size = io_file_size (data->stream);
+		if (duration > 0 && file_size != -1)
+			avg_bitrate = file_size / duration * 8;
+		aac_close (data);
+		data = aac_open_internal (NULL, file);
+		data->duration = duration;
+		data->avg_bitrate = avg_bitrate;
+	}
+
+	return data;
+}
+
+static void *aac_open_stream (struct io_stream *stream)
+{
+	assert (stream != NULL);
+
+	return aac_open_internal (stream, NULL);
 }
 
 static char *get_tag (struct id3_tag *tag, const char *what)
@@ -397,8 +427,12 @@ static void aac_info (const char *file_name,
 		struct aac_data *data;
 
 		data = aac_open_internal (NULL, file_name);
+
 		if (data->ok)
 			info->time = aac_count_time (data);
+		else
+			logit ("%s", decoder_error_text (&data->error));
+
 		aac_close (data);
 	}
 }
