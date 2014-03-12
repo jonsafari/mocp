@@ -35,8 +35,17 @@
 #include "io_curl.h"
 #include "options.h"
 
+static char user_agent[] = PACKAGE_NAME"/"PACKAGE_VERSION;
+
 void io_curl_init ()
 {
+	char *ptr;
+
+	for (ptr = user_agent; *ptr; ptr += 1) {
+		if (*ptr == ' ')
+			*ptr = '-';
+	}
+
 	curl_global_init (CURL_GLOBAL_NOTHING);
 }
 
@@ -244,8 +253,7 @@ void io_curl_open (struct io_stream *s, const char *url)
 	curl_easy_setopt (s->curl.handle, CURLOPT_HEADERFUNCTION,
 			header_callback);
 	curl_easy_setopt (s->curl.handle, CURLOPT_WRITEHEADER, s);
-	curl_easy_setopt (s->curl.handle, CURLOPT_USERAGENT,
-			PACKAGE_NAME"/"PACKAGE_VERSION);
+	curl_easy_setopt (s->curl.handle, CURLOPT_USERAGENT, user_agent);
 	curl_easy_setopt (s->curl.handle, CURLOPT_URL, s->curl.url);
 	curl_easy_setopt (s->curl.handle, CURLOPT_FOLLOWLOCATION, 1);
 	curl_easy_setopt (s->curl.handle, CURLOPT_FAILONERROR, 1);
