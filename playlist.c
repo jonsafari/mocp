@@ -453,11 +453,10 @@ static char *title_expn_subs(char fmt, const struct file_tags *tags)
 
 	switch (fmt) {
 		case 'n':
-			if (tags && tags->track != -1) {
-				snprintf (track, sizeof(track), "%d", tags->track);
-				return track;
-			}
-			return NULL;
+			if (!tags || tags->track == -1)
+				break;
+			snprintf (track, sizeof(track), "%d", tags->track);
+			return track;
 		case 'a':
 			return if_not_empty (tags->artist);
 		case 'A':
@@ -467,7 +466,8 @@ static char *title_expn_subs(char fmt, const struct file_tags *tags)
 		default:
 			fatal ("Error parsing format string!");
 	}
-	return NULL; /* To avoid gcc warning */
+
+	return NULL;
 }
 
 /* Generate a title from fmt. */

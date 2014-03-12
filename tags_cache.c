@@ -699,9 +699,11 @@ void tags_cache_init (struct tags_cache *c, size_t max_size)
 	for (i = 0; i < CLIENTS_MAX; i++)
 		request_queue_init (&c->queues[i]);
 
+#if CACHE_DB_FORMAT_VERSION
 	c->max_items = max_size;
-	if (CACHE_DB_FORMAT_VERSION == 0)
-		c->max_items = 0;
+#else
+	c->max_items = 0;
+#endif
 	c->stop_reader_thread = 0;
 	pthread_mutex_init (&c->mutex, NULL);
 

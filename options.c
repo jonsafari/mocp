@@ -759,14 +759,14 @@ int options_check_int (const char *name, const int val)
  * other types. */
 int options_check_bool (const char *name, const bool val)
 {
-	int opt;
+	int opt, result = 0;
 
 	opt = find_option (name, OPTION_BOOL);
 	if (opt == -1)
 		return 0;
 	if (val == true || val == false)
-		return 1;
-	return 0;
+		result = 1;
+	return result;
 }
 
 /* Return 1 if a parameter to a string option is valid. */

@@ -228,7 +228,6 @@ struct decoder *plugin_init ()
       config = "<default>";
     fatal("TiMidity-Plugin: Error processing TiMidity-Configuration!\n"
           "                              Configuration file is: %s", config);
-    return NULL;
   }
 
   midioptions.rate = options_get_int("TiMidity_Rate");

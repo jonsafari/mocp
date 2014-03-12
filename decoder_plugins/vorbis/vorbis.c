@@ -265,11 +265,13 @@ static void *vorbis_open (const char *file)
 	}
 
 	/* This a restriction placed on us by the vorbisfile API. */
+#if INT64_MAX > LONG_MAX
 	if (io_file_size (data->stream) > LONG_MAX) {
 		decoder_error (&data->error, ERROR_FATAL, 0, "File too large!");
 		io_close (data->stream);
 		return data;
 	}
+#endif
 
 	vorbis_open_stream_internal (data);
 

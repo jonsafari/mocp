@@ -148,7 +148,7 @@ static int buffer_fill_frame(struct aac_data *data)
 		/* need at least 6 bytes of data */
 		rc = buffer_fill_min(data, 6);
 		if (rc <= 0)
-			return rc;
+			break;
 
 		len = buffer_length(data);
 		datap = buffer_data(data);
@@ -173,7 +173,7 @@ static int buffer_fill_frame(struct aac_data *data)
 			/* rc == frame length */
 			rc = buffer_fill_min (data, rc);
 			if (rc <= 0)
-				return rc;
+				goto end;
 
 			return 1;
 		}
@@ -182,8 +182,8 @@ static int buffer_fill_frame(struct aac_data *data)
 		buffer_consume (data, n);
 	}
 
-	/* not reached */
-	return -1; /* silence the GCC warning */
+end:
+	return rc;
 }
 
 static int aac_count_time (struct aac_data *data)
