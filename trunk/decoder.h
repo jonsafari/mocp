@@ -317,6 +317,18 @@ void decoder_error_clear (struct decoder_error *error);
 void decoder_error_copy (struct decoder_error *dst,
 		const struct decoder_error *src);
 
+/** Return the error text from the decoder_error variable.
+ *
+ * Returns the error text from the decoder_error variable.  NULL may be
+ * returned if decoder_error() has not been called.
+ *
+ * \param dst Destination.
+ * \param src Source.
+ *
+ * \return The address of the error text or NULL.
+ */
+const char *decoder_error_text (const struct decoder_error *error);
+
 /** Initialize decoder_error variable.
  *
  * Initialize decoder_error variable and set the error to ERROR_OK with no
