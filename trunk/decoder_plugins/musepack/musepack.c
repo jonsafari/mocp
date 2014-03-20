@@ -232,11 +232,10 @@ static void musepack_close (void *prv_data)
 {
 	struct musepack_data *data = (struct musepack_data *)prv_data;
 
-#ifndef MPC_IS_OLD_API
-	mpc_demux_exit (data->demux);
-#endif
-
 	if (data->ok) {
+#ifndef MPC_IS_OLD_API
+		mpc_demux_exit (data->demux);
+#endif
 		if (data->remain_buf)
 			free (data->remain_buf);
 	}
