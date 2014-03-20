@@ -440,6 +440,8 @@ static void io_open_file (struct io_stream *s, const char *file)
 {
 	struct stat file_stat;
 
+	s->source = IO_SOURCE_FD;
+
 	if ((s->fd = open(file, O_RDONLY)) == -1)
 		s->errno_val = errno;
 	else if (fstat(s->fd, &file_stat) == -1)
@@ -454,7 +456,6 @@ static void io_open_file (struct io_stream *s, const char *file)
 			if (s->mem == MAP_FAILED) {
 				s->mem = NULL;
 				logit ("mmap() failed: %s", strerror(errno));
-				s->source = IO_SOURCE_FD;
 			}
 			else {
 				logit ("mmap()ed %"PRId64" bytes", s->size);
@@ -464,10 +465,7 @@ static void io_open_file (struct io_stream *s, const char *file)
 		}
 		else {
 			logit ("Not using mmap()");
-			s->source = IO_SOURCE_FD;
 		}
-#else
-		s->source = IO_SOURCE_FD;
 #endif
 
 		s->opened = 1;
