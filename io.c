@@ -309,6 +309,8 @@ void io_close (struct io_stream *s)
 		if (s->source == IO_SOURCE_FD)
 			close (s->fd);
 
+		s->opened = 0;
+
 		if (s->buffered) {
 			fifo_buf_destroy (&s->buf);
 			rc = pthread_cond_destroy (&s->buf_free_cond);
@@ -444,8 +446,10 @@ static void io_open_file (struct io_stream *s, const char *file)
 
 	if ((s->fd = open(file, O_RDONLY)) == -1)
 		s->errno_val = errno;
-	else if (fstat(s->fd, &file_stat) == -1)
+	else if (fstat(s->fd, &file_stat) == -1) {
 		s->errno_val = errno;
+		close(s->fd);
+	}
 	else {
 
 		s->size = file_stat.st_size;

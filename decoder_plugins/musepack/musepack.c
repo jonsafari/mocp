@@ -159,7 +159,6 @@ static void musepack_open_stream_internal (struct musepack_data *data)
 
 	if (mpc_streaminfo_read(&data->info, &data->reader) != ERROR_CODE_OK) {
 		decoder_error (&data->error, ERROR_FATAL, 0, "Not a valid MPC file.");
-		io_close (data->stream);
 		return;
 	}
 
@@ -168,14 +167,12 @@ static void musepack_open_stream_internal (struct musepack_data *data)
 	if (!mpc_decoder_initialize(&data->decoder, &data->info)) {
 		decoder_error (&data->error, ERROR_FATAL, 0,
 				"Can't initialize mpc decoder.");
-		io_close (data->stream);
 		return;
 	}
 #else
 	data->demux = mpc_demux_init (&data->reader);
 	if (!data->demux) {
 		decoder_error (&data->error, ERROR_FATAL, 0, "Not a valid MPC file.");
-		io_close (data->stream);
 		return;
 	}
 
@@ -203,14 +200,12 @@ static void *musepack_open (const char *file)
 	if (!io_ok(data->stream)) {
 		decoder_error (&data->error, ERROR_FATAL, 0,
 				"Can't open file: %s", io_strerror(data->stream));
-		io_close (data->stream);
 		return data;
 	}
 
 	/* This a restriction placed on us by the Musepack API. */
 	if (io_file_size (data->stream) > INT32_MAX) {
 		decoder_error (&data->error, ERROR_FATAL, 0, "File too large!");
-		io_close (data->stream);
 		return data;
 	}
 
@@ -242,11 +237,11 @@ static void musepack_close (void *prv_data)
 #endif
 
 	if (data->ok) {
-		io_close (data->stream);
 		if (data->remain_buf)
 			free (data->remain_buf);
 	}
 
+	io_close (data->stream);
 	decoder_error_clear (&data->error);
 	free (data);
 }
