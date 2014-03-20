@@ -229,7 +229,6 @@ static void vorbis_open_stream_internal (struct vorbis_data *data)
 		decoder_error (&data->error, ERROR_FATAL, 0, "%s", vorbis_err);
 		debug ("ov_open error: %s", vorbis_err);
 
-		io_close (data->stream);
 	}
 	else {
 		int64_t duration;
@@ -260,7 +259,6 @@ static void *vorbis_open (const char *file)
 	if (!io_ok(data->stream)) {
 		decoder_error (&data->error, ERROR_FATAL, 0,
 		               "Can't load OGG: %s", io_strerror(data->stream));
-		io_close (data->stream);
 		return data;
 	}
 
@@ -268,7 +266,6 @@ static void *vorbis_open (const char *file)
 #if INT64_MAX > LONG_MAX
 	if (io_file_size (data->stream) > LONG_MAX) {
 		decoder_error (&data->error, ERROR_FATAL, 0, "File too large!");
-		io_close (data->stream);
 		return data;
 	}
 #endif
@@ -309,9 +306,9 @@ static void vorbis_close (void *prv_data)
 
 	if (data->ok) {
 		ov_clear (&data->vf);
-		io_close (data->stream);
 	}
 
+	io_close (data->stream);
 	decoder_error_clear (&data->error);
 	if (data->tags)
 		tags_free (data->tags);

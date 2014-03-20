@@ -362,7 +362,6 @@ static struct mp3_data *mp3_open_internal (const char *file,
 
 		if (io_seek(data->io_stream, 0, SEEK_SET) == -1) {
 			decoder_error (&data->error, ERROR_FATAL, 0, "seek failed");
-			io_close (data->io_stream);
 			mad_stream_finish (&data->stream);
 			mad_frame_finish (&data->frame);
 			mad_synth_finish (&data->synth);
@@ -374,7 +373,6 @@ static struct mp3_data *mp3_open_internal (const char *file,
 	else {
 		decoder_error (&data->error, ERROR_FATAL, 0, "Can't open: %s",
 				io_strerror(data->io_stream));
-		io_close (data->io_stream);
 	}
 
 	return data;
@@ -418,11 +416,11 @@ static void mp3_close (void *void_data)
 	struct mp3_data *data = (struct mp3_data *)void_data;
 
 	if (data->ok) {
-		io_close (data->io_stream);
 		mad_stream_finish (&data->stream);
 		mad_frame_finish (&data->frame);
 		mad_synth_finish (&data->synth);
 	}
+	io_close (data->io_stream);
 	decoder_error_clear (&data->error);
 	free (data);
 }

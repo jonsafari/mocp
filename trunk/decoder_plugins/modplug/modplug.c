@@ -124,6 +124,7 @@ static struct modplug_data *make_modplug_data(const char *file) {
   if (!RANGE(1, size, INT_MAX)) {
     decoder_error(&data->error, ERROR_FATAL, 0,
                   "Module size unsuitable for loading: %s", file);
+    io_close(s);
     return data;
   }
 

@@ -281,7 +281,6 @@ static void *aac_open_internal (struct io_stream *stream, const char *fname)
 		if (!io_ok(data->stream)) {
 			decoder_error (&data->error, ERROR_FATAL, 0,
 					"Can't open AAC file: %s", io_strerror(data->stream));
-			io_close (data->stream);
 			return data;
 		}
 	}
