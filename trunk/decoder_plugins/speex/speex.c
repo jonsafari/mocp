@@ -253,6 +253,7 @@ static void *spx_open (const char *file)
 	else {
 		data = (struct spx_data *)xmalloc (sizeof(struct spx_data));
 		data->stream = stream;
+		data->header = NULL;
 		decoder_error_init (&data->error);
 		decoder_error (&data->error, ERROR_STREAM, 0,
 				"Can't open file: %s", io_strerror(stream));
