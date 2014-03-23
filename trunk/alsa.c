@@ -23,6 +23,7 @@
 #define DEBUG
 
 #include <stdlib.h>
+#include <inttypes.h>
 #include <alsa/asoundlib.h>
 #include <assert.h>
 #include <string.h>
@@ -461,7 +462,8 @@ static int alsa_open (struct sound_params *sound_params)
 	bytes_per_frame = sound_params->channels
 		* sfmt_Bps(sound_params->fmt);
 
-	logit ("Buffer time: %ldus", buffer_frames * bytes_per_frame);
+	logit ("Buffer time: %"PRIu64"us",
+	       (uint64_t) buffer_frames * 1000000 / params.rate);
 
 	if (chunk_frames == buffer_frames) {
 		error ("Can't use period equal to buffer size (%lu == %lu)",
@@ -573,7 +575,7 @@ static void alsa_close ()
 	 * the SVN commit log for r2550).  Instead we sleep for the duration
 	 * of the still unplayed samples. */
 	if (snd_pcm_delay (handle, &delay) == 0)
-		usleep ((delay * 1000 / params.rate) * 1000);
+		usleep ((uint64_t) delay * 1000000 / params.rate);
 	snd_pcm_close (handle);
 	logit ("ALSA device closed");
 
