@@ -234,6 +234,7 @@ static void ffmpeg_log_repeats (char *msg)
 
 	/* We need to gate the decoder and precaching threads. */
 	LOCK (mutex);
+
 	if (prev_msg && (!msg || strcmp (msg, prev_msg))) {
 		if (msg_count > 1)
 			logit ("FFmpeg said: Last message repeated %d times", msg_count);
@@ -247,7 +248,15 @@ static void ffmpeg_log_repeats (char *msg)
 		msg_count += 1;
 	}
 	if (!prev_msg && msg) {
-		logit ("FFmpeg said: %s", msg);
+		int count, ix;
+		lists_t_strs *lines;
+
+		lines = lists_strs_new (4);
+		count = lists_strs_split (lines, msg, "\n");
+		for (ix = 0; ix < count; ix += 1)
+			logit ("FFmpeg said: %s", lists_strs_at (lines, ix));
+		lists_strs_free (lines);
+
 		prev_msg = msg;
 		msg_count = 1;
 	}
