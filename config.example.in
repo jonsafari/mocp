@@ -182,7 +182,16 @@
 # Show time played as a percentage in the time progress bar.
 #ShowTimePercent = no
 
-# Values of the TERM environment variable which are deemed to be xterms.
+# Values of the TERM environment variable which are deemed to be managed by
+# screen(1).  If you are setting a specific terminal using screen(1)'s
+# '-T <term>' option, then you will need to add 'screen.<term>' to this list.
+# Note that this is only a partial test; the value of the WINDOW environment
+# variable must also be a number (which screen(1) sets).
+#ScreenTerms = screen:screen-w:vt100
+
+# Values of the TERM environment variable which are deemed to be xterms.  If
+# you are using MOC within screen(1) under an xterm, then add screen(1)'s
+# TERM setting here as well to cause MOC to update the xterm's title.
 #XTerms = xterm
 #XTerms += xterm-colour:xterm-color
 #XTerms += xterm-256colour:xterm-256color
@@ -517,7 +526,12 @@
 # Set the terminal title when running under xterm.
 #SetXtermTitle = yes
 
-# Set the terminal title when running under screen.
+# Set the terminal title when running under screen(1).  If MOC can detect
+# that it is running under screen(1), then it will set an appropriate
+# title (see description of ScreenTerms above).  However, if multiple
+# levels of screen management are involved, detection might fail and this
+# could cause a screen upset.  In that situation you can use this option
+# to force screen titles off.
 #SetScreenTitle = yes
 
 # Display full paths instead of just file names in the playlist.

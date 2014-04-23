@@ -604,6 +604,8 @@ void options_init ()
 	                 CHECK_SYMBOL(3), "yes", "no", "IfAvailable");
 	add_bool ("ShowTimePercent", false);
 
+	add_list ("ScreenTerms", "screen:screen-w:vt100", CHECK_NONE);
+
 	add_list ("XTerms", "xterm:"
 	                    "xterm-colour:xterm-color:"
 	                    "xterm-256colour:xterm-256color:"

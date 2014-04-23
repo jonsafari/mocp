@@ -271,7 +271,7 @@ static struct info_win
 static bool has_xterm = false;
 
 /* Are we running inside screen? */
-static int has_screen = 0;
+static bool has_screen = false;
 
 /* Was the interface initialized? */
 static int iface_initialized = 0;
@@ -2450,13 +2450,16 @@ static void xterm_clear_title ()
 /* Set the has_screen variable. */
 static void detect_screen ()
 {
-	char *window;
-	char *term;
+	char *term, *window;
 
-	if (((term = getenv("TERM")) && !strcmp(term, "screen"))
-	   || ((window = getenv("WINDOW")) && isdigit(*window)))
+	term = getenv ("TERM");
+	window = getenv ("WINDOW");
+	if (term && window && isdigit (*window)) {
+		lists_t_strs *screen_terms;
 
-		has_screen = 1;
+		screen_terms = options_get_list ("ScreenTerms");
+		has_screen = lists_strs_exists (screen_terms, term);
+	}
 }
 
 #define SCREEN_TITLE_START "\033k"
