@@ -78,14 +78,8 @@ static void sndfile_info (const char *file_name, struct file_tags *info,
 	if (tags_sel & TAGS_TIME) {
 		struct sndfile_data *data = sndfile_open (file_name);
 
-		if (data->sndfile) {
-
-			/* I don't know why, but this condition is in the examples. */
-			if (data->snd_info.frames <= 0x7FFFFFFF) {
-				info->time = data->snd_info.frames
-					/ data->snd_info.samplerate;
-			}
-		}
+		if (data->sndfile && data->snd_info.frames < SF_COUNT_MAX)
+			info->time = data->snd_info.frames / data->snd_info.samplerate;
 
 		sndfile_close (data);
 	}
@@ -130,7 +124,7 @@ static int sndfile_get_duration (void *void_data)
 {
 	struct sndfile_data *data = (struct sndfile_data *)void_data;
 
-	return	data->snd_info.frames <= 0x7FFFFFFF ?
+	return	data->snd_info.frames < SF_COUNT_MAX ?
 			data->snd_info.frames / data->snd_info.samplerate
 			: -1;
 }
