@@ -17,7 +17,7 @@
  *		 only because LibAV doesn't care a second about their users."
  *
  *		-- http://blog.pkh.me/p/13-the-ffmpeg-libav-situation.html
-*/
+ */
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"

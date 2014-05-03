@@ -14,11 +14,11 @@
 #endif
 
 #include <pthread.h>
-#include <log.h>
 #include <string.h>
 #include <errno.h>
 
 #include "common.h"
+#include "log.h"
 
 /* Various functions which some systems lack. */
 
