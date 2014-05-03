@@ -1031,6 +1031,14 @@ static void *ffmpeg_open (const char *file)
 	data->seek_broken = is_seek_broken (data);
 	data->timing_broken = is_timing_broken (data->ic);
 
+	if (data->timing_broken && extn && !strcasecmp (extn, "wav")) {
+		ffmpeg_log_repeats (NULL);
+		decoder_error (&data->error, ERROR_FATAL, 0,
+		                   "Broken WAV file; use W64!");
+		avcodec_close (data->enc);
+		goto end;
+	}
+
 	data->okay = true;
 
 	if (!data->timing_broken && data->ic->duration >= AV_TIME_BASE) {
