@@ -214,7 +214,7 @@ void lists_strs_replace (lists_t_strs *list, int index, char *s)
 int lists_strs_split (lists_t_strs *list, const char *s, const char *delim)
 {
 	int result;
-	char *str, *token;
+	char *str, *token, *saveptr;
 
 	assert (list);
 	assert (s);
@@ -222,11 +222,11 @@ int lists_strs_split (lists_t_strs *list, const char *s, const char *delim)
 
 	result = 0;
 	str = xstrdup (s);
-	token = strtok (str, delim);
+	token = strtok_r (str, delim, &saveptr);
 	while (token) {
 		result += 1;
 		lists_strs_append (list, token);
-		token = strtok (NULL, delim);
+		token = strtok_r (NULL, delim, &saveptr);
 	}
 
 	free (str);
