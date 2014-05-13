@@ -256,7 +256,8 @@ static void wait_for_data ()
 
 	do {
 		event = get_int_from_srv ();
-
+		if (event == EV_EXIT)
+			interface_fatal ("The server exited!");
 		if (event != EV_DATA)
 			event_push (&events, event, get_event_data(event));
 	 } while (event != EV_DATA);
