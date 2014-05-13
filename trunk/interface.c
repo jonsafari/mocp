@@ -592,14 +592,15 @@ static int ask_for_tags (const struct plist *plist, const int tags_sel)
 static void interface_message (const char *format, ...)
 {
 	va_list va;
-	char message[128];
+	char *msg;
 
 	va_start (va, format);
-	vsnprintf (message, sizeof(message), format, va);
-	message[sizeof(message)-1] = 0;
+	msg = format_msg_va (format, va);
 	va_end (va);
 
-	iface_message (message);
+	iface_message (msg);
+
+	free (msg);
 }
 
 /* Update tags (and titles) for the given item on the playlist with new tags. */
@@ -3645,17 +3646,16 @@ void interface_end ()
 
 void interface_fatal (const char *format, ...)
 {
-	char err_msg[512];
+	char *msg;
 	va_list va;
 
 	va_start (va, format);
-	vsnprintf (err_msg, sizeof(err_msg), format, va);
-	err_msg[sizeof(err_msg) - 1] = 0;
+	msg = format_msg_va (format, va);
 	va_end (va);
 
-	logit ("FATAL ERROR: %s", err_msg);
+	logit ("FATAL ERROR: %s", msg);
 	windows_end ();
-	fatal ("%s", err_msg);
+	fatal ("%s", msg);
 }
 
 void interface_error (const char *msg)
