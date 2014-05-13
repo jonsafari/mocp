@@ -268,7 +268,6 @@ static void ffmpeg_log_cb (void *data ATTR_UNUSED, int level,
 {
 	int len;
 	char *msg;
-	va_list vlist;
 
 	assert (fmt);
 
@@ -284,12 +283,9 @@ static void ffmpeg_log_cb (void *data ATTR_UNUSED, int level,
 		return;
 #endif
 
-	va_copy (vlist, vl);
-	len = vsnprintf (NULL, 0, fmt, vlist);
-	va_end (vlist);
-	msg = xmalloc (len + 1);
-	vsnprintf (msg, len + 1, fmt, vl);
-	if (len > 0 && msg[len - 1] == '\n')
+	msg = format_msg_va (fmt, vl);
+	len = strlen (msg);
+	for (len = strlen (msg); len > 0 && msg[len - 1] == '\n'; len -= 1)
 		msg[len - 1] = 0x00;
 
 	ffmpeg_log_repeats (msg);

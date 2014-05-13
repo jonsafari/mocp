@@ -77,33 +77,6 @@ static inline void flush_log (void)
 	}
 }
 
-static inline char *format_msg_va (const char *fmt, va_list va)
-{
-	int len;
-	char *result;
-	va_list va_copy;
-
-	va_copy (va_copy, va);
-	len = vsnprintf (NULL, 0, fmt, va_copy) + 1;
-	va_end (va_copy);
-	result = xmalloc (len);
-	vsnprintf (result, len, fmt, va);
-
-	return result;
-}
-
-static inline char *format_msg (const char *fmt, ...)
-{
-	char *result;
-	va_list va;
-
-	va_start (va, fmt);
-	result = format_msg_va (fmt, va);
-	va_end (va);
-
-	return result;
-}
-
 static void locked_logit (const char *file, const int line,
                           const char *function, const char *msg)
 {

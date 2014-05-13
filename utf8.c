@@ -283,11 +283,10 @@ int xwprintw (WINDOW *win, const char *fmt, ...)
 {
 	va_list va;
 	int res;
-	char buf[1024];
+	char *buf;
 
 	va_start (va, fmt);
-	vsnprintf (buf, sizeof(buf), fmt, va);
-	buf[sizeof(buf)-1] = 0;
+	buf = format_msg_va (fmt, va);
 	va_end (va);
 
 	if (using_utf8)
@@ -298,6 +297,8 @@ int xwprintw (WINDOW *win, const char *fmt, ...)
 		res = waddstr (win, lstr);
 		free (lstr);
 	}
+
+	free (buf);
 
 	return res;
 }

@@ -725,7 +725,7 @@ void decoder_error (struct decoder_error *error,
 		const char *format, ...)
 {
 	char errno_buf[256] = "";
-	char err_str[256];
+	char *err_str;
 	va_list va;
 
 	if (error->err)
@@ -734,18 +734,15 @@ void decoder_error (struct decoder_error *error,
 	error->type = type;
 
 	va_start (va, format);
-	vsnprintf (err_str, sizeof(err_str), format, va);
-	err_str[sizeof(err_str)-1] = 0;
+	err_str = format_msg_va (format, va);
+	va_end (va);
 
 	if (add_errno)
 		strerror_r(add_errno, errno_buf, sizeof(errno_buf));
 
-	error->err = (char *)xmalloc (sizeof(char) *
-			(strlen(err_str) + strlen(errno_buf) + 1));
-	strcpy (error->err, err_str);
-	strcat (error->err, errno_buf);
+	error->err = format_msg ("%s%s", err_str, errno_buf);
 
-	va_end (va);
+	free (err_str);
 }
 
 /* Initialize the decoder_error structure. */

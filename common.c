@@ -41,17 +41,18 @@ static int im_server = 0; /* Am I the server? */
 void error (const char *format, ...)
 {
 	va_list va;
-	char msg[256];
+	char *msg;
 
 	va_start (va, format);
-	vsnprintf (msg, sizeof(msg), format, va);
-	msg[sizeof(msg) - 1] = 0;
+	msg = format_msg_va (format, va);
 	va_end (va);
 
 	if (im_server)
 		server_error (msg);
 	else
 		interface_error (msg);
+
+	free (msg);
 }
 
 /* End program with a message. Use when an error occurs and we can't recover.
@@ -60,13 +61,12 @@ void internal_fatal (const char *file ATTR_UNUSED, int line ATTR_UNUSED,
                  const char *function ATTR_UNUSED, const char *format, ...)
 {
 	va_list va;
-	char msg[256];
+	char *msg;
 
 	windows_reset ();
 
 	va_start (va, format);
-	vsnprintf (msg, sizeof(msg), format, va);
-	msg[sizeof(msg) - 1] = 0;
+	msg = format_msg_va (format, va);
 	fprintf (stderr, "\nFATAL_ERROR: %s\n\n", msg);
 #ifndef NDEBUG
 	internal_logit (file, line, function, "FATAL ERROR: %s", msg);
@@ -79,6 +79,8 @@ void internal_fatal (const char *file ATTR_UNUSED, int line ATTR_UNUSED,
 	if (im_server)
 		syslog (LOG_USER|LOG_ERR, "%s", msg);
 #endif
+
+	free (msg);
 
 	exit (EXIT_FATAL);
 }
@@ -177,6 +179,37 @@ char *trim (const char *src, size_t len)
 	result = xcalloc (last - first + 1, sizeof (char));
 	strncpy (result, first, last - first);
 	result[last - first] = 0x00;
+
+	return result;
+}
+
+/* Format argument values according to 'format' and return it as a
+ * malloc()ed string. */
+char *format_msg (const char *format, ...)
+{
+	char *result;
+	va_list va;
+
+	va_start (va, format);
+	result = format_msg_va (format, va);
+	va_end (va);
+
+	return result;
+}
+
+/* Format a vararg list according to 'format' and return it as a
+ * malloc()ed string. */
+char *format_msg_va (const char *format, va_list va)
+{
+	int len;
+	char *result;
+	va_list va_copy;
+
+	va_copy (va_copy, va);
+	len = vsnprintf (NULL, 0, format, va_copy) + 1;
+	va_end (va_copy);
+	result = xmalloc (len);
+	vsnprintf (result, len, format, va);
 
 	return result;
 }
