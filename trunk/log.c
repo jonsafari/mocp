@@ -19,7 +19,6 @@
 #include <sys/time.h>
 #include <time.h>
 #include <errno.h>
-#include <assert.h>
 
 #include "common.h"
 #include "lists.h"
@@ -40,24 +39,78 @@ static inline void flush_log (void)
 {
 	int rc;
 
-	assert (logfp);
+	if (logfp) {
+		do {
+			rc = fflush (logfp);
+		} while (rc != 0 && errno == EINTR);
+	}
+}
 
-	do {
-		rc = fflush (logfp);
-	} while (rc != 0 && errno == EINTR);
+static inline char *format_msg_va (const char *fmt, va_list va)
+{
+	int len;
+	char *result;
+	va_list va_copy;
+
+	va_copy (va_copy, va);
+	len = vsnprintf (NULL, 0, fmt, va_copy) + 1;
+	va_end (va_copy);
+	result = xmalloc (len);
+	vsnprintf (result, len, fmt, va);
+
+	return result;
+}
+
+static inline char *format_msg (const char *fmt, ...)
+{
+	char *result;
+	va_list va;
+
+	va_start (va, fmt);
+	result = format_msg_va (fmt, va);
+	va_end (va);
+
+	return result;
+}
+
+static void locked_logit (const char *file, const int line,
+                          const char *function, const char *msg)
+{
+	char time_str[20];
+	struct timeval utc_time;
+	time_t tv_sec;
+	struct tm tm_time;
+	const char fmt[] = "%s.%06u: %s:%d %s(): %s\n";
+
+	gettimeofday (&utc_time, NULL);
+	tv_sec = utc_time.tv_sec;
+	localtime_r (&tv_sec, &tm_time);
+	strftime (time_str, sizeof (time_str), "%b %e %T", &tm_time);
+
+	if (logfp) {
+		fprintf (logfp, fmt, time_str, (unsigned)utc_time.tv_usec,
+		                     file, line, function, msg);
+	}
+	else if (logging_state == BUFFERING) {
+		int len;
+		char *str;
+
+		len = snprintf (NULL, 0, fmt, time_str, (unsigned)utc_time.tv_usec,
+		                              file, line, function, msg);
+		str = xmalloc (len + 1);
+		snprintf (str, len + 1, fmt, time_str, (unsigned)utc_time.tv_usec,
+		                             file, line, function, msg);
+
+		lists_strs_push (buffered_log, str);
+	}
 }
 
 /* Put something into the log */
 void internal_logit (const char *file, const int line, const char *function,
 		const char *format, ...)
 {
-	int len;
-	char *msg, time_str[20];
-	struct timeval utc_time;
-	time_t tv_sec;
+	char *msg;
 	va_list va;
-	struct tm tm_time;
-	const char fmt[] = "%s.%06u: %s:%d %s(): %s\n";
 
 	LOCK(logging_mutex);
 
@@ -73,44 +126,20 @@ void internal_logit (const char *file, const int line, const char *function,
 				break;
 			log_records_spilt += 1;
 		case LOGGING:
-			UNLOCK(logging_mutex);
-			return;
+			goto end;
 		}
 	}
 
 	va_start (va, format);
-	len = vsnprintf (NULL, 0, format, va) + 1;
+	msg = format_msg_va (format, va);
 	va_end (va);
-	msg = xmalloc (len);
-	va_start (va, format);
-	vsnprintf (msg, len, format, va);
-	va_end (va);
-
-	gettimeofday (&utc_time, NULL);
-	tv_sec = utc_time.tv_sec;
-	localtime_r (&tv_sec, &tm_time);
-	strftime (time_str, sizeof (time_str), "%b %e %T", &tm_time);
-
-	if (logfp) {
-		fprintf (logfp, fmt, time_str, (unsigned)utc_time.tv_usec,
-		                     file, line, function, msg);
-		flush_log ();
-	}
-	else {
-		char *str;
-
-		len = snprintf (NULL, 0, fmt, time_str, (unsigned)utc_time.tv_usec,
-		                              file, line, function, msg);
-		str = xmalloc (len + 1);
-		snprintf (str, len + 1, fmt, time_str, (unsigned)utc_time.tv_usec,
-		                             file, line, function, msg);
-
-		lists_strs_push (buffered_log, str);
-	}
-
-	UNLOCK(logging_mutex);
-
+	locked_logit (file, line, function, msg);
 	free (msg);
+
+	flush_log ();
+
+end:
+	UNLOCK(logging_mutex);
 }
 
 /* fake logit() function for NDEBUG */
@@ -121,6 +150,8 @@ void fake_logit (const char *format ATTR_UNUSED, ...)
 /* Initialize logging stream */
 void log_init_stream (FILE *f, const char *fn)
 {
+	char *msg;
+
 	LOCK(logging_mutex);
 
 	logfp = f;
@@ -131,8 +162,6 @@ void log_init_stream (FILE *f, const char *fn)
 
 			for (ix = 0; ix < lists_strs_size (buffered_log); ix += 1)
 				fprintf (logfp, "%s", lists_strs_at (buffered_log, ix));
-
-			flush_log ();
 		}
 		lists_strs_free (buffered_log);
 		buffered_log = NULL;
@@ -140,11 +169,19 @@ void log_init_stream (FILE *f, const char *fn)
 
 	logging_state = LOGGING;
 
-	UNLOCK(logging_mutex);
+	msg = format_msg ("Writing log to: %s", fn);
+	locked_logit (__FILE__, __LINE__, __FUNCTION__, msg);
+	free (msg);
 
-	logit ("Writing log to: %s", fn);
-	if (log_records_spilt > 0)
-		logit ("%d log records spilt", log_records_spilt);
+	if (log_records_spilt > 0) {
+		msg = format_msg ("%d log records spilt", log_records_spilt);
+		locked_logit (__FILE__, __LINE__, __FUNCTION__, msg);
+		free (msg);
+	}
+
+	flush_log ();
+
+	UNLOCK(logging_mutex);
 }
 
 void log_close ()
