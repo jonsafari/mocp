@@ -129,7 +129,9 @@ static void sig_exit (int sig)
 	logit ("Got signal %d", sig);
 	server_quit = 1;
 
-	if (server_tid != pthread_self())
+	// FIXME (JCF): pthread_*() are not async-signal-safe and
+	//              should not be used within signal handlers.
+	if (!pthread_equal (server_tid, pthread_self()))
 		pthread_kill (server_tid, sig);
 }
 
