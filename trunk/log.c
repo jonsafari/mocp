@@ -15,10 +15,12 @@
 
 #include <stdio.h>
 #include <stdarg.h>
+#include <stdint.h>
 #include <pthread.h>
 #include <sys/time.h>
 #include <time.h>
 #include <errno.h>
+#include <signal.h>
 
 #include "common.h"
 #include "lists.h"
@@ -34,6 +36,35 @@ static lists_t_strs *buffered_log = NULL;
 static int log_records_spilt = 0;
 
 static pthread_mutex_t logging_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+#ifndef NDEBUG
+static struct {
+	int sig;
+	const char *name;
+	volatile uint64_t raised;
+	uint64_t logged;
+} sig_info[] = {
+	{SIGINT, "SIGINT", 0, 0},
+	{SIGHUP, "SIGHUP", 0, 0},
+	{SIGQUIT, "SIGQUIT", 0, 0},
+	{SIGTERM, "SIGTERM", 0, 0},
+	{SIGCHLD, "SIGCHLD", 0, 0},
+	{SIGWINCH, "SIGWINCH", 0, 0},
+	{0, "SIG other", 0, 0}
+};
+#endif
+
+#ifndef NDEBUG
+void log_signal (int sig)
+{
+	int ix = 0;
+
+	while (sig_info[ix].sig && sig_info[ix].sig != sig)
+		ix += 1;
+
+	sig_info[ix].raised += 1;
+}
+#endif
 
 static inline void flush_log (void)
 {
@@ -105,6 +136,20 @@ static void locked_logit (const char *file, const int line,
 	}
 }
 
+static void log_signals_raised (void)
+{
+#ifndef NDEBUG
+	size_t ix;
+
+    for (ix = 0; ix < ARRAY_SIZE(sig_info); ix += 1) {
+		while (sig_info[ix].raised > sig_info[ix].logged) {
+			locked_logit (__FILE__, __LINE__, __FUNCTION__, sig_info[ix].name);
+			sig_info[ix].logged += 1;
+		}
+	}
+#endif
+}
+
 /* Put something into the log */
 void internal_logit (const char *file, const int line, const char *function,
 		const char *format, ...)
@@ -130,6 +175,8 @@ void internal_logit (const char *file, const int line, const char *function,
 		}
 	}
 
+	log_signals_raised ();
+
 	va_start (va, format);
 	msg = format_msg_va (format, va);
 	va_end (va);
@@ -137,6 +184,8 @@ void internal_logit (const char *file, const int line, const char *function,
 	free (msg);
 
 	flush_log ();
+
+	log_signals_raised ();
 
 end:
 	UNLOCK(logging_mutex);
