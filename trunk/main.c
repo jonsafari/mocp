@@ -141,10 +141,16 @@ static void check_moc_dir ()
 
 static void sig_chld (int sig ATTR_UNUSED)
 {
+	int saved_errno;
+	pid_t rc;
+
 	logit ("Got SIGCHLD");
 
-	while (waitpid(-1, NULL, WNOHANG) > 0)
-		;
+	saved_errno = errno;
+	do {
+		rc = waitpid (-1, NULL, WNOHANG);
+	} while (rc > 0);
+	errno = saved_errno;
 }
 
 /* Run client and the server if needed. */
