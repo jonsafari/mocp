@@ -18,6 +18,8 @@
 #include <pthread.h>
 #include <sys/time.h>
 #include <time.h>
+#include <errno.h>
+#include <assert.h>
 
 #include "common.h"
 #include "lists.h"
@@ -33,6 +35,17 @@ static lists_t_strs *buffered_log = NULL;
 static int log_records_spilt = 0;
 
 static pthread_mutex_t logging_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+static inline void flush_log (void)
+{
+	int rc;
+
+	assert (logfp);
+
+	do {
+		rc = fflush (logfp);
+	} while (rc != 0 && errno == EINTR);
+}
 
 /* Put something into the log */
 void internal_logit (const char *file, const int line, const char *function,
@@ -81,7 +94,7 @@ void internal_logit (const char *file, const int line, const char *function,
 	if (logfp) {
 		fprintf (logfp, fmt, time_str, (unsigned)utc_time.tv_usec,
 		                     file, line, function, msg);
-		fflush (logfp);
+		flush_log ();
 	}
 	else {
 		char *str;
@@ -119,7 +132,7 @@ void log_init_stream (FILE *f, const char *fn)
 			for (ix = 0; ix < lists_strs_size (buffered_log); ix += 1)
 				fprintf (logfp, "%s", lists_strs_at (buffered_log, ix));
 
-			fflush (logfp);
+			flush_log ();
 		}
 		lists_strs_free (buffered_log);
 		buffered_log = NULL;
