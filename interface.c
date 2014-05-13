@@ -106,18 +106,20 @@ static time_t last_menu_move_time = (time_t)0;
 
 static void sig_quit (int sig ATTR_UNUSED)
 {
+	log_signal (sig);
 	want_quit = QUIT_CLIENT;
 }
 
-static void sig_interrupt (int sig)
+static void sig_interrupt (int sig ATTR_UNUSED)
 {
-	logit ("Got signal %d: interrupt the operation", sig);
+	log_signal (sig);
 	wants_interrupt = 1;
 }
 
 #ifdef SIGWINCH
 static void sig_winch (int sig ATTR_UNUSED)
 {
+	log_signal (sig);
 	want_resize = 1;
 }
 #endif

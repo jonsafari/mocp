@@ -144,7 +144,7 @@ static void sig_chld (int sig ATTR_UNUSED)
 	int saved_errno;
 	pid_t rc;
 
-	logit ("Got SIGCHLD");
+	log_signal (sig);
 
 	saved_errno = errno;
 	do {

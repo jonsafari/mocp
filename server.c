@@ -126,7 +126,7 @@ static int check_pid_file ()
 
 static void sig_exit (int sig)
 {
-	logit ("Got signal %d", sig);
+	log_signal (sig);
 	server_quit = 1;
 
 	// FIXME (JCF): pthread_*() are not async-signal-safe and

@@ -34,6 +34,12 @@ void fake_logit (const char *format, ...);
 void log_init_stream (FILE *f, const char *fn);
 void log_close ();
 
+#ifdef NDEBUG
+#define log_signal(sig)
+#else
+void log_signal (int sig);
+#endif
+
 #ifdef __cplusplus
 }
 #endif
