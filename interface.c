@@ -2761,6 +2761,7 @@ static void use_theme ()
 		return;
 
 	themes_switch_theme (file);
+	iface_update_attrs ();
 	iface_refresh ();
 
 	free (file);
