@@ -2786,6 +2786,9 @@ static void make_theme_menu ()
 
 		error ("No themes found.");
 	}
+
+	iface_update_theme_selection (get_current_theme ());
+	iface_refresh ();
 }
 
 /* Use theme from the currently selected file. */

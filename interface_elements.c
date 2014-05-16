@@ -3831,6 +3831,13 @@ void iface_update_attrs ()
 	}
 }
 
+void iface_update_theme_selection (const char *file)
+{
+    assert ((main_win.menus[2].menu.list.main)->selected != NULL);  /* menus[2] is theme menu */
+
+    menu_setcurritem_file (main_win.menus[2].menu.list.main, file);
+}
+
 /* Like iface_set_dir_content(), but before replacing the menu content, save
  * the menu state (selected file, view position) and restore it after making
  * a new menu. */
