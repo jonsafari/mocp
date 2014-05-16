@@ -3833,7 +3833,8 @@ void iface_update_attrs ()
 
 void iface_update_theme_selection (const char *file)
 {
-    assert ((main_win.menus[2].menu.list.main)->selected != NULL);  /* menus[2] is theme menu */
+    /* menus[2] is theme menu. */
+    assert (main_win.menus[2].menu.list.main->selected);
 
     menu_setcurritem_file (main_win.menus[2].menu.list.main, file);
 }

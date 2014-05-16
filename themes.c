@@ -517,21 +517,24 @@ void theme_init (bool has_xterm)
 {
 	reset_colors_table ();
 
-	if (has_colors()) {
-		if (options_get_str("ForceTheme")) {
-			load_color_theme (options_get_str("ForceTheme"), 1);
-			strncpy (current_theme, find_theme_file (options_get_str ("ForceTheme")), PATH_MAX);
+	if (has_colors ()) {
+		char *file;
+
+		if ((file = options_get_str ("ForceTheme"))) {
+			load_color_theme (file, 1);
+			strncpy (current_theme, find_theme_file (file), PATH_MAX);
 		}
-		else if (has_xterm && options_get_str("XTermTheme")) {
-			load_color_theme (options_get_str("XTermTheme"), 1);
-			strncpy (current_theme, find_theme_file (options_get_str ("XTermTheme")), PATH_MAX);
+		else if (has_xterm && (file = options_get_str ("XTermTheme"))) {
+			load_color_theme (file, 1);
+			strncpy (current_theme, find_theme_file (file), PATH_MAX);
 		}
-		else if (options_get_str("Theme")) {
-			load_color_theme (options_get_str("Theme"), 1);
-			strncpy (current_theme, find_theme_file (options_get_str ("Theme")), PATH_MAX);
+		else if ((file = options_get_str ("Theme"))) {
+			load_color_theme (file, 1);
+			strncpy (current_theme, find_theme_file (file), PATH_MAX);
 		}
 		else
-			snprintf (current_theme, PATH_MAX, "%s/example_theme", SYSTEM_THEMES_DIR);
+			snprintf (current_theme, PATH_MAX, "%s/example_theme",
+			                                   SYSTEM_THEMES_DIR);
 
 		set_default_colors ();
 	}
