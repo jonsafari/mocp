@@ -2696,18 +2696,19 @@ static void cmd_next ()
 	}
 }
 
-/* Add themes found in the directory to the theme selection menu.
- * Return the number of items added. */
-static int add_themes_to_menu (const char *themes_dir)
+/* Add themes found in the directory to the list of theme files. */
+static void add_themes_to_list (lists_t_strs *themes, const char *themes_dir)
 {
 	DIR *dir;
 	struct dirent *entry;
-	int count = 0;
+
+	assert (themes);
+	assert (themes_dir);
 
 	if (!(dir = opendir(themes_dir))) {
 		logit ("Can't open themes directory %s: %s", themes_dir,
 				strerror(errno));
-		return 0;
+		return;
 	}
 
 	while ((entry = readdir(dir))) {
@@ -2724,25 +2725,62 @@ static int add_themes_to_menu (const char *themes_dir)
 					entry->d_name) >= (int)sizeof(file))
 			continue;
 
-		iface_add_file (file, entry->d_name, F_THEME);
-		count++;
+		lists_strs_append (themes, file);
 	}
 
 	closedir (dir);
+}
 
-	return count;
+/* Compare two pathnames based on filename. */
+static int themes_cmp (const void *a, const void *b)
+{
+	int result;
+	char *sa = *(char **)a;
+	char *sb = *(char **)b;
+
+	result = strcoll (strrchr (sa, '/') + 1, strrchr (sb, '/') + 1);
+	if (result == 0)
+		result = strcoll (sa, sb);
+
+	return result;
+}
+
+/* Add themes found in the directories to the theme selection menu.
+ * Return the number of items added. */
+static int add_themes_to_menu (const char *user_themes,
+                               const char *system_themes)
+{
+	int ix;
+	lists_t_strs *themes;
+
+	assert (user_themes);
+	assert (system_themes);
+
+	themes = lists_strs_new (16);
+	add_themes_to_list (themes, user_themes);
+	add_themes_to_list (themes, system_themes);
+	lists_strs_sort (themes, themes_cmp);
+
+	for (ix = 0; ix < lists_strs_size (themes); ix += 1) {
+		char *file;
+
+		file = lists_strs_at (themes, ix);
+		iface_add_file (file, strrchr (file, '/') + 1, F_THEME);
+	}
+
+	lists_strs_free (themes);
+
+	return ix;
 }
 
 static void make_theme_menu ()
 {
 	iface_switch_to_theme_menu ();
 
-	if (add_themes_to_menu (create_file_name("themes"))
-			+ add_themes_to_menu (SYSTEM_THEMES_DIR) == 0) {
+	if (add_themes_to_menu (create_file_name ("themes"),
+	                        SYSTEM_THEMES_DIR) == 0) {
 		if (!cwd[0])
-
-			/* we were at the playlist from the startup */
-			enter_first_dir ();
+			enter_first_dir (); /* we were at the playlist from the startup */
 		else
 			iface_switch_to_dir ();
 
