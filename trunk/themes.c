@@ -42,6 +42,8 @@
 # define COLOR_GREY	10
 #endif
 
+static char current_theme[PATH_MAX];
+
 static int colors[CLR_LAST];
 
 /* Counter used for making colors (init_pair()) */
@@ -516,12 +518,20 @@ void theme_init (bool has_xterm)
 	reset_colors_table ();
 
 	if (has_colors()) {
-		if (options_get_str("ForceTheme"))
+		if (options_get_str("ForceTheme")) {
 			load_color_theme (options_get_str("ForceTheme"), 1);
-		else if (has_xterm && options_get_str("XTermTheme"))
+			strncpy (current_theme, find_theme_file (options_get_str ("ForceTheme")), PATH_MAX);
+		}
+		else if (has_xterm && options_get_str("XTermTheme")) {
 			load_color_theme (options_get_str("XTermTheme"), 1);
-		else if (options_get_str("Theme"))
+			strncpy (current_theme, find_theme_file (options_get_str ("XTermTheme")), PATH_MAX);
+		}
+		else if (options_get_str("Theme")) {
 			load_color_theme (options_get_str("Theme"), 1);
+			strncpy (current_theme, find_theme_file (options_get_str ("Theme")), PATH_MAX);
+		}
+		else
+			snprintf (current_theme, PATH_MAX, "%s/example_theme", SYSTEM_THEMES_DIR);
 
 		set_default_colors ();
 	}
@@ -542,7 +552,14 @@ void themes_switch_theme (const char *file)
 			interface_error ("Error loading theme!");
 			reset_colors_table ();
 		}
+		else
+			strncpy (current_theme, file, PATH_MAX);
 
 		set_default_colors ();
 	}
+}
+
+const char *get_current_theme ()
+{
+	return current_theme;
 }
