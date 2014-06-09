@@ -238,6 +238,7 @@ static void *get_event_data (const int type)
 		case EV_PLIST_DEL:
 		case EV_QUEUE_DEL:
 		case EV_STATUS_MSG:
+		case EV_SRV_ERROR:
 			return get_str_from_srv ();
 		case EV_FILE_TAGS:
 			return recv_tags_data_from_srv ();
@@ -913,14 +914,9 @@ static void event_queue_add (const struct plist_item *item)
 }
 
 /* Get error message from the server and show it. */
-static void update_error ()
+static void update_error (char *err)
 {
-	char *err;
-
-	send_int_to_srv (CMD_GET_ERROR);
-	err = get_data_str ();
 	error ("%s", err);
-	free (err);
 }
 
 /* Send the playlist to the server to be forwarded to another client. */
@@ -1130,7 +1126,7 @@ static void server_event (const int event, void *data)
 			update_channels ();
 			break;
 		case EV_SRV_ERROR:
-			update_error ();
+			update_error ((char *)data);
 			break;
 		case EV_OPTIONS:
 			get_server_options ();

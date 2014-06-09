@@ -595,7 +595,7 @@ void free_event_data (const int type, void *data)
 	else if (type == EV_FILE_TAGS)
 		free_tag_ev_data ((struct tag_ev_response *)data);
 	else if (type == EV_PLIST_DEL || type == EV_STATUS_MSG
-			|| type == EV_QUEUE_DEL)
+			|| type == EV_SRV_ERROR || type == EV_QUEUE_DEL)
 		free (data);
 	else if (type == EV_PLIST_MOVE || type == EV_QUEUE_MOVE)
 		free_move_ev_data ((struct move_ev_data *)data);
@@ -664,6 +664,7 @@ static struct packet_buf *make_event_packet (const struct event *e)
 
 	if (e->type == EV_PLIST_DEL
 			|| e->type == EV_QUEUE_DEL
+			|| e->type == EV_SRV_ERROR
 			|| e->type == EV_STATUS_MSG) {
 		assert (e->data != NULL);
 		packet_buf_add_str (b, e->data);

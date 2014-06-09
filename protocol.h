@@ -107,7 +107,6 @@ enum noblock_io_status
 #define CMD_SET_MIXER	0x1b /* set the volume level */
 #define CMD_DELETE	0x1c /* delete an item from the playlist */
 #define CMD_SEND_EVENTS 0x1d /* request for events */
-#define CMD_GET_ERROR	0x1e /* get the error message */
 #define CMD_PREV	0x20 /* start playing previous song if available */
 #define CMD_SEND_PLIST	0x21 /* send the playlist to the requesting client */
 #define CMD_GET_PLIST	0x22 /* get the playlist from one of the clients */
