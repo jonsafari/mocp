@@ -1549,8 +1549,10 @@ static void process_multiple_args (lists_t_strs *args)
 
 		if (dir == 1)
 			read_directory_recurr (path, playlist);
-		else if (!dir && (is_sound_file (path) || is_url (path)))
-			plist_add (playlist, path);
+		else if (!dir && (is_sound_file (path) || is_url (path))) {
+			if (plist_find_fname (playlist, path) == -1)
+				plist_add (playlist, path);
+		}
 		else if (is_plist_file (path)) {
 			char *plist_dir, *slash;
 
