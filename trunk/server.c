@@ -75,8 +75,6 @@ static int wake_up_pipe[2];
 /* Set to 1 when a signal arrived causing the program to exit. */
 static volatile int server_quit = 0;
 
-static char err_msg[265] = "";
-
 /* Information about currently played file */
 static struct {
 	int avg_bitrate;
@@ -599,7 +597,8 @@ static void add_event_all (const int event, const void *data)
 				}
 				else if (event == EV_PLIST_DEL
 						|| event == EV_QUEUE_DEL
-						|| event == EV_STATUS_MSG) {
+						|| event == EV_STATUS_MSG
+						|| event == EV_SRV_ERROR) {
 					data_copy = xstrdup (data);
 				}
 				else if (event == EV_PLIST_MOVE
@@ -772,10 +771,8 @@ static int req_jump_to (struct client *cli)
 /* Report an error logging it and sending a message to the client. */
 void server_error (const char *msg)
 {
-	strncpy (err_msg, msg, sizeof(err_msg) - 1);
-	err_msg[sizeof(err_msg) - 1] = 0;
-	logit ("ERROR: %s", err_msg);
-	add_event_all (EV_SRV_ERROR, NULL);
+	logit ("ERROR: %s", msg);
+	add_event_all (EV_SRV_ERROR, msg);
 }
 
 /* Send the song name to the client. Return 0 on error. */
@@ -1492,10 +1489,6 @@ static void handle_command (const int client_id)
 		case CMD_SEND_EVENTS:
 			cli->wants_events = 1;
 			logit ("Request for events");
-			break;
-		case CMD_GET_ERROR:
-			if (!send_data_str(cli, err_msg))
-				err = 1;
 			break;
 		case CMD_GET_PLIST:
 			if (!get_client_plist(cli))
