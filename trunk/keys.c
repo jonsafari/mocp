@@ -340,7 +340,7 @@ static struct command commands[] = {
 	{
 		KEY_CMD_GO_MUSIC_DIR,
 		"go_to_music_directory",
-		"Go to the music directory (requires an entry in the config)",
+		"Go to the music directory (requires config option)",
 		CON_MENU,
 		{ 'm', -1 },
 		1
@@ -396,7 +396,7 @@ static struct command commands[] = {
 	{
 		KEY_CMD_GO_TO_PLAYING_FILE,
 		"go_to_playing_file",
-		"Go to the directory containing the currently played file",
+		"Go to the currently playing file's directory",
 		CON_MENU,
 		{ 'G', -1 },
 		1
@@ -1215,15 +1215,22 @@ static char *get_command_keys (const int idx)
 static void make_help ()
 {
 	size_t i;
+	const char unassigned[] = " [unassigned]";
 
 	for (i = 0; i < COMMANDS_NUM; i += 1) {
-		help[i] = xmalloc (sizeof(char) *
-				(HELP_INDENT + strlen(commands[i].help) + 1));
+		size_t len;
+
+		len = HELP_INDENT + strlen (commands[i].help) + 1;
+		if (commands[i].keys[0] == -1)
+			len += strlen (unassigned);
+		help[i] = xcalloc (sizeof(char), len);
 		strncpy (help[i], get_command_keys(i), HELP_INDENT);
 		if (strlen(help[i]) < HELP_INDENT)
 			memset (help[i] + strlen(help[i]), ' ',
 					HELP_INDENT - strlen(help[i]));
 		strcpy (help[i] + HELP_INDENT, commands[i].help);
+		if (commands[i].keys[0] == -1)
+			strcat (help[i], unassigned);
 	}
 }
 
