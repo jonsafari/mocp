@@ -3523,7 +3523,7 @@ void init_interface (const int sock, const int logging, lists_t_strs *args)
 			if (!options_get_int("SyncPlaylist")
 					|| !use_server_playlist())
 				load_playlist ();
-			send_int_to_srv (CMD_SEND_EVENTS);
+			send_int_to_srv (CMD_SEND_PLIST_EVENTS);
 		}
 		else if (options_get_int("SyncPlaylist")) {
 			struct plist tmp_plist;
@@ -3536,7 +3536,7 @@ void init_interface (const int sock, const int logging, lists_t_strs *args)
 			plist_init (&tmp_plist);
 			get_server_playlist (&tmp_plist);
 
-			send_int_to_srv (CMD_SEND_EVENTS);
+			send_int_to_srv (CMD_SEND_PLIST_EVENTS);
 
 			send_int_to_srv (CMD_LOCK);
 			send_int_to_srv (CMD_CLI_PLIST_CLEAR);
@@ -3560,7 +3560,7 @@ void init_interface (const int sock, const int logging, lists_t_strs *args)
 		}
 	}
 	else {
-		send_int_to_srv (CMD_SEND_EVENTS);
+		send_int_to_srv (CMD_SEND_PLIST_EVENTS);
 		if (!options_get_int("SyncPlaylist")
 				|| !use_server_playlist())
 			load_playlist ();
