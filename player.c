@@ -225,11 +225,10 @@ static void update_time ()
 	static int last_time = 0;
 	int ctime = audio_get_time ();
 
-	if (ctime != last_time) {
+	if (ctime >= 0 && ctime != last_time) {
 		last_time = ctime;
 		ctime_change ();
-		set_info_bitrate (bitrate_list_get(&bitrate_list,
-					audio_get_time()));
+		set_info_bitrate (bitrate_list_get (&bitrate_list, ctime));
 	}
 }
 
@@ -948,11 +947,16 @@ void player_stop ()
 
 void player_seek (const int sec)
 {
-	request = REQ_SEEK;
-	req_seek = sec + audio_get_time();
-	LOCK (request_cond_mutex);
-	pthread_cond_signal (&request_cond);
-	UNLOCK (request_cond_mutex);
+	int time;
+
+	time = audio_get_time ();
+	if (time >= 0) {
+		request = REQ_SEEK;
+		req_seek = sec + time;
+		LOCK (request_cond_mutex);
+		pthread_cond_signal (&request_cond);
+		UNLOCK (request_cond_mutex);
+	}
 }
 
 void player_jump_to (const int sec)

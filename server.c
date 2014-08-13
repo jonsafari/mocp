@@ -1442,7 +1442,7 @@ static void handle_command (const int client_id)
 			audio_stop ();
 			break;
 		case CMD_GET_CTIME:
-			if (!send_data_int(cli, audio_get_time()))
+			if (!send_data_int(cli, MAX(0, audio_get_time())))
 				err = 1;
 			break;
 		case CMD_SEEK:
