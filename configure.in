@@ -53,6 +53,12 @@ AC_PROG_CC
 AC_PROG_CXX
 AC_PROG_INSTALL
 
+dnl Test for an ISO C99 capable compiler so we can warn of pending
+dnl requirement.
+save_CC="$CC"
+AC_PROG_CC_C99
+CC="$save_CC"
+
 AC_PROG_AWK
 AC_LIBTOOL_DLOPEN
 AC_DISABLE_STATIC
@@ -464,6 +470,13 @@ if test "x$AUTOCONF_DEPRECATED" = "xyes"
 then
 	echo "WARNING: After release 2.5 MOC will require Autoconf version"
 	echo "         2.64 or later.  Plan to upgrade your Autoconf soon."
+	echo
+fi
+
+if test "x$ac_cv_prog_cc_c99" = "xno"
+then
+	echo "WARNING: After release 2.5 MOC will require an ISO C99 capable"
+	echo "         compiler.  Plan to upgrade your compiler soon."
 	echo
 fi
 
