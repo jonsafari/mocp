@@ -93,7 +93,7 @@ static ssize_t io_read_mmap (struct io_stream *s, const int dont_move,
 		return 0;
 
 	to_read = MIN(count, (size_t) (s->size - s->mem_pos));
-	memcpy (buf, s->mem + s->mem_pos, to_read);
+	memcpy (buf, (char *)s->mem + s->mem_pos, to_read);
 
 	if (!dont_move)
 		s->mem_pos += to_read;
@@ -601,7 +601,7 @@ static ssize_t io_read_buffered (struct io_stream *s, void *buf, size_t count)
 			&& ((!s->eof && !s->read_error)
 				|| fifo_buf_get_fill(&s->buf))) {
 		if (fifo_buf_get_fill(&s->buf)) {
-			received += fifo_buf_get (&s->buf, buf + received,
+			received += fifo_buf_get (&s->buf, (char *)buf + received,
 					count - received);
 			debug ("Read %zd bytes so far", received);
 			pthread_cond_signal (&s->buf_free_cond);
