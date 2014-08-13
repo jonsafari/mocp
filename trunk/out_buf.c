@@ -359,6 +359,11 @@ void out_buf_time_set (struct out_buf *buf, const float time)
 	UNLOCK (buf->mutex);
 }
 
+/* Return the time in the audio which the user is currently hearing.
+ * If unplayed samples still remain in the hardware buffer from the
+ * previous audio then the value returned may be negative and it is
+ * up to the caller to handle this appropriately in the context of
+ * its own processing. */
 int out_buf_time_get (struct out_buf *buf)
 {
 	int time;
@@ -367,8 +372,6 @@ int out_buf_time_get (struct out_buf *buf)
 	LOCK (buf->mutex);
 	time = buf->time - (bps ? buf->hardware_buf_fill / (float)bps : 0);
 	UNLOCK (buf->mutex);
-
-	assert (time >= 0);
 
 	return time;
 }
