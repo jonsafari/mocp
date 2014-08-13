@@ -70,7 +70,6 @@ Transitional code removal (after 2.5):
 * Remove Berkeley DB version 4.1 requirement warning.
 * Remove libcurl version 7.15.1 requirement warning.
 * Remove POPT requirement warning.
-* Remove explicit '--enable-debug' warning.
 * Remove XZ requirement warning.
 
 FFmpeg/LibAV support changes (after 2.5):
@@ -86,7 +85,6 @@ Pending 2.6 changes:
 * Require at least Berkeley DB version 4.1.
 * Require at least libcurl version 7.15.1.
 * Require the POPT library (libpopt).
-* Make '--enable-debug' configuration option default to 'no'.
 * Make XZ the default compression for the 'make dist' target.
 
 Pending 2.7 changes:
