@@ -525,10 +525,10 @@ static void flac_info (const char *file_name, struct file_tags *info,
 	if (tags_sel & TAGS_TIME) {
 		struct flac_data *data;
 
-		if ((data = flac_open_internal(file_name, 0))) {
+		data = flac_open_internal (file_name, 0);
+		if (data->ok)
 			info->time = data->length;
-			flac_close (data);
-		}
+		flac_close (data);
 	}
 
 	if (tags_sel & TAGS_COMMENTS)
@@ -666,9 +666,13 @@ static int flac_get_avg_bitrate (void *void_data)
 
 static int flac_get_duration (void *void_data)
 {
+	int result = -1;
 	struct flac_data *data = (struct flac_data *)void_data;
 
-	return data->length;
+	if (data->ok)
+		result = data->length;
+
+	return result;
 }
 
 static void flac_get_name (const char *file ATTR_UNUSED, char buf[4])
