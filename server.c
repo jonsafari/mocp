@@ -373,10 +373,10 @@ int server_init (int debugging, int foreground)
 	log_process_stack_size ();
 	log_pthread_stack_size ();
 
+	clients_init ();
 	audio_initialize ();
 	tags_cache_init (&tags_cache, options_get_int("TagsCacheSize"));
 	tags_cache_load (&tags_cache, create_file_name("cache"));
-	clients_init ();
 
 	server_tid = pthread_self ();
 	thread_signal (SIGTERM, sig_exit);
