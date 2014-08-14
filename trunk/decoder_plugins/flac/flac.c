@@ -160,7 +160,8 @@ static void metadata_callback (
 		data->bits_per_sample = metadata->data.stream_info.bits_per_sample;
 		data->channels = metadata->data.stream_info.channels;
 		data->sample_rate = metadata->data.stream_info.sample_rate;
-		data->length = data->total_samples / data->sample_rate;
+		if (data->total_samples > 0)
+			data->length = data->total_samples / data->sample_rate;
 	}
 }
 
@@ -320,6 +321,7 @@ static void *flac_open_internal (const char *file, const int buffered)
 	data->abort = 0;
 	data->sample_buffer_fill = 0;
 	data->last_decode_position = 0;
+	data->length = -1;
 	data->ok = 0;
 
 	data->stream = io_open (file, buffered);
