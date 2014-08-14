@@ -180,8 +180,8 @@ static void *read_thread (void *arg)
 			LOCK (buf->mutex);
 
 			/* Update time */
-			if (played && audio_get_bps())
-				buf->time += played / (float)audio_get_bps();
+			if (play_buf_fill && audio_get_bps())
+				buf->time += play_buf_fill / (float)audio_get_bps();
 			buf->hardware_buf_fill = audio_get_buf_fill();
 		}
 	}
