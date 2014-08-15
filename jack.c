@@ -240,7 +240,7 @@ static int moc_jack_play (const char *buff, const size_t size)
 
 	if (jack_shutdown) {
 		logit ("Refusing to play, because there is no client thread.");
-		return 0;
+		return -1;
 	}
 
 	debug ("Playing %zu bytes", size);
@@ -292,7 +292,10 @@ static int moc_jack_play (const char *buff, const size_t size)
 		}
 	}
 
-	return size - remain;
+	if (jack_shutdown)
+		return -1;
+
+	return size;
 }
 
 static int moc_jack_read_mixer ()
