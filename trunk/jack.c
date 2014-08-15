@@ -42,9 +42,9 @@ static int play;
 static int rate;
 /* flag set if xrun occured that was our fault (the ringbuffer doesn't contain
  * enough data in the process callback) */
-static int our_xrun = 0;
+static volatile int our_xrun = 0;
 /* set to 1 if jack client thread exits */
-static int jack_shutdown;
+static volatile int jack_shutdown = 0;
 
 /* this is the function that jack calls to get audio samples from us */
 static int moc_jack_process(jack_nframes_t nframes, void *arg ATTR_UNUSED)
