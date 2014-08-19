@@ -29,7 +29,6 @@
 #include <strings.h>
 #include <mad.h>
 #include <id3tag.h>
-#include <pthread.h>
 #include <assert.h>
 #ifdef HAVE_ICONV
 # include <iconv.h>
@@ -60,9 +59,9 @@ struct mp3_data
 
 	unsigned int freq;
 	short channels;
-	signed long duration; /* Total time of the file in seconds
-	                         (used for seeking). */
-	off_t size; /* Size of the file */
+	signed long duration;	/* Total time of the file in seconds
+	                           (used for seeking). */
+	off_t size;				/* Size of the file */
 
 	unsigned char in_buff[INPUT_BUFFER + MAD_BUFFER_GUARD];
 

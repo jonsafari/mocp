@@ -62,7 +62,7 @@ static int options_num = 0;
 
 
 /* Returns the str's hash using djb2 algorithm. */
-static unsigned int hash(const char * str)
+static unsigned int hash (const char * str)
 {
 	unsigned int hash = 5381;
 
@@ -82,14 +82,14 @@ static int find_option (const char *name, enum option_type type)
 			return -1;
 		else if(h == options[i].hash && type & options[i].type)
 			if(!strcasecmp(name, options[i].name))
-		    return i;
+		    	return i;
 
 	for(i=0;i<init_pos;i++)
 		if(options[i].type==OPTION_FREE)
 			return -1;
 		else if(h == options[i].hash && type & options[i].type)
 			if(!strcasecmp(name, options[i].name))
-		    return i;
+		    	return i;
 
 	return -1;
 }

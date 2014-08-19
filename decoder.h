@@ -168,12 +168,12 @@ struct decoder
 	/** Get duration of the stream.
 	 *
 	 * Get duration of the stream. It is used as a faster alternative
-	 * for getting duration using info() if the file is opened.
+	 * for getting duration than using info() if the file is opened.
 	 *
 	 * \param data Decoder's private data.
 	 *
 	 * \return Duration in seconds or -1 on error. -1 is not a fatal
-	 * error, further decoding fill be performed.
+	 * error, further decoding will be performed.
 	 */
 	int (*get_duration)(void *data);
 

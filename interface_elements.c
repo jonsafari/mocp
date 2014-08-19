@@ -358,8 +358,8 @@ static char *entry_history_get (const struct entry_history *h, const int num)
 	return xstrdup (h->items[num]);
 }
 
-/* Draw the entry. Use this function at the end of screen drawing, because
- * Set the cursor position in the right place. */
+/* Draw the entry.  Use this function at the end of screen drawing
+ * because it sets the cursor position in the right place. */
 static void entry_draw (const struct entry *e, WINDOW *w, const int posx,
 		const int posy)
 {
@@ -4513,4 +4513,3 @@ void iface_update_queue_position_last (const struct plist *queue,
 	update_queue_position (playlist, dir_list, queue->items[i].file, pos);
 	iface_refresh_screen ();
 }
-

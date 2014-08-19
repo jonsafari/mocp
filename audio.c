@@ -109,7 +109,7 @@ static struct audio_conversion sound_conv;
 static int need_audio_conversion = 0;
 
 /* URL of the last played stream. Used to fake pause/unpause of internet
- * streams. Protected by curr_playing_mu. */
+ * streams. Protected by curr_playing_mut. */
 static char *last_stream_url = NULL;
 
 static int current_mixer = 0;
@@ -444,8 +444,7 @@ static void *play_thread (void *unused ATTR_UNUSED)
 			out_buf_time_set (&out_buf, 0.0);
 
 			next = plist_next (curr_plist, curr_playing);
-			next_file = next != -1
-				? plist_get_file(curr_plist, next) : NULL;
+			next_file = next != -1 ? plist_get_file (curr_plist, next) : NULL;
 			UNLOCK (plist_mut);
 			UNLOCK (curr_playing_mut);
 

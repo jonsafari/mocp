@@ -42,7 +42,7 @@ enum color_index
 	CLR_ERROR,
 	CLR_MESSAGE,
 	CLR_PLIST_TIME,
-	CLR_LAST, /* Fake element to get number of collors */
+	CLR_LAST, /* Fake element to get number of colors */
 	CLR_WRONG
 };
 

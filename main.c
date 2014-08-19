@@ -173,8 +173,7 @@ static void start_moc (const struct parameters *params, lists_t_strs *args)
 		switch (fork()) {
 			case 0: /* child - start server */
 				set_me_server ();
-				list_sock = server_init (params->debug,
-						params->foreground);
+				list_sock = server_init (params->debug, params->foreground);
 				rc = write (notify_pipe[1], &i, sizeof(i));
 				if (rc < 0)
 					fatal ("write() to notify pipe failed: %s",
@@ -194,8 +193,7 @@ static void start_moc (const struct parameters *params, lists_t_strs *args)
 				fatal ("fork() failed: %s", strerror(errno));
 			default:
 				close (notify_pipe[1]);
-				if (read(notify_pipe[0], &i, sizeof(i))
-						!= sizeof(i))
+				if (read(notify_pipe[0], &i, sizeof(i)) != sizeof(i))
 					fatal ("Server exited!");
 				close (notify_pipe[0]);
 				if ((server_sock = server_connect()) == -1) {

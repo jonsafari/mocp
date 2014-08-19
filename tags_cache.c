@@ -469,7 +469,7 @@ static void tags_cache_gc (struct tags_cache *c)
 }
 #endif
 
-/* Remove the one element of the cache based on it's access time. */
+/* Synchronize cache every DB_SYNC_COUNT updates. */
 #ifdef HAVE_DB_H
 static void tags_cache_sync (struct tags_cache *c)
 {
@@ -811,7 +811,7 @@ void tags_cache_add_request (struct tags_cache *c, const char *file,
 	assert (file != NULL);
 	assert (LIMIT(client_id, CLIENTS_MAX));
 
-	debug ("Request for tags for %s from client %d", file, client_id);
+	debug ("Request for tags for '%s' from client %d", file, client_id);
 
 #ifdef HAVE_DB_H
 	if (c->max_items)
