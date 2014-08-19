@@ -224,7 +224,7 @@ static int client_unlock (struct client *cli)
 	return 1;
 }
 
-/* Return the client index from tht clients table. */
+/* Return the client index from the clients table. */
 static int client_index (const struct client *cli)
 {
 	int i;

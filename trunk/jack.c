@@ -40,8 +40,8 @@ static int volume_integer = 100;
 static int play;
 /* current sample rate */
 static int rate;
-/* flag set if xrun occured that was our fault (the ringbuffer doesn't contain
- * enough data in the process callback) */
+/* flag set if xrun occurred that was our fault (the ringbuffer doesn't
+ * contain enough data in the process callback) */
 static volatile int our_xrun = 0;
 /* set to 1 if jack client thread exits */
 static volatile int jack_shutdown = 0;

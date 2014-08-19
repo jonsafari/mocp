@@ -1299,11 +1299,9 @@ static int go_to_dir (const char *dir, const int reload)
 	ask_for_tags (dir_plist, get_tags_setting());
 
 	if (reload)
-		iface_update_dir_content (IFACE_MENU_DIR, dir_plist, dirs,
-				playlists);
+		iface_update_dir_content (IFACE_MENU_DIR, dir_plist, dirs, playlists);
 	else
-		iface_set_dir_content (IFACE_MENU_DIR, dir_plist, dirs,
-				playlists);
+		iface_set_dir_content (IFACE_MENU_DIR, dir_plist, dirs, playlists);
 	lists_strs_free (dirs);
 	lists_strs_free (playlists);
 	if (going_up)
@@ -1326,8 +1324,8 @@ static void change_srv_plist_serial ()
 	do {
 		send_int_to_srv (CMD_GET_SERIAL);
 		serial = get_data_int ();
-	 } while (serial == plist_get_serial(playlist)
-			|| serial == plist_get_serial(dir_plist));
+	 } while (serial == plist_get_serial(playlist) ||
+	          serial == plist_get_serial(dir_plist));
 
 	send_int_to_srv (CMD_PLIST_SET_SERIAL);
 	send_int_to_srv (serial);
@@ -3520,8 +3518,7 @@ void init_interface (const int sock, const int logging, lists_t_strs *args)
 		process_args (args);
 
 		if (plist_count(playlist) == 0) {
-			if (!options_get_int("SyncPlaylist")
-					|| !use_server_playlist())
+			if (!options_get_int("SyncPlaylist") || !use_server_playlist())
 				load_playlist ();
 			send_int_to_srv (CMD_SEND_PLIST_EVENTS);
 		}
@@ -3561,8 +3558,7 @@ void init_interface (const int sock, const int logging, lists_t_strs *args)
 	}
 	else {
 		send_int_to_srv (CMD_SEND_PLIST_EVENTS);
-		if (!options_get_int("SyncPlaylist")
-				|| !use_server_playlist())
+		if (!options_get_int("SyncPlaylist") || !use_server_playlist())
 			load_playlist ();
 		enter_first_dir ();
 	}

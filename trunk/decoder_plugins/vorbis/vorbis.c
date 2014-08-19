@@ -248,6 +248,7 @@ static void vorbis_open_stream_internal (struct vorbis_data *data)
 static void *vorbis_open (const char *file)
 {
 	struct vorbis_data *data;
+
 	data = (struct vorbis_data *)xmalloc (sizeof(struct vorbis_data));
 	data->ok = 0;
 

@@ -39,7 +39,7 @@ struct io_stream_curl
 	char *url;
 	struct curl_slist *http_headers;	/* HTTP headers to send with
 						   the request */
-	char *buf;		/* buffer for data the curl gives us */
+	char *buf;		/* buffer for data that curl gives us */
 	long buf_fill;
 	int need_perform_loop;	/* do we need the perform() loop? */
 	int got_locn;	/* received a location header */

@@ -369,7 +369,7 @@ void player_init ()
 {
 	precache.file = NULL;
 	precache.running = 0;
-	precache.ok =  0;
+	precache.ok = 0;
 }
 
 static void show_tags (const struct file_tags *tags)
@@ -556,8 +556,7 @@ static void decode_loop (const struct decoder *f, void *decoder_data,
 			logit ("seeking");
 			md5->okay = false;
 			req_seek = MAX(0, req_seek);
-			if ((decoder_seek = f->seek(decoder_data, req_seek))
-					== -1)
+			if ((decoder_seek = f->seek(decoder_data, req_seek)) == -1)
 				logit ("error when seeking");
 			else {
 				out_buf_stop (out_buf);
@@ -752,7 +751,7 @@ static void play_file (const char *file, const struct decoder *f,
 		bitrate_list.head = precache.bitrate_list.head;
 		bitrate_list.tail = precache.bitrate_list.tail;
 
-		/* don't free list elements when reseting precache */
+		/* don't free list elements when resetting precache */
 		precache.bitrate_list.head = NULL;
 		precache.bitrate_list.tail = NULL;
 	}
@@ -772,7 +771,7 @@ static void play_file (const char *file, const struct decoder *f,
 		}
 
 		already_decoded_time = 0.0;
-		if(f->get_avg_bitrate)
+		if (f->get_avg_bitrate)
 			set_info_avg_bitrate (f->get_avg_bitrate(decoder_data));
 		bitrate_list_init (&bitrate_list);
 	}
