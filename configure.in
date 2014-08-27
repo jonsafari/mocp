@@ -232,6 +232,10 @@ then
 	      AC_DEFINE([HAVE_ALSA], 1, [Define if you have ALSA.])
 	      EXTRA_LIBS="$EXTRA_LIBS $ALSA_LIBS"
 	      CFLAGS="$CFLAGS $ALSA_CFLAGS"
+		  if ! $PKG_CONFIG --atleast-version 1.0.11 alsa
+		  then
+			  ALSA_DEPRECATED="yes"
+		  fi
 	      need_usleep="yes"],
 	     [true])
 fi
@@ -499,6 +503,13 @@ if test "x$CURL_DEPRECATED" = "xyes"
 then
 	echo "WARNING: After release 2.5 MOC will require libcurl version"
 	echo "         7.15.1 or later.  Plan to upgrade your libraries soon."
+	echo
+fi
+
+if test "x$ALSA_DEPRECATED" = "xyes"
+then
+	echo "WARNING: After release 2.5 MOC will require ALSA version 1.0.11"
+	echo "         or later.  Plan to upgrade your ALSA soon."
 	echo
 fi
 
