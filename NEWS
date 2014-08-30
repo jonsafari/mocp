@@ -1,4 +1,4 @@
-2.5.0
+2.5.0 - "Consolidation"
 	* Autotools and packaging changes:
 	  - Upgraded autoconf version requirement to 2.60
 	  - Added '--with-alsa' to suppress ALSA sound driver inclusion
@@ -31,6 +31,8 @@
 	  - Renamed SndFile plugin for consistancy
 	  - Removed M4A format support from AAC decoder plugin
 	  - Removed WAV format support from ModPlug decoder plugin
+	  - Detect huge files in certain formats which SndFile cannot play
+	  - Improved (drastically in some cases) the accuracy of AAC durations
 	* Overhauled FFmpeg/LibAV decoder:
 	  - Resolved FFmpeg API deprecations
 	  - Provided LibAV compatibility
@@ -50,6 +52,8 @@
 	  - Fixed loop playing FLAC files
 	  - Fixed many FFmpeg/LibAV API breakages
 	  - Fixed many miscellaneous bugs
+	  - Detect over-length (and therefore broken) WAV files
+	  - Fixed log formatting when FFmpeg messages contain newline characters
 	* Audio reproduction changes:
 	  - Improved support for 8-bit sample size
 	  - Added software mixer (Hendrik Iben)
@@ -104,6 +108,7 @@
 	  - Fixed overlength highlight bar
 	  - Fixed screen upset when tags contain control characters
 	  - Fixed some screen upsets when tags contain UTF-8 characters (firejox)
+	  - Fixed screen upset caused by screen(1) mis-detection
 	* New and updated client interaction features:
 	  - 'a' command: also add a directory to the playlist (Filippo Giunchedi)
 	  - 'L' command: display music lyrics (Géraud Le Falher)
@@ -111,6 +116,8 @@
 	  - Queued messages for display in the message area
 	  - Added play queue (Martin Milata)
 	  - Mark a fragment of a file which can be passed to external commands
+	  - Clear status message after a stream open failure
+	  - Minor help menu clarifications
 	* Improve text entry history and editting:
 	  - Recognise ^u (by default) as delete to start of line
 	  - Recognise ^k (by default) as delete to end of line
@@ -123,12 +130,16 @@
 	  - Enabled highlighted playlist numbers and file times (Marc Tschiesche)
 	  - Fixed miscoloured frame when switching themes (Alexander Polakov)
 	  - Fixed default colour settings
+	  - Fixed cursor placement in themes menu (Alex Merenstein)
+	  - Fixed ordering of theme files in themes menu
+	  - Fixed new attributes application on theme switching (Alex Merenstein)
 	* General code cleaning:
 	  - Refactoring, optimisations and cosmetic improvements
 	  - Silenced many build warnings and errors
 	  - Replaced various deprecated, legacy and platform-specific functions
+	  - Improved thread safety
 	* Significant bug fixes:
-	  - Fixed stale locks freeze in tags cache database following a crash.
+	  - Fixed stale locks freeze in tags cache database following a crash
 	  - Fixed CURL timeout for internet streaming errors (Daniel Stenberg)
 	  - Fixed audio distortion on MP3 file having overly long tag values
 	  - Fixed false positive stream detection in the MP3 decoder
@@ -136,7 +147,7 @@
 	  - Fixed 'LRINTF error' raised when reconfiguring MOC
 	  - Fixed backspace key mishandling
 	  - Fixed client interface meta-key handling
-	  - Fixed pthread stack overflow segfault on OpenBSD.
+	  - Fixed pthread stack overflow segfault on OpenBSD
 	  - Fixed segfault when text entry history becomes full
 	  - Fixed segfault processing playlists with relative paths
 	  - Fixed memory corruptions when toggling tag reading
@@ -154,6 +165,14 @@
 	  - Workaround for streams that have the actual title as tags/comments
 	  - Indentified cause of "undefined symbol" build errors
 	  - Plugged all known memory and file descriptor leaks
+	  - Fixed nonsense duration values returned on some corrupt FLAC files
+	  - Fixed 'time >= 0' assertion at change of audio file
+	  - Fixed client event notification failure in some circumstances
+	  - Fixed client abort on duplicated playlist filenames
+	  - Fixed delayed client exit when server invokes long-running scripts
+	    (Alex Merenstein)
+	  - Fixed occasional server freeze on logging when running scripts
+	  - Fixed non-conforming 'User-Agent' HTTP request header
 	* Miscellaneous:
 	  - Updated and reformatted mocp manpage and equalizer README file
 	  - Made many warning and error reports more informative and consistant
@@ -164,6 +183,8 @@
 	  - Improved compatibility with big-endian systems
 	  - Moved tags cache to a Berkeley DB
 	  - Integration of down-stream distribution patches
+	  - Fixed frames to duration calculations in ALSA
+	  - Fixed some mutex management bugs
 	  - Fixed many bugs which crashed MOC
 
 2.4.4
