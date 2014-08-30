@@ -1,6 +1,21 @@
-Items marked with $ are bigger changes requiring more time.
+This file does not list all bugs which:
 
-Known bugs:
+- are known but rarely encountered,
+- are not visible to the user,
+- are programming errors detectable only with the aid of testing tools,
+- are benign, or
+- have been reported but not yet confirmed to be attributable to MOC.
+
+It also does not contain many "To Do" items as these are often quite fluid
+and can evolve rapidly over time.
+
+The MOC Maintainer does hold a master list containing bugs, feature requests,
+program change requests and future requirements, and once it is possible to
+generate this file from that list automatically it may be updated more
+frequently so it is current and comprehensive.
+
+
+Known Bugs:
 
 * Character set problems:
   - Do we assume filesystem in UTF-8?  It's incorrect.
@@ -16,9 +31,6 @@ Known bugs:
     MOC with musepack (libmpcdec) support MOC always core dumps on exit.
     (This may have been fixed by other storage-related patches and will be
     removed in MOC 2.7 if no one has confirmed it still exists.)
-  - Assertion failure on FreeBSD 5.5.  [node/148]
-    (This may have been fixed by other storage-related patches and will be
-    removed in MOC 2.7 if no one has confirmed it still exists.)
   - Using DB_THREAD in combination with DB_CREATE and DB_PRIVATE seems to
     cause a segfault on OpenWRT.  The circumvention is to configure MOC on
     OpenWRT with '--disable-cache' or set the MOC configuration option
@@ -31,6 +43,11 @@ Known bugs:
   - libmagic: uninitialised storage in reads
   - librcc: uninitialised storage in conditions
   - libspeex: uninitialised storage in conditions and reads
+  - The problems above occur in libraries but it needs to be determined
+    whether they somehow arise from MOC's misuse of them.
+  - There are many data race and mutex handling problems (particularly
+    around the time of file-to-file transitions), but these are not visible
+    to the users and difficult to solve without compromising gapless playback.
 * Directory and playlists:
   - When sorting by file name (directories), put files beginning with a
     non-alphanumeric character at the top.
@@ -39,9 +56,6 @@ Known bugs:
     program.
   - Client continues to show file names after ReadTags is toggled when
     MOC is started with 'ShowTime=yes' and 'ReadTags=no'.
-* Themes problems:
-  - MOC needs to be restarted (when switching themes) in order to understand
-    the ATTRIBUTE correctly.
 * Decoder problems:
   - Seeking in some formats does not work in the FFmpeg decoder because of
     the limitations of the FFmpeg libraries (and seeking is disabled for
@@ -49,12 +63,15 @@ Known bugs:
     if SEEK_IN_DECODER is set in the FFmpeg decoder plug-in.  (This may be
     parameterised in due course.)
   - Some decoders do not currently pass the MD5 sum or sample count checks.
-  - The duration of some AAC audios is incorrectly reported.
+  - The duration of some AAC audios is incorrectly reported.  This problem
+    arises from the limitations of the format, but MOC now makes much more
+    accurate guesses.
 * Bugs of unknown origin:
   - After many hours of playing an Internet stream, the audio can begin
     to stutter.  [node/692]
 
-Transitional code removal (after 2.5):
+
+Transitional Code Removal (after 2.5):
 
 * Remove deprecated option TagsIconv.
 * Remove changed option name for OSSMixerChannel.
@@ -74,13 +91,15 @@ Transitional code removal (after 2.5):
 * Remove POPT requirement warning.
 * Remove XZ requirement warning.
 
-FFmpeg/LibAV support changes (after 2.5):
+
+FFmpeg/LibAV Support Changes (after 2.5):
 
 * Remove deprecated ffmpeg-config support.
 * Raise minimum FFmpeg/LibAV requirement to release 0.7.
 * Remove supporting code for previous releases.
 
-Pending 2.6 changes:
+
+Pending 2.6 Changes:
 
 * Require at least FLAC version 1.1.3.
 * Require ISO C99 capable compiler.
@@ -89,14 +108,16 @@ Pending 2.6 changes:
 * Require at least libcurl version 7.15.1.
 * Require at least ALSA version 1.0.11.
 * Require the POPT library (libpopt).
+* Replace curl-config version checking with pkg-config.
 * Make XZ the default compression for the 'make dist' target.
 
-Pending 2.7 changes:
+
+Pending 2.7 Changes:
 
 * Remove FreeBSD program crash bug if no one has confirmed it still exists.
-* Remove FreeBSD assertion failure if no one has confirmed it still exists.
 
-In future:
+
+Future Wishlist (items marked with $ are bigger changes requiring more time):
 
 * Move TODO to moc.daper.net/roadmap .
 * A string-valued variable "TitleFormatString", similar to "FormatString".
@@ -148,9 +169,10 @@ In future:
 * Upgrade TiMidity decoder plug-in to TiMidity++.  This would add support
   for soundfonts (.sf2) which are now more common.
 
-Maybe never:
+
+Maybe Never:
 
 * Say about ignored options that affects server when the server is not being
   run.
 * Funny ASCII equalizer.
-* Mouse support.
+* Mouse support.  [node/743]
