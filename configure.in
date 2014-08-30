@@ -1,7 +1,7 @@
 dnl This can be moved into AC_INIT when AC_PREREQ reaches 2.64.
 m4_define([AC_PACKAGE_URL],[http://moc.daper.net/])
 
-AC_INIT([Music On Console],[2.5.0-beta2],[mocmaint@daper.net],[moc])
+AC_INIT([Music On Console],[2.5.0],[mocmaint@daper.net],[moc])
 AC_CONFIG_SRCDIR([main.c])
 AC_CONFIG_HEADERS([config.h])
 
