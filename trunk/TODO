@@ -75,7 +75,6 @@ Transitional Code Removal (after 2.5):
 
 * Remove ISO C99 capable compiler requirement warning.
 * Remove Autoconf version 2.64 requirement warning.
-* Remove FLAC version 1.1.3 requirement warning.
 * Remove Berkeley DB version 4.1 requirement warning.
 * Remove libcurl version 7.15.1 requirement warning.
 * Remove ALSA version 1.0.11 requirement warning.
@@ -85,7 +84,6 @@ Transitional Code Removal (after 2.5):
 
 Pending 2.6 Changes:
 
-* Require at least FLAC version 1.1.3.
 * Require ISO C99 capable compiler.
 * Require at least Autoconf version 2.64.
 * Require at least Berkeley DB version 4.1.
