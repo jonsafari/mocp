@@ -1,3 +1,7 @@
+2.6.0 - "Usability"
+	* Removed functionality:
+	  - Transitional code from the previous release
+
 2.5.0 - "Consolidation"
 	* Autotools and packaging changes:
 	  - Upgraded autoconf version requirement to 2.60

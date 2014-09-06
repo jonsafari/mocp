@@ -821,14 +821,6 @@ int options_check_list (const char *name, const char *val)
 	return result;
 }
 
-static int is_deprecated_option (const char *name)
-{
-	if (!strcmp(name, "TagsIconv"))
-		return 1;
-
-	return 0;
-}
-
 /* Find and substitute variables enclosed by '${...}'.  Variables are
  * substituted first from the environment then, if not found, from
  * the configuration options.  Strings of the form '$${' are reduced to
@@ -954,87 +946,15 @@ static char *substitute_variable (const char *name_in, const char *value_in)
 	return result;
 }
 
-/* Rewrite comma-separated SoundDriver value as a list value. */
-static char *rewrite_sounddriver_as_list (const char *str)
-{
-	char *result, *ptr;
-
-	ptr = result = xmalloc (strlen (str) + 1);
-
-	do {
-		if (*str == ',')
-			*ptr++ = ':';
-		else if (*ptr != ' ')
-			*ptr++ = *str;
-	} while (*str++);
-
-	return result;
-}
-
-/* Rewrite Layout string value as a function-valued list. */
-static char *rewrite_layout_as_list (const char *str)
-{
-	int len, size, ix;
-	char *result, *work;
-	lists_t_strs *layouts;
-
-	layouts = lists_strs_new (4);
-	work = xstrdup (str);
-	size = lists_strs_split (layouts, str, " ");
-	free (work);
-
-	for (ix = 0; ix < size; ix += 1) {
-		char *ptr;
-
-		ptr = strchr (lists_strs_at (layouts, ix), ':');
-		if (!ptr)
-			fatal ("Malformed layout option: %s", str);
-		*ptr = '(';
-	}
-
-	result = lists_strs_fmt (layouts, "%s):");
-	len = strlen (result);
-	result[len - 1] = 0x00;
-	lists_strs_free (layouts);
-
-	return result;
-}
-
 /* Set an option read from the configuration file. Return false on error. */
 static bool set_option (const char *name, const char *value_in, bool append)
 {
 	int i;
-	char *value, *value_s;
-	const char *name_s;
+	char *value;
 
-	if (is_deprecated_option (name)) {
-		fprintf (stderr, "\n\tOption '%s' was ignored;"
-		                 "\n\tplease remove it from your configuration file.\n", name);
-		sleep (5);
-		return true;
-	}
-
-	name_s = name;
-
-	/* Handle a change of option name for OSSMixerChannel. */
-	if (!strcasecmp (name, "OSSMixerChannel"))
-		name_s = "OSSMixerChannel1";
-
-	/* Handle a change of option name for ALSAMixer. */
-	if (!strcasecmp (name, "ALSAMixer"))
-		name_s = "ALSAMixer1";
-
-	/* Warn if configuration file needs updating. */
-	if (name != name_s) {
-		fprintf (stderr, "\n\tThe name of option '%s' has changed to '%s';"
-		                 "\n\tplease update your configuration file accordingly.\n\n",
-		                 name, name_s);
-		sleep (5);
-	}
-
-	i = find_option (name_s, OPTION_ANY);
+	i = find_option (name, OPTION_ANY);
 	if (i == -1) {
-		fprintf (stderr, "Wrong option name: '%s'.", name_s);
+		fprintf (stderr, "Wrong option name: '%s'.", name);
 		return false;
 	}
 
@@ -1044,72 +964,22 @@ static bool set_option (const char *name, const char *value_in, bool append)
 	if (append && options[i].type != OPTION_LIST) {
 		fprintf (stderr,
 		         "Only list valued options can be appended to ('%s').",
-		         name_s);
+		         name);
 		return false;
 	}
 
 	if (!append && options[i].set_in_config) {
 		fprintf (stderr, "Tried to set an option that has been already "
-		                 "set in the config file ('%s').", name_s);
+		                 "set in the config file ('%s').", name);
 		return false;
 	}
 
 	options[i].set_in_config = 1;
 
 	/* Substitute environmental variables. */
-	value_s = substitute_variable (name_s, value_in);
-	value = NULL;
+	value = substitute_variable (name, value_in);
 
-	/* Handle a change of option type for SidPlay2_StartAtStart. */
-	if (!strcasecmp (options[i].name, "SidPlay2_StartAtStart")) {
-		if (!strcmp (value_s, "0"))
-			value = xstrdup ("no");
-		else if (!strcmp (value_s, "1"))
-			value = xstrdup ("yes");
-	}
-
-	/* Handle a change of option type for SidPlay2_PlaySubTunes. */
-	if (!strcasecmp (options[i].name, "SidPlay2_PlaySubTunes")) {
-		if (!strcmp (value_s, "0"))
-			value = xstrdup ("no");
-		else if (!strcmp (value_s, "1"))
-			value = xstrdup ("yes");
-	}
-
-	/* Handle a change of option type for QueueNextSongReturn. */
-	if (!strcasecmp (options[i].name, "QueueNextSongReturn")) {
-		if (!strcmp (value_s, "0"))
-			value = xstrdup ("no");
-		else if (!strcmp (value_s, "1"))
-			value = xstrdup ("yes");
-	}
-
-	/* Handle a change of option type for SoundDriver. */
-	if (!strcasecmp (options[i].name, "SoundDriver")) {
-		if (strchr (value_s, ','))
-			value = rewrite_sounddriver_as_list (value_s);
-	}
-
-	/* Handle a change of option type for Layouts. */
-	if (!strncasecmp (options[i].name, "Layout", 6)) {
-		if (value_s[0] && !strchr (value_s, '('))
-			value = rewrite_layout_as_list (value_s);
-	}
-
-	/* Warn if configuration file needs updating. */
-	if (value) {
-		free (value_s);
-		fprintf (stderr, "\n\tThe valid values of '%s' have changed;"
-		                 "\n\tplease read the comments for this option in"
-		                 "\n\tthe supplied config.example file and update"
-		                 "\n\tyour own configuration file accordingly.\n\n",
-		                 name_s);
-		sleep (5);
-	}
-	else
-		value = value_s;
-
-	if (!options_set_pair (name_s, value, append))
+	if (!options_set_pair (name, value, append))
 		return false;
 
 	free (value);

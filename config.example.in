@@ -625,13 +625,10 @@
 #SidPlay2_PlayMode = "M"
 
 # Use start-song information from SID ('yes') or start at first song
-# ('no').  Songs before the start-song won't be played.  (Note that this
-# option previously took the values 1 and 0; these are now deprecated
-# in favour of 'yes' and 'no'.)
+# ('no').  Songs before the start-song won't be played.
 #SidPlay2_StartAtStart = yes
 
-# Play sub-tunes.  (Note that this option previously took the values 1
-# and 0; these are now deprecated in favour of 'yes' and 'no'.)
+# Play sub-tunes.
 #SidPlay2_PlaySubTunes = yes
 
 # Run the OnSongChange command when a new song starts playing.
