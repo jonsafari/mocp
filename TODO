@@ -85,7 +85,6 @@ Transitional Code Removal (after 2.5):
 
 FFmpeg/LibAV Support Changes (after 2.5):
 
-* Remove deprecated ffmpeg-config support.
 * Raise minimum FFmpeg/LibAV requirement to release 0.7.
 * Remove supporting code for previous releases.
 
