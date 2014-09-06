@@ -83,12 +83,6 @@ Transitional Code Removal (after 2.5):
 * Remove XZ requirement warning.
 
 
-FFmpeg/LibAV Support Changes (after 2.5):
-
-* Raise minimum FFmpeg/LibAV requirement to release 0.7.
-* Remove supporting code for previous releases.
-
-
 Pending 2.6 Changes:
 
 * Require at least FLAC version 1.1.3.
