@@ -66,6 +66,7 @@ To build MOC from the distribution tarball you will need:
   - C and C++ compilers (MOC is written in C, but libtool and some
     decoder plugins require a C++ compiler)
   - Berkeley DB (libdb) version 4.1 (unless configured with --disable-cache)
+  - GnuPG (gpg) if you are going to verify the tarball (and you should)
 
 If you are building from the SVN repository you will also need:
 
@@ -141,6 +142,39 @@ on other operating systems, and it is known to compile and probably work on:
   - OpenWRT
 
 There is no intention to support MOC on MS-Windows (so please don't ask).
+
+--------------------------------------------------------------------------------
+How Do I Verify the Authenicity of the Tarball?
+--------------------------------------------------------------------------------
+
+If you downloaded the official MOC distribution you should have the
+following files:
+
+	moc-2.6-alpha1.tar.xz
+	moc-2.6-alpha1.tar.asc
+
+and would verify the tarball thusly:
+
+	xzcat moc-2.6-alpha1.tar.xz | gpg --verify moc-2.6-alpha1.tar.asc -
+
+The signature file (*.asc) was made against the uncompressed tarball,
+so if the tarball you have has been recompressed using a tool other
+than XZ then uncompress it using the appropriate tool then verify that:
+
+	gunzip moc-2.6-alpha1.tar.gz
+	gpg --verify moc-2.6-alpha1.tar.asc
+
+If the tool can output to stdout (and most can) then you can also verify
+verify it in a single step similar to the way in which the XZ tarball
+was verified above.
+
+Of course, you'll also need the MOC Release Signing Key:
+
+	gpg --recv-key 0x2885A7AA
+
+for which the fingerprint is:
+
+	5935 9B80 406D 9E73 E805  99BE F312 1E4F 2885 A7AA
 
 --------------------------------------------------------------------------------
 How Do I Build and Install It?
