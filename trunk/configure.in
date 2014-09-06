@@ -412,16 +412,11 @@ then
 		curl_ver_minor=`echo $curl_ver | $AWK -F. '{print $2}'`
 		curl_ver_fix=`echo $curl_ver | $AWK -F. '{print $3}'`
 
-		# make 071202 from 7.12.2
+		# make 071501 from 7.15.1
 		curl_ver_number=`printf "%02d%02d%02d" $curl_ver_major \
 			$curl_ver_minor $curl_ver_fix`
 
-		if test "$curl_ver_number" -lt "071501"
-		then
-			CURL_DEPRECATED="yes"
-		fi
-
-		if test "$curl_ver_number" -ge "071202"
+		if test "$curl_ver_number" -ge "071501"
 		then
 			AC_MSG_RESULT([$curl_ver, OK])
 			CFLAGS="$CFLAGS `curl-config --cflags`"
@@ -430,7 +425,7 @@ then
 			AC_DEFINE([HAVE_CURL], 1, [Define if you have libcurl])
 			COMPILE_CURL="yes"
 		else
-			AC_MSG_RESULT([$curl_ver, but minimum is 7.12.2])
+			AC_MSG_RESULT([$curl_ver, but minimum is 7.15.1])
 		fi
 	fi
 fi
@@ -480,13 +475,6 @@ if test "x$ac_cv_prog_cc_c99" = "xno"
 then
 	echo "WARNING: After release 2.5 MOC will require an ISO C99 capable"
 	echo "         compiler.  Plan to upgrade your compiler soon."
-	echo
-fi
-
-if test "x$CURL_DEPRECATED" = "xyes"
-then
-	echo "WARNING: After release 2.5 MOC will require libcurl version"
-	echo "         7.15.1 or later.  Plan to upgrade your libraries soon."
 	echo
 fi
 
