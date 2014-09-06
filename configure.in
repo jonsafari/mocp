@@ -3,7 +3,7 @@ AC_INIT([Music On Console],[2.5.0],[mocmaint@daper.net],[moc],
 AC_CONFIG_SRCDIR([main.c])
 AC_CONFIG_HEADERS([config.h])
 
-AM_INIT_AUTOMAKE
+AM_INIT_AUTOMAKE([dist-xz no-dist-gzip])
 
 AC_PREREQ([2.64])
 
@@ -418,9 +418,6 @@ then
 	fi
 fi
 
-dnl Check for XZ.
-AC_CHECK_PROG([XZ_MISSING], [xz], [no], [yes])
-
 AC_SUBST(EXTRA_LIBS)
 AC_SUBST(EXTRA_DISTS)
 
@@ -470,15 +467,6 @@ if test "x$POPT_MISSING" = "xyes"
 then
 	echo "WARNING: After release 2.5 MOC will require libpopt.  Plan"
 	echo "         to install it before moving on from release 2.5."
-	echo
-fi
-
-if test "x$XZ_MISSING" = "xyes"
-then
-	echo "WARNING: After release 2.5 MOC will use XZ to create tarballs"
-	echo "         by default.  If you wish to build tarballs, either plan"
-	echo "         to install XZ soon or start using explicit 'dist-*'"
-	echo "         'make' targets."
 	echo
 fi
 

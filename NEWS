@@ -1,4 +1,6 @@
 2.6.0 - "Usability"
+	* Changed build behaviours:
+	  - 'make dist': now defaults to XZ compression
 	* Changed minimum release requirements:
 	  - FFmpeg/LibAV: raised minimum requirement to release 0.7
 	  - FLAC: raised minimum requirement to release 1.1.3
