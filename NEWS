@@ -11,6 +11,7 @@
 	  - Transitional code from the previous release
 	  - autogen.sh in favour of autoreconf(1)
 	  - Deprecated ffmpeg-config support
+	  - Warning of changed executable name
 
 2.5.0 - "Consolidation"
 	* Autotools and packaging changes:
