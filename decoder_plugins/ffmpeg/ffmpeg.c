@@ -55,7 +55,6 @@
 # define GCC_DIAG_ON(x)
 #endif
 
-#if HAVE_LIBAVFORMAT_AVFORMAT_H
 /* This warning reset suppresses a deprecation warning message for
  * av_metadata_set()'s use of an AVMetadata parameter.  Although it
  * only occurs in FFmpeg release 0.7, the non-linear versioning of
@@ -89,13 +88,6 @@ GCC_DIAG_ON(deprecated-declarations)
  * in formats for which FFmpeg falsely reports seek errors, but could
  * result erroneous current time values. */
 #define SEEK_IN_DECODER 0
-
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(52,94,1)
-#define AV_SAMPLE_FMT_U8   SAMPLE_FMT_U8
-#define AV_SAMPLE_FMT_S16  SAMPLE_FMT_S16
-#define AV_SAMPLE_FMT_S32  SAMPLE_FMT_S32
-#define AV_SAMPLE_FMT_FLT  SAMPLE_FMT_FLT
-#endif
 
 #if !HAVE_DECL_CODEC_ID_MP2 && HAVE_DECL_AV_CODEC_ID_MP2
 #define CODEC_ID_MP2 AV_CODEC_ID_MP2
@@ -297,14 +289,8 @@ static unsigned int find_first_audio (AVFormatContext *ic)
 	assert (ic);
 
 	for (result = 0; result < ic->nb_streams; result += 1) {
-#if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(50,15,1)
-		if (ic->streams[result]->codec->codec_type == CODEC_TYPE_AUDIO)
-#else
 		if (ic->streams[result]->codec->codec_type == AVMEDIA_TYPE_AUDIO)
-#endif
-		{
 			break;
-		}
 	}
 
 	return result;
@@ -404,7 +390,6 @@ static void load_video_extns (lists_t_strs *list)
 }
 
 /* Handle FFmpeg's locking requirements. */
-#ifdef HAVE_LOCKMGR_REGISTER
 static int locking_cb (void **mutex, enum AVLockOp op)
 {
 	int result;
@@ -435,7 +420,6 @@ static int locking_cb (void **mutex, enum AVLockOp op)
 
 	return result;
 }
-#endif
 
 /* Here we attempt to determine if FFmpeg/LibAV has trashed the 'duration'
  * and 'bit_rate' fields in AVFormatContext for large files.  Determining
@@ -452,8 +436,6 @@ static int locking_cb (void **mutex, enum AVLockOp op)
 */
 static bool is_timing_broken (AVFormatContext *ic)
 {
-	int64_t file_size;
-
 	if (ic->duration < 0 || ic->bit_rate < 0)
 		return true;
 
@@ -466,14 +448,8 @@ static bool is_timing_broken (AVFormatContext *ic)
 	if (!strcmp (ic->iformat->name, "aac"))
 		return true;
 
-#ifdef HAVE_AVIO_SIZE
-	file_size = avio_size (ic->pb);
-#else
-	file_size = ic->file_size;
-#endif
-
 	/* Formats less than 4 GiB should be okay, except those excluded above. */
-	if (file_size < UINT32_MAX)
+	if (avio_size (ic->pb) < UINT32_MAX)
 		return false;
 
 	/* WAV files are limited to 4 GiB but that doesn't stop some encoders. */
@@ -488,9 +464,7 @@ static bool is_timing_broken (AVFormatContext *ic)
 
 static void ffmpeg_init ()
 {
-#ifdef HAVE_LOCKMGR_REGISTER
 	int rc;
-#endif
 
 #ifdef DEBUG
 	av_log_set_level (AV_LOG_INFO);
@@ -505,18 +479,14 @@ static void ffmpeg_init ()
 	load_audio_extns (supported_extns);
 	load_video_extns (supported_extns);
 
-#ifdef HAVE_LOCKMGR_REGISTER
 	rc = av_lockmgr_register (locking_cb);
 	if (rc < 0)
 		fatal ("Lock manager initialisation failed");
-#endif
 }
 
 static void ffmpeg_destroy ()
 {
-#ifdef HAVE_LOCKMGR_REGISTER
 	av_lockmgr_register (NULL);
-#endif
 
 	av_log_set_level (AV_LOG_QUIET);
 	ffmpeg_log_repeats (NULL);
@@ -532,21 +502,12 @@ static void ffmpeg_info (const char *file_name,
 	int err;
 	AVFormatContext *ic = NULL;
 
-#ifdef HAVE_AVFORMAT_OPEN_INPUT
 	err = avformat_open_input (&ic, file_name, NULL, NULL);
 	if (err < 0) {
 		ffmpeg_log_repeats (NULL);
 		logit ("avformat_open_input() failed (%d)", err);
 		return;
 	}
-#else
-	err = av_open_input_file (&ic, file_name, NULL, 0, NULL);
-	if (err < 0) {
-		ffmpeg_log_repeats (NULL);
-		logit ("av_open_input_file() failed (%d)", err);
-		return;
-	}
-#endif
 
 #ifdef HAVE_AVFORMAT_FIND_STREAM_INFO
 	err = avformat_find_stream_info (ic, NULL);
@@ -575,15 +536,10 @@ static void ffmpeg_info (const char *file_name,
 
 #if defined(HAVE_AV_DICT_GET)
 	AVDictionary *md;
-#elif defined(HAVE_AV_METADATA_GET)
+#else
 	AVMetadata *md;
-
-#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(52,83,0)
-	av_metadata_conv (ic, NULL, ic->iformat->metadata_conv);
-#endif
 #endif
 
-#if defined(HAVE_AV_DICT_GET) || defined(HAVE_AV_METADATA_GET)
 	md = ic->metadata;
 	if (md == NULL) {
 		unsigned int audio_ix;
@@ -597,7 +553,6 @@ static void ffmpeg_info (const char *file_name,
 		debug ("no metadata found");
 		goto end;
 	}
-#endif
 
 #if defined(HAVE_AV_DICT_GET)
 
@@ -616,7 +571,7 @@ static void ffmpeg_info (const char *file_name,
 	if (entry && entry->value && entry->value[0])
 		info->album = xstrdup (entry->value);
 
-#elif defined(HAVE_AV_METADATA_GET)
+#else
 
 	AVMetadataTag *tag;
 
@@ -626,26 +581,12 @@ static void ffmpeg_info (const char *file_name,
 	tag = av_metadata_get (md, "title", NULL, 0);
 	if (tag && tag->value && tag->value[0])
 		info->title = xstrdup (tag->value);
-	if (avformat_version () < AV_VERSION_INT(52,50,0))
-		tag = av_metadata_get (md, "author", NULL, 0);
-	else
-		tag = av_metadata_get (md, "artist", NULL, 0);
+	tag = av_metadata_get (md, "artist", NULL, 0);
 	if (tag && tag->value && tag->value[0])
 		info->artist = xstrdup (tag->value);
 	tag = av_metadata_get (md, "album", NULL, 0);
 	if (tag && tag->value && tag->value[0])
 		info->album = xstrdup (tag->value);
-
-#else
-
-	if (ic->track != 0)
-		info->track = ic->track;
-	if (ic->title[0] != 0)
-		info->title = xstrdup (ic->title);
-	if (ic->author[0] != 0)
-		info->artist = xstrdup (ic->author);
-	if (ic->album[0] != 0)
-		info->album = xstrdup (ic->album);
 
 #endif
 
@@ -770,13 +711,11 @@ static bool is_seek_broken (struct ffmpeg_data *data)
 	}
 #endif
 
-#ifdef HAVE_AVIOCONTEXT_SEEKABLE
 	/* How much do we trust this? */
 	if (!data->ic->pb->seekable) {
 		debug ("Seek broken by AVIOContext.seekable");
 		return true;
 	}
-#endif
 
 	/* ASF/MP2 (.wma): Seeking ends playing. */
 	if (!strcmp (data->ic->iformat->name, "asf") &&
@@ -915,11 +854,7 @@ static void *ffmpeg_open (const char *file)
 
 	decoder_error_init (&data->error);
 
-#ifdef HAVE_AVFORMAT_OPEN_INPUT
 	err = avformat_open_input (&data->ic, file, NULL, NULL);
-#else
-	err = av_open_input_file (&data->ic, file, NULL, 0, NULL);
-#endif
 	if (err < 0) {
 		ffmpeg_log_repeats (NULL);
 		decoder_error (&data->error, ERROR_FATAL, 0, "Can't open file");
@@ -973,7 +908,6 @@ static void *ffmpeg_open (const char *file)
 	debug ("FFmpeg thinks '%s' is format(codec) '%s(%s)'",
 	        fn, data->ic->iformat->name, data->codec->name);
 
-#if HAVE_DECL_CODEC_CAP_EXPERIMENTAL
 	/* This may or may not work depending on the particular version of
 	 * FFmpeg/LibAV in use.  For some versions this will be caught in
 	 * *_find_stream_info() above and misreported as an unfound codec
@@ -984,7 +918,6 @@ static void *ffmpeg_open (const char *file)
 				data->codec->name);
 		goto end;
 	}
-#endif
 
 	set_downmixing (data);
 	if (data->codec->capabilities & CODEC_CAP_TRUNCATED)
@@ -1005,14 +938,9 @@ static void *ffmpeg_open (const char *file)
 	if (data->fmt == 0)
 		data->fmt = fmt_from_sample_fmt (data);
 	if (data->fmt == 0) {
-#ifdef HAVE_AV_GET_SAMPLE_FMT_NAME
 		decoder_error (&data->error, ERROR_FATAL, 0,
 		               "Cannot get sample size from unknown sample format: %s",
 		               av_get_sample_fmt_name (data->enc->sample_fmt));
-#else
-		decoder_error (&data->error, ERROR_FATAL, 0,
-		               "Unsupported sample size!");
-#endif
 		avcodec_close (data->enc);
 		goto end;
 	}
@@ -1034,15 +962,9 @@ static void *ffmpeg_open (const char *file)
 
 	data->okay = true;
 
-	if (!data->timing_broken && data->ic->duration >= AV_TIME_BASE) {
-#ifdef HAVE_AVIO_SIZE
+	if (!data->timing_broken && data->ic->duration >= AV_TIME_BASE)
 		data->avg_bitrate = (int) (avio_size (data->ic->pb) /
 		                           (data->ic->duration / AV_TIME_BASE) * 8);
-#else
-		data->avg_bitrate = (int) (data->ic->file_size /
-		                           (data->ic->duration / AV_TIME_BASE) * 8);
-#endif
-	}
 
 	if (!data->timing_broken && data->ic->bit_rate > 0)
 		data->bitrate = data->ic->bit_rate;
@@ -1220,17 +1142,8 @@ static int decode_packet (struct ffmpeg_data *data, AVPacket *pkt,
 
 	do {
 		data_size = data->avbuf_size;
-
-#if defined(HAVE_AVCODEC_DECODE_AUDIO3)
 		len = avcodec_decode_audio3 (data->enc, (int16_t *)data->avbuf,
 		                             &data_size, pkt);
-#elif defined(HAVE_AVCODEC_DECODE_AUDIO2)
-		len = avcodec_decode_audio2 (data->enc, (int16_t *)data->avbuf,
-		                             &data_size, pkt->data, pkt->size);
-#else
-		len = avcodec_decode_audio (data->enc, (int16_t *)data->avbuf,
-		                            &data_size, pkt->data, pkt->size);
-#endif
 
 		if (len < 0) {
 			/* skip frame */

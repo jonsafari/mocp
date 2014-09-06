@@ -29,7 +29,7 @@ then
 		fi
 		if ! $PKG_CONFIG --atleast-version 52.110.0 libavformat
 		then
-			FFMPEG_DEPRECATED="yes"
+			AC_MSG_ERROR([You need FFmpeg/LibAV of at least release 0.7.])
 		fi
 		save_CPPFLAGS="$CPPFLAGS"
 		CPPFLAGS="$CPPFLAGS $ffmpeg_CPPFLAGS"
@@ -37,45 +37,21 @@ then
 		CFLAGS="$CFLAGS $ffmpeg_CFLAGS"
 		save_LIBS="$LIBS"
 		LIBS="$LIBS $ffmpeg_LIBS"
-		AC_CHECK_HEADERS(ffmpeg/avformat.h libavformat/avformat.h)
-		if test "x$ac_cv_header_ffmpeg_avformat_h" = "xyes"
-		then
-			AC_CHECK_MEMBERS([struct AVCodecContext.request_channels], [], [],
-		                     [#include <ffmpeg/avcodec.h>])
-		else
-			AC_CHECK_MEMBERS([struct AVCodecContext.request_channels], [], [],
-		                     [#include <libavcodec/avcodec.h>])
-		fi
+		AC_CHECK_MEMBERS([struct AVCodecContext.request_channels], [], [],
+	                     [#include <libavcodec/avcodec.h>])
 		AC_SEARCH_LIBS(avcodec_open2, avcodec,
 			[AC_DEFINE([HAVE_AVCODEC_OPEN2], 1,
 				[Define to 1 if you have the `avcodec_open2' function.])])
-		AC_SEARCH_LIBS(avcodec_decode_audio2, avcodec,
-			[AC_DEFINE([HAVE_AVCODEC_DECODE_AUDIO2], 1,
-				[Define to 1 if you have the `avcodec_decode_audio2' function.])])
-		AC_SEARCH_LIBS(avcodec_decode_audio3, avcodec,
-			[AC_DEFINE([HAVE_AVCODEC_DECODE_AUDIO3], 1,
-				[Define to 1 if you have the `avcodec_decode_audio3' function.])])
 		AC_SEARCH_LIBS(avcodec_decode_audio4, avcodec,
 			[AC_DEFINE([HAVE_AVCODEC_DECODE_AUDIO4], 1,
 				[Define to 1 if you have the `avcodec_decode_audio4' function.])],
 			[AX_FUNC_POSIX_MEMALIGN])
-		AC_SEARCH_LIBS(avformat_open_input, avformat,
-			[AC_DEFINE([HAVE_AVFORMAT_OPEN_INPUT], 1,
-				[Define to 1 if you have the `avformat_open_input' function.])])
 		AC_SEARCH_LIBS(avformat_close_input, avformat,
 			[AC_DEFINE([HAVE_AVFORMAT_CLOSE_INPUT], 1,
 				[Define to 1 if you have the `avformat_close_input' function.])])
 		AC_SEARCH_LIBS(avformat_find_stream_info, avformat,
 			[AC_DEFINE([HAVE_AVFORMAT_FIND_STREAM_INFO], 1,
 				[Define to 1 if you have the `avformat_find_stream_info' function.])])
-		AC_SEARCH_LIBS(avio_size, avformat,
-			[AC_DEFINE([HAVE_AVIO_SIZE], 1,
-				[Define to 1 if you have the `avio_size' function.])])
-		AC_CHECK_MEMBERS([AVIOContext.seekable], , ,
-		                 [#include <libavformat/avformat.h>])
-		AC_SEARCH_LIBS(av_metadata_get, avformat,
-			[AC_DEFINE([HAVE_AV_METADATA_GET], 1,
-				[Define to 1 if you have the `av_metadata_get' function.])])
 		AC_SEARCH_LIBS(av_dict_get, avutil,
 			[AC_DEFINE([HAVE_AV_DICT_GET], 1,
 				[Define to 1 if you have the `av_dict_get' function.])])
@@ -172,14 +148,6 @@ then
 		                 [#include <libavcodec/avcodec.h>])
 		AC_CHECK_DECLS([AV_SAMPLE_FMT_FLTP], , ,
 		                 [#include <libavcodec/avcodec.h>])
-		AC_CHECK_DECLS([CODEC_CAP_EXPERIMENTAL], , ,
-		                 [#include <libavcodec/avcodec.h>])
-		AC_SEARCH_LIBS(av_get_sample_fmt_name, avutil,
-			[AC_DEFINE([HAVE_AV_GET_SAMPLE_FMT_NAME], 1,
-				[Define to 1 if you have the `av_get_sample_fmt_name' function.])])
-		AC_SEARCH_LIBS(av_lockmgr_register, avcodec,
-			[AC_DEFINE([HAVE_LOCKMGR_REGISTER], 1,
-				[Define to 1 if you have the `av_lockmgr_register' function.])])
 		CPPFLAGS="$save_CPPFLAGS"
 		CFLAGS="$save_CFLAGS"
 		LIBS="$save_LIBS"
