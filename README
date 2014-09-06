@@ -70,7 +70,7 @@ To build MOC from the distribution tarball you will need:
 If you are building from the SVN repository you will also need:
 
   - Subversion (to checkout the source directory tree)
-  - Autoconf version 2.60 and the associated Automake and Libtool
+  - Autoconf version 2.64 and the associated Automake and Libtool
 
 You should choose which of the following audio formats you wish to play and
 provide the libraries needed to support them:
