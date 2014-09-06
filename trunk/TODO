@@ -73,14 +73,6 @@ Known Bugs:
 
 Transitional Code Removal (after 2.5):
 
-* Remove deprecated option TagsIconv.
-* Remove changed option name for OSSMixerChannel.
-* Remove changed option name for ALSAMixer.
-* Remove changed option type for SidPlay2_StartAtStart.
-* Remove changed option type for SidPlay2_PlaySubTunes.
-* Remove changed option type for QueueNextSongReturn.
-* Remove changed option type for SoundDriver.
-* Remove changed option format for Layouts.
 * Remove deprecated autogen.sh file.
 * Remove ISO C99 capable compiler requirement warning.
 * Remove Autoconf version 2.64 requirement warning.

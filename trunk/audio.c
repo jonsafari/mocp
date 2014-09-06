@@ -320,7 +320,7 @@ static void go_to_another_file ()
 		/* If we just finished playing files from the queue and the
 		 * appropriate option is set, continue with the file played
 		 * before playing the queue. */
-		if (before_queue_fname && options_get_int("QueueNextSongReturn")) {
+		if (before_queue_fname && options_get_bool ("QueueNextSongReturn")) {
 			free (curr_playing_fname);
 			curr_playing_fname = before_queue_fname;
 			before_queue_fname = NULL;
@@ -347,7 +347,7 @@ static void go_to_another_file ()
 
 		/* If we came from the queue and the last file in
 		 * queue wasn't in the playlist, we try to revert to
-		 * the QueueNextSongReturn = 1 behaviour. */
+		 * the QueueNextSongReturn == true behaviour. */
 		if (curr_playing_curr_pos == -1 && before_queue_fname) {
 			curr_playing_curr_pos = plist_find_fname (curr_plist,
 					before_queue_fname);

@@ -33,9 +33,9 @@ static int defaultLength;
 
 static int minLength;
 
-static int startAtStart;
+static bool startAtStart;
 
-static int playSubTunes;
+static bool playSubTunes;
 
 static sidplay2_data * make_data()
 {
@@ -516,9 +516,9 @@ extern "C" void init()
 
   minLength = options_get_int(OPT_MINLEN);
 
-  startAtStart = options_get_int(OPT_START);
+  startAtStart = options_get_bool(OPT_START);
 
-  playSubTunes = options_get_int(OPT_SUBTUNES);
+  playSubTunes = options_get_bool(OPT_SUBTUNES);
 
   database = NULL;
   init_db = 1;
