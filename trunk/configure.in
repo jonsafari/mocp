@@ -499,8 +499,3 @@ then
 	echo "         stereo downmixing."
 	echo
 fi
-
-echo "WARNING: Since MOC version 2 the executable file name has changed to mocp!"
-echo "         Please remove old moc binary if you have installed an older version."
-echo
-
