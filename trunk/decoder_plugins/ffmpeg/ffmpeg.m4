@@ -11,20 +11,7 @@ then
 		 AC_SUBST(ffmpeg_CFLAGS)
 		 AC_SUBST(ffmpeg_LIBS)
 		 want_ffmpeg="yes"],
-		[AC_CHECK_PROG([FFMPEG_CONFIG], [ffmpeg-config], [yes])
-		 if test "x$FFMPEG_CONFIG" = "xyes"
-		 then
-			 ffmpeg_CPPFLAGS=`ffmpeg-config --cflags`
-			 ffmpeg_CFLAGS=`ffmpeg-config --cflags`
-			 avformat_LIBS=`ffmpeg-config --plugin-libs avformat`
-			 avcodec_LIBS=`ffmpeg-config --plugin-libs avcodec`
-			 avutil_LIBS=`ffmpeg-config --plugin-libs avutil`
-			 ffmpeg_LIBS="$avformat_LIBS $avcodec_LIBS $avutil_LIBS"
-			 AC_SUBST(ffmpeg_CPPFLAGS)
-			 AC_SUBST(ffmpeg_CFLAGS)
-			 AC_SUBST(ffmpeg_LIBS)
-			 want_ffmpeg="yes"
-		 fi])
+		[true])
 	if test "x$want_ffmpeg" = "xyes"
 	then
 		if $PKG_CONFIG --max-version 53.47.99 libavcodec
