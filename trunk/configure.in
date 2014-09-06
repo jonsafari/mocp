@@ -451,22 +451,22 @@ echo
 
 if test "x$ac_cv_prog_cc_c99" = "xno"
 then
-	echo "WARNING: After release 2.5 MOC will require an ISO C99 capable"
-	echo "         compiler.  Plan to upgrade your compiler soon."
+	echo "WARNING: MOC release 2.6 will soon require an ISO C99 capable compiler;"
+	echo "         plan to upgrade your compiler soon."
 	echo
 fi
 
 if test "x$ALSA_DEPRECATED" = "xyes"
 then
-	echo "WARNING: After release 2.5 MOC will require ALSA version 1.0.11"
-	echo "         or later.  Plan to upgrade your ALSA soon."
+	echo "WARNING: MOC release 2.6 will soon require ALSA version 1.0.11 or later;"
+	echo "         plan to upgrade your ALSA soon."
 	echo
 fi
 
 if test "x$POPT_MISSING" = "xyes"
 then
-	echo "WARNING: After release 2.5 MOC will require libpopt.  Plan"
-	echo "         to install it before moving on from release 2.5."
+	echo "WARNING: MOC release 2.6 will soon require libpopt;"
+	echo "         plan to install it soon."
 	echo
 fi
 

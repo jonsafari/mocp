@@ -215,7 +215,7 @@ file, there are some MOC-specific options:
 	--enable-debug=[yes|no|gdb]
 
 	  Using 'gdb' will cause MOC to be built with options tailored to
-	  use with GDB.  (Note that after release 2.5 this option will be
+	  use with GDB.  (Note that in release 2.6 this option will be
 	  split into separate debugging and logging options.)
 
 	--with-oss=[yes|no|DIR]
