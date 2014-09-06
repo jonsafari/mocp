@@ -1,5 +1,5 @@
-AC_INIT([Music On Console],[2.5.0],[mocmaint@daper.net],[moc],
-                                       [http://moc.daper.net/])
+AC_INIT([Music On Console],[2.6-alpha1],[mocmaint@daper.net],[moc],
+                           [http://moc.daper.net/])
 AC_CONFIG_SRCDIR([main.c])
 AC_CONFIG_HEADERS([config.h])
 
