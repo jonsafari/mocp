@@ -1,4 +1,6 @@
 2.6.0 - "Usability"
+	* Autotools and packaging changes:
+	  - Dropped version micro number for development versions.
 	* Changed build behaviours:
 	  - 'make dist': now defaults to XZ compression
 	* Changed minimum release requirements:
