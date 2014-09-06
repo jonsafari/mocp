@@ -74,7 +74,6 @@ Known Bugs:
 Transitional Code Removal (after 2.5):
 
 * Remove ISO C99 capable compiler requirement warning.
-* Remove Autoconf version 2.64 requirement warning.
 * Remove ALSA version 1.0.11 requirement warning.
 * Remove POPT requirement warning.
 * Remove XZ requirement warning.
@@ -83,7 +82,6 @@ Transitional Code Removal (after 2.5):
 Pending 2.6 Changes:
 
 * Require ISO C99 capable compiler.
-* Require at least Autoconf version 2.64.
 * Require at least ALSA version 1.0.11.
 * Require the POPT library (libpopt).
 * Replace curl-config version checking with pkg-config.

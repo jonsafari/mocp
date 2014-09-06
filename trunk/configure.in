@@ -1,23 +1,11 @@
-dnl This can be moved into AC_INIT when AC_PREREQ reaches 2.64.
-m4_define([AC_PACKAGE_URL],[http://moc.daper.net/])
-
-AC_INIT([Music On Console],[2.5.0],[mocmaint@daper.net],[moc])
+AC_INIT([Music On Console],[2.5.0],[mocmaint@daper.net],[moc],
+                                       [http://moc.daper.net/])
 AC_CONFIG_SRCDIR([main.c])
 AC_CONFIG_HEADERS([config.h])
 
 AM_INIT_AUTOMAKE
 
-AC_PREREQ(2.60)
-
-m4_version_prereq([2.64], , [AUTOCONF_DEPRECATED='yes'])
-
-dnl This can be removed when AC_PREREQ reaches 2.64.
-if test -z "$PACKAGE_URL"
-then
-	AC_SUBST([PACKAGE_URL],['AC_PACKAGE_URL'])
-	AC_DEFINE_UNQUOTED([PACKAGE_URL], ["$PACKAGE_URL"],
-	                   [Define to the home page for this package.])
-fi
+AC_PREREQ([2.64])
 
 dnl Capture configuration options for this build.
 AC_DEFINE_UNQUOTED([CONFIGURATION], ["$ac_configure_args"],
@@ -463,13 +451,6 @@ echo "Resampling:        "$COMPILE_SAMPLERATE
 echo "MIME magic:        "$COMPILE_MAGIC
 echo "-----------------------------------------------------------------------"
 echo
-
-if test "x$AUTOCONF_DEPRECATED" = "xyes"
-then
-	echo "WARNING: After release 2.5 MOC will require Autoconf version"
-	echo "         2.64 or later.  Plan to upgrade your Autoconf soon."
-	echo
-fi
 
 if test "x$ac_cv_prog_cc_c99" = "xno"
 then
