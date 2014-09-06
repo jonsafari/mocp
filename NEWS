@@ -3,6 +3,7 @@
 	  - FFmpeg/LibAV: raised minimum requirement to release 0.7
 	  - FLAC: raised minimum requirement to release 1.1.3
 	  - Berkeley DB: raised minimum requirement to release 4.1
+	  - libcurl: raised minimum requirement to version 7.15.1
 	* Removed functionality:
 	  - Transitional code from the previous release
 	  - autogen.sh in favour of autoreconf(1)

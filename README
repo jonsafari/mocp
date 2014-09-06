@@ -109,7 +109,7 @@ more of the following:
 
 For network streams:
 
-  - libcurl version 7.12.2 (http://curl.haxx.se/)
+  - libcurl version 7.15.1 (http://curl.haxx.se/)
 
 For resampling (playing files with sample rate not supported by your
 hardware):
