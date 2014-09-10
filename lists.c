@@ -249,6 +249,7 @@ int lists_strs_tokenise (lists_t_strs *list, const char *s)
 
 /* Return the concatenation of all the strings in a list using the
  * given format for each, or NULL if the list is empty. */
+GCC_DIAG_OFF(format-nonliteral)
 char *lists_strs_fmt (const lists_t_strs *list, const char *fmt)
 {
 	int len, ix, rc;
@@ -276,6 +277,7 @@ char *lists_strs_fmt (const lists_t_strs *list, const char *fmt)
 
 	return result;
 }
+GCC_DIAG_ON(format-nonliteral)
 
 /* Return the concatenation of all the strings in a list, or NULL
  * if the list is empty. */
