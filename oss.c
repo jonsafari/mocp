@@ -332,19 +332,30 @@ static int oss_open (struct sound_params *sound_params)
 	return 1;
 }
 
-/* Return -errno on error, number of bytes played when okay. */
+/* Return -1 on error, or number of bytes played when okay. */
 static int oss_play (const char *buff, const size_t size)
 {
-	int res;
-	if (dsp_fd == -1)
+	ssize_t ssize = (ssize_t) size;
+	ssize_t count = 0;
+
+	if (dsp_fd == -1) {
 		error ("Can't play: audio device isn't opened!");
+		return -1;
+	}
 
-	res = write (dsp_fd, buff, size);
+	while (count < ssize) {
+		ssize_t rc;
 
-	if (res == -1)
-		error ("Error writing pcm sound: %s", strerror (errno));
+		rc = write (dsp_fd, buff + count, ssize - count);
+		if (rc == -1) {
+			error ("Error writing pcm sound: %s", strerror (errno));
+			return -1;
+		}
 
-	return res == -1 ? -errno : res;
+		count += rc;
+	}
+
+	return count;
 }
 
 /* Set PCM volume */
