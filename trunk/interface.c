@@ -582,7 +582,7 @@ static int get_tags_setting ()
 
 	if (options_get_bool("ReadTags"))
 		needed_tags |= TAGS_COMMENTS;
-	if (!strcasecmp(options_get_str("ShowTime"), "yes"))
+	if (!strcasecmp(options_get_symb("ShowTime"), "yes"))
 		needed_tags |= TAGS_TIME;
 
 	return needed_tags;
@@ -890,7 +890,7 @@ static void event_plist_add (const struct plist_item *item)
 		if (options_get_bool("ReadTags")
 				&& (!item->tags || !item->tags->title))
 			needed_tags |= TAGS_COMMENTS;
-		if (!strcasecmp(options_get_str("ShowTime"), "yes")
+		if (!strcasecmp(options_get_symb("ShowTime"), "yes")
 				&& (!item->tags || item->tags->time == -1))
 			needed_tags |= TAGS_TIME;
 
@@ -2027,12 +2027,12 @@ static void toggle_option (const char *name)
 
 static void toggle_show_time ()
 {
-	if (!strcasecmp (options_get_str ("ShowTime"), "yes")) {
-		options_set_str ("ShowTime", "IfAvailable");
+	if (!strcasecmp (options_get_symb ("ShowTime"), "yes")) {
+		options_set_symb ("ShowTime", "IfAvailable");
 		iface_set_status ("ShowTime: IfAvailable");
 	}
-	else if (!strcasecmp (options_get_str ("ShowTime"), "no")) {
-		options_set_str ("ShowTime", "yes");
+	else if (!strcasecmp (options_get_symb ("ShowTime"), "no")) {
+		options_set_symb ("ShowTime", "yes");
 		iface_update_show_time ();
 		ask_for_tags (dir_plist, TAGS_TIME);
 		ask_for_tags (playlist, TAGS_TIME);
@@ -2040,7 +2040,7 @@ static void toggle_show_time ()
 
 	}
 	else { /* IfAvailable */
-		options_set_str ("ShowTime", "no");
+		options_set_symb ("ShowTime", "no");
 		iface_update_show_time ();
 		iface_set_status ("ShowTime: no");
 	}

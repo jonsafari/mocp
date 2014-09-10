@@ -801,7 +801,7 @@ static void side_menu_init (struct side_menu *m, const enum side_menu_type type,
 		menu_set_show_format (m->menu.list.main,
 				options_get_bool("ShowFormat"));
 		menu_set_show_time (m->menu.list.main,
-				strcasecmp(options_get_str("ShowTime"), "no"));
+				strcasecmp(options_get_symb("ShowTime"), "no"));
 		menu_set_info_attr_normal (m->menu.list.main,
 				get_color(CLR_MENU_ITEM_INFO));
 		menu_set_info_attr_sel (m->menu.list.main,
@@ -1109,7 +1109,7 @@ static void side_menu_clear (struct side_menu *m)
 
 	menu_set_show_format (m->menu.list.main, options_get_bool("ShowFormat"));
 	menu_set_show_time (m->menu.list.main,
-			strcasecmp(options_get_str("ShowTime"), "no"));
+			strcasecmp(options_get_symb("ShowTime"), "no"));
 	menu_set_info_attr_normal (m->menu.list.main, get_color(CLR_MENU_ITEM_INFO));
 	menu_set_info_attr_sel (m->menu.list.main, get_color(CLR_MENU_ITEM_INFO_SELECTED));
 	menu_set_info_attr_marked (m->menu.list.main, get_color(CLR_MENU_ITEM_INFO_MARKED));
@@ -1568,7 +1568,7 @@ static void side_menu_update_show_time (struct side_menu *m)
 	assert (m->type == MENU_DIR || m->type == MENU_PLAYLIST);
 
 	menu_set_show_time (m->menu.list.main,
-				strcasecmp(options_get_str("ShowTime"), "no"));
+				strcasecmp(options_get_symb("ShowTime"), "no"));
 }
 
 static void side_menu_update_show_format (struct side_menu *m)

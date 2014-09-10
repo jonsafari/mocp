@@ -446,18 +446,14 @@ void options_set_symb (const char *name, const char *value)
 /* Set a string option to the value. The string is duplicated. */
 void options_set_str (const char *name, const char *value)
 {
-	int opt = find_option (name, OPTION_STR | OPTION_SYMB);
+	int opt = find_option (name, OPTION_STR);
 
 	if (opt == -1)
 		fatal ("Tried to set wrong option '%s'!", name);
 
-	if (options[opt].type == OPTION_SYMB) {
-		options_set_symb (name, value);
-	} else {
-		if (options[opt].value.str)
-			free (options[opt].value.str);
-		options[opt].value.str = xstrdup (value);
-	}
+	if (options[opt].value.str)
+		free (options[opt].value.str);
+	options[opt].value.str = xstrdup (value);
 }
 
 /* Set list option values to the colon separated value. */
@@ -773,7 +769,7 @@ int options_check_str (const char *name, const char *val)
 {
 	int opt;
 
-	opt = find_option (name, OPTION_STR | OPTION_SYMB);
+	opt = find_option (name, OPTION_STR);
 	if (opt == -1)
 		return 0;
 	return options[opt].check (opt, val);
@@ -1178,7 +1174,7 @@ bool options_get_bool (const char *name)
 
 char *options_get_str (const char *name)
 {
-	int i = find_option (name, OPTION_STR | OPTION_SYMB);
+	int i = find_option (name, OPTION_STR);
 
 	if (i == -1)
 		fatal ("Tried to get wrong option '%s'!", name);
