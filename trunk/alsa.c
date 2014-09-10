@@ -178,7 +178,7 @@ static void handle_mixer_events (snd_mixer_t *mixer_handle)
 		if ((err = snd_mixer_poll_descriptors(mixer_handle, fds,
 						count)) < 0)
 			logit ("snd_mixer_poll_descriptors() failed: %s",
-					snd_strerror(count));
+					snd_strerror(err));
 		else {
 			err = poll (fds, count, 0);
 			if (err < 0)
