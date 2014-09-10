@@ -15,6 +15,8 @@
 	  - autogen.sh in favour of autoreconf(1)
 	  - Deprecated ffmpeg-config support
 	  - Warning of changed executable name
+	* Changes to supported formats and codecs:
+	  - VQF: now supported via FFmpeg/LibAV
 
 2.5.0 - "Consolidation"
 	* Autotools and packaging changes:

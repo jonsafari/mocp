@@ -130,7 +130,6 @@ Future Wishlist (items marked with $ are bigger changes requiring more time):
 *$ Make equal volume level for every song like in http://volnorm.sourceforge.net
 *$ Replaygain.
 * Seek to arbitrary position (by typing a number).
-*$ VQF (like http://www.csn.ul.ie/~mel/projects/linux/vqfplugin/).
 *$ ESD.
 *$ CUE-sheet.
 * Command line option to delete the currently played item from the playlist.
