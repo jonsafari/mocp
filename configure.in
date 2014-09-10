@@ -390,32 +390,13 @@ AC_ARG_WITH(curl, AS_HELP_STRING([--without-curl],
                                  [Compile without Network streams support]))
 if test "x$with_curl" != "xno"
 then
-	dnl FIXME: make a better curl test
-	AC_CHECK_PROG([CURL_CONFIG], [curl-config], [yes])
-	if test "x$CURL_CONFIG" = "xyes"
-	then
-		AC_MSG_CHECKING([libcurl version])
-		curl_ver=`curl-config --version | $AWK '{print $2}'`
-		curl_ver_major=`echo $curl_ver | $AWK -F. '{print $1}'`
-		curl_ver_minor=`echo $curl_ver | $AWK -F. '{print $2}'`
-		curl_ver_fix=`echo $curl_ver | $AWK -F. '{print $3}'`
-
-		# make 071501 from 7.15.1
-		curl_ver_number=`printf "%02d%02d%02d" $curl_ver_major \
-			$curl_ver_minor $curl_ver_fix`
-
-		if test "$curl_ver_number" -ge "071501"
-		then
-			AC_MSG_RESULT([$curl_ver, OK])
-			CFLAGS="$CFLAGS `curl-config --cflags`"
-			EXTRA_LIBS="$EXTRA_LIBS `curl-config --libs`"
-			EXTRA_OBJS="$EXTRA_OBJS io_curl.o"
-			AC_DEFINE([HAVE_CURL], 1, [Define if you have libcurl])
-			COMPILE_CURL="yes"
-		else
-			AC_MSG_RESULT([$curl_ver, but minimum is 7.15.1])
-		fi
-	fi
+	PKG_CHECK_MODULES(CURL, [curl >= 7.15.1],
+		[EXTRA_OBJS="$EXTRA_OBJS io_curl.o"
+		 AC_DEFINE([HAVE_CURL], 1, [Define if you have libcurl])
+		 EXTRA_LIBS="$EXTRA_LIBS $CURL_LIBS"
+		 CFLAGS="$CFLAGS $CURL_CFLAGS"
+		 COMPILE_CURL="yes"],
+		[true])
 fi
 
 AC_SUBST(EXTRA_LIBS)

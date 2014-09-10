@@ -1,8 +1,9 @@
 2.6.0 - "Usability"
 	* Autotools and packaging changes:
-	  - Dropped version micro number for development versions.
+	  - Dropped version micro number for development versions
 	* Changed build behaviours:
 	  - 'make dist': now defaults to XZ compression
+	  - curl-config: replaced by pkg-config
 	* Changed minimum release requirements:
 	  - FFmpeg/LibAV: raised minimum requirement to release 0.7
 	  - FLAC: raised minimum requirement to release 1.1.3
