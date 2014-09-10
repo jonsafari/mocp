@@ -5,6 +5,8 @@
 #include <stdarg.h>
 #include <ctype.h>
 
+#include "compiler.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -52,12 +54,6 @@ extern "C" {
                               (val) > (max) ? (max) : (val))
 #endif
 
-#ifdef HAVE__ATTRIBUTE__
-# define ATTR_UNUSED __attribute__((unused))
-#else
-# define ATTR_UNUSED
-#endif
-
 #if HAVE_STDBOOL_H
 # include <stdbool.h>
 #else
@@ -77,11 +73,6 @@ typedef unsigned char _Bool;
 /* isblank() is a GNU extension */
 #ifndef isblank
 #define isblank(c) ((c) == ' ' || (c) == '\t')
-#endif
-
-/* __FUNCTION__ is a gcc extension */
-#ifndef HAVE__FUNCTION__
-# define __FUNCTION__ "UNKNOWN_FUNC"
 #endif
 
 #define ARRAY_SIZE(x)	(sizeof(x)/sizeof(x[0]))
