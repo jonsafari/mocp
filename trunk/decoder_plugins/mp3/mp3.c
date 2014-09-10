@@ -156,7 +156,7 @@ static char *get_tag (struct id3_tag *tag, const char *what)
 			union id3_field *encoding_field = &frame->fields[0];
 			if (((id3_tag_options(tag, 0, 0) & ID3_TAG_OPTION_ID3V1) &&
 						__unique_frame(tag, frame))
-					|| ((options_get_int ("EnforceTagsEncoding") &&
+					|| ((options_get_bool ("EnforceTagsEncoding") &&
 							(id3_field_gettextencoding((encoding_field))
 							 == ID3_FIELD_TEXTENCODING_ISO_8859_1))))
 			{
@@ -165,7 +165,7 @@ static char *get_tag (struct id3_tag *tag, const char *what)
 				comm = (char *)id3_ucs4_latin1duplicate (ucs4);
 
 #ifdef HAVE_RCC
-				if (options_get_int("UseRCC"))
+				if (options_get_bool("UseRCC"))
 					comm = rcc_reencode (comm);
 				else {
 #endif /* HAVE_RCC */
@@ -349,7 +349,7 @@ static struct mp3_data *mp3_open_internal (const char *file,
 		mad_frame_init (&data->frame);
 		mad_synth_init (&data->synth);
 
-		if (options_get_int ("MP3IgnoreCRCErrors"))
+		if (options_get_bool ("MP3IgnoreCRCErrors"))
 				mad_stream_options (&data->stream,
 					MAD_OPTION_IGNORECRC);
 
@@ -403,7 +403,7 @@ static void *mp3_open_stream (struct io_stream *stream)
 	mad_frame_init (&data->frame);
 	mad_synth_init (&data->synth);
 
-	if (options_get_int ("MP3IgnoreCRCErrors"))
+	if (options_get_bool ("MP3IgnoreCRCErrors"))
 			mad_stream_options (&data->stream,
 				MAD_OPTION_IGNORECRC);
 

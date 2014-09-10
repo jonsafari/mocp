@@ -654,7 +654,7 @@ static lists_t_strs *process_command_line (int argc, char *argv[],
 				options_ignore_config ("SoundDriver");
 				break;
 			case 'm':
-				options_set_int ("StartInMusicDir", 1);
+				options_set_bool ("StartInMusicDir", true);
 				options_ignore_config ("StartInMusicDir");
 				break;
 			case 'a':
@@ -720,15 +720,15 @@ static lists_t_strs *process_command_line (int argc, char *argv[],
 				options_ignore_config ("MOCDir");
 				break;
 			case 'y':
-				options_set_int ("SyncPlaylist", 1);
+				options_set_bool ("SyncPlaylist", true);
 				options_ignore_config ("SyncPlaylist");
 				break;
 			case 'n':
-				options_set_int ("SyncPlaylist", 0);
+				options_set_bool ("SyncPlaylist", false);
 				options_ignore_config ("SyncPlaylist");
 				break;
 			case 'A':
-				options_set_int ("ASCIILines", 1);
+				options_set_bool ("ASCIILines", true);
 				options_ignore_config ("ASCIILines");
 				break;
 			case 'G':

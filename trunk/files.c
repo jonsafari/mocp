@@ -172,7 +172,7 @@ char *file_mime_type (const char *file ATTR_UNUSED)
 /* Make a title from the file name for the item.  If hide_extn != 0,
  * strip the file name from extension. */
 void make_file_title (struct plist *plist, const int num,
-		const int hide_extension)
+		const bool hide_extension)
 {
 	assert (plist != NULL);
 	assert (LIMIT(num, plist->num));
@@ -189,7 +189,7 @@ void make_file_title (struct plist *plist, const int num,
 				*(extn - 1) = 0;
 		}
 
-		if (options_get_int ("FileNamesIconv"))
+		if (options_get_bool ("FileNamesIconv"))
 		{
 			char *old_title = file;
 			file = files_iconv_str (file);
@@ -206,7 +206,7 @@ void make_file_title (struct plist *plist, const int num,
 /* Make a title from the tags for the item. */
 void make_tags_title (struct plist *plist, const int num)
 {
-	int hide_extn;
+	bool hide_extn;
 	char *title;
 
 	assert (plist != NULL);
@@ -214,7 +214,7 @@ void make_tags_title (struct plist *plist, const int num)
 	assert (!plist_deleted (plist, num));
 
 	if (file_type (plist->items[num].file) == F_URL) {
-		make_file_title (plist, num, 0);
+		make_file_title (plist, num, false);
 		return;
 	}
 
@@ -230,16 +230,17 @@ void make_tags_title (struct plist *plist, const int num)
 		return;
 	}
 
-	hide_extn = options_get_int ("HideFileExtension");
+	hide_extn = options_get_bool ("HideFileExtension");
 	make_file_title (plist, num, hide_extn);
 }
 
 /* Switch playlist titles to title_file */
 void switch_titles_file (struct plist *plist)
 {
-	int i, hide_extn;
+	int i;
+	bool hide_extn;
 
-	hide_extn = options_get_int ("HideFileExtension");
+	hide_extn = options_get_bool ("HideFileExtension");
 
 	for (i = 0; i < plist->num; i++) {
 		if (plist_deleted (plist, i))
@@ -255,9 +256,10 @@ void switch_titles_file (struct plist *plist)
 /* Switch playlist titles to title_tags */
 void switch_titles_tags (struct plist *plist)
 {
-	int i, hide_extn;
+	int i;
+	bool hide_extn;
 
-	hide_extn = options_get_int ("HideFileExtension");
+	hide_extn = options_get_bool ("HideFileExtension");
 
 	for (i = 0; i < plist->num; i++) {
 		if (plist_deleted (plist, i))
@@ -377,7 +379,7 @@ int read_directory (const char *directory, lists_t_strs *dirs,
 {
 	DIR *dir;
 	struct dirent *entry;
-	int show_hidden = options_get_int ("ShowHiddenFiles");
+	bool show_hidden = options_get_bool ("ShowHiddenFiles");
 	int dir_is_root;
 
 	assert (directory != NULL);

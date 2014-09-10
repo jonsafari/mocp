@@ -235,11 +235,11 @@ static struct info_win
 	struct entry_history user_history;
 
 	/* true/false options values */
-	int state_stereo;
-	int state_shuffle;
-	int state_repeat;
-	int state_next;
-	int state_net;
+	bool state_stereo;
+	bool state_shuffle;
+	bool state_repeat;
+	bool state_next;
+	bool state_net;
 
 	int bitrate;		/* in kbps */
 	int rate;		/* in kHz */
@@ -797,9 +797,9 @@ static void side_menu_init (struct side_menu *m, const enum side_menu_type type,
 
 		menu_set_items_numbering (m->menu.list.main,
 				type == MENU_PLAYLIST
-				&& options_get_int("PlaylistNumbering"));
+				&& options_get_bool("PlaylistNumbering"));
 		menu_set_show_format (m->menu.list.main,
-				options_get_int("ShowFormat"));
+				options_get_bool("ShowFormat"));
 		menu_set_show_time (m->menu.list.main,
 				strcasecmp(options_get_str("ShowTime"), "no"));
 		menu_set_info_attr_normal (m->menu.list.main,
@@ -1105,9 +1105,9 @@ static void side_menu_clear (struct side_menu *m)
 	menu_free (m->menu.list.main);
 	side_menu_init_menu (m);
 	menu_set_items_numbering (m->menu.list.main, m->type == MENU_PLAYLIST
-			&& options_get_int("PlaylistNumbering"));
+			&& options_get_bool("PlaylistNumbering"));
 
-	menu_set_show_format (m->menu.list.main, options_get_int("ShowFormat"));
+	menu_set_show_format (m->menu.list.main, options_get_bool("ShowFormat"));
 	menu_set_show_time (m->menu.list.main,
 			strcasecmp(options_get_str("ShowTime"), "no"));
 	menu_set_info_attr_normal (m->menu.list.main, get_color(CLR_MENU_ITEM_INFO));
@@ -1144,7 +1144,7 @@ static void side_menu_make_list_content (struct side_menu *m,
 
 #ifdef HAVE_RCC
 			char *t_str = NULL;
-			if (options_get_int("UseRCCForFilesystem")) {
+			if (options_get_bool("UseRCCForFilesystem")) {
 				strcpy (title, strrchr (lists_strs_at (dirs, i), '/') + 1);
 				strcat (title, "/");
 				t_str = xstrdup (title);
@@ -1154,7 +1154,7 @@ static void side_menu_make_list_content (struct side_menu *m,
 			}
 			else
 #endif
-			if (options_get_int ("FileNamesIconv"))
+			if (options_get_bool ("FileNamesIconv"))
 			{
 				char *conv_title = files_iconv_str (
 						strrchr (lists_strs_at (dirs, i), '/') + 1);
@@ -1195,7 +1195,7 @@ static void side_menu_make_list_content (struct side_menu *m,
 		if (!plist_deleted(files, i))
 			add_to_menu (m->menu.list.main, files, i,
 					m->type == MENU_PLAYLIST
-					&& options_get_int("PlaylistFullPaths"));
+					&& options_get_bool("PlaylistFullPaths"));
 	}
 
 	m->total_time = plist_total_time (files, &m->total_time_for_all);
@@ -1306,7 +1306,7 @@ static void side_menu_draw (const struct side_menu *m, const int active)
 	if (m->type == MENU_DIR || m->type == MENU_PLAYLIST
 			|| m->type == MENU_THEMES) {
 		menu_draw (m->menu.list.main, active);
-		if (options_get_int("UseCursorSelection"))
+		if (options_get_bool("UseCursorSelection"))
 			menu_set_cursor (m->menu.list.main);
 	}
 	else
@@ -1472,13 +1472,13 @@ static int side_menu_update_item (struct side_menu *m,
 
 	if ((mi = menu_find(m->menu.list.main, file))) {
 		update_menu_item (mi, plist, n, m->type == MENU_PLAYLIST
-				&& options_get_int("PlaylistFullpaths"));
+				&& options_get_bool("PlaylistFullpaths"));
 		visible = menu_is_visible (m->menu.list.main, mi);
 	}
 	if (m->menu.list.copy
 			&& (mi = menu_find(m->menu.list.copy, file))) {
 		update_menu_item (mi, plist, n, m->type == MENU_PLAYLIST
-				&& options_get_int("PlaylistFullpaths"));
+				&& options_get_bool("PlaylistFullpaths"));
 		visible = visible || menu_is_visible (m->menu.list.main, mi);
 	}
 
@@ -1539,7 +1539,7 @@ static int side_menu_add_plist_item (struct side_menu *m,
 			: m->menu.list.main,
 			plist, num,
 			m->type == MENU_PLAYLIST
-			&& options_get_int("PlaylistFullPaths"));
+			&& options_get_bool("PlaylistFullPaths"));
 	m->total_time = plist_total_time (plist, &m->total_time_for_all);
 
 	return visible;
@@ -1577,7 +1577,7 @@ static void side_menu_update_show_format (struct side_menu *m)
 	assert (m->visible);
 	assert (m->type == MENU_DIR || m->type == MENU_PLAYLIST);
 
-	menu_set_show_format (m->menu.list.main, options_get_int("ShowFormat"));
+	menu_set_show_format (m->menu.list.main, options_get_bool("ShowFormat"));
 }
 
 static void side_menu_get_state (const struct side_menu *m,
@@ -2405,7 +2405,7 @@ static void detect_term ()
 
 static void xterm_set_title (const int state, const char *title)
 {
-	if (has_xterm && options_get_int("SetXtermTitle")) {
+	if (has_xterm && options_get_bool("SetXtermTitle")) {
 		soft_write (1, "\033]0;", sizeof("\033]0;")-1);
 		soft_write (1, "MOC ", sizeof("MOC ")-1);
 
@@ -2424,7 +2424,7 @@ static void xterm_set_title (const int state, const char *title)
         if (title)
         {
             soft_write (1, " - ", sizeof(" - ")-1);
-            if (options_get_int ("NonUTFXterm"))
+            if (options_get_bool ("NonUTFXterm"))
             {
                 char *iconv_title = xterm_iconv_str (title);
                 soft_write (1, iconv_title, strlen(iconv_title));
@@ -2443,7 +2443,7 @@ static void xterm_set_title (const int state, const char *title)
 
 static void xterm_clear_title ()
 {
-	if (has_xterm && options_get_int("SetXtermTitle"))
+	if (has_xterm && options_get_bool("SetXtermTitle"))
 		soft_write (1, "\033]2;\007", sizeof("\033]2;\007")-1);
 }
 
@@ -2466,7 +2466,7 @@ static void detect_screen ()
 #define SCREEN_TITLE_END "\033\\"
 static void screen_set_title (const int state, const char *title)
 {
-	if (has_screen && options_get_int("SetScreenTitle")) {
+	if (has_screen && options_get_bool("SetScreenTitle")) {
 		soft_write (1, SCREEN_TITLE_START, sizeof(SCREEN_TITLE_START)-1);
 		soft_write (1, "MOC ", sizeof("MOC ")-1);
 
@@ -2493,7 +2493,7 @@ static void screen_set_title (const int state, const char *title)
 
 static void screen_clear_title ()
 {
-	if (has_screen && options_get_int("SetScreenTitle"))
+	if (has_screen && options_get_bool("SetScreenTitle"))
 	{
 		soft_write (1, SCREEN_TITLE_START, sizeof(SCREEN_TITLE_START)-1);
 		soft_write (1, SCREEN_TITLE_END, sizeof(SCREEN_TITLE_END)-1);
@@ -2504,7 +2504,7 @@ static void screen_clear_title ()
  * ASCII characters. */
 static void init_lines ()
 {
-	if (options_get_int("ASCIILines")) {
+	if (options_get_bool("ASCIILines")) {
 		lines.vert = '|';
 		lines.horiz = '-';
 		lines.ulcorn = '+';
@@ -2704,12 +2704,12 @@ static void info_win_init (struct info_win *w)
 
 	w->too_small = 0;
 
-	w->state_stereo = 0;
-	w->state_shuffle = 0;
-	w->state_repeat = 0;
-	w->state_next = 0;
+	w->state_stereo = false;
+	w->state_shuffle = false;
+	w->state_repeat = false;
+	w->state_next = false;
 	w->state_play = STATE_STOP;
-	w->state_net = 0;
+	w->state_net = false;
 
 	w->bitrate = -1;
 	w->rate = -1;
@@ -3090,7 +3090,7 @@ static void info_win_set_mixer_value (struct info_win *w, const int value)
 
 /* Draw a switch that is turned on or off in form of [TITLE]. */
 static void info_win_draw_switch (const struct info_win *w, const int posx,
-		const int posy, const char *title, const int value)
+		const int posy, const char *title, const bool value)
 {
 	assert (w != NULL);
 	assert (title != NULL);
@@ -3293,7 +3293,7 @@ static void info_win_set_channels (struct info_win *w, const int channels)
 	assert (w != NULL);
 	assert (channels == 1 || channels == 2);
 
-	w->state_stereo = (channels == 2) ? 1 : 0;
+	w->state_stereo = (channels == 2);
 	info_win_draw_options_state (w);
 }
 
@@ -3313,7 +3313,7 @@ static enum entry_type info_win_get_entry_type (const struct info_win *w)
 }
 
 static void info_win_set_option_state (struct info_win *w, const char *name,
-		const int value)
+		const bool value)
 {
 	assert (w != NULL);
 	assert (name != NULL);
@@ -3463,7 +3463,7 @@ static void info_win_entry_disable (struct info_win *w)
 	entry_destroy (&w->entry);
 	w->in_entry = 0;
 
-	if (!options_get_int("UseCursorSelection"))
+	if (!options_get_bool("UseCursorSelection"))
 		curs_set (0);
 	info_win_draw (w);
 }
@@ -3637,7 +3637,7 @@ void windows_init ()
 	validate_layouts ();
 	cbreak ();
 	noecho ();
-	if (!options_get_int ("UseCursorSelection"))
+	if (!options_get_bool ("UseCursorSelection"))
 		curs_set (0);
 	use_default_colors ();
 
@@ -3712,7 +3712,7 @@ static void iface_refresh_screen ()
 }
 
 /* Set state of the options displayed in the information window. */
-void iface_set_option_state (const char *name, const int value)
+void iface_set_option_state (const char *name, const bool value)
 {
 	assert (name != NULL);
 
@@ -3887,7 +3887,7 @@ void iface_set_title (const enum iface_menu menu, const char *title)
 
 	assert (title != NULL);
 
-    if (options_get_int ("FileNamesIconv"))
+    if (options_get_bool ("FileNamesIconv"))
     {
         char *conv_title = NULL;
         conv_title = files_iconv_str (title);
@@ -4419,7 +4419,7 @@ void iface_temporary_exit ()
 void iface_restore ()
 {
 	iface_refresh ();
-	if (!options_get_int("UseCursorSelection"))
+	if (!options_get_bool("UseCursorSelection"))
 		curs_set (0);
 }
 

@@ -455,7 +455,7 @@ static void io_open_file (struct io_stream *s, const char *file)
 		s->size = file_stat.st_size;
 
 #ifdef HAVE_MMAP
-		if (options_get_int ("UseMMap") && RANGE(1, s->size, (off_t)SIZE_MAX)) {
+		if (options_get_bool ("UseMMap") && RANGE(1, s->size, (off_t)SIZE_MAX)) {
 			s->mem = mmap (0, (size_t)s->size, PROT_READ, MAP_SHARED, s->fd, 0);
 			if (s->mem == MAP_FAILED) {
 				s->mem = NULL;

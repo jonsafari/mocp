@@ -31,7 +31,7 @@ void switch_titles_file (struct plist *plist);
 void switch_titles_tags (struct plist *plist);
 void make_tags_title (struct plist *plist, const int num);
 void make_file_title (struct plist *plist, const int num,
-		const int hide_extension);
+		const bool hide_extension);
 int is_dir (const char *file);
 int can_read_file (const char *file);
 char *absolute_path (const char *path, const char *cwd);

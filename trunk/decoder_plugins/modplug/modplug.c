@@ -328,15 +328,15 @@ struct decoder *plugin_init ()
 {
   ModPlug_GetSettings(&settings);
   settings.mFlags = 0;
-  settings.mFlags |= options_get_int("ModPlug_Oversampling")
+  settings.mFlags |= options_get_bool("ModPlug_Oversampling")
     ?MODPLUG_ENABLE_OVERSAMPLING:0;
-  settings.mFlags |= options_get_int("ModPlug_NoiseReduction")
+  settings.mFlags |= options_get_bool("ModPlug_NoiseReduction")
     ?MODPLUG_ENABLE_NOISE_REDUCTION:0;
-  settings.mFlags |= options_get_int("ModPlug_Reverb")
+  settings.mFlags |= options_get_bool("ModPlug_Reverb")
     ?MODPLUG_ENABLE_REVERB:0;
-  settings.mFlags |= options_get_int("ModPlug_MegaBass")
+  settings.mFlags |= options_get_bool("ModPlug_MegaBass")
     ?MODPLUG_ENABLE_MEGABASS:0;
-  settings.mFlags |= options_get_int("ModPlug_Surround")
+  settings.mFlags |= options_get_bool("ModPlug_Surround")
     ?MODPLUG_ENABLE_SURROUND:0;
   if(!strcasecmp(options_get_str("ModPlug_ResamplingMode"), "FIR"))
     settings.mResamplingMode = MODPLUG_RESAMPLE_FIR;

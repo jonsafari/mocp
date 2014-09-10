@@ -79,7 +79,7 @@ struct menu
 
 	/* Flags for displaying information about the file. */
 	int show_time;
-	int show_format;
+	bool show_format;
 
 	int info_attr_normal;	/* attributes for information about the file */
 	int info_attr_sel;
@@ -125,7 +125,7 @@ void menu_update_size (struct menu *menu, const int posx, const int posy,
 void menu_unmark_item (struct menu *menu);
 struct menu *menu_filter_pattern (const struct menu *menu, const char *pattern);
 void menu_set_show_time (struct menu *menu, const int t);
-void menu_set_show_format (struct menu *menu, const int t);
+void menu_set_show_format (struct menu *menu, const bool t);
 void menu_set_info_attr_normal (struct menu *menu, const int attr);
 void menu_set_info_attr_sel (struct menu *menu, const int attr);
 void menu_set_info_attr_marked (struct menu *menu, const int attr);

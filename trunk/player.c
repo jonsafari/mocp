@@ -525,7 +525,7 @@ static void decode_loop (const struct decoder *f, void *decoder_data,
 			debug ("waiting...");
 			if (eof && !precache.file && next_file
 					&& file_type(next_file) == F_SOUND
-					&& options_get_int("Precache")
+					&& options_get_bool("Precache")
 					&& options_get_bool("AutoNext"))
 				start_precache (&precache, next_file);
 			pthread_cond_wait (&request_cond, &request_cond_mutex);

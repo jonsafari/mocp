@@ -294,8 +294,8 @@ int sfmt_Bps (const long format)
  * request and whether or not there are files in the queue. */
 static void go_to_another_file ()
 {
-	int shuffle = options_get_int ("Shuffle");
-	int go_next = (play_next || options_get_int("AutoNext"));
+	bool shuffle = options_get_bool ("Shuffle");
+	bool go_next = (play_next || options_get_bool("AutoNext"));
 	int curr_playing_curr_pos;
 	/* XXX: Shouldn't play_next be protected by mutex? */
 
@@ -366,7 +366,7 @@ static void go_to_another_file ()
 						curr_playing_curr_pos);
 
 			if (curr_playing == -1) {
-				if (options_get_int("Repeat"))
+				if (options_get_bool("Repeat"))
 					curr_playing = plist_last (curr_plist);
 				logit ("Beginning of the list.");
 			}
@@ -385,7 +385,7 @@ static void go_to_another_file ()
 				curr_playing = plist_next (curr_plist,
 						curr_playing_curr_pos);
 
-			if (curr_playing == -1 && options_get_int("Repeat")) {
+			if (curr_playing == -1 && options_get_bool("Repeat")) {
 				if (shuffle) {
 					plist_clear (&shuffled_plist);
 					plist_cat (&shuffled_plist, &playlist);
@@ -400,7 +400,7 @@ static void go_to_another_file ()
 				logit ("Next item");
 
 		}
-		else if (!options_get_int("Repeat")) {
+		else if (!options_get_bool("Repeat")) {
 			curr_playing = -1;
 		}
 		else
@@ -555,7 +555,7 @@ void audio_play (const char *fname)
 
 		started_playing_in_queue = 1;
 	}
-	else if (options_get_int("Shuffle")) {
+	else if (options_get_bool("Shuffle")) {
 		plist_clear (&shuffled_plist);
 		plist_cat (&shuffled_plist, &playlist);
 		plist_shuffle (&shuffled_plist);
@@ -949,7 +949,7 @@ void audio_initialize ()
 	assert (sound_format_ok(hw_caps.formats));
 
 	print_output_capabilities (&hw_caps);
-	if (!options_get_int("Allow24bitOutput")
+	if (!options_get_bool("Allow24bitOutput")
 			&& hw_caps.formats & (SFMT_S32 | SFMT_U32)) {
 		logit ("Disabling 24bit modes because Allow24bitOutput is set to no.");
 		hw_caps.formats &= ~(SFMT_S32 | SFMT_U32);

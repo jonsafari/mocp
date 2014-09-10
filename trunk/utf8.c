@@ -340,10 +340,10 @@ void utf8_init ()
 			logit ("iconv_open() failed: %s", strerror(errno));
 	}
 
-	if (options_get_int ("FileNamesIconv"))
+	if (options_get_bool ("FileNamesIconv"))
 		files_iconv_desc = iconv_open ("UTF-8", "");
 
-	if (options_get_int ("NonUTFXterm"))
+	if (options_get_bool ("NonUTFXterm"))
 		xterm_iconv_desc = iconv_open ("", "UTF-8");
 }
 

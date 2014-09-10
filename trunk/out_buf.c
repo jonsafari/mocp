@@ -50,7 +50,7 @@ static void set_realtime_prio ()
 #ifdef HAVE_SCHED_GET_PRIORITY_MAX
 	int rc;
 
-	if (options_get_int("UseRealtimePriority")) {
+	if (options_get_bool("UseRealtimePriority")) {
 		struct sched_param param;
 
 		param.sched_priority = sched_get_priority_max(SCHED_RR);

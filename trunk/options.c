@@ -408,14 +408,11 @@ static void add_list (const char *name, const char *value, options_t_check *chec
 /* Set an integer option to the value. */
 void options_set_int (const char *name, const int value)
 {
-	int i = find_option (name, OPTION_INT | OPTION_BOOL);
+	int i = find_option (name, OPTION_INT);
 
 	if (i == -1)
 		fatal ("Tried to set wrong option '%s'!", name);
-	if (options[i].type == OPTION_INT)
-		options[i].value.num = value;
-	else
-		options[i].value.boolean = value ? true : false;
+	options[i].value.num = value;
 }
 
 /* Set a boolean option to the value. */
@@ -1161,13 +1158,11 @@ void options_free ()
 
 int options_get_int (const char *name)
 {
-	int i = find_option (name, OPTION_INT | OPTION_BOOL);
+	int i = find_option (name, OPTION_INT);
 
 	if (i == -1)
 		fatal ("Tried to get wrong option '%s'!", name);
 
-	if (options[i].type == OPTION_BOOL)
-		return options[i].value.boolean ? 1 : 0;
 	return options[i].value.num;
 }
 
