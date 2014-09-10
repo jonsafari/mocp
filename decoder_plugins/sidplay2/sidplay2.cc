@@ -58,7 +58,7 @@ static sidplay2_data * make_data()
 
   s2d->cfg.optimisation = options_get_int(OPT_OPTI);
 
-  switch(options_get_str(OPT_PMODE)[0])
+  switch(options_get_symb(OPT_PMODE)[0])
   {
     case 'M':
       s2d->cfg.playback = sid2_mono;

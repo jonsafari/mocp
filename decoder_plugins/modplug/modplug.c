@@ -338,13 +338,13 @@ struct decoder *plugin_init ()
     ?MODPLUG_ENABLE_MEGABASS:0;
   settings.mFlags |= options_get_bool("ModPlug_Surround")
     ?MODPLUG_ENABLE_SURROUND:0;
-  if(!strcasecmp(options_get_str("ModPlug_ResamplingMode"), "FIR"))
+  if(!strcasecmp(options_get_symb("ModPlug_ResamplingMode"), "FIR"))
     settings.mResamplingMode = MODPLUG_RESAMPLE_FIR;
-  if(!strcasecmp(options_get_str("ModPlug_ResamplingMode"), "SPLINE"))
+  if(!strcasecmp(options_get_symb("ModPlug_ResamplingMode"), "SPLINE"))
     settings.mResamplingMode = MODPLUG_RESAMPLE_SPLINE;
-  if(!strcasecmp(options_get_str("ModPlug_ResamplingMode"), "LINEAR"))
+  if(!strcasecmp(options_get_symb("ModPlug_ResamplingMode"), "LINEAR"))
     settings.mResamplingMode = MODPLUG_RESAMPLE_LINEAR;
-  if(!strcasecmp(options_get_str("ModPlug_ResamplingMode"), "NEAREST"))
+  if(!strcasecmp(options_get_symb("ModPlug_ResamplingMode"), "NEAREST"))
     settings.mResamplingMode = MODPLUG_RESAMPLE_NEAREST;
   settings.mChannels = options_get_int("ModPlug_Channels");
   settings.mBits = options_get_int("ModPlug_Bits");
