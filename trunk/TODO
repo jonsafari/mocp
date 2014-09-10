@@ -83,7 +83,6 @@ Pending 2.6 Changes:
 * Require ISO C99 capable compiler.
 * Require at least ALSA version 1.0.11.
 * Require the POPT library (libpopt).
-* Replace curl-config version checking with pkg-config.
 
 
 Pending 2.7 Changes:
