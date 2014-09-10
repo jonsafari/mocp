@@ -273,24 +273,28 @@ static int cache_record_deserialize (struct cache_record *rec,
 	else
 		rec->tags = NULL;
 
-#define extract_num(var)			\
-	if (bytes_left < sizeof(var))		\
-		goto err;			\
-	memcpy (&var, p, sizeof(var));		\
-	bytes_left -= sizeof(var);		\
-	p += sizeof(var);
+#define extract_num(var) \
+	do { \
+		if (bytes_left < sizeof(var)) \
+			goto err; \
+		memcpy (&var, p, sizeof(var)); \
+		bytes_left -= sizeof(var); \
+		p += sizeof(var); \
+	} while (0)
 
-#define extract_str(var)			\
-	if (bytes_left < sizeof(str_len))	\
-		goto err;			\
-	memcpy (&str_len, p, sizeof(str_len));	\
-	p += sizeof(str_len);			\
-	if (bytes_left < str_len)		\
-		goto err;			\
-	var = xmalloc (str_len + 1);		\
-	memcpy (var, p, str_len);		\
-	var[str_len] = '\0';			\
-	p += str_len;
+#define extract_str(var) \
+	do { \
+		if (bytes_left < sizeof(str_len)) \
+			goto err; \
+		memcpy (&str_len, p, sizeof(str_len)); \
+		p += sizeof(str_len); \
+		if (bytes_left < str_len) \
+			goto err; \
+		var = xmalloc (str_len + 1); \
+		memcpy (var, p, str_len); \
+		var[str_len] = '\0'; \
+		p += str_len; \
+	} while (0)
 
 	extract_num (rec->mod_time);
 	extract_num (rec->atime);

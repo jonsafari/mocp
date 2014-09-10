@@ -455,10 +455,13 @@ static char *title_expn_subs(char fmt, const struct file_tags *tags)
 	return NULL;
 }
 
-/* Generate a title from fmt. */
-#define check_zero(x) if((x) == '\0') \
-		fatal ("Unexpected end of title expression!")
+static inline void check_zero (const char *x)
+{
+	if (*x == '\0')
+		fatal ("Unexpected end of title expression!");
+}
 
+/* Generate a title from fmt. */
 static void do_title_expn (char *dest, int size, const char *fmt,
 		const struct file_tags *tags)
 {
@@ -470,7 +473,7 @@ static void do_title_expn (char *dest, int size, const char *fmt,
 
 	while (free > 0 && *fmt) {
 		if (*fmt == '%' && !escape) {
-			check_zero(*++fmt);
+			check_zero(++fmt);
 
 			/* do ternary expansion
 			 * format: %(x:true:false)
@@ -479,13 +482,13 @@ static void do_title_expn (char *dest, int size, const char *fmt,
 				char separator, expr[256];
 				int expr_pos = 0;
 
-				check_zero(*++fmt);
+				check_zero(++fmt);
 				h = title_expn_subs(*fmt, tags);
 
-				check_zero(*++fmt);
+				check_zero(++fmt);
 				separator = *fmt;
 
-				check_zero(*++fmt);
+				check_zero(++fmt);
 
 				if(h) { /* true */
 
@@ -498,7 +501,7 @@ static void do_title_expn (char *dest, int size, const char *fmt,
 							escape = 1;
 						else
 							escape = 0;
-						check_zero(*++fmt);
+						check_zero(++fmt);
 					}
 					expr[expr_pos] = '\0';
 
@@ -508,7 +511,7 @@ static void do_title_expn (char *dest, int size, const char *fmt,
 							escape = 0;
 						else if (*fmt == '\\')
 							escape = 1;
-						check_zero(*++fmt);
+						check_zero(++fmt);
 					}
 				}
 				else { /* false */
@@ -519,10 +522,10 @@ static void do_title_expn (char *dest, int size, const char *fmt,
 							escape = 0;
 						else if (*fmt == '\\')
 							escape = 1;
-						check_zero(*++fmt);
+						check_zero(++fmt);
 					}
 
-					check_zero(*++fmt);
+					check_zero(++fmt);
 
 					/* copy the expression */
 					while (escape || *fmt != ')') {
@@ -533,7 +536,7 @@ static void do_title_expn (char *dest, int size, const char *fmt,
 							escape = 1;
 						else
 							escape = 0;
-						check_zero(*++fmt);
+						check_zero(++fmt);
 					}
 					expr[expr_pos] = '\0';
 				}
