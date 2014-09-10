@@ -29,31 +29,7 @@
 #include <assert.h>
 #include <stdint.h>
 
-#ifndef GCC_VERSION
-#define GCC_VERSION (__GNUC__ * 10000 + \
-                     __GNUC_MINOR__ * 100 + \
-                     __GNUC_PATCHLEVEL__)
-#endif
-
-/* These macros allow us to use the appropriate method for manipulating
- * GCC's diagnostic pragmas depending on the compiler's version. */
-#if GCC_VERSION >= 40200
-# define GCC_DIAG_STR(s) #s
-# define GCC_DIAG_JOINSTR(x,y) GCC_DIAG_STR(x ## y)
-# define GCC_DIAG_DO_PRAGMA(x) _Pragma (#x)
-# define GCC_DIAG_PRAGMA(x) GCC_DIAG_DO_PRAGMA(GCC diagnostic x)
-# if GCC_VERSION >= 40600
-#  define GCC_DIAG_OFF(x) GCC_DIAG_PRAGMA(push) \
-                          GCC_DIAG_PRAGMA(ignored GCC_DIAG_JOINSTR(-W,x))
-#  define GCC_DIAG_ON(x)  GCC_DIAG_PRAGMA(pop)
-# else
-#  define GCC_DIAG_OFF(x) GCC_DIAG_PRAGMA(ignored GCC_DIAG_JOINSTR(-W,x))
-#  define GCC_DIAG_ON(x)  GCC_DIAG_PRAGMA(warning GCC_DIAG_JOINSTR(-W,x))
-# endif
-#else
-# define GCC_DIAG_OFF(x)
-# define GCC_DIAG_ON(x)
-#endif
+#include "compiler.h"
 
 /* This warning reset suppresses a deprecation warning message for
  * av_metadata_set()'s use of an AVMetadata parameter.  Although it

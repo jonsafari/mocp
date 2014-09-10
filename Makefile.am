@@ -13,6 +13,7 @@ mocp_SOURCES = log.c \
 	       main.c \
 	       common.c \
 	       common.h \
+	       compiler.h \
 	       playlist.c \
 	       playlist.h \
 	       fifo_buf.c \
