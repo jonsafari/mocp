@@ -654,7 +654,7 @@ void plist_set_title_file (struct plist *plist, const int num,
 		free (plist->items[num].title_file);
 
 #ifdef  HAVE_RCC
-	if (options_get_int ("UseRCCForFilesystem")) {
+	if (options_get_bool ("UseRCCForFilesystem")) {
 		char *t_str = xstrdup (title);
 		plist->items[num].title_file = rcc_reencode (t_str);
 		return;

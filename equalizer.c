@@ -511,7 +511,7 @@ void equalizer_init()
 
 void equalizer_shutdown()
 {
-  if(options_get_int(EQUALIZER_SAVE_OPTION))
+  if(options_get_bool(EQUALIZER_SAVE_OPTION))
     equalizer_write_config();
 
   clear_eq_set(&equ_list);

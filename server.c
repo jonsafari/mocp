@@ -408,6 +408,18 @@ static int send_data_int (const struct client *cli, const int data)
 	return 1;
 }
 
+/* Send EV_DATA and the boolean value. Return 0 on error. */
+static int send_data_bool (const struct client *cli, const bool data)
+{
+	assert (cli->socket != -1);
+
+	if (!send_int(cli->socket, EV_DATA) ||
+	    !send_int(cli->socket, data ? 1 : 0))
+		return 0;
+
+	return 1;
+}
+
 /* Send EV_DATA and the string value. Return 0 on error. */
 static int send_data_str (const struct client *cli, const char *str) {
 	if (!send_int(cli->socket, EV_DATA) || !send_str(cli->socket, str))
@@ -833,8 +845,8 @@ static int send_option (struct client *cli)
 		return 0;
 	}
 
-	/* All supported options are integer type. */
-	if (!send_data_int(cli, options_get_int(name))) {
+	/* All supported options are boolean type. */
+	if (!send_data_bool(cli, options_get_bool(name))) {
 		free (name);
 		return 0;
 	}
@@ -860,7 +872,7 @@ static int get_set_option (struct client *cli)
 		return 0;
 	}
 
-	options_set_int (name, val);
+	options_set_bool (name, val ? true : false);
 	free (name);
 
 	add_event_all (EV_OPTIONS, NULL);

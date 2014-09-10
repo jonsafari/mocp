@@ -140,6 +140,12 @@ static void send_int_to_srv (const int num)
 		fatal ("Can't send() int to the server!");
 }
 
+static void send_bool_to_srv (const bool t)
+{
+	if (!send_int(srv_sock, t ? 1 : 0))
+		fatal ("Can't send() bool to the server!");
+}
+
 static void send_str_to_srv (const char *str)
 {
 	if (!send_str(srv_sock, str))
@@ -160,6 +166,16 @@ static int get_int_from_srv ()
 		fatal ("Can't receive value from the server!");
 
 	return num;
+}
+
+static bool get_bool_from_srv ()
+{
+	int num;
+
+	if (!get_int(srv_sock, &num))
+		fatal ("Can't receive value from the server!");
+
+	return num == 1 ? true : false;
 }
 
 /* Returned memory is malloc()ed. */
@@ -269,6 +285,13 @@ static int get_data_int ()
 {
 	wait_for_data ();
 	return get_int_from_srv ();
+}
+
+/* Get a boolean value from the server that will arrive after EV_DATA. */
+static bool get_data_bool ()
+{
+	wait_for_data ();
+	return get_bool_from_srv ();
 }
 
 /* Get a string value from the server that will arrive after EV_DATA. */
@@ -387,24 +410,24 @@ static void file_info_block_mark (int *marker)
 	}
 }
 
-/* Get an integer option from the server (like shuffle) and set it. */
-static void sync_int_option (const char *name)
+/* Get a boolean option from the server (like Shuffle) and set it. */
+static void sync_bool_option (const char *name)
 {
-	int value;
+	bool value;
 
 	send_int_to_srv (CMD_GET_OPTION);
 	send_str_to_srv (name);
-	value = get_data_int ();
-	options_set_int (name, value);
+	value = get_data_bool ();
+	options_set_bool (name, value);
 	iface_set_option_state (name, value);
 }
 
 /* Get the server options and set our options like them. */
 static void get_server_options ()
 {
-	sync_int_option ("Shuffle");
-	sync_int_option ("Repeat");
-	sync_int_option ("AutoNext");
+	sync_bool_option ("Shuffle");
+	sync_bool_option ("Repeat");
+	sync_bool_option ("AutoNext");
 }
 
 static int get_server_plist_serial ()
@@ -557,7 +580,7 @@ static int get_tags_setting ()
 {
 	int needed_tags = 0;
 
-	if (options_get_int("ReadTags"))
+	if (options_get_bool("ReadTags"))
 		needed_tags |= TAGS_COMMENTS;
 	if (!strcasecmp(options_get_str("ShowTime"), "yes"))
 		needed_tags |= TAGS_TIME;
@@ -626,9 +649,10 @@ static void update_item_tags (struct plist *plist, const int num,
 
 	make_tags_title (plist, num);
 
-	if (options_get_int ("ReadTags") && !plist->items[num].title_tags) {
+	if (options_get_bool ("ReadTags") && !plist->items[num].title_tags) {
 		if (!plist->items[num].title_file)
-			make_file_title (plist, num, options_get_int ("HideFileExtension"));
+			make_file_title (plist, num,
+					options_get_bool ("HideFileExtension"));
 	}
 
 	if (old_tags)
@@ -789,7 +813,7 @@ static void update_curr_file ()
 		}
 		else
 		{
-			if (options_get_int ("FileNamesIconv"))
+			if (options_get_bool ("FileNamesIconv"))
 			{
 				curr_file.title = files_iconv_str (
 					strrchr(file, '/') + 1);
@@ -809,7 +833,7 @@ static void update_curr_file ()
 		silent_seek_pos = -1;
 		iface_set_curr_time (curr_file.curr_time);
 
-		if (options_get_int("FollowPlayedFile"))
+		if (options_get_bool("FollowPlayedFile"))
 			follow_curr_file ();
 	}
 	else
@@ -863,7 +887,7 @@ static void event_plist_add (const struct plist_item *item)
 		int needed_tags = 0;
 		int i;
 
-		if (options_get_int("ReadTags")
+		if (options_get_bool("ReadTags")
 				&& (!item->tags || !item->tags->title))
 			needed_tags |= TAGS_COMMENTS;
 		if (!strcasecmp(options_get_str("ShowTime"), "yes")
@@ -873,11 +897,11 @@ static void event_plist_add (const struct plist_item *item)
 		if (needed_tags)
 			send_tags_request (item->file, needed_tags);
 
-		if (options_get_int ("ReadTags"))
+		if (options_get_bool ("ReadTags"))
 			make_tags_title (playlist, item_num);
 		else
 			make_file_title (playlist, item_num,
-					options_get_int ("HideFileExtension"));
+					options_get_bool ("HideFileExtension"));
 
 		/* Just calling iface_update_queue_positions (queue, playlist,
 		 * NULL, NULL) is too slow in cases when we receive a large
@@ -1135,19 +1159,19 @@ static void server_event (const int event, void *data)
 			forward_playlist ();
 			break;
 		case EV_PLIST_ADD:
-			if (options_get_int("SyncPlaylist"))
+			if (options_get_bool("SyncPlaylist"))
 				event_plist_add ((struct plist_item *)data);
 			break;
 		case EV_PLIST_CLEAR:
-			if (options_get_int("SyncPlaylist"))
+			if (options_get_bool("SyncPlaylist"))
 				clear_playlist ();
 			break;
 		case EV_PLIST_DEL:
-			if (options_get_int("SyncPlaylist"))
+			if (options_get_bool("SyncPlaylist"))
 				event_plist_del ((char *)data);
 			break;
 		case EV_PLIST_MOVE:
-			if (options_get_int("SyncPlaylist"))
+			if (options_get_bool("SyncPlaylist"))
 				event_plist_move ((struct move_ev_data *)data);
 			break;
 		case EV_TAGS:
@@ -1366,7 +1390,7 @@ static int go_to_playlist (const char *file, const int load_serial,
 	iface_set_status ("Loading playlist...");
 	if (plist_load(playlist, file, cwd, load_serial)) {
 
-		if (options_get_int("SyncPlaylist")) {
+		if (options_get_bool("SyncPlaylist")) {
 			send_int_to_srv (CMD_LOCK);
 			if (!load_serial)
 				change_srv_plist_serial ();
@@ -1406,7 +1430,7 @@ static void enter_first_dir ()
 {
 	static int first_run = 1;
 
-	if (options_get_int("StartInMusicDir")) {
+	if (options_get_bool("StartInMusicDir")) {
 		char *music_dir;
 
 		if ((music_dir = options_get_str("MusicDir"))) {
@@ -1586,7 +1610,7 @@ static void process_args (lists_t_strs *args)
 	else
 		process_multiple_args (args);
 
-	if (plist_count (playlist) && !options_get_int ("SyncPlaylist")) {
+	if (plist_count (playlist) && !options_get_bool ("SyncPlaylist")) {
 		switch_titles_file (playlist);
 		ask_for_tags (playlist, get_tags_setting ());
 		iface_set_dir_content (IFACE_MENU_PLIST, playlist, NULL, NULL);
@@ -1818,7 +1842,7 @@ static void add_dir_plist ()
 	if (get_server_plist_serial() == plist_get_serial(playlist))
 		send_playlist (&plist, 0);
 
-	if (options_get_int("SyncPlaylist")) {
+	if (options_get_bool("SyncPlaylist")) {
 		iface_set_status ("Notifying clients...");
 		send_items_to_clients (&plist);
 		iface_set_status ("");
@@ -1851,7 +1875,7 @@ static void remove_file_from_playlist (const char *file)
 	assert (file != NULL);
 	assert (plist_count(playlist) > 0);
 
-	if (options_get_int("SyncPlaylist")) {
+	if (options_get_bool("SyncPlaylist")) {
 		send_int_to_srv (CMD_CLI_PLIST_DEL);
 		send_str_to_srv (file);
 	}
@@ -1927,7 +1951,7 @@ static void add_file_plist ()
 
 		send_int_to_srv (CMD_LOCK);
 
-		if (options_get_int("SyncPlaylist")) {
+		if (options_get_bool("SyncPlaylist")) {
 			send_int_to_srv (CMD_CLI_PLIST_ADD);
 			send_item_to_srv (item);
 		}
@@ -1997,8 +2021,8 @@ static void toggle_option (const char *name)
 {
 	send_int_to_srv (CMD_SET_OPTION);
 	send_str_to_srv (name);
-	send_int_to_srv (!options_get_int(name));
-	sync_int_option (name);
+	send_bool_to_srv (!options_get_bool(name));
+	sync_bool_option (name);
 }
 
 static void toggle_show_time ()
@@ -2024,9 +2048,9 @@ static void toggle_show_time ()
 
 static void toggle_show_format ()
 {
-	int show_format = !options_get_int("ShowFormat");
+	bool show_format = !options_get_bool("ShowFormat");
 
-	options_set_int ("ShowFormat", show_format);
+	options_set_bool ("ShowFormat", show_format);
 	if (show_format)
 		iface_set_status ("ShowFormat: yes");
 	else
@@ -2044,7 +2068,7 @@ static void reread_dir ()
 /* Clear the playlist on user request. */
 static void cmd_clear_playlist ()
 {
-	if (options_get_int("SyncPlaylist")) {
+	if (options_get_bool("SyncPlaylist")) {
 		send_int_to_srv (CMD_LOCK);
 		send_int_to_srv (CMD_CLI_PLIST_CLEAR);
 		change_srv_plist_serial ();
@@ -2257,7 +2281,7 @@ static void add_url_to_plist (const char *url)
 	if (plist_find_fname(playlist, url) == -1) {
 		send_int_to_srv (CMD_LOCK);
 
-		if (options_get_int("SyncPlaylist")) {
+		if (options_get_bool("SyncPlaylist")) {
 			struct plist_item *item = plist_new_item ();
 
 			item->file = xstrdup (url);
@@ -2273,7 +2297,7 @@ static void add_url_to_plist (const char *url)
 			int added;
 
 			added = plist_add (playlist, url);
-			make_file_title (playlist, added, 0);
+			make_file_title (playlist, added, false);
 			iface_add_to_plist (playlist, added);
 		}
 
@@ -2483,14 +2507,14 @@ static void update_iface_menu (const enum iface_menu menu,
 /* Switch ReadTags options and update the menu. */
 static void switch_read_tags ()
 {
-	if (options_get_int ("ReadTags")) {
-		options_set_int ("ReadTags", 0);
+	if (options_get_bool ("ReadTags")) {
+		options_set_bool ("ReadTags", false);
 		switch_titles_file (dir_plist);
 		switch_titles_file (playlist);
 		iface_set_status ("ReadTags: no");
 	}
 	else {
-		options_set_int ("ReadTags", 1);
+		options_set_bool ("ReadTags", true);
 		ask_for_tags (dir_plist, TAGS_COMMENTS);
 		ask_for_tags (playlist, TAGS_COMMENTS);
 		switch_titles_tags (dir_plist);
@@ -2632,7 +2656,7 @@ static void move_item (const int direction)
 
 	send_int_to_srv (CMD_LOCK);
 
-	if (options_get_int("SyncPlaylist")) {
+	if (options_get_bool("SyncPlaylist")) {
 		send_int_to_srv (CMD_CLI_PLIST_MOVE);
 		send_str_to_srv (file);
 		send_str_to_srv (second_file);
@@ -3121,9 +3145,9 @@ static void go_to_fast_dir (const int num)
 
 static void toggle_playlist_full_paths (void)
 {
-	int new_val = !options_get_int ("PlaylistFullPaths");
+	bool new_val = !options_get_bool ("PlaylistFullPaths");
 
-	options_set_int ("PlaylistFullPaths", new_val);
+	options_set_bool ("PlaylistFullPaths", new_val);
 
 	if (new_val)
 		iface_set_status ("PlaylistFullPaths: on");
@@ -3243,8 +3267,8 @@ static void menu_key (const struct iface_key *k)
 					reread_dir ();
 				break;
 			case KEY_CMD_TOGGLE_SHOW_HIDDEN_FILES:
-				options_set_int ("ShowHiddenFiles",
-				                 !options_get_int ("ShowHiddenFiles"));
+				options_set_bool ("ShowHiddenFiles",
+				                  !options_get_bool ("ShowHiddenFiles"));
 				if (iface_in_dir_menu ())
 					reread_dir ();
 				break;
@@ -3518,11 +3542,11 @@ void init_interface (const int sock, const int logging, lists_t_strs *args)
 		process_args (args);
 
 		if (plist_count(playlist) == 0) {
-			if (!options_get_int("SyncPlaylist") || !use_server_playlist())
+			if (!options_get_bool("SyncPlaylist") || !use_server_playlist())
 				load_playlist ();
 			send_int_to_srv (CMD_SEND_PLIST_EVENTS);
 		}
-		else if (options_get_int("SyncPlaylist")) {
+		else if (options_get_bool("SyncPlaylist")) {
 			struct plist tmp_plist;
 
 			/* We have made the playlist from command line. */
@@ -3553,12 +3577,12 @@ void init_interface (const int sock, const int logging, lists_t_strs *args)
 
 			/* Now enter_first_dir() should not go to the music
 			 * directory. */
-			options_set_int ("StartInMusicDir", 0);
+			options_set_bool ("StartInMusicDir", false);
 		}
 	}
 	else {
 		send_int_to_srv (CMD_SEND_PLIST_EVENTS);
-		if (!options_get_int("SyncPlaylist") || !use_server_playlist())
+		if (!options_get_bool("SyncPlaylist") || !use_server_playlist())
 			load_playlist ();
 		enter_first_dir ();
 	}
@@ -3566,12 +3590,12 @@ void init_interface (const int sock, const int logging, lists_t_strs *args)
 	/* Ask the server for queue. */
 	use_server_queue ();
 
-	if (options_get_int("SyncPlaylist"))
+	if (options_get_bool("SyncPlaylist"))
 		send_int_to_srv (CMD_CAN_SEND_PLIST);
 
 	update_state ();
 
-	if (options_get_int("CanStartInPlaylist")
+	if (options_get_bool("CanStartInPlaylist")
 			&& curr_file.file
 			&& plist_find_fname(playlist, curr_file.file) != -1)
 		iface_switch_to_plist ();
@@ -3647,7 +3671,7 @@ static void save_playlist_in_moc ()
 {
 	char *plist_file = create_file_name (PLAYLIST_FILE);
 
-	if (plist_count(playlist) && options_get_int("SavePlaylist"))
+	if (plist_count(playlist) && options_get_bool("SavePlaylist"))
 		save_playlist (plist_file, NULL, 1);
 	else
 		unlink (plist_file);
@@ -3709,7 +3733,7 @@ void interface_cmdline_clear_plist (int server_sock)
 
 	plist_init (&plist);
 
-	if (options_get_int("SyncPlaylist"))
+	if (options_get_bool("SyncPlaylist"))
 		send_int_to_srv (CMD_CLI_PLIST_CLEAR);
 
 	if (recv_server_plist(&plist) && plist_get_serial(&plist)
@@ -3767,7 +3791,7 @@ static void add_recursively (struct plist *plist, lists_t_strs *args)
 			int added = plist_add (plist, path);
 
 			if (is_url (path))
-				make_file_title (plist, added, 0);
+				make_file_title (plist, added, false);
 		}
 	}
 }
@@ -3777,7 +3801,7 @@ void interface_cmdline_append (int server_sock, lists_t_strs *args)
 	srv_sock = server_sock; /* the interface is not initialized, so set it
 				   here */
 
-	if (options_get_int("SyncPlaylist")) {
+	if (options_get_bool("SyncPlaylist")) {
 		struct plist clients_plist;
 		struct plist new;
 
@@ -3825,7 +3849,7 @@ void interface_cmdline_append (int server_sock, lists_t_strs *args)
 			send_int_to_srv (CMD_UNLOCK);
 
 			plist_cat (&saved_plist, &new);
-			if (options_get_int("SavePlaylist")) {
+			if (options_get_bool("SavePlaylist")) {
 				fill_tags (&saved_plist, TAGS_COMMENTS
 						| TAGS_TIME, 1);
 				plist_save (&saved_plist,
@@ -4151,11 +4175,11 @@ void interface_cmdline_set (int server_sock, char *arg, const int val)
 
 	while(tok) {
 
-		if(!strncmp (tok, "shuffle", 8) || !strncmp (tok,"s",2))
+		if(!strncmp (tok, "Shuffle", 8) || !strncmp (tok,"s",2))
 			tok = "Shuffle";
-		else if(!strncmp (tok, "autonext", 9) || !strncmp (tok, "n",2))
+		else if(!strncmp (tok, "AutoNext", 9) || !strncmp (tok, "n",2))
 			tok = "AutoNext";
-		else if(!strncmp (tok, "repeat", 7) || !strncmp (tok, "r", 2))
+		else if(!strncmp (tok, "Repeat", 7) || !strncmp (tok, "r", 2))
 			tok = "Repeat";
 		else {
 			fprintf (stderr, "Unknown option '%s'\n", tok);
@@ -4165,7 +4189,7 @@ void interface_cmdline_set (int server_sock, char *arg, const int val)
 		if(val == 2) {
 			send_int_to_srv (CMD_GET_OPTION);
 			send_str_to_srv (tok);
-			options_set_int (tok, get_data_int());
+			options_set_bool (tok, get_data_bool());
 		}
 
 		send_int_to_srv (CMD_SET_OPTION);

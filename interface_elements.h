@@ -58,7 +58,7 @@ struct iface_key
 void windows_init ();
 void windows_reset ();
 void windows_end ();
-void iface_set_option_state (const char *name, const int value);
+void iface_set_option_state (const char *name, const bool value);
 void iface_set_mixer_name (const char *name);
 void iface_set_status (const char *msg);
 void iface_set_dir_content (const enum iface_menu iface_menu,

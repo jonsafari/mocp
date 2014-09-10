@@ -59,7 +59,7 @@ void softmixer_init()
 
 void softmixer_shutdown()
 {
-  if(options_get_int(SOFTMIXER_SAVE_OPTION))
+  if(options_get_bool(SOFTMIXER_SAVE_OPTION))
     softmixer_write_config();
   logit ("Softmixer stopped");
 }
