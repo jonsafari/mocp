@@ -326,6 +326,7 @@ static void load_audio_extns (lists_t_strs *list)
 		{"spc", "libgme"},
 		{"vgm", "libgme"},
 		{"vgz", "libgme"},
+		{"vqf", "vqf"},
 		{"wav", "wav"},
 		{"w64", "w64"},
 		{"wma", "asf"},
