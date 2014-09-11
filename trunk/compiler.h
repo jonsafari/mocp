@@ -5,7 +5,13 @@
 extern "C" {
 #endif
 
-#ifdef HAVE__ATTRIBUTE__
+#ifdef HAVE_FUNC_ATTRIBUTE_NORETURN
+# define ATTR_NORETURN __attribute__((noreturn))
+#else
+# define ATTR_NORETURN
+#endif
+
+#ifdef HAVE_VAR_ATTRIBUTE_UNUSED
 # define ATTR_UNUSED __attribute__((unused))
 #else
 # define ATTR_UNUSED

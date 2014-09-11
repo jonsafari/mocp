@@ -39,7 +39,7 @@ void interface_end ();
 int user_wants_interrupt ();
 void interface_error (const char *msg);
 
-#ifdef HAVE_ATTRIBUTE__
+#ifdef HAVE_FUNC_ATTRIBUTE_FORMAT
 void interface_fatal (const char *format, ...)
 	__attribute__ ((format (printf, 1, 2)));
 #else

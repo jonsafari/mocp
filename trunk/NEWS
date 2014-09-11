@@ -2,6 +2,7 @@
 	* Autotools and packaging changes:
 	  - Dropped version micro number for development versions
 	  - Upgraded autoconf-archive macros to 2014-02-28 release
+	  - Replaced custom shell code with Autoconf archive macros
 	* Changed build behaviours:
 	  - 'make dist': now defaults to XZ compression
 	  - curl-config: replaced by pkg-config
