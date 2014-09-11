@@ -52,6 +52,12 @@ then
 						 ])
 				CFLAGS="$old_cflags"
 				CPPFLAGS="$old_cppflags"
+
+				AX_COMPARE_VERSION($taglib_ver, [lt], [1.5])
+				if test "x$ax_compare_version" = "xtrue"
+				then
+					UPGRADE_TAGLIB="yes"
+				fi
 			else
 				AC_MSG_RESULT([$taglib_ver, but minimum is 1.3.1 - required for musepack])
 			fi
