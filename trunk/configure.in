@@ -451,6 +451,13 @@ then
 	echo
 fi
 
+if test "x$UPGRADE_TAGLIB" = "xyes"
+then
+	echo "WARNING: MOC will soon require TagLib version 1.5 or later;"
+	echo "         plan to upgrade your TagLib soon."
+	echo
+fi
+
 if test "x$DECODER_PLUGINS" = "x"
 then
 	echo "WARNING: No decoder plugins are to be compiled;"
