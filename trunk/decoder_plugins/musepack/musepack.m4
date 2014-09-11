@@ -30,18 +30,8 @@ then
 		then
 			AC_MSG_CHECKING([taglib version])
 			taglib_ver=`taglib-config --version`
-			taglib_ver_major=`echo "$taglib_ver" | awk -F. '{print $1}'`
-			taglib_ver_minor=`echo "$taglib_ver" | awk -F. '{print $2}'`
-			taglib_ver_extra=`echo "$taglib_ver" | awk -F. '{print $3}'`
-
-			if test -z "$taglib_ver_extra"
-			then
-				taglib_ver_extra="0"
-			fi
-
-			if test \( "$taglib_ver_major" = "1" -a "$taglib_ver_minor" -ge 4 \) \
-				-o \( "$taglib_ver_major" = "1" -a "$taglib_ver_minor" = "3" \
-				-a "$taglib_ver_extra" -ge 1 \)
+			AX_COMPARE_VERSION($taglib_ver, [ge], [1.3.1])
+			if test "x$ax_compare_version" = "xtrue"
 			then
 				AC_MSG_RESULT([$taglib_ver, OK])
 
@@ -62,7 +52,6 @@ then
 						 ])
 				CFLAGS="$old_cflags"
 				CPPFLAGS="$old_cppflags"
-
 			else
 				AC_MSG_RESULT([$taglib_ver, but minimum is 1.3.1 - required for musepack])
 			fi
