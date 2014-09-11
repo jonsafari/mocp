@@ -92,14 +92,14 @@ char *xstrdup (const char *s);
 	## __VA_ARGS__)
 #endif
 
-#ifdef HAVE__ATTRIBUTE__
+#ifdef HAVE_FUNC_ATTRIBUTE_FORMAT
 void internal_fatal (const char *file, int line, const char *function,
-		const char *format, ...)
-	__attribute__ ((format (printf, 4, 5), noreturn));
+                     const char *format, ...) ATTR_NORETURN
+                     __attribute__ ((format (printf, 4, 5)));
 void error (const char *format, ...) __attribute__((format (printf, 1, 2)));
 #else
 void internal_fatal (const char *file, int line, const char *function,
-		const char *format, ...);
+                     const char *format, ...) ATTR_NORETURN;
 void error (const char *format, ...);
 #endif
 

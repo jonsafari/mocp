@@ -38,7 +38,7 @@
 
 /* These merely silence compiler warnings about unused definitions in
  * the Vorbis library header files. */
-#if defined(HAVE__ATTRIBUTE__) && !defined(HAVE_TREMOR)
+#if defined(HAVE_VAR_ATTRIBUTE_UNUSED) && !defined(HAVE_TREMOR)
 static ov_callbacks *vorbis_unused[] ATTR_UNUSED = {
 	&OV_CALLBACKS_DEFAULT,
 	&OV_CALLBACKS_NOCLOSE,

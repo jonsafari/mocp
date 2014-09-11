@@ -21,7 +21,7 @@ extern "C" {
 # define logit fake_logit
 #endif
 
-#ifdef HAVE__ATTRIBUTE__
+#ifdef HAVE_FUNC_ATTRIBUTE_FORMAT
 void internal_logit (const char *file, const int line, const char *function,
 		const char *format, ...)
 	__attribute__ ((format (printf, 4, 5)));

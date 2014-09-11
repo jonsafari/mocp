@@ -290,7 +290,7 @@ char *file_type_name (const char *file);
  * error message.
  * \param format Format, like in the printf() function.
  */
-#ifdef HAVE__ATTRIBUTE__
+#ifdef HAVE_FUNC_ATTRIBUTE_FORMAT
 void decoder_error (struct decoder_error *error,
 		const enum decoder_error_type type, const int add_errno,
 		const char *format, ...) __attribute__((format (printf, 4, 5)));

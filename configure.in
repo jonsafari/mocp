@@ -333,11 +333,13 @@ AC_TRY_COMPILE(,[printf(__FUNCTION__);], [AC_DEFINE([HAVE__FUNCTION__], 1,
 	       [Define if we have __FUNCTION__ constant])])
 
 dnl __attribute__
-AC_TRY_COMPILE([#include <stdarg.h>],
-	       [int f(const char *f, ...)
-	       __attribute__((format (printf, 1, 2)))],
-	       [AC_DEFINE([HAVE__ATTRIBUTE__], 1,
-			  [Define if we have __attribute__ extension])])
+AX_C___ATTRIBUTE__
+if test "x$ax_cv___attribute__" = "xyes"
+then
+	AX_GCC_FUNC_ATTRIBUTE(format)
+	AX_GCC_FUNC_ATTRIBUTE(noreturn)
+	AX_GCC_VAR_ATTRIBUTE(unused)
+fi
 
 dnl ncurses
 AX_WITH_CURSES
