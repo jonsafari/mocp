@@ -1,75 +1,90 @@
-dnl @synopsis AX_COMPARE_VERSION(VERSION_A, OP, VERSION_B, [ACTION-IF-TRUE], [ACTION-IF-FALSE])
-dnl
-dnl This macro compares two version strings. It is used heavily in the
-dnl macro _AX_PATH_BDB for library checking. Due to the various number
-dnl of minor-version numbers that can exist, and the fact that string
-dnl comparisons are not compatible with numeric comparisons, this is
-dnl not necessarily trivial to do in a autoconf script. This macro
-dnl makes doing these comparisons easy.
-dnl
-dnl The six basic comparisons are available, as well as checking
-dnl equality limited to a certain number of minor-version levels.
-dnl
-dnl The operator OP determines what type of comparison to do, and can
-dnl be one of:
-dnl
-dnl  eq  - equal (test A == B)
-dnl  ne  - not equal (test A != B)
-dnl  le  - less than or equal (test A <= B)
-dnl  ge  - greater than or equal (test A >= B)
-dnl  lt  - less than (test A < B)
-dnl  gt  - greater than (test A > B)
-dnl
-dnl Additionally, the eq and ne operator can have a number after it to
-dnl limit the test to that number of minor versions.
-dnl
-dnl  eq0 - equal up to the length of the shorter version
-dnl  ne0 - not equal up to the length of the shorter version
-dnl  eqN - equal up to N sub-version levels
-dnl  neN - not equal up to N sub-version levels
-dnl
-dnl When the condition is true, shell commands ACTION-IF-TRUE are run,
-dnl otherwise shell commands ACTION-IF-FALSE are run. The environment
-dnl variable 'ax_compare_version' is always set to either 'true' or
-dnl 'false' as well.
-dnl
-dnl Examples:
-dnl
-dnl   AX_COMPARE_VERSION([3.15.7],[lt],[3.15.8])
-dnl   AX_COMPARE_VERSION([3.15],[lt],[3.15.8])
-dnl
-dnl would both be true.
-dnl
-dnl   AX_COMPARE_VERSION([3.15.7],[eq],[3.15.8])
-dnl   AX_COMPARE_VERSION([3.15],[gt],[3.15.8])
-dnl
-dnl would both be false.
-dnl
-dnl   AX_COMPARE_VERSION([3.15.7],[eq2],[3.15.8])
-dnl
-dnl would be true because it is only comparing two minor versions.
-dnl
-dnl   AX_COMPARE_VERSION([3.15.7],[eq0],[3.15])
-dnl
-dnl would be true because it is only comparing the lesser number of
-dnl minor versions of the two values.
-dnl
-dnl Note: The characters that separate the version numbers do not
-dnl matter. An empty string is the same as version 0. OP is evaluated
-dnl by autoconf, not configure, so must be a string, not a variable.
-dnl
-dnl The author would like to acknowledge Guido Draheim whose advice
-dnl about the m4_case and m4_ifvaln functions make this macro only
-dnl include the portions necessary to perform the specific comparison
-dnl specified by the OP argument in the final configure script.
-dnl
-dnl @category Misc
-dnl @author Tim Toolan <toolan@ele.uri.edu>
-dnl @version 2004-03-01
-dnl @license GPLWithACException
+# ===========================================================================
+#    http://www.gnu.org/software/autoconf-archive/ax_compare_version.html
+# ===========================================================================
+#
+# SYNOPSIS
+#
+#   AX_COMPARE_VERSION(VERSION_A, OP, VERSION_B, [ACTION-IF-TRUE], [ACTION-IF-FALSE])
+#
+# DESCRIPTION
+#
+#   This macro compares two version strings. Due to the various number of
+#   minor-version numbers that can exist, and the fact that string
+#   comparisons are not compatible with numeric comparisons, this is not
+#   necessarily trivial to do in a autoconf script. This macro makes doing
+#   these comparisons easy.
+#
+#   The six basic comparisons are available, as well as checking equality
+#   limited to a certain number of minor-version levels.
+#
+#   The operator OP determines what type of comparison to do, and can be one
+#   of:
+#
+#    eq  - equal (test A == B)
+#    ne  - not equal (test A != B)
+#    le  - less than or equal (test A <= B)
+#    ge  - greater than or equal (test A >= B)
+#    lt  - less than (test A < B)
+#    gt  - greater than (test A > B)
+#
+#   Additionally, the eq and ne operator can have a number after it to limit
+#   the test to that number of minor versions.
+#
+#    eq0 - equal up to the length of the shorter version
+#    ne0 - not equal up to the length of the shorter version
+#    eqN - equal up to N sub-version levels
+#    neN - not equal up to N sub-version levels
+#
+#   When the condition is true, shell commands ACTION-IF-TRUE are run,
+#   otherwise shell commands ACTION-IF-FALSE are run. The environment
+#   variable 'ax_compare_version' is always set to either 'true' or 'false'
+#   as well.
+#
+#   Examples:
+#
+#     AX_COMPARE_VERSION([3.15.7],[lt],[3.15.8])
+#     AX_COMPARE_VERSION([3.15],[lt],[3.15.8])
+#
+#   would both be true.
+#
+#     AX_COMPARE_VERSION([3.15.7],[eq],[3.15.8])
+#     AX_COMPARE_VERSION([3.15],[gt],[3.15.8])
+#
+#   would both be false.
+#
+#     AX_COMPARE_VERSION([3.15.7],[eq2],[3.15.8])
+#
+#   would be true because it is only comparing two minor versions.
+#
+#     AX_COMPARE_VERSION([3.15.7],[eq0],[3.15])
+#
+#   would be true because it is only comparing the lesser number of minor
+#   versions of the two values.
+#
+#   Note: The characters that separate the version numbers do not matter. An
+#   empty string is the same as version 0. OP is evaluated by autoconf, not
+#   configure, so must be a string, not a variable.
+#
+#   The author would like to acknowledge Guido Draheim whose advice about
+#   the m4_case and m4_ifvaln functions make this macro only include the
+#   portions necessary to perform the specific comparison specified by the
+#   OP argument in the final configure script.
+#
+# LICENSE
+#
+#   Copyright (c) 2008 Tim Toolan <toolan@ele.uri.edu>
+#
+#   Copying and distribution of this file, with or without modification, are
+#   permitted in any medium without royalty provided the copyright notice
+#   and this notice are preserved. This file is offered as-is, without any
+#   warranty.
+
+#serial 11
 
 dnl #########################################################################
 AC_DEFUN([AX_COMPARE_VERSION], [
+  AC_REQUIRE([AC_PROG_AWK])
+
   # Used to indicate true or false condition
   ax_compare_version=false
 
@@ -117,8 +132,8 @@ x$B" | sed 's/^ *//' | sort -r | sed "s/x${A}/true/;s/x${B}/false/;1q"`
     [0],[
       # A count of zero means use the length of the shorter version.
       # Determine the number of characters in A and B.
-      ax_compare_version_len_A=`echo "$A" | awk '{print(length)}'`
-      ax_compare_version_len_B=`echo "$B" | awk '{print(length)}'`
+      ax_compare_version_len_A=`echo "$A" | $AWK '{print(length)}'`
+      ax_compare_version_len_B=`echo "$B" | $AWK '{print(length)}'`
 
       # Set A to no more than B's length and B to no more than A's length.
       A=`echo "$A" | sed "s/\(.\{$ax_compare_version_len_B\}\).*/\1/"`

@@ -17,14 +17,6 @@
 #include <strings.h>
 #include <assert.h>
 
-#ifdef HAVE_NCURSESW_H
-# include <ncursesw/curses.h>
-#elif HAVE_NCURSES_H
-# include <ncurses.h>
-#elif HAVE_CURSES_H
-# include <curses.h>
-#endif
-
 #include <stdio.h>
 #include <errno.h>
 #include <unistd.h>

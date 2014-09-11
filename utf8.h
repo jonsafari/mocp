@@ -1,11 +1,15 @@
 #ifndef UTF8_H
 #define UTF8_H
 
-#ifdef HAVE_NCURSESW_H
+#if defined HAVE_NCURSESW_CURSES_H
 # include <ncursesw/curses.h>
-#elif HAVE_NCURSES_H
+#elif defined HAVE_NCURSESW_H
+# include <ncursesw.h>
+#elif defined HAVE_NCURSES_CURSES_H
+# include <ncurses/curses.h>
+#elif defined HAVE_NCURSES_H
 # include <ncurses.h>
-#else
+#elif defined HAVE_CURSES_H
 # include <curses.h>
 #endif
 
