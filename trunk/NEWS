@@ -1,6 +1,7 @@
 2.6.0 - "Usability"
 	* Autotools and packaging changes:
 	  - Dropped version micro number for development versions
+	  - Upgraded autoconf-archive macros to 2014-02-28 release
 	* Changed build behaviours:
 	  - 'make dist': now defaults to XZ compression
 	  - curl-config: replaced by pkg-config

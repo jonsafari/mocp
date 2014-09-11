@@ -315,7 +315,7 @@ fi
 dnl FIXME: Support for this in the source code
 AC_HEADER_DIRENT
 
-ACX_PTHREAD
+AX_PTHREAD
 AC_FUNC_MMAP
 
 if test "$ax_pthread_ok" != "yes"
@@ -340,16 +340,17 @@ AC_TRY_COMPILE([#include <stdarg.h>],
 			  [Define if we have __attribute__ extension])])
 
 dnl ncurses
-MP_WITH_CURSES
-if test -z "$CURSES_LIB"
+AX_WITH_CURSES
+if test "x$ax_cv_curses" = "xyes"
 then
-	AC_MSG_ERROR([You need curses/ncurses library and header files.])
-else
-	AC_CHECK_LIB([$CURSES_LIB], [set_escdelay],
+	CURSES_LIB_NO_L=`echo $CURSES_LIB | $AWK '{print substr($0, 3, 99)}'`
+	AC_CHECK_LIB([$CURSES_LIB_NO_L], [set_escdelay],
 		AC_DEFINE([HAVE_SET_ESCDELAY], 1, [Define if you have set_escdelay.]),
 		[AC_CHECK_FUNC([setenv], ,
 			AC_MSG_ERROR([Required function setenv not found.]))])
-	EXTRA_LIBS="$EXTRA_LIBS -l$CURSES_LIB"
+	EXTRA_LIBS="$EXTRA_LIBS $CURSES_LIB"
+else
+	AC_MSG_ERROR([You need curses/ncurses library and header files.])
 fi
 
 dnl popt

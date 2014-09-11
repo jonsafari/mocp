@@ -1,67 +1,79 @@
-dnl @synopsis AX_PATH_BDB([MINIMUM-VERSION], [ACTION-IF-FOUND], [ACTION-IF-NOT-FOUND])
-dnl
-dnl This macro finds the latest version of Berkeley DB on the system,
-dnl and ensures that the header file and library versions match. If
-dnl MINIMUM-VERSION is specified, it will ensure that the library found
-dnl is at least that version.
-dnl
-dnl It determines the name of the library as well as the path to the
-dnl header file and library. It will check both the default environment
-dnl as well as the default Berkeley DB install location. When found, it
-dnl sets BDB_LIBS, BDB_CPPFLAGS, and BDB_LDFLAGS to the necessary
-dnl values to add to LIBS, CPPFLAGS, and LDFLAGS, as well as setting
-dnl BDB_VERSION to the version found. HAVE_DB_H is defined also.
-dnl
-dnl The option --with-bdb-dir=DIR can be used to specify a specific
-dnl Berkeley DB installation to use.
-dnl
-dnl An example of it's use is:
-dnl
-dnl    AX_PATH_BDB([3],[
-dnl      LIBS="$BDB_LIBS $LIBS"
-dnl      LDFLAGS="$BDB_LDFLAGS $LDFLAGS"
-dnl      CPPFLAGS="$CPPFLAGS $BDB_CPPFLAGS"
-dnl    ])
-dnl
-dnl which will locate the latest version of Berkeley DB on the system,
-dnl and ensure that it is version 3.0 or higher.
-dnl
-dnl Details: This macro does not use either AC_CHECK_HEADERS or
-dnl AC_CHECK_LIB because, first, the functions inside the library are
-dnl sometimes renamed to contain a version code that is only available
-dnl from the db.h on the system, and second, because it is common to
-dnl have multiple db.h and libdb files on a system it is important to
-dnl make sure the ones being used correspond to the same version.
-dnl Additionally, there are many different possible names for libdb
-dnl when installed by an OS distribution, and these need to be checked
-dnl if db.h does not correspond to libdb.
-dnl
-dnl When cross compiling, only header versions are verified since it
-dnl would be difficult to check the library version. Additionally the
-dnl default Berkeley DB installation locations /usr/local/BerkeleyDB*
-dnl are not searched for higher versions of the library.
-dnl
-dnl The format for the list of library names to search came from the
-dnl Cyrus IMAP distribution, although they are generated dynamically
-dnl here, and only for the version found in db.h.
-dnl
-dnl The macro AX_COMPARE_VERSION is required to use this macro, and
-dnl should be available from the Autoconf Macro Archive.
-dnl
-dnl The author would like to acknowledge the generous and valuable
-dnl feedback from Guido Draheim, without which this macro would be far
-dnl less robust, and have poor and inconsistent cross compilation
-dnl support.
-dnl
-dnl Changes:
-dnl
-dnl  1/5/05 applied patch from Rafa Rzepecki to eliminate compiler
-dnl         warning about unused variable, argv
-dnl
-dnl @category InstalledPackages
-dnl @author Tim Toolan <toolan@ele.uri.edu>
-dnl @version 2005-01-17
-dnl @license GPLWithACException
+# ===========================================================================
+#        http://www.gnu.org/software/autoconf-archive/ax_path_bdb.html
+# ===========================================================================
+#
+# SYNOPSIS
+#
+#   AX_PATH_BDB([MINIMUM-VERSION], [ACTION-IF-FOUND], [ACTION-IF-NOT-FOUND])
+#
+# DESCRIPTION
+#
+#   This macro finds the latest version of Berkeley DB on the system, and
+#   ensures that the header file and library versions match. If
+#   MINIMUM-VERSION is specified, it will ensure that the library found is
+#   at least that version.
+#
+#   It determines the name of the library as well as the path to the header
+#   file and library. It will check both the default environment as well as
+#   the default Berkeley DB install location. When found, it sets BDB_LIBS,
+#   BDB_CPPFLAGS, and BDB_LDFLAGS to the necessary values to add to LIBS,
+#   CPPFLAGS, and LDFLAGS, as well as setting BDB_VERSION to the version
+#   found. HAVE_DB_H is defined also.
+#
+#   The option --with-bdb-dir=DIR can be used to specify a specific Berkeley
+#   DB installation to use.
+#
+#   An example of it's use is:
+#
+#     AX_PATH_BDB([3],[
+#       LIBS="$BDB_LIBS $LIBS"
+#       LDFLAGS="$BDB_LDFLAGS $LDFLAGS"
+#       CPPFLAGS="$CPPFLAGS $BDB_CPPFLAGS"
+#     ])
+#
+#   which will locate the latest version of Berkeley DB on the system, and
+#   ensure that it is version 3.0 or higher.
+#
+#   Details: This macro does not use either AC_CHECK_HEADERS or AC_CHECK_LIB
+#   because, first, the functions inside the library are sometimes renamed
+#   to contain a version code that is only available from the db.h on the
+#   system, and second, because it is common to have multiple db.h and libdb
+#   files on a system it is important to make sure the ones being used
+#   correspond to the same version. Additionally, there are many different
+#   possible names for libdb when installed by an OS distribution, and these
+#   need to be checked if db.h does not correspond to libdb.
+#
+#   When cross compiling, only header versions are verified since it would
+#   be difficult to check the library version. Additionally the default
+#   Berkeley DB installation locations /usr/local/BerkeleyDB* are not
+#   searched for higher versions of the library.
+#
+#   The format for the list of library names to search came from the Cyrus
+#   IMAP distribution, although they are generated dynamically here, and
+#   only for the version found in db.h.
+#
+#   The macro AX_COMPARE_VERSION is required to use this macro, and should
+#   be available from the Autoconf Macro Archive.
+#
+#   The author would like to acknowledge the generous and valuable feedback
+#   from Guido Draheim, without which this macro would be far less robust,
+#   and have poor and inconsistent cross compilation support.
+#
+#   Changes:
+#
+#    1/5/05 applied patch from Rafal Rzepecki to eliminate compiler
+#           warning about unused variable, argv
+#
+# LICENSE
+#
+#   Copyright (c) 2008 Tim Toolan <toolan@ele.uri.edu>
+#
+#   Copying and distribution of this file, with or without modification, are
+#   permitted in any medium without royalty provided the copyright notice
+#   and this notice are preserved. This file is offered as-is, without any
+#   warranty.
+
+#serial 11
 
 dnl #########################################################################
 AC_DEFUN([AX_PATH_BDB], [
@@ -70,7 +82,7 @@ AC_DEFUN([AX_PATH_BDB], [
 
   # Add --with-bdb-dir option to configure.
   AC_ARG_WITH([bdb-dir],
-    [AC_HELP_STRING([--with-bdb-dir=DIR],
+    [AS_HELP_STRING([--with-bdb-dir=DIR],
                     [Berkeley DB installation directory])])
 
   # Check if --with-bdb-dir was specified.
