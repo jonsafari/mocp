@@ -17,6 +17,8 @@
 	  - autogen.sh in favour of autoreconf(1)
 	  - Deprecated ffmpeg-config support
 	  - Warning of changed executable name
+	* Changed functionality:
+	  - Decoupled mono-mixing from softmixer
 	* Changes to supported formats and codecs:
 	  - VQF: now supported via FFmpeg/LibAV
 

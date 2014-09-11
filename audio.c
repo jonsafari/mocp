@@ -817,7 +817,7 @@ int audio_send_pcm (const char *buf, const size_t size)
 		buf = equalized;
 	}
 
-	if (softmixer_is_active ())
+	if (softmixer_is_active () || softmixer_is_mono ())
 	{
 		if (equalized)
 		{
