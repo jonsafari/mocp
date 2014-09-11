@@ -17,6 +17,7 @@
   #include "config.h"
 #endif
 
+#include <assert.h>
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
@@ -254,12 +255,15 @@ static void softmixer_write_config()
 
 void softmixer_process_buffer(char *buf, size_t size, const struct sound_params *sound_params)
 {
+  int do_softmix, do_monomix;
+
   debug ("Processing %zu bytes...", size);
 
-  if(mixer_real==100 && !mix_mono)
-    return;
+  do_softmix = active && (mixer_real != 100);
+  do_monomix = mix_mono && (sound_params->channels > 1);
 
-  int do_softmix = mixer_real != 100;
+  if(!do_softmix && !do_monomix)
+    return;
 
   long sound_endianness = sound_params->fmt & SFMT_MASK_ENDIANNESS;
   long sound_format = sound_params->fmt & SFMT_MASK_FORMAT;
@@ -292,43 +296,43 @@ void softmixer_process_buffer(char *buf, size_t size, const struct sound_params 
     case SFMT_U8:
       if(do_softmix)
         process_buffer_u8((uint8_t *)buf, size);
-      if(mix_mono)
+      if(do_monomix)
         mix_mono_u8((uint8_t *)buf, sound_params->channels, size);
       break;
     case SFMT_S8:
       if(do_softmix)
         process_buffer_s8((int8_t *)buf, size);
-      if(mix_mono)
+      if(do_monomix)
         mix_mono_s8((int8_t *)buf, sound_params->channels, size);
       break;
     case SFMT_U16:
       if(do_softmix)
         process_buffer_u16((uint16_t *)buf, size / sizeof(uint16_t));
-      if(mix_mono)
+      if(do_monomix)
         mix_mono_u16((uint16_t *)buf, sound_params->channels, size / sizeof(uint16_t));
       break;
     case SFMT_S16:
       if(do_softmix)
         process_buffer_s16((int16_t *)buf, size / sizeof(int16_t));
-      if(mix_mono)
+      if(do_monomix)
         mix_mono_s16((int16_t *)buf, sound_params->channels, size / sizeof(int16_t));
       break;
     case SFMT_U32:
       if(do_softmix)
         process_buffer_u32((uint32_t *)buf, size / sizeof(uint32_t));
-      if(mix_mono)
+      if(do_monomix)
         mix_mono_u32((uint32_t *)buf, sound_params->channels, size / sizeof(uint32_t));
       break;
     case SFMT_S32:
       if(do_softmix)
         process_buffer_s32((int32_t *)buf, size / sizeof(int32_t));
-      if(mix_mono)
+      if(do_monomix)
         mix_mono_s32((int32_t *)buf, sound_params->channels, size / sizeof(int32_t));
       break;
     case SFMT_FLOAT:
       if(do_softmix)
         process_buffer_float((float *)buf, size / sizeof(float));
-      if(mix_mono)
+      if(do_monomix)
         mix_mono_float((float *)buf, sound_params->channels, size / sizeof(float));
       break;
   }
@@ -470,8 +474,7 @@ static void mix_mono_u8(uint8_t *buf, int channels, size_t size)
 
   debug ("making mono");
 
-  if(channels < 2)
-    return;
+  assert (channels > 1);
 
   while(i < size)
   {
@@ -499,8 +502,7 @@ static void mix_mono_s8(int8_t *buf, int channels, size_t size)
 
   debug ("making mono");
 
-  if(channels < 2)
-    return;
+  assert (channels > 1);
 
   while(i < size)
   {
@@ -528,8 +530,7 @@ static void mix_mono_u16(uint16_t *buf, int channels, size_t size)
 
   debug ("making mono");
 
-  if(channels < 2)
-    return;
+  assert (channels > 1);
 
   while(i < size)
   {
@@ -557,8 +558,7 @@ static void mix_mono_s16(int16_t *buf, int channels, size_t size)
 
   debug ("making mono");
 
-  if(channels < 2)
-    return;
+  assert (channels > 1);
 
   while(i < size)
   {
@@ -586,8 +586,7 @@ static void mix_mono_u32(uint32_t *buf, int channels, size_t size)
 
   debug ("making mono");
 
-  if(channels < 2)
-    return;
+  assert (channels > 1);
 
   while(i < size)
   {
@@ -615,8 +614,7 @@ static void mix_mono_s32(int32_t *buf, int channels, size_t size)
 
   debug ("making mono");
 
-  if(channels < 2)
-    return;
+  assert (channels > 1);
 
   while(i < size)
   {
@@ -644,8 +642,7 @@ static void mix_mono_float(float *buf, int channels, size_t size)
 
   debug ("making mono");
 
-  if(channels < 2)
-    return;
+  assert (channels > 1);
 
   while(i < size)
   {

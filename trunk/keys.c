@@ -692,7 +692,7 @@ static struct command commands[] = {
  	{
  		KEY_CMD_TOGGLE_MAKE_MONO,
  		"toggle_make_mono",
- 		"Toggle mono-mixing (when softmixer enabled)",
+		"Toggle mono-mixing",
  		CON_MENU,
  		{ 'J', -1 },
  		1
