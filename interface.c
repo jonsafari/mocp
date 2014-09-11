@@ -28,18 +28,10 @@
 #include <sys/socket.h>
 #include <sys/time.h>
 #include <sys/wait.h>
+#include <dirent.h>
+
 #ifdef HAVE_SYS_SELECT_H
 # include <sys/select.h>
-#endif
-
-/* Include dirent for various systems */
-#ifdef HAVE_DIRENT_H
-# include <dirent.h>
-#else
-# define dirent direct
-# if HAVE_SYS_NDIR_H
-#  include <sys/ndir.h>
-# endif
 #endif
 
 #define DEBUG

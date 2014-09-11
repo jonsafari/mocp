@@ -21,20 +21,11 @@
 #include <string.h>
 #include <errno.h>
 #include <stdlib.h>
+#include <dirent.h>
 
 #ifdef HAVE_LIBMAGIC
 #include <magic.h>
 #include <pthread.h>
-#endif
-
-/* Include dirent for various systems */
-#ifdef HAVE_DIRENT_H
-# include <dirent.h>
-#else
-# define dirent direct
-# if HAVE_SYS_NDIR_H
-#  include <sys/ndir.h>
-# endif
 #endif
 
 #define DEBUG
