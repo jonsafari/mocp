@@ -390,7 +390,7 @@ AC_ARG_WITH(curl, AS_HELP_STRING([--without-curl],
                                  [Compile without Network streams support]))
 if test "x$with_curl" != "xno"
 then
-	PKG_CHECK_MODULES(CURL, [curl >= 7.15.1],
+	PKG_CHECK_MODULES(CURL, [libcurl >= 7.15.1],
 		[EXTRA_OBJS="$EXTRA_OBJS io_curl.o"
 		 AC_DEFINE([HAVE_CURL], 1, [Define if you have libcurl])
 		 EXTRA_LIBS="$EXTRA_LIBS $CURL_LIBS"
