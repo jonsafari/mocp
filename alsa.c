@@ -15,11 +15,6 @@
 # include "config.h"
 #endif
 
-/* _XOPEN_SOURCE is known to break compilation under OpenBSD. */
-#ifndef OPENBSD
-# define _XOPEN_SOURCE  500 /* for usleep() */
-#endif
-
 #define DEBUG
 
 #include <stdlib.h>
@@ -575,7 +570,7 @@ static void alsa_close ()
 	 * the SVN commit log for r2550).  Instead we sleep for the duration
 	 * of the still unplayed samples. */
 	if (snd_pcm_delay (handle, &delay) == 0)
-		usleep ((uint64_t) delay * 1000000 / params.rate);
+		xsleep (delay, params.rate);
 	snd_pcm_close (handle);
 	logit ("ALSA device closed");
 
