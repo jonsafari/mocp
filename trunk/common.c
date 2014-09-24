@@ -17,11 +17,13 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <string.h>
 #include <strings.h>
 #include <ctype.h>
 #include <assert.h>
 #include <unistd.h>
+#include <time.h>
 #include <sys/types.h>
 #include <pwd.h>
 #include <errno.h>
@@ -125,6 +127,33 @@ char *xstrdup (const char *s)
 
 	return s ? n : NULL;
 }
+
+#ifdef NEED_XSLEEP
+/* Sleep for the specified number of 'ticks'. */
+void xsleep (size_t ticks, size_t ticks_per_sec)
+{
+	assert(ticks < UINT64_MAX / __UINT64_C(1000000000));
+	assert(ticks_per_sec > 0);
+
+	if (ticks > 0) {
+		int rc;
+		uint64_t nsecs;
+		struct timespec delay;
+
+		nsecs = ticks;
+		nsecs *= __UINT64_C(1000000000);
+		nsecs /= ticks_per_sec;
+		delay.tv_sec = nsecs / __UINT64_C(1000000000);
+		delay.tv_nsec = nsecs % __UINT64_C(1000000000);
+
+		do {
+			rc = nanosleep (&delay, &delay);
+			if (rc == -1 && errno != EINTR)
+				fatal ("nanosleep() failed: %s", strerror (errno));
+		} while (rc != 0);
+	}
+}
+#endif
 
 void set_me_server ()
 {

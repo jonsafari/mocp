@@ -82,6 +82,9 @@ void *xcalloc (size_t nmemb, size_t size);
 void *xrealloc (void *ptr, const size_t size);
 char *xstrdup (const char *s);
 
+#ifdef NEED_XSLEEP
+void xsleep (size_t ticks, size_t ticks_per_sec);
+#endif
 
 #ifdef NDEBUG
 #define fatal(format, ...) \
