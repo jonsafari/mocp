@@ -77,11 +77,11 @@ AC_DEFINE([_FILE_OFFSET_BITS], 64, [Use 64bit IO])
 AC_HEADER_STDC
 AC_HEADER_STDBOOL
 AC_CHECK_HEADERS([fcntl.h string.h strings.h sys/param.h unistd.h sys/un.h \
-		  sys/socket.h sys/types.h signal.h sys/time.h limits.h \
+		  sys/socket.h sys/types.h signal.h sys/time.h limits.h sys/select.h \
 		  sys/wait.h sys/ioctl.h pwd.h regex.h inttypes.h stdint.h \
 		  dirent.h time.h errno.h sys/stat.h assert.h locale.h wchar.h],,
 		 AC_MSG_ERROR([Can't find required header files.]))
-AC_CHECK_HEADERS([sys/select.h byteswap.h])
+AC_CHECK_HEADERS([byteswap.h])
 
 AC_CHECK_FUNCS([sched_get_priority_max])
 

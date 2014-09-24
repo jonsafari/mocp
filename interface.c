@@ -24,14 +24,10 @@
 #include <time.h>
 #include <signal.h>
 #include <ctype.h>
-#include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/wait.h>
 #include <dirent.h>
-
-#ifdef HAVE_SYS_SELECT_H
-# include <sys/select.h>
-#endif
+#include <sys/select.h>
 
 #define DEBUG
 
@@ -3598,16 +3594,16 @@ void interface_loop ()
 	while (want_quit == NO_QUIT) {
 		fd_set fds;
 		int ret;
-		struct timeval timeout = { 1, 0 };
+		struct timespec timeout = { 1, 0 };
 
 		FD_ZERO (&fds);
 		FD_SET (srv_sock, &fds);
 		FD_SET (STDIN_FILENO, &fds);
 
 		dequeue_events ();
-		ret = select (srv_sock + 1, &fds, NULL, NULL, &timeout);
+		ret = pselect (srv_sock + 1, &fds, NULL, NULL, &timeout, NULL);
 		if (ret == -1 && !want_quit && errno != EINTR)
-			interface_fatal ("select() failed: %s", strerror(errno));
+			interface_fatal ("pselect() failed: %s", strerror(errno));
 
 		iface_tick ();
 

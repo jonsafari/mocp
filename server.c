@@ -15,10 +15,7 @@
 
 #include <stdio.h>
 #include <sys/socket.h>
-#ifdef HAVE_SYS_SELECT_H
-# include <sys/select.h>
-#endif
-#include <sys/time.h>
+#include <sys/select.h>
 #ifdef HAVE_GETRLIMIT
 # include <sys/resource.h>
 #endif
