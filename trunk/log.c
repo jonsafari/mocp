@@ -17,12 +17,12 @@
 #include <stdarg.h>
 #include <stdint.h>
 #include <pthread.h>
-#include <sys/time.h>
 #include <time.h>
 #include <errno.h>
 #include <signal.h>
 
 #include "common.h"
+#include "compat.h"
 #include "lists.h"
 #include "log.h"
 
@@ -81,28 +81,28 @@ static void locked_logit (const char *file, const int line,
                           const char *function, const char *msg)
 {
 	char time_str[20];
-	struct timeval utc_time;
+	struct timespec utc_time;
 	time_t tv_sec;
 	struct tm tm_time;
-	const char fmt[] = "%s.%06u: %s:%d %s(): %s\n";
+	const char fmt[] = "%s.%06ld: %s:%d %s(): %s\n";
 
-	gettimeofday (&utc_time, NULL);
+	clock_gettime (CLOCK_REALTIME, &utc_time);
 	tv_sec = utc_time.tv_sec;
 	localtime_r (&tv_sec, &tm_time);
 	strftime (time_str, sizeof (time_str), "%b %e %T", &tm_time);
 
 	if (logfp) {
-		fprintf (logfp, fmt, time_str, (unsigned)utc_time.tv_usec,
+		fprintf (logfp, fmt, time_str, utc_time.tv_nsec / 1000L,
 		                     file, line, function, msg);
 	}
 	else if (logging_state == BUFFERING) {
 		int len;
 		char *str;
 
-		len = snprintf (NULL, 0, fmt, time_str, (unsigned)utc_time.tv_usec,
+		len = snprintf (NULL, 0, fmt, time_str, utc_time.tv_nsec / 1000L,
 		                              file, line, function, msg);
 		str = xmalloc (len + 1);
-		snprintf (str, len + 1, fmt, time_str, (unsigned)utc_time.tv_usec,
+		snprintf (str, len + 1, fmt, time_str, utc_time.tv_nsec / 1000L,
 		                             file, line, function, msg);
 
 		lists_strs_push (buffered_log, str);
