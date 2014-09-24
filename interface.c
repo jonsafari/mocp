@@ -26,7 +26,6 @@
 #include <ctype.h>
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <sys/time.h>
 #include <sys/wait.h>
 #include <dirent.h>
 
@@ -37,6 +36,7 @@
 #define DEBUG
 
 #include "common.h"
+#include "compat.h"
 #include "log.h"
 #include "interface_elements.h"
 #include "interface.h"
@@ -2583,15 +2583,15 @@ static void go_to_playing_file ()
  * have 11.8 seconds, return 12 seconds. */
 static time_t rounded_time ()
 {
-	struct timeval exact_time;
+	struct timespec exact_time;
 	time_t curr_time;
 
-	if (gettimeofday(&exact_time, NULL) == -1)
-		interface_fatal ("gettimeofday() failed: %s", strerror(errno));
+	if (clock_gettime (CLOCK_REALTIME, &exact_time) == -1)
+		interface_fatal ("clock_gettime() failed: %s", strerror(errno));
 
 	curr_time = exact_time.tv_sec;
-	if (exact_time.tv_usec > 500000)
-		curr_time++;
+	if (exact_time.tv_nsec > 500000000L)
+		curr_time += 1;
 
 	return curr_time;
 }

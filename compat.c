@@ -16,6 +16,11 @@
 #include <pthread.h>
 #include <string.h>
 #include <errno.h>
+#include <assert.h>
+
+#ifndef HAVE_CLOCK_GETTIME
+# include <sys/time.h>
+#endif
 
 #include "common.h"
 #include "log.h"
@@ -75,6 +80,23 @@ int strerror_r (int errnum, char *buf, size_t n)
 	UNLOCK (strerror_r_mutex);
 
 	return ret_val;
+}
+#endif
+
+/* OSX doesn't provide clock_gettime(3) so fall back to gettimeofday(2). */
+#ifndef HAVE_CLOCK_GETTIME
+int clock_gettime (int clk_id ATTR_UNUSED, struct timespec *ts)
+{
+	int result;
+	struct timeval tv;
+
+	assert (clk_id == CLOCK_REALTIME);
+
+	result = gettimeofday (&tv, NULL);
+	ts->tv_sec = tv.tv_sec;
+	ts->tv_nsec = tv.tv_usec * 1000L;
+
+	return result;
 }
 #endif
 

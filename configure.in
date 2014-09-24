@@ -277,10 +277,19 @@ fi
 AC_FUNC_MALLOC
 AC_FUNC_STAT
 AC_CHECK_FUNCS([getcwd memmove strcasecmp strdup strerror strncasecmp strchr \
-		strrchr socket gettimeofday getenv fork setsid kill bind listen \
-		accept time connect unlink send recv select strftime access freopen \
+		strrchr socket getenv fork setsid kill bind listen \
+		accept connect unlink send recv select strftime access freopen \
 		localtime_r mbsrtowcs mbstowcs execvp wcswidth strspn geteuid],,
 	       AC_MSG_ERROR([Required standard C/UNIX functions are not present.]))
+
+dnl OSX doesn't provide clock_gettime(3) so fall back to gettimeofday(2).
+AC_CHECK_FUNCS([clock_gettime], ,
+	[AC_SEARCH_LIBS([clock_gettime], [rt],
+		[AC_DEFINE([HAVE_CLOCK_GETTIME], 1,
+		           [Define if you have clock_gettime(3)])],
+		[AC_CHECK_FUNCS([gettimeofday],
+			[AC_MSG_WARN([Using the obsolete gettimeofday(2) function.])],
+			[AC_MSG_ERROR([No suitable current time function found.])])])])
 
 AC_CHECK_FUNC([sin], ,
               [AC_CHECK_LIB([m], [sin], ,
