@@ -17,11 +17,7 @@
 #include <string.h>
 #include <strings.h>
 #include <stdlib.h>
-#ifdef HAVE_SYS_SELECT_H
-# include <sys/select.h>
-#endif
-#include <sys/time.h>
-#include <sys/types.h>
+#include <sys/select.h>
 #include <unistd.h>
 #include <errno.h>
 #include <assert.h>
@@ -352,9 +348,9 @@ static int curl_read_internal (struct io_stream *s)
 			fd_set read_fds, write_fds, exc_fds;
 			int max_fd, ret;
 			long milliseconds;
-			struct timeval timeout;
+			struct timespec timeout;
 
-			logit ("Doing select()...");
+			logit ("Doing pselect()...");
 
 			FD_ZERO (&read_fds);
 			FD_ZERO (&write_fds);
@@ -375,10 +371,10 @@ static int curl_read_internal (struct io_stream *s)
 			if (milliseconds <= 0)
 				milliseconds = 1000;
 			timeout.tv_sec = milliseconds / 1000;
-			timeout.tv_usec = (milliseconds % 1000) * 1000;
+			timeout.tv_nsec = (milliseconds % 1000L) * 1000000L;
 
-			ret = select (max_fd + 1, &read_fds, &write_fds,
-					&exc_fds, &timeout);
+			ret = pselect (max_fd + 1, &read_fds, &write_fds, &exc_fds,
+			              &timeout, NULL);
 
 			if (ret < 0 && errno == EINTR) {
 				logit ("Interrupted");
@@ -387,7 +383,7 @@ static int curl_read_internal (struct io_stream *s)
 
 			if (ret < 0) {
 				s->errno_val = errno;
-				logit ("select() failed");
+				logit ("pselect() failed");
 				return 0;
 			}
 
