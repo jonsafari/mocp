@@ -540,7 +540,7 @@ static void on_song_change ()
 	case 0:
 		args = lists_strs_save (arg_list);
 		execve (args[0], args, environ);
-		exit (EXIT_SUCCESS);
+		exit (EXIT_FAILURE);
 	case -1:
 		logit ("Failed to fork(): %s", strerror (errno));
 	}
@@ -566,7 +566,7 @@ static void on_stop ()
 		switch (fork()) {
 			case 0:
 				execve (command, args, environ);
-				exit (EXIT_SUCCESS);
+				exit (EXIT_FAILURE);
 			case -1:
 				logit ("Error when running OnStop command '%s': %s",
 						command, strerror(errno));
