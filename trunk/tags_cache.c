@@ -730,9 +730,11 @@ void tags_cache_destroy (struct tags_cache *c)
 
 #ifdef HAVE_DB_H
 	if (c->db) {
+#ifndef NDEBUG
 		c->db->set_errcall (c->db, NULL);
 		c->db->set_msgcall (c->db, NULL);
 		c->db->set_paniccall (c->db, NULL);
+#endif
 		c->db->close (c->db, 0);
 		c->db = NULL;
 	}
@@ -741,9 +743,11 @@ void tags_cache_destroy (struct tags_cache *c)
 #ifdef HAVE_DB_H
 	if (c->db_env) {
 		c->db_env->lock_id_free (c->db_env, c->locker);
+#ifndef NDEBUG
 		c->db_env->set_errcall (c->db_env, NULL);
 		c->db_env->set_msgcall (c->db_env, NULL);
 		c->db_env->set_paniccall (c->db_env, NULL);
+#endif
 		c->db_env->close (c->db_env, 0);
 		c->db_env = NULL;
 	}
@@ -863,9 +867,9 @@ void tags_cache_save (struct tags_cache *c ASSERT_ONLY,
 	assert (cache_dir != NULL);
 }
 
-#ifdef HAVE_DB_H
+#if defined(HAVE_DB_H) && !defined(NDEBUG)
 static void db_err_cb (const DB_ENV *unused ATTR_UNUSED, const char *errpfx,
-                                                         const char *msg LOGIT_ONLY)
+                                                         const char *msg)
 {
 	assert (msg);
 
@@ -876,8 +880,8 @@ static void db_err_cb (const DB_ENV *unused ATTR_UNUSED, const char *errpfx,
 }
 #endif
 
-#ifdef HAVE_DB_H
-static void db_msg_cb (const DB_ENV *unused ATTR_UNUSED, const char *msg LOGIT_ONLY)
+#if defined(HAVE_DB_H) && !defined(NDEBUG)
+static void db_msg_cb (const DB_ENV *unused ATTR_UNUSED, const char *msg)
 {
 	assert (msg);
 
@@ -885,8 +889,8 @@ static void db_msg_cb (const DB_ENV *unused ATTR_UNUSED, const char *msg LOGIT_O
 }
 #endif
 
-#ifdef HAVE_DB_H
-static void db_panic_cb (DB_ENV *unused ATTR_UNUSED, int errval LOGIT_ONLY)
+#if defined(HAVE_DB_H) && !defined(NDEBUG)
+static void db_panic_cb (DB_ENV *unused ATTR_UNUSED, int errval)
 {
 	logit ("BDB said: %s", db_strerror (errval));
 }
@@ -1116,11 +1120,13 @@ void tags_cache_load (struct tags_cache *c DB_ONLY,
 		goto err;
 	}
 
+#ifndef NDEBUG
 	c->db_env->set_errcall (c->db_env, db_err_cb);
 	c->db_env->set_msgcall (c->db_env, db_msg_cb);
 	ret = c->db_env->set_paniccall (c->db_env, db_panic_cb);
 	if (ret)
 		logit ("Could not set DB panic callback");
+#endif
 
 	ret = c->db_env->open (c->db_env, cache_dir,
 	                       DB_CREATE | DB_PRIVATE | DB_INIT_MPOOL |
@@ -1143,11 +1149,13 @@ void tags_cache_load (struct tags_cache *c DB_ONLY,
 		goto err;
 	}
 
+#ifndef NDEBUG
 	c->db->set_errcall (c->db, db_err_cb);
 	c->db->set_msgcall (c->db, db_msg_cb);
 	ret = c->db->set_paniccall (c->db, db_panic_cb);
 	if (ret)
 		logit ("Could not set DB panic callback");
+#endif
 
 	ret = c->db->open (c->db, NULL, TAGS_DB, NULL, DB_BTREE,
 	                                DB_CREATE | DB_THREAD, 0);
@@ -1161,16 +1169,20 @@ void tags_cache_load (struct tags_cache *c DB_ONLY,
 
 err:
 	if (c->db) {
+#ifndef NDEBUG
 		c->db->set_errcall (c->db, NULL);
 		c->db->set_msgcall (c->db, NULL);
 		c->db->set_paniccall (c->db, NULL);
+#endif
 		c->db->close (c->db, 0);
 		c->db = NULL;
 	}
 	if (c->db_env) {
+#ifndef NDEBUG
 		c->db_env->set_errcall (c->db_env, NULL);
 		c->db_env->set_msgcall (c->db_env, NULL);
 		c->db_env->set_paniccall (c->db_env, NULL);
+#endif
 		c->db_env->close (c->db_env, 0);
 		c->db_env = NULL;
 	}

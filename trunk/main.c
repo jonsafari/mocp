@@ -457,15 +457,16 @@ static long get_num_param (const char *p,const char ** last)
 }
 
 /* Log the command line which launched MOC. */
-static void log_command_line (int argc, char *argv[])
+static void log_command_line (int argc ASSERT_ONLY, char *argv[] ASSERT_ONLY)
 {
-	lists_t_strs *cmdline;
-	char *str;
+	lists_t_strs *cmdline LOGIT_ONLY;
+	char *str LOGIT_ONLY;
 
 	assert (argc >= 0);
 	assert (argv != NULL);
 	assert (argv[argc] == NULL);
 
+#ifndef NDEBUG
 	cmdline = lists_strs_new (argc);
 	if (lists_strs_load (cmdline, argv) > 0)
 		str = lists_strs_fmt (cmdline, "%s ");
@@ -474,6 +475,7 @@ static void log_command_line (int argc, char *argv[])
 	logit ("%s", str);
 	free (str);
 	lists_strs_free (cmdline);
+#endif
 }
 
 static void override_config_option (const char *optarg, lists_t_strs *deferred)
@@ -790,11 +792,6 @@ int main (int argc, char *argv[])
 	lists_t_strs *deferred_overrides;
 	lists_t_strs *args;
 
-#ifdef HAVE_UNAME_SYSCALL
-	int rc;
-	struct utsname uts;
-#endif
-
 #ifdef PACKAGE_REVISION
 	logit ("This is Music On Console (revision %s)", PACKAGE_REVISION);
 #else
@@ -805,10 +802,15 @@ int main (int argc, char *argv[])
 	logit ("Configured:%s", CONFIGURATION);
 #endif
 
-#ifdef HAVE_UNAME_SYSCALL
-	rc = uname (&uts);
-	if (rc == 0)
-		logit ("Running on: %s %s %s", uts.sysname, uts.release, uts.machine);
+#if !defined(NDEBUG) && defined(HAVE_UNAME_SYSCALL)
+	{
+		int rc;
+		struct utsname uts;
+
+		rc = uname (&uts);
+		if (rc == 0)
+			logit ("Running on: %s %s %s", uts.sysname, uts.release, uts.machine);
+	}
 #endif
 
 	log_command_line (argc, argv);

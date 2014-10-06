@@ -53,7 +53,7 @@ struct modplug_data
   struct decoder_error error;
 };
 
-#ifdef DEBUG
+#if !defined(NDEBUG) && defined(DEBUG)
 // this is needed because debugging in plugin_init gets lost
 // The alternative is to debug settings when opening a file
 // but settings never change so I need a flag to check if it
@@ -154,7 +154,7 @@ static void *modplug_open (const char *file)
 {
 // this is not really needed but without it the calls would still be made
 // and thus time gets wasted...
-#ifdef DEBUG
+#if !defined(NDEBUG) && defined(DEBUG)
   if(doDebugSettings) {
     doDebugSettings=0;
     debugSettings();
@@ -166,11 +166,9 @@ static void *modplug_open (const char *file)
     data->length = ModPlug_GetLength(data->modplugfile);
   }
 
-#ifdef DEBUG
   if(data->modplugfile) {
     debug ("Opened file %s", file);
   }
-#endif
 
   return data;
 }

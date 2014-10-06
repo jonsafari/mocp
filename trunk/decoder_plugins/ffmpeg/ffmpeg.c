@@ -189,8 +189,9 @@ struct extn_list {
 
 static lists_t_strs *supported_extns = NULL;
 
-static void ffmpeg_log_repeats (char *msg)
+static void ffmpeg_log_repeats (char *msg LOGIT_ONLY)
 {
+#ifndef NDEBUG
 	static int msg_count = 0;
 	static char *prev_msg = NULL;
 	static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -224,8 +225,10 @@ static void ffmpeg_log_repeats (char *msg)
 		msg_count = 1;
 	}
 	UNLOCK (mutex);
+#endif
 }
 
+#ifndef NDEBUG
 static void ffmpeg_log_cb (void *unused ATTR_UNUSED, int level,
                            const char *fmt, va_list vl)
 {
@@ -253,6 +256,7 @@ static void ffmpeg_log_cb (void *unused ATTR_UNUSED, int level,
 
 	ffmpeg_log_repeats (msg);
 }
+#endif
 
 /* Find the first audio stream and return its index, or nb_streams if
  * none found. */
@@ -441,12 +445,14 @@ static void ffmpeg_init ()
 {
 	int rc;
 
-#ifdef DEBUG
+#ifndef NDEBUG
+# ifdef DEBUG
 	av_log_set_level (AV_LOG_INFO);
-#else
+# else
 	av_log_set_level (AV_LOG_ERROR);
-#endif
+# endif
 	av_log_set_callback (ffmpeg_log_cb);
+#endif
 	avcodec_register_all ();
 	av_register_all ();
 

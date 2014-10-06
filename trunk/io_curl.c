@@ -147,7 +147,7 @@ static size_t header_callback (void *data, size_t size, size_t nmemb,
 	return size * nmemb;
 }
 
-#ifdef DEBUG
+#if !defined(NDEBUG) && defined(DEBUG)
 static int debug_callback (CURL *unused1 ATTR_UNUSED, curl_infotype i,
                            char *msg, size_t size, void *unused2 ATTR_UNUSED)
 {
@@ -266,7 +266,7 @@ void io_curl_open (struct io_stream *s, const char *url)
 	if (options_get_str("HTTPProxy"))
 		curl_easy_setopt (s->curl.handle, CURLOPT_PROXY,
 				options_get_str("HTTPProxy"));
-#ifdef DEBUG
+#if !defined(NDEBUG) && defined(DEBUG)
 	curl_easy_setopt (s->curl.handle, CURLOPT_VERBOSE, 1);
 	curl_easy_setopt (s->curl.handle, CURLOPT_DEBUGFUNCTION,
 			debug_callback);
