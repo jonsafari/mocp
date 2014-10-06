@@ -286,7 +286,7 @@ static void redirect_output (FILE *stream)
 
 static void log_process_stack_size ()
 {
-#ifdef HAVE_GETRLIMIT
+#if !defined(NDEBUG) && defined(HAVE_GETRLIMIT)
 	int rc;
 	struct rlimit limits;
 
@@ -298,7 +298,7 @@ static void log_process_stack_size ()
 
 static void log_pthread_stack_size ()
 {
-#ifdef HAVE_PTHREAD_ATTR_GETSTACKSIZE
+#if !defined(NDEBUG) && defined(HAVE_PTHREAD_ATTR_GETSTACKSIZE)
 	int rc;
 	size_t stack_size;
 	pthread_attr_t attr;
@@ -439,8 +439,7 @@ static void on_song_change ()
 
 	int ix;
 	bool same_file, unpaused;
-	char *curr_file;
-	char **args, *cmd;
+	char *curr_file, **args;
 	struct file_tags *curr_tags;
 	lists_t_strs *arg_list;
 
@@ -532,9 +531,15 @@ static void on_song_change ()
 	}
 	tags_free (curr_tags);
 
-	cmd = lists_strs_fmt (arg_list, " %s");
-	debug ("Running command: %s", cmd);
-	free (cmd);
+#ifndef NDEBUG
+	{
+		char *cmd;
+
+		cmd = lists_strs_fmt (arg_list, " %s");
+		debug ("Running command: %s", cmd);
+		free (cmd);
+	}
+#endif
 
 	switch (fork ()) {
 	case 0:

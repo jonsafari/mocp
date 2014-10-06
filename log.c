@@ -26,18 +26,20 @@
 #include "lists.h"
 #include "log.h"
 
+#ifndef NDEBUG
 static FILE *logfp = NULL; /* logging file stream */
+
 static enum {
 	UNINITIALISED,
 	BUFFERING,
 	LOGGING
 } logging_state = UNINITIALISED;
+
 static lists_t_strs *buffered_log = NULL;
 static int log_records_spilt = 0;
 
 static pthread_mutex_t logging_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-#ifndef NDEBUG
 static struct {
 	int sig;
 	const char *name;
@@ -66,6 +68,7 @@ void log_signal (int sig)
 }
 #endif
 
+#ifndef NDEBUG
 static inline void flush_log (void)
 {
 	int rc;
@@ -76,7 +79,9 @@ static inline void flush_log (void)
 		} while (rc != 0 && errno == EINTR);
 	}
 }
+#endif
 
+#ifndef NDEBUG
 static void locked_logit (const char *file, const int line,
                           const char *function, const char *msg)
 {
@@ -108,10 +113,11 @@ static void locked_logit (const char *file, const int line,
 		lists_strs_push (buffered_log, str);
 	}
 }
+#endif
 
+#ifndef NDEBUG
 static void log_signals_raised (void)
 {
-#ifndef NDEBUG
 	size_t ix;
 
     for (ix = 0; ix < ARRAY_SIZE(sig_info); ix += 1) {
@@ -120,13 +126,18 @@ static void log_signals_raised (void)
 			sig_info[ix].logged += 1;
 		}
 	}
-#endif
 }
+#endif
 
-/* Put something into the log */
-void internal_logit (const char *file, const int line, const char *function,
-		const char *format, ...)
+/* Put something into the log.  If built with logging disabled,
+ * this function is provided as a stub so independant plug-ins
+ * configured with logging enabled can still resolve it. */
+void internal_logit (const char *file LOGIT_ONLY,
+                     const int line LOGIT_ONLY,
+                     const char *function LOGIT_ONLY,
+                     const char *format LOGIT_ONLY, ...)
 {
+#ifndef NDEBUG
 	char *msg;
 	va_list va;
 
@@ -162,11 +173,13 @@ void internal_logit (const char *file, const int line, const char *function,
 
 end:
 	UNLOCK(logging_mutex);
+#endif
 }
 
 /* Initialize logging stream */
-void log_init_stream (FILE *f, const char *fn)
+void log_init_stream (FILE *f LOGIT_ONLY, const char *fn LOGIT_ONLY)
 {
+#ifndef NDEBUG
 	char *msg;
 
 	LOCK(logging_mutex);
@@ -199,19 +212,26 @@ void log_init_stream (FILE *f, const char *fn)
 	flush_log ();
 
 	UNLOCK(logging_mutex);
+#endif
 }
 
 void log_close ()
 {
+#ifndef NDEBUG
 	LOCK(logging_mutex);
+
 	if (!(logfp == stdout || logfp == stderr || logfp == NULL)) {
 		fclose (logfp);
 		logfp = NULL;
 	}
+
 	if (buffered_log) {
 		lists_strs_free (buffered_log);
 		buffered_log = NULL;
 	}
+
 	log_records_spilt = 0;
+
 	UNLOCK(logging_mutex);
+#endif
 }
