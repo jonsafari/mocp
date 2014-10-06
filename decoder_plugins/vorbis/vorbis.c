@@ -200,7 +200,7 @@ static int seek_callback (void *datasource, ogg_int64_t offset, int whence)
 	return io_seek (datasource, offset, whence) == -1 ? -1 : 0;
 }
 
-static int close_callback (void *datasource ATTR_UNUSED)
+static int close_callback (void *unused ATTR_UNUSED)
 {
 	return 0;
 }
@@ -421,7 +421,7 @@ static struct io_stream *vorbis_get_stream (void *prv_data)
 	return data->stream;
 }
 
-static void vorbis_get_name (const char *file ATTR_UNUSED, char buf[4])
+static void vorbis_get_name (const char *unused ATTR_UNUSED, char buf[4])
 {
 	strcpy (buf, "OGG");
 }

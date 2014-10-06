@@ -34,7 +34,7 @@ static struct sound_params params = { 0, 0, 0 };
 
 static void sndio_close ();
 
-static void volume_cb (void *addr ATTR_UNUSED, unsigned vol)
+static void volume_cb (void *unused ATTR_UNUSED, unsigned vol)
 {
 	curvol = SIO_TO_PCT(vol);
 }

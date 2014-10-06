@@ -226,7 +226,7 @@ static void ffmpeg_log_repeats (char *msg)
 	UNLOCK (mutex);
 }
 
-static void ffmpeg_log_cb (void *data ATTR_UNUSED, int level,
+static void ffmpeg_log_cb (void *unused ATTR_UNUSED, int level,
                            const char *fmt, va_list vl)
 {
 	int len;

@@ -182,7 +182,7 @@ void menu_set_cursor (const struct menu *m)
 		wmove (m->win, m->selected->num - m->top->num + m->posy, m->posx);
 }
 
-static int rb_compare (const void *a, const void *b, void *adata ATTR_UNUSED)
+static int rb_compare (const void *a, const void *b, void *unused ATTR_UNUSED)
 {
 	struct menu_item *mia = (struct menu_item *)a;
 	struct menu_item *mib = (struct menu_item *)b;
@@ -191,7 +191,7 @@ static int rb_compare (const void *a, const void *b, void *adata ATTR_UNUSED)
 }
 
 static int rb_fname_compare (const void *key, const void *data,
-		void *adata ATTR_UNUSED)
+		void *unused ATTR_UNUSED)
 {
 	const char *fname = (const char *)key;
 	const struct menu_item *mi = (const struct menu_item *)data;

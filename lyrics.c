@@ -140,8 +140,8 @@ static char *centre_line (const char* line, int max)
 }
 
 /* Centre all the lines in the lyrics. */
-static lists_t_strs *centre_style (lists_t_strs *lines, int height ATTR_UNUSED,
-                                   int width, void *data ATTR_UNUSED)
+static lists_t_strs *centre_style (lists_t_strs *lines, int unused1 ATTR_UNUSED,
+                                   int width, void *unused2 ATTR_UNUSED)
 {
 	lists_t_strs *result;
 	int ix, size;

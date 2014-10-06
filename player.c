@@ -827,8 +827,8 @@ static void play_stream (const struct decoder *f, struct out_buf *out_buf)
 }
 
 /* Callback for io buffer fill - show the prebuffering state. */
-static void fill_callback (struct io_stream *s ATTR_UNUSED, size_t fill,
-		size_t buf_size ATTR_UNUSED, void *data_ptr ATTR_UNUSED)
+static void fill_callback (struct io_stream *unused1 ATTR_UNUSED, size_t fill,
+		size_t unused2 ATTR_UNUSED, void *unused3 ATTR_UNUSED)
 {
 	if (prebuffering) {
 		char msg[32];
