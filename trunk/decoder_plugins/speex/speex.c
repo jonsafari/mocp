@@ -643,7 +643,7 @@ static int spx_get_bitrate (void *prv_data)
 	return data->bitrate / 1000;
 }
 
-static int spx_get_duration (void *prv_data ATTR_UNUSED)
+static int spx_get_duration (void *unused ATTR_UNUSED)
 {
 	/*struct spx_data *data = (struct spx_data *)prv_data;*/
 
@@ -657,7 +657,7 @@ static struct io_stream *spx_get_stream (void *prv_data)
 	return data->stream;
 }
 
-static void spx_get_name (const char *file ATTR_UNUSED, char buf[4])
+static void spx_get_name (const char *unused ATTR_UNUSED, char buf[4])
 {
 	strcpy (buf, "SPX");
 }

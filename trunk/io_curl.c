@@ -148,8 +148,8 @@ static size_t header_callback (void *data, size_t size, size_t nmemb,
 }
 
 #ifdef DEBUG
-static int debug_callback (CURL *curl ATTR_UNUSED, curl_infotype i, char *msg,
-		size_t size, void *d ATTR_UNUSED)
+static int debug_callback (CURL *unused1 ATTR_UNUSED, curl_infotype i,
+                           char *msg, size_t size, void *unused2 ATTR_UNUSED)
 {
 	int ix;
 	char *log;

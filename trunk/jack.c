@@ -46,7 +46,7 @@ static volatile int our_xrun = 0;
 static volatile int jack_shutdown = 0;
 
 /* this is the function that jack calls to get audio samples from us */
-static int moc_jack_process(jack_nframes_t nframes, void *arg ATTR_UNUSED)
+static int moc_jack_process(jack_nframes_t nframes, void *unused ATTR_UNUSED)
 {
 	jack_default_audio_sample_t *out[2];
 
@@ -109,7 +109,7 @@ static int moc_jack_process(jack_nframes_t nframes, void *arg ATTR_UNUSED)
 
 /* this is called if jack changes its sample rate */
 static int moc_jack_update_sample_rate(jack_nframes_t new_rate,
-		void *arg ATTR_UNUSED)
+		void *unused ATTR_UNUSED)
 {
 	rate = new_rate;
 	return 0;
@@ -121,7 +121,7 @@ static void error_callback (const char *msg)
 	error ("JACK: %s", msg);
 }
 
-static void shutdown_callback (void *arg ATTR_UNUSED)
+static void shutdown_callback (void *unused ATTR_UNUSED)
 {
 	jack_shutdown = 1;
 }

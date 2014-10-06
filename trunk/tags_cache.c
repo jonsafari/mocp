@@ -864,8 +864,8 @@ void tags_cache_save (struct tags_cache *c ASSERT_ONLY,
 }
 
 #ifdef HAVE_DB_H
-static void db_err_cb (const DB_ENV *dbenv ATTR_UNUSED, const char *errpfx,
-                                                        const char *msg)
+static void db_err_cb (const DB_ENV *unused ATTR_UNUSED, const char *errpfx,
+                                                         const char *msg)
 {
 	assert (msg);
 
@@ -877,7 +877,7 @@ static void db_err_cb (const DB_ENV *dbenv ATTR_UNUSED, const char *errpfx,
 #endif
 
 #ifdef HAVE_DB_H
-static void db_msg_cb (const DB_ENV *dbenv ATTR_UNUSED, const char *msg)
+static void db_msg_cb (const DB_ENV *unused ATTR_UNUSED, const char *msg)
 {
 	assert (msg);
 
@@ -886,7 +886,7 @@ static void db_msg_cb (const DB_ENV *dbenv ATTR_UNUSED, const char *msg)
 #endif
 
 #ifdef HAVE_DB_H
-static void db_panic_cb (DB_ENV *dbenv ATTR_UNUSED, int errval)
+static void db_panic_cb (DB_ENV *unused ATTR_UNUSED, int errval)
 {
 	logit ("BDB said: %s", db_strerror (errval));
 }

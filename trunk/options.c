@@ -262,7 +262,7 @@ static int check_function (int opt, ...)
 }
 
 /* Always pass a value as valid. */
-static int check_true (int opt ATTR_UNUSED, ...)
+static int check_true (int unused ATTR_UNUSED, ...)
 {
 	return 1;
 }
