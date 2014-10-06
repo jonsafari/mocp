@@ -128,7 +128,7 @@ enum file_type file_type (const char *file)
 }
 
 /* Given a file name, return the mime type or NULL. */
-char *file_mime_type (const char *file ATTR_UNUSED)
+char *file_mime_type (const char *file ASSERT_ONLY)
 {
 	char *result = NULL;
 

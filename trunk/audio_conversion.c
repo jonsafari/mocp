@@ -787,7 +787,7 @@ char *audio_conv (struct audio_conversion *conv, const char *buf,
 	return curr_sound;
 }
 
-void audio_conv_destroy (struct audio_conversion *conv ATTR_UNUSED)
+void audio_conv_destroy (struct audio_conversion *conv ASSERT_ONLY)
 {
 	assert (conv != NULL);
 

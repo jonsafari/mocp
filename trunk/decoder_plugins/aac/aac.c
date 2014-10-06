@@ -436,7 +436,7 @@ static void aac_info (const char *file_name,
 	}
 }
 
-static int aac_seek (void *prv_data ATTR_UNUSED, int sec ATTR_UNUSED)
+static int aac_seek (void *prv_data ATTR_UNUSED, int sec ASSERT_ONLY)
 {
 	assert (sec >= 0);
 
