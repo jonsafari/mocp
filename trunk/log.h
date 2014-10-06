@@ -45,10 +45,10 @@ void internal_logit (const char *file, const int line, const char *function,
 void log_init_stream (FILE *f, const char *fn);
 void log_close ();
 
-#ifdef NDEBUG
-#define log_signal(sig)
-#else
+#ifndef NDEBUG
 void log_signal (int sig);
+#else
+# define log_signal(...) do {} while (0)
 #endif
 
 #ifdef __cplusplus
