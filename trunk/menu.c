@@ -35,7 +35,7 @@ static void draw_item (const struct menu *menu, const struct menu_item *mi,
 {
 	int title_width, queue_pos_len = 0;
 	int ix, x;
-	int y ATTR_UNUSED;
+	int y ATTR_UNUSED;		/* OpenBSD flags this as unused. */
 	char buf[32];
 
 	assert (menu != NULL);

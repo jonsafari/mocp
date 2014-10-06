@@ -460,7 +460,7 @@ static void spx_info (const char *file_name, struct file_tags *tags,
 		io_close (s);
 }
 
-static int spx_seek (void *prv_data ATTR_UNUSED, int sec)
+static int spx_seek (void *prv_data, int sec)
 {
 	struct spx_data *data = (struct spx_data *)prv_data;
 	off_t begin = 0, end, old_pos;
