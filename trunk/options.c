@@ -550,6 +550,7 @@ void options_init ()
 	add_bool ("ReadTags", true);
 	add_str  ("MusicDir", NULL, CHECK_NONE);
 	add_bool ("StartInMusicDir", false);
+	add_int  ("CircularLogSize", 0, CHECK_RANGE(1), 0, INT_MAX);
 	add_symb ("Sort", "FileName", CHECK_SYMBOL(1), "FileName");
 	add_bool ("ShowStreamErrors", false);
 	add_bool ("MP3IgnoreCRCErrors", true);

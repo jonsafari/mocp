@@ -199,6 +199,10 @@ $SILENT || echo
 while read
 do
 
+  # Reject log file if circular logging has been used.
+  [[ "$REPLY" =~ "Circular Log Starts" ]] && \
+      die MD5 sums cannot be checked when circular logging was used
+
   # Extract MOC revision header.
   [[ "$REPLY" =~ "This is Music On Console" ]] && \
       REVN="$(echo "$REPLY" | sed 's/^.*Music/Music/')"

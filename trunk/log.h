@@ -43,6 +43,10 @@ void internal_logit (const char *file, const int line, const char *function,
 #endif
 
 void log_init_stream (FILE *f, const char *fn);
+void log_circular_start ();
+void log_circular_log ();
+void log_circular_reset ();
+void log_circular_stop ();
 void log_close ();
 
 #ifndef NDEBUG

@@ -19,6 +19,8 @@
 	  - Warning of changed executable name
 	* Changed functionality:
 	  - Decoupled mono-mixing from softmixer
+	* Added functionality:
+	  - Introduced in-memory circular logging buffer
 	* Changes to supported formats and codecs:
 	  - VQF: now supported via FFmpeg/LibAV
 

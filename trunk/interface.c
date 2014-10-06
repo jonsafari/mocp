@@ -3591,10 +3591,12 @@ void init_interface (const int sock, const int logging, lists_t_strs *args)
 
 void interface_loop ()
 {
+	log_circular_start ();
+
 	while (want_quit == NO_QUIT) {
 		fd_set fds;
 		int ret;
-		struct timespec timeout = { 1, 0 };
+		struct timespec timeout = { 0, 100000L };
 
 		FD_ZERO (&fds);
 		FD_SET (srv_sock, &fds);
@@ -3637,6 +3639,9 @@ void interface_loop ()
 		if (!want_quit)
 			update_mixer_value ();
 	}
+
+	log_circular_log ();
+	log_circular_stop ();
 }
 
 /* Save the current directory path to a file. */
