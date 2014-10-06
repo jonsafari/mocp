@@ -45,6 +45,12 @@
 #endif
 #include "compat.h"
 
+#ifdef HAVE_CURL
+# define CURL_ONLY
+#else
+# define CURL_ONLY ATTR_UNUSED
+#endif
+
 #ifdef HAVE_MMAP
 static ssize_t io_read_mmap (struct io_stream *s, const int dont_move,
 		void *buf, size_t count)
@@ -249,7 +255,7 @@ off_t io_seek (struct io_stream *s, off_t offset, int whence)
 }
 
 /* Wake up the IO reading thread. */
-static void io_wake_up (struct io_stream *s ATTR_UNUSED)
+static void io_wake_up (struct io_stream *s CURL_ONLY)
 {
 #ifdef HAVE_CURL
 	if (s->source == IO_SOURCE_CURL)
@@ -765,7 +771,7 @@ void io_cleanup ()
 /* Return the mime type if available or NULL.
  * The mime type is read by curl only after the first read (or peek), until
  * then it's NULL. */
-char *io_get_mime_type (struct io_stream *s ATTR_UNUSED)
+char *io_get_mime_type (struct io_stream *s CURL_ONLY)
 {
 #ifdef HAVE_CURL
 	return s->curl.mime_type;

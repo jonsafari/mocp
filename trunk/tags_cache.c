@@ -40,6 +40,12 @@
 #include "log.h"
 #include "audio.h"
 
+#ifdef HAVE_DB_H
+# define DB_ONLY
+#else
+# define DB_ONLY ATTR_UNUSED
+#endif
+
 /* The name of the tags database in the cache directory. */
 #define TAGS_DB "tags.db"
 
@@ -596,7 +602,7 @@ static void *locked_read_add (struct tags_cache *c, const char *file,
 /* Read the selected tags for this file and add it to the cache.
  * If client_id != -1, the server is notified using tags_response().
  * If client_id == -1, copy of file_tags is returned. */
-static struct file_tags *tags_cache_read_add (struct tags_cache *c ATTR_UNUSED,
+static struct file_tags *tags_cache_read_add (struct tags_cache *c DB_ONLY,
                      const char *file, int tags_sel, int client_id)
 {
 	struct file_tags *tags = NULL;
@@ -1087,7 +1093,8 @@ static int prepare_cache_dir (const char *cache_dir)
 }
 #endif
 
-void tags_cache_load (struct tags_cache *c, const char *cache_dir)
+void tags_cache_load (struct tags_cache *c DB_ONLY,
+                      const char *cache_dir DB_ONLY)
 {
 	assert (c != NULL);
 	assert (cache_dir != NULL);
