@@ -413,6 +413,7 @@ fi
 
 AC_SUBST(EXTRA_LIBS)
 AC_SUBST(EXTRA_DISTS)
+AH_BOTTOM([#include "compiler.h"])
 
 AC_OUTPUT([Makefile
 	  themes/Makefile

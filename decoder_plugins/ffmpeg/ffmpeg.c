@@ -29,8 +29,6 @@
 #include <assert.h>
 #include <stdint.h>
 
-#include "compiler.h"
-
 /* This warning reset suppresses a deprecation warning message for
  * av_metadata_set()'s use of an AVMetadata parameter.  Although it
  * only occurs in FFmpeg release 0.7, the non-linear versioning of
