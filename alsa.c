@@ -15,8 +15,6 @@
 # include "config.h"
 #endif
 
-#define DEBUG
-
 #include <stdlib.h>
 #include <inttypes.h>
 #include <alsa/asoundlib.h>
@@ -24,6 +22,8 @@
 #include <string.h>
 #include <errno.h>
 #include <unistd.h>
+
+#define DEBUG
 
 #include "common.h"
 #include "server.h"

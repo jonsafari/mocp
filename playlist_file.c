@@ -13,14 +13,14 @@
 # include "config.h"
 #endif
 
-#define DEBUG
-
 #include <sys/file.h>
 #include <stdio.h>
 #include <string.h>
 #include <strings.h>
 #include <errno.h>
 #include <assert.h>
+
+#define DEBUG
 
 #include "common.h"
 #include "playlist.h"

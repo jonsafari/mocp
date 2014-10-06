@@ -23,6 +23,8 @@
 #include <assert.h>
 #include <stdint.h>
 
+/* #define DEBUG */
+
 #include "common.h"
 #include "audio.h"
 #include "audio_conversion.h"
@@ -30,8 +32,6 @@
 #include "options.h"
 #include "files.h"
 #include "log.h"
-
-/* #define DEBUG */
 
 static int active;
 static int mix_mono;

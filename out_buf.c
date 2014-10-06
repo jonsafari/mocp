@@ -9,8 +9,6 @@
  *
  */
 
-/*#define DEBUG*/
-
 /* Defining OUT_TEST causes the raw audio samples to be written
  * to the file 'out_test' in the current directory for debugging. */
 /*#define OUT_TEST*/
@@ -28,6 +26,8 @@
 #include <sys/types.h>
 #include <fcntl.h>
 #endif
+
+/*#define DEBUG*/
 
 #include "common.h"
 #include "audio.h"
