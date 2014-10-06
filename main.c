@@ -139,7 +139,7 @@ static void check_moc_dir ()
 	}
 }
 
-static void sig_chld (int sig ATTR_UNUSED)
+static void sig_chld (int sig LOGIT_ONLY)
 {
 	int saved_errno;
 	pid_t rc;

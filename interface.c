@@ -92,20 +92,20 @@ static time_t silent_seek_key_last = (time_t)0; /* when the silent seek key was
 /* When the menu was last moved (arrow keys, page up, etc.) */
 static time_t last_menu_move_time = (time_t)0;
 
-static void sig_quit (int sig ATTR_UNUSED)
+static void sig_quit (int sig LOGIT_ONLY)
 {
 	log_signal (sig);
 	want_quit = QUIT_CLIENT;
 }
 
-static void sig_interrupt (int sig ATTR_UNUSED)
+static void sig_interrupt (int sig LOGIT_ONLY)
 {
 	log_signal (sig);
 	wants_interrupt = 1;
 }
 
 #ifdef SIGWINCH
-static void sig_winch (int sig ATTR_UNUSED)
+static void sig_winch (int sig LOGIT_ONLY)
 {
 	log_signal (sig);
 	want_resize = 1;
