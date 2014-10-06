@@ -372,7 +372,7 @@ void player_init ()
 	precache.ok = 0;
 }
 
-static void show_tags (const struct file_tags *tags)
+static void show_tags (const struct file_tags *tags DEBUG_ONLY)
 {
 	debug ("TAG[title]: %s", tags->title ? tags->title : "N/A");
 	debug ("TAG[album]: %s", tags->album ? tags->album : "N/A");
