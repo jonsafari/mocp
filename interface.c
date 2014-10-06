@@ -3028,7 +3028,7 @@ static char *custom_cmd_substitute (const char *arg)
 	return result;
 }
 
-static void run_external_cmd (char **args, const int arg_num ATTR_UNUSED)
+static void run_external_cmd (char **args, const int arg_num ASSERT_ONLY)
 {
 	pid_t child;
 

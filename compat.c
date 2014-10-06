@@ -85,7 +85,7 @@ int strerror_r (int errnum, char *buf, size_t n)
 
 /* OSX doesn't provide clock_gettime(3) so fall back to gettimeofday(2). */
 #ifndef HAVE_CLOCK_GETTIME
-int clock_gettime (int clk_id ATTR_UNUSED, struct timespec *ts)
+int clock_gettime (int clk_id ASSERT_ONLY, struct timespec *ts)
 {
 	int result;
 	struct timeval tv;
