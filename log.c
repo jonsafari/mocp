@@ -16,6 +16,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdint.h>
+#include <assert.h>
 #include <pthread.h>
 #include <time.h>
 #include <errno.h>
@@ -25,6 +26,7 @@
 #include "compat.h"
 #include "lists.h"
 #include "log.h"
+#include "options.h"
 
 #ifndef NDEBUG
 static FILE *logfp = NULL; /* logging file stream */
@@ -37,6 +39,9 @@ static enum {
 
 static lists_t_strs *buffered_log = NULL;
 static int log_records_spilt = 0;
+
+static lists_t_strs *circular_log = NULL;
+static int circular_ptr = 0;
 
 static pthread_mutex_t logging_mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -85,33 +90,52 @@ static inline void flush_log (void)
 static void locked_logit (const char *file, const int line,
                           const char *function, const char *msg)
 {
-	char time_str[20];
+	int len;
+	char *str, time_str[20];
 	struct timespec utc_time;
 	time_t tv_sec;
 	struct tm tm_time;
 	const char fmt[] = "%s.%06ld: %s:%d %s(): %s\n";
+
+	assert (logging_state == BUFFERING || logging_state == LOGGING);
+	assert (logging_state != BUFFERING || !logfp);
+	assert (logging_state != BUFFERING || !circular_log);
+	assert (logging_state != LOGGING || logfp || !circular_log);
+
+	if (logging_state == LOGGING && !logfp)
+		return;
 
 	clock_gettime (CLOCK_REALTIME, &utc_time);
 	tv_sec = utc_time.tv_sec;
 	localtime_r (&tv_sec, &tm_time);
 	strftime (time_str, sizeof (time_str), "%b %e %T", &tm_time);
 
-	if (logfp) {
+	if (logfp && !circular_log) {
 		fprintf (logfp, fmt, time_str, utc_time.tv_nsec / 1000L,
 		                     file, line, function, msg);
+		return;
 	}
-	else if (logging_state == BUFFERING) {
-		int len;
-		char *str;
 
-		len = snprintf (NULL, 0, fmt, time_str, utc_time.tv_nsec / 1000L,
-		                              file, line, function, msg);
-		str = xmalloc (len + 1);
-		snprintf (str, len + 1, fmt, time_str, utc_time.tv_nsec / 1000L,
-		                             file, line, function, msg);
+	len = snprintf (NULL, 0, fmt, time_str, utc_time.tv_nsec / 1000L,
+	                              file, line, function, msg);
+	str = xmalloc (len + 1);
+	snprintf (str, len + 1, fmt, time_str, utc_time.tv_nsec / 1000L,
+	                             file, line, function, msg);
 
+	if (logging_state == BUFFERING) {
 		lists_strs_push (buffered_log, str);
+		return;
 	}
+
+	assert (circular_log);
+
+	if (circular_ptr == lists_strs_capacity (circular_log))
+		circular_ptr = 0;
+	if (circular_ptr < lists_strs_size (circular_log))
+		free (lists_strs_swap (circular_log, circular_ptr, str));
+	else
+		lists_strs_push (circular_log, str);
+	circular_ptr += 1;
 }
 #endif
 
@@ -198,6 +222,8 @@ void log_init_stream (FILE *f LOGIT_ONLY, const char *fn LOGIT_ONLY)
 	}
 
 	logging_state = LOGGING;
+	if (!logfp)
+		goto end;
 
 	msg = format_msg ("Writing log to: %s", fn);
 	locked_logit (__FILE__, __LINE__, __FUNCTION__, msg);
@@ -210,6 +236,109 @@ void log_init_stream (FILE *f LOGIT_ONLY, const char *fn LOGIT_ONLY)
 	}
 
 	flush_log ();
+
+end:
+	UNLOCK(logging_mutex);
+#endif
+}
+
+/* Start circular logging (if enabled). */
+void log_circular_start ()
+{
+#ifndef NDEBUG
+	int circular_size;
+
+	assert (logging_state == LOGGING);
+	assert (!circular_log);
+
+	if (!logfp)
+		return;
+
+	circular_size = options_get_int ("CircularLogSize");
+	if (circular_size > 0) {
+		LOCK(logging_mutex);
+
+		circular_log = lists_strs_new (circular_size);
+		circular_ptr = 0;
+
+		UNLOCK(logging_mutex);
+	}
+#endif
+}
+
+/* Internal circular log reset. */
+#ifndef NDEBUG
+static inline void locked_circular_reset ()
+{
+	lists_strs_clear (circular_log);
+	circular_ptr = 0;
+}
+#endif
+
+/* Reset the circular log (if enabled). */
+void log_circular_reset ()
+{
+#ifndef NDEBUG
+	assert (logging_state == LOGGING);
+
+	if (!circular_log)
+		return;
+
+	LOCK(logging_mutex);
+
+	locked_circular_reset ();
+
+	UNLOCK(logging_mutex);
+#endif
+}
+
+/* Write circular log (if enabled) to the log file. */
+void log_circular_log ()
+{
+#ifndef NDEBUG
+	int ix;
+
+	assert (logging_state == LOGGING && (logfp || !circular_log));
+
+	if (!circular_log)
+		return;
+
+	LOCK(logging_mutex);
+
+	fprintf (logfp, "\n* Circular Log Starts *\n\n");
+
+	for (ix = circular_ptr; ix < lists_strs_size (circular_log); ix += 1)
+		fprintf (logfp, "%s", lists_strs_at (circular_log, ix));
+
+	fflush (logfp);
+
+	for (ix = 0; ix < circular_ptr; ix += 1)
+		fprintf (logfp, "%s", lists_strs_at (circular_log, ix));
+
+	fprintf (logfp, "\n* Circular Log Ends *\n\n");
+
+	fflush (logfp);
+
+	locked_circular_reset ();
+
+	UNLOCK(logging_mutex);
+#endif
+}
+
+/* Stop circular logging (if enabled). */
+void log_circular_stop ()
+{
+#ifndef NDEBUG
+	assert (logging_state == LOGGING);
+
+	if (!circular_log)
+		return;
+
+	LOCK(logging_mutex);
+
+	lists_strs_free (circular_log);
+	circular_log = NULL;
+	circular_ptr = 0;
 
 	UNLOCK(logging_mutex);
 #endif

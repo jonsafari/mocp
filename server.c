@@ -1708,6 +1708,8 @@ void server_loop (int list_sock)
 
 	logit ("MOC server started, pid: %d", getpid());
 
+	log_circular_start ();
+
 	do {
 		int res;
 		fd_set fds_write, fds_read;
@@ -1763,6 +1765,9 @@ void server_loop (int list_sock)
 			logit ("Exiting...");
 
 	} while (!end && !server_quit);
+
+	log_circular_log ();
+	log_circular_stop ();
 
 	close_clients ();
 	clients_cleanup ();

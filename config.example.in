@@ -76,6 +76,19 @@
 # the command line takes precedence.
 #StartInMusicDir = no
 
+# The number of lines which are retained in an in-memory circular logging
+# buffer.  A value of zero indicates that lines will be written directly
+# to the log file, otherwise the latest CircularLogSize lines are retained
+# in memory and not written to the log file until the MOC client or server
+# are shutdown.  If the client or server terminates abnormally then the
+# log lines are lost.
+#
+# This option is intended to help identify problems which occur infrequently
+# and for which the amount of disk space consumed by logging would otherwise
+# be a limiting factor.  Obviously the memory footprint will increase in
+# proportion to the value of this option.
+#CircularLogSize = 0
+
 # How to sort?  FileName is the option's only value for now.
 #Sort = FileName
 
