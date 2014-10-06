@@ -164,11 +164,6 @@ end:
 	UNLOCK(logging_mutex);
 }
 
-/* fake logit() function for NDEBUG */
-void fake_logit (const char *format ATTR_UNUSED, ...)
-{
-}
-
 /* Initialize logging stream */
 void log_init_stream (FILE *f, const char *fn)
 {

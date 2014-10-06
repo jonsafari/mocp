@@ -187,10 +187,8 @@ static long sfmt_best_matching (const long formats_with_endian,
 	long req = req_with_endian & SFMT_MASK_FORMAT;
 	long best = 0;
 
-#ifdef DEBUG
-	char fmt_name1[SFMT_STR_MAX];
-	char fmt_name2[SFMT_STR_MAX];
-#endif
+	char fmt_name1[SFMT_STR_MAX] DEBUG_ONLY;
+	char fmt_name2[SFMT_STR_MAX] DEBUG_ONLY;
 
 	if (formats & req)
 		best = req;
@@ -253,11 +251,9 @@ static long sfmt_best_matching (const long formats_with_endian,
 			best |= formats_with_endian & SFMT_MASK_ENDIANNESS;
 	}
 
-#ifdef DEBUG
 	debug ("Chose %s as the best matching %s",
 			sfmt_str(best, fmt_name1, sizeof(fmt_name1)),
 			sfmt_str(req_with_endian, fmt_name2, sizeof(fmt_name2)));
-#endif
 
 	return best;
 }
@@ -726,7 +722,7 @@ int audio_open (struct sound_params *sound_params)
 	res = hw.open (&driver_sound_params);
 
 	if (res) {
-		char fmt_name[SFMT_STR_MAX];
+		char fmt_name[SFMT_STR_MAX] LOGIT_ONLY;
 
 		driver_sound_params.rate = hw.get_rate ();
 		if (driver_sound_params.fmt != req_sound_params.fmt
@@ -932,9 +928,10 @@ static void find_working_driver (lists_t_strs *drivers, struct hw_funcs *funcs)
 	fatal ("No valid sound driver!");
 }
 
-static void print_output_capabilities (const struct output_driver_caps *caps)
+static void print_output_capabilities
+            (const struct output_driver_caps *caps LOGIT_ONLY)
 {
-	char fmt_name[SFMT_STR_MAX];
+	char fmt_name[SFMT_STR_MAX] LOGIT_ONLY;
 
 	logit ("Sound driver capabilities: channels %d - %d, formats: %s",
 			caps->min_channels, caps->max_channels,

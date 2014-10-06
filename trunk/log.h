@@ -10,7 +10,7 @@ extern "C" {
 #ifdef DEBUG
 # define debug logit
 #else
-# define debug fake_logit
+# define debug(...)  do {} while (0)
 #endif
 
 #ifndef NDEBUG
@@ -18,7 +18,7 @@ extern "C" {
 	internal_logit (__FILE__, __LINE__, __FUNCTION__, format, \
 	## __VA_ARGS__)
 #else
-# define logit fake_logit
+# define logit(...)  do {} while (0)
 #endif
 
 #ifdef HAVE_FUNC_ATTRIBUTE_FORMAT
@@ -30,7 +30,18 @@ void internal_logit (const char *file, const int line, const char *function,
 		const char *format, ...);
 #endif
 
-void fake_logit (const char *format, ...);
+#ifndef NDEBUG
+# define LOGIT_ONLY
+#else
+# define LOGIT_ONLY ATTR_UNUSED
+#endif
+
+#if !defined(NDEBUG) && defined(DEBUG)
+# define DEBUG_ONLY
+#else
+# define DEBUG_ONLY ATTR_UNUSED
+#endif
+
 void log_init_stream (FILE *f, const char *fn);
 void log_close ();
 

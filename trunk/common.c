@@ -59,8 +59,8 @@ void error (const char *format, ...)
 
 /* End program with a message. Use when an error occurs and we can't recover.
  * If we're the server, then also log the message to the system log. */
-void internal_fatal (const char *file ATTR_UNUSED, int line ATTR_UNUSED,
-                 const char *function ATTR_UNUSED, const char *format, ...)
+void internal_fatal (const char *file LOGIT_ONLY, int line LOGIT_ONLY,
+                 const char *function LOGIT_ONLY, const char *format, ...)
 {
 	va_list va;
 	char *msg;
