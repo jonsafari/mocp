@@ -109,7 +109,7 @@ static size_t pack_pcm_signed (FLAC__byte *data,
 	return wide_samples * channels * bytes_per_sample;
 }
 
-static FLAC__StreamDecoderWriteStatus write_callback (
+static FLAC__StreamDecoderWriteStatus write_cb (
 		const FLAC__StreamDecoder *unused ATTR_UNUSED,
 		const FLAC__Frame *frame,
 		const FLAC__int32 * const buffer[], void *client_data)
@@ -127,7 +127,7 @@ static FLAC__StreamDecoderWriteStatus write_callback (
 	return FLAC__STREAM_DECODER_WRITE_STATUS_CONTINUE;
 }
 
-static void metadata_callback (
+static void metadata_cb (
 		const FLAC__StreamDecoder *unused ATTR_UNUSED,
 		const FLAC__StreamMetadata *metadata, void *client_data)
 {
@@ -145,7 +145,7 @@ static void metadata_callback (
 	}
 }
 
-static void error_callback (
+static void error_cb (
 		const FLAC__StreamDecoder *unused ATTR_UNUSED,
 		FLAC__StreamDecoderErrorStatus status, void *client_data)
 {
@@ -159,7 +159,7 @@ static void error_callback (
 		decoder_error (&data->error, ERROR_FATAL, 0, "FLAC: lost sync");
 }
 
-static FLAC__StreamDecoderReadStatus read_callback (
+static FLAC__StreamDecoderReadStatus read_cb (
 		const FLAC__StreamDecoder *unused ATTR_UNUSED,
 		FLAC__byte buffer[], size_t *bytes, void *client_data)
 {
@@ -184,7 +184,7 @@ static FLAC__StreamDecoderReadStatus read_callback (
 	return FLAC__STREAM_DECODER_READ_STATUS_ABORT;
 }
 
-static FLAC__StreamDecoderSeekStatus seek_callback (
+static FLAC__StreamDecoderSeekStatus seek_cb (
 		const FLAC__StreamDecoder *unused ATTR_UNUSED,
 		FLAC__uint64 absolute_byte_offset, void *client_data)
 {
@@ -195,7 +195,7 @@ static FLAC__StreamDecoderSeekStatus seek_callback (
 		: FLAC__STREAM_DECODER_SEEK_STATUS_ERROR;
 }
 
-static FLAC__StreamDecoderTellStatus tell_callback (
+static FLAC__StreamDecoderTellStatus tell_cb (
 		const FLAC__StreamDecoder *unused ATTR_UNUSED,
 		FLAC__uint64 *absolute_byte_offset, void *client_data)
 {
@@ -206,7 +206,7 @@ static FLAC__StreamDecoderTellStatus tell_callback (
 	return FLAC__STREAM_DECODER_TELL_STATUS_OK;
 }
 
-static FLAC__StreamDecoderLengthStatus length_callback (
+static FLAC__StreamDecoderLengthStatus length_cb (
 		const FLAC__StreamDecoder *unused ATTR_UNUSED,
 		FLAC__uint64 *stream_length, void *client_data)
 {
@@ -222,7 +222,7 @@ static FLAC__StreamDecoderLengthStatus length_callback (
 	return FLAC__STREAM_DECODER_LENGTH_STATUS_OK;
 }
 
-static FLAC__bool eof_callback (
+static FLAC__bool eof_cb (
 		const FLAC__StreamDecoder *unused ATTR_UNUSED,
 		void *client_data)
 {
@@ -266,7 +266,7 @@ static void *flac_open_internal (const char *file, const int buffered)
 	FLAC__stream_decoder_set_metadata_respond (data->decoder,
 			FLAC__METADATA_TYPE_STREAMINFO);
 
-	if (FLAC__stream_decoder_init_stream(data->decoder, read_callback, seek_callback, tell_callback, length_callback, eof_callback, write_callback, metadata_callback, error_callback, data)
+	if (FLAC__stream_decoder_init_stream(data->decoder, read_cb, seek_cb, tell_cb, length_cb, eof_cb, write_cb, metadata_cb, error_cb, data)
 			!= FLAC__STREAM_DECODER_INIT_STATUS_OK) {
 		decoder_error (&data->error, ERROR_FATAL, 0,
 				"FLAC__stream_decoder_init() failed");
