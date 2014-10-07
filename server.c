@@ -54,7 +54,7 @@ struct client
 	int socket; 		/* -1 if inactive */
 	int wants_plist_events;	/* requested playlist events? */
 	struct event_queue events;
-	pthread_mutex_t events_mutex;
+	pthread_mutex_t events_mtx;
 	int requests_plist;	/* is the client waiting for the playlist? */
 	int can_send_plist;	/* can this client send a playlist? */
 	int lock;		/* is this client locking us? */
@@ -136,7 +136,7 @@ static void clients_init ()
 
 	for (i = 0; i < CLIENTS_MAX; i++) {
 		clients[i].socket = -1;
-		pthread_mutex_init (&clients[i].events_mutex, NULL);
+		pthread_mutex_init (&clients[i].events_mtx, NULL);
 	}
 }
 
@@ -146,7 +146,7 @@ static void clients_cleanup ()
 
 	for (i = 0; i < CLIENTS_MAX; i++) {
 		clients[i].socket = -1;
-		rc = pthread_mutex_destroy (&clients[i].events_mutex);
+		rc = pthread_mutex_destroy (&clients[i].events_mtx);
 		if (rc != 0)
 			logit ("Can't destroy events mutex: %s", strerror (rc));
 	}
@@ -160,10 +160,10 @@ static int add_client (int sock)
 	for (i = 0; i < CLIENTS_MAX; i++)
 		if (clients[i].socket == -1) {
 			clients[i].wants_plist_events = 0;
-			LOCK (clients[i].events_mutex);
+			LOCK (clients[i].events_mtx);
 			event_queue_free (&clients[i].events);
 			event_queue_init (&clients[i].events);
-			UNLOCK (clients[i].events_mutex);
+			UNLOCK (clients[i].events_mtx);
 			clients[i].socket = sock;
 			clients[i].requests_plist = 0;
 			clients[i].can_send_plist = 0;
@@ -235,10 +235,10 @@ static int client_index (const struct client *cli)
 static void del_client (struct client *cli)
 {
 	cli->socket = -1;
-	LOCK (cli->events_mutex);
+	LOCK (cli->events_mtx);
 	event_queue_free (&cli->events);
 	tags_cache_clear_queue (&tags_cache, client_index(cli));
-	UNLOCK (cli->events_mutex);
+	UNLOCK (cli->events_mtx);
 }
 
 /* Check if the process with given PID exists. Return != 0 if so. */
@@ -427,9 +427,9 @@ static int send_data_str (const struct client *cli, const char *str) {
 /* Add event to the client's queue */
 static void add_event (struct client *cli, const int event, void *data)
 {
-	LOCK (cli->events_mutex);
+	LOCK (cli->events_mtx);
 	event_push (&cli->events, event, data);
-	UNLOCK (cli->events_mutex);
+	UNLOCK (cli->events_mtx);
 }
 
 static void on_song_change ()
@@ -660,12 +660,12 @@ static int flush_events (struct client *cli)
 {
 	enum noblock_io_status st = NB_IO_OK;
 
-	LOCK (cli->events_mutex);
+	LOCK (cli->events_mtx);
 	while (!event_queue_empty(&cli->events)
 			&& (st = event_send_noblock(cli->socket, &cli->events))
 			== NB_IO_OK)
 		;
-	UNLOCK (cli->events_mutex);
+	UNLOCK (cli->events_mtx);
 
 	return st != NB_IO_ERR ? 1 : 0;
 }
@@ -1647,10 +1647,10 @@ static void add_clients_fds (fd_set *read, fd_set *write)
 			if (locking_client() == -1 || is_locking(&clients[i]))
 				FD_SET (clients[i].socket, read);
 
-			LOCK (clients[i].events_mutex);
+			LOCK (clients[i].events_mtx);
 			if (!event_queue_empty(&clients[i].events))
 				FD_SET (clients[i].socket, write);
-			UNLOCK (clients[i].events_mutex);
+			UNLOCK (clients[i].events_mtx);
 		}
 }
 

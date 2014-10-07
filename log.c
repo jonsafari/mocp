@@ -43,7 +43,7 @@ static int log_records_spilt = 0;
 static lists_t_strs *circular_log = NULL;
 static int circular_ptr = 0;
 
-static pthread_mutex_t logging_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t logging_mtx = PTHREAD_MUTEX_INITIALIZER;
 
 static struct {
 	int sig;
@@ -165,7 +165,7 @@ void internal_logit (const char *file LOGIT_ONLY,
 	char *msg;
 	va_list va;
 
-	LOCK(logging_mutex);
+	LOCK(logging_mtx);
 
 	if (!logfp) {
 		switch (logging_state) {
@@ -196,7 +196,7 @@ void internal_logit (const char *file LOGIT_ONLY,
 	log_signals_raised ();
 
 end:
-	UNLOCK(logging_mutex);
+	UNLOCK(logging_mtx);
 #endif
 }
 
@@ -206,7 +206,7 @@ void log_init_stream (FILE *f LOGIT_ONLY, const char *fn LOGIT_ONLY)
 #ifndef NDEBUG
 	char *msg;
 
-	LOCK(logging_mutex);
+	LOCK(logging_mtx);
 
 	logfp = f;
 
@@ -238,7 +238,7 @@ void log_init_stream (FILE *f LOGIT_ONLY, const char *fn LOGIT_ONLY)
 	flush_log ();
 
 end:
-	UNLOCK(logging_mutex);
+	UNLOCK(logging_mtx);
 #endif
 }
 
@@ -256,12 +256,12 @@ void log_circular_start ()
 
 	circular_size = options_get_int ("CircularLogSize");
 	if (circular_size > 0) {
-		LOCK(logging_mutex);
+		LOCK(logging_mtx);
 
 		circular_log = lists_strs_new (circular_size);
 		circular_ptr = 0;
 
-		UNLOCK(logging_mutex);
+		UNLOCK(logging_mtx);
 	}
 #endif
 }
@@ -284,11 +284,11 @@ void log_circular_reset ()
 	if (!circular_log)
 		return;
 
-	LOCK(logging_mutex);
+	LOCK(logging_mtx);
 
 	locked_circular_reset ();
 
-	UNLOCK(logging_mutex);
+	UNLOCK(logging_mtx);
 #endif
 }
 
@@ -303,7 +303,7 @@ void log_circular_log ()
 	if (!circular_log)
 		return;
 
-	LOCK(logging_mutex);
+	LOCK(logging_mtx);
 
 	fprintf (logfp, "\n* Circular Log Starts *\n\n");
 
@@ -321,7 +321,7 @@ void log_circular_log ()
 
 	locked_circular_reset ();
 
-	UNLOCK(logging_mutex);
+	UNLOCK(logging_mtx);
 #endif
 }
 
@@ -334,20 +334,20 @@ void log_circular_stop ()
 	if (!circular_log)
 		return;
 
-	LOCK(logging_mutex);
+	LOCK(logging_mtx);
 
 	lists_strs_free (circular_log);
 	circular_log = NULL;
 	circular_ptr = 0;
 
-	UNLOCK(logging_mutex);
+	UNLOCK(logging_mtx);
 #endif
 }
 
 void log_close ()
 {
 #ifndef NDEBUG
-	LOCK(logging_mutex);
+	LOCK(logging_mtx);
 
 	if (!(logfp == stdout || logfp == stderr || logfp == NULL)) {
 		fclose (logfp);
@@ -361,6 +361,6 @@ void log_close ()
 
 	log_records_spilt = 0;
 
-	UNLOCK(logging_mutex);
+	UNLOCK(logging_mtx);
 #endif
 }
