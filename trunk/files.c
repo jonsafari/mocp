@@ -135,10 +135,10 @@ char *file_mime_type (const char *file ASSERT_ONLY)
 	assert (file != NULL);
 
 #ifdef HAVE_LIBMAGIC
-	static pthread_mutex_t magic_mutex = PTHREAD_MUTEX_INITIALIZER;
+	static pthread_mutex_t magic_mtx = PTHREAD_MUTEX_INITIALIZER;
 
 	if (cookie != NULL) {
-		LOCK(magic_mutex);
+		LOCK(magic_mtx);
 		if (cached_file && !strcmp (cached_file, file))
 			result = xstrdup (cached_result);
 		else {
@@ -153,7 +153,7 @@ char *file_mime_type (const char *file ASSERT_ONLY)
 				cached_result = xstrdup (result);
 			}
 		}
-		UNLOCK(magic_mutex);
+		UNLOCK(magic_mtx);
 	}
 #endif
 

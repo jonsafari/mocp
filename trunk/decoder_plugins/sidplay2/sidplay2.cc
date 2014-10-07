@@ -31,7 +31,7 @@ static SID_EXTERN::SidDatabase *database;
 
 static int init_db;
 
-static pthread_mutex_t dbmutex, player_select_mutex;
+static pthread_mutex_t db_mtx, player_select_mtx;
 
 static int defaultLength;
 
@@ -43,7 +43,7 @@ static bool playSubTunes;
 
 static sidplay2_data * make_data()
 {
-  pthread_mutex_lock(&player_select_mutex);
+  pthread_mutex_lock(&player_select_mtx);
 
   playerIndex = (playerIndex+1)%POOL_SIZE;
 
@@ -89,7 +89,7 @@ static sidplay2_data * make_data()
 
   s2d->builder = builders[playerIndex];
 
-  pthread_mutex_unlock(&player_select_mutex);
+  pthread_mutex_unlock(&player_select_mtx);
 
   if((*s2d->builder))
   {
@@ -198,14 +198,14 @@ static void init_database()
 {
   int cancel = 0;
 
-  pthread_mutex_lock(&dbmutex);
+  pthread_mutex_lock(&db_mtx);
 
   if(init_db==0)
     cancel = 1;
 
   init_db = 0;
 
-  pthread_mutex_unlock(&dbmutex);
+  pthread_mutex_unlock(&db_mtx);
 
   if(cancel)
     return;
@@ -532,9 +532,9 @@ extern "C" void init()
 
 extern "C" void destroy()
 {
-  pthread_mutex_destroy(&dbmutex);
+  pthread_mutex_destroy(&db_mtx);
 
-  pthread_mutex_destroy(&player_select_mutex);
+  pthread_mutex_destroy(&player_select_mtx);
 
   if(database!=NULL)
     delete database;
@@ -573,7 +573,7 @@ static struct decoder sidplay2_decoder =
 
 extern "C" struct decoder *plugin_init ()
 {
-  pthread_mutex_init(&dbmutex, NULL);
-  pthread_mutex_init(&player_select_mutex, NULL);
+  pthread_mutex_init(&db_mtx, NULL);
+  pthread_mutex_init(&player_select_mtx, NULL);
   return &sidplay2_decoder;
 }
