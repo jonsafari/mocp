@@ -51,7 +51,7 @@ void io_curl_cleanup ()
 	curl_global_cleanup ();
 }
 
-static size_t write_callback (void *data, size_t size, size_t nmemb,
+static size_t write_cb (void *data, size_t size, size_t nmemb,
 		void *stream)
 {
 	struct io_stream *s = (struct io_stream *)stream;
@@ -66,7 +66,7 @@ static size_t write_callback (void *data, size_t size, size_t nmemb,
 	return data_size;
 }
 
-static size_t header_callback (void *data, size_t size, size_t nmemb,
+static size_t header_cb (void *data, size_t size, size_t nmemb,
 		void *stream)
 {
 	struct io_stream *s = (struct io_stream *)stream;
@@ -148,8 +148,8 @@ static size_t header_callback (void *data, size_t size, size_t nmemb,
 }
 
 #if !defined(NDEBUG) && defined(DEBUG)
-static int debug_callback (CURL *unused1 ATTR_UNUSED, curl_infotype i,
-                           char *msg, size_t size, void *unused2 ATTR_UNUSED)
+static int debug_cb (CURL *unused1 ATTR_UNUSED, curl_infotype i,
+                     char *msg, size_t size, void *unused2 ATTR_UNUSED)
 {
 	int ix;
 	char *log;
@@ -248,11 +248,9 @@ void io_curl_open (struct io_stream *s, const char *url)
 
 	curl_easy_setopt (s->curl.handle, CURLOPT_NOPROGRESS, 1);
 	curl_easy_setopt (s->curl.handle, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
-	curl_easy_setopt (s->curl.handle, CURLOPT_WRITEFUNCTION,
-			write_callback);
+	curl_easy_setopt (s->curl.handle, CURLOPT_WRITEFUNCTION, write_cb);
 	curl_easy_setopt (s->curl.handle, CURLOPT_WRITEDATA, s);
-	curl_easy_setopt (s->curl.handle, CURLOPT_HEADERFUNCTION,
-			header_callback);
+	curl_easy_setopt (s->curl.handle, CURLOPT_HEADERFUNCTION, header_cb);
 	curl_easy_setopt (s->curl.handle, CURLOPT_WRITEHEADER, s);
 	curl_easy_setopt (s->curl.handle, CURLOPT_USERAGENT, user_agent);
 	curl_easy_setopt (s->curl.handle, CURLOPT_URL, s->curl.url);
@@ -268,8 +266,7 @@ void io_curl_open (struct io_stream *s, const char *url)
 				options_get_str("HTTPProxy"));
 #if !defined(NDEBUG) && defined(DEBUG)
 	curl_easy_setopt (s->curl.handle, CURLOPT_VERBOSE, 1);
-	curl_easy_setopt (s->curl.handle, CURLOPT_DEBUGFUNCTION,
-			debug_callback);
+	curl_easy_setopt (s->curl.handle, CURLOPT_DEBUGFUNCTION, debug_cb);
 #endif
 
 	if ((s->curl.multi_status = curl_multi_add_handle(s->curl.multi_handle,

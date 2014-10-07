@@ -58,9 +58,9 @@ struct musepack_data
 };
 
 #ifdef MPC_IS_OLD_API
-static mpc_int32_t read_callback (void *t, void *buf, mpc_int32_t size)
+static mpc_int32_t read_cb (void *t, void *buf, mpc_int32_t size)
 #else
-static mpc_int32_t read_callback (mpc_reader *t, void *buf, mpc_int32_t size)
+static mpc_int32_t read_cb (mpc_reader *t, void *buf, mpc_int32_t size)
 #endif
 {
 #ifdef MPC_IS_OLD_API
@@ -80,9 +80,9 @@ static mpc_int32_t read_callback (mpc_reader *t, void *buf, mpc_int32_t size)
 }
 
 #ifdef MPC_IS_OLD_API
-static mpc_bool_t seek_callback (void *t, mpc_int32_t offset)
+static mpc_bool_t seek_cb (void *t, mpc_int32_t offset)
 #else
-static mpc_bool_t seek_callback (mpc_reader *t, mpc_int32_t offset)
+static mpc_bool_t seek_cb (mpc_reader *t, mpc_int32_t offset)
 #endif
 {
 #ifdef MPC_IS_OLD_API
@@ -97,9 +97,9 @@ static mpc_bool_t seek_callback (mpc_reader *t, mpc_int32_t offset)
 }
 
 #ifdef MPC_IS_OLD_API
-static mpc_int32_t tell_callback (void *t)
+static mpc_int32_t tell_cb (void *t)
 #else
-static mpc_int32_t tell_callback (mpc_reader *t)
+static mpc_int32_t tell_cb (mpc_reader *t)
 #endif
 {
 #ifdef MPC_IS_OLD_API
@@ -114,9 +114,9 @@ static mpc_int32_t tell_callback (mpc_reader *t)
 }
 
 #ifdef MPC_IS_OLD_API
-static mpc_int32_t get_size_callback (void *t)
+static mpc_int32_t get_size_cb (void *t)
 #else
-static mpc_int32_t get_size_callback (mpc_reader *t)
+static mpc_int32_t get_size_cb (mpc_reader *t)
 #endif
 {
 #ifdef MPC_IS_OLD_API
@@ -131,9 +131,9 @@ static mpc_int32_t get_size_callback (mpc_reader *t)
 }
 
 #ifdef MPC_IS_OLD_API
-static mpc_bool_t canseek_callback (void *t)
+static mpc_bool_t canseek_cb (void *t)
 #else
-static mpc_bool_t canseek_callback (mpc_reader *t)
+static mpc_bool_t canseek_cb (mpc_reader *t)
 #endif
 {
 #ifdef MPC_IS_OLD_API
@@ -147,11 +147,11 @@ static mpc_bool_t canseek_callback (mpc_reader *t)
 
 static void musepack_open_stream_internal (struct musepack_data *data)
 {
-	data->reader.read = read_callback;
-	data->reader.seek = seek_callback;
-	data->reader.tell = tell_callback;
-	data->reader.get_size = get_size_callback;
-	data->reader.canseek = canseek_callback;
+	data->reader.read = read_cb;
+	data->reader.seek = seek_cb;
+	data->reader.tell = tell_cb;
+	data->reader.get_size = get_size_cb;
+	data->reader.canseek = canseek_cb;
 	data->reader.data = data;
 
 #ifdef MPC_IS_OLD_API

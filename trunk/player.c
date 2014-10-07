@@ -425,7 +425,7 @@ static void update_tags (const struct decoder *f, void *decoder_data,
 }
 
 /* Called when some free space in the output buffer appears. */
-static void buf_free_callback ()
+static void buf_free_cb ()
 {
 	LOCK (request_cond_mutex);
 	pthread_cond_broadcast (&request_cond);
@@ -450,7 +450,7 @@ static void decode_loop (const struct decoder *f, void *decoder_data,
 	float decode_time = already_decoded_sec; /* the position of the decoder
 	                                            (in seconds) */
 
-	out_buf_set_free_callback (out_buf, buf_free_callback);
+	out_buf_set_free_callback (out_buf, buf_free_cb);
 
 	LOCK (curr_tags_mut);
 	curr_tags = tags_new ();
@@ -827,7 +827,7 @@ static void play_stream (const struct decoder *f, struct out_buf *out_buf)
 }
 
 /* Callback for io buffer fill - show the prebuffering state. */
-static void fill_callback (struct io_stream *unused1 ATTR_UNUSED, size_t fill,
+static void fill_cb (struct io_stream *unused1 ATTR_UNUSED, size_t fill,
 		size_t unused2 ATTR_UNUSED, void *unused3 ATTR_UNUSED)
 {
 	if (prebuffering) {
@@ -872,7 +872,7 @@ void player (const char *file, const char *next_file, struct out_buf *out_buf)
 
 		status_msg ("Prebuffering...");
 		prebuffering = 1;
-		io_set_buf_fill_callback (decoder_stream, fill_callback, NULL);
+		io_set_buf_fill_callback (decoder_stream, fill_cb, NULL);
 		io_prebuffer (decoder_stream,
 				options_get_int("Prebuffering") * 1024);
 		prebuffering = 0;

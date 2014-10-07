@@ -171,8 +171,7 @@ static void vorbis_tags (const char *file_name, struct file_tags *info,
 	ov_clear (&vf);
 }
 
-static size_t read_callback (void *ptr, size_t size, size_t nmemb,
-		void *datasource)
+static size_t read_cb (void *ptr, size_t size, size_t nmemb, void *datasource)
 {
 	ssize_t res;
 
@@ -192,7 +191,7 @@ static size_t read_callback (void *ptr, size_t size, size_t nmemb,
 	return res;
 }
 
-static int seek_callback (void *datasource, ogg_int64_t offset, int whence)
+static int seek_cb (void *datasource, ogg_int64_t offset, int whence)
 {
 	debug ("Seek request to %"PRId64" (%s)", offset,
 			whence == SEEK_SET ? "SEEK_SET"
@@ -200,12 +199,12 @@ static int seek_callback (void *datasource, ogg_int64_t offset, int whence)
 	return io_seek (datasource, offset, whence) == -1 ? -1 : 0;
 }
 
-static int close_callback (void *unused ATTR_UNUSED)
+static int close_cb (void *unused ATTR_UNUSED)
 {
 	return 0;
 }
 
-static long tell_callback (void *datasource)
+static long tell_cb (void *datasource)
 {
 	return (long)io_tell (datasource);
 }
@@ -214,10 +213,10 @@ static void vorbis_open_stream_internal (struct vorbis_data *data)
 {
 	int res;
 	ov_callbacks callbacks = {
-		read_callback,
-		seek_callback,
-		close_callback,
-		tell_callback
+		read_cb,
+		seek_cb,
+		close_cb,
+		tell_cb
 	};
 
 	data->tags = tags_new ();
