@@ -42,7 +42,9 @@ static struct
 	snd_pcm_format_t format;
 } params = { 0, 0, SND_PCM_FORMAT_UNKNOWN };
 
-static int chunk_size = -1; /* in frames */
+static snd_pcm_uframes_t buffer_frames;
+static snd_pcm_uframes_t chunk_frames;
+static int chunk_bytes = -1;
 static char alsa_buf[512 * 1024];
 static int alsa_buf_fill = 0;
 static int bytes_per_frame;
@@ -340,8 +342,6 @@ static int alsa_open (struct sound_params *sound_params)
 	int err;
 	unsigned int period_time;
 	unsigned int buffer_time;
-	snd_pcm_uframes_t chunk_frames;
-	snd_pcm_uframes_t buffer_frames;
 	char fmt_name[128];
 
 	switch (sound_params->fmt & SFMT_MASK_FORMAT) {
@@ -467,9 +467,9 @@ static int alsa_open (struct sound_params *sound_params)
 		return 0;
 	}
 
-	chunk_size = chunk_frames * bytes_per_frame;
+	chunk_bytes = chunk_frames * bytes_per_frame;
 
-	debug ("Chunk size: %d", chunk_size);
+	debug ("Chunk size: %d", chunk_bytes);
 
 	snd_pcm_hw_params_free (hw_params);
 
@@ -493,11 +493,11 @@ static int play_buf_chunks ()
 {
 	int written = 0;
 
-	while (alsa_buf_fill >= chunk_size) {
+	while (alsa_buf_fill >= chunk_bytes) {
 		int err;
 
 		err = snd_pcm_writei (handle, alsa_buf + written,
-				chunk_size / bytes_per_frame);
+				chunk_bytes / bytes_per_frame);
 		if (err == -EAGAIN) {
 			if (snd_pcm_wait(handle, 500) < 0)
 				logit ("snd_pcm_wait() failed");
@@ -554,13 +554,13 @@ static void alsa_close ()
 
 	/* play what remained in the buffer */
 	if (alsa_buf_fill) {
-		assert (alsa_buf_fill < chunk_size);
+		assert (alsa_buf_fill < chunk_bytes);
 
 		snd_pcm_format_set_silence (params.format,
 				alsa_buf + alsa_buf_fill,
-				(chunk_size - alsa_buf_fill) / bytes_per_frame
+				(chunk_bytes - alsa_buf_fill) / bytes_per_frame
 				* params.channels);
-		alsa_buf_fill = chunk_size;
+		alsa_buf_fill = chunk_bytes;
 		play_buf_chunks ();
 	}
 
@@ -577,6 +577,9 @@ static void alsa_close ()
 	params.format = 0;
 	params.rate = 0;
 	params.channels = 0;
+	buffer_frames = 0;
+	chunk_frames = 0;
+	chunk_bytes = -1;
 	handle = NULL;
 }
 
@@ -585,7 +588,7 @@ static int alsa_play (const char *buff, const size_t size)
 	int to_write = size;
 	int buf_pos = 0;
 
-	assert (chunk_size > 0);
+	assert (chunk_bytes > 0);
 
 	debug ("Got %zu bytes to play", size);
 
