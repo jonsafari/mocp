@@ -268,15 +268,16 @@ static snd_mixer_elem_t *alsa_init_mixer_channel (const char *name,
 static int alsa_init (struct output_driver_caps *caps)
 {
 	int err;
+	const char *device;
 
-	logit ("Initialising ALSA device");
+	device = options_get_str ("ALSADevice");
+	logit ("Initialising ALSA device: %s", device);
 
 	if ((err = snd_mixer_open(&mixer_handle, 0)) < 0) {
 		error ("Can't open ALSA mixer: %s", snd_strerror(err));
 		mixer_handle = NULL;
 	}
-	else if ((err = snd_mixer_attach(mixer_handle,
-					options_get_str("AlsaDevice"))) < 0) {
+	else if ((err = snd_mixer_attach(mixer_handle, device)) < 0) {
 		snd_mixer_close (mixer_handle);
 		mixer_handle = NULL;
 		error ("Can't attach mixer: %s", snd_strerror(err));
@@ -343,6 +344,7 @@ static int alsa_open (struct sound_params *sound_params)
 	unsigned int period_time;
 	unsigned int buffer_time;
 	char fmt_name[128];
+	const char *device;
 
 	switch (sound_params->fmt & SFMT_MASK_FORMAT) {
 		case SFMT_S8:
@@ -370,7 +372,10 @@ static int alsa_open (struct sound_params *sound_params)
 			return 0;
 	}
 
-	if ((err = snd_pcm_open(&handle, options_get_str("AlsaDevice"),
+	device = options_get_str ("ALSADevice");
+	logit ("Opening ALSA device: %s", device);
+
+	if ((err = snd_pcm_open(&handle, device,
 					SND_PCM_STREAM_PLAYBACK,
 					SND_PCM_NONBLOCK)) < 0) {
 		error ("Can't open audio: %s", snd_strerror(err));
@@ -403,6 +408,8 @@ static int alsa_open (struct sound_params *sound_params)
 		return 0;
 	}
 
+	logit ("Set sample width: %d bytes", sfmt_Bps (sound_params->fmt));
+
 	params.rate = sound_params->rate;
 	if ((err = snd_pcm_hw_params_set_rate_near (handle, hw_params,
 					&params.rate, 0)) < 0) {
@@ -411,7 +418,7 @@ static int alsa_open (struct sound_params *sound_params)
 		return 0;
 	}
 
-	logit ("Set rate to %u", params.rate);
+	logit ("Set rate: %uHz", params.rate);
 
 	if ((err = snd_pcm_hw_params_set_channels (handle, hw_params,
 					sound_params->channels)) < 0) {
@@ -419,6 +426,8 @@ static int alsa_open (struct sound_params *sound_params)
 		snd_pcm_hw_params_free (hw_params);
 		return 0;
 	}
+
+	logit ("Set channels: %d", sound_params->channels);
 
 	if ((err = snd_pcm_hw_params_get_buffer_time_max(hw_params,
 					&buffer_time, 0)) < 0) {
@@ -452,13 +461,17 @@ static int alsa_open (struct sound_params *sound_params)
 	}
 
 	snd_pcm_hw_params_get_period_size (hw_params, &chunk_frames, 0);
+	debug ("Chunk size: %lu frames", chunk_frames);
+
 	snd_pcm_hw_params_get_buffer_size (hw_params, &buffer_frames);
+	debug ("Buffer size: %lu frames", buffer_frames);
+	debug ("Buffer time: %"PRIu64"us",
+	        (uint64_t) buffer_frames * __UINT64_C(1000000) / params.rate);
 
-	bytes_per_frame = sound_params->channels
-		* sfmt_Bps(sound_params->fmt);
+	bytes_per_frame = sound_params->channels * sfmt_Bps(sound_params->fmt);
+	debug ("Frame size: %d bytes", bytes_per_frame);
 
-	logit ("Buffer time: %"PRIu64"us",
-	       (uint64_t) buffer_frames * 1000000 / params.rate);
+	chunk_bytes = chunk_frames * bytes_per_frame;
 
 	if (chunk_frames == buffer_frames) {
 		error ("Can't use period equal to buffer size (%lu == %lu)",
@@ -466,10 +479,6 @@ static int alsa_open (struct sound_params *sound_params)
 		snd_pcm_hw_params_free (hw_params);
 		return 0;
 	}
-
-	chunk_bytes = chunk_frames * bytes_per_frame;
-
-	debug ("Chunk size: %d", chunk_bytes);
 
 	snd_pcm_hw_params_free (hw_params);
 
