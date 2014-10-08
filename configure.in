@@ -213,16 +213,12 @@ AC_ARG_WITH(alsa, AS_HELP_STRING([--without-alsa],
 
 if test "x$with_alsa" != "xno"
 then
-	PKG_CHECK_MODULES(ALSA, [alsa >= 0.9],
+	PKG_CHECK_MODULES(ALSA, [alsa >= 1.0.11],
 	     [SOUND_DRIVERS="$SOUND_DRIVERS ALSA"
 	      EXTRA_OBJS="$EXTRA_OBJS alsa.o"
 	      AC_DEFINE([HAVE_ALSA], 1, [Define if you have ALSA.])
 	      EXTRA_LIBS="$EXTRA_LIBS $ALSA_LIBS"
 	      CFLAGS="$CFLAGS $ALSA_CFLAGS"
-		  if ! $PKG_CONFIG --atleast-version 1.0.11 alsa
-		  then
-			  ALSA_DEPRECATED="yes"
-		  fi
 	      need_xsleep="yes"],
 	     [true])
 fi
@@ -447,13 +443,6 @@ if test "x$ac_cv_prog_cc_c99" = "xno"
 then
 	echo "WARNING: MOC release 2.6 will soon require an ISO C99 capable compiler;"
 	echo "         plan to upgrade your compiler soon."
-	echo
-fi
-
-if test "x$ALSA_DEPRECATED" = "xyes"
-then
-	echo "WARNING: MOC release 2.6 will soon require ALSA version 1.0.11 or later;"
-	echo "         plan to upgrade your ALSA soon."
 	echo
 fi
 

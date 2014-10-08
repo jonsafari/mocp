@@ -102,7 +102,7 @@ provide the libraries needed to support them:
 For interfacing to the sound sub-system, you will need libraries for one or
 more of the following:
 
-  - ALSA - alsa-lib version 0.9 (http://www.alsa-project.org/)
+  - ALSA - alsa-lib version 1.0.11 (http://www.alsa-project.org/)
   - OSS - the OSS libraries (http://www.opensound.com/)
   - BSD's SNDIO - SNDIO libraries
   - JACK low-latency audio server - JACK version 0.4
