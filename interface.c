@@ -3596,7 +3596,7 @@ void interface_loop ()
 	while (want_quit == NO_QUIT) {
 		fd_set fds;
 		int ret;
-		struct timespec timeout = { 0, 100000L };
+		struct timespec timeout = { 1, 0 };
 
 		FD_ZERO (&fds);
 		FD_SET (srv_sock, &fds);
