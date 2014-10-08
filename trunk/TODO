@@ -74,7 +74,6 @@ Known Bugs:
 Transitional Code Removal:
 
 * Remove ISO C99 capable compiler requirement warning.
-* Remove ALSA version 1.0.11 requirement warning.
 * Remove POPT requirement warning.
 * Remove TagLib version 1.5 requirement warning.
 
@@ -82,7 +81,6 @@ Transitional Code Removal:
 Pending 2.6 Changes:
 
 * Require ISO C99 capable compiler.
-* Require at least ALSA version 1.0.11.
 * Require the POPT library (libpopt).
 * Require at least TagLib version 1.5.
 

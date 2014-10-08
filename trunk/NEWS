@@ -12,6 +12,7 @@
 	  - Berkeley DB: raised minimum requirement to release 4.1
 	  - libcurl: raised minimum requirement to version 7.15.1
 	  - autoconf: raised minimum requirement to version 2.64
+	  - ALSA: raised minimum requirement to version 1.0.11
 	* Removed functionality:
 	  - Transitional code from the previous release
 	  - autogen.sh in favour of autoreconf(1)
