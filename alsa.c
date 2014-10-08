@@ -69,12 +69,36 @@ static int real_volume2 = -1;
 #define scale_volume1(v) ((v) - mixer1_min) * 100 / (mixer1_max - mixer1_min)
 #define scale_volume2(v) ((v) - mixer2_min) * 100 / (mixer2_max - mixer2_min)
 
+#ifndef NDEBUG
+static void alsa_log_cb (const char *unused1 ATTR_UNUSED,
+                         int unused2 ATTR_UNUSED,
+                         const char *unused3 ATTR_UNUSED,
+                         int unused4 ATTR_UNUSED, const char *fmt, ...)
+{
+	char *msg;
+	va_list va;
+
+	assert (fmt);
+
+	va_start (va, fmt);
+	msg = format_msg_va (fmt, va);
+	va_end (va);
+
+	logit ("ALSA said: %s", msg);
+	free (msg);
+}
+#endif
+
 static void alsa_shutdown ()
 {
 	int err;
 
 	if (mixer_handle && (err = snd_mixer_close(mixer_handle)) < 0)
 		logit ("Can't close mixer: %s", snd_strerror(err));
+
+#ifndef NDEBUG
+	snd_lib_error_set_handler (NULL);
+#endif
 }
 
 /* Fill caps with the device capabilities. Return 0 on error. */
@@ -272,6 +296,10 @@ static int alsa_init (struct output_driver_caps *caps)
 
 	device = options_get_str ("ALSADevice");
 	logit ("Initialising ALSA device: %s", device);
+
+#ifndef NDEBUG
+	snd_lib_error_set_handler (alsa_log_cb);
+#endif
 
 	if ((err = snd_mixer_open(&mixer_handle, 0)) < 0) {
 		error ("Can't open ALSA mixer: %s", snd_strerror(err));
