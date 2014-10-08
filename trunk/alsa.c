@@ -529,51 +529,46 @@ static int alsa_open (struct sound_params *sound_params)
 static int play_buf_chunks ()
 {
 	int written = 0;
+	bool zero_logged = false;
 
 	while (alsa_buf_fill >= chunk_bytes) {
-		int err;
+		int rc;
 
-		err = snd_pcm_writei (handle, alsa_buf + written,
+		rc = snd_pcm_writei (handle, alsa_buf + written,
 				chunk_bytes / bytes_per_frame);
-		if (err == -EAGAIN) {
-			if (snd_pcm_wait(handle, 500) < 0)
-				logit ("snd_pcm_wait() failed");
-		}
-		else if (err == -EPIPE) {
-			logit ("underrun!");
-			if ((err = snd_pcm_prepare(handle)) < 0) {
-				error ("Can't recover after underrun: %s",
-						snd_strerror(err));
-				/* TODO: reopen the device */
-				return -1;
+
+		if (rc == 0) {
+			if (!zero_logged) {
+				debug ("Played 0 bytes");
+				zero_logged = true;
 			}
+			continue;
 		}
-		else if (err == -ESTRPIPE) {
-			logit ("Suspend, trying to resume");
-			while ((err = snd_pcm_resume(handle))
-					== -EAGAIN)
-				sleep (1);
-			if (err < 0) {
-				logit ("Failed, restarting");
-				if ((err = snd_pcm_prepare(handle))
-						< 0) {
-					error ("Failed to restart device: %s",
-							snd_strerror(err));
-					return -1;
-				}
-			}
-		}
-		else if (err < 0) {
-			error ("Can't play: %s", snd_strerror(err));
-			return -1;
-		}
-		else {
-			int written_bytes = err * bytes_per_frame;
+
+		zero_logged = false;
+
+		if (rc > 0) {
+			int written_bytes = rc * bytes_per_frame;
 
 			written += written_bytes;
 			alsa_buf_fill -= written_bytes;
 
 			debug ("Played %d bytes", written_bytes);
+			continue;
+		}
+
+		rc = snd_pcm_recover (handle, rc, 0);
+
+		switch (rc) {
+		case 0:
+			break;
+		case -EAGAIN:
+			if (snd_pcm_wait (handle, 500) < 0)
+				logit ("snd_pcm_wait() failed");
+			break;
+		default:
+			error ("Can't play: %s", snd_strerror (rc));
+			return -1;
 		}
 	}
 
