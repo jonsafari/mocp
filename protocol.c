@@ -56,19 +56,19 @@ char *socket_name ()
 /* Get an integer value from the socket, return == 0 on error. */
 int get_int (int sock, int *i)
 {
-	int res;
+	ssize_t res;
 
 	res = recv (sock, i, sizeof(int), 0);
 	if (res == -1)
 		logit ("recv() failed when getting int: %s", strerror(errno));
 
-	return res == sizeof(int) ? 1 : 0;
+	return res == ssizeof(int) ? 1 : 0;
 }
 
 /* Get an integer value from the socket without blocking. */
 enum noblock_io_status get_int_noblock (int sock, int *i)
 {
-	int res;
+	ssize_t res;
 	long flags;
 
 	if ((flags = fcntl(sock, F_GETFL)) == -1)
@@ -82,12 +82,12 @@ enum noblock_io_status get_int_noblock (int sock, int *i)
 	if (fcntl(sock, F_SETFL, flags) == -1)
 		fatal ("Restoring flags for socket failed: %s", strerror(errno));
 
-	if (res == sizeof(int))
+	if (res == ssizeof(int))
 		return NB_IO_OK;
 	if (res < 0 && errno == EAGAIN)
 		return NB_IO_BLOCK;
 
-	logit ("recv() failed when getting int (res %d): %s", res,
+	logit ("recv() failed when getting int (res %zd): %s", res,
 			strerror(errno));
 	return NB_IO_ERR;
 }
@@ -95,26 +95,26 @@ enum noblock_io_status get_int_noblock (int sock, int *i)
 /* Send an integer value to the socket, return == 0 on error */
 int send_int (int sock, int i)
 {
-	int res;
+	ssize_t res;
 
 	res = send (sock, &i, sizeof(int), 0);
 	if (res == -1)
 		logit ("send() failed: %s", strerror(errno));
 
-	return res == sizeof(int) ? 1 : 0;
+	return res == ssizeof(int) ? 1 : 0;
 }
 
 #if 0
 /* Get a long value from the socket, return == 0 on error. */
 static int get_long (int sock, long *i)
 {
-	int res;
+	ssize_t res;
 
 	res = recv (sock, i, sizeof(long), 0);
 	if (res == -1)
 		logit ("recv() failed when getting int: %s", strerror(errno));
 
-	return res == sizeof(long) ? 1 : 0;
+	return res == ssizeof(long) ? 1 : 0;
 }
 #endif
 
@@ -122,21 +122,20 @@ static int get_long (int sock, long *i)
 /* Send a long value to the socket, return == 0 on error */
 static int send_long (int sock, long i)
 {
-	int res;
+	ssize_t res;
 
 	res = send (sock, &i, sizeof(long), 0);
 	if (res == -1)
 		logit ("send() failed: %s", strerror(errno));
 
-	return res == sizeof(long) ? 1 : 0;
+	return res == ssizeof(long) ? 1 : 0;
 }
 #endif
 
 /* Get the string from socket, return NULL on error. The memory is malloced. */
 char *get_str (int sock)
 {
-	int len;
-	int res, nread = 0;
+	int len, nread = 0;
 	char *str;
 
 	if (!get_int(sock, &len))
@@ -149,6 +148,8 @@ char *get_str (int sock)
 
 	str = (char *)xmalloc (sizeof(char) * (len + 1));
 	while (nread < len) {
+		ssize_t res;
+
 		res = recv (sock, str + nread, len - nread, 0);
 		if (res == -1) {
 			logit ("recv() failed when getting string: %s",
@@ -185,25 +186,25 @@ int send_str (int sock, const char *str)
 /* Get a time_t value from the socket, return == 0 on error. */
 int get_time (int sock, time_t *i)
 {
-	int res;
+	ssize_t res;
 
 	res = recv (sock, i, sizeof(time_t), 0);
 	if (res == -1)
 		logit ("recv() failed when getting time_t: %s", strerror(errno));
 
-	return res == sizeof(time_t) ? 1 : 0;
+	return res == ssizeof(time_t) ? 1 : 0;
 }
 
 /* Send a time_t value to the socket, return == 0 on error */
 int send_time (int sock, time_t i)
 {
-	int res;
+	ssize_t res;
 
 	res = send (sock, &i, sizeof(time_t), 0);
 	if (res == -1)
 		logit ("send() failed: %s", strerror(errno));
 
-	return res == sizeof(time_t) ? 1 : 0;
+	return res == ssizeof(time_t) ? 1 : 0;
 }
 
 static struct packet_buf *packet_buf_new ()
