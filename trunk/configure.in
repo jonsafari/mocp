@@ -290,12 +290,12 @@ AC_CHECK_FUNCS([clock_gettime], ,
 
 AC_CHECK_FUNC([sin], ,
               [AC_CHECK_LIB([m], [sin], ,
-               AC_MSG_ERROR([No sin() function found.]))
+                            AC_MSG_ERROR([No sin() function found.]))
                EXTRA_LIBS="$EXTRA_LIBS -lm"])
 
 AC_CHECK_FUNC([sinh], ,
               [AC_CHECK_LIB([m], [sinh], ,
-               AC_MSG_ERROR([No sinh() function found.]))
+                            AC_MSG_ERROR([No sinh() function found.]))
                EXTRA_LIBS="$EXTRA_LIBS -lm"])
 
 dnl optional functions

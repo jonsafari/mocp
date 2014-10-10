@@ -221,13 +221,12 @@ static void vorbis_open_stream_internal (struct vorbis_data *data)
 
 	data->tags = tags_new ();
 
-	if ((res = ov_open_callbacks(data->stream, &data->vf, NULL, 0,
-					callbacks)) < 0) {
+	res = ov_open_callbacks (data->stream, &data->vf, NULL, 0, callbacks);
+	if (res < 0) {
 		const char *vorbis_err = vorbis_strerror (res);
 
 		decoder_error (&data->error, ERROR_FATAL, 0, "%s", vorbis_err);
 		debug ("ov_open error: %s", vorbis_err);
-
 	}
 	else {
 		int64_t duration;
