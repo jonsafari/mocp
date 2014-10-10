@@ -262,6 +262,7 @@ static int new_colordef (const int line_num, const char *name, const short red,
 /* Find path to the theme for the given name. Returned memory is static. */
 static char *find_theme_file (const char *name)
 {
+	int rc;
 	static char path[PATH_MAX];
 
 	path[sizeof(path)-1] = 0;
@@ -275,15 +276,16 @@ static char *find_theme_file (const char *name)
 	}
 
 	/* Try the user directory */
-	if (snprintf(path, sizeof(path), "%s/%s", create_file_name("themes"),
-				name) >= (int)sizeof(path))
+	rc = snprintf(path, sizeof(path), "%s/%s",
+	              create_file_name("themes"), name);
+	if (rc >= ssizeof(path))
 		interface_fatal ("Theme path too long!");
 	if (file_exists(path))
 		return path;
 
 	/* Try the system directory */
-	if (snprintf(path, sizeof(path), "%s/%s", SYSTEM_THEMES_DIR,
-				name) >= (int)sizeof(path))
+	rc = snprintf(path, sizeof(path), "%s/%s", SYSTEM_THEMES_DIR, name);
+	if (rc >= ssizeof(path))
 		interface_fatal ("Theme path too long!");
 	if (file_exists(path))
 		return path;

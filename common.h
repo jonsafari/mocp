@@ -74,6 +74,7 @@ typedef unsigned char _Bool;
 #endif
 
 #define ARRAY_SIZE(x)	(sizeof(x)/sizeof(x[0]))
+#define ssizeof(x)		((ssize_t) sizeof(x))
 
 void *xmalloc (size_t size);
 void *xcalloc (size_t nmemb, size_t size);

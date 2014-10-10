@@ -265,14 +265,15 @@ void switch_titles_tags (struct plist *plist)
 /* buf must be absolute path. */
 void resolve_path (char *buf, const int size, const char *file)
 {
+	int rc;
 	char *f; /* points to the char in *file we process */
 	char path[2*PATH_MAX]; /* temporary path */
 	int len = 0; /* number of characters in the buffer */
 
 	assert (buf[0] == '/');
 
-	if (snprintf(path, sizeof(path), "%s/%s/", buf, file)
-			>= (int)sizeof(path))
+	rc = snprintf(path, sizeof(path), "%s/%s/", buf, file);
+	if (rc >= ssizeof(path))
 		fatal ("Path too long!");
 
 	f = path;
@@ -390,6 +391,7 @@ int read_directory (const char *directory, lists_t_strs *dirs,
 		dir_is_root = 0;
 
 	while ((entry = readdir(dir))) {
+		int rc;
 		char file[PATH_MAX];
 		enum file_type type;
 
@@ -402,9 +404,9 @@ int read_directory (const char *directory, lists_t_strs *dirs,
 			continue;
 		if (!show_hidden && entry->d_name[0] == '.')
 			continue;
-		if (snprintf(file, sizeof(file), "%s/%s", dir_is_root ?
-					"" : directory,	entry->d_name)
-				>= (int)sizeof(file)) {
+		rc = snprintf(file, sizeof(file), "%s/%s",
+		              dir_is_root ? "" : directory, entry->d_name);
+		if (rc >= ssizeof(file)) {
 			error ("Path too long!");
 			return 0;
 		}
@@ -466,6 +468,7 @@ static int read_directory_recurr_internal (const char *directory, struct plist *
 	(*dir_stack)[*depth - 1] = st.st_ino;
 
 	while ((entry = readdir(dir))) {
+		int rc;
 		char file[PATH_MAX];
 		enum file_type type;
 
@@ -476,8 +479,8 @@ static int read_directory_recurr_internal (const char *directory, struct plist *
 
 		if (!strcmp(entry->d_name, ".") || !strcmp(entry->d_name, ".."))
 			continue;
-		if (snprintf(file, sizeof(file), "%s/%s", directory, entry->d_name)
-				>= (int)sizeof(file)) {
+		rc = snprintf(file, sizeof(file), "%s/%s", directory, entry->d_name);
+		if (rc >= ssizeof(file)) {
 			error ("Path too long!");
 			continue;
 		}

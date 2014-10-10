@@ -2720,6 +2720,7 @@ static void add_themes_to_list (lists_t_strs *themes, const char *themes_dir)
 	}
 
 	while ((entry = readdir(dir))) {
+		int rc;
 		char file[PATH_MAX];
 
 		if (entry->d_name[0] == '.')
@@ -2729,8 +2730,8 @@ static void add_themes_to_list (lists_t_strs *themes, const char *themes_dir)
 		if (entry->d_name[strlen(entry->d_name)-1] == '~')
 			continue;
 
-		if (snprintf(file, sizeof(file), "%s/%s", themes_dir,
-					entry->d_name) >= (int)sizeof(file))
+		rc = snprintf(file, sizeof(file), "%s/%s", themes_dir, entry->d_name);
+		if (rc >= ssizeof(file))
 			continue;
 
 		lists_strs_append (themes, file);

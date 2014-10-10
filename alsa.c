@@ -625,9 +625,9 @@ static int alsa_play (const char *buff, const size_t size)
 	debug ("Got %zu bytes to play", size);
 
 	while (to_write) {
-		int to_copy = MIN((size_t)to_write,
-				sizeof(alsa_buf) - (size_t)alsa_buf_fill);
+		int to_copy;
 
+		to_copy = MIN(to_write, ssizeof(alsa_buf) - alsa_buf_fill);
 		memcpy (alsa_buf + alsa_buf_fill, buff + buf_pos, to_copy);
 		to_write -= to_copy;
 		buf_pos += to_copy;
