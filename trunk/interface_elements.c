@@ -1199,7 +1199,7 @@ static void clear_area (WINDOW *w, const int posx, const int posy,
 	int y;
 	char line[512];
 
-	assert (width < (int)sizeof(line));
+	assert (width < ssizeof(line));
 
 	memset (line, ' ', width);
 	line[width] = 0;
@@ -2560,7 +2560,7 @@ static void bar_init (struct bar *b, const int width, const char *title,
 		const int fill_color, const int empty_color)
 {
 	assert (b != NULL);
-	assert (width > 5 && width < (int)sizeof(b->title));
+	assert (width > 5 && width < ssizeof(b->title));
 	assert (title != NULL || !show_val);
 
 	b->width = width;
@@ -2613,7 +2613,7 @@ static void bar_set_fill (struct bar *b, const double fill)
 static void bar_resize (struct bar *b, const int width)
 {
 	assert (b != NULL);
-	assert (width > 5 && width < (int)sizeof(b->title));
+	assert (width > 5 && width < ssizeof(b->title));
 
 	if (b->show_val && b->width < width) {
 		char *new_title = xmalloc (width + 1);

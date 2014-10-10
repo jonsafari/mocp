@@ -266,18 +266,18 @@ bool is_valid_symbol (const char *candidate)
 /* Return path to a file in MOC config directory. NOT THREAD SAFE */
 char *create_file_name (const char *file)
 {
+	int rc;
 	static char fname[PATH_MAX];
 	char *moc_dir = options_get_str ("MOCDir");
 
-	if (moc_dir[0] == '~') {
-		if (snprintf(fname, sizeof(fname), "%s/%s/%s", get_home (),
-				(moc_dir[1] == '/') ? moc_dir + 2 : moc_dir + 1,
-				file)
-				>= (int)sizeof(fname))
-			fatal ("Path too long!");
-	}
-	else if (snprintf(fname, sizeof(fname), "%s/%s", moc_dir, file)
-			>= (int)sizeof(fname))
+	if (moc_dir[0] == '~')
+		rc = snprintf(fname, sizeof(fname), "%s/%s/%s", get_home (),
+		              (moc_dir[1] == '/') ? moc_dir + 2 : moc_dir + 1,
+		              file);
+	else
+		rc = snprintf(fname, sizeof(fname), "%s/%s", moc_dir, file);
+
+	if (rc >= ssizeof(fname))
 		fatal ("Path too long!");
 
 	return fname;

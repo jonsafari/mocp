@@ -449,7 +449,7 @@ static void parse_icy_string (struct io_stream *s, const char *str)
 		t = c;
 		while (*c && *c != '=')
 			c++;
-		if (*c != '=' || c - t >= (int)sizeof(name)) {
+		if (*c != '=' || c - t >= ssizeof(name)) {
 			logit ("malformed metadata");
 			return;
 		}
@@ -476,8 +476,8 @@ static void parse_icy_string (struct io_stream *s, const char *str)
 			return;
 		}
 
-		strncpy (value, t, MIN(c - t, (int)sizeof(value) - 1));
-		value[MIN(c - t, (int)sizeof(value) - 1)] = 0;
+		strncpy (value, t, MIN(c - t, ssizeof(value) - 1));
+		value[MIN(c - t, ssizeof(value) - 1)] = 0;
 
 		/* eat ' */
 		c++;
