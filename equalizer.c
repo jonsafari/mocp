@@ -1088,10 +1088,10 @@ static int read_setup(char *name, char *desc, t_eq_setup **sp)
     }
   }
 
-	if (curloc) {
+  if (curloc) {
 	  setlocale(LC_NUMERIC, curloc); // posix decimal point
-		free (curloc);
-	}
+	  free (curloc);
+  }
 
   return 0;
 }

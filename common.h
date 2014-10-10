@@ -25,7 +25,7 @@ extern "C" {
 # endif
 #endif
 
-/* Exit status on fatal exit. */
+/* Exit status on fatal error. */
 #define EXIT_FATAL	2
 
 #define LOCK(mutex)	pthread_mutex_lock (&mutex)

@@ -270,7 +270,7 @@ static void *spx_open_stream (struct io_stream *stream)
 
 static int spx_can_decode (struct io_stream *stream)
 {
-	char buf [36];
+	char buf[36];
 
 	if (io_peek(stream, buf, 36) == 36 && !memcmp(buf, "OggS", 4)
 			&& !memcmp(buf + 28, "Speex   ", 8))
