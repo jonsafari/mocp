@@ -319,6 +319,32 @@ static void show_help (poptContext ctx)
 	show_banner ();
 	poptSetOtherOptionHelp (ctx, mocp_summary);
 	poptPrintHelp (ctx, stdout, 0);
+	printf ("\nEnvironment variables:\n\n");
+	printf ("  MOCP_POPTRC"
+	        "                       List of POPT configuration files\n");
+	printf ("\n");
+}
+
+/* Disambiguate the user's request. */
+static void show_misc_cb (poptContext ctx,
+                          enum poptCallbackReason unused1 ATTR_UNUSED,
+                          const struct poptOption *opt,
+                          const char *unused2 ATTR_UNUSED,
+                          void *unused3 ATTR_UNUSED)
+{
+	switch (opt->shortName) {
+	case 'V':
+		show_version ();
+		break;
+	case 'h':
+		show_help (ctx);
+		break;
+	case 0:
+		show_usage (ctx);
+		break;
+	}
+
+	exit (EXIT_SUCCESS);
 }
 
 /* Send commands requested in params to the server. */
@@ -550,9 +576,6 @@ static void process_deferred_overrides (lists_t_strs *deferred)
 enum {
 	CL_HANDLED = 0,
 	CL_NOIFACE,
-	CL_VERSION,
-	CL_HELP,
-	CL_USAGE,
 	CL_SDRIVER,
 	CL_MUSICDIR,
 	CL_THEME,
@@ -567,13 +590,37 @@ enum {
 
 static struct parameters params;
 
-static struct poptOption opts[] = {
+static struct poptOption general_opts[] = {
+#ifndef NDEBUG
+	{"debug", 'D', POPT_ARG_NONE, &params.debug, CL_HANDLED,
+			"Turn on logging to a file", NULL},
+#endif
+	{"moc-dir", 'M', POPT_ARG_STRING, NULL, CL_MOCDIR,
+			"Use the specified MOC directory instead of the default", "DIR"},
+	{"music-dir", 'm', POPT_ARG_NONE, NULL, CL_MUSICDIR,
+			"Start in MusicDir", NULL},
 	{"config", 'C', POPT_ARG_STRING, &params.config_file, CL_HANDLED,
 			"Use the specified config file instead of the default", "FILE"},
 	{"set-option", 'O', POPT_ARG_STRING, NULL, CL_SETOPTION,
 			"Override the configuration option NAME with VALUE", "'NAME=VALUE'"},
-	{"moc-dir", 'M', POPT_ARG_STRING, NULL, CL_MOCDIR,
-			"Use the specified MOC directory instead of the default", "DIR"},
+	{"foreground", 'F', POPT_ARG_NONE, &params.foreground, CL_HANDLED,
+			"Run the server in foreground (logging to stdout)", NULL},
+	{"server", 'S', POPT_ARG_NONE, &params.only_server, CL_HANDLED,
+			"Only run the server", NULL},
+	{"sound-driver", 'R', POPT_ARG_STRING, NULL, CL_SDRIVER,
+			"Use the first valid sound driver", "DRIVERS"},
+	{"ascii", 'A', POPT_ARG_NONE, NULL, CL_ASCII,
+			"Use ASCII characters to draw lines", NULL},
+	{"theme", 'T', POPT_ARG_STRING, NULL, CL_THEME,
+			"Use the selected theme file (read from ~/.moc/themes if the path is not absolute)", "FILE"},
+	{"sync", 'y', POPT_ARG_NONE, NULL, CL_SYNCPL,
+			"Synchronize the playlist with other clients", NULL},
+	{"nosync", 'n', POPT_ARG_NONE, NULL, CL_NOSYNC,
+			"Don't synchronize the playlist with other clients", NULL},
+	POPT_TABLEEND
+};
+
+static struct poptOption server_opts[] = {
 	{"pause", 'P', POPT_ARG_NONE, &params.pause, CL_NOIFACE,
 			"Pause", NULL},
 	{"unpause", 'U', POPT_ARG_NONE, &params.unpause, CL_NOIFACE,
@@ -586,24 +633,14 @@ static struct poptOption opts[] = {
 			"Play the next song", NULL},
 	{"previous", 'r', POPT_ARG_NONE, &params.previous, CL_NOIFACE,
 			"Play the previous song", NULL},
-	{"version", 'V', POPT_ARG_NONE, NULL, CL_VERSION,
-			"Print version information", NULL},
-	{"help", 'h', POPT_ARG_NONE, NULL, CL_HELP,
-			"Print extended usage", NULL},
-	{"usage", 0, POPT_ARG_NONE, NULL, CL_USAGE,
-			"Print brief usage", NULL},
-#ifndef NDEBUG
-	{"debug", 'D', POPT_ARG_NONE, &params.debug, CL_HANDLED,
-			"Turn on logging to a file", NULL},
-#endif
-	{"server", 'S', POPT_ARG_NONE, &params.only_server, CL_HANDLED,
-			"Only run the server", NULL},
-	{"foreground", 'F', POPT_ARG_NONE, &params.foreground, CL_HANDLED,
-			"Run the server in foreground (logging to stdout)", NULL},
-	{"sound-driver", 'R', POPT_ARG_STRING, NULL, CL_SDRIVER,
-			"Use the first valid sound driver", "DRIVERS"},
-	{"music-dir", 'm', POPT_ARG_NONE, NULL, CL_MUSICDIR,
-			"Start in MusicDir", NULL},
+	{"seek", 'k', POPT_ARG_INT, &params.seek_by, CL_NOIFACE,
+			"Seek by N seconds (can be negative)", "N"},
+	{"jump", 'j', POPT_ARG_STRING, NULL, CL_JUMP,
+			"Jump to some position in the current track", "N{%,s}"},
+	{"volume", 'v', POPT_ARG_STRING, &params.adj_volume, CL_NOIFACE,
+			"Adjust the PCM volume", "[+,-]LEVEL"},
+	{"exit", 'x', POPT_ARG_NONE, &params.exit, CL_NOIFACE,
+			"Shutdown the server", NULL},
 	{"append", 'a', POPT_ARG_NONE, &params.append, CL_NOIFACE,
 			"Append the files/directories/playlists passed in "
 			"the command line to playlist", NULL},
@@ -617,32 +654,34 @@ static struct poptOption opts[] = {
 			"Start playing from the first item on the playlist", NULL},
 	{"playit", 'l', POPT_ARG_NONE, &params.playit, CL_NOIFACE,
 			"Play files given on command line without modifying the playlist", NULL},
-	{"exit", 'x', POPT_ARG_NONE, &params.exit, CL_NOIFACE,
-			"Shutdown the server", NULL},
-	{"info", 'i', POPT_ARG_NONE, &params.get_file_info, CL_NOIFACE,
-			"Print information about the file currently playing", NULL},
-	{"theme", 'T', POPT_ARG_STRING, NULL, CL_THEME,
-			"Use the selected theme file (read from ~/.moc/themes if the path is not absolute)", "FILE"},
-	{"sync", 'y', POPT_ARG_NONE, NULL, CL_SYNCPL,
-			"Synchronize the playlist with other clients", NULL},
-	{"nosync", 'n', POPT_ARG_NONE, NULL, CL_NOSYNC,
-			"Don't synchronize the playlist with other clients", NULL},
-	{"ascii", 'A', POPT_ARG_NONE, NULL, CL_ASCII,
-			"Use ASCII characters to draw lines", NULL},
-	{"seek", 'k', POPT_ARG_INT, &params.seek_by, CL_NOIFACE,
-			"Seek by N seconds (can be negative)", "N"},
-	{"jump", 'j', POPT_ARG_STRING, NULL, CL_JUMP,
-			"Jump to some position in the current track", "N{%,s}"},
-	{"volume", 'v', POPT_ARG_STRING, &params.adj_volume, CL_NOIFACE,
-			"Adjust the PCM volume", "[+,-]LEVEL"},
 	{"toggle", 't', POPT_ARG_STRING, &params.toggle, CL_NOIFACE,
 			"Toggle a control (shuffle, autonext, repeat)", "CONTROL"},
 	{"on", 'o', POPT_ARG_STRING, &params.on, CL_NOIFACE,
 			"Turn on a control (shuffle, autonext, repeat)", "CONTROL"},
 	{"off", 'u', POPT_ARG_STRING, &params.off, CL_NOIFACE,
 			"Turn off a control (shuffle, autonext, repeat)", "CONTROL"},
+	{"info", 'i', POPT_ARG_NONE, &params.get_file_info, CL_NOIFACE,
+			"Print information about the file currently playing", NULL},
 	{"format", 'Q', POPT_ARG_STRING, &params.formatted_info_param, CL_GETINFO,
 			"Print formatted information about the file currently playing", "FORMAT"},
+	POPT_TABLEEND
+};
+
+static struct poptOption misc_opts[] = {
+	{NULL, 0, POPT_ARG_CALLBACK, show_misc_cb, 0, NULL, NULL},
+	{"version", 'V', POPT_ARG_NONE, NULL, 0,
+			"Print version information", NULL},
+	{"usage", 0, POPT_ARG_NONE, NULL, 0,
+			"Print brief usage", NULL},
+	{"help", 'h', POPT_ARG_NONE, NULL, 0,
+			"Print extended usage", NULL},
+	POPT_TABLEEND
+};
+
+static struct poptOption opts[] = {
+	{NULL, 0, POPT_ARG_INCLUDE_TABLE, general_opts, 0, "General options:", NULL},
+	{NULL, 0, POPT_ARG_INCLUDE_TABLE, server_opts, 0, "Server commands:", NULL},
+	{NULL, 0, POPT_ARG_INCLUDE_TABLE, misc_opts, 0, "Miscellaneous options:", NULL},
 	POPT_AUTOALIAS
 	POPT_TABLEEND
 };
@@ -726,15 +765,6 @@ static void process_options (poptContext ctx, lists_t_strs *deferred)
 		arg = poptGetOptArg (ctx);
 
 		switch (rc) {
-		case CL_VERSION:
-			show_version ();
-			exit (EXIT_SUCCESS);
-		case CL_HELP:
-			show_help (ctx);
-			exit (EXIT_SUCCESS);
-		case CL_USAGE:
-			show_usage (ctx);
-			exit (EXIT_SUCCESS);
 		case CL_SDRIVER:
 			if (!options_check_list ("SoundDriver", arg))
 				fatal ("No such sound driver: %s", arg);
