@@ -320,6 +320,8 @@ static void show_help (poptContext ctx)
 	poptSetOtherOptionHelp (ctx, mocp_summary);
 	poptPrintHelp (ctx, stdout, 0);
 	printf ("\nEnvironment variables:\n\n");
+	printf ("  MOCP_OPTS  "
+	        "                       Additional command line options\n");
 	printf ("  MOCP_POPTRC"
 	        "                       List of POPT configuration files\n");
 	printf ("\n");
@@ -754,6 +756,31 @@ static void read_popt_config (poptContext ctx)
 		read_default_poptrc (ctx);
 }
 
+/* Prepend MOCP_OPTS to the command line. */
+static void prepend_mocp_opts (poptContext ctx)
+{
+	int rc;
+	const char *env_opts;
+
+	env_opts = getenv ("MOCP_OPTS");
+	if (env_opts) {
+		int env_argc;
+		const char **env_argv;
+
+		logit ("MOCP_OPTS: %s", env_opts);
+
+		rc = poptParseArgvString (env_opts, &env_argc, &env_argv);
+		if (rc < 0)
+			fatal ("poptParseArgvString() error: %s", poptStrerror (rc));
+
+		rc = poptStuffArgs (ctx, env_argv);
+		if (rc < 0)
+			fatal ("Error prepending MOCP_OPTS: %s", poptStrerror (rc));
+
+		free (env_argv);
+	}
+}
+
 /* Process the command line options. */
 static void process_options (poptContext ctx, lists_t_strs *deferred)
 {
@@ -830,7 +857,10 @@ static void process_options (poptContext ctx, lists_t_strs *deferred)
 
 		opt = poptBadOption (ctx, 0);
 		alias = poptBadOption (ctx, POPT_BADOPTION_NOALIAS);
-		if (!strcmp (opt, alias))
+
+		/* poptBadOption() with POPT_BADOPTION_NOALIAS fails to
+		 * return the correct option if poptStuffArgs() was used. */
+		if (!strcmp (opt, alias) || getenv ("MOCP_OPTS"))
 			fatal ("%s: %s\n", opt, poptStrerror (rc));
 		else
 			fatal ("%s (aliased by %s): %s\n", opt, alias, poptStrerror (rc));
@@ -853,6 +883,7 @@ static lists_t_strs *process_command_line (int argc, const char *argv[],
 	ctx = poptGetContext ("mocp", argc, argv, opts, 0);
 
 	read_popt_config (ctx);
+	prepend_mocp_opts (ctx);
 	process_options (ctx, deferred);
 
 	if (params.foreground)

@@ -25,6 +25,7 @@
 	* Added functionality:
 	  - Introduced in-memory circular logging buffer
 	  - Introduced MOCP_POPTRC environment variable
+	  - Introduced MOCP_OPTS environment variable
 	* Changes to supported formats and codecs:
 	  - VQF: now supported via FFmpeg/LibAV
 
