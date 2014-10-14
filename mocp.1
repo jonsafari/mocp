@@ -253,6 +253,124 @@ Examples: \fB\-j 10s\fP, \fB\-j 50%\fP
 .EE
 .RE
 .LP
+.SH USING POPT ALIASES
+MOC uses the POPT library to process its command line.  This allows
+users to assign MOC options and arguments to an alias of their choosing.
+The aliases are just lines in the \fB~/.popt\fP text file and have the
+general form:
+.IP
+.RS
+.EX
+.BI mocp " " alias " " \fInewoption\fP " " \fIexpansion\fP
+.EE
+.RE
+.LP
+This works as if \fIexpansion\fP textually replaces \fInewoption\fP
+on the command line.  The replacement is recursive; that is,
+other \fInewoption\fPs can be embedded in the \fIexpansion\fP.
+The \fIexpansion\fP is parsed similarly to a shell command, which
+allows \\, ", and ' to be used for quoting.  If a backslash is the
+final character on a line, the next line in the file is assumed to be a
+logical continuation of the line containing the backslash, just as in
+the shell.  The \fInewoption\fP can be either a short or long option,
+and any syntactically valid name the user wishes to use.
+.LP
+If you add a description for the new option and/or for any argument by
+appending the special POPT options \fB\-\-POPTdesc\fP and \fB\-\-POPTargs\fP,
+then the option will be displayed in the output of \fB\-\-help\fP and
+\fB\-\-usage\fP.  The value for these two options are strings of the form
+\fB$"\fP\fIstring\fP\fB"\fP.
+.LP
+So, for example:
+.IP
+.RS
+.EX
+\fBmocp alias \-\-single \-D \-\-set\-option autonext=no \\\fP
+\fB           \-\-POPTdesc=$"Play just the file selected"
+.EE
+.RE
+.LP
+would allow the user to turn on logging (\fB\-D\fP) and override
+the configuration file's \fBAutoNext\fP option setting just by using
+\fB\-\-single\fP as an option to the mocp command.
+.LP
+Sometimes you may wish to provide values to aliased options from the
+command line.  If just one aliased option has such a value, then it's
+a simple matter of placing it last:
+.LP
+.IP
+.RS
+.EX
+\fBmocp alias \-\-yours \-\-sound-driver OSS \-\-theme
+.EE
+.RE
+.LP
+when used like this:
+.LP
+.IP
+.RS
+.EX
+\fBmocp \-\-yours your_theme
+.EE
+.RE
+.LP
+would result in:
+.LP
+.IP
+.RS
+.EX
+\fBmocp \-\-sound-driver OSS \-\-theme your_theme
+.EE
+.RE
+.LP
+But aliasing multiple options with such values means making use of the
+special construct \fB!#:+\fP (and quoting carefully):
+.LP
+.IP
+.RS
+.EX
+\fBmocp alias \-1 "\-R !#:+" "\-T my_theme" "\-O !#:+"
+.EE
+.RE
+.LP
+when used like this:
+.LP
+.IP
+.RS
+.EX
+\fBmocp \-1 OSS shuffle=yes ~/my_music
+.EE
+.RE
+.LP
+would result in:
+.LP
+.IP
+.RS
+.EX
+\fBmocp \-R OSS \-T my_theme \-O shuffle=yes ~/my_music
+.EE
+.RE
+.LP
+There is also a \fB~/.popt\fP entry which allows for the execution of
+a different program when the associated option is used.  For this, an
+\fBexec\fP is used in place of the \fBalias\fP and the \fIexpansion\fP
+is the program to be executed:
+.LP
+.IP
+.RS
+.EX
+\fBmocp exec \-\-help /usr/bin/man 1 mocp \\
+\fB           POPTdesc=$"Provide the man page instead of help"
+.EE
+.RE
+.LP
+This would override the usual MOC \fB\-\-help\fP output and use the
+system's \fBman\fP program to present this man page instead.
+.LP
+Note that while \fB~/.popt\fP (or \fB/etc/popt\fP) is the default POPT
+configuration file, you can nominate specific file(s) to be used instead
+via the \fBMOCP_POPTRC\fP environment variable.
+.LP
 .SH ENVIRONMENT VARIABLES
 The following environment variables are used directly by MOC.  Additional
 variables may be relevant to the libraries MOC uses.  Also, any environment
@@ -270,6 +388,19 @@ systems.
 .B HOME
 Tells MOC where your home directory is located and is used for various
 purposes, including the default location of the MOC directory.
+.LP
+.TP
+.B MOCP_POPTRC
+A colon-separated list of POPT configuration files which will be loaded in
+sequence by MOC during initialisation.  If the variable is unset then the
+ default POPT configuration file will be used.  If the variable is set but
+empty then no POPT configuration file will be loaded.  If the variable is
+set then those files which exist will be loaded and those which don't will
+be skipped.
+.IP
+As these files can specify commands which invoke other applications, MOC
+will refuse to start if they are not owned by root or the current user,
+or they are writable by anyone other than their owner.
 .LP
 .TP
 .B TERM \fPand\fB WINDOW
@@ -291,6 +422,16 @@ options, and so is a useful reference when using the \fB\-O\fP option.  As
 this file can specify commands which invoke other applications MOC will
 refuse to start if it is not owned by either root or the current user, or if
 it is writable by anyone other than its owner.
+.LP
+.TP
+.B ~/.popt
+.TQ
+.B /etc/popt
+The default files POPT reads to obtain aliased options.  As these files can
+specify commands which invoke other applications, MOC will refuse to start
+if it is not owned by root or the current user, or if it is writable by
+anyone other than its owner.  (Also see the \fBMOCP_POPTRC\fP environment
+variable above.)
 .LP
 .TP
 .B ~/.moc/themes

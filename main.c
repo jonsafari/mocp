@@ -24,11 +24,11 @@
 #include <sys/un.h>
 #include <unistd.h>
 #include <signal.h>
-#include <getopt.h>
 #include <errno.h>
 #include <time.h>
 #include <locale.h>
 #include <assert.h>
+#include <popt.h>
 
 #ifdef HAVE_UNAME_SYSCALL
 #include <sys/utsname.h>
@@ -69,7 +69,7 @@ struct parameters
 	int seek_by;
 	char jump_type;
 	int jump_to;
-	char *formatted_into_param;
+	char *formatted_info_param;
 	int get_formatted_info;
 	char *adj_volume;
 	char *toggle;
@@ -293,57 +293,32 @@ static void show_version ()
 	putchar ('\n');
 }
 
-/* Show program usage. */
-static void show_usage (const char *prg_name) {
+/* Show program banner. */
+static void show_banner ()
+{
 	printf ("%s (version %s", PACKAGE_NAME, PACKAGE_VERSION);
 #ifdef PACKAGE_REVISION
 	printf (", revision %s", PACKAGE_REVISION);
 #endif
 	printf (")\n");
-	printf ("Usage:\n %s [OPTIONS]... [FILE]...\n%s", prg_name,
-"-V --version           Print program version and exit\n"
-"-h --help              Print usage and exit\n"
-#ifndef NDEBUG
-"-D --debug             Turn on logging to a file\n"
-#endif
-"-S --server            Only run the server\n"
-"-F --foreground        Run server in foreground and log to stdout\n"
-"-R --sound-driver LIST Use the first valid sound driver from LIST\n"
-"                       (sndio, oss, alsa, jack, null)\n"
-"-m --music-dir         Start in MusicDir\n"
-"-a --append            Append the files/directories/playlists passed in\n"
-"                       the command line to playlist and exit\n"
-"-q --enqueue           Add the files given on command line to the queue\n"
-"-c --clear             Clear the playlist and exit\n"
-"-p --play              Start playing from the first item on the playlist\n"
-"-l --playit            Play files given on the command line without modifying\n"
-"                       the playlist\n"
-"-s --stop              Stop playing\n"
-"-f --next              Play the next song\n"
-"-r --previous          Play the previous song\n"
-"-x --exit              Shutdown the server\n"
-"-T --theme theme       Use the selected theme file (read from ~/.moc/themes\n"
-"                       if the path is not absolute)\n"
-"-C --config FILE       Use the specified config file instead of the default\n"
-"-O --set-option NAME=VALUE\n"
-"                       Override the configuration option NAME with VALUE\n"
-"-M --moc-dir DIR       Use the specified MOC directory instead of the default\n"
-"-P --pause             Pause\n"
-"-U --unpause           Unpause\n"
-"-G --toggle-pause      Toggle between playing and paused\n"
-"-v --volume (+/-)LEVEL Adjust the PCM volume\n"
-"-y --sync              Synchronize the playlist with other clients\n"
-"-n --nosync            Don't synchronize the playlist with other clients\n"
-"-A --ascii             Use ASCII characters to draw lines\n"
-"-i --info              Print information about the currently playing file\n"
-"-Q --format FORMAT     Print formatted information about the currently\n"
-"                       playing file\n"
-"-e --recursively       Alias for -a\n"
-"-k --seek N            Seek by N seconds (can be negative)\n"
-"-j --jump N{%,s}       Jump to some position of the current track\n"
-"-o --on <controls>     Turn on a control (shuffle, autonext, repeat)\n"
-"-u --off <controls>    Turn off a control (shuffle, autonext, repeat)\n"
-"-t --toggle <controls> Toggle a control (shuffle, autonext, repeat)\n");
+}
+
+static const char mocp_summary[] = "[OPTIONS] [FILE|DIR ...]";
+
+/* Show program usage. */
+static void show_usage (poptContext ctx)
+{
+	show_banner ();
+	poptSetOtherOptionHelp (ctx, mocp_summary);
+	poptPrintUsage (ctx, stdout, 0);
+}
+
+/* Show program help. */
+static void show_help (poptContext ctx)
+{
+	show_banner ();
+	poptSetOtherOptionHelp (ctx, mocp_summary);
+	poptPrintHelp (ctx, stdout, 0);
 }
 
 /* Send commands requested in params to the server. */
@@ -376,7 +351,7 @@ static void server_command (struct parameters *params, lists_t_strs *args)
 			interface_cmdline_jump_to (sock,params->jump_to);
 		if (params->get_formatted_info)
 			interface_cmdline_formatted_info (sock,
-					params->formatted_into_param);
+					params->formatted_info_param);
 		if (params->adj_volume)
 			interface_cmdline_adj_volume (sock, params->adj_volume);
 		if (params->toggle)
@@ -457,7 +432,8 @@ static long get_num_param (const char *p,const char ** last)
 }
 
 /* Log the command line which launched MOC. */
-static void log_command_line (int argc ASSERT_ONLY, char *argv[] ASSERT_ONLY)
+static void log_command_line (int argc ASSERT_ONLY,
+                              const char *argv[] ASSERT_ONLY)
 {
 	lists_t_strs *cmdline LOGIT_ONLY;
 	char *str LOGIT_ONLY;
@@ -478,30 +454,30 @@ static void log_command_line (int argc ASSERT_ONLY, char *argv[] ASSERT_ONLY)
 #endif
 }
 
-static void override_config_option (const char *optarg, lists_t_strs *deferred)
+static void override_config_option (const char *arg, lists_t_strs *deferred)
 {
 	int len;
 	bool append;
 	char *ptr, *name, *value;
 	enum option_type type;
 
-	assert (optarg != NULL);
+	assert (arg != NULL);
 
-	ptr = strchr (optarg, '=');
+	ptr = strchr (arg, '=');
 	if (ptr == NULL)
 		goto error;
 
 	/* Allow for list append operator ("+="). */
-	append = (ptr > optarg && *(ptr - 1) == '+');
+	append = (ptr > arg && *(ptr - 1) == '+');
 
-	name = trim (optarg, ptr - optarg - (append ? 1 : 0));
+	name = trim (arg, ptr - arg - (append ? 1 : 0));
 	if (!name || !name[0])
 		goto error;
 	type = options_get_type (name);
 
 	if (type == OPTION_LIST) {
 		if (deferred) {
-			lists_strs_append (deferred, optarg);
+			lists_strs_append (deferred, arg);
 			free (name);
 			return;
 		}
@@ -532,7 +508,7 @@ static void override_config_option (const char *optarg, lists_t_strs *deferred)
 	return;
 
 error:
-	fatal ("Malformed override option: %s", optarg);
+	fatal ("Malformed override option: %s", arg);
 }
 
 static void process_deferred_overrides (lists_t_strs *deferred)
@@ -564,233 +540,307 @@ static void process_deferred_overrides (lists_t_strs *deferred)
 		free (lists_strs_pop (decoders_option));
 		override_decoders = lists_strs_save (decoders_option);
 		lists_strs_clear (decoders_option);
-		lists_strs_load (decoders_option, config_decoders);
-		lists_strs_load (decoders_option, override_decoders);
+		lists_strs_load (decoders_option, (const char **)config_decoders);
+		lists_strs_load (decoders_option, (const char **)override_decoders);
 		free (override_decoders);
 	}
 	free (config_decoders);
 }
 
+enum {
+	CL_HANDLED = 0,
+	CL_NOIFACE,
+	CL_VERSION,
+	CL_HELP,
+	CL_USAGE,
+	CL_SDRIVER,
+	CL_MUSICDIR,
+	CL_THEME,
+	CL_SETOPTION,
+	CL_MOCDIR,
+	CL_SYNCPL,
+	CL_NOSYNC,
+	CL_ASCII,
+	CL_JUMP,
+	CL_GETINFO
+};
+
+static struct parameters params;
+
+static struct poptOption opts[] = {
+	{"config", 'C', POPT_ARG_STRING, &params.config_file, CL_HANDLED,
+			"Use the specified config file instead of the default", "FILE"},
+	{"set-option", 'O', POPT_ARG_STRING, NULL, CL_SETOPTION,
+			"Override the configuration option NAME with VALUE", "'NAME=VALUE'"},
+	{"moc-dir", 'M', POPT_ARG_STRING, NULL, CL_MOCDIR,
+			"Use the specified MOC directory instead of the default", "DIR"},
+	{"pause", 'P', POPT_ARG_NONE, &params.pause, CL_NOIFACE,
+			"Pause", NULL},
+	{"unpause", 'U', POPT_ARG_NONE, &params.unpause, CL_NOIFACE,
+			"Unpause", NULL},
+	{"toggle-pause", 'G', POPT_ARG_NONE, &params.toggle_pause, CL_NOIFACE,
+			"Toggle between playing and paused", NULL},
+	{"stop", 's', POPT_ARG_NONE, &params.stop, CL_NOIFACE,
+			"Stop playing", NULL},
+	{"next", 'f', POPT_ARG_NONE, &params.next, CL_NOIFACE,
+			"Play the next song", NULL},
+	{"previous", 'r', POPT_ARG_NONE, &params.previous, CL_NOIFACE,
+			"Play the previous song", NULL},
+	{"version", 'V', POPT_ARG_NONE, NULL, CL_VERSION,
+			"Print version information", NULL},
+	{"help", 'h', POPT_ARG_NONE, NULL, CL_HELP,
+			"Print extended usage", NULL},
+	{"usage", 0, POPT_ARG_NONE, NULL, CL_USAGE,
+			"Print brief usage", NULL},
+#ifndef NDEBUG
+	{"debug", 'D', POPT_ARG_NONE, &params.debug, CL_HANDLED,
+			"Turn on logging to a file", NULL},
+#endif
+	{"server", 'S', POPT_ARG_NONE, &params.only_server, CL_HANDLED,
+			"Only run the server", NULL},
+	{"foreground", 'F', POPT_ARG_NONE, &params.foreground, CL_HANDLED,
+			"Run the server in foreground (logging to stdout)", NULL},
+	{"sound-driver", 'R', POPT_ARG_STRING, NULL, CL_SDRIVER,
+			"Use the first valid sound driver", "DRIVERS"},
+	{"music-dir", 'm', POPT_ARG_NONE, NULL, CL_MUSICDIR,
+			"Start in MusicDir", NULL},
+	{"append", 'a', POPT_ARG_NONE, &params.append, CL_NOIFACE,
+			"Append the files/directories/playlists passed in "
+			"the command line to playlist", NULL},
+	{"recursively", 'e', POPT_ARG_NONE, &params.append, CL_NOIFACE,
+			"Alias for --append", NULL},
+	{"enqueue", 'q', POPT_ARG_NONE, &params.enqueue, CL_NOIFACE,
+			"Add the files given on command line to the queue", NULL},
+	{"clear", 'c', POPT_ARG_NONE, &params.clear, CL_NOIFACE,
+			"Clear the playlist", NULL},
+	{"play", 'p', POPT_ARG_NONE, &params.play, CL_NOIFACE,
+			"Start playing from the first item on the playlist", NULL},
+	{"playit", 'l', POPT_ARG_NONE, &params.playit, CL_NOIFACE,
+			"Play files given on command line without modifying the playlist", NULL},
+	{"exit", 'x', POPT_ARG_NONE, &params.exit, CL_NOIFACE,
+			"Shutdown the server", NULL},
+	{"info", 'i', POPT_ARG_NONE, &params.get_file_info, CL_NOIFACE,
+			"Print information about the file currently playing", NULL},
+	{"theme", 'T', POPT_ARG_STRING, NULL, CL_THEME,
+			"Use the selected theme file (read from ~/.moc/themes if the path is not absolute)", "FILE"},
+	{"sync", 'y', POPT_ARG_NONE, NULL, CL_SYNCPL,
+			"Synchronize the playlist with other clients", NULL},
+	{"nosync", 'n', POPT_ARG_NONE, NULL, CL_NOSYNC,
+			"Don't synchronize the playlist with other clients", NULL},
+	{"ascii", 'A', POPT_ARG_NONE, NULL, CL_ASCII,
+			"Use ASCII characters to draw lines", NULL},
+	{"seek", 'k', POPT_ARG_INT, &params.seek_by, CL_NOIFACE,
+			"Seek by N seconds (can be negative)", "N"},
+	{"jump", 'j', POPT_ARG_STRING, NULL, CL_JUMP,
+			"Jump to some position in the current track", "N{%,s}"},
+	{"volume", 'v', POPT_ARG_STRING, &params.adj_volume, CL_NOIFACE,
+			"Adjust the PCM volume", "[+,-]LEVEL"},
+	{"toggle", 't', POPT_ARG_STRING, &params.toggle, CL_NOIFACE,
+			"Toggle a control (shuffle, autonext, repeat)", "CONTROL"},
+	{"on", 'o', POPT_ARG_STRING, &params.on, CL_NOIFACE,
+			"Turn on a control (shuffle, autonext, repeat)", "CONTROL"},
+	{"off", 'u', POPT_ARG_STRING, &params.off, CL_NOIFACE,
+			"Turn off a control (shuffle, autonext, repeat)", "CONTROL"},
+	{"format", 'Q', POPT_ARG_STRING, &params.formatted_info_param, CL_GETINFO,
+			"Print formatted information about the file currently playing", "FORMAT"},
+	POPT_AUTOALIAS
+	POPT_TABLEEND
+};
+
+/* Read the POPT configuration files as given in MOCP_POPTRC. */
+static void read_mocp_poptrc (poptContext ctx, const char *env_poptrc)
+{
+	int ix, rc, count;
+	lists_t_strs *files;
+
+	logit ("MOCP_POPTRC: %s", env_poptrc);
+
+	files = lists_strs_new (4);
+	count = lists_strs_split (files, env_poptrc, ":");
+	for (ix = 0; ix < count; ix += 1) {
+		const char *fn;
+
+		fn = lists_strs_at (files, ix);
+		if (!strlen (fn))
+			continue;
+
+		if (!is_secure (fn))
+			fatal ("POPT config file is not secure: %s", fn);
+
+		rc = poptReadConfigFile (ctx, fn);
+		if (rc < 0)
+			fatal ("Error reading POPT config file '%s': %s",
+			        fn, poptStrerror (rc));
+	}
+
+	lists_strs_free (files);
+}
+
+/* Check that the ~/.popt file is secure. */
+static void check_popt_secure ()
+{
+	int len;
+	const char *home, dot_popt[] = ".popt";
+	char *home_popt;
+
+	home = get_home ();
+	len = strlen (home) + strlen (dot_popt) + 2;
+	home_popt = xcalloc (len, sizeof (char));
+	snprintf (home_popt, len, "%s/%s", home, dot_popt);
+	if (!is_secure (home_popt))
+		fatal ("POPT config file is not secure: %s", home_popt);
+	free (home_popt);
+}
+
+/* Read the default POPT configuration file. */
+static void read_default_poptrc (poptContext ctx)
+{
+	int rc;
+
+	check_popt_secure ();
+	rc = poptReadDefaultConfig (ctx, 0);
+	if (rc != 0)
+		fatal ("poptReadDefaultConfig() error: %s\n", poptStrerror (rc));
+}
+
+/* Read the POPT configuration files(s). */
+static void read_popt_config (poptContext ctx)
+{
+	const char *env_poptrc;
+
+	env_poptrc = getenv ("MOCP_POPTRC");
+	if (env_poptrc)
+		read_mocp_poptrc (ctx, env_poptrc);
+	else
+		read_default_poptrc (ctx);
+}
+
+/* Process the command line options. */
+static void process_options (poptContext ctx, lists_t_strs *deferred)
+{
+	int rc;
+
+	while ((rc = poptGetNextOpt (ctx)) >= 0) {
+		const char *jump_type, *arg;
+
+		arg = poptGetOptArg (ctx);
+
+		switch (rc) {
+		case CL_VERSION:
+			show_version ();
+			exit (EXIT_SUCCESS);
+		case CL_HELP:
+			show_help (ctx);
+			exit (EXIT_SUCCESS);
+		case CL_USAGE:
+			show_usage (ctx);
+			exit (EXIT_SUCCESS);
+		case CL_SDRIVER:
+			if (!options_check_list ("SoundDriver", arg))
+				fatal ("No such sound driver: %s", arg);
+			options_set_list ("SoundDriver", arg, false);
+			options_ignore_config ("SoundDriver");
+			break;
+		case CL_MUSICDIR:
+			options_set_bool ("StartInMusicDir", true);
+			options_ignore_config ("StartInMusicDir");
+			break;
+		case CL_NOIFACE:
+			params.dont_run_iface = 1;
+			break;
+		case CL_THEME:
+			options_set_str ("ForceTheme", arg);
+			break;
+		case CL_SETOPTION:
+			override_config_option (arg, deferred);
+			break;
+		case CL_MOCDIR:
+			options_set_str ("MOCDir", arg);
+			options_ignore_config ("MOCDir");
+			break;
+		case CL_SYNCPL:
+			options_set_bool ("SyncPlaylist", true);
+			options_ignore_config ("SyncPlaylist");
+			break;
+		case CL_NOSYNC:
+			options_set_bool ("SyncPlaylist", false);
+			options_ignore_config ("SyncPlaylist");
+			break;
+		case CL_ASCII:
+			options_set_bool ("ASCIILines", true);
+			options_ignore_config ("ASCIILines");
+			break;
+		case CL_JUMP:
+			arg = poptGetOptArg (ctx);
+			params.jump_to = get_num_param (arg, &jump_type);
+			if (*jump_type)
+				if (!jump_type[1])
+					if (*jump_type == '%' || tolower (*jump_type) == 's') {
+						params.jump_type = tolower (*jump_type);
+						params.dont_run_iface = 1;
+						break;
+					}
+			//TODO: Add message explaining the error
+			show_usage (ctx);
+			exit (EXIT_FAILURE);
+		case CL_GETINFO:
+			params.get_formatted_info = 1;
+			params.dont_run_iface = 1;
+			break;
+		default:
+			show_usage (ctx);
+			exit (EXIT_FAILURE);
+		}
+
+		free ((void *) arg);
+	}
+
+	if (rc < -1) {
+		const char *opt, *alias;
+
+		opt = poptBadOption (ctx, 0);
+		alias = poptBadOption (ctx, POPT_BADOPTION_NOALIAS);
+		if (!strcmp (opt, alias))
+			fatal ("%s: %s\n", opt, poptStrerror (rc));
+		else
+			fatal ("%s (aliased by %s): %s\n", opt, alias, poptStrerror (rc));
+	}
+}
+
 /* Process the command line options and arguments. */
-static lists_t_strs *process_command_line (int argc, char *argv[],
-                                           struct parameters *params,
+static lists_t_strs *process_command_line (int argc, const char *argv[],
                                            lists_t_strs *deferred)
 {
-	int ret, opt_index = 0;
-	const char *jump_type;
+	const char **rest;
+	poptContext ctx;
 	lists_t_strs *result;
-
-	struct option long_options[] = {
-		{ "version",		0, NULL, 'V' },
-		{ "help",		0, NULL, 'h' },
-#ifndef NDEBUG
-		{ "debug",		0, NULL, 'D' },
-#endif
-		{ "server",		0, NULL, 'S' },
-		{ "foreground",		0, NULL, 'F' },
-		{ "sound-driver",	1, NULL, 'R' },
-		{ "music-dir",		0, NULL, 'm' },
-		{ "append",		0, NULL, 'a' },
-		{ "enqueue",		0, NULL, 'q' },
-		{ "clear", 		0, NULL, 'c' },
-		{ "play", 		0, NULL, 'p' },
-		{ "playit",		0, NULL, 'l' },
-		{ "stop",		0, NULL, 's' },
-		{ "next",		0, NULL, 'f' },
-		{ "previous",		0, NULL, 'r' },
-		{ "exit",		0, NULL, 'x' },
-		{ "theme",		1, NULL, 'T' },
-		{ "config",		1, NULL, 'C' },
-		{ "set-option",		1, NULL, 'O' },
-		{ "moc-dir",		1, NULL, 'M' },
-		{ "pause",		0, NULL, 'P' },
-		{ "unpause",		0, NULL, 'U' },
-		{ "toggle-pause",	0, NULL, 'G' },
-		{ "sync",		0, NULL, 'y' },
-		{ "nosync",		0, NULL, 'n' },
-		{ "ascii",		0, NULL, 'A' },
-		{ "info",		0, NULL, 'i' },
-		{ "recursively",	0, NULL, 'e' },
-		{ "seek",		1, NULL, 'k' },
-		{ "jump",		1, NULL, 'j' },
-		{ "format",		1, NULL, 'Q' },
-		{ "volume",		1, NULL, 'v' },
-		{ "toggle",		1, NULL, 't' },
-		{ "on",			1, NULL, 'o' },
-		{ "off",		1, NULL, 'u' },
-		{ 0, 0, 0, 0 }
-	};
 
 	assert (argc >= 0);
 	assert (argv != NULL);
 	assert (argv[argc] == NULL);
-	assert (params != NULL);
 	assert (deferred != NULL);
 
-	while ((ret = getopt_long(argc, argv,
-					"VhDSFR:macpsxT:C:O:M:PUynArfiGelk:j:v:t:o:u:Q:q",
-					long_options, &opt_index)) != -1) {
-		switch (ret) {
-			case 'V':
-				show_version ();
-				exit (EXIT_SUCCESS);
-			case 'h':
-				show_usage (argv[0]);
-				exit (EXIT_SUCCESS);
-#ifndef NDEBUG
-			case 'D':
-				params->debug = 1;
-				break;
-#endif
-			case 'S':
-				params->only_server = 1;
-				break;
-			case 'F':
-				params->foreground = 1;
-				params->only_server = 1;
-				break;
-			case 'R':
-				if (!options_check_list ("SoundDriver", optarg))
-					fatal ("No such sound driver: %s", optarg);
-				options_set_list ("SoundDriver", optarg, false);
-				options_ignore_config ("SoundDriver");
-				break;
-			case 'm':
-				options_set_bool ("StartInMusicDir", true);
-				options_ignore_config ("StartInMusicDir");
-				break;
-			case 'a':
-			case 'e':
-				params->append = 1;
-				params->dont_run_iface = 1;
-				break;
-			case 'q':
-				params->enqueue = 1;
-				params->dont_run_iface = 1;
-				break;
-			case 'c':
-				params->clear = 1;
-				params->dont_run_iface = 1;
-				break;
-			case 'i':
-				params->get_file_info = 1;
-				params->dont_run_iface = 1;
-				break;
-			case 'p':
-				params->play = 1;
-				params->dont_run_iface = 1;
-				break;
-			case 'l':
-				params->playit = 1;
-				params->dont_run_iface = 1;
-				break;
-			case 's':
-				params->stop = 1;
-				params->dont_run_iface = 1;
-				break;
-			case 'f':
-				params->next = 1;
-				params->dont_run_iface = 1;
-				break;
-			case 'r':
-				params->previous = 1;
-				params->dont_run_iface = 1;
-				break;
-			case 'x':
-				params->exit = 1;
-				params->dont_run_iface = 1;
-				break;
-			case 'P':
-				params->pause = 1;
-				params->dont_run_iface = 1;
-				break;
-			case 'U':
-				params->unpause = 1;
-				params->dont_run_iface = 1;
-				break;
-			case 'T':
-				options_set_str ("ForceTheme", optarg);
-				break;
-			case 'C':
-				params->config_file = xstrdup (optarg);
-				break;
-			case 'O':
-				override_config_option (optarg, deferred);
-				break;
-			case 'M':
-				options_set_str ("MOCDir", optarg);
-				options_ignore_config ("MOCDir");
-				break;
-			case 'y':
-				options_set_bool ("SyncPlaylist", true);
-				options_ignore_config ("SyncPlaylist");
-				break;
-			case 'n':
-				options_set_bool ("SyncPlaylist", false);
-				options_ignore_config ("SyncPlaylist");
-				break;
-			case 'A':
-				options_set_bool ("ASCIILines", true);
-				options_ignore_config ("ASCIILines");
-				break;
-			case 'G':
-				params->toggle_pause = 1;
-				params->dont_run_iface = 1;
-				break;
-			case 'k':
-				params->seek_by = get_num_param (optarg, NULL);
-				params->dont_run_iface = 1;
-				break;
-			case 'j':
-				params->jump_to = get_num_param (optarg, &jump_type);
-				if (*jump_type)
-					if (!jump_type[1])
-						if (*jump_type == '%' || tolower (*jump_type) == 's') {
-							params->jump_type = tolower (*jump_type);
-							params->dont_run_iface = 1;
-							break;
-						}
-				//TODO: Add message explaining the error
-				show_usage (argv[0]);
-				exit (EXIT_FAILURE);
-			case 'v' :
-				params->adj_volume = optarg;
-				params->dont_run_iface = 1;
-				break;
-			case 't' :
-				params->toggle = optarg;
-				params->dont_run_iface = 1;
-				break;
-			case 'o' :
-				params->on = optarg;
-				params->dont_run_iface = 1;
-				break;
-			case 'u' :
-				params->off = optarg;
-				params->dont_run_iface = 1;
-				break;
-			case 'Q':
-				params->formatted_into_param = optarg;
-				params->get_formatted_info = 1;
-				params->dont_run_iface = 1;
-				break;
-			default:
-				show_usage (argv[0]);
-				exit (EXIT_FAILURE);
-		}
-	}
+	ctx = poptGetContext ("mocp", argc, argv, opts, 0);
 
-	result = lists_strs_new (argc - optind);
-	lists_strs_load (result, argv + optind);
+	read_popt_config (ctx);
+	process_options (ctx, deferred);
+
+	if (params.foreground)
+		params.only_server = 1;
+
+	result = lists_strs_new (4);
+	rest = poptGetArgs (ctx);
+	if (rest)
+		lists_strs_load (result, rest);
+
+	poptFreeContext (ctx);
 
 	return result;
 }
 
-int main (int argc, char *argv[])
+int main (int argc, const char *argv[])
 {
-	struct parameters params;
-	lists_t_strs *deferred_overrides;
-	lists_t_strs *args;
+	lists_t_strs *deferred_overrides, *args;
 
 #ifdef PACKAGE_REVISION
 	logit ("This is Music On Console (revision %s)", PACKAGE_REVISION);
@@ -828,17 +878,14 @@ int main (int argc, char *argv[])
 	if (!setlocale(LC_ALL, ""))
 		logit ("Could not set locale!");
 
-	args = process_command_line (argc, argv, &params, deferred_overrides);
+	args = process_command_line (argc, argv, deferred_overrides);
 
 	if (params.dont_run_iface && params.only_server)
 		fatal ("-c, -a and -p options can't be used with --server!");
 
 	if (!params.config_file)
-		params.config_file = xstrdup (create_file_name ("config"));
+		params.config_file = create_file_name ("config");
 	options_parse (params.config_file);
-	if (params.config_file)
-		free (params.config_file);
-	params.config_file = NULL;
 
 	process_deferred_overrides (deferred_overrides);
 	lists_strs_free (deferred_overrides);

@@ -340,6 +340,10 @@ then
 	AX_GCC_VAR_ATTRIBUTE(unused)
 fi
 
+dnl popt
+AC_SEARCH_LIBS([poptGetContext], [popt], ,
+               AC_MSG_ERROR([POPT (libpopt) not found.]))
+
 dnl ncurses
 AX_WITH_CURSES
 if test "x$ax_cv_curses" = "xyes"
@@ -353,20 +357,6 @@ then
 else
 	AC_MSG_ERROR([You need curses/ncurses library and header files.])
 fi
-
-dnl popt
-AC_CHECK_LIB([popt], [poptGetContext], [true], [POPT_MISSING="yes"])
-
-dnl getopt
-AC_CHECK_FUNC(getopt_long,
-	      [AC_CHECK_HEADERS([getopt.h],,[AC_MSG_ERROR([You need getopt.h.])])],
-	      [#FreeBSD has it there
-	       AC_CHECK_LIB(gnugetopt,getopt_long,,
-			    [AC_LIBOBJ(getopt)
-			    AC_LIBOBJ(getopt1)
-			    AC_CONFIG_LINKS([getopt.h:gnugetopt.h])]
-			    )]
-	      )
 
 dnl samplerate
 AC_ARG_WITH(samplerate, AS_HELP_STRING([--without-samplerate],
@@ -444,13 +434,6 @@ if test "x$ac_cv_prog_cc_c99" = "xno"
 then
 	echo "WARNING: MOC release 2.6 will soon require an ISO C99 capable compiler;"
 	echo "         plan to upgrade your compiler soon."
-	echo
-fi
-
-if test "x$POPT_MISSING" = "xyes"
-then
-	echo "WARNING: MOC release 2.6 will soon require libpopt;"
-	echo "         plan to install it soon."
 	echo
 fi
 

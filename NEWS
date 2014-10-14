@@ -13,6 +13,8 @@
 	  - libcurl: raised minimum requirement to version 7.15.1
 	  - autoconf: raised minimum requirement to version 2.64
 	  - ALSA: raised minimum requirement to version 1.0.11
+	* New and changed library requirements:
+	  - POPT library: MOC now requires libpopt
 	* Removed functionality:
 	  - Transitional code from the previous release
 	  - autogen.sh in favour of autoreconf(1)
@@ -22,6 +24,7 @@
 	  - Decoupled mono-mixing from softmixer
 	* Added functionality:
 	  - Introduced in-memory circular logging buffer
+	  - Introduced MOCP_POPTRC environment variable
 	* Changes to supported formats and codecs:
 	  - VQF: now supported via FFmpeg/LibAV
 

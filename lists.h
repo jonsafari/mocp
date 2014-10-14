@@ -42,7 +42,7 @@ int lists_strs_tokenise (lists_t_strs *list, const char *s);
 char *lists_strs_fmt (const lists_t_strs *list, const char *fmt);
 char *lists_strs_cat (const lists_t_strs *list);
 char **lists_strs_save (const lists_t_strs *list);
-int lists_strs_load (lists_t_strs *list, char **saved);
+int lists_strs_load (lists_t_strs *list, const char **saved);
 int lists_strs_find (lists_t_strs *list, const char *sought);
 bool lists_strs_exists (lists_t_strs *list, const char *sought);
 

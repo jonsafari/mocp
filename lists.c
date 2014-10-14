@@ -322,7 +322,7 @@ char **lists_strs_save (const lists_t_strs *list)
 
 /* Reload saved strings into a list.  The reloaded strings are appended
  * to the list.  The number of items reloaded is returned. */
-int lists_strs_load (lists_t_strs *list, char **saved)
+int lists_strs_load (lists_t_strs *list, const char **saved)
 {
 	int size;
 
