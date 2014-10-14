@@ -64,9 +64,7 @@ mocp_SOURCES = log.c \
 	       lists.c \
 	       equalizer.h \
 	       equalizer.c
-EXTRA_mocp_SOURCES = gnugetopt.h \
-		     getopt.c \
-		     getopt1.c \
+EXTRA_mocp_SOURCES = \
 		     md5.c \
 		     md5.h \
 		     null_out.c \

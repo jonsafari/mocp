@@ -63,6 +63,7 @@ To build MOC from the distribution tarball you will need:
 
   - UNIX system with POSIX threads (e.g., Linux or FreeBSD)
   - ncurses (probably already installed in your system)
+  - POPT (libpopt) (probably already installed in your system)
   - C and C++ compilers (MOC is written in C, but libtool and some
     decoder plugins require a C++ compiler)
   - Berkeley DB (libdb) version 4.1 (unless configured with --disable-cache)
