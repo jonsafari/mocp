@@ -229,6 +229,102 @@ static void start_moc (const struct parameters *params, lists_t_strs *args)
 	close (server_sock);
 }
 
+/* Send commands requested in params to the server. */
+static void server_command (struct parameters *params, lists_t_strs *args)
+{
+	int sock;
+
+	if ((sock = server_connect()) == -1)
+		fatal ("The server is not running!");
+
+	signal (SIGPIPE, SIG_IGN);
+	if (ping_server(sock)) {
+		if (params->playit)
+			interface_cmdline_playit (sock, args);
+		if (params->clear)
+			interface_cmdline_clear_plist (sock);
+		if (params->append)
+			interface_cmdline_append (sock, args);
+		if (params->enqueue)
+			interface_cmdline_enqueue (sock, args);
+		if (params->play)
+			interface_cmdline_play_first (sock);
+		if (params->get_file_info)
+			interface_cmdline_file_info (sock);
+		if (params->seek_by)
+			interface_cmdline_seek_by (sock, params->seek_by);
+		if (params->jump_type=='%')
+			interface_cmdline_jump_to_percent (sock,params->jump_to);
+		if (params->jump_type=='s')
+			interface_cmdline_jump_to (sock,params->jump_to);
+		if (params->get_formatted_info)
+			interface_cmdline_formatted_info (sock,
+					params->formatted_info_param);
+		if (params->adj_volume)
+			interface_cmdline_adj_volume (sock, params->adj_volume);
+		if (params->toggle)
+			interface_cmdline_set (sock, params->toggle, 2);
+		if (params->on)
+			interface_cmdline_set (sock, params->on, 1);
+		if (params->off)
+			interface_cmdline_set (sock, params->off, 0);
+		if (params->exit) {
+			if (!send_int(sock, CMD_QUIT))
+				fatal ("Can't send command!");
+		}
+		else if (params->stop) {
+			if (!send_int(sock, CMD_STOP)
+					|| !send_int(sock, CMD_DISCONNECT))
+				fatal ("Can't send commands!");
+		}
+		else if (params->pause) {
+			if (!send_int(sock, CMD_PAUSE)
+					|| !send_int(sock, CMD_DISCONNECT))
+				fatal ("Can't send commands!");
+		}
+		else if (params->next) {
+			if (!send_int(sock, CMD_NEXT)
+					|| !send_int(sock, CMD_DISCONNECT))
+				fatal ("Can't send commands!");
+		}
+		else if (params->previous) {
+			if (!send_int(sock, CMD_PREV)
+					|| !send_int(sock, CMD_DISCONNECT))
+				fatal ("Can't send commands!");
+		}
+		else if (params->unpause) {
+			if (!send_int(sock, CMD_UNPAUSE)
+					|| !send_int(sock, CMD_DISCONNECT))
+				fatal ("Can't send commands!");
+		}
+		else if (params->toggle_pause) {
+			int state;
+			int ev;
+			int cmd = -1;
+
+			if (!send_int(sock, CMD_GET_STATE))
+				fatal ("Can't send commands!");
+			if (!get_int(sock, &ev) || ev != EV_DATA
+					|| !get_int(sock, &state))
+				fatal ("Can't get data from the server!");
+
+			if (state == STATE_PAUSE)
+				cmd = CMD_UNPAUSE;
+			else if (state == STATE_PLAY)
+				cmd = CMD_PAUSE;
+
+			if (cmd != -1 && !send_int(sock, cmd))
+				fatal ("Can't send commands!");
+			if (!send_int(sock, CMD_DISCONNECT))
+				fatal ("Can't send commands!");
+		}
+	}
+	else
+		fatal ("Can't connect to the server!");
+
+	close (sock);
+}
+
 static void show_version ()
 {
 #ifdef HAVE_UNAME_SYSCALL
@@ -349,232 +445,7 @@ static void show_misc_cb (poptContext ctx,
 	exit (EXIT_SUCCESS);
 }
 
-/* Send commands requested in params to the server. */
-static void server_command (struct parameters *params, lists_t_strs *args)
-{
-	int sock;
-
-	if ((sock = server_connect()) == -1)
-		fatal ("The server is not running!");
-
-	signal (SIGPIPE, SIG_IGN);
-	if (ping_server(sock)) {
-		if (params->playit)
-			interface_cmdline_playit (sock, args);
-		if (params->clear)
-			interface_cmdline_clear_plist (sock);
-		if (params->append)
-			interface_cmdline_append (sock, args);
-		if (params->enqueue)
-			interface_cmdline_enqueue (sock, args);
-		if (params->play)
-			interface_cmdline_play_first (sock);
-		if (params->get_file_info)
-			interface_cmdline_file_info (sock);
-		if (params->seek_by)
-			interface_cmdline_seek_by (sock, params->seek_by);
-		if (params->jump_type=='%')
-			interface_cmdline_jump_to_percent (sock,params->jump_to);
-		if (params->jump_type=='s')
-			interface_cmdline_jump_to (sock,params->jump_to);
-		if (params->get_formatted_info)
-			interface_cmdline_formatted_info (sock,
-					params->formatted_info_param);
-		if (params->adj_volume)
-			interface_cmdline_adj_volume (sock, params->adj_volume);
-		if (params->toggle)
-			interface_cmdline_set (sock, params->toggle, 2);
-		if (params->on)
-			interface_cmdline_set (sock, params->on, 1);
-		if (params->off)
-			interface_cmdline_set (sock, params->off, 0);
-		if (params->exit) {
-			if (!send_int(sock, CMD_QUIT))
-				fatal ("Can't send command!");
-		}
-		else if (params->stop) {
-			if (!send_int(sock, CMD_STOP)
-					|| !send_int(sock, CMD_DISCONNECT))
-				fatal ("Can't send commands!");
-		}
-		else if (params->pause) {
-			if (!send_int(sock, CMD_PAUSE)
-					|| !send_int(sock, CMD_DISCONNECT))
-				fatal ("Can't send commands!");
-		}
-		else if (params->next) {
-			if (!send_int(sock, CMD_NEXT)
-					|| !send_int(sock, CMD_DISCONNECT))
-				fatal ("Can't send commands!");
-		}
-		else if (params->previous) {
-			if (!send_int(sock, CMD_PREV)
-					|| !send_int(sock, CMD_DISCONNECT))
-				fatal ("Can't send commands!");
-		}
-		else if (params->unpause) {
-			if (!send_int(sock, CMD_UNPAUSE)
-					|| !send_int(sock, CMD_DISCONNECT))
-				fatal ("Can't send commands!");
-		}
-		else if (params->toggle_pause) {
-			int state;
-			int ev;
-			int cmd = -1;
-
-			if (!send_int(sock, CMD_GET_STATE))
-				fatal ("Can't send commands!");
-			if (!get_int(sock, &ev) || ev != EV_DATA
-					|| !get_int(sock, &state))
-				fatal ("Can't get data from the server!");
-
-			if (state == STATE_PAUSE)
-				cmd = CMD_UNPAUSE;
-			else if (state == STATE_PLAY)
-				cmd = CMD_PAUSE;
-
-			if (cmd != -1 && !send_int(sock, cmd))
-				fatal ("Can't send commands!");
-			if (!send_int(sock, CMD_DISCONNECT))
-				fatal ("Can't send commands!");
-		}
-	}
-	else
-		fatal ("Can't connect to the server!");
-
-	close (sock);
-}
-
-static long get_num_param (const char *p,const char ** last)
-{
-	char *e;
-	long val;
-
-	val = strtol (p, &e, 10);
-	if ((*e&&last==NULL)||e==p)
-		fatal ("The parameter should be a number!");
-
-	if (last)
-		*last=e;
-	return val;
-}
-
 /* Log the command line which launched MOC. */
-static void log_command_line (int argc ASSERT_ONLY,
-                              const char *argv[] ASSERT_ONLY)
-{
-	lists_t_strs *cmdline LOGIT_ONLY;
-	char *str LOGIT_ONLY;
-
-	assert (argc >= 0);
-	assert (argv != NULL);
-	assert (argv[argc] == NULL);
-
-#ifndef NDEBUG
-	cmdline = lists_strs_new (argc);
-	if (lists_strs_load (cmdline, argv) > 0)
-		str = lists_strs_fmt (cmdline, "%s ");
-	else
-		str = xstrdup ("No command line available");
-	logit ("%s", str);
-	free (str);
-	lists_strs_free (cmdline);
-#endif
-}
-
-static void override_config_option (const char *arg, lists_t_strs *deferred)
-{
-	int len;
-	bool append;
-	char *ptr, *name, *value;
-	enum option_type type;
-
-	assert (arg != NULL);
-
-	ptr = strchr (arg, '=');
-	if (ptr == NULL)
-		goto error;
-
-	/* Allow for list append operator ("+="). */
-	append = (ptr > arg && *(ptr - 1) == '+');
-
-	name = trim (arg, ptr - arg - (append ? 1 : 0));
-	if (!name || !name[0])
-		goto error;
-	type = options_get_type (name);
-
-	if (type == OPTION_LIST) {
-		if (deferred) {
-			lists_strs_append (deferred, arg);
-			free (name);
-			return;
-		}
-	}
-	else if (append)
-		goto error;
-
-	value = trim (ptr + 1, strlen (ptr + 1));
-	if (!value || !value[0])
-		goto error;
-
-	if (value[0] == '\'' || value[0] == '"') {
-		len = strlen (value);
-		if (value[0] != value[len - 1])
-			goto error;
-		if (strlen (value) < 2)
-			goto error;
-		memmove (value, value + 1, len - 2);
-		value[len - 2] = 0x00;
-	}
-
-	if (!options_set_pair (name, value, append))
-		goto error;
-	options_ignore_config (name);
-
-	free (name);
-	free (value);
-	return;
-
-error:
-	fatal ("Malformed override option: %s", arg);
-}
-
-static void process_deferred_overrides (lists_t_strs *deferred)
-{
-	int ix;
-	bool cleared;
-	const char marker[] = "*Marker*";
-	char **config_decoders;
-	lists_t_strs *decoders_option;
-
-	/* We need to shuffle the PreferredDecoders list into the
-	 * right order as we load any deferred overriding options. */
-
-	decoders_option = options_get_list ("PreferredDecoders");
-	lists_strs_reverse (decoders_option);
-	config_decoders = lists_strs_save (decoders_option);
-	lists_strs_clear (decoders_option);
-	lists_strs_append (decoders_option, marker);
-
-	for (ix = 0; ix < lists_strs_size (deferred); ix += 1)
-		override_config_option (lists_strs_at (deferred, ix), NULL);
-
-	cleared = lists_strs_empty (decoders_option) ||
-	          strcmp (lists_strs_at (decoders_option, 0), marker) != 0;
-	lists_strs_reverse (decoders_option);
-	if (!cleared) {
-		char **override_decoders;
-
-		free (lists_strs_pop (decoders_option));
-		override_decoders = lists_strs_save (decoders_option);
-		lists_strs_clear (decoders_option);
-		lists_strs_load (decoders_option, (const char **)config_decoders);
-		lists_strs_load (decoders_option, (const char **)override_decoders);
-		free (override_decoders);
-	}
-	free (config_decoders);
-}
-
 enum {
 	CL_HANDLED = 0,
 	CL_NOIFACE,
@@ -680,7 +551,7 @@ static struct poptOption misc_opts[] = {
 	POPT_TABLEEND
 };
 
-static struct poptOption opts[] = {
+static struct poptOption mocp_opts[] = {
 	{NULL, 0, POPT_ARG_INCLUDE_TABLE, general_opts, 0, "General options:", NULL},
 	{NULL, 0, POPT_ARG_INCLUDE_TABLE, server_opts, 0, "Server commands:", NULL},
 	{NULL, 0, POPT_ARG_INCLUDE_TABLE, misc_opts, 0, "Miscellaneous options:", NULL},
@@ -779,6 +650,77 @@ static void prepend_mocp_opts (poptContext ctx)
 
 		free (env_argv);
 	}
+}
+
+static void override_config_option (const char *arg, lists_t_strs *deferred)
+{
+	int len;
+	bool append;
+	char *ptr, *name, *value;
+	enum option_type type;
+
+	assert (arg != NULL);
+
+	ptr = strchr (arg, '=');
+	if (ptr == NULL)
+		goto error;
+
+	/* Allow for list append operator ("+="). */
+	append = (ptr > arg && *(ptr - 1) == '+');
+
+	name = trim (arg, ptr - arg - (append ? 1 : 0));
+	if (!name || !name[0])
+		goto error;
+	type = options_get_type (name);
+
+	if (type == OPTION_LIST) {
+		if (deferred) {
+			lists_strs_append (deferred, arg);
+			free (name);
+			return;
+		}
+	}
+	else if (append)
+		goto error;
+
+	value = trim (ptr + 1, strlen (ptr + 1));
+	if (!value || !value[0])
+		goto error;
+
+	if (value[0] == '\'' || value[0] == '"') {
+		len = strlen (value);
+		if (value[0] != value[len - 1])
+			goto error;
+		if (strlen (value) < 2)
+			goto error;
+		memmove (value, value + 1, len - 2);
+		value[len - 2] = 0x00;
+	}
+
+	if (!options_set_pair (name, value, append))
+		goto error;
+	options_ignore_config (name);
+
+	free (name);
+	free (value);
+	return;
+
+error:
+	fatal ("Malformed override option: %s", arg);
+}
+
+static long get_num_param (const char *p,const char ** last)
+{
+	char *e;
+	long val;
+
+	val = strtol (p, &e, 10);
+	if ((*e&&last==NULL)||e==p)
+		fatal ("The parameter should be a number!");
+
+	if (last)
+		*last=e;
+	return val;
 }
 
 /* Process the command line options. */
@@ -880,7 +822,7 @@ static lists_t_strs *process_command_line (int argc, const char *argv[],
 	assert (argv[argc] == NULL);
 	assert (deferred != NULL);
 
-	ctx = poptGetContext ("mocp", argc, argv, opts, 0);
+	ctx = poptGetContext ("mocp", argc, argv, mocp_opts, 0);
 
 	read_popt_config (ctx);
 	prepend_mocp_opts (ctx);
@@ -897,6 +839,64 @@ static lists_t_strs *process_command_line (int argc, const char *argv[],
 	poptFreeContext (ctx);
 
 	return result;
+}
+
+static void process_deferred_overrides (lists_t_strs *deferred)
+{
+	int ix;
+	bool cleared;
+	const char marker[] = "*Marker*";
+	char **config_decoders;
+	lists_t_strs *decoders_option;
+
+	/* We need to shuffle the PreferredDecoders list into the
+	 * right order as we load any deferred overriding options. */
+
+	decoders_option = options_get_list ("PreferredDecoders");
+	lists_strs_reverse (decoders_option);
+	config_decoders = lists_strs_save (decoders_option);
+	lists_strs_clear (decoders_option);
+	lists_strs_append (decoders_option, marker);
+
+	for (ix = 0; ix < lists_strs_size (deferred); ix += 1)
+		override_config_option (lists_strs_at (deferred, ix), NULL);
+
+	cleared = lists_strs_empty (decoders_option) ||
+	          strcmp (lists_strs_at (decoders_option, 0), marker) != 0;
+	lists_strs_reverse (decoders_option);
+	if (!cleared) {
+		char **override_decoders;
+
+		free (lists_strs_pop (decoders_option));
+		override_decoders = lists_strs_save (decoders_option);
+		lists_strs_clear (decoders_option);
+		lists_strs_load (decoders_option, (const char **)config_decoders);
+		lists_strs_load (decoders_option, (const char **)override_decoders);
+		free (override_decoders);
+	}
+	free (config_decoders);
+}
+
+static void log_command_line (int argc ASSERT_ONLY,
+                              const char *argv[] ASSERT_ONLY)
+{
+	lists_t_strs *cmdline LOGIT_ONLY;
+	char *str LOGIT_ONLY;
+
+	assert (argc >= 0);
+	assert (argv != NULL);
+	assert (argv[argc] == NULL);
+
+#ifndef NDEBUG
+	cmdline = lists_strs_new (argc);
+	if (lists_strs_load (cmdline, argv) > 0)
+		str = lists_strs_fmt (cmdline, "%s ");
+	else
+		str = xstrdup ("No command line available");
+	logit ("%s", str);
+	free (str);
+	lists_strs_free (cmdline);
+#endif
 }
 
 int main (int argc, const char *argv[])
