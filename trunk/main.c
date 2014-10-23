@@ -48,6 +48,8 @@
 
 static int mocp_argc;
 static const char **mocp_argv;
+static int popt_next_val = 1;
+static char *render_popt_command_line ();
 
 struct parameters
 {
@@ -426,6 +428,16 @@ static void show_help (poptContext ctx)
 	printf ("\n");
 }
 
+/* Show POPT-interpreted command line arguments. */
+static void show_args ()
+{
+	char *str;
+
+	str = render_popt_command_line ();
+	printf ("%s\n", str);
+	free (str);
+}
+
 /* Disambiguate the user's request. */
 static void show_misc_cb (poptContext ctx,
                           enum poptCallbackReason unused1 ATTR_UNUSED,
@@ -441,7 +453,10 @@ static void show_misc_cb (poptContext ctx,
 		show_help (ctx);
 		break;
 	case 0:
-		show_usage (ctx);
+		if (!strcmp (opt->longName, "echo-args"))
+			show_args ();
+		else if (!strcmp (opt->longName, "usage"))
+			show_usage (ctx);
 		break;
 	}
 
@@ -547,6 +562,8 @@ static struct poptOption misc_opts[] = {
 	{NULL, 0, POPT_ARG_CALLBACK, show_misc_cb, 0, NULL, NULL},
 	{"version", 'V', POPT_ARG_NONE, NULL, 0,
 			"Print version information", NULL},
+	{"echo-args", 0, POPT_ARG_NONE, NULL, 0,
+			"Print POPT-interpreted arguments", NULL},
 	{"usage", 0, POPT_ARG_NONE, NULL, 0,
 			"Print brief usage", NULL},
 	{"help", 'h', POPT_ARG_NONE, NULL, 0,
@@ -653,6 +670,215 @@ static void prepend_mocp_opts (poptContext ctx)
 
 		free (env_argv);
 	}
+}
+
+/* Return a copy of the POPT option table structure which is suitable
+ * for rendering the POPT expansions of the command line. */
+struct poptOption *clone_popt_options (struct poptOption *opts)
+{
+	size_t count, ix, iy = 0;
+	struct poptOption *result;
+	const struct poptOption specials[] = {POPT_AUTOHELP
+	                                      POPT_AUTOALIAS
+	                                      POPT_TABLEEND};
+
+	assert (opts);
+
+	for (count = 1;
+	     memcmp (&opts[count - 1], &specials[2], sizeof (struct poptOption));
+	     count += 1);
+
+	result = xcalloc (count, sizeof (struct poptOption));
+
+	for (ix = 0; ix < count; ix += 1) {
+		if (opts[ix].argInfo == POPT_ARG_CALLBACK)
+			continue;
+
+		if (!memcmp (&opts[ix], &specials[0], sizeof (struct poptOption)))
+			continue;
+
+		if (!memcmp (&opts[ix], &specials[1], sizeof (struct poptOption)))
+			continue;
+
+		memcpy (&result[iy], &opts[ix], sizeof (struct poptOption));
+
+		if (!memcmp (&opts[ix], &specials[2], sizeof (struct poptOption)))
+			continue;
+
+		if (opts[ix].argInfo == POPT_ARG_INCLUDE_TABLE) {
+			result[iy++].arg = clone_popt_options (opts[ix].arg);
+			continue;
+		}
+
+		switch (result[iy].argInfo) {
+		case POPT_ARG_STRING:
+		case POPT_ARG_INT:
+		case POPT_ARG_LONG:
+		case POPT_ARG_FLOAT:
+		case POPT_ARG_DOUBLE:
+			result[iy].argInfo = POPT_ARG_STRING;
+			break;
+		case POPT_ARG_VAL:
+			result[iy].argInfo = POPT_ARG_NONE;
+			break;
+		case POPT_ARG_NONE:
+			break;
+		default:
+			fatal ("Unknown POPT option table argInfo type: %d",
+			                                result[iy].argInfo);
+		}
+
+		result[iy].arg = NULL;
+		result[iy++].val = popt_next_val++;
+	}
+
+	return result;
+}
+
+/* Free a copied POPT option table structure. */
+void free_popt_clone (struct poptOption *opts)
+{
+	int ix;
+	const struct poptOption table_end = POPT_TABLEEND;
+
+	assert (opts);
+
+	for (ix = 0; memcmp (&opts[ix], &table_end, sizeof (table_end)); ix += 1) {
+		if (opts[ix].argInfo == POPT_ARG_INCLUDE_TABLE)
+			free_popt_clone (opts[ix].arg);
+	}
+
+	free (opts);
+}
+
+/* Return a pointer to the copied POPT option table entry for which the
+ * 'val' field matches 'wanted'.  */
+struct poptOption *find_popt_option (struct poptOption *opts, int wanted)
+{
+	int ix = 0;
+	const struct poptOption table_end = POPT_TABLEEND;
+
+	assert (opts);
+	assert (LIMIT(wanted, popt_next_val));
+
+	while (1) {
+		struct poptOption *result;
+
+		if (!memcmp (&opts[ix], &table_end, sizeof (table_end)))
+			break;
+
+		assert (opts[ix].argInfo != POPT_ARG_CALLBACK);
+
+		if (opts[ix].val == wanted)
+			return &opts[ix];
+
+		switch (opts[ix].argInfo) {
+		case POPT_ARG_INCLUDE_TABLE:
+			result = find_popt_option (opts[ix].arg, wanted);
+			if (result)
+				return result;
+		case POPT_ARG_STRING:
+		case POPT_ARG_INT:
+		case POPT_ARG_LONG:
+		case POPT_ARG_FLOAT:
+		case POPT_ARG_DOUBLE:
+		case POPT_ARG_VAL:
+		case POPT_ARG_NONE:
+			ix += 1;
+			break;
+		default:
+			fatal ("Unknown POPT option table argInfo type: %d",
+			                                opts[ix].argInfo);
+		}
+	}
+
+	return NULL;
+}
+
+/* Render the command line as interpreted by POPT. */
+static char *render_popt_command_line ()
+{
+	int rc;
+	lists_t_strs *cmdline;
+	char *result;
+	const char **rest;
+	poptContext ctx;
+	struct poptOption *null_opts;
+
+	null_opts = clone_popt_options (mocp_opts);
+
+	ctx = poptGetContext ("mocp", mocp_argc, mocp_argv, null_opts,
+	                       POPT_CONTEXT_NO_EXEC);
+
+	read_popt_config (ctx);
+	prepend_mocp_opts (ctx);
+
+	cmdline = lists_strs_new (mocp_argc * 2);
+	lists_strs_append (cmdline, mocp_argv[0]);
+
+	while (1) {
+		size_t len;
+		char *str;
+		const char *arg;
+		struct poptOption *opt;
+
+		rc = poptGetNextOpt (ctx);
+		if (rc == -1)
+			break;
+
+		if (rc == POPT_ERROR_BADOPT) {
+			lists_strs_append (cmdline, poptBadOption (ctx, 0));
+			continue;
+		}
+
+		opt = find_popt_option (null_opts, rc);
+		if (!opt) {
+			result = xstrdup ("Couldn't find option in copied option table!");
+			goto err;
+		}
+
+		arg = poptGetOptArg (ctx);
+
+		if (opt->longName) {
+			len = strlen (opt->longName) + 3;
+			if (arg)
+				len += strlen (arg) + 3;
+			str = xmalloc (len);
+
+			if (arg)
+				snprintf (str, len, "--%s='%s'", opt->longName, arg);
+			else
+				snprintf (str, len, "--%s", opt->longName);
+		}
+		else {
+			len = 3;
+			if (arg)
+				len += strlen (arg) + 3;
+			str = xmalloc (len);
+
+			if (arg)
+				snprintf (str, len, "-%c '%s'", opt->shortName, arg);
+			else
+				snprintf (str, len, "-%c", opt->shortName);
+		}
+
+		lists_strs_push (cmdline, str);
+		free ((void *) arg);
+	}
+
+	rest = poptGetArgs (ctx);
+	if (rest)
+		lists_strs_load (cmdline, rest);
+
+	if (lists_strs_size (cmdline) > 0)
+		result = lists_strs_fmt (cmdline, "%s ");
+
+err:
+	poptFreeContext (ctx);
+	free_popt_clone (null_opts);
+	lists_strs_free (cmdline);
+
+	return result;
 }
 
 static void override_config_option (const char *arg, lists_t_strs *deferred)
