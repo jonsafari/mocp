@@ -632,7 +632,8 @@ static void read_default_poptrc (poptContext ctx)
 	check_popt_secure ();
 	rc = poptReadDefaultConfig (ctx, 0);
 	if (rc != 0)
-		fatal ("poptReadDefaultConfig() error: %s\n", poptStrerror (rc));
+		fatal ("Error reading default POPT config file: %s\n",
+		        poptStrerror (rc));
 }
 
 /* Read the POPT configuration files(s). */
@@ -662,7 +663,7 @@ static void prepend_mocp_opts (poptContext ctx)
 
 		rc = poptParseArgvString (env_opts, &env_argc, &env_argv);
 		if (rc < 0)
-			fatal ("poptParseArgvString() error: %s", poptStrerror (rc));
+			fatal ("Error parsing MOCP_OPTS: %s", poptStrerror (rc));
 
 		rc = poptStuffArgs (ctx, env_argv);
 		if (rc < 0)
