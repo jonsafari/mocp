@@ -46,6 +46,9 @@
 #include "files.h"
 #include "rcc.h"
 
+static int mocp_argc;
+static const char **mocp_argv;
+
 struct parameters
 {
 	char *config_file;
@@ -810,19 +813,15 @@ static void process_options (poptContext ctx, lists_t_strs *deferred)
 }
 
 /* Process the command line options and arguments. */
-static lists_t_strs *process_command_line (int argc, const char *argv[],
-                                           lists_t_strs *deferred)
+static lists_t_strs *process_command_line (lists_t_strs *deferred)
 {
 	const char **rest;
 	poptContext ctx;
 	lists_t_strs *result;
 
-	assert (argc >= 0);
-	assert (argv != NULL);
-	assert (argv[argc] == NULL);
 	assert (deferred != NULL);
 
-	ctx = poptGetContext ("mocp", argc, argv, mocp_opts, 0);
+	ctx = poptGetContext ("mocp", mocp_argc, mocp_argv, mocp_opts, 0);
 
 	read_popt_config (ctx);
 	prepend_mocp_opts (ctx);
@@ -877,19 +876,14 @@ static void process_deferred_overrides (lists_t_strs *deferred)
 	free (config_decoders);
 }
 
-static void log_command_line (int argc ASSERT_ONLY,
-                              const char *argv[] ASSERT_ONLY)
+static void log_command_line ()
 {
-	lists_t_strs *cmdline LOGIT_ONLY;
-	char *str LOGIT_ONLY;
-
-	assert (argc >= 0);
-	assert (argv != NULL);
-	assert (argv[argc] == NULL);
-
 #ifndef NDEBUG
-	cmdline = lists_strs_new (argc);
-	if (lists_strs_load (cmdline, argv) > 0)
+	lists_t_strs *cmdline;
+	char *str;
+
+	cmdline = lists_strs_new (mocp_argc);
+	if (lists_strs_load (cmdline, mocp_argv) > 0)
 		str = lists_strs_fmt (cmdline, "%s ");
 	else
 		str = xstrdup ("No command line available");
@@ -902,6 +896,13 @@ static void log_command_line (int argc ASSERT_ONLY,
 int main (int argc, const char *argv[])
 {
 	lists_t_strs *deferred_overrides, *args;
+
+	assert (argc >= 0);
+	assert (argv != NULL);
+	assert (argv[argc] == NULL);
+
+	mocp_argc = argc;
+	mocp_argv = argv;
 
 #ifdef PACKAGE_REVISION
 	logit ("This is Music On Console (revision %s)", PACKAGE_REVISION);
@@ -924,7 +925,7 @@ int main (int argc, const char *argv[])
 	}
 #endif
 
-	log_command_line (argc, argv);
+	log_command_line ();
 
 	files_init ();
 
@@ -939,7 +940,7 @@ int main (int argc, const char *argv[])
 	if (!setlocale(LC_ALL, ""))
 		logit ("Could not set locale!");
 
-	args = process_command_line (argc, argv, deferred_overrides);
+	args = process_command_line (deferred_overrides);
 
 	if (params.dont_run_iface && params.only_server)
 		fatal ("-c, -a and -p options can't be used with --server!");
