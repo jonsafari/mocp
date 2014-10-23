@@ -763,7 +763,7 @@ static void prepend_mocp_opts (poptContext ctx)
 	const char *env_opts;
 
 	env_opts = getenv ("MOCP_OPTS");
-	if (env_opts) {
+	if (env_opts && strlen (env_opts)) {
 		int env_argc;
 		const char **env_argv;
 
