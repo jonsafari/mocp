@@ -1834,7 +1834,7 @@ static enum side_menu_type iface_to_side_menu (const enum iface_menu iface_menu)
 			return MENU_DIR;
 		default:
 			abort (); /* BUG */
-	};
+	}
 }
 
 static void main_win_set_dir_content (struct main_win *w,
@@ -2646,7 +2646,7 @@ static struct queued_message *queued_message_create (enum message_type type)
 	result->data = NULL;
 
 	return result;
-};
+}
 
 static void queued_message_destroy (struct queued_message *msg)
 {
@@ -2658,7 +2658,7 @@ static void queued_message_destroy (struct queued_message *msg)
 		free (msg->prompt);
 
 	free (msg);
-};
+}
 
 static void set_startup_message (struct info_win *w)
 {
