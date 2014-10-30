@@ -58,7 +58,7 @@ struct plist
 	int total_time;		/* Total time for files on the playlist */
 	int items_with_time;	/* Number of items for which the time is set. */
 
-	struct rb_tree search_tree;
+	struct rb_tree *search_tree;
 };
 
 void plist_init (struct plist *plist);

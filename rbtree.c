@@ -22,6 +22,31 @@
 #include "common.h"
 #include "rbtree.h"
 
+enum rb_color { RB_RED, RB_BLACK };
+
+struct rb_node
+{
+	struct rb_node *left;
+	struct rb_node *right;
+	struct rb_node *parent;
+	enum rb_color color;
+	const void *data;
+};
+
+struct rb_tree
+{
+	struct rb_node *root;
+
+	/* compare function for two data elements */
+	rb_t_compare *cmp_fn;
+
+	/* compare function for data element and a key value */
+	rb_t_compare_key *cmp_key_fn;
+
+	/* pointer to additional data passed to compare functions */
+	const void *adata;
+};
+
 /* item used as a null value */
 static struct rb_node rb_null = { NULL, NULL, NULL, RB_BLACK, NULL };
 
@@ -208,7 +233,7 @@ void rb_insert (struct rb_tree *t, void *data)
 	z->data = data;
 
 	while (x != &rb_null) {
-		int cmp = t->cmp_func(z->data, x->data, t->adata);
+		int cmp = t->cmp_fn (z->data, x->data, t->adata);
 
 		y = x;
 		if (cmp < 0)
@@ -223,7 +248,7 @@ void rb_insert (struct rb_tree *t, void *data)
 	if (y == &rb_null)
 		t->root = z;
 	else {
-		if (t->cmp_func(z->data, y->data, t->adata) < 0)
+		if (t->cmp_fn (z->data, y->data, t->adata) < 0)
 			y->left = z;
 		else
 			y->right = z;
@@ -247,7 +272,7 @@ struct rb_node *rb_search (struct rb_tree *t, const void *key)
 	x = t->root;
 
 	while (x != &rb_null) {
-		int cmp = t->cmp_key_func (key, x->data, t->adata);
+		int cmp = t->cmp_key_fn (key, x->data, t->adata);
 
 		if (cmp < 0)
 			x = x->left;
@@ -263,6 +288,16 @@ struct rb_node *rb_search (struct rb_tree *t, const void *key)
 int rb_is_null (const struct rb_node *n)
 {
 	return n == &rb_null;
+}
+
+const void *rb_get_data (const struct rb_node *n)
+{
+	return n->data;
+}
+
+void rb_set_data (struct rb_node *n, const void *data)
+{
+	n->data = data;
 }
 
 static struct rb_node *rb_min_internal (struct rb_node *n)
@@ -346,20 +381,23 @@ void rb_delete (struct rb_tree *t, const void *key)
 	}
 }
 
-void rb_init_tree (struct rb_tree *t,
-		int (*cmp_func)(const void *a, const void *b, void *adata),
-		int (*cmp_key_func)(const void *key, const void *data,
-			void *adata),
-		void *adata)
+struct rb_tree *rb_tree_new (rb_t_compare *cmp_fn,
+                             rb_t_compare_key *cmp_key_fn,
+                             const void *adata)
 {
-	assert (t != NULL);
-	assert (cmp_func != NULL);
-	assert (cmp_key_func != NULL);
+	struct rb_tree *t;
+
+	assert (cmp_fn != NULL);
+	assert (cmp_key_fn != NULL);
+
+	t = xmalloc (sizeof (*t));
 
 	t->root = &rb_null;
-	t->cmp_func = cmp_func;
-	t->cmp_key_func = cmp_key_func;
+	t->cmp_fn = cmp_fn;
+	t->cmp_key_fn = cmp_key_fn;
 	t->adata = adata;
+
+	return t;
 }
 
 static void rb_destroy (struct rb_node *n)
@@ -371,7 +409,7 @@ static void rb_destroy (struct rb_node *n)
 	}
 }
 
-void rb_clear (struct rb_tree *t)
+void rb_tree_clear (struct rb_tree *t)
 {
 	assert (t != NULL);
 	assert (t->root != NULL);
@@ -382,4 +420,13 @@ void rb_clear (struct rb_tree *t)
 		free (t->root);
 		t->root = &rb_null;
 	}
+}
+
+void rb_tree_free (struct rb_tree *t)
+{
+	assert (t != NULL);
+	assert (t->root != NULL);
+
+	rb_tree_clear (t);
+	free (t);
 }
