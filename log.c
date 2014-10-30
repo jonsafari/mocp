@@ -56,7 +56,9 @@ static struct {
 	{SIGQUIT, "SIGQUIT", 0, 0},
 	{SIGTERM, "SIGTERM", 0, 0},
 	{SIGCHLD, "SIGCHLD", 0, 0},
+#ifdef SIGWINCH
 	{SIGWINCH, "SIGWINCH", 0, 0},
+#endif
 	{0, "SIG other", 0, 0}
 };
 #endif

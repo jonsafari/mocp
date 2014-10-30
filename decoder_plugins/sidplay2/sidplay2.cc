@@ -91,15 +91,12 @@ static sidplay2_data * make_data()
 
   pthread_mutex_unlock(&player_select_mtx);
 
-  if((*s2d->builder))
-  {
-    s2d->builder->create(s2d->player->info().maxsids);
-    s2d->builder->sampling(s2d->cfg.frequency);
-  }
-  else
-  {
+  if(!(*s2d->builder))
     fatal("sidplay2: Cannot create ReSID-Builder!");
-  }
+
+  s2d->builder->create(s2d->player->info().maxsids);
+
+  s2d->builder->sampling(s2d->cfg.frequency);
 
   s2d->cfg.sidEmulation = s2d->builder;
 
