@@ -339,6 +339,7 @@ if test "x$ax_cv___attribute__" = "xyes"
 then
 	AX_GCC_FUNC_ATTRIBUTE(format)
 	AX_GCC_FUNC_ATTRIBUTE(noreturn)
+	AX_GCC_VAR_ATTRIBUTE(aligned)
 	AX_GCC_VAR_ATTRIBUTE(unused)
 fi
 

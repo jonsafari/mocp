@@ -17,6 +17,12 @@ extern "C" {
 # define ATTR_NORETURN
 #endif
 
+#ifdef HAVE_VAR_ATTRIBUTE_ALIGNED
+# define ATTR_ALIGNED __attribute__((aligned))
+#else
+# define ATTR_ALIGNED
+#endif
+
 #ifdef HAVE_VAR_ATTRIBUTE_UNUSED
 # define ATTR_UNUSED __attribute__((unused))
 #else
