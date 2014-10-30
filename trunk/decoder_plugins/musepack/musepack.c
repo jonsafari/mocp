@@ -333,7 +333,7 @@ static int musepack_decode (void *prv_data, char *buf, int buf_len,
 #endif
 	float decode_buf[MPC_DECODER_BUFFER_LENGTH];
 	if (data->remain_buf) {
-		size_t to_copy = MIN((unsigned)buf_len,
+		size_t to_copy = MIN((unsigned int)buf_len,
 				data->remain_buf_len * sizeof(float));
 
 		debug ("Copying %zu bytes from the remain buf", to_copy);

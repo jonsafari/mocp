@@ -37,8 +37,8 @@ static snd_pcm_t *handle = NULL;
 
 static struct
 {
-	unsigned channels;
-	unsigned rate;
+	unsigned int channels;
+	unsigned int rate;
 	snd_pcm_format_t format;
 } params = { 0, 0, SND_PCM_FORMAT_UNKNOWN };
 
@@ -107,7 +107,7 @@ static int fill_capabilities (struct output_driver_caps *caps)
 	snd_pcm_hw_params_t *hw_params;
 	snd_pcm_format_mask_t *format_mask;
 	int err;
-	unsigned val;
+	unsigned int val;
 
 	if ((err = snd_pcm_open(&handle, options_get_str("AlsaDevice"),
 					SND_PCM_STREAM_PLAYBACK,
