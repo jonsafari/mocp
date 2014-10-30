@@ -96,17 +96,9 @@ void xsleep (size_t ticks, size_t ticks_per_sec);
 #define ASSERT_ONLY
 #endif
 
-#ifdef HAVE_FUNC_ATTRIBUTE_FORMAT
 void internal_fatal (const char *file, int line, const char *function,
-                     const char *format, ...) ATTR_NORETURN
-                     __attribute__ ((format (printf, 4, 5)));
-void error (const char *format, ...) __attribute__((format (printf, 1, 2)));
-#else
-void internal_fatal (const char *file, int line, const char *function,
-                     const char *format, ...) ATTR_NORETURN;
-void error (const char *format, ...);
-#endif
-
+                     const char *format, ...) ATTR_NORETURN ATTR_PRINTF(4, 5);
+void error (const char *format, ...) ATTR_PRINTF(1, 2);
 void set_me_server ();
 char *str_repl (char *target, const char *oldstr, const char *newstr);
 char *trim (const char *src, size_t len);
