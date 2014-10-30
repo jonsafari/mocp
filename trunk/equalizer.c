@@ -267,7 +267,7 @@ static t_biquad *mk_biquad(float dbgain, float cf, float srate, float bw, t_biqu
   b->gain = dbgain;
 
   return b;
-};
+}
 
 /*
  * not used but keep as example use for biquad filter
@@ -283,8 +283,7 @@ static inline void biquad(float *src, float *dst, int len, t_biquad *b)
     b->y2 = b->y1;
     b->y1 = f;
   }
-
-};
+}
 */
 
 /* Applies a set of biquadratic filters to a buffer of floating point
@@ -321,9 +320,9 @@ static inline void apply_biquads(float *src, float *dst, int channels, int len, 
       *dst++=f;
       boffs += blen;
       len--;
-    };
-  };
-};
+    }
+  }
+}
 
 /*
  preamping
@@ -944,10 +943,10 @@ static t_eq_set_list *append_eq_set(t_eq_set *eqs, t_eq_set_list *l)
       l->next->prev = l;
       l = append_eq_set(eqs, l->next);
     }
-  };
+  }
 
   return l;
-};
+}
 
 static void clear_eq_set(t_eq_set_list *l)
 {
@@ -964,7 +963,7 @@ static void clear_eq_set(t_eq_set_list *l)
     free(l->next);
     l->next = NULL;
   }
-};
+}
 
 /* parsing stuff */
 static int read_setup(char *name, char *desc, t_eq_setup **sp)
@@ -1147,4 +1146,4 @@ static int read_float(char *s, float *f, char **endp)
   *f = t;
 
   return 0;
-};
+}
