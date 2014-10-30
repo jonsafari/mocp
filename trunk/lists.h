@@ -7,8 +7,7 @@
 extern "C" {
 #endif
 
-struct lists_s_strs;
-typedef struct lists_s_strs lists_t_strs;
+typedef struct lists_strs lists_t_strs;
 typedef int lists_t_compare (const void *, const void *);
 
 /* List administration functions. */

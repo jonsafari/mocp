@@ -21,7 +21,7 @@
 #include "common.h"
 #include "lists.h"
 
-struct lists_s_strs {
+struct lists_strs {
 	int size;          /* Number of strings on the list */
 	int capacity;      /* Number of allocated strings */
 	char **strs;
