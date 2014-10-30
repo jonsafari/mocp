@@ -15,7 +15,6 @@
 
 #include <stdarg.h>
 #include <locale.h>
-#include <unistd.h>
 #include <assert.h>
 #include <string.h>
 #include <errno.h>
@@ -3054,7 +3053,7 @@ static void run_external_cmd (char **args, const int arg_num ASSERT_ONLY)
 			/* We have an error. */
 			fprintf (stderr, "\nError executing %s: %s\n", args[0],
 					strerror(errno));
-			sleep (2);
+			xsleep (2, 1);
 			exit (EXIT_FAILURE);
 		}
 
@@ -3063,7 +3062,7 @@ static void run_external_cmd (char **args, const int arg_num ASSERT_ONLY)
 		if (WIFEXITED(status) && WEXITSTATUS(status) != 0) {
 			fprintf (stderr, "\nCommand exited with error (status %d).\n",
 			                 WEXITSTATUS(status));
-			sleep (2);
+			xsleep (2, 1);
 		}
 		iface_restore ();
 	}

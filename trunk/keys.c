@@ -18,7 +18,6 @@
 #include <assert.h>
 #include <stdio.h>
 #include <errno.h>
-#include <unistd.h>
 #include <ctype.h>
 
 #define DEBUG
@@ -952,7 +951,7 @@ static int parse_key (const char *symbol)
 			fprintf (stderr,
 			         "\n\tUsing digits as keys is deprecated as they may"
 			         "\n\tbe used for specific purposes in release 2.6.\n");
-			sleep (5);
+			xsleep (5, 1);
 			digit_key_warned = true;
 		}
 		return symbol[0];
