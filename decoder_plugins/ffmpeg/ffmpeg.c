@@ -1115,7 +1115,7 @@ static int decode_packet (struct ffmpeg_data *data, AVPacket *pkt,
 	 *
 	 * See: avcodec.h in ffmpeg
 	 */
-	char avbuf[(AVCODEC_MAX_AUDIO_FRAME_SIZE * 3) / 2] __attribute__((aligned(16)));
+	char avbuf[(AVCODEC_MAX_AUDIO_FRAME_SIZE * 3) / 2] ATTR_ALIGNED(16);
 
 	data->avbuf_size = sizeof(avbuf);
 	data->avbuf = avbuf;
