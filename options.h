@@ -1,6 +1,8 @@
 #ifndef OPTIONS_H
 #define OPTIONS_H
 
+#include "lists.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -16,13 +18,11 @@ enum option_type
 	OPTION_ANY  = 255
 };
 
-struct lists_s_strs;
-
 int options_get_int (const char *name);
 bool options_get_bool (const char *name);
 char *options_get_str (const char *name);
 char *options_get_symb (const char *name);
-struct lists_s_strs *options_get_list (const char *name);
+lists_t_strs *options_get_list (const char *name);
 void options_set_int (const char *name, const int value);
 void options_set_bool (const char *name, const bool value);
 void options_set_str (const char *name, const char *value);

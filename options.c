@@ -1193,7 +1193,7 @@ char *options_get_symb (const char *name)
 	return options[i].value.str;
 }
 
-struct lists_s_strs *options_get_list (const char *name)
+lists_t_strs *options_get_list (const char *name)
 {
 	int i = find_option (name, OPTION_LIST);
 
