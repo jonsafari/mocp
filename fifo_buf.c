@@ -13,31 +13,43 @@
 # include "config.h"
 #endif
 
+#include <stddef.h>
 #include <assert.h>
 #include <string.h>
 
 #include "common.h"
 #include "fifo_buf.h"
 
-/* Initialize the fifo_buf structure with empty buffer of the given size. */
-void fifo_buf_init (struct fifo_buf *b, const size_t size)
+struct fifo_buf
 {
-	assert (b != NULL);
+	int size;                           /* Size of the buffer */
+	int pos;                            /* Current position */
+	int fill;                           /* Current fill */
+	char buf[FLEXIBLE_ARRAY_MEMBER];    /* The buffer content */
+};
+
+/* Initialize and return a new fifo_buf structure of the size requested. */
+struct fifo_buf *fifo_buf_new (const size_t size)
+{
+	struct fifo_buf *b;
+
 	assert (size > 0);
 
-	b->buf = (char *)xmalloc (size);
+	b = xmalloc (offsetof (struct fifo_buf, buf) + size);
+
 	b->size = size;
 	b->pos = 0;
 	b->fill = 0;
+
+	return b;
 }
 
 /* Destroy the buffer object. */
-void fifo_buf_destroy (struct fifo_buf *b)
+void fifo_buf_free (struct fifo_buf *b)
 {
 	assert (b != NULL);
 
-	free (b->buf);
-	b->buf = NULL;
+	free (b);
 }
 
 /* Put data into the buffer. Returns number of bytes actually put. */

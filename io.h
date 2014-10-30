@@ -78,7 +78,7 @@ struct io_stream
 	struct io_stream_curl curl;
 #endif
 
-	struct fifo_buf buf;
+	struct fifo_buf *buf;
 	pthread_mutex_t buf_mtx;
 	pthread_cond_t buf_free_cond; /* some space became available in the
 					 buffer */
