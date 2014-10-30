@@ -117,7 +117,7 @@ struct file_tags *tags_dup (const struct file_tags *tags)
 	return dtags;
 }
 
-static int rb_compare (const void *a, const void *b, void *adata)
+static int rb_compare (const void *a, const void *b, const void *adata)
 {
 	struct plist *plist = (struct plist *)adata;
 	int pos_a = (intptr_t)a;
@@ -126,7 +126,8 @@ static int rb_compare (const void *a, const void *b, void *adata)
 	return strcoll (plist->items[pos_a].file, plist->items[pos_b].file);
 }
 
-static int rb_fname_compare (const void *key, const void *data, void *adata)
+static int rb_fname_compare (const void *key, const void *data,
+                             const void *adata)
 {
 	struct plist *plist = (struct plist *)adata;
 	const char *fname = (const char *)key;
@@ -152,8 +153,7 @@ void plist_init (struct plist *plist)
 	plist->items = (struct plist_item *)xmalloc (sizeof(struct plist_item)
 			* INIT_SIZE);
 	plist->serial = -1;
-	rb_init_tree (&plist->search_tree, rb_compare, rb_fname_compare,
-			plist);
+	plist->search_tree = rb_tree_new (rb_compare, rb_fname_compare, plist);
 	plist->total_time = 0;
 	plist->items_with_time = 0;
 }
@@ -200,8 +200,8 @@ int plist_add (struct plist *plist, const char *file_name)
 	plist->items[plist->num].queue_pos = 0;
 
 	if (file_name) {
-		rb_delete (&plist->search_tree, file_name);
-		rb_insert (&plist->search_tree, (void *)(intptr_t)plist->num);
+		rb_delete (plist->search_tree, file_name);
+		rb_insert (plist->search_tree, (void *)(intptr_t)plist->num);
 	}
 
 	plist->num++;
@@ -316,7 +316,7 @@ void plist_clear (struct plist *plist)
 	plist->allocated = INIT_SIZE;
 	plist->num = 0;
 	plist->not_deleted = 0;
-	rb_clear (&plist->search_tree);
+	rb_tree_clear (plist->search_tree);
 	plist->total_time = 0;
 	plist->items_with_time = 0;
 }
@@ -330,6 +330,7 @@ void plist_free (struct plist *plist)
 	free (plist->items);
 	plist->allocated = 0;
 	plist->items = NULL;
+	rb_tree_free (plist->search_tree);
 }
 
 /* Sort the playlist by file names. */
@@ -345,20 +346,20 @@ void plist_sort_fname (struct plist *plist)
 	sorted = (struct plist_item *)xmalloc (plist_count(plist) *
 			sizeof(struct plist_item));
 
-	x = rb_min (&plist->search_tree);
+	x = rb_min (plist->search_tree);
 	assert (!rb_is_null(x));
 
-	while (plist_deleted(plist, (intptr_t)x->data))
+	while (plist_deleted(plist, (intptr_t)rb_get_data (x)))
 		x = rb_next (x);
 
-	sorted[0] = plist->items[(intptr_t)x->data];
-	x->data = NULL;
+	sorted[0] = plist->items[(intptr_t)rb_get_data (x)];
+	rb_set_data (x, NULL);
 
 	n = 1;
 	while (!rb_is_null(x = rb_next(x))) {
-		if (!plist_deleted(plist, (intptr_t)x->data)) {
-			sorted[n] = plist->items[(intptr_t)x->data];
-			x->data = (void *)(intptr_t)n++;
+		if (!plist_deleted(plist, (intptr_t)rb_get_data (x))) {
+			sorted[n] = plist->items[(intptr_t)rb_get_data (x)];
+			rb_set_data (x, (void *)(intptr_t)n++);
 		}
 	}
 
@@ -376,12 +377,13 @@ int plist_find_fname (struct plist *plist, const char *file)
 
 	assert (plist != NULL);
 
-	x = rb_search (&plist->search_tree, file);
+	x = rb_search (plist->search_tree, file);
 
 	if (rb_is_null(x))
 		return -1;
 
-	return !plist_deleted(plist, (intptr_t)x->data) ? (intptr_t)x->data : -1;
+	return !plist_deleted(plist, (intptr_t)rb_get_data (x)) ?
+                                 (intptr_t)rb_get_data (x) : -1;
 }
 
 /* Find an item in the list; also find deleted items.  If there is more than
@@ -674,7 +676,7 @@ void plist_set_file (struct plist *plist, const int num, const char *file)
 	assert (file != NULL);
 
 	if (plist->items[num].file) {
-		rb_delete (&plist->search_tree, file);
+		rb_delete (plist->search_tree, file);
 		free (plist->items[num].file);
 		plist->items[num].type = file_type (file);
 	}
@@ -682,7 +684,7 @@ void plist_set_file (struct plist *plist, const int num, const char *file)
 	plist->items[num].file = xstrdup (file);
 	plist->items[num].type = file_type (file);
 	plist->items[num].mtime = get_mtime (file);
-	rb_insert (&plist->search_tree, (void *)(intptr_t)num);
+	rb_insert (plist->search_tree, (void *)(intptr_t)num);
 }
 
 /* Add the content of playlist b to a by copying items. */
@@ -780,10 +782,10 @@ void plist_shuffle (struct plist *plist)
 		plist_swap (plist, i,
 				(rand()/(float)RAND_MAX) * (plist->num - 1));
 
-	rb_clear (&plist->search_tree);
+	rb_tree_clear (plist->search_tree);
 
 	for (i = 0; i < plist->num; i++)
-		rb_insert (&plist->search_tree, (void *)(intptr_t)i);
+		rb_insert (plist->search_tree, (void *)(intptr_t)i);
 }
 
 /* Swap the first item on the playlist with the item with file fname. */
@@ -797,11 +799,11 @@ void plist_swap_first_fname (struct plist *plist, const char *fname)
 	i = plist_find_fname (plist, fname);
 
 	if (i != -1 && i != 0) {
-		rb_delete (&plist->search_tree, fname);
-		rb_delete (&plist->search_tree, plist->items[0].file);
+		rb_delete (plist->search_tree, fname);
+		rb_delete (plist->search_tree, plist->items[0].file);
 		plist_swap (plist, 0, i);
-		rb_insert (&plist->search_tree, NULL);
-		rb_insert (&plist->search_tree, (void *)(intptr_t)i);
+		rb_insert (plist->search_tree, NULL);
+		rb_insert (plist->search_tree, (void *)(intptr_t)i);
 	}
 }
 
@@ -916,17 +918,18 @@ void plist_swap_files (struct plist *plist, const char *file1,
 	assert (file1 != NULL);
 	assert (file2 != NULL);
 
-	x1 = rb_search (&plist->search_tree, file1);
-	x2 = rb_search (&plist->search_tree, file2);
+	x1 = rb_search (plist->search_tree, file1);
+	x2 = rb_search (plist->search_tree, file2);
 
 	if (!rb_is_null(x1) && !rb_is_null(x2)) {
-		void *t;
+		const void *t;
 
-		plist_swap (plist, (intptr_t)x1->data, (intptr_t)x2->data);
+		plist_swap (plist, (intptr_t)rb_get_data (x1),
+		                   (intptr_t)rb_get_data (x2));
 
-		t = x1->data;
-		x1->data = x2->data;
-		x2->data = t;
+		t = rb_get_data (x1);
+		rb_set_data (x1, rb_get_data (x2));
+		rb_set_data (x2, t);
 	}
 }
 

@@ -182,7 +182,8 @@ void menu_set_cursor (const struct menu *m)
 		wmove (m->win, m->selected->num - m->top->num + m->posy, m->posx);
 }
 
-static int rb_compare (const void *a, const void *b, void *unused ATTR_UNUSED)
+static int rb_compare (const void *a, const void *b,
+                       const void *unused ATTR_UNUSED)
 {
 	struct menu_item *mia = (struct menu_item *)a;
 	struct menu_item *mib = (struct menu_item *)b;
@@ -191,7 +192,7 @@ static int rb_compare (const void *a, const void *b, void *unused ATTR_UNUSED)
 }
 
 static int rb_fname_compare (const void *key, const void *data,
-		void *unused ATTR_UNUSED)
+                             const void *unused ATTR_UNUSED)
 {
 	const char *fname = (const char *)key;
 	const struct menu_item *mi = (const struct menu_item *)data;
@@ -232,7 +233,7 @@ struct menu *menu_new (WINDOW *win, const int posx, const int posy,
 	menu->info_attr_sel_marked = A_NORMAL;
 	menu->number_items = 0;
 
-	rb_init_tree (&menu->search_tree, rb_compare, rb_fname_compare, NULL);
+	menu->search_tree = rb_tree_new (rb_compare, rb_fname_compare, NULL);
 
 	return menu;
 }
@@ -275,7 +276,7 @@ struct menu_item *menu_add (struct menu *menu, const char *title,
 		menu->selected = menu->items;
 
 	if (file)
-		rb_insert (&menu->search_tree, (void *)mi);
+		rb_insert (menu->search_tree, (void *)mi);
 
 	menu->last = mi;
 	menu->nitems++;
@@ -376,7 +377,7 @@ void menu_free (struct menu *menu)
 		mi = next;
 	}
 
-	rb_clear (&menu->search_tree);
+	rb_tree_free (menu->search_tree);
 
 	free (menu);
 }
@@ -704,11 +705,11 @@ struct menu_item *menu_find (struct menu *menu, const char *fname)
 	assert (menu != NULL);
 	assert (fname != NULL);
 
-	x = rb_search (&menu->search_tree, fname);
+	x = rb_search (menu->search_tree, fname);
 	if (rb_is_null(x))
 		return NULL;
 
-	return (struct menu_item *)x->data;
+	return (struct menu_item *)rb_get_data (x);
 }
 
 void menu_mark_item (struct menu *menu, const char *file)
@@ -759,7 +760,7 @@ static void menu_delete (struct menu *menu, struct menu_item *mi)
 		menu->top = mi->next ? mi->next : mi->prev;
 
 	if (mi->file)
-		rb_delete (&menu->search_tree, mi->file);
+		rb_delete (menu->search_tree, mi->file);
 
 	menu->nitems--;
 	menu_renumber_items (menu);

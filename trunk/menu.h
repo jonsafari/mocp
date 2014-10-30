@@ -91,7 +91,7 @@ struct menu
 	int info_attr_sel_marked;
 	int number_items; /* display item number (position) */
 
-	struct rb_tree search_tree; /* RB tree for searching by file name */
+	struct rb_tree *search_tree; /* RB tree for searching by file name */
 };
 
 /* Menu state: relative (to the first item) positions of the top and selected
