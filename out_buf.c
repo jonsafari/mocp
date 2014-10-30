@@ -121,7 +121,7 @@ static void *read_thread (void *arg)
 			logit ("Opening the device again after pause");
 			if (!audio_open(NULL)) {
 				logit ("Can't reopen the device! sleeping...");
-				sleep (1); /* there is no way to exit :( */
+				xsleep (1, 1); /* there is no way to exit :( */
 			}
 			else
 				audio_dev_closed = 0;
