@@ -418,11 +418,13 @@ static void show_help (poptContext ctx)
 /* Show POPT-interpreted command line arguments. */
 static void show_args ()
 {
-	char *str;
+	if (mocp_argc > 0) {
+		char *str;
 
-	str = render_popt_command_line ();
-	printf ("%s\n", str);
-	free (str);
+		str = render_popt_command_line ();
+		printf ("%s\n", str);
+		free (str);
+	}
 }
 
 /* Disambiguate the user's request. */
@@ -858,8 +860,7 @@ static char *render_popt_command_line ()
 	if (rest)
 		lists_strs_load (cmdline, rest);
 
-	if (lists_strs_size (cmdline) > 0)
-		result = lists_strs_fmt (cmdline, "%s ");
+	result = lists_strs_fmt (cmdline, "%s ");
 
 err:
 	poptFreeContext (ctx);
