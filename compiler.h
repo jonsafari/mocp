@@ -5,6 +5,12 @@
 extern "C" {
 #endif
 
+#ifdef HAVE_FUNC_ATTRIBUTE_FORMAT
+# define ATTR_PRINTF(x,y) __attribute__ ((format (printf, x, y)))
+#else
+# define ATTR_PRINTF(...)
+#endif
+
 #ifdef HAVE_FUNC_ATTRIBUTE_NORETURN
 # define ATTR_NORETURN __attribute__((noreturn))
 #else

@@ -38,14 +38,7 @@ void interface_loop ();
 void interface_end ();
 int user_wants_interrupt ();
 void interface_error (const char *msg);
-
-#ifdef HAVE_FUNC_ATTRIBUTE_FORMAT
-void interface_fatal (const char *format, ...)
-	__attribute__ ((format (printf, 1, 2)));
-#else
-void interface_fatal (const char *format, ...);
-#endif
-
+void interface_fatal (const char *format, ...) ATTR_PRINTF(1, 2);
 void interface_cmdline_clear_plist (int server_sock);
 void interface_cmdline_append (int server_sock, lists_t_strs *args);
 void interface_cmdline_play_first (int server_sock);

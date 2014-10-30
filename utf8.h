@@ -32,16 +32,9 @@ int xwaddnstr (WINDOW *win, const char *str, const int n);
 int xmvwaddstr (WINDOW *win, const int y, const int x, const char *str);
 int xmvwaddnstr (WINDOW *win, const int y, const int x, const char *str,
 		const int n);
-#ifdef HAVE_FUNC_ATTRIBUTE_FORMAT
-int xwprintw (WINDOW *win, const char *fmt, ...)
-	__attribute__ ((format (printf, 2, 3)));
-#else
-int xwprintw (WINDOW *win, const char *fmt, ...);
-#endif
-
+int xwprintw (WINDOW *win, const char *fmt, ...) ATTR_PRINTF(2, 3);
 size_t strwidth (const char *s);
 char *xstrtail (const char *str, const int len);
-
 char *iconv_str (const iconv_t desc, const char *str);
 char *files_iconv_str (const char *str);
 char *xterm_iconv_str (const char *str);
