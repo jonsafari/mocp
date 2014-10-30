@@ -82,7 +82,6 @@ struct parameters
 	char *off;
 };
 
-
 /* Connect to the server, return fd of the socket or -1 on error. */
 static int server_connect ()
 {
@@ -106,7 +105,7 @@ static int server_connect ()
 }
 
 /* Ping the server.
- * Return 1 if the server responds with EV_PONG, otherwise 1. */
+ * Return 1 if the server responds with EV_PONG, otherwise 0. */
 static int ping_server (int sock)
 {
 	int event;
@@ -129,14 +128,13 @@ static void check_moc_dir ()
 	dir_name[strlen(dir_name)-1] = 0;
 
 	if (stat (dir_name, &file_stat) == -1) {
-		if (errno == ENOENT) {
-			if (mkdir (dir_name, 0700) == -1)
-				fatal ("Can't create directory %s: %s",
-						dir_name, strerror (errno));
-		}
-		else
+		if (errno != ENOENT)
 			fatal ("Error trying to check for "CONFIG_DIR" directory: %s",
 			        strerror (errno));
+
+		if (mkdir (dir_name, 0700) == -1)
+			fatal ("Can't create directory %s: %s",
+					dir_name, strerror (errno));
 	}
 	else {
 		if (!S_ISDIR(file_stat.st_mode) || access (dir_name, W_OK))
@@ -217,15 +215,14 @@ static void start_moc (const struct parameters *params, lists_t_strs *args)
 
 	if (!params->only_server) {
 		signal (SIGPIPE, SIG_IGN);
-		if (ping_server(server_sock)) {
-			if (!params->dont_run_iface) {
-				init_interface (server_sock, params->debug, args);
-				interface_loop ();
-				interface_end ();
-			}
-		}
-		else
+		if (!ping_server (server_sock))
 			fatal ("Can't connect to the server!");
+
+		if (!params->dont_run_iface) {
+			init_interface (server_sock, params->debug, args);
+			interface_loop ();
+			interface_end ();
+		}
 	}
 
 	if (!params->foreground && params->only_server)
@@ -243,89 +240,79 @@ static void server_command (struct parameters *params, lists_t_strs *args)
 		fatal ("The server is not running!");
 
 	signal (SIGPIPE, SIG_IGN);
-	if (ping_server(sock)) {
-		if (params->playit)
-			interface_cmdline_playit (sock, args);
-		if (params->clear)
-			interface_cmdline_clear_plist (sock);
-		if (params->append)
-			interface_cmdline_append (sock, args);
-		if (params->enqueue)
-			interface_cmdline_enqueue (sock, args);
-		if (params->play)
-			interface_cmdline_play_first (sock);
-		if (params->get_file_info)
-			interface_cmdline_file_info (sock);
-		if (params->seek_by)
-			interface_cmdline_seek_by (sock, params->seek_by);
-		if (params->jump_type=='%')
-			interface_cmdline_jump_to_percent (sock,params->jump_to);
-		if (params->jump_type=='s')
-			interface_cmdline_jump_to (sock,params->jump_to);
-		if (params->get_formatted_info)
-			interface_cmdline_formatted_info (sock,
-					params->formatted_info_param);
-		if (params->adj_volume)
-			interface_cmdline_adj_volume (sock, params->adj_volume);
-		if (params->toggle)
-			interface_cmdline_set (sock, params->toggle, 2);
-		if (params->on)
-			interface_cmdline_set (sock, params->on, 1);
-		if (params->off)
-			interface_cmdline_set (sock, params->off, 0);
-		if (params->exit) {
-			if (!send_int(sock, CMD_QUIT))
-				fatal ("Can't send command!");
-		}
-		else if (params->stop) {
-			if (!send_int(sock, CMD_STOP)
-					|| !send_int(sock, CMD_DISCONNECT))
-				fatal ("Can't send commands!");
-		}
-		else if (params->pause) {
-			if (!send_int(sock, CMD_PAUSE)
-					|| !send_int(sock, CMD_DISCONNECT))
-				fatal ("Can't send commands!");
-		}
-		else if (params->next) {
-			if (!send_int(sock, CMD_NEXT)
-					|| !send_int(sock, CMD_DISCONNECT))
-				fatal ("Can't send commands!");
-		}
-		else if (params->previous) {
-			if (!send_int(sock, CMD_PREV)
-					|| !send_int(sock, CMD_DISCONNECT))
-				fatal ("Can't send commands!");
-		}
-		else if (params->unpause) {
-			if (!send_int(sock, CMD_UNPAUSE)
-					|| !send_int(sock, CMD_DISCONNECT))
-				fatal ("Can't send commands!");
-		}
-		else if (params->toggle_pause) {
-			int state;
-			int ev;
-			int cmd = -1;
-
-			if (!send_int(sock, CMD_GET_STATE))
-				fatal ("Can't send commands!");
-			if (!get_int(sock, &ev) || ev != EV_DATA
-					|| !get_int(sock, &state))
-				fatal ("Can't get data from the server!");
-
-			if (state == STATE_PAUSE)
-				cmd = CMD_UNPAUSE;
-			else if (state == STATE_PLAY)
-				cmd = CMD_PAUSE;
-
-			if (cmd != -1 && !send_int(sock, cmd))
-				fatal ("Can't send commands!");
-			if (!send_int(sock, CMD_DISCONNECT))
-				fatal ("Can't send commands!");
-		}
-	}
-	else
+	if (!ping_server (sock))
 		fatal ("Can't connect to the server!");
+
+	if (params->playit)
+		interface_cmdline_playit (sock, args);
+	if (params->clear)
+		interface_cmdline_clear_plist (sock);
+	if (params->append)
+		interface_cmdline_append (sock, args);
+	if (params->enqueue)
+		interface_cmdline_enqueue (sock, args);
+	if (params->play)
+		interface_cmdline_play_first (sock);
+	if (params->get_file_info)
+		interface_cmdline_file_info (sock);
+	if (params->seek_by)
+		interface_cmdline_seek_by (sock, params->seek_by);
+	if (params->jump_type=='%')
+		interface_cmdline_jump_to_percent (sock,params->jump_to);
+	if (params->jump_type=='s')
+		interface_cmdline_jump_to (sock,params->jump_to);
+	if (params->get_formatted_info)
+		interface_cmdline_formatted_info (sock, params->formatted_info_param);
+	if (params->adj_volume)
+		interface_cmdline_adj_volume (sock, params->adj_volume);
+	if (params->toggle)
+		interface_cmdline_set (sock, params->toggle, 2);
+	if (params->on)
+		interface_cmdline_set (sock, params->on, 1);
+	if (params->off)
+		interface_cmdline_set (sock, params->off, 0);
+	if (params->exit) {
+		if (!send_int(sock, CMD_QUIT))
+			fatal ("Can't send command!");
+	}
+	else if (params->stop) {
+		if (!send_int(sock, CMD_STOP) || !send_int(sock, CMD_DISCONNECT))
+			fatal ("Can't send commands!");
+	}
+	else if (params->pause) {
+		if (!send_int(sock, CMD_PAUSE) || !send_int(sock, CMD_DISCONNECT))
+			fatal ("Can't send commands!");
+	}
+	else if (params->next) {
+		if (!send_int(sock, CMD_NEXT) || !send_int(sock, CMD_DISCONNECT))
+			fatal ("Can't send commands!");
+	}
+	else if (params->previous) {
+		if (!send_int(sock, CMD_PREV) || !send_int(sock, CMD_DISCONNECT))
+			fatal ("Can't send commands!");
+	}
+	else if (params->unpause) {
+		if (!send_int(sock, CMD_UNPAUSE) || !send_int(sock, CMD_DISCONNECT))
+			fatal ("Can't send commands!");
+	}
+	else if (params->toggle_pause) {
+		int state, ev, cmd = -1;
+
+		if (!send_int(sock, CMD_GET_STATE))
+			fatal ("Can't send commands!");
+		if (!get_int(sock, &ev) || ev != EV_DATA || !get_int(sock, &state))
+			fatal ("Can't get data from the server!");
+
+		if (state == STATE_PAUSE)
+			cmd = CMD_UNPAUSE;
+		else if (state == STATE_PLAY)
+			cmd = CMD_PAUSE;
+
+		if (cmd != -1 && !send_int(sock, cmd))
+			fatal ("Can't send commands!");
+		if (!send_int(sock, CMD_DISCONNECT))
+			fatal ("Can't send commands!");
+	}
 
 	close (sock);
 }

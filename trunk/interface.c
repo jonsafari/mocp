@@ -4062,8 +4062,8 @@ void interface_cmdline_enqueue (int server_sock, lists_t_strs *args)
 
 void interface_cmdline_playit (int server_sock, lists_t_strs *args)
 {
+	int ix, serial;
 	struct plist plist;
-	int ix;
 
 	srv_sock = server_sock; /* the interface is not initialized, so set it
 				   here */
@@ -4084,25 +4084,22 @@ void interface_cmdline_playit (int server_sock, lists_t_strs *args)
 		}
 	}
 
-	if (plist_count(&plist)) {
-		int serial;
-
-		send_int_to_srv (CMD_LOCK);
-
-		send_playlist (&plist, 1);
-
-		send_int_to_srv (CMD_GET_SERIAL);
-		serial = get_data_int ();
-		send_int_to_srv (CMD_PLIST_SET_SERIAL);
-		send_int_to_srv (serial);
-
-		send_int_to_srv (CMD_UNLOCK);
-
-		send_int_to_srv (CMD_PLAY);
-		send_str_to_srv ("");
-	}
-	else
+	if (plist_count (&plist) == 0)
 		fatal ("No files added - no sound files on command line!");
+
+	send_int_to_srv (CMD_LOCK);
+
+	send_playlist (&plist, 1);
+
+	send_int_to_srv (CMD_GET_SERIAL);
+	serial = get_data_int ();
+	send_int_to_srv (CMD_PLIST_SET_SERIAL);
+	send_int_to_srv (serial);
+
+	send_int_to_srv (CMD_UNLOCK);
+
+	send_int_to_srv (CMD_PLAY);
+	send_str_to_srv ("");
 
 	plist_free (&plist);
 }

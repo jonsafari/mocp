@@ -1085,7 +1085,7 @@ static AVPacket *get_packet (struct ffmpeg_data *data)
 	free_packet (pkt);
 
 	/* FFmpeg has (at least) two ways of indicating EOF.  (Awesome!) */
-	if (rc == (int)AVERROR_EOF)
+	if (rc == AVERROR_EOF)
 		data->eof = true;
 	if (data->ic->pb && data->ic->pb->eof_reached)
 		data->eof = true;
