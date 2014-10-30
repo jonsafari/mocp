@@ -85,7 +85,7 @@ static struct {
 	-1
 };
 
-static struct tags_cache tags_cache;
+static struct tags_cache *tags_cache;
 
 extern char **environ;
 
@@ -168,7 +168,7 @@ static int add_client (int sock)
 			clients[i].requests_plist = 0;
 			clients[i].can_send_plist = 0;
 			clients[i].lock = 0;
-			tags_cache_clear_queue (&tags_cache, i);
+			tags_cache_clear_queue (tags_cache, i);
 			return 1;
 		}
 
@@ -237,7 +237,7 @@ static void del_client (struct client *cli)
 	cli->socket = -1;
 	LOCK (cli->events_mtx);
 	event_queue_free (&cli->events);
-	tags_cache_clear_queue (&tags_cache, client_index(cli));
+	tags_cache_clear_queue (tags_cache, client_index(cli));
 	UNLOCK (cli->events_mtx);
 }
 
@@ -372,8 +372,8 @@ int server_init (int debugging, int foreground)
 
 	clients_init ();
 	audio_initialize ();
-	tags_cache_init (&tags_cache, options_get_int("TagsCacheSize"));
-	tags_cache_load (&tags_cache, create_file_name("cache"));
+	tags_cache = tags_cache_new (options_get_int("TagsCacheSize"));
+	tags_cache_load (tags_cache, create_file_name("cache"));
 
 	server_tid = pthread_self ();
 	thread_signal (SIGTERM, sig_exit);
@@ -469,7 +469,7 @@ static void on_song_change ()
 		return;
 	}
 
-	curr_tags = tags_cache_get_immediate (&tags_cache, curr_file,
+	curr_tags = tags_cache_get_immediate (tags_cache, curr_file,
 	                                      TAGS_COMMENTS | TAGS_TIME);
 	arg_list = lists_strs_new (lists_strs_size (on_song_change));
 	for (ix = 0; ix < lists_strs_size (on_song_change); ix += 1) {
@@ -691,8 +691,9 @@ static void server_shutdown ()
 {
 	logit ("Server exiting...");
 	audio_exit ();
-	tags_cache_save (&tags_cache, create_file_name("tags_cache"));
-	tags_cache_destroy (&tags_cache);
+	tags_cache_save (tags_cache, create_file_name("tags_cache"));
+	tags_cache_free (tags_cache);
+	tags_cache = NULL;
 	unlink (socket_name());
 	unlink (create_file_name(PID_FILE));
 	close (wake_up_pipe[0]);
@@ -1342,7 +1343,7 @@ static int get_file_tags (const int cli_id)
 		return 0;
 	}
 
-	tags_cache_add_request (&tags_cache, file, tags_sel, cli_id);
+	tags_cache_add_request (tags_cache, file, tags_sel, cli_id);
 	free (file);
 
 	return 1;
@@ -1355,7 +1356,7 @@ static int abort_tags_requests (const int cli_id)
 	if (!(file = get_str(clients[cli_id].socket)))
 		return 0;
 
-	tags_cache_clear_up_to (&tags_cache, file, cli_id);
+	tags_cache_clear_up_to (tags_cache, file, cli_id);
 	free (file);
 
 	return 1;
