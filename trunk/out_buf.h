@@ -12,7 +12,7 @@ typedef void (out_buf_free_callback)();
 
 struct out_buf
 {
-	struct fifo_buf buf;
+	struct fifo_buf *buf;
 	pthread_mutex_t	mutex;
 	pthread_t tid;	/* Thread id of the reading thread. */
 
