@@ -42,16 +42,16 @@ struct flac_data
 	int avg_bitrate;
 	int abort; /* abort playing (due to an error) */
 
-	unsigned length;
+	unsigned int length;
 	FLAC__uint64 total_samples;
 
 	FLAC__byte sample_buffer[SAMPLE_BUFFER_SIZE];
-	unsigned sample_buffer_fill;
+	unsigned int sample_buffer_fill;
 
 	/* sound parameters */
-	unsigned bits_per_sample;
-	unsigned sample_rate;
-	unsigned channels;
+	unsigned int bits_per_sample;
+	unsigned int sample_rate;
+	unsigned int channels;
 
 	FLAC__uint64 last_decode_position;
 
@@ -61,15 +61,15 @@ struct flac_data
 
 /* Convert FLAC big-endian data into PCM little-endian. */
 static size_t pack_pcm_signed (FLAC__byte *data,
-		const FLAC__int32 * const input[], unsigned wide_samples,
-		unsigned channels, unsigned bps)
+		const FLAC__int32 * const input[], unsigned int wide_samples,
+		unsigned int channels, unsigned int bps)
 {
 	FLAC__byte * const start = data;
 	FLAC__int32 sample;
 	const FLAC__int32 *input_;
-	unsigned samples, channel;
-	unsigned bytes_per_sample;
-	unsigned incr;
+	unsigned int samples, channel;
+	unsigned int bytes_per_sample;
+	unsigned int incr;
 
 	if (bps == 24)
 		bps = 32; /* we encode to 32-bit words */
@@ -115,7 +115,7 @@ static FLAC__StreamDecoderWriteStatus write_cb (
 		const FLAC__int32 * const buffer[], void *client_data)
 {
 	struct flac_data *data = (struct flac_data *)client_data;
-	const unsigned wide_samples = frame->header.blocksize;
+	const unsigned int wide_samples = frame->header.blocksize;
 
 	if (data->abort)
 		return FLAC__STREAM_DECODER_WRITE_STATUS_ABORT;
@@ -374,7 +374,7 @@ static void get_vorbiscomments (const char *filename, struct file_tags *tags)
 			block = FLAC__metadata_simple_iterator_get_block (
 					iterator);
 			if (block) {
-				unsigned i;
+				unsigned int i;
 				const FLAC__StreamMetadata_VorbisComment *vc
 					= &block->data.vorbis_comment;
 
@@ -412,7 +412,7 @@ static int flac_seek (void *void_data, int sec)
 	struct flac_data *data = (struct flac_data *)void_data;
 	FLAC__uint64 target_sample;
 
-	if ((unsigned)sec > data->length)
+	if ((unsigned int)sec > data->length)
 		return -1;
 
 	target_sample = (FLAC__uint64)(((double)sec / (double)data->length) *
@@ -431,7 +431,7 @@ static int flac_decode (void *void_data, char *buf, int buf_len,
 		struct sound_params *sound_params)
 {
 	struct flac_data *data = (struct flac_data *)void_data;
-	unsigned to_copy;
+	unsigned int to_copy;
 	int bytes_per_sample;
 	FLAC__uint64 decode_position;
 
@@ -489,7 +489,7 @@ static int flac_decode (void *void_data, char *buf, int buf_len,
 
 	debug ("Decoded %d bytes", data->sample_buffer_fill);
 
-	to_copy = MIN((unsigned)buf_len, data->sample_buffer_fill);
+	to_copy = MIN((unsigned int)buf_len, data->sample_buffer_fill);
 	memcpy (buf, data->sample_buffer, to_copy);
 	memmove (data->sample_buffer, data->sample_buffer + to_copy,
 			data->sample_buffer_fill - to_copy);

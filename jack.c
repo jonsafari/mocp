@@ -284,7 +284,7 @@ static int moc_jack_play (const char *buff, const size_t size)
 			}
 		}
 		else {
-			debug ("Sleeping for %uus", (unsigned)(RINGBUF_SZ
+			debug ("Sleeping for %uus", (unsigned int)(RINGBUF_SZ
 					/ (float)(audio_get_bps()) * 100000.0));
 			xsleep (RINGBUF_SZ, audio_get_bps ());
 		}
