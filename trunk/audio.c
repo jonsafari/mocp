@@ -74,7 +74,7 @@ static char *curr_playing_fname = NULL;
 static int started_playing_in_queue = 0;
 static pthread_mutex_t curr_playing_mtx = PTHREAD_MUTEX_INITIALIZER;
 
-static struct out_buf out_buf;
+static struct out_buf *out_buf;
 static struct hw_funcs hw;
 static struct output_driver_caps hw_caps; /* capabilities of the output
 					     driver */
@@ -437,21 +437,21 @@ static void *play_thread (void *unused ATTR_UNUSED)
 				free (curr_playing_fname);
 			curr_playing_fname = xstrdup (file);
 
-			out_buf_time_set (&out_buf, 0.0);
+			out_buf_time_set (out_buf, 0.0);
 
 			next = plist_next (curr_plist, curr_playing);
 			next_file = next != -1 ? plist_get_file (curr_plist, next) : NULL;
 			UNLOCK (plist_mtx);
 			UNLOCK (curr_playing_mtx);
 
-			player (file, next_file, &out_buf);
+			player (file, next_file, out_buf);
 			if (next_file)
 				free (next_file);
 
 			set_info_rate (0);
 			set_info_bitrate (0);
 			set_info_channels (1);
-			out_buf_time_set (&out_buf, 0.0);
+			out_buf_time_set (out_buf, 0.0);
 			free (file);
 		}
 
@@ -627,7 +627,7 @@ void audio_pause ()
 			curr_playing_fname = xstrdup (sname);
 		}
 		else
-			out_buf_pause (&out_buf);
+			out_buf_pause (out_buf);
 
 		prev_state = state;
 		state = STATE_PAUSE;
@@ -651,7 +651,7 @@ void audio_unpause ()
 		free (url);
 	}
 	else if (curr_playing != -1) {
-		out_buf_unpause (&out_buf);
+		out_buf_unpause (out_buf);
 		prev_state = state;
 		state = STATE_PLAY;
 		UNLOCK (curr_playing_mtx);
@@ -765,9 +765,9 @@ int audio_send_buf (const char *buf, const size_t size)
 		converted = audio_conv (&sound_conv, buf, size, &out_data_len);
 
 	if (need_audio_conversion && converted)
-		res = out_buf_put (&out_buf, converted,	out_data_len);
+		res = out_buf_put (out_buf, converted,	out_data_len);
 	else if (!need_audio_conversion)
-		res = out_buf_put (&out_buf, buf, size);
+		res = out_buf_put (out_buf, buf, size);
 	else
 		res = 0;
 
@@ -849,7 +849,7 @@ int audio_send_pcm (const char *buf, const size_t size)
 /* Get current time of the song in seconds. */
 int audio_get_time ()
 {
-	return state != STATE_STOP ? out_buf_time_get (&out_buf) : 0;
+	return state != STATE_STOP ? out_buf_time_get (out_buf) : 0;
 }
 
 void audio_close ()
@@ -952,7 +952,7 @@ void audio_initialize ()
 		hw_caps.formats &= ~(SFMT_S32 | SFMT_U32);
 	}
 
-	out_buf_init (&out_buf, options_get_int("OutputBuffer") * 1024);
+	out_buf = out_buf_new (options_get_int("OutputBuffer") * 1024);
 
 	softmixer_init();
 	equalizer_init();
@@ -970,7 +970,8 @@ void audio_exit ()
 	audio_stop ();
 	if (hw.shutdown)
 		hw.shutdown ();
-	out_buf_destroy (&out_buf);
+	out_buf_free (out_buf);
+	out_buf = NULL;
 	plist_free (&playlist);
 	plist_free (&shuffled_plist);
 	plist_free (&queue);

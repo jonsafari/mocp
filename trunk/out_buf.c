@@ -36,6 +36,34 @@
 #include "out_buf.h"
 #include "options.h"
 
+struct out_buf
+{
+	struct fifo_buf *buf;
+	pthread_mutex_t	mutex;
+	pthread_t tid;	/* Thread id of the reading thread. */
+
+	/* Signals. */
+	pthread_cond_t play_cond;	/* Something was written to the buffer. */
+	pthread_cond_t ready_cond;	/* There is some space in the buffer. */
+
+	/* Optional callback called when there is some free space in
+	 * the buffer. */
+	out_buf_free_callback *free_callback;
+
+	/* State flags of the buffer. */
+	int pause;
+	int exit;	/* Exit when the buffer is empty. */
+	int stop;	/* Don't play anything. */
+
+	int reset_dev;	/* Request to the reading thread to reset the audio
+			   device. */
+
+	float time;	/* Time of played sound. */
+	int hardware_buf_fill;	/* How the sound card buffer is filled. */
+
+	int read_thread_waiting; /* Is the read thread waiting for data? */
+};
+
 /* Don't play more than this value (in seconds) in one audio_play().
  * This prevents locking. */
 #define AUDIO_MAX_PLAY		0.1
@@ -190,13 +218,15 @@ static void *read_thread (void *arg)
 	return NULL;
 }
 
-/* Initialize the buf structure, size is the buffer size. */
-void out_buf_init (struct out_buf *buf, int size)
+/* Allocate and initialize the buf structure, size is the buffer size. */
+struct out_buf *out_buf_new (int size)
 {
 	int rc;
+	struct out_buf *buf;
 
-	assert (buf != NULL);
 	assert (size > 0);
+
+	buf = xmalloc (sizeof (struct out_buf));
 
 	buf->buf = fifo_buf_new (size);
 	buf->exit = 0;
@@ -219,11 +249,13 @@ void out_buf_init (struct out_buf *buf, int size)
 	rc = pthread_create (&buf->tid, NULL, read_thread, buf);
 	if (rc != 0)
 		fatal ("Can't create buffer thread: %s", strerror (rc));
+
+	return buf;
 }
 
 /* Wait for empty buffer, end playing, free resources allocated for the buf
  * structure.  Can be used only if nothing is played. */
-void out_buf_destroy (struct out_buf *buf)
+void out_buf_free (struct out_buf *buf)
 {
 	int rc;
 
@@ -254,6 +286,8 @@ void out_buf_destroy (struct out_buf *buf)
 	rc = pthread_cond_destroy (&buf->ready_cond);
 	if (rc != 0)
 		logit ("Destroying buffer ready condition failed: %s", strerror (rc));
+
+	free (buf);
 
 	logit ("buffer destroyed");
 
