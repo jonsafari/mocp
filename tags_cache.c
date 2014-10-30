@@ -76,6 +76,33 @@ struct request_queue_node
 	int tags_sel; /* which tags to read (TAGS_*) */
 };
 
+struct request_queue
+{
+	struct request_queue_node *head;
+	struct request_queue_node *tail;
+};
+
+struct tags_cache
+{
+	/* BerkeleyDB's stuff for storing cache. */
+#ifdef HAVE_DB_H
+	DB_ENV *db_env;
+	DB *db;
+	u_int32_t locker;
+#endif
+
+	int max_items;		/* maximum number of items in the cache. */
+	struct request_queue queues[CLIENTS_MAX]; /* requests queues for each
+						     client */
+	int stop_reader_thread; /* request for stopping read thread (if
+				   non-zero) */
+	pthread_cond_t request_cond; /* condition for signalizing new
+					requests */
+	pthread_mutex_t mutex; /* mutex for all above data (except db because
+				  it's thread-safe) */
+	pthread_t reader_thread; /* tid of the reading thread */
+};
+
 struct cache_record
 {
 	time_t mod_time;		/* last modification time of the file */
@@ -686,38 +713,41 @@ static void *reader_thread (void *cache_ptr)
 	return NULL;
 }
 
-void tags_cache_init (struct tags_cache *c, size_t max_size)
+struct tags_cache *tags_cache_new (size_t max_size)
 {
 	int i, rc;
+	struct tags_cache *result;
 
-	assert (c != NULL);
+	result = (struct tags_cache *)xmalloc (sizeof (struct tags_cache));
 
 #ifdef HAVE_DB_H
-	c->db_env = NULL;
-	c->db = NULL;
+	result->db_env = NULL;
+	result->db = NULL;
 #endif
 
 	for (i = 0; i < CLIENTS_MAX; i++)
-		request_queue_init (&c->queues[i]);
+		request_queue_init (&result->queues[i]);
 
 #if CACHE_DB_FORMAT_VERSION
-	c->max_items = max_size;
+	result->max_items = max_size;
 #else
-	c->max_items = 0;
+	result->max_items = 0;
 #endif
-	c->stop_reader_thread = 0;
-	pthread_mutex_init (&c->mutex, NULL);
+	result->stop_reader_thread = 0;
+	pthread_mutex_init (&result->mutex, NULL);
 
-	rc = pthread_cond_init (&c->request_cond, NULL);
+	rc = pthread_cond_init (&result->request_cond, NULL);
 	if (rc != 0)
 		fatal ("Can't create request_cond: %s", strerror (rc));
 
-	rc = pthread_create (&c->reader_thread, NULL, reader_thread, c);
+	rc = pthread_create (&result->reader_thread, NULL, reader_thread, result);
 	if (rc != 0)
 		fatal ("Can't create tags cache thread: %s", strerror (rc));
+
+	return result;
 }
 
-void tags_cache_destroy (struct tags_cache *c)
+void tags_cache_free (struct tags_cache *c)
 {
 	int i, rc;
 
@@ -767,6 +797,8 @@ void tags_cache_destroy (struct tags_cache *c)
 	rc = pthread_cond_destroy (&c->request_cond);
 	if (rc != 0)
 		logit ("Can't destroy request_cond: %s", strerror (rc));
+
+	free (c);
 }
 
 #ifdef HAVE_DB_H
