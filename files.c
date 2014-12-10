@@ -408,6 +408,7 @@ int read_directory (const char *directory, lists_t_strs *dirs,
 		              dir_is_root ? "" : directory, entry->d_name);
 		if (rc >= ssizeof(file)) {
 			error ("Path too long!");
+			closedir (dir);
 			return 0;
 		}
 		type = file_type (file);
