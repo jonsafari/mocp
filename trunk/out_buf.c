@@ -23,7 +23,9 @@
 #include <errno.h>
 
 #ifdef OUT_TEST
+#include <unistd.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <fcntl.h>
 #endif
 
