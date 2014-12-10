@@ -128,7 +128,6 @@ char *xstrdup (const char *s)
 	return s ? n : NULL;
 }
 
-#ifdef NEED_XSLEEP
 /* Sleep for the specified number of 'ticks'. */
 void xsleep (size_t ticks, size_t ticks_per_sec)
 {
@@ -153,7 +152,6 @@ void xsleep (size_t ticks, size_t ticks_per_sec)
 		} while (rc != 0);
 	}
 }
-#endif
 
 void set_me_server ()
 {
