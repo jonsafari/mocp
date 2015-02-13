@@ -691,7 +691,7 @@ static void alsa_set_mixer (int vol)
 			real_vol = &real_volume2;
 		}
 
-		vol_alsa = vol * (mixer_max - mixer_min) / 100;
+		vol_alsa = vol * (mixer_max - mixer_min) / 100 + mixer_min;
 
 		debug ("Setting vol to %ld", vol_alsa);
 
