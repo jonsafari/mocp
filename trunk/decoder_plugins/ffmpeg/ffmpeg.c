@@ -277,6 +277,11 @@ static unsigned int find_first_audio (AVFormatContext *ic)
 static void load_audio_extns (lists_t_strs *list)
 {
 	int ix;
+
+	/* When adding an entry to this list, tests need to be performed to
+	 * determine whether or not FFmpeg/LibAV handles durations and seeking
+	 * correctly.  If not, then the appropriate additions should be made
+	 * in is_timing_broken() and is_seek_broken(). */
 	const struct extn_list audio_extns[] = {
 		{"aac", "aac"},
 		{"ac3", "ac3"},
@@ -302,6 +307,7 @@ static void load_audio_extns (lists_t_strs *list)
 		{"ra", "rm"},
 		{"sap", "libgme"},
 		{"spc", "libgme"},
+		{"tta", "tta"},
 		{"vgm", "libgme"},
 		{"vgz", "libgme"},
 		{"vqf", "vqf"},

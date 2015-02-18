@@ -30,6 +30,7 @@
 	  - echo-args: Show POPT-interpreted command line arguments
 	* Changes to supported formats and codecs:
 	  - VQF: now supported via FFmpeg/LibAV
+	  - TTA: now supported via FFmpeg/LibAV
 
 2.5.0 - "Consolidation"
 	* Autotools and packaging changes:
