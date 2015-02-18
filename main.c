@@ -51,6 +51,15 @@ static const char **mocp_argv;
 static int popt_next_val = 1;
 static char *render_popt_command_line ();
 
+/* List of MOC-specific environment variables. */
+static struct {
+	const char *name;
+	const char *desc;
+} environment_variables[] = {
+	{"MOCP_OPTS", "Additional command line options"},
+	{"MOCP_POPTRC", "List of POPT configuration files"}
+};
+
 struct parameters
 {
 	char *config_file;
@@ -404,14 +413,16 @@ static void show_usage (poptContext ctx)
 /* Show program help. */
 static void show_help (poptContext ctx)
 {
+	size_t ix;
+
 	show_banner ();
 	poptSetOtherOptionHelp (ctx, mocp_summary);
 	poptPrintHelp (ctx, stdout, 0);
+
 	printf ("\nEnvironment variables:\n\n");
-	printf ("  MOCP_OPTS  "
-	        "                       Additional command line options\n");
-	printf ("  MOCP_POPTRC"
-	        "                       List of POPT configuration files\n");
+	for (ix = 0; ix < ARRAY_SIZE(environment_variables); ix += 1)
+		printf ("  %-34s%s\n", environment_variables[ix].name,
+		                       environment_variables[ix].desc);
 	printf ("\n");
 }
 
@@ -420,6 +431,14 @@ static void show_args ()
 {
 	if (mocp_argc > 0) {
 		char *str;
+
+		str = getenv ("MOCP_POPTRC");
+		if (str)
+			printf ("MOCP_POPTRC='%s' ", str);
+
+		str = getenv ("MOCP_OPTS");
+		if (str)
+			printf ("MOCP_OPTS='%s' ", str);
 
 		str = render_popt_command_line ();
 		printf ("%s\n", str);
@@ -574,10 +593,9 @@ static void read_mocp_poptrc (poptContext ctx, const char *env_poptrc)
 	int ix, rc, count;
 	lists_t_strs *files;
 
-	logit ("MOCP_POPTRC: %s", env_poptrc);
-
 	files = lists_strs_new (4);
 	count = lists_strs_split (files, env_poptrc, ":");
+
 	for (ix = 0; ix < count; ix += 1) {
 		const char *fn;
 
@@ -647,8 +665,6 @@ static void prepend_mocp_opts (poptContext ctx)
 	if (env_opts && strlen (env_opts)) {
 		int env_argc;
 		const char **env_argv;
-
-		logit ("MOCP_OPTS: %s", env_opts);
 
 		rc = poptParseArgvString (env_opts, &env_argc, &env_argv);
 		if (rc < 0)
@@ -1091,6 +1107,21 @@ static void process_deferred_overrides (lists_t_strs *deferred)
 	free (config_decoders);
 }
 
+static void log_environment_variables ()
+{
+#ifndef NDEBUG
+	size_t ix;
+
+	for (ix = 0; ix < ARRAY_SIZE(environment_variables); ix += 1) {
+		char *str;
+
+		str = getenv (environment_variables[ix].name);
+		if (str)
+			logit ("%s='%s'", environment_variables[ix].name, str);
+	}
+#endif
+}
+
 static void log_command_line ()
 {
 #ifndef NDEBUG
@@ -1167,6 +1198,7 @@ int main (int argc, const char *argv[])
 	if (!setlocale(LC_ALL, ""))
 		logit ("Could not set locale!");
 
+	log_environment_variables ();
 	log_command_line ();
 	args = process_command_line (deferred_overrides);
 	log_popt_command_line ();
