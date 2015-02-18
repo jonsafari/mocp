@@ -48,8 +48,11 @@
 
 static int mocp_argc;
 static const char **mocp_argv;
+
+#ifndef OPENWRT
 static int popt_next_val = 1;
 static char *render_popt_command_line ();
+#endif
 
 /* List of MOC-specific environment variables. */
 static struct {
@@ -427,6 +430,7 @@ static void show_help (poptContext ctx)
 }
 
 /* Show POPT-interpreted command line arguments. */
+#ifndef OPENWRT
 static void show_args ()
 {
 	if (mocp_argc > 0) {
@@ -445,6 +449,7 @@ static void show_args ()
 		free (str);
 	}
 }
+#endif
 
 /* Disambiguate the user's request. */
 static void show_misc_cb (poptContext ctx,
@@ -461,9 +466,12 @@ static void show_misc_cb (poptContext ctx,
 		show_help (ctx);
 		break;
 	case 0:
+#ifndef OPENWRT
 		if (!strcmp (opt->longName, "echo-args"))
 			show_args ();
-		else if (!strcmp (opt->longName, "usage"))
+		else
+#endif
+		if (!strcmp (opt->longName, "usage"))
 			show_usage (ctx);
 		break;
 	}
@@ -570,8 +578,10 @@ static struct poptOption misc_opts[] = {
 	{NULL, 0, POPT_ARG_CALLBACK, show_misc_cb, 0, NULL, NULL},
 	{"version", 'V', POPT_ARG_NONE, NULL, 0,
 			"Print version information", NULL},
+#ifndef OPENWRT
 	{"echo-args", 0, POPT_ARG_NONE, NULL, 0,
 			"Print POPT-interpreted arguments", NULL},
+#endif
 	{"usage", 0, POPT_ARG_NONE, NULL, 0,
 			"Print brief usage", NULL},
 	{"help", 'h', POPT_ARG_NONE, NULL, 0,
@@ -680,6 +690,7 @@ static void prepend_mocp_opts (poptContext ctx)
 
 /* Return a copy of the POPT option table structure which is suitable
  * for rendering the POPT expansions of the command line. */
+#ifndef OPENWRT
 struct poptOption *clone_popt_options (struct poptOption *opts)
 {
 	size_t count, ix, iy = 0;
@@ -740,8 +751,10 @@ struct poptOption *clone_popt_options (struct poptOption *opts)
 
 	return result;
 }
+#endif
 
 /* Free a copied POPT option table structure. */
+#ifndef OPENWRT
 void free_popt_clone (struct poptOption *opts)
 {
 	int ix;
@@ -756,9 +769,11 @@ void free_popt_clone (struct poptOption *opts)
 
 	free (opts);
 }
+#endif
 
 /* Return a pointer to the copied POPT option table entry for which the
  * 'val' field matches 'wanted'.  */
+#ifndef OPENWRT
 struct poptOption *find_popt_option (struct poptOption *opts, int wanted)
 {
 	int ix = 0;
@@ -800,8 +815,10 @@ struct poptOption *find_popt_option (struct poptOption *opts, int wanted)
 
 	return NULL;
 }
+#endif
 
 /* Render the command line as interpreted by POPT. */
+#ifndef OPENWRT
 static char *render_popt_command_line ()
 {
 	int rc;
@@ -885,6 +902,7 @@ err:
 
 	return result;
 }
+#endif
 
 static void override_config_option (const char *arg, lists_t_strs *deferred)
 {
@@ -1029,17 +1047,23 @@ static void process_options (poptContext ctx, lists_t_strs *deferred)
 	}
 
 	if (rc < -1) {
-		const char *opt, *alias;
+		const char *opt, *alias, *reason;
 
 		opt = poptBadOption (ctx, 0);
 		alias = poptBadOption (ctx, POPT_BADOPTION_NOALIAS);
+		reason = poptStrerror (rc);
+
+#ifdef OPENWRT
+		if (!strcmp (opt, "--echo-args"))
+			reason = "Not available on OpenWRT";
+#endif
 
 		/* poptBadOption() with POPT_BADOPTION_NOALIAS fails to
 		 * return the correct option if poptStuffArgs() was used. */
 		if (!strcmp (opt, alias) || getenv ("MOCP_OPTS"))
-			fatal ("%s: %s\n", opt, poptStrerror (rc));
+			fatal ("%s: %s", opt, reason);
 		else
-			fatal ("%s (aliased by %s): %s\n", opt, alias, poptStrerror (rc));
+			fatal ("%s (aliased by %s): %s", opt, alias, reason);
 	}
 }
 
@@ -1142,7 +1166,7 @@ static void log_command_line ()
 /* Log the command line as interpreted by POPT. */
 static void log_popt_command_line ()
 {
-#ifndef NDEBUG
+#if !defined(NDEBUG) && !defined(OPENWRT)
 	if (mocp_argc > 0) {
 		char *str;
 
