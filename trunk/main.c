@@ -648,8 +648,21 @@ static void read_default_poptrc (poptContext ctx)
 
 	check_popt_secure ();
 	rc = poptReadDefaultConfig (ctx, 0);
+
+	if (rc == POPT_ERROR_ERRNO) {
+		int saved_errno = errno;
+
+		fprintf (stderr, "\n"
+		         "WARNING: The following fatal error message may be bogus!\n"
+		         "         If you have an empty /etc/popt.d directory, try\n"
+		         "         adding an empty file to it.  If that does not fix\n"
+		         "         the problem then you have a genuine error.\n");
+
+		errno = saved_errno;
+	}
+
 	if (rc != 0)
-		fatal ("Error reading default POPT config file: %s\n",
+		fatal ("Error reading default POPT config file: %s",
 		        poptStrerror (rc));
 }
 
