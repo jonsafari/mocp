@@ -74,6 +74,9 @@ case "$host_os" in
 	openbsd*)
 		AC_DEFINE([OPENBSD], 1, [Define if your system is OpenBSD])
 		;;
+	freebsd*)
+		AC_DEFINE([FREEBSD], 1, [Define if your system is FreeBSD])
+		;;
 esac
 
 AC_DEFINE([_FILE_OFFSET_BITS], 64, [Use 64bit IO])

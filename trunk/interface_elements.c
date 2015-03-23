@@ -31,9 +31,8 @@
 #include <wctype.h>
 #include <wchar.h>
 
-/* This breaks compilation on FreeBSD 5.4, so use it only on
- * Linux and OpenBSD. */
-#if defined(LINUX) || defined(OPENBSD)
+/* This breaks compilation on FreeBSD 5.4. */
+#ifndef FREEBSD
 # define _XOPEN_SOURCE_EXTENDED /* for wget_wch() */
 #endif
 
