@@ -17,6 +17,7 @@
 
 #include <pthread.h>
 #include <assert.h>
+#include <strings.h>
 
 #include "common.h"
 #include "sidplay2.h"

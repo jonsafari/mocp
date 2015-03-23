@@ -22,6 +22,7 @@
 #endif
 
 #include <string.h>
+#include <strings.h>
 #include <stdint.h>
 #include <assert.h>
 #include <wavpack/wavpack.h>
