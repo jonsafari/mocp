@@ -18,6 +18,7 @@
 # define _XOPEN_SOURCE  500 /* for wcswidth() */
 #endif
 
+#include <stdio.h>
 #include <stdarg.h>
 
 #ifdef HAVE_ICONV
