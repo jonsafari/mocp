@@ -67,7 +67,12 @@ static iconv_t xterm_iconv_desc = (iconv_t)(-1);
 char *iconv_str (const iconv_t desc, const char *str)
 {
 	char buf[512];
-	char *inbuf, *outbuf;
+#ifdef FREEBSD
+	const char *inbuf;
+#else
+	char *inbuf;
+#endif
+	char *outbuf;
 	char *str_copy;
 	size_t inbytesleft, outbytesleft;
 	char *converted;
@@ -77,7 +82,7 @@ char *iconv_str (const iconv_t desc, const char *str)
 	if (desc == (iconv_t)(-1))
 		return xstrdup (str);
 
-	str_copy = inbuf = xstrdup (str);
+	inbuf = str_copy = xstrdup (str);
 	outbuf = buf;
 	inbytesleft = strlen(inbuf);
 	outbytesleft = sizeof(buf) - 1;
