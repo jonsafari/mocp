@@ -13,6 +13,7 @@
 # include "config.h"
 #endif
 
+#include <stdio.h>
 #include <pthread.h>
 #include <string.h>
 #include <stdint.h>
