@@ -494,7 +494,7 @@ static int alsa_open (struct sound_params *sound_params)
 	snd_pcm_hw_params_get_buffer_size (hw_params, &buffer_frames);
 	debug ("Buffer size: %lu frames", buffer_frames);
 	debug ("Buffer time: %"PRIu64"us",
-	        (uint64_t) buffer_frames * __UINT64_C(1000000) / params.rate);
+	        (uint64_t) buffer_frames * UINT64_C(1000000) / params.rate);
 
 	bytes_per_frame = sound_params->channels * sfmt_Bps(sound_params->fmt);
 	debug ("Frame size: %d bytes", bytes_per_frame);
