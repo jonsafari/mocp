@@ -26,6 +26,7 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <string.h>
+#include <strings.h>
 #include <assert.h>
 #include <stdint.h>
 

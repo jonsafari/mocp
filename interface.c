@@ -17,6 +17,7 @@
 #include <locale.h>
 #include <assert.h>
 #include <string.h>
+#include <strings.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>

@@ -20,6 +20,7 @@
 
 #include <ctype.h> // for toupper
 #include <string.h>
+#include <strings.h>
 #include <assert.h>
 #include <timidity.h>
 

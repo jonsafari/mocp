@@ -24,6 +24,7 @@
 
 #include <ctype.h> // for toupper
 #include <string.h>
+#include <strings.h>
 #include <limits.h>
 #include <assert.h>
 #include <libmodplug/modplug.h>

@@ -28,6 +28,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <strings.h>
 #include <assert.h>
 #include <stdint.h>
 #include <math.h>

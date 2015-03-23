@@ -20,6 +20,7 @@
 #include <stdint.h>
 #include <errno.h>
 #include <string.h>
+#include <strings.h>
 #include <assert.h>
 #include <sndfile.h>
 
