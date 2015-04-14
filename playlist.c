@@ -678,7 +678,6 @@ void plist_set_file (struct plist *plist, const int num, const char *file)
 	if (plist->items[num].file) {
 		rb_delete (plist->search_tree, file);
 		free (plist->items[num].file);
-		plist->items[num].type = file_type (file);
 	}
 
 	plist->items[num].file = xstrdup (file);
