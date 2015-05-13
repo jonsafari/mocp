@@ -942,14 +942,21 @@ void audio_initialize ()
 {
 	find_working_driver (options_get_list ("SoundDriver"), &hw);
 
-	assert (hw_caps.max_channels >= hw_caps.min_channels);
-	assert (sound_format_ok(hw_caps.formats));
+	if (hw_caps.max_channels < hw_caps.min_channels)
+		fatal ("Error initializing audio device: "
+		       "device reports incorrect number of channels.");
+	if (!sound_format_ok (hw_caps.formats))
+		fatal ("Error initializing audio device: "
+		       "device reports no usable formats.");
 
 	print_output_capabilities (&hw_caps);
-	if (!options_get_bool("Allow24bitOutput")
+	if (!options_get_bool ("Allow24bitOutput")
 			&& hw_caps.formats & (SFMT_S32 | SFMT_U32)) {
 		logit ("Disabling 24bit modes because Allow24bitOutput is set to no.");
 		hw_caps.formats &= ~(SFMT_S32 | SFMT_U32);
+		if (!sound_format_ok (hw_caps.formats))
+			fatal ("No available sound formats after disabling 24bit modes. "
+			       "Consider setting Allow24bitOutput to yes.");
 	}
 
 	out_buf = out_buf_new (options_get_int("OutputBuffer") * 1024);
