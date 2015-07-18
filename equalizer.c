@@ -668,7 +668,11 @@ void equalizer_refresh()
       current_equ = current_equ->next;
     }
 
-    free(current_set_name);
+    if(current_equ)
+    {
+      // only free name when EQ was found to allow logging
+      free(current_set_name);
+    }
   }
 
   if (!current_equ && current_set_name)
@@ -676,6 +680,8 @@ void equalizer_refresh()
     logit ("EQ %s not found.", current_set_name);
     /* equalizer not found, pick next equalizer */
     current_equ = &equ_list;
+    // free name now
+    free(current_set_name);
   }
   if(current_equ && !current_equ->set)
     equalizer_next();
