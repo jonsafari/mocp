@@ -221,13 +221,13 @@ static void rb_delete_fixup (struct rb_node **root, struct rb_node *x,
 
 void rb_insert (struct rb_tree *t, void *data)
 {
-	struct rb_node *z;
-	struct rb_node *y = &rb_null;
-	struct rb_node *x = t->root;
+	struct rb_node *x, *y, *z;
 
 	assert (t != NULL);
 	assert (t->root != NULL);
 
+	x = t->root;
+	y = &rb_null;
 	z = (struct rb_node *)xmalloc (sizeof(struct rb_node));
 
 	z->data = data;

@@ -89,11 +89,13 @@ size_t fifo_buf_put (struct fifo_buf *b, const char *data, size_t size)
 size_t fifo_buf_peek (struct fifo_buf *b, char *user_buf, size_t user_buf_size)
 {
 	size_t user_buf_pos = 0, written = 0;
-	ssize_t left = b->fill;
-	ssize_t pos = b->pos;
+	ssize_t left, pos;
 
 	assert (b != NULL);
 	assert (b->buf != NULL);
+
+	left = b->fill;
+	pos = b->pos;
 
 	while (left && written < user_buf_size) {
 		size_t to_copy = pos + left <= b->size
