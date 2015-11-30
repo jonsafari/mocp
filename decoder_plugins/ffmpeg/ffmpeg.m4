@@ -39,6 +39,8 @@ then
 		LIBS="$LIBS $ffmpeg_LIBS"
 		AC_CHECK_MEMBERS([struct AVCodecContext.request_channels], [], [],
 	                     [#include <libavcodec/avcodec.h>])
+		AC_CHECK_HEADERS([ffmpeg/avformat.h \
+		                  libavformat/avformat.h libavutil/channel_layout.h])
 		AC_SEARCH_LIBS(avcodec_open2, avcodec,
 			[AC_DEFINE([HAVE_AVCODEC_OPEN2], 1,
 				[Define to 1 if you have the `avcodec_open2' function.])])

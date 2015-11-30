@@ -41,7 +41,11 @@ GCC_DIAG_OFF(deprecated-declarations)
 GCC_DIAG_ON(deprecated-declarations)
 #include <libavutil/mathematics.h>
 #ifdef HAVE_AV_GET_CHANNEL_LAYOUT_NB_CHANNELS
-#include <libavutil/audioconvert.h>
+# if HAVE_LIBAVUTIL_CHANNEL_LAYOUT_H
+#  include <libavutil/channel_layout.h>
+# else
+#  include <libavutil/audioconvert.h>
+# endif
 #endif
 
 /* FFmpeg also likes common names, without that, our common.h and log.h
