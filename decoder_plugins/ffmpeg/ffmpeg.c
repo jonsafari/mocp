@@ -773,31 +773,10 @@ static void set_downmixing (struct ffmpeg_data *data)
 		return;
 #endif
 
-	data->enc->channels = 2;
-
 #ifdef HAVE_STRUCT_AVCODECCONTEXT_REQUEST_CHANNELS
-
-	/*
-	 * When FFmpeg breaks its API (and it will), this code will be
-	 * disabled and users will complain that MOC no longer downmixes
-	 * to stereo.  This is because the 'request_channels' field in
-	 * AVCodecContext is marked as deprecated (and so will probably
-	 * be removed at some time) but FFmpeg requires it to be set to
-	 * trigger downmixing (go figure!).  Currently, there is no
-	 * guidance on how it will work in the future, but looking at
-	 * where 's->downmixed' is set near the end of 'ac3_decode_init()'
-	 * in the FFmpeg's source code file 'libavcodec/ac3dec.c' might
-	 * help (in the absence of proper documentation).
-	 */
-
 	set_request_channels (data->enc, 2);
-
-#ifdef AV_CH_LAYOUT_STEREO_DOWNMIX
-	data->enc->request_channel_layout = AV_CH_LAYOUT_STEREO_DOWNMIX;
 #else
-	data->enc->request_channel_layout = CH_LAYOUT_STEREO_DOWNMIX;
-#endif
-
+	data->enc->request_channel_layout = AV_CH_LAYOUT_STEREO;
 #endif
 }
 

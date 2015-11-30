@@ -457,19 +457,3 @@ then
 	echo "         you will not hear any sound!"
 	echo
 fi
-
-dnl
-dnl  If the warning below gets reported, then for further guidance:
-dnl
-dnl         vi +/REQUEST_CHANNELS decoder_plugins/ffmpeg/ffmpeg.c
-dnl
-if test "x$want_ffmpeg" = "xyes" && \
-   test "x$ac_cv_member_struct_AVCodecContext_request_channels" != "xyes"
-then
-	echo "WARNING: It appears that the FFmpeg/LibAV API has changed and no longer"
-	echo "         supports downmixing to stereo as it did previously.  Report"
-	echo "         this message along with the output of 'ffmpeg -version' to"
-	echo "         <$PACKAGE_BUGREPORT>.  Meanwhile, you may have to live without"
-	echo "         stereo downmixing."
-	echo
-fi
