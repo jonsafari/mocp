@@ -1047,7 +1047,12 @@ static inline void free_packet (AVPacket *pkt)
 {
 	assert (pkt);
 
+#if HAVE_AV_PACKET_UNREF
+	av_packet_unref (pkt);
+#else
 	av_free_packet (pkt);
+#endif
+
 	free (pkt);
 }
 

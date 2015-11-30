@@ -48,6 +48,9 @@ then
 			[AC_DEFINE([HAVE_AVCODEC_DECODE_AUDIO4], 1,
 				[Define to 1 if you have the `avcodec_decode_audio4' function.])],
 			[AX_FUNC_POSIX_MEMALIGN])
+		AC_SEARCH_LIBS(av_packet_unref, avcodec,
+			[AC_DEFINE([HAVE_AV_PACKET_UNREF], 1,
+				[Define to 1 if you have the `av_packet_unref' function.])])
 		AC_SEARCH_LIBS(avformat_close_input, avformat,
 			[AC_DEFINE([HAVE_AVFORMAT_CLOSE_INPUT], 1,
 				[Define to 1 if you have the `avformat_close_input' function.])])
