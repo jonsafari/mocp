@@ -1271,5 +1271,5 @@ int main (int argc, const char *argv[])
 	files_cleanup ();
 	compat_cleanup ();
 
-	exit (EXIT_SUCCESS);
+	return EXIT_SUCCESS;
 }
