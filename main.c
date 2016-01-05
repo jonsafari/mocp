@@ -479,7 +479,6 @@ static void show_misc_cb (poptContext ctx,
 	exit (EXIT_SUCCESS);
 }
 
-/* Log the command line which launched MOC. */
 enum {
 	CL_HANDLED = 0,
 	CL_NOIFACE,
@@ -1159,6 +1158,7 @@ static void log_environment_variables ()
 #endif
 }
 
+/* Log the command line which launched MOC. */
 static void log_command_line ()
 {
 #ifndef NDEBUG
