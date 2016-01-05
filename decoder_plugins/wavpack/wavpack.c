@@ -107,7 +107,7 @@ static int wav_seek (void *prv_data, int sec)
 
 	assert (sec >= 0);
 
-	if ( WavpackSeekSample (data->wpc, sec * data->sample_rate) )
+	if (WavpackSeekSample (data->wpc, sec * data->sample_rate))
 		return sec;
 
 	decoder_error (&data->error, ERROR_FATAL, 0, "Fatal seeking error!");
@@ -214,10 +214,9 @@ static int wav_decode (void *prv_data, char *buf, int buf_len,
 
 	decoder_error_clear (&data->error);
 
-	int32_t *dbuf = (int32_t *)xcalloc (
-			 s_num, data->channels * 4);
+	int32_t *dbuf = (int32_t *)xcalloc (s_num, data->channels * 4);
 
-	ret = WavpackUnpackSamples (data->wpc, dbuf, s_num );
+	ret = WavpackUnpackSamples (data->wpc, dbuf, s_num);
 
 	if (ret == 0) {
 		free (dbuf);

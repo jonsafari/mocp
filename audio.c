@@ -765,7 +765,7 @@ int audio_send_buf (const char *buf, const size_t size)
 		converted = audio_conv (&sound_conv, buf, size, &out_data_len);
 
 	if (need_audio_conversion && converted)
-		res = out_buf_put (out_buf, converted,	out_data_len);
+		res = out_buf_put (out_buf, converted, out_data_len);
 	else if (!need_audio_conversion)
 		res = out_buf_put (out_buf, buf, size);
 	else
@@ -996,8 +996,8 @@ void audio_exit ()
 	if (last_stream_url)
 		free (last_stream_url);
 
-        softmixer_shutdown();
-        equalizer_shutdown();
+	softmixer_shutdown();
+	equalizer_shutdown();
 }
 
 void audio_seek (const int sec)

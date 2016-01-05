@@ -405,6 +405,7 @@ int read_directory (const char *directory, lists_t_strs *dirs,
 			continue;
 		if (!show_hidden && entry->d_name[0] == '.')
 			continue;
+
 		rc = snprintf(file, sizeof(file), "%s/%s",
 		              dir_is_root ? "" : directory, entry->d_name);
 		if (rc >= ssizeof(file)) {
@@ -412,6 +413,7 @@ int read_directory (const char *directory, lists_t_strs *dirs,
 			closedir (dir);
 			return 0;
 		}
+
 		type = file_type (file);
 		if (type == F_SOUND)
 			plist_add (plist, file);

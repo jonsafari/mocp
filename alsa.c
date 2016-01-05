@@ -211,7 +211,6 @@ static void handle_mixer_events (snd_mixer_t *mixer_handle)
 					logit ("snd_mixer_handle_events() failed: %s",
 							snd_strerror(err));
 			}
-
 		}
 
 		free (fds);

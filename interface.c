@@ -2552,7 +2552,7 @@ static void go_to_playing_file ()
 	if (curr_file.file && file_type(curr_file.file) == F_SOUND) {
 		if (plist_find_fname(playlist, curr_file.file) != -1)
 			iface_switch_to_plist ();
-		else if (plist_find_fname(dir_plist,  curr_file.file) != -1)
+		else if (plist_find_fname(dir_plist, curr_file.file) != -1)
 			iface_switch_to_dir ();
 		else {
 			char *slash;
@@ -4380,5 +4380,4 @@ void interface_cmdline_formatted_info (const int server_sock,
 	plist_free (dir_plist);
 	plist_free (playlist);
 	plist_free (queue);
-
 }

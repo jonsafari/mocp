@@ -969,7 +969,7 @@ void player_jump_to (const int sec)
 }
 
 /* Stop playing, clear the output buffer, but allow to unpause by starting
- * playing the same stream. This is usefull for internet streams that can't
+ * playing the same stream.  This is useful for Internet streams that can't
  * be really paused. */
 void player_pause ()
 {

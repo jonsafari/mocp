@@ -166,17 +166,22 @@ char *str_repl (char *target, const char *oldstr, const char *newstr)
 	size_t target_max = target_len;
 	size_t s, p;
 	char *needle;
-	for (s = 0; (needle = strstr(target + s, oldstr)) != NULL; s = p + newstr_len) {
+
+	for (s = 0; (needle = strstr(target + s, oldstr)) != NULL;
+	            s = p + newstr_len) {
 		target_len += newstr_len - oldstr_len;
 		p = needle - target;
 		if (target_len + 1 > target_max) {
 			target_max = MAX(target_len + 1, target_max * 2);
 			target = xrealloc(target, target_max);
 		}
-		memmove(target + p + newstr_len, target + p + oldstr_len, target_len - p - newstr_len + 1);
+		memmove(target + p + newstr_len, target + p + oldstr_len,
+		                                 target_len - p - newstr_len + 1);
 		memcpy(target + p, newstr, newstr_len);
 	}
+
 	target = xrealloc(target, target_len + 1);
+
 	return target;
 }
 

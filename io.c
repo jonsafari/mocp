@@ -580,7 +580,7 @@ static ssize_t io_peek_internal (struct io_stream *s, void *buf, size_t count)
 	return io_ok(s) ? received : -1;
 }
 
-/* Wait until there will be s->prebuffer bytes in the buffer or some event
+/* Wait until there are s->prebuffer bytes in the buffer or some event
  * occurs which prevents prebuffering. */
 void io_prebuffer (struct io_stream *s, const size_t to_fill)
 {

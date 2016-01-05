@@ -234,7 +234,7 @@ static t_biquad *mk_biquad(float dbgain, float cf, float srate, float bw, t_biqu
   if(b==NULL)
     b = (t_biquad *)xmalloc(sizeof(t_biquad));
 
-  float A = powf(10.0f,  dbgain / 40.0f);
+  float A = powf(10.0f, dbgain / 40.0f);
   float omega = TWOPI * cf / srate;
   float sn = sin(omega);
   float cs = cos(omega);

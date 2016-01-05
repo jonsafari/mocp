@@ -135,7 +135,7 @@ On Which Systems Is MOC Running?
 --------------------------------------------------------------------------------
 
 MOC is developed and tested on GNU/Linux.  Sometimes test runs are made on
-on other operating systems, and it is known to compile and probably work on:
+other operating systems, and it is known to compile and probably work on:
 
   - FreeBSD
   - NetBSD
