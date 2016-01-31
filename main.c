@@ -15,6 +15,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -574,7 +575,8 @@ static struct poptOption server_opts[] = {
 };
 
 static struct poptOption misc_opts[] = {
-	{NULL, 0, POPT_ARG_CALLBACK, show_misc_cb, 0, NULL, NULL},
+	{NULL, 0, POPT_ARG_CALLBACK,
+	       (void *) (uintptr_t) show_misc_cb, 0, NULL, NULL},
 	{"version", 'V', POPT_ARG_NONE, NULL, 0,
 			"Print version information", NULL},
 #ifndef OPENWRT

@@ -447,7 +447,8 @@ static int lt_load_plugin (const char *file, lt_ptr debug_info_ptr)
 		return 0;
 	}
 
-	init_func = lt_dlsym (plugins[plugins_num].handle, "plugin_init");
+	*(void **) (&init_func) = lt_dlsym (plugins[plugins_num].handle,
+	                                    "plugin_init");
 	if (!init_func) {
 		fprintf (stderr, "No init function in the plugin!\n");
 		if (lt_dlclose (plugins[plugins_num].handle))
@@ -476,8 +477,8 @@ static int lt_load_plugin (const char *file, lt_ptr debug_info_ptr)
 	if (!strcmp (plugins[plugins_num].name, "vorbis")) {
 		bool (*vorbis_is_tremor)();
 
-		vorbis_is_tremor = lt_dlsym (plugins[plugins_num].handle,
-		                             "vorbis_is_tremor");
+		*(void **) (&vorbis_is_tremor) = lt_dlsym (plugins[plugins_num].handle,
+		                                           "vorbis_is_tremor");
 		if (vorbis_is_tremor)
 			have_tremor = vorbis_is_tremor ();
 	}
