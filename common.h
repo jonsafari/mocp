@@ -83,13 +83,12 @@ char *xstrdup (const char *s);
 void xsleep (size_t ticks, size_t ticks_per_sec);
 
 #ifdef NDEBUG
-#define fatal(format, ...) \
-	internal_fatal (NULL, 0, NULL, format, ## __VA_ARGS__)
+#define fatal(...) \
+	internal_fatal (NULL, 0, NULL, ## __VA_ARGS__)
 #define ASSERT_ONLY ATTR_UNUSED
 #else
-#define fatal(format, ...) \
-	internal_fatal (__FILE__, __LINE__, __FUNCTION__, format, \
-	## __VA_ARGS__)
+#define fatal(...) \
+	internal_fatal (__FILE__, __LINE__, __FUNCTION__, ## __VA_ARGS__)
 #define ASSERT_ONLY
 #endif
 
