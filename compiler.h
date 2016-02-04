@@ -18,9 +18,9 @@ extern "C" {
 #endif
 
 #ifdef HAVE_VAR_ATTRIBUTE_ALIGNED
-# define ATTR_ALIGNED __attribute__((aligned))
+# define ATTR_ALIGNED(x) __attribute__((aligned(x)))
 #else
-# define ATTR_ALIGNED
+# define ATTR_ALIGNED(...)
 #endif
 
 #ifdef HAVE_VAR_ATTRIBUTE_UNUSED
