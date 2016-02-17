@@ -15,7 +15,7 @@ then
 			     have_musepack="yes"
 			     MUSEPACK_LIBS="-lmpcdec"
 			     AC_SUBST(MUSEPACK_LIBS)
-			     ], [HAVE_MUSEPACK="no"])
+			     ], [have_musepack="no"])
 			 ])
 
 	if test "x$have_musepack" = "xyes"
