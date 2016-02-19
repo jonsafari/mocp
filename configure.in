@@ -444,6 +444,13 @@ then
 	echo
 fi
 
+if test "x$UPGRADE_FFMPEG" = "xyes"
+then
+	echo "WARNING: MOC 2.6 will soon require FFmpeg/LibAV version 1.0/10.0"
+	echo "         or later.  Plan to upgrade your libraries soon."
+	echo
+fi
+
 if test "x$DECODER_PLUGINS" = "x"
 then
 	echo "WARNING: No decoder plugins are to be compiled;"

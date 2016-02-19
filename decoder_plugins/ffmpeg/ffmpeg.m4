@@ -14,22 +14,31 @@ then
 		[true])
 	if test "x$want_ffmpeg" = "xyes"
 	then
+		if ! $PKG_CONFIG --atleast-version 52.110.0 libavformat
+		then
+			AC_MSG_ERROR([You need FFmpeg/LibAV of at least version 0.7.])
+		fi
 		if $PKG_CONFIG --max-version 53.47.99 libavcodec
 		then
+			 UPGRADE_FFMPEG="yes"
 			 DECODER_PLUGINS="$DECODER_PLUGINS ffmpeg/libav"
 		elif test "`$PKG_CONFIG --modversion libavcodec | awk -F. '{ print $3; }'`" -gt 99
 		then
+			 if ! $PKG_CONFIG --atleast-version 54.59.100 libavcodec
+			 then
+				UPGRADE_FFMPEG="yes"
+			 fi
 			 DECODER_PLUGINS="$DECODER_PLUGINS ffmpeg"
 			 AC_DEFINE([HAVE_FFMPEG], 1,
 				[Define to 1 if you know you have FFmpeg.])
 		else
+			 if ! $PKG_CONFIG --atleast-version 55.34.1 libavcodec
+			 then
+				UPGRADE_FFMPEG="yes"
+			 fi
 			 DECODER_PLUGINS="$DECODER_PLUGINS ffmpeg(libav)"
 			 AC_DEFINE([HAVE_LIBAV], 1,
 				[Define to 1 if you know you have LibAV.])
-		fi
-		if ! $PKG_CONFIG --atleast-version 52.110.0 libavformat
-		then
-			AC_MSG_ERROR([You need FFmpeg/LibAV of at least release 0.7.])
 		fi
 		save_CPPFLAGS="$CPPFLAGS"
 		CPPFLAGS="$CPPFLAGS $ffmpeg_CPPFLAGS"
