@@ -86,7 +86,7 @@ static void set_realtime_prio ()
 		param.sched_priority = sched_get_priority_max(SCHED_RR);
 		rc = pthread_setschedparam (pthread_self (), SCHED_RR, &param);
 		if (rc != 0)
-			logit ("Can't set realtime priority: %s", strerror (rc));
+			log_errno ("Can't set realtime priority", rc);
 	}
 #else
 	logit ("No sched_get_priority_max() function: "
@@ -250,7 +250,7 @@ struct out_buf *out_buf_new (int size)
 
 	rc = pthread_create (&buf->tid, NULL, read_thread, buf);
 	if (rc != 0)
-		fatal ("Can't create buffer thread: %s", strerror (rc));
+		fatal ("Can't create buffer thread: %s", xstrerror (rc));
 
 	return buf;
 }
@@ -281,13 +281,13 @@ void out_buf_free (struct out_buf *buf)
 	buf->buf = NULL;
 	rc = pthread_mutex_destroy (&buf->mutex);
 	if (rc != 0)
-		logit ("Destroying buffer mutex failed: %s", strerror (rc));
+		log_errno ("Destroying buffer mutex failed", rc);
 	rc = pthread_cond_destroy (&buf->play_cond);
 	if (rc != 0)
-		logit ("Destroying buffer play condition failed: %s", strerror (rc));
+		log_errno ("Destroying buffer play condition failed", rc);
 	rc = pthread_cond_destroy (&buf->ready_cond);
 	if (rc != 0)
-		logit ("Destroying buffer ready condition failed: %s", strerror (rc));
+		log_errno ("Destroying buffer ready condition failed", rc);
 
 	free (buf);
 

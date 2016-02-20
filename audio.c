@@ -507,7 +507,7 @@ void audio_stop ()
 		logit ("pthread_join (playing_thread, NULL)");
 		rc = pthread_join (playing_thread, NULL);
 		if (rc != 0)
-			logit ("pthread_join() failed: %s", strerror (rc));
+			log_errno ("pthread_join() failed", rc);
 		playing_thread = 0;
 		play_thread_running = 0;
 		stop_playing = 0;
@@ -581,7 +581,7 @@ void audio_play (const char *fname)
 	rc = pthread_create (&playing_thread, NULL, play_thread,
 	                     curr_playing != -1 ? NULL : (void *)fname);
 	if (rc != 0)
-		error ("Can't create thread: %s", strerror (rc));
+		error_errno ("Can't create thread", rc);
 	play_thread_running = 1;
 
 	UNLOCK (plist_mtx);
@@ -985,13 +985,13 @@ void audio_exit ()
 	player_cleanup ();
 	rc = pthread_mutex_destroy (&curr_playing_mtx);
 	if (rc != 0)
-		logit ("Can't destroy curr_playing_mtx: %s", strerror (rc));
+		log_errno ("Can't destroy curr_playing_mtx", rc);
 	rc = pthread_mutex_destroy (&plist_mtx);
 	if (rc != 0)
-		logit ("Can't destroy plist_mtx: %s", strerror (rc));
+		log_errno ("Can't destroy plist_mtx", rc);
 	rc = pthread_mutex_destroy (&request_mtx);
 	if (rc != 0)
-		logit ("Can't destroy request_mtx: %s", strerror (rc));
+		log_errno ("Can't destroy request_mtx", rc);
 
 	if (last_stream_url)
 		free (last_stream_url);

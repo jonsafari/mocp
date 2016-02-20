@@ -764,14 +764,14 @@ static void mp3_init ()
 {
 	iconv_id3_fix = iconv_open ("UTF-8",
 			options_get_str("ID3v1TagsEncoding"));
-		if (iconv_id3_fix == (iconv_t)(-1))
-			logit ("iconv_open() failed: %s", strerror(errno));
+	if (iconv_id3_fix == (iconv_t)(-1))
+		log_errno ("iconv_open() failed", errno);
 }
 
 static void mp3_destroy ()
 {
 	if (iconv_close(iconv_id3_fix) == -1)
-		logit ("iconv_close() failed: %s", strerror(errno));
+		log_errno ("iconv_close() failed", errno);
 }
 
 static struct decoder mp3_decoder = {

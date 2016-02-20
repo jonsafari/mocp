@@ -93,6 +93,17 @@ char *xstrerror (int errnum);
 #define ASSERT_ONLY
 #endif
 
+#ifndef STRERROR_FN
+# define STRERROR_FN xstrerror
+#endif
+
+#define error_errno(format, errnum) \
+	do { \
+		char *err = STRERROR_FN (errnum); \
+		error (format ": %s", err); \
+		free (err); \
+	} while (0)
+
 void internal_fatal (const char *file, int line, const char *function,
                      const char *format, ...) ATTR_NORETURN ATTR_PRINTF(4, 5);
 void error (const char *format, ...) ATTR_PRINTF(1, 2);

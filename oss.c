@@ -67,8 +67,9 @@ static const struct {
 static int open_dev ()
 {
 	if ((dsp_fd = open (options_get_str ("OSSDevice"), O_WRONLY)) == -1) {
-		error ("Can't open %s: %s", options_get_str ("OSSDevice"),
-		        strerror (errno));
+		char *err = xstrerror (errno);
+		error ("Can't open %s: %s", options_get_str ("OSSDevice"), err);
+		free (err);
 		return 0;
 	}
 
@@ -88,7 +89,7 @@ static int set_capabilities (struct output_driver_caps *caps)
 	}
 
 	if (ioctl (dsp_fd, SNDCTL_DSP_GETFMTS, &format_mask) == -1) {
-		error ("Can't get supported audio formats: %s", strerror (errno));
+		error_errno ("Can't get supported audio formats", errno);
 		close (dsp_fd);
 		return 0;
 	}
@@ -115,7 +116,7 @@ static int set_capabilities (struct output_driver_caps *caps)
 
 	caps->min_channels = caps->max_channels = 1;
 	if (ioctl (dsp_fd, SNDCTL_DSP_CHANNELS, &caps->min_channels)) {
-		error ("Can't set number of channels: %s", strerror (errno));
+		error_errno ("Can't set number of channels", errno);
 		close (dsp_fd);
 		return 0;
 	}
@@ -130,7 +131,7 @@ static int set_capabilities (struct output_driver_caps *caps)
 		caps->min_channels = 2;
 	caps->max_channels = 2;
 	if (ioctl (dsp_fd, SNDCTL_DSP_CHANNELS, &caps->max_channels)) {
-		error ("Can't set number of channels: %s", strerror (errno));
+		error_errno ("Can't set number of channels", errno);
 		close (dsp_fd);
 		return 0;
 	}
@@ -194,9 +195,10 @@ static int oss_init (struct output_driver_caps *caps)
 	/* Open the mixer device */
 	mixer_fd = open (options_get_str ("OSSMixerDevice"), O_RDWR);
 	if (mixer_fd == -1) {
+		char *err = xstrerror (errno);
 		error ("Can't open mixer device %s: %s",
-		        options_get_str ("OSSMixerDevice"),
-		        strerror (errno));
+		        options_get_str ("OSSMixerDevice"), err);
+		free (err);
 	}
 	else {
 		mixer_channel1 = oss_mixer_name_to_channel (
@@ -278,7 +280,7 @@ static int oss_set_params ()
 	}
 
 	if (ioctl (dsp_fd, SNDCTL_DSP_SETFMT, &req_format) == -1) {
-		error ("Can't set audio format: %s", strerror (errno));
+		error_errno ("Can't set audio format", errno);
 		oss_close ();
 		return 0;
 	}
@@ -286,8 +288,10 @@ static int oss_set_params ()
 	/* Set number of channels */
 	req_channels = params.channels;
 	if (ioctl (dsp_fd, SNDCTL_DSP_CHANNELS, &req_channels) == -1) {
+		char *err = xstrerror (errno);
 		error ("Can't set number of channels to %d: %s",
-		        params.channels, strerror (errno));
+		        params.channels, err);
+		free (err);
 		oss_close ();
 		return 0;
 	}
@@ -301,8 +305,9 @@ static int oss_set_params ()
 
 	/* Set sample rate */
 	if (ioctl (dsp_fd, SNDCTL_DSP_SPEED, &params.rate) == -1) {
-		error ("Can't set sampling rate to %d: %s", params.rate,
-		        strerror (errno));
+		char *err = xstrerror (errno);
+		error ("Can't set sampling rate to %d: %s", params.rate, err);
+		free (err);
 		oss_close ();
 		return 0;
 	}
@@ -348,7 +353,7 @@ static int oss_play (const char *buff, const size_t size)
 
 		rc = write (dsp_fd, buff + count, ssize - count);
 		if (rc == -1) {
-			error ("Error writing pcm sound: %s", strerror (errno));
+			error_errno ("Error writing pcm sound", errno);
 			return -1;
 		}
 

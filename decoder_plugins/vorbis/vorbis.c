@@ -140,7 +140,7 @@ static void vorbis_tags (const char *file_name, struct file_tags *info,
 	int err_code;
 
 	if (!(file = fopen (file_name, "r"))) {
-		logit ("Can't open an OGG file: %s", strerror(errno));
+		log_errno ("Can't open an OGG file", errno);
 		return;
 	}
 

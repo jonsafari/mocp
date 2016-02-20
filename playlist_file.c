@@ -86,13 +86,13 @@ static int plist_load_m3u (struct plist *plist, const char *fname,
 
 	file = fopen (fname, "r");
 	if (!file) {
-		error ("Can't open playlist file: %s", strerror (errno));
+		error_errno ("Can't open playlist file", errno);
 		return 0;
 	}
 
 	/* Lock gets released by fclose(). */
 	if (flock (fileno (file), LOCK_SH) == -1)
-		logit ("Can't flock() the playlist file: %s", strerror (errno));
+		log_errno ("Can't flock() the playlist file", errno);
 
 	while ((line = read_line (file))) {
 		if (!strncmp (line, "#EXTINF:", sizeof("#EXTINF:") - 1)) {
@@ -205,7 +205,7 @@ static char *read_ini_value (FILE *file, const char *section, const char *key)
 	int key_len;
 
 	if (fseek(file, 0, SEEK_SET)) {
-		error ("File fseek() error: %s", strerror(errno));
+		error_errno ("File fseek() error", errno);
 		return NULL;
 	}
 
@@ -295,7 +295,7 @@ static int plist_load_pls (struct plist *plist, const char *fname,
 
 	file = fopen (fname, "r");
 	if (!file) {
-		error ("Can't open playlist file: %s", strerror (errno));
+		error_errno ("Can't open playlist file", errno);
 		return 0;
 	}
 
@@ -407,22 +407,22 @@ static int plist_save_m3u (struct plist *plist, const char *fname,
 
 	file = fopen (fname, "w");
 	if (!file) {
-		error ("Can't save playlist: %s", strerror (errno));
+		error_errno ("Can't save playlist", errno);
 		return 0;
 	}
 
 	/* Lock gets released by fclose(). */
 	if (flock (fileno (file), LOCK_EX) == -1)
-		logit ("Can't flock() the playlist file: %s", strerror (errno));
+		log_errno ("Can't flock() the playlist file", errno);
 
 	if (fprintf (file, "#EXTM3U\r\n") < 0) {
-		error ("Error writing playlist: %s", strerror (errno));
+		error_errno ("Error writing playlist", errno);
 		goto err;
 	}
 
 	if (save_serial && fprintf (file, "#MOCSERIAL: %d\r\n",
 	                                  plist_get_serial (plist)) < 0) {
-		error ("Error writing playlist: %s", strerror (errno));
+		error_errno ("Error writing playlist", errno);
 		goto err;
 	}
 
@@ -446,7 +446,7 @@ static int plist_save_m3u (struct plist *plist, const char *fname,
 				                     plist->items[i].file + strip_path);
 
 			if (ret < 0) {
-				error ("Error writing playlist: %s", strerror (errno));
+				error_errno ("Error writing playlist", errno);
 				goto err;
 			}
 		}
@@ -455,7 +455,7 @@ static int plist_save_m3u (struct plist *plist, const char *fname,
 	ret = fclose (file);
 	file = NULL;
 	if (ret)
-		error ("Error writing playlist: %s", strerror (errno));
+		error_errno ("Error writing playlist", errno);
 	else
 		result = 1;
 

@@ -318,7 +318,7 @@ static void iconv_cleanup ()
 {
 	if (iconv_desc != (iconv_t)(-1)
 			&& iconv_close(iconv_desc) == -1)
-		logit ("iconv_close() failed: %s", strerror(errno));
+		log_errno ("iconv_close() failed", errno);
 }
 
 void utf8_init ()
@@ -348,7 +348,7 @@ void utf8_init ()
 	if (!using_utf8 && terminal_charset) {
 		iconv_desc = iconv_open (terminal_charset, "UTF-8");
 		if (iconv_desc == (iconv_t)(-1))
-			logit ("iconv_open() failed: %s", strerror(errno));
+			log_errno ("iconv_open() failed", errno);
 	}
 
 	if (options_get_bool ("FileNamesIconv"))

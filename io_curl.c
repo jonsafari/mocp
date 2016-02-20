@@ -277,7 +277,7 @@ void io_curl_open (struct io_stream *s, const char *url)
 	}
 
 	if (pipe(s->curl.wake_up_pipe) < 0) {
-		logit ("pipe() failed: %s", strerror(errno));
+		log_errno ("pipe() failed", errno);
 		s->errno_val = EINVAL;
 		return;
 	}
@@ -621,6 +621,5 @@ void io_curl_wake_up (struct io_stream *s)
 	int w = 1;
 
 	if (write(s->curl.wake_up_pipe[1], &w, sizeof(w)) < 0)
-		logit ("Can't wake up curl thread: write() failed: %s",
-				strerror(errno));
+		log_errno ("Can't wake up curl thread: write() failed", errno);
 }

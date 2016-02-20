@@ -61,7 +61,7 @@ static ssize_t io_read_mmap (struct io_stream *s, const int dont_move,
 	assert (s->mem != NULL);
 
 	if (fstat(s->fd, &file_stat) == -1) {
-		logit ("fstat() failed: %s", strerror(errno));
+		log_errno ("fstat() failed", errno);
 		return -1;
 	}
 
@@ -69,7 +69,7 @@ static ssize_t io_read_mmap (struct io_stream *s, const int dont_move,
 		logit ("File size has changed");
 
 		if (munmap (s->mem, (size_t)s->size)) {
-			logit ("munmap() failed: %s", strerror(errno));
+			log_errno ("munmap() failed", errno);
 			return -1;
 		}
 
@@ -84,7 +84,7 @@ static ssize_t io_read_mmap (struct io_stream *s, const int dont_move,
 		s->mem = mmap (0, (size_t)s->size, PROT_READ, MAP_SHARED, s->fd, 0);
 		if (s->mem == MAP_FAILED) {
 			s->mem = NULL;
-			logit ("mmap() failed: %s", strerror(errno));
+			log_errno ("mmap() failed", errno);
 			return -1;
 		}
 
@@ -302,7 +302,7 @@ void io_close (struct io_stream *s)
 #ifdef HAVE_MMAP
 		if (s->source == IO_SOURCE_MMAP) {
 			if (s->mem && munmap (s->mem, (size_t)s->size))
-				logit ("munmap() failed: %s", strerror(errno));
+				log_errno ("munmap() failed", errno);
 			close (s->fd);
 		}
 #endif
@@ -322,10 +322,10 @@ void io_close (struct io_stream *s)
 			s->buf = NULL;
 			rc = pthread_cond_destroy (&s->buf_free_cond);
 			if (rc != 0)
-				logit ("Destroying buf_free_cond failed: %s", strerror (rc));
+				log_errno ("Destroying buf_free_cond failed", rc);
 			rc = pthread_cond_destroy (&s->buf_fill_cond);
 			if (rc != 0)
-				logit ("Destroying buf_fill_cond failed: %s", strerror (rc));
+				log_errno ("Destroying buf_fill_cond failed", rc);
 		}
 
 		if (s->metadata.title)
@@ -336,13 +336,13 @@ void io_close (struct io_stream *s)
 
 	rc = pthread_mutex_destroy (&s->buf_mtx);
 	if (rc != 0)
-		logit ("Destroying buf_mtx failed: %s", strerror (rc));
+		log_errno ("Destroying buf_mtx failed", rc);
 	rc = pthread_mutex_destroy (&s->io_mtx);
 	if (rc != 0)
-		logit ("Destroying io_mtx failed: %s", strerror (rc));
+		log_errno ("Destroying io_mtx failed", rc);
 	rc = pthread_mutex_destroy (&s->metadata.mtx);
 	if (rc != 0)
-		logit ("Destroying metadata.mtx failed: %s", strerror (rc));
+		log_errno ("Destroying metadata.mtx failed", rc);
 
 	if (s->strerror)
 		free (s->strerror);
@@ -465,7 +465,7 @@ static void io_open_file (struct io_stream *s, const char *file)
 			s->mem = mmap (0, (size_t)s->size, PROT_READ, MAP_SHARED, s->fd, 0);
 			if (s->mem == MAP_FAILED) {
 				s->mem = NULL;
-				logit ("mmap() failed: %s", strerror(errno));
+				log_errno ("mmap() failed", errno);
 			}
 			else {
 				logit ("mmap()ed %"PRId64" bytes", s->size);
@@ -529,7 +529,7 @@ struct io_stream *io_open (const char *file, const int buffered)
 
 		rc = pthread_create (&s->read_thread, NULL, io_read_thread, s);
 		if (rc != 0)
-			fatal ("Can't create read thread: %s", strerror (rc));
+			fatal ("Can't create read thread: %s", xstrerror (errno));
 	}
 
 	return s;
@@ -691,8 +691,6 @@ ssize_t io_peek (struct io_stream *s, void *buf, size_t count)
 /* Get the string describing the error associated with the stream. */
 char *io_strerror (struct io_stream *s)
 {
-	char err[256];
-
 	if (s->strerror)
 		free (s->strerror);
 
@@ -701,10 +699,8 @@ char *io_strerror (struct io_stream *s)
 		io_curl_strerror (s);
 	else
 #endif
-	if (s->errno_val) {
-		strerror_r (s->errno_val, err, sizeof(err));
-		s->strerror = xstrdup (err);
-	}
+	if (s->errno_val)
+		s->strerror = xstrerror (s->errno_val);
 	else
 		s->strerror = xstrdup ("OK");
 

@@ -491,7 +491,7 @@ static int load_color_theme (const char *name, const int errors_are_fatal)
 
 	if (!(file = fopen(theme_file, "r"))) {
 		if (errors_are_fatal)
-			interface_fatal ("Can't open theme file: %s", strerror(errno));
+			interface_fatal ("Can't open theme file: %s", xstrerror (errno));
 		return 0;
 	}
 

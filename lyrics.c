@@ -64,8 +64,10 @@ lists_t_strs *lyrics_load_file (const char *filename)
 
 	lyrics_file = fopen (filename, "r");
 	if (lyrics_file == NULL) {
+		char *err = xstrerror (errno);
+		logit ("Error reading '%s': %s", filename, err);
+		free (err);
 		lyrics_message = "[Lyrics file cannot be read!]";
-		logit ("Error reading '%s': %s", filename, strerror (errno));
 		return NULL;
 	}
 

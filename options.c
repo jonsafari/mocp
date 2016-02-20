@@ -1010,7 +1010,7 @@ void options_parse (const char *config_file)
 		fatal ("Configuration file is not secure: %s", config_file);
 
 	if (!(file = fopen(config_file, "r"))) {
-		logit ("Can't open config file: %s", strerror (errno));
+		log_errno ("Can't open config file", errno);
 		return;
 	}
 

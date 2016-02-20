@@ -738,11 +738,11 @@ struct tags_cache *tags_cache_new (size_t max_size)
 
 	rc = pthread_cond_init (&result->request_cond, NULL);
 	if (rc != 0)
-		fatal ("Can't create request_cond: %s", strerror (rc));
+		fatal ("Can't create request_cond: %s", xstrerror (rc));
 
 	rc = pthread_create (&result->reader_thread, NULL, reader_thread, result);
 	if (rc != 0)
-		fatal ("Can't create tags cache thread: %s", strerror (rc));
+		fatal ("Can't create tags cache thread: %s", xstrerror (rc));
 
 	return result;
 }
@@ -786,17 +786,17 @@ void tags_cache_free (struct tags_cache *c)
 	rc = pthread_join (c->reader_thread, NULL);
 	if (rc != 0)
 		fatal ("pthread_join() on cache reader thread failed: %s",
-		        strerror (rc));
+		        xstrerror (rc));
 
 	for (i = 0; i < CLIENTS_MAX; i++)
 		request_queue_clear (&c->queues[i]);
 
 	rc = pthread_mutex_destroy (&c->mutex);
 	if (rc != 0)
-		logit ("Can't destroy mutex: %s", strerror (rc));
+		log_errno ("Can't destroy mutex", rc);
 	rc = pthread_cond_destroy (&c->request_cond);
 	if (rc != 0)
-		logit ("Can't destroy request_cond: %s", strerror (rc));
+		log_errno ("Can't destroy request_cond", rc);
 
 	free (c);
 }
@@ -939,7 +939,9 @@ static int purge_directory (const char *dir_path)
 
 	dir = opendir (dir_path);
 	if (!dir) {
-		logit ("Can't open directory %s: %s", dir_path, strerror (errno));
+		char *err = xstrerror (errno);
+		logit ("Can't open directory %s: %s", dir_path, err);
+		free (err);
 		return 0;
 	}
 
@@ -956,7 +958,9 @@ static int purge_directory (const char *dir_path)
 		snprintf (fpath, len, "%s/%s", dir_path, d->d_name);
 
 		if (stat (fpath, &st) < 0) {
-			logit ("Can't stat %s: %s", fpath, strerror (errno));
+			char *err = xstrerror (errno);
+			logit ("Can't stat %s: %s", fpath, err);
+			free (err);
 			free (fpath);
 			closedir (dir);
 			return 0;
@@ -971,7 +975,9 @@ static int purge_directory (const char *dir_path)
 
 			logit ("Removing directory %s...", fpath);
 			if (rmdir (fpath) < 0) {
-				logit ("Can't remove %s: %s", fpath, strerror (errno));
+				char *err = xstrerror (errno);
+				logit ("Can't remove %s: %s", fpath, err);
+				free (err);
 				free (fpath);
 				closedir (dir);
 				return 0;
@@ -981,7 +987,9 @@ static int purge_directory (const char *dir_path)
 			logit ("Removing file %s...", fpath);
 
 			if (unlink (fpath) < 0) {
-				logit ("Can't remove %s: %s", fpath, strerror (errno));
+				char *err = xstrerror (errno);
+				logit ("Can't remove %s: %s", fpath, err);
+				free (err);
 				free (fpath);
 				closedir (dir);
 				return 0;
@@ -1087,7 +1095,7 @@ static void write_cache_version (const char *cache_dir)
 
 	f = fopen (fname, "w");
 	if (!f) {
-		logit ("Error opening cache: %s", strerror (errno));
+		log_errno ("Error opening cache", errno);
 		free (fname);
 		return;
 	}
@@ -1112,8 +1120,7 @@ static int prepare_cache_dir (const char *cache_dir)
 	}
 
 	if (errno != EEXIST) {
-		error ("Failed to create directory for tags cache: %s",
-				strerror (errno));
+		error_errno ("Failed to create directory for tags cache", errno);
 		return 0;
 	}
 

@@ -60,7 +60,7 @@ void files_init ()
 	                     MAGIC_NO_CHECK_TAR | MAGIC_NO_CHECK_TOKENS |
 	                     MAGIC_NO_CHECK_FORTRAN | MAGIC_NO_CHECK_TROFF);
 	if (cookie == NULL)
-		logit ("Error allocating magic cookie: %s", strerror (errno));
+		log_errno ("Error allocating magic cookie", errno);
 	else if (magic_load (cookie, NULL) != 0) {
 		logit ("Error loading magic database: %s", magic_error (cookie));
 		magic_close (cookie);
@@ -96,8 +96,10 @@ int is_dir (const char *file)
 	if (is_url (file))
 		return 0;
 
-	if (stat(file, &file_stat) == -1) {
-		error ("Can't stat %s: %s", file, strerror(errno));
+	if (stat (file, &file_stat) == -1) {
+		char *err = xstrerror (errno);
+		error ("Can't stat %s: %s", file, err);
+		free (err);
 		return -1;
 	}
 	return S_ISDIR(file_stat.st_mode) ? 1 : 0;
@@ -382,7 +384,7 @@ int read_directory (const char *directory, lists_t_strs *dirs,
 	assert (plist != NULL);
 
 	if (!(dir = opendir(directory))) {
-		error ("Can't read directory: %s", strerror(errno));
+		error_errno ("Can't read directory", errno);
 		return 0;
 	}
 
@@ -449,8 +451,10 @@ static int read_directory_recurr_internal (const char *directory, struct plist *
 	struct dirent *entry;
 	struct stat st;
 
-	if (stat(directory, &st)) {
-		error ("Can't stat %s: %s", directory, strerror(errno));
+	if (stat (directory, &st)) {
+		char *err = xstrerror (errno);
+		error ("Can't stat %s: %s", directory, err);
+		free (err);
 		return 0;
 	}
 
@@ -463,7 +467,7 @@ static int read_directory_recurr_internal (const char *directory, struct plist *
 	}
 
 	if (!(dir = opendir(directory))) {
-		error ("Can't read directory: %s", strerror(errno));
+		error_errno ("Can't read directory", errno);
 		return 1;
 	}
 
@@ -672,7 +676,7 @@ int file_exists (const char *file)
 
 	/* Log any error other than non-existence. */
 	if (errno != ENOENT)
-		logit ("Error : %s", strerror (errno));
+		log_errno ("Error", errno);
 
 	return 0;
 }

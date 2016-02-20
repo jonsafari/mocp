@@ -69,7 +69,7 @@ static bool is_timing_broken (int fd, struct sndfile_data *data)
 	case SF_FORMAT_WAV:
 		rc = fstat (fd, &buf);
 		if (rc == -1) {
-			logit ("Can't stat file: %s", strerror (errno));
+			log_errno ("Can't stat file", errno);
 			/* We really need to return "unknown" here. */
 			return false;
 		}
@@ -94,8 +94,10 @@ static void *sndfile_open (const char *file)
 
 	fd = open (file, O_RDONLY);
 	if (fd == -1) {
+		char *err = xstrerror (errno);
 		decoder_error (&data->error, ERROR_FATAL, 0,
-				"Can't open file: %s", strerror (errno));
+		               "Can't open file: %s", err);
+		free (err);
 		return data;
 	}
 

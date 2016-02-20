@@ -502,7 +502,7 @@ static void set_cwd (const char *path)
 		strcpy (cwd, "/"); /* for absolute path */
 	else if (!cwd[0]) {
 		if (!getcwd(cwd, sizeof(cwd)))
-			fatal ("Can't get CWD: %s", strerror(errno));
+			fatal ("Can't get CWD: %s", xstrerror (errno));
 	}
 
 	resolve_path (cwd, sizeof(cwd), path);
@@ -1510,7 +1510,7 @@ static void process_plist_arg (const char *file)
 	if (file[0] == '/')
 		strcpy (path, "/");
 	else if (!getcwd (path, sizeof (path)))
-		interface_fatal ("Can't get CWD: %s", strerror (errno));
+		interface_fatal ("Can't get CWD: %s", xstrerror (errno));
 
 	resolve_path (path, sizeof (path), file);
 	slash = strrchr (path, '/');
@@ -1530,7 +1530,7 @@ static void process_multiple_args (lists_t_strs *args)
 	char this_cwd[PATH_MAX];
 
 	if (!getcwd (this_cwd, sizeof (cwd)))
-		interface_fatal ("Can't get CWD: %s", strerror (errno));
+		interface_fatal ("Can't get CWD: %s", xstrerror (errno));
 
 	size = lists_strs_size (args);
 
@@ -2583,7 +2583,7 @@ static time_t rounded_time ()
 	time_t curr_time;
 
 	if (clock_gettime (CLOCK_REALTIME, &exact_time) == -1)
-		interface_fatal ("clock_gettime() failed: %s", strerror(errno));
+		interface_fatal ("clock_gettime() failed: %s", xstrerror (errno));
 
 	curr_time = exact_time.tv_sec;
 	if (exact_time.tv_nsec > 500000000L)
@@ -2713,9 +2713,10 @@ static void add_themes_to_list (lists_t_strs *themes, const char *themes_dir)
 	assert (themes);
 	assert (themes_dir);
 
-	if (!(dir = opendir(themes_dir))) {
-		logit ("Can't open themes directory %s: %s", themes_dir,
-				strerror(errno));
+	if (!(dir = opendir (themes_dir))) {
+		char *err = xstrerror (errno);
+		logit ("Can't open themes directory %s: %s", themes_dir, err);
+		free (err);
 		return;
 	}
 
@@ -3042,18 +3043,20 @@ static void run_external_cmd (char **args, const int arg_num ASSERT_ONLY)
 
 	child = fork();
 	if (child == -1)
-		error ("fork() failed: %s", strerror (errno));
+		error_errno ("fork() failed", errno);
 	else {
 		int status;
 
 		if (child == 0) { /* I'm a child. */
+			char *err;
 
 			putchar ('\n');
 			execvp (args[0], args);
 
 			/* We have an error. */
-			fprintf (stderr, "\nError executing %s: %s\n", args[0],
-					strerror(errno));
+			err = xstrerror (errno);
+			fprintf (stderr, "\nError executing %s: %s\n", args[0], err);
+			free (err);
 			xsleep (2, 1);
 			exit (EXIT_FAILURE);
 		}
@@ -3499,7 +3502,7 @@ void init_interface (const int sock, const int logging, lists_t_strs *args)
 	if (logging) {
 		logfp = fopen (INTERFACE_LOG, "a");
 		if (!logfp)
-			fatal ("Can't open client log file: %s", strerror (errno));
+			fatal ("Can't open client log file: %s", xstrerror (errno));
 	}
 	log_init_stream (logfp, INTERFACE_LOG);
 
@@ -3606,7 +3609,7 @@ void interface_loop ()
 		dequeue_events ();
 		ret = pselect (srv_sock + 1, &fds, NULL, NULL, &timeout, NULL);
 		if (ret == -1 && !want_quit && errno != EINTR)
-			interface_fatal ("pselect() failed: %s", strerror(errno));
+			interface_fatal ("pselect() failed: %s", xstrerror (errno));
 
 		iface_tick ();
 
@@ -3651,7 +3654,7 @@ static void save_curr_dir ()
 	FILE *dir_file;
 
 	if (!(dir_file = fopen(create_file_name("last_directory"), "w"))) {
-		error ("Can't save current directory: %s", strerror(errno));
+		error_errno ("Can't save current directory", errno);
 		return;
 	}
 
@@ -3803,7 +3806,7 @@ void interface_cmdline_append (int server_sock, lists_t_strs *args)
 		plist_init (&new);
 
 		if (!getcwd(cwd, sizeof(cwd)))
-			fatal ("Can't get CWD: %s", strerror(errno));
+			fatal ("Can't get CWD: %s", xstrerror (errno));
 
 		if (recv_server_plist(&clients_plist)) {
 			add_recursively (&new, args);
@@ -3867,7 +3870,7 @@ void interface_cmdline_play_first (int server_sock)
 				   here */
 
 	if (!getcwd(cwd, sizeof(cwd)))
-		fatal ("Can't get CWD: %s", strerror(errno));
+		fatal ("Can't get CWD: %s", xstrerror (errno));
 	plist_init (&plist);
 
 	send_int_to_srv (CMD_GET_SERIAL);
@@ -4045,7 +4048,7 @@ void interface_cmdline_enqueue (int server_sock, lists_t_strs *args)
 	srv_sock = server_sock;
 
 	if (!getcwd (cwd, sizeof (cwd)))
-		fatal ("Can't get CWD: %s", strerror(errno));
+		fatal ("Can't get CWD: %s", xstrerror (errno));
 
 	for (ix = 0; ix < lists_strs_size (args); ix += 1) {
 		const char *arg;
@@ -4069,7 +4072,7 @@ void interface_cmdline_playit (int server_sock, lists_t_strs *args)
 				   here */
 
 	if (!getcwd(cwd, sizeof(cwd)))
-		fatal ("Can't get CWD: %s", strerror(errno));
+		fatal ("Can't get CWD: %s", xstrerror (errno));
 
 	plist_init (&plist);
 

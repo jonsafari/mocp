@@ -143,11 +143,11 @@ static void check_moc_dir ()
 	if (stat (dir_name, &file_stat) == -1) {
 		if (errno != ENOENT)
 			fatal ("Error trying to check for "CONFIG_DIR" directory: %s",
-			        strerror (errno));
+			        xstrerror (errno));
 
 		if (mkdir (dir_name, 0700) == -1)
 			fatal ("Can't create directory %s: %s",
-					dir_name, strerror (errno));
+					dir_name, xstrerror (errno));
 	}
 	else {
 		if (!S_ISDIR(file_stat.st_mode) || access (dir_name, W_OK))
@@ -184,7 +184,7 @@ static void start_moc (const struct parameters *params, lists_t_strs *args)
 
 		/* To notify the client that the server socket is ready */
 		if (pipe(notify_pipe))
-			fatal ("pipe() failed: %s", strerror(errno));
+			fatal ("pipe() failed: %s", xstrerror (errno));
 
 		switch (fork()) {
 			case 0: /* child - start server */
@@ -193,7 +193,7 @@ static void start_moc (const struct parameters *params, lists_t_strs *args)
 				rc = write (notify_pipe[1], &i, sizeof(i));
 				if (rc < 0)
 					fatal ("write() to notify pipe failed: %s",
-					        strerror(errno));
+					        xstrerror (errno));
 				close (notify_pipe[0]);
 				close (notify_pipe[1]);
 				signal (SIGCHLD, sig_chld);
@@ -206,7 +206,7 @@ static void start_moc (const struct parameters *params, lists_t_strs *args)
 				common_cleanup ();
 				exit (EXIT_SUCCESS);
 			case -1:
-				fatal ("fork() failed: %s", strerror(errno));
+				fatal ("fork() failed: %s", xstrerror (errno));
 			default:
 				close (notify_pipe[1]);
 				if (read(notify_pipe[0], &i, sizeof(i)) != sizeof(i))

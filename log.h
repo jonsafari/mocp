@@ -20,6 +20,21 @@ extern "C" {
 # define logit(...)  do {} while (0)
 #endif
 
+#ifndef STRERROR_FN
+# define STRERROR_FN xstrerror
+#endif
+
+#ifndef NDEBUG
+#define log_errno(format, errnum) \
+	do { \
+		char *err = STRERROR_FN (errnum); \
+		logit (format ": %s", err); \
+		free (err); \
+	} while (0)
+#else
+# define log_errno(...) do {} while (0)
+#endif
+
 void internal_logit (const char *file, const int line, const char *function,
 		const char *format, ...) ATTR_PRINTF(4, 5);
 

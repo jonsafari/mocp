@@ -149,7 +149,7 @@ void xsleep (size_t ticks, size_t ticks_per_sec)
 		do {
 			rc = nanosleep (&delay, &delay);
 			if (rc == -1 && errno != EINTR)
-				fatal ("nanosleep() failed: %s", strerror (errno));
+				fatal ("nanosleep() failed: %s", xstrerror (errno));
 		} while (rc != 0);
 	}
 }
@@ -371,8 +371,11 @@ const char *get_home ()
 			if (passwd)
 				home = xstrdup (passwd->pw_dir);
 			else
-				if (errno != 0)
-					logit ("getpwuid(%d): %s", geteuid (), strerror (errno));
+				if (errno != 0) {
+					char *err = xstrerror (errno);
+					logit ("getpwuid(%d): %s", geteuid (), err);
+					free (err);
+				}
 		}
 	}
 

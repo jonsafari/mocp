@@ -726,7 +726,6 @@ void decoder_error (struct decoder_error *error,
 		const enum decoder_error_type type, const int add_errno,
 		const char *format, ...)
 {
-	char errno_buf[256] = "";
 	char *err_str;
 	va_list va;
 
@@ -739,10 +738,15 @@ void decoder_error (struct decoder_error *error,
 	err_str = format_msg_va (format, va);
 	va_end (va);
 
-	if (add_errno)
-		strerror_r(add_errno, errno_buf, sizeof(errno_buf));
+	if (add_errno) {
+		char *err_buf;
 
-	error->err = format_msg ("%s%s", err_str, errno_buf);
+		err_buf = xstrerror (add_errno);
+		error->err = format_msg ("%s%s", err_str, err_buf);
+		free (err_buf);
+	}
+	else
+		error->err = format_msg ("%s", err_str);
 
 	free (err_str);
 }

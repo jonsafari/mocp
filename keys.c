@@ -1070,7 +1070,7 @@ static void load_key_map (const char *file_name)
 	size_t cmd_ix;
 
 	if (!(file = fopen(file_name, "r")))
-		fatal ("Can't open keymap file: %s", strerror(errno));
+		fatal ("Can't open keymap file: %s", xstrerror (errno));
 
 	/* Read lines in format:
 	 * COMMAND = KEY [KEY ...]

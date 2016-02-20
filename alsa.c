@@ -192,24 +192,23 @@ static void handle_mixer_events (snd_mixer_t *mixer_handle)
 				snd_strerror(count));
 	else {
 		struct pollfd *fds;
-		int err;
+		int rc;
 
 		fds = xcalloc (count, sizeof(struct pollfd));
 
-		if ((err = snd_mixer_poll_descriptors(mixer_handle, fds,
+		if ((rc = snd_mixer_poll_descriptors(mixer_handle, fds,
 						count)) < 0)
 			logit ("snd_mixer_poll_descriptors() failed: %s",
-					snd_strerror(err));
+					snd_strerror(rc));
 		else {
-			err = poll (fds, count, 0);
-			if (err < 0)
-				error ("poll() failed: %s", strerror(errno));
-			else if (err > 0) {
+			rc = poll (fds, count, 0);
+			if (rc < 0)
+				error_errno ("poll() failed", errno);
+			else if (rc > 0) {
 				debug ("Mixer event");
-				if ((err = snd_mixer_handle_events(mixer_handle)
-							) < 0)
+				if ((rc = snd_mixer_handle_events(mixer_handle)) < 0)
 					logit ("snd_mixer_handle_events() failed: %s",
-							snd_strerror(err));
+							snd_strerror(rc));
 			}
 		}
 

@@ -2377,7 +2377,7 @@ static void soft_write (int fd, const void *buf, size_t count)
 
 	rc = write (fd, buf, count);
 	if (rc < 0)
-		logit ("write() failed: %s", strerror(errno));
+		log_errno ("write() failed", errno);
 }
 
 /* Set the has_xterm variable. */

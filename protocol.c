@@ -60,7 +60,7 @@ int get_int (int sock, int *i)
 
 	res = recv (sock, i, sizeof(int), 0);
 	if (res == -1)
-		logit ("recv() failed when getting int: %s", strerror(errno));
+		log_errno ("recv() failed when getting int", errno);
 
 	return res == ssizeof(int) ? 1 : 0;
 }
@@ -70,25 +70,28 @@ enum noblock_io_status get_int_noblock (int sock, int *i)
 {
 	ssize_t res;
 	long flags;
+	char *err;
 
 	if ((flags = fcntl(sock, F_GETFL)) == -1)
-		fatal ("fcntl(sock, F_GETFL) failed: %s", strerror(errno));
+		fatal ("fcntl(sock, F_GETFL) failed: %s", xstrerror (errno));
 	flags |= O_NONBLOCK;
 	if (fcntl(sock, F_SETFL, O_NONBLOCK) == -1)
 		fatal ("Setting O_NONBLOCK for the socket failed: %s",
-				strerror(errno));
+		        xstrerror (errno));
 	res = recv (sock, i, sizeof(int), 0);
 	flags &= ~O_NONBLOCK;
 	if (fcntl(sock, F_SETFL, flags) == -1)
-		fatal ("Restoring flags for socket failed: %s", strerror(errno));
+		fatal ("Restoring flags for socket failed: %s", xstrerror (errno));
 
 	if (res == ssizeof(int))
 		return NB_IO_OK;
 	if (res < 0 && errno == EAGAIN)
 		return NB_IO_BLOCK;
 
-	logit ("recv() failed when getting int (res %zd): %s", res,
-			strerror(errno));
+	err = xstrerror (errno);
+	logit ("recv() failed when getting int (res %zd): %s", res, err);
+	free (err);
+
 	return NB_IO_ERR;
 }
 
@@ -99,7 +102,7 @@ int send_int (int sock, int i)
 
 	res = send (sock, &i, sizeof(int), 0);
 	if (res == -1)
-		logit ("send() failed: %s", strerror(errno));
+		log_errno ("send() failed", errno);
 
 	return res == ssizeof(int) ? 1 : 0;
 }
@@ -112,7 +115,7 @@ static int get_long (int sock, long *i)
 
 	res = recv (sock, i, sizeof(long), 0);
 	if (res == -1)
-		logit ("recv() failed when getting int: %s", strerror(errno));
+		log_errno ("recv() failed when getting int", errno);
 
 	return res == ssizeof(long) ? 1 : 0;
 }
@@ -126,7 +129,7 @@ static int send_long (int sock, long i)
 
 	res = send (sock, &i, sizeof(long), 0);
 	if (res == -1)
-		logit ("send() failed: %s", strerror(errno));
+		log_errno ("send() failed", errno);
 
 	return res == ssizeof(long) ? 1 : 0;
 }
@@ -152,8 +155,7 @@ char *get_str (int sock)
 
 		res = recv (sock, str + nread, len - nread, 0);
 		if (res == -1) {
-			logit ("recv() failed when getting string: %s",
-					strerror(errno));
+			log_errno ("recv() failed when getting string", errno);
 			free (str);
 			return NULL;
 		}
@@ -190,7 +192,7 @@ int get_time (int sock, time_t *i)
 
 	res = recv (sock, i, sizeof(time_t), 0);
 	if (res == -1)
-		logit ("recv() failed when getting time_t: %s", strerror(errno));
+		log_errno ("recv() failed when getting time_t", errno);
 
 	return res == ssizeof(time_t) ? 1 : 0;
 }
@@ -202,7 +204,7 @@ int send_time (int sock, time_t i)
 
 	res = send (sock, &i, sizeof(time_t), 0);
 	if (res == -1)
-		logit ("send() failed: %s", strerror(errno));
+		log_errno ("send() failed", errno);
 
 	return res == ssizeof(time_t) ? 1 : 0;
 }
@@ -317,7 +319,7 @@ static int send_all (int sock, const char *buf, const size_t size)
 	while (send_pos < size) {
 		sent = send (sock, buf + send_pos, size - send_pos, 0);
 		if (sent < 0) {
-			logit ("Error while sending data: %s", strerror(errno));
+			log_errno ("Error while sending data", errno);
 			return 0;
 		}
 		send_pos += sent;
@@ -729,6 +731,6 @@ enum noblock_io_status event_send_noblock (int sock, struct event_queue *q)
 	}
 
 	/* Error */
-	logit ("Error when sending event: %s", strerror(errno));
+	log_errno ("Error when sending event", errno);
 	return NB_IO_ERR;
 }

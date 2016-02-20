@@ -95,7 +95,7 @@ static void write_pid_file ()
 	FILE *file;
 
 	if ((file = fopen(fname, "w")) == NULL)
-		fatal ("Can't open pid file for writing: %s", strerror(errno));
+		fatal ("Can't open pid file for writing: %s", xstrerror (errno));
 	fprintf (file, "%d\n", getpid());
 	fclose (file);
 }
@@ -148,7 +148,7 @@ static void clients_cleanup ()
 		clients[i].socket = -1;
 		rc = pthread_mutex_destroy (&clients[i].events_mtx);
 		if (rc != 0)
-			logit ("Can't destroy events mutex: %s", strerror (rc));
+			log_errno ("Can't destroy events mutex", rc);
 	}
 }
 
@@ -254,8 +254,7 @@ static void wake_up_server ()
 	debug ("Waking up the server");
 
 	if (write(wake_up_pipe[1], &w, sizeof(w)) < 0)
-		logit ("Can't wake up the server: (write() failed) %s",
-				strerror(errno));
+		log_errno ("Can't wake up the server: (write() failed)", errno);
 }
 
 /* Thread-safe signal() version */
@@ -268,7 +267,7 @@ static void thread_signal (const int signum, void (*func)(int))
 	sigemptyset (&act.sa_mask);
 
 	if (sigaction(signum, &act, 0) == -1)
-		fatal ("sigaction() failed: %s", strerror(errno));
+		fatal ("sigaction() failed: %s", xstrerror (errno));
 }
 
 static void redirect_output (FILE *stream)
@@ -281,7 +280,7 @@ static void redirect_output (FILE *stream)
 		rc = freopen ("/dev/null", "w", stream);
 
 	if (!rc)
-		fatal ("Can't open /dev/null: %s", strerror (errno));
+		fatal ("Can't open /dev/null: %s", xstrerror (errno));
 }
 
 static void log_process_stack_size ()
@@ -343,28 +342,28 @@ int server_init (int debugging, int foreground)
 		if (debugging) {
 			logfp = fopen (SERVER_LOG, "a");
 			if (!logfp)
-				fatal ("Can't open server log file: %s", strerror (errno));
+				fatal ("Can't open server log file: %s", xstrerror (errno));
 		}
 		log_init_stream (logfp, SERVER_LOG);
 	}
 
 	if (pipe(wake_up_pipe) < 0)
-		fatal ("pipe() failed: %s", strerror(errno));
+		fatal ("pipe() failed: %s", xstrerror (errno));
 
 	unlink (socket_name());
 
 	/* Create a socket */
 	if ((server_sock = socket (PF_LOCAL, SOCK_STREAM, 0)) == -1)
-		fatal ("Can't create socket: %s", strerror(errno));
+		fatal ("Can't create socket: %s", xstrerror (errno));
 	sock_name.sun_family = AF_LOCAL;
 	strcpy (sock_name.sun_path, socket_name());
 
 	/* Bind to socket */
 	if (bind(server_sock, (struct sockaddr *)&sock_name, SUN_LEN(&sock_name)) == -1)
-		fatal ("Can't bind() to the socket: %s", strerror(errno));
+		fatal ("Can't bind() to the socket: %s", xstrerror (errno));
 
 	if (listen(server_sock, 1) == -1)
-		fatal ("listen() failed: %s", strerror(errno));
+		fatal ("listen() failed: %s", xstrerror (errno));
 
 	/* Log stack sizes so stack overflows can be debugged. */
 	log_process_stack_size ();
@@ -547,7 +546,7 @@ static void on_song_change ()
 		execve (args[0], args, environ);
 		exit (EXIT_FAILURE);
 	case -1:
-		logit ("Failed to fork(): %s", strerror (errno));
+		log_errno ("Failed to fork()", errno);
 	}
 
 	lists_strs_free (arg_list);
@@ -563,7 +562,7 @@ static void on_stop ()
 	command = xstrdup (options_get_str("OnStop"));
 
 	if (command) {
-		char *args[2];
+		char *args[2], *err;
 
 		args[0] = xstrdup (command);
 		args[1] = NULL;
@@ -573,8 +572,10 @@ static void on_stop ()
 				execve (command, args, environ);
 				exit (EXIT_FAILURE);
 			case -1:
+				err = xstrerror (errno);
 				logit ("Error when running OnStop command '%s': %s",
-						command, strerror(errno));
+				        command, err);
+				free (err);
 				break;
 		}
 
@@ -1730,8 +1731,8 @@ void server_loop (int list_sock)
 		if (res == -1 && errno != EINTR && !server_quit) {
 			int err = errno;
 
-			logit ("select() failed: %s", strerror(err));
-			fatal ("select() failed: %s", strerror(err));
+			logit ("select() failed: %s", xstrerror(err));
+			fatal ("select() failed: %s", xstrerror(err));
 		}
 		else if (!server_quit && res >= 0) {
 			if (FD_ISSET(list_sock, &fds_read)) {
@@ -1743,7 +1744,7 @@ void server_loop (int list_sock)
 					&name_len);
 
 				if (client_sock == -1)
-					fatal ("accept() failed: %s", strerror(errno));
+					fatal ("accept() failed: %s", xstrerror (errno));
 				logit ("Incoming connection");
 				if (!add_client(client_sock))
 					busy (client_sock);
@@ -1755,7 +1756,7 @@ void server_loop (int list_sock)
 				logit ("Got 'wake up'");
 
 				if (read(wake_up_pipe[0], &w, sizeof(w)) < 0)
-					fatal ("Can't read wake up signal: %s", strerror(errno));
+					fatal ("Can't read wake up signal: %s", xstrerror (errno));
 			}
 
 			send_events (&fds_write);

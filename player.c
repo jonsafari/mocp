@@ -154,7 +154,7 @@ static void bitrate_list_destroy (struct bitrate_list *b)
 
 	rc = pthread_mutex_destroy (&b->mtx);
 	if (rc != 0)
-		logit ("Can't destroy bitrate list mutex: %s", strerror (rc));
+		log_errno ("Can't destroy bitrate list mutex", rc);
 }
 
 static void bitrate_list_add (struct bitrate_list *b, const int time,
@@ -333,7 +333,7 @@ static void start_precache (struct precache *precache, const char *file)
 	precache->ok = 0;
 	rc = pthread_create (&precache->tid, NULL, precache_thread, precache);
 	if (rc != 0)
-		logit ("Could not run precache thread: %s", strerror (rc));
+		log_errno ("Could not run precache thread", rc);
 	else
 		precache->running = 1;
 }
@@ -347,7 +347,7 @@ static void precache_wait (struct precache *precache)
 		rc = pthread_join (precache->tid, NULL);
 		if (rc != 0)
 			fatal ("pthread_join() for precache thread failed: %s",
-			        strerror (rc));
+			        xstrerror (rc));
 		precache->running = 0;
 		debug ("done");
 	}
@@ -909,16 +909,16 @@ void player_cleanup ()
 
 	rc = pthread_mutex_destroy (&request_cond_mtx);
 	if (rc != 0)
-		logit ("Can't destroy request mutex: %s", strerror (rc));
+		log_errno ("Can't destroy request mutex", rc);
 	rc = pthread_mutex_destroy (&curr_tags_mtx);
 	if (rc != 0)
-		logit ("Can't destroy tags mutex: %s", strerror (rc));
+		log_errno ("Can't destroy tags mutex", rc);
 	rc = pthread_mutex_destroy (&decoder_stream_mtx);
 	if (rc != 0)
-		logit ("Can't destroy decoder_stream mutex: %s", strerror (rc));
+		log_errno ("Can't destroy decoder_stream mutex", rc);
 	rc = pthread_cond_destroy (&request_cond);
 	if (rc != 0)
-		logit ("Can't destroy request condition: %s", strerror (rc));
+		log_errno ("Can't destroy request condition", rc);
 
 	precache_wait (&precache);
 	precache_reset (&precache);
