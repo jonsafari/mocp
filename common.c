@@ -26,6 +26,7 @@
 #include <time.h>
 #include <sys/types.h>
 #include <pwd.h>
+#include <pthread.h>
 #include <errno.h>
 #ifdef HAVE_SYSLOG
 #include <syslog.h>
@@ -152,6 +153,53 @@ void xsleep (size_t ticks, size_t ticks_per_sec)
 		} while (rc != 0);
 	}
 }
+
+#if !HAVE_DECL_STRERROR_R
+static pthread_mutex_t xstrerror_mtx = PTHREAD_MUTEX_INITIALIZER;
+#endif
+
+#if !HAVE_DECL_STRERROR_R
+/* Return error message in malloc() buffer (for strerror(3)). */
+char *xstrerror (int errnum)
+{
+	char *result;
+
+	/* The client is not threaded. */
+	if (!im_server)
+		return xstrdup (strerror (errnum));
+
+	LOCK (xstrerror_mtx);
+
+	result = xstrdup (strerror (errnum));
+
+	UNLOCK (xstrerror_mtx);
+
+	return result;
+}
+#endif
+
+#if HAVE_DECL_STRERROR_R
+/* Return error message in malloc() buffer (for strerror_r(3)). */
+char *xstrerror (int errnum)
+{
+	char *err_str, err_buf[256];
+
+#ifdef STRERROR_R_CHAR_P
+	/* strerror_r(3) is GNU variant. */
+	err_str = strerror_r (errnum, err_buf, sizeof (err_buf));
+#else
+	/* strerror_r(3) is XSI variant. */
+	if (strerror_r (errnum, err_buf, sizeof (err_buf)) < 0) {
+		logit ("Error %d occurred obtaining error description for %d",
+		        errno, errnum);
+		strcpy (err_buf, "Error occurred obtaining error description");
+	}
+	err_str = err_buf;
+#endif
+
+	return xstrdup (err_str);
+}
+#endif
 
 void set_me_server ()
 {
@@ -329,4 +377,18 @@ const char *get_home ()
 	}
 
 	return home;
+}
+
+void common_cleanup ()
+{
+#ifndef HAVE_DECL_STRERROR_R
+	int rc;
+
+	if (im_server)
+		return;
+
+	rc = pthread_mutex_destroy (&xstrerror_mtx);
+	if (rc != 0)
+		logit ("Can't destroy xstrerror_mtx: %s", strerror (rc));
+#endif
 }

@@ -203,7 +203,7 @@ static void start_moc (const struct parameters *params, lists_t_strs *args)
 				io_cleanup ();
 				files_cleanup ();
 				rcc_cleanup ();
-				compat_cleanup ();
+				common_cleanup ();
 				exit (EXIT_SUCCESS);
 			case -1:
 				fatal ("fork() failed: %s", strerror(errno));
@@ -1271,7 +1271,7 @@ int main (int argc, const char *argv[])
 	io_cleanup ();
 	rcc_cleanup ();
 	files_cleanup ();
-	compat_cleanup ();
+	common_cleanup ();
 
 	return EXIT_SUCCESS;
 }

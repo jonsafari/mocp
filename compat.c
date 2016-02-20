@@ -13,7 +13,6 @@
 # include "config.h"
 #endif
 
-#include <pthread.h>
 #include <string.h>
 #include <errno.h>
 #include <assert.h>
@@ -57,32 +56,6 @@ char *strcasestr (const char *haystack, const char *needle)
 }
 #endif
 
-#ifndef HAVE_STRERROR_R
-static pthread_mutex_t strerror_r_mtx = PTHREAD_MUTEX_INITIALIZER;
-#endif
-
-#ifndef HAVE_STRERROR_R
-int strerror_r (int errnum, char *buf, size_t n)
-{
-	char *err_str;
-	int ret_val = 0;
-
-	LOCK (strerror_r_mtx);
-
-	err_str = strerror (errnum);
-	if (strlen (err_str) >= n) {
-		errno = ERANGE;
-		ret_val = -1;
-	}
-	else
-		strcpy (buf, err_str);
-
-	UNLOCK (strerror_r_mtx);
-
-	return ret_val;
-}
-#endif
-
 /* OSX doesn't provide clock_gettime(3) so fall back to gettimeofday(2). */
 #ifndef HAVE_CLOCK_GETTIME
 int clock_gettime (int clk_id ASSERT_ONLY, struct timespec *ts)
@@ -99,14 +72,3 @@ int clock_gettime (int clk_id ASSERT_ONLY, struct timespec *ts)
 	return result;
 }
 #endif
-
-void compat_cleanup ()
-{
-#ifndef HAVE_STRERROR_R
-	int rc;
-
-	rc = pthread_mutex_destroy (&strerror_r_mtx);
-	if (rc != 0)
-		logit ("Can't destroy strerror_r_mtx: %s", strerror (rc));
-#endif
-}

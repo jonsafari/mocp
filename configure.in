@@ -305,7 +305,8 @@ AC_CHECK_FUNC([sinh], ,
                EXTRA_LIBS="$EXTRA_LIBS -lm"])
 
 dnl optional functions
-AC_CHECK_FUNCS([strcasestr strerror_r syslog])
+AC_CHECK_FUNCS([strcasestr syslog])
+AC_FUNC_STRERROR_R
 AX_CHECK_UNAME_SYSCALL
 
 dnl MIME magic

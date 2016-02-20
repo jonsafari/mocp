@@ -81,6 +81,7 @@ void *xcalloc (size_t nmemb, size_t size);
 void *xrealloc (void *ptr, const size_t size);
 char *xstrdup (const char *s);
 void xsleep (size_t ticks, size_t ticks_per_sec);
+char *xstrerror (int errnum);
 
 #ifdef NDEBUG
 #define fatal(...) \
@@ -104,6 +105,7 @@ bool is_valid_symbol (const char *candidate);
 char *create_file_name (const char *file);
 void sec_to_min (char *buff, const int seconds);
 const char *get_home ();
+void common_cleanup ();
 
 #ifdef __cplusplus
 }
