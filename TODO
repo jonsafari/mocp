@@ -73,6 +73,7 @@ Known Bugs:
 
 Transitional Code Removal:
 
+* Remove POSIX.1-2001 minimum compliance requirement warning.
 * Remove ISO C99 capable compiler requirement warning.
 * Remove TagLib version 1.5 requirement warning.
 * Remove FFmpeg/LibAV raised requirement warning.
@@ -80,6 +81,7 @@ Transitional Code Removal:
 
 Pending 2.6 Changes:
 
+* Require POSIX.1-2001 minimum compliance.
 * Require ISO C99 capable compiler.
 * Require at least TagLib version 1.5.
 * Raise minimum FFmpeg/LibAV requirement to 1.0/10.0.
