@@ -22,6 +22,7 @@
 #endif
 
 #include "common.h"
+#include "compat.h"
 #include "log.h"
 
 /* Various functions which some systems lack. */
