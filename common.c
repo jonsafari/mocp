@@ -384,7 +384,7 @@ const char *get_home ()
 
 void common_cleanup ()
 {
-#ifndef HAVE_DECL_STRERROR_R
+#if !HAVE_DECL_STRERROR_R
 	int rc;
 
 	if (im_server)
