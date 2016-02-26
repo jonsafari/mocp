@@ -1429,6 +1429,8 @@ static void handle_command (const int client_id)
 	switch (cmd) {
 		case CMD_QUIT:
 			logit ("Exit request from the client");
+			close (cli->socket);
+			del_client (cli);
 			server_quit = 1;
 			break;
 		case CMD_LIST_CLEAR:
