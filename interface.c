@@ -3711,7 +3711,6 @@ void interface_fatal (const char *format, ...)
 	msg = format_msg_va (format, va);
 	va_end (va);
 
-	logit ("FATAL ERROR: %s", msg);
 	windows_end ();
 	fatal ("%s", msg);
 }
