@@ -1708,7 +1708,6 @@ void server_loop (int list_sock)
 {
 	struct sockaddr_un client_name;
 	socklen_t name_len = sizeof (client_name);
-	int end = 0;
 
 	logit ("MOC server started, pid: %d", getpid());
 
@@ -1765,7 +1764,7 @@ void server_loop (int list_sock)
 		if (server_quit)
 			logit ("Exiting...");
 
-	} while (!end && !server_quit);
+	} while (!server_quit);
 
 	log_circular_log ();
 	log_circular_stop ();
