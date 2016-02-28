@@ -3656,6 +3656,7 @@ void windows_init ()
 void windows_reset ()
 {
 	if (screen_initialized) {
+		screen_initialized = 0;
 
 		/* endwin() sometimes fails on X-terminals when we get SIGCHLD
 		 * at this moment.  Double invocation seems to solve this. */
