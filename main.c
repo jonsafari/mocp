@@ -235,13 +235,17 @@ static void start_moc (const struct parameters *params, lists_t_strs *args)
 			init_interface (server_sock, params->debug, args);
 			interface_loop ();
 			interface_end ();
+			server_sock = -1;
 		}
 	}
 
 	if (!params->foreground && params->only_server)
 		send_int (server_sock, CMD_DISCONNECT);
 
-	close (server_sock);
+	if (server_sock != -1) {
+		close (server_sock);
+		server_sock = -1;
+	}
 }
 
 /* Send commands requested in params to the server. */
