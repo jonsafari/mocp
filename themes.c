@@ -486,6 +486,7 @@ static int load_color_theme (const char *name, const int errors_are_fatal)
 {
 	FILE *file;
 	char *line;
+	int result = 1;
 	int line_num = 0;
 	char *theme_file = find_theme_file (name);
 
@@ -495,20 +496,15 @@ static int load_color_theme (const char *name, const int errors_are_fatal)
 		return 0;
 	}
 
-	while ((line = read_line(file))) {
-		int res;
-
+	while (result && (line = read_line (file))) {
 		line_num++;
-		res = parse_theme_line (line_num, line, errors_are_fatal);
+		result = parse_theme_line (line_num, line, errors_are_fatal);
 		free (line);
-
-		if (!res)
-			return 0;
 	}
 
 	fclose (file);
 
-	return 1;
+	return result;
 }
 
 static void reset_colors_table ()
