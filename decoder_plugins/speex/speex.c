@@ -30,6 +30,7 @@
 
 #include "common.h"
 #include "decoder.h"
+#include "io.h"
 #include "audio.h"
 #include "log.h"
 

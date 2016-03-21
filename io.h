@@ -1,7 +1,7 @@
 #ifndef IO_H
 #define IO_H
 
-#include <unistd.h>         /* for [s]size_t */
+#include <sys/types.h>
 #include <pthread.h>
 #ifdef HAVE_CURL
 # include <sys/socket.h>     /* curl sometimes needs this */

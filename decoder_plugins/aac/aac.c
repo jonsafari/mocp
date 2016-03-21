@@ -28,6 +28,7 @@
 
 #include "common.h"
 #include "decoder.h"
+#include "io.h"
 #include "log.h"
 #include "files.h"
 

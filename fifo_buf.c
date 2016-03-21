@@ -14,6 +14,7 @@
 #endif
 
 #include <stddef.h>
+#include <sys/types.h>
 #include <assert.h>
 #include <string.h>
 

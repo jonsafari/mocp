@@ -24,6 +24,7 @@
 #include <time.h>
 #include <signal.h>
 #include <ctype.h>
+#include <unistd.h>
 #include <sys/socket.h>
 #include <sys/wait.h>
 #include <dirent.h>
