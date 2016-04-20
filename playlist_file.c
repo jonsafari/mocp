@@ -13,6 +13,7 @@
 # include "config.h"
 #endif
 
+#include <unistd.h>
 #include <sys/file.h>
 #include <stdio.h>
 #include <string.h>
@@ -91,8 +92,8 @@ static int plist_load_m3u (struct plist *plist, const char *fname,
 	}
 
 	/* Lock gets released by fclose(). */
-	if (flock (fileno (file), LOCK_SH) == -1)
-		log_errno ("Can't flock() the playlist file", errno);
+	if (lockf (fileno (file), F_LOCK, 0) == -1)
+		log_errno ("Can't lock the playlist file", errno);
 
 	while ((line = read_line (file))) {
 		if (!strncmp (line, "#EXTINF:", sizeof("#EXTINF:") - 1)) {
@@ -412,8 +413,8 @@ static int plist_save_m3u (struct plist *plist, const char *fname,
 	}
 
 	/* Lock gets released by fclose(). */
-	if (flock (fileno (file), LOCK_EX) == -1)
-		log_errno ("Can't flock() the playlist file", errno);
+	if (lockf (fileno (file), F_LOCK, 0) == -1)
+		log_errno ("Can't lock the playlist file", errno);
 
 	if (fprintf (file, "#EXTM3U\r\n") < 0) {
 		error_errno ("Error writing playlist", errno);

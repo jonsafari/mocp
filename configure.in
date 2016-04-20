@@ -305,7 +305,7 @@ fi
 AC_FUNC_MALLOC
 AC_FUNC_STAT
 AC_CHECK_FUNCS([getcwd memmove strcasecmp strdup strerror strncasecmp strchr \
-		strrchr socket getenv fork setsid kill nanosleep bind listen \
+		strrchr socket getenv fork setsid kill nanosleep bind listen lockf \
 		accept connect unlink send recv select strftime access freopen \
 		localtime_r mbsrtowcs mbstowcs execvp wcswidth strspn geteuid],,
 	       AC_MSG_ERROR([Required standard C/UNIX functions are not present.]))
