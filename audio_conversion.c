@@ -42,7 +42,6 @@
 #include "audio_conversion.h"
 #include "log.h"
 #include "options.h"
-#include "compat.h"
 
 static void float_to_u8 (const float *in, unsigned char *out,
 		const size_t samples)

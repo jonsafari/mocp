@@ -1,3 +1,10 @@
+/*
+ * The purpose of this header is to provide common functions and macros
+ * used throughout MOC code.  It also provides (x-prefixed) functions
+ * which enhance or adapt their respective system functions with error
+ * checking and the like.
+ */
+
 #ifndef COMMON_H
 #define COMMON_H
 
@@ -6,31 +13,43 @@
 #include <ctype.h>
 #include <limits.h>
 
-#ifdef __cplusplus
-extern "C" {
+#include "compat.h"
+
+#ifdef HAVE_FUNC_ATTRIBUTE_FORMAT
+# define ATTR_PRINTF(x,y) __attribute__ ((format (printf, x, y)))
+#else
+# define ATTR_PRINTF(...)
+#endif
+
+#ifdef HAVE_FUNC_ATTRIBUTE_NORETURN
+# define ATTR_NORETURN __attribute__((noreturn))
+#else
+# define ATTR_NORETURN
+#endif
+
+#ifdef HAVE_VAR_ATTRIBUTE_ALIGNED
+# define ATTR_ALIGNED(x) __attribute__((aligned(x)))
+#else
+# define ATTR_ALIGNED(...)
+#endif
+
+#ifdef HAVE_VAR_ATTRIBUTE_UNUSED
+# define ATTR_UNUSED __attribute__((unused))
+#else
+# define ATTR_UNUSED
 #endif
 
 #define CONFIG_DIR      ".moc"
+#define LOCK(mutex)	pthread_mutex_lock (&mutex)
+#define UNLOCK(mutex)	pthread_mutex_unlock (&mutex)
+#define ARRAY_SIZE(x)	(sizeof(x)/sizeof(x[0]))
+#define ssizeof(x)		((ssize_t) sizeof(x))
 
 /* Maximal string length sent/received. */
 #define MAX_SEND_STRING	4096
 
-/* Maximum path length, we don't consider exceptions like mounted NFS */
-#ifndef PATH_MAX
-# if defined(_POSIX_PATH_MAX)
-#  define PATH_MAX	_POSIX_PATH_MAX /* Posix */
-# elif defined(MAXPATHLEN)
-#  define PATH_MAX	MAXPATHLEN      /* Solaris? Also linux...*/
-# else
-#  define PATH_MAX	4096             /* Suppose, we have 4096 */
-# endif
-#endif
-
 /* Exit status on fatal error. */
 #define EXIT_FATAL	2
-
-#define LOCK(mutex)	pthread_mutex_lock (&mutex)
-#define UNLOCK(mutex)	pthread_mutex_unlock (&mutex)
 
 #ifndef MIN
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
@@ -53,37 +72,6 @@ extern "C" {
                               (val) > (max) ? (max) : (val))
 #endif
 
-#if HAVE_STDBOOL_H
-# include <stdbool.h>
-#else
-# if ! HAVE__BOOL
-#  ifdef __cplusplus
-typedef bool _Bool;
-#  else
-typedef unsigned char _Bool;
-#  endif
-# endif
-# define bool _Bool
-# define false 0
-# define true 1
-# define __bool_true_false_are_defined 1
-#endif
-
-/* isblank() is a GNU extension */
-#ifndef isblank
-#define isblank(c) ((c) == ' ' || (c) == '\t')
-#endif
-
-#define ARRAY_SIZE(x)	(sizeof(x)/sizeof(x[0]))
-#define ssizeof(x)		((ssize_t) sizeof(x))
-
-void *xmalloc (size_t size);
-void *xcalloc (size_t nmemb, size_t size);
-void *xrealloc (void *ptr, const size_t size);
-char *xstrdup (const char *s);
-void xsleep (size_t ticks, size_t ticks_per_sec);
-char *xstrerror (int errnum);
-
 #ifdef NDEBUG
 #define fatal(...) \
 	internal_fatal (NULL, 0, NULL, ## __VA_ARGS__)
@@ -104,6 +92,17 @@ char *xstrerror (int errnum);
 		error (format ": %s", err); \
 		free (err); \
 	} while (0)
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+void *xmalloc (size_t size);
+void *xcalloc (size_t nmemb, size_t size);
+void *xrealloc (void *ptr, const size_t size);
+char *xstrdup (const char *s);
+void xsleep (size_t ticks, size_t ticks_per_sec);
+char *xstrerror (int errnum);
 
 void internal_fatal (const char *file, int line, const char *function,
                      const char *format, ...) ATTR_NORETURN ATTR_PRINTF(4, 5);

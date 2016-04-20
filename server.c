@@ -34,7 +34,6 @@
 #define DEBUG
 
 #include "common.h"
-#include "compat.h"
 #include "log.h"
 #include "protocol.h"
 #include "audio.h"

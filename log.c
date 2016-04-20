@@ -23,7 +23,6 @@
 #include <signal.h>
 
 #include "common.h"
-#include "compat.h"
 #include "lists.h"
 #include "log.h"
 #include "options.h"

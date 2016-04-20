@@ -41,7 +41,6 @@
 #include "options.h"
 #include "protocol.h"
 #include "log.h"
-#include "compat.h"
 #include "decoder.h"
 #include "lists.h"
 #include "files.h"

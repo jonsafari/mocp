@@ -26,7 +26,6 @@
 #include "files.h"
 #include "log.h"
 #include "io.h"
-#include "compat.h"
 #include "options.h"
 
 static struct plugin {

@@ -43,7 +43,6 @@
 #ifdef HAVE_CURL
 # include "io_curl.h"
 #endif
-#include "compat.h"
 
 #ifdef HAVE_CURL
 # define CURL_ONLY

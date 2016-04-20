@@ -21,7 +21,6 @@
 #include <ctype.h>
 
 #include "common.h"
-#include "compat.h"
 #include "options.h"
 #include "menu.h"
 #include "files.h"
