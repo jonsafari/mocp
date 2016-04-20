@@ -472,15 +472,10 @@ struct decoder *plugin_init ()
 	return &vorbis_decoder;
 }
 
-/* Return true if the Vorbis decoder is using Tremor, otherwise false.
- * This is used by the decoder plugin loader so it can document which
- * library is being used without requiring the decoder and the loader
- * be built with the same HAVE_TREMOR setting. */
-bool vorbis_is_tremor ()
-{
+/* Defined and true if the Vorbis decoder is using Tremor, otherwise
+ * undefined.  This is used by the decoder plugin loader so it can
+ * document which library is being used without requiring the decoder
+ * and the loader be built with the same HAVE_TREMOR setting. */
 #ifdef HAVE_TREMOR
-	return true;
-#else
-	return false;
+const bool vorbis_has_tremor = true;
 #endif
-}

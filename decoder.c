@@ -419,7 +419,10 @@ static int lt_load_plugin (const char *file, lt_ptr debug_info_ptr)
 {
 	int debug_info;
 	const char *name;
-	void *init_func;
+	union {
+		void *data;
+		plugin_init_func *func;
+	} init;
 
 	debug_info = *(int *)debug_info_ptr;
 	name = strrchr (file, '/');
@@ -447,15 +450,17 @@ static int lt_load_plugin (const char *file, lt_ptr debug_info_ptr)
 		return 0;
 	}
 
-	init_func = lt_dlsym (plugins[plugins_num].handle, "plugin_init");
-	if (!init_func) {
+	init.data = lt_dlsym (plugins[plugins_num].handle, "plugin_init");
+	if (!init.data) {
 		fprintf (stderr, "No init function in the plugin!\n");
 		if (lt_dlclose (plugins[plugins_num].handle))
 			fprintf (stderr, "Error unloading plugin: %s\n", lt_dlerror ());
 		return 0;
 	}
 
-	plugins[plugins_num].decoder = ((plugin_init_func)init_func) ();
+	/* If this call to init.func() fails with memory access or illegal
+	 * instruction errors then read the commit log message for r2831. */
+	plugins[plugins_num].decoder = init.func ();
 	if (!plugins[plugins_num].decoder) {
 		fprintf (stderr, "NULL decoder!\n");
 		if (lt_dlclose (plugins[plugins_num].handle))
@@ -474,12 +479,11 @@ static int lt_load_plugin (const char *file, lt_ptr debug_info_ptr)
 
 	/* Is the Vorbis decoder using Tremor? */
 	if (!strcmp (plugins[plugins_num].name, "vorbis")) {
-		void *vorbis_is_tremor;
+		void *vorbis_has_tremor;
 
-		vorbis_is_tremor = lt_dlsym (plugins[plugins_num].handle,
-		                             "vorbis_is_tremor");
-		if (vorbis_is_tremor)
-			have_tremor = ((bool (*)())vorbis_is_tremor) ();
+		vorbis_has_tremor = lt_dlsym (plugins[plugins_num].handle,
+		                              "vorbis_has_tremor");
+		have_tremor = vorbis_has_tremor != NULL;
 	}
 
 	debug ("Loaded %s decoder", plugins[plugins_num].name);

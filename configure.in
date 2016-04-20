@@ -92,6 +92,18 @@ case "$host_os" in
 		;;
 esac
 
+dnl Check that a function pointer is the same size as a data pointer.
+AC_MSG_CHECKING([if function and data pointer sizes match])
+AC_RUN_IFELSE(
+	[AC_LANG_PROGRAM(
+		[], [[if (sizeof(void *) != sizeof(void (*)())) return 1;]]
+	)],
+	[AC_MSG_RESULT([yes])],
+	[WARN_POINTER_MISMATCH=yes
+	 AC_MSG_RESULT([no])],
+	[AC_MSG_RESULT([unknown])
+	 AC_MSG_WARN([Cross-compilation means pointer size test couldn't be run])])
+
 AC_DEFINE([_FILE_OFFSET_BITS], 64, [Use 64bit IO])
 
 AC_HEADER_STDC
@@ -483,5 +495,21 @@ if test "x$SOUND_DRIVERS" = "x"
 then
 	echo "WARNING: No sound output methods are to be compiled;"
 	echo "         you will not hear any sound!"
+	echo
+fi
+
+if test "x$cross_compiling" = "xyes"
+then
+	echo "WARNING: Because of cross-compilation, some tests could not be run"
+	echo "         and MOC may fail with memory access or illegal instruction"
+	echo "         errors when loading plug-ins."
+	echo
+fi
+
+if test "x$WARN_POINTER_MISMATCH" = "xyes"
+then
+	echo "WARNING: Because the sizes of data and function pointers are not"
+	echo "         the same on this architecture, MOC may fail with memory"
+	echo "         access or illegal instruction errors when loading plug-ins."
 	echo
 fi

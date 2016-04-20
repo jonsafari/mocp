@@ -262,7 +262,7 @@ struct decoder
  * The function must return a pointer to the struct decoder variable filled
  * with pointers to decoder's functions.
  */
-typedef struct decoder *(*plugin_init_func)();
+typedef struct decoder *plugin_init_func ();
 
 int is_sound_file (const char *name);
 struct decoder *get_decoder (const char *file);
