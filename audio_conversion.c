@@ -193,7 +193,7 @@ static void float_to_s32 (const float *in, char *out, const size_t samples)
 		if (f >= S32_MAX)
 			*out_val = S32_MAX << 8;
 		else if (f <= S32_MIN)
-			*out_val = S32_MIN << 8;
+			*out_val = S32_MIN * 256;
 		else {
 #ifdef HAVE_LRINTF
 			*out_val = lrintf(f) << 8;
