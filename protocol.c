@@ -33,6 +33,23 @@
 #define UNIX_PATH_MAX	108
 #define SOCKET_NAME	"socket2"
 
+#define nonblocking(fn, result, sock, buf, len) \
+	do { \
+		long flags = fcntl (sock, F_GETFL); \
+		if (flags == -1) \
+			fatal ("Getting flags for socket failed: %s", \
+			        xstrerror (errno)); \
+		flags |= O_NONBLOCK; \
+		if (fcntl (sock, F_SETFL, O_NONBLOCK) == -1) \
+			fatal ("Setting O_NONBLOCK for the socket failed: %s", \
+			        xstrerror (errno)); \
+		result = fn (sock, buf, len, 0); \
+		flags &= ~O_NONBLOCK; \
+		if (fcntl (sock, F_SETFL, flags) == -1) \
+			fatal ("Restoring flags for socket failed: %s", \
+			        xstrerror (errno)); \
+	} while (0)
+
 /* Buffer used to send data in one bigger chunk instead of sending sigle
  * integer, string etc. values. */
 struct packet_buf
@@ -69,21 +86,11 @@ int get_int (int sock, int *i)
 enum noblock_io_status get_int_noblock (int sock, int *i)
 {
 	ssize_t res;
-	long flags;
 	char *err;
 
-	if ((flags = fcntl(sock, F_GETFL)) == -1)
-		fatal ("fcntl(sock, F_GETFL) failed: %s", xstrerror (errno));
-	flags |= O_NONBLOCK;
-	if (fcntl(sock, F_SETFL, O_NONBLOCK) == -1)
-		fatal ("Setting O_NONBLOCK for the socket failed: %s",
-		        xstrerror (errno));
-	res = recv (sock, i, sizeof(int), 0);
-	flags &= ~O_NONBLOCK;
-	if (fcntl(sock, F_SETFL, flags) == -1)
-		fatal ("Restoring flags for socket failed: %s", xstrerror (errno));
+	nonblocking (recv, res, sock, i, sizeof (int));
 
-	if (res == ssizeof(int))
+	if (res == ssizeof (int))
 		return NB_IO_OK;
 	if (res < 0 && (errno == EAGAIN || errno == EWOULDBLOCK))
 		return NB_IO_BLOCK;
@@ -706,31 +713,41 @@ static struct packet_buf *make_event_packet (const struct event *e)
 enum noblock_io_status event_send_noblock (int sock, struct event_queue *q)
 {
 	ssize_t res;
+	char *err;
 	struct packet_buf *b;
+	enum noblock_io_status result;
 
 	assert (q != NULL);
 	assert (!event_queue_empty(q));
 
-	/* We must do it in one send() call to be able to handle blocking. */
 	b = make_event_packet (event_get_first(q));
-	res = send (sock, b->buf, b->len, MSG_DONTWAIT);
-	packet_buf_free (b);
 
-	if (res > 0) {
+	/* We must do it in one send() call to be able to handle blocking. */
+	nonblocking (send, res, sock, b->buf, b->len);
+
+	if (res == (ssize_t)b->len) {
 		struct event *e;
 
 		e = event_get_first (q);
 		free_event_data (e->type, e->data);
 		event_pop (q);
 
-		return NB_IO_OK;
-	}
-	else if (errno == EAGAIN || errno == EWOULDBLOCK) {
-		logit ("Sending event would block");
-		return NB_IO_BLOCK;
+		result = NB_IO_OK;
+		goto exit;
 	}
 
-	/* Error */
-	log_errno ("Error when sending event", errno);
-	return NB_IO_ERR;
+	if (res < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+		logit ("Sending event would block");
+		result = NB_IO_BLOCK;
+		goto exit;
+	}
+
+	err = xstrerror (errno);
+	logit ("send()ing event failed (%zd): %s", res, err);
+	free (err);
+	result = NB_IO_ERR;
+
+exit:
+	packet_buf_free (b);
+	return result;
 }
