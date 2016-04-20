@@ -63,10 +63,10 @@ To build MOC from the distribution tarball you will need:
 
   - A POSIX.1-2001 compatible UNIX system with POSIX threads
     (e.g., Linux or OSX)
+  - A C compiler which is C99 capable and a C++ compiler (MOC is written
+    in C, but libtool and some decoder plugins require a C++ compiler)
   - ncurses (probably already installed in your system)
   - POPT (libpopt) (probably already installed in your system)
-  - C and C++ compilers (MOC is written in C, but libtool and some
-    decoder plugins require a C++ compiler)
   - Berkeley DB (libdb) version 4.1 (unless configured with --disable-cache)
   - GnuPG (gpg) if you are going to verify the tarball (and you should)
 
@@ -135,13 +135,12 @@ compatibility.
 On Which Systems Is MOC Running?
 --------------------------------------------------------------------------------
 
-MOC is developed and tested on GNU/Linux.  Sometimes test runs are made on
-other operating systems, and it is known to compile and probably work on:
+MOC is developed and tested on GNU/Linux.
 
-  - FreeBSD
-  - NetBSD
-  - OpenBSD
-  - OpenWRT
+MOC is now C99 and POSIX.1-2001 compliant and so should build and run on
+any system which has a C99 capable compiler and is POSIX.1-2001 compatible.
+However, there may still be cases where MOC breaks this compliance and any
+reports of such breakage are welcome.
 
 There is no intention to support MOC on MS-Windows (so please don't ask).
 
@@ -206,11 +205,6 @@ Under FreeBSD and NetBSD (and possibly other systems) it is necessary to
 run the configure script this way:
 
 	./configure LDFLAGS=-L/usr/local/lib CPPFLAGS=-I/usr/local/include
-
-Note that MOC and some of its supporting packages make use of GNU extensions
-to the C89 and C99 language standards.  Therefore, do not set the '-std'
-option in CFLAGS to a non-GNU value; if you do, configure will fail
-unexpectedly.
 
 In addition to the standard configure options documented in the INSTALL
 file, there are some MOC-specific options:

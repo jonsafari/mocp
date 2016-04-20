@@ -15,7 +15,7 @@ extern "C" {
 
 #ifndef NDEBUG
 # define logit(...) \
-	internal_logit (__FILE__, __LINE__, __FUNCTION__, ## __VA_ARGS__)
+	internal_logit (__FILE__, __LINE__, __func__, ## __VA_ARGS__)
 #else
 # define logit(...)  do {} while (0)
 #endif

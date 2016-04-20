@@ -78,7 +78,7 @@
 #define ASSERT_ONLY ATTR_UNUSED
 #else
 #define fatal(...) \
-	internal_fatal (__FILE__, __LINE__, __FUNCTION__, ## __VA_ARGS__)
+	internal_fatal (__FILE__, __LINE__, __func__, ## __VA_ARGS__)
 #define ASSERT_ONLY
 #endif
 

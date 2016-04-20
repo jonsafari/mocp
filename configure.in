@@ -37,15 +37,14 @@ then
 fi
 
 AC_CANONICAL_HOST
-AC_PROG_CC
+AC_PROG_CC_C99
 AC_PROG_CXX
 AC_PROG_INSTALL
 
-dnl Test for an ISO C99 capable compiler so we can warn of pending
-dnl requirement.
-save_CC="$CC"
-AC_PROG_CC_C99
-CC="$save_CC"
+if test "x$ac_cv_prog_cc_c99" = "xno"
+then
+	AC_MSG_ERROR([You need an ISO C99 capable compiler.])
+fi
 
 dnl Test for POSIX.1-2001 or better.
 AC_EGREP_CPP(posix_2001_compatible,
@@ -393,10 +392,6 @@ CFLAGS="$PTHREAD_CFLAGS $CFLAGS"
 EXTRA_LIBS="$EXTRA_LIBS $PTHREAD_LIBS"
 AC_CHECK_FUNCS([getrlimit pthread_attr_getstacksize])
 
-dnl __FUNCTION__
-AC_TRY_COMPILE(,[printf(__FUNCTION__);], [AC_DEFINE([HAVE__FUNCTION__], 1,
-	       [Define if we have __FUNCTION__ constant])])
-
 dnl __attribute__
 AX_C___ATTRIBUTE__
 if test "x$ax_cv___attribute__" = "xyes"
@@ -489,13 +484,6 @@ echo "Resampling:        "$COMPILE_SAMPLERATE
 echo "MIME magic:        "$COMPILE_MAGIC
 echo "-----------------------------------------------------------------------"
 echo
-
-if test "x$ac_cv_prog_cc_c99" = "xno"
-then
-	echo "WARNING: MOC release 2.6 will soon require an ISO C99 capable compiler;"
-	echo "         plan to upgrade your compiler soon."
-	echo
-fi
 
 if test "x$UPGRADE_TAGLIB" = "xyes"
 then

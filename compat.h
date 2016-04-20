@@ -31,11 +31,6 @@
         ((sizeof *(p)) - sizeof((p)->sun_path) + strlen ((p)->sun_path))
 #endif
 
-/* __FUNCTION__ is a gcc extension */
-#ifndef HAVE__FUNCTION__
-# define __FUNCTION__ "UNKNOWN_FUNC"
-#endif
-
 /* isblank() is a GNU extension */
 #ifndef isblank
 #define isblank(c) ((c) == ' ' || (c) == '\t')
