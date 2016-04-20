@@ -132,15 +132,15 @@ char *xstrdup (const char *s)
 /* Sleep for the specified number of 'ticks'. */
 void xsleep (size_t ticks, size_t ticks_per_sec)
 {
-	assert(ticks < UINT64_MAX / UINT64_C(1000000000));
 	assert(ticks_per_sec > 0);
 
 	if (ticks > 0) {
 		int rc;
-		uint64_t nsecs;
+		uint64_t nsecs = ticks;
 		struct timespec delay;
 
-		nsecs = ticks;
+		assert(nsecs < UINT64_MAX / UINT64_C(1000000000));
+
 		nsecs *= UINT64_C(1000000000);
 		nsecs /= ticks_per_sec;
 		delay.tv_sec = nsecs / UINT64_C(1000000000);
