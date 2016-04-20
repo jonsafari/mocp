@@ -85,7 +85,7 @@ enum noblock_io_status get_int_noblock (int sock, int *i)
 
 	if (res == ssizeof(int))
 		return NB_IO_OK;
-	if (res < 0 && errno == EAGAIN)
+	if (res < 0 && (errno == EAGAIN || errno == EWOULDBLOCK))
 		return NB_IO_BLOCK;
 
 	err = xstrerror (errno);
@@ -725,7 +725,7 @@ enum noblock_io_status event_send_noblock (int sock, struct event_queue *q)
 
 		return NB_IO_OK;
 	}
-	else if (errno == EAGAIN) {
+	else if (errno == EAGAIN || errno == EWOULDBLOCK) {
 		logit ("Sending event would block");
 		return NB_IO_BLOCK;
 	}
