@@ -330,9 +330,14 @@ AC_CHECK_FUNC([sinh], ,
                EXTRA_LIBS="$EXTRA_LIBS -lm"])
 
 dnl optional functions
-AC_CHECK_FUNCS([strcasestr syslog])
+AC_CHECK_FUNCS([syslog])
 AC_FUNC_STRERROR_R
 AX_CHECK_UNAME_SYSCALL
+
+dnl strcasestr(3) is a GNU extension
+AC_CHECK_DECLS([strcasestr], , , [[#include "${srcdir}/compiler.h"]
+                                  [#include <string.h>]])
+AC_CHECK_FUNCS([strcasestr])
 
 dnl MIME magic
 AC_ARG_WITH(magic, AS_HELP_STRING([--without-magic],
