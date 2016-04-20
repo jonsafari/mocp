@@ -26,6 +26,12 @@
 #include <dirent.h>
 
 #ifdef HAVE_DB_H
+# ifndef HAVE_U_INT
+typedef unsigned char u_char;
+typedef unsigned short u_short;
+typedef unsigned int u_int;
+typedef unsigned long int u_long;
+# endif
 #include <db.h>
 #endif
 
