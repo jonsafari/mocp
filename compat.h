@@ -17,6 +17,11 @@
                       (((x) & 0xFF000000) >> 24))
 #endif
 
+#ifndef SUN_LEN
+#define SUN_LEN(p) \
+        ((sizeof *(p)) - sizeof((p)->sun_path) + strlen ((p)->sun_path))
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
