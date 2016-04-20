@@ -108,14 +108,27 @@ AC_DEFINE([_FILE_OFFSET_BITS], 64, [Use 64bit IO])
 
 AC_HEADER_STDC
 AC_HEADER_STDBOOL
-AC_CHECK_HEADERS([fcntl.h string.h strings.h sys/param.h unistd.h sys/un.h \
-		  sys/socket.h sys/types.h signal.h sys/time.h limits.h sys/select.h \
-		  sys/wait.h sys/ioctl.h pwd.h regex.h inttypes.h stdint.h \
-		  dirent.h time.h errno.h sys/stat.h assert.h locale.h wchar.h],,
-		 AC_MSG_ERROR([Can't find required header files.]))
-AC_CHECK_HEADERS([byteswap.h])
 
-AC_CHECK_FUNCS([sched_get_priority_max])
+dnl required C99 language standard headers
+AC_CHECK_HEADERS([assert.h errno.h inttypes.h limits.h locale.h \
+                  signal.h stdint.h string.h time.h wchar.h],,
+		 AC_MSG_ERROR([Required C99 header files are not present.]))
+
+dnl required POSIX.1-2001 standard headers
+AC_CHECK_HEADERS([dirent.h fcntl.h pwd.h regex.h sys/select.h sys/socket.h \
+                  sys/stat.h sys/time.h sys/types.h sys/wait.h unistd.h],,
+		 AC_MSG_ERROR([Required POSIX.1-2001 header files are not present.]))
+
+dnl required X/Open SUS standard headers
+AC_CHECK_HEADERS([strings.h sys/un.h],,
+		 AC_MSG_ERROR([Required X/Open SUS header files are not present.]))
+
+dnl required OS provided headers
+AC_CHECK_HEADERS([sys/ioctl.h sys/param.h],,
+		 AC_MSG_ERROR([Required OS header files are not present.]))
+
+dnl optional headers
+AC_CHECK_HEADERS([byteswap.h])
 
 dnl langinfo
 AC_CHECK_HEADERS([langinfo.h])
@@ -310,11 +323,26 @@ fi
 
 AC_FUNC_MALLOC
 AC_FUNC_STAT
-AC_CHECK_FUNCS([getcwd memmove strcasecmp strdup strerror strncasecmp strchr \
-		strrchr socket getenv fork setsid kill nanosleep bind listen lockf \
-		accept connect unlink send recv select strftime access freopen \
-		localtime_r mbsrtowcs mbstowcs execvp wcswidth strspn geteuid],,
-	       AC_MSG_ERROR([Required standard C/UNIX functions are not present.]))
+
+dnl required C99 language standard functions
+AC_CHECK_FUNCS([freopen getenv mbsrtowcs mbstowcs memmove \
+                strchr strerror strftime strrchr strspn],,
+	       AC_MSG_ERROR([Required C99 functions are not present.]))
+
+dnl required POSIX.1-2001 standard functions
+AC_CHECK_FUNCS([accept access bind connect execvp fork getcwd geteuid kill \
+                listen lockf recv select send setsid socket unlink],,
+	       AC_MSG_ERROR([Required POSIX.1-2001 functions are not present.]))
+
+dnl required POSIX (TMR/TSF/XSI) functions
+AC_CHECK_FUNCS([localtime_r nanosleep strcasecmp \
+                strdup strncasecmp wcswidth],,
+	       AC_MSG_ERROR([Required POSIX functions are not present.]))
+
+dnl optional functions
+AC_FUNC_STRERROR_R
+AC_CHECK_FUNCS([sched_get_priority_max syslog])
+AX_CHECK_UNAME_SYSCALL
 
 dnl OSX doesn't provide clock_gettime(3) so fall back to gettimeofday(2).
 AC_CHECK_FUNCS([clock_gettime], ,
@@ -334,11 +362,6 @@ AC_CHECK_FUNC([sinh], ,
               [AC_CHECK_LIB([m], [sinh], ,
                             AC_MSG_ERROR([No sinh() function found.]))
                EXTRA_LIBS="$EXTRA_LIBS -lm"])
-
-dnl optional functions
-AC_CHECK_FUNCS([syslog])
-AC_FUNC_STRERROR_R
-AX_CHECK_UNAME_SYSCALL
 
 dnl strcasestr(3) is a GNU extension
 AC_CHECK_DECLS([strcasestr], , , [[#include "${srcdir}/compiler.h"]
