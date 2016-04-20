@@ -101,11 +101,13 @@ static int server_connect ()
 	struct sockaddr_un sock_name;
 	int sock;
 
-	/* Create a socket */
-	if ((sock = socket (PF_LOCAL, SOCK_STREAM, 0)) == -1)
+	/* Create a socket.
+	 * For reasons why AF_UNIX is the correct constant to use in both
+	 * cases, see the commentary the SVN log for commit r2833. */
+	if ((sock = socket (AF_UNIX, SOCK_STREAM, 0)) == -1)
 		 return -1;
 
-	sock_name.sun_family = AF_LOCAL;
+	sock_name.sun_family = AF_UNIX;
 	strcpy (sock_name.sun_path, socket_name());
 
 	if (connect(sock, (struct sockaddr *)&sock_name,

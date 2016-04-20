@@ -353,10 +353,12 @@ int server_init (int debugging, int foreground)
 
 	unlink (socket_name());
 
-	/* Create a socket */
-	if ((server_sock = socket (PF_LOCAL, SOCK_STREAM, 0)) == -1)
+	/* Create a socket.
+	 * For reasons why AF_UNIX is the correct constant to use in both
+	 * cases, see the commentary the SVN log for commit r9999. */
+	if ((server_sock = socket (AF_UNIX, SOCK_STREAM, 0)) == -1)
 		fatal ("Can't create socket: %s", xstrerror (errno));
-	sock_name.sun_family = AF_LOCAL;
+	sock_name.sun_family = AF_UNIX;
 	strcpy (sock_name.sun_path, socket_name());
 
 	/* Bind to socket */
