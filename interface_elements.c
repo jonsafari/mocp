@@ -969,7 +969,7 @@ err:
 static void main_win_init (struct main_win *w, lists_t_strs *layout_fmt)
 {
 	struct main_win_layout l;
-	bool rc;
+	bool rc ASSERT_ONLY;
 
 	assert (w != NULL);
 
@@ -2225,7 +2225,7 @@ static void main_win_swap_plist_items (struct main_win *w, const char *file1,
 static void main_win_use_layout (struct main_win *w, lists_t_strs *layout_fmt)
 {
 	struct main_win_layout l;
-	bool rc;
+	bool rc ASSERT_ONLY;
 
 	assert (w != NULL);
 	assert (layout_fmt != NULL);
@@ -2263,7 +2263,7 @@ static void validate_layouts ()
 static void main_win_resize (struct main_win *w)
 {
 	struct main_win_layout l;
-	bool rc;
+	bool rc ASSERT_ONLY;
 
 	assert (w != NULL);
 
