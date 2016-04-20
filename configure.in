@@ -48,17 +48,17 @@ AC_PROG_CC_C99
 CC="$save_CC"
 
 dnl Test for POSIX.1-2001 or better.
-AC_EGREP_CPP(posix_2001_compliant,
+AC_EGREP_CPP(posix_2001_compatible,
              [#define _POSIX_C_SOURCE 200112L
               #include <unistd.h>
               #ifdef _POSIX_VERSION
               #if _POSIX_VERSION >= 200112L
-              posix_2001_compliant
+              posix_2001_compatible
               #endif
               #endif
              ],
-             [posix_2001_compliant='yes'],
-             [posix_2001_compliant='no'])
+             [true],
+             [AC_MSG_ERROR([A POSIX.1-2001 compatible system is required.])])
 
 AC_PROG_AWK
 AC_LIBTOOL_DLOPEN
@@ -489,13 +489,6 @@ echo "Resampling:        "$COMPILE_SAMPLERATE
 echo "MIME magic:        "$COMPILE_MAGIC
 echo "-----------------------------------------------------------------------"
 echo
-
-if test "x$posix_2001_compliant" = "xno"
-then
-	echo "WARNING: MOC release 2.6 will soon require a POSIX.1-2001 compliant"
-	echo "         system; plan to upgrade your system soon."
-	echo
-fi
 
 if test "x$ac_cv_prog_cc_c99" = "xno"
 then

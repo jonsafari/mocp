@@ -15,11 +15,6 @@
 # include "config.h"
 #endif
 
-/* _XOPEN_SOURCE is known to break compilation under OpenBSD. */
-#ifndef OPENBSD
-# define _XOPEN_SOURCE	500 /* for wcswidth() */
-#endif
-
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
@@ -30,11 +25,6 @@
 #include <unistd.h>
 #include <wctype.h>
 #include <wchar.h>
-
-/* This breaks compilation on FreeBSD 5.4. */
-#ifndef FREEBSD
-# define _XOPEN_SOURCE_EXTENDED /* for wget_wch() */
-#endif
 
 #include "common.h"
 #include "menu.h"

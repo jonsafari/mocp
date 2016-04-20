@@ -61,7 +61,8 @@ What Software Is Required To Build It?
 
 To build MOC from the distribution tarball you will need:
 
-  - UNIX system with POSIX threads (e.g., Linux or FreeBSD)
+  - A POSIX.1-2001 compatible UNIX system with POSIX threads
+    (e.g., Linux or OSX)
   - ncurses (probably already installed in your system)
   - POPT (libpopt) (probably already installed in your system)
   - C and C++ compilers (MOC is written in C, but libtool and some
