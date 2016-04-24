@@ -166,11 +166,12 @@ struct ffmpeg_data
 
 	char *remain_buf;
 	int remain_buf_len;
+
 	bool delay;             /* FFmpeg may buffer samples */
 	bool eof;               /* end of file seen */
 	bool eos;               /* end of sound seen */
+	bool okay;              /* was this stream successfully opened? */
 
-	bool okay; /* was this stream successfully opened? */
 	struct decoder_error error;
 	long fmt;
 	int sample_width;

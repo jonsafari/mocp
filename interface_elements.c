@@ -3656,7 +3656,6 @@ void windows_reset ()
 		/* Make sure that the next line after we exit will be "clear". */
 		printf ("\n");
 		fflush (stdout);
-
 	}
 }
 

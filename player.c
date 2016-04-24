@@ -992,13 +992,11 @@ void player_unpause ()
  * Tags are duplicated. */
 struct file_tags *player_get_curr_tags ()
 {
-	struct file_tags *tags;
+	struct file_tags *tags = NULL;
 
 	LOCK (curr_tags_mtx);
 	if (curr_tags)
 		tags = tags_dup (curr_tags);
-	else
-		tags = NULL;
 	UNLOCK (curr_tags_mtx);
 
 	return tags;

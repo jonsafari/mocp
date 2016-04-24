@@ -379,14 +379,14 @@ then
 		 EXTRA_LIBS="$EXTRA_LIBS -lmagic"])
 fi
 
-AX_PTHREAD
 AC_FUNC_MMAP
 
+dnl POSIX threads
+AX_PTHREAD
 if test "$ax_pthread_ok" != "yes"
 then
 	AC_MSG_ERROR([[I don't know how to compile pthreads code on this system.]])
 fi
-
 CC="$PTHREAD_CC"
 CFLAGS="$PTHREAD_CFLAGS $CFLAGS"
 EXTRA_LIBS="$EXTRA_LIBS $PTHREAD_LIBS"

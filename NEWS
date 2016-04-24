@@ -1,4 +1,4 @@
-2.6.0 - "Usability"
+2.6 - "Usability"
 	* Autotools and packaging changes:
 	  - Dropped version micro number for development versions
 	  - Upgraded autoconf-archive macros to 2014-02-28 release
@@ -34,7 +34,7 @@
 	  - VQF: now supported via FFmpeg/LibAV
 	  - TTA: now supported via FFmpeg/LibAV
 
-2.5.0 - "Consolidation"
+2.5.0 - "Consolidation"  [2014-08-13]
 	* Autotools and packaging changes:
 	  - Upgraded autoconf version requirement to 2.60
 	  - Added '--with-alsa' to suppress ALSA sound driver inclusion
@@ -223,7 +223,7 @@
 	  - Fixed some mutex management bugs
 	  - Fixed many bugs which crashed MOC
 
-2.4.4
+2.4.4  [2009-01-04]
 	* Fix crash when saving a playlist with URLs.
 	* Fix hang in case of symlink loop (like symlink to parent directory)
 	  when adding files recursively to the playlist.
@@ -244,7 +244,7 @@
 	* Run libtoolize in autogen.sh to prevent conflicts with installed
 	  libtool/libltdl version.
 
-2.4.3
+2.4.3  [2007-07-30]
 	* Fix displaying tags from Internet streams, sometimes the name of the
 	  station or other less useful text was displayed instead the title.
 	* Fix a problem with opening Internet streams with curl 7.16.x. (Samid
@@ -258,7 +258,7 @@
 	* Fix FollowPlayedFile after CLI restart.
 	* Updated moc.spec (Klaus Ethgen)
 
-2.4.2
+2.4.2  [2007-06-10]
 	* Disable 24bit output by default due to reported problems with some
 	  sound cards. It can be enabled by setting Allow24bitOutput option
 	  to yes.
@@ -275,7 +275,7 @@
 	* Fix displaying the playlist panel when the width of the terminal is
 	  an odd number.
 
-2.4.1
+2.4.1  [2006-02-12]
 	* Added Command 'P' and a configuration option PlaylistFullPaths to turn
 	  on/off displaying full paths for files in the playlist.
 	* Fixed choosing endianess when playing float samples (musepack or
@@ -305,7 +305,7 @@
 	  made in the filesystem by this command.
 	* Added missing exec_command# keys in the example keymap file.
 
-2.4.0
+2.4.0  [2006-02-12]
 	* Layout of the main window can be changed using Layout[123] options.
 	  Switching between layouts is done using the 'l' key and now TAB is
 	  used to switch between the playlist and the directory menu. For
@@ -369,7 +369,7 @@
 	  FreeBSD 6.
 	* Fixed OSS support on some machones (like G3 iBook).
 
-2.3.3
+2.3.3  [2006-01-04]
 	* Workaround for backspace key on many terminals (like aterm).
 	* Fixed a memory leak when playing Internet streams. (rixx)
 	* Fixed a crash when an mpc file coudn't be read.
@@ -380,7 +380,7 @@
 	* Fixed resource leak when reading tags from invalid OGG file.
 	* Check if FileNamesIconv has valid format at startup like TagsIconv.
 
-2.3.2
+2.3.2  [2005-09-25]
 	* Optimized 24bit->16bit conversion. Helps playing mp3 on handheld
 	  devices without FPU.
 	* Fixed a crash when using the playlist with ReadTags turnedoff.
@@ -396,7 +396,7 @@
 	  bitrate updates.
 	* Fixed a typo: owerwrite -> overwrite.
 
-2.3.1
+2.3.1  [2005-08-02]
 	* Fixed detecting MPEG stream by the content (Shoutcast fix).
 	* Fixed handling ALSA mixer events (crash in some situations).
 	* Fixed handling a mixer channel that has no playback volume.
@@ -415,7 +415,7 @@
 	* Fixed counting time after file open error.
 	* Fixed some gcc4 warnings.
 
-2.3.0
+2.3.0  [2005-07-09]
 	* Network streams (shoutcast, icecast, regular HTTP, FTP). You can load
 	  an m3u file with a URL or use the 'o' command.
 	* JACK output (by Alex Norman).
@@ -499,7 +499,7 @@
 	* Fixed a memory leak in iconv_str() when iconv() is not available.
 	  (breg)
 
-2.2.2
+2.2.2  [2005-05-16]
 	* Added an option to ignore CRC errors in mp3 files (set to yes by
 	  default, like most players do). This fixes playing mp3 files that
 	  have bad CRC checksums but are actually good.
@@ -522,7 +522,7 @@
 	* Fixed a warning about wprintw() usage on some systems.
 	* Fixed setting compiler flags for vorbis.
 
-2.2.1
+2.2.1  [2005-04-16]
 	* Fixed missing titles of files without tags when added to the playlist.
 	* Fixed refreshing the screen after searching.
 	* Fixed recognizing AIFF file extension.
@@ -535,7 +535,7 @@
 	* Fixed --without-sndfile configure option.
 	* Fixed a rare deadlock.
 
-2.2.0
+2.2.0  [2005-02-26]
 	* Added support for FLAC audio format.
 	* Added support for various file formats like au, aiff, voc and more
 	  using libsndfile. This also provides better support for wav files.
@@ -609,7 +609,7 @@
 	* Fixed reading track numbers for mp3 files.
 	* Small fixes of ALSA behaviour when underrun occurs.
 
-2.1.4
+2.1.4  [2004-12-31]
 	* Fixed the 'next' command when AutoNext is turned off.
 	* Sorting the files before adding them to the playlist when using the
 	  A command.
@@ -619,20 +619,20 @@
 	* Fixed error messages for mp3 files.
 	* Fixed segfault when reading some tags.
 
-2.1.3
+2.1.3  [2004-11-15]
 	* Fixed compilation with header files not from Linux 2.4.
 
-2.1.2
+2.1.2  [2004-11-14]
 	* Fixed playing mp3 with UseMmap turned on.
 	* Fixed handling ALSA device open errors.
 	* Proper handling 8, 16, and 24 bit sound, raise error if using
 	  anything else.
 	* Fixed a (almost :) deadlock when pressing stop when seeking.
 
-2.1.1
+2.1.1  [2004-11-13]
 	* Added missing example_theme.
 
-2.1.0
+2.1.0  [2004-11-11]
 	* Multiple clients. You can have moc interface on many
 	  consoles/terminals.
 	* Searching the menu (CTRL-g) like M-s in Midnight Commander.
@@ -653,7 +653,7 @@
 	* Fixes for systems where threads are not processes.
 	* Small fixes and cleanups.
 
-2.0.1
+2.0.1  [2004-10-21]
 	* Do not allow to add '..' to the playlist.
 	* Fixed seeking when not playing.
 	* Fixed segfault when using f after creating a playlist from the
@@ -663,7 +663,7 @@
 	* Fixed broken menu after resizing terminal when help screen is
 	  displayed.
 
-2.0.0
+2.0.0  [2004-10-16]
 	* Split into client-server, you can detach the interface and leave
 	  the server playing songs in the background (keys: q - background,
 	  Q - quit).
@@ -691,8 +691,8 @@
 	* Fixed escaping characters in config file, no need for '\\\\'.
 	* Stronger checking for parse errors in configuration file.
 
-1.1.0
-	* Support for WAVE.
+1.1.0  [2002-12-08]
+	* Support for WAV.
 	* Playlist without reading/writeing to file.
 	* Option in the config file to automaticaly change process priority at
 	  startup. Helpful on slow computers.

@@ -11,8 +11,8 @@ extern "C" {
 
 /** Version of the decoder API.
  *
- * On every change in the decoder API this number will be changed, so MOC will
- * not load plugins compiled with older/newer decoder.h. */
+ * On every change in the decoder API this number will be changed, so
+ * MOC will not load plugins compiled with older/newer decoder.h. */
 #define DECODER_API_VERSION	7
 
 /** Type of the decoder error. */
@@ -20,14 +20,14 @@ enum decoder_error_type
 {
 	ERROR_OK, /*!< There was no error. */
 	ERROR_STREAM, /*!< Recoverable error in the stream. */
-	ERROR_FATAL /*!< Fatal error in the stream - further decoding can't be
-		      performed. */
+	ERROR_FATAL /*!< Fatal error in the stream - further decoding can't
+		      be performed. */
 };
 
 /** Decoder error.
  *
- * Describes decoder error. Fields don't need to be accessed directly, there are
- * functions to modify/access decoder_error object. */
+ * Describes decoder error. Fields don't need to be accessed directly,
+ * there are functions to modify/access decoder_error object. */
 struct decoder_error
 {
 	enum decoder_error_type type; /*!< Type of the error. */
@@ -37,8 +37,8 @@ struct decoder_error
 /** @struct decoder
  * Functions provided by the decoder plugin.
  *
- * Describes decoder - contains pointers to decoder's functions. If some field
- * is optional, it may have NULL value. */
+ * Describes decoder - contains pointers to decoder's functions. If some
+ * field is optional, it may have NULL value. */
 struct decoder
 {
 	/** API version used by the plugin.
@@ -65,8 +65,8 @@ struct decoder
 	 *
 	 * Open the given resource (file).
 	 *
-	 * \param uri URL to the resource that can be used as the file parameter and return pointer
-	 * to io_open().
+	 * \param uri URL to the resource that can be used as the file parameter
+	 * and return pointer to io_open().
 	 *
 	 * \return Private decoder data. This pointer will be passed to every
 	 * other function that operates on the stream.
@@ -235,9 +235,9 @@ struct decoder
 
 	/** Get the IO stream used by the decoder.
 	 *
-	 * Get the pointer to the io_stream object used by the decoder. This is
-	 * used for fast interrupting especially when the stream reads from
-	 * a network. This function is optional.
+	 * Get the pointer to the io_stream object used by the decoder. This
+	 * is used for fast interrupting especially when the stream reads
+	 * from a network. This function is optional.
 	 *
 	 * \param data Decoder's private data.
 	 *
@@ -258,9 +258,9 @@ struct decoder
 
 /** Initialize decoder plugin.
  *
- * Each decoder plugin must export a function name plugin_init of this type.
- * The function must return a pointer to the struct decoder variable filled
- * with pointers to decoder's functions.
+ * Each decoder plugin must export a function name plugin_init of this
+ * type. The function must return a pointer to the struct decoder variable
+ * filled with pointers to decoder's functions.
  */
 typedef struct decoder *plugin_init_func ();
 
@@ -285,9 +285,9 @@ char *file_type_name (const char *file);
  *
  * \param error Pointer to the decoder error variable to fill.
  * \param type Type of the error.
- * \param add_errno If this value is non-zero, a space and a string describing
- * system error for errno equal to the value of add_errno is appended to the
- * error message.
+ * \param add_errno If this value is non-zero, a space and a string
+ * describing system error for errno equal to the value of add_errno
+ * is appended to the error message.
  * \param format Format, like in the printf() function.
  */
 void decoder_error (struct decoder_error *error,

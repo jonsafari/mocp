@@ -1389,9 +1389,6 @@ static int req_list_move (struct client *cli)
 /* Handle CMD_QUEUE_MOVE. Return 0 on error. */
 static int req_queue_move (const struct client *cli)
 {
-	/*char *from;
-	char *to;
-	*/
 	struct move_ev_data m;
 
 	if (!(m.from = get_str(cli->socket)))
@@ -1725,11 +1722,10 @@ void server_loop (int list_sock)
 		FD_SET (wake_up_pipe[0], &fds_read);
 		add_clients_fds (&fds_read, &fds_write);
 
+		res = 0;
 		if (!server_quit)
 			res = select (max_fd(list_sock)+1, &fds_read,
 					&fds_write, NULL, NULL);
-		else
-			res = 0;
 
 		if (res == -1 && errno != EINTR && !server_quit)
 			fatal ("select() failed: %s", xstrerror (errno));

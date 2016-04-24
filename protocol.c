@@ -707,7 +707,7 @@ static struct packet_buf *make_event_packet (const struct event *e)
 	return b;
 }
 
-/* Send the first event from the queue an remove it on success.  If the
+/* Send the first event from the queue and remove it on success.  If the
  * operation would block return NB_IO_BLOCK.  Return NB_IO_ERR on error
  * or NB_IO_OK on success. */
 enum noblock_io_status event_send_noblock (int sock, struct event_queue *q)

@@ -14,13 +14,13 @@ extern "C" {
  */
 enum sfmt_fmt
 {
-	SFMT_S8 =	0x00000001, /*!< signed 8-bit */
-	SFMT_U8	=	0x00000002, /*!< unsigned 8-bit */
-	SFMT_S16 =	0x00000004, /*!< signed 16-bit */
-	SFMT_U16 =	0x00000008, /*!< unsigned 16-bit */
-	SFMT_S32 =	0x00000010, /*!< signed 24-bit (LSB is 0) */
-	SFMT_U32 =	0x00000020, /*!< unsigned 24-bit (LSB set to 0) */
-	SFMT_FLOAT =	0x00000040, /*!< float in range -1.0 to 1.0 */
+	SFMT_S8 =    0x00000001, /*!< signed 8-bit */
+	SFMT_U8	=    0x00000002, /*!< unsigned 8-bit */
+	SFMT_S16 =   0x00000004, /*!< signed 16-bit */
+	SFMT_U16 =   0x00000008, /*!< unsigned 16-bit */
+	SFMT_S32 =   0x00000010, /*!< signed 24-bit (LSB is 0) */
+	SFMT_U32 =   0x00000020, /*!< unsigned 24-bit (LSB set to 0) */
+	SFMT_FLOAT = 0x00000040  /*!< float in range -1.0 to 1.0 */
 };
 
 /** Sample endianness.
@@ -29,14 +29,14 @@ enum sfmt_fmt
  */
 enum sfmt_endianness
 {
-	SFMT_LE =	0x00001000, /*!< little-endian */
-	SFMT_BE =	0x00002000, /*!< big-endian */
+	SFMT_LE = 0x00001000, /*!< little-endian */
+	SFMT_BE = 0x00002000, /*!< big-endian */
 
 /** Define native endianness to SFMT_LE or SFMT_BE. */
 #ifdef WORDS_BIGENDIAN
-	SFMT_NE =	SFMT_BE
+	SFMT_NE = SFMT_BE
 #else
-	SFMT_NE =	SFMT_LE
+	SFMT_NE = SFMT_LE
 #endif
 };
 
@@ -45,8 +45,8 @@ enum sfmt_endianness
  * Masks used to extract only one type of information from the sound format.
  */
 /*@{*/
-#define SFMT_MASK_FORMAT		0x00000fff /*!< sample format */
-#define SFMT_MASK_ENDIANNESS	0x00003000 /*!< sample endianness */
+#define SFMT_MASK_FORMAT     0x00000fff /*!< sample format */
+#define SFMT_MASK_ENDIANNESS 0x00003000 /*!< sample endianness */
 /*@}*/
 
 /** Return a value other than 0 if the sound format seems to be proper. */
