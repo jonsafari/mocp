@@ -394,7 +394,7 @@ static void show_version ()
 	printf ("           Author : Damian Pietras\n");
 	printf ("         Homepage : %s\n", PACKAGE_URL);
 	printf ("           E-Mail : %s\n", PACKAGE_BUGREPORT);
-	printf ("        Copyright : (C) 2003-2014 Damian Pietras and others\n");
+	printf ("        Copyright : (C) 2003-2016 Damian Pietras and others\n");
 	printf ("          License : GNU General Public License, version 2 or later\n");
 	putchar ('\n');
 }

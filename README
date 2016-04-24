@@ -72,7 +72,7 @@ To build MOC from the distribution tarball you will need:
 
 If you are building from the SVN repository you will also need:
 
-  - Subversion (to checkout the source directory tree)
+  - Subversion or git-svn (to checkout the source directory tree)
   - Autoconf version 2.64 and the associated Automake and Libtool
 
 You should choose which of the following audio formats you wish to play and
@@ -151,10 +151,15 @@ How Do I Verify the Authenticity of the Tarball?
 If you downloaded the official MOC distribution you should have the
 following files:
 
-	moc-2.6-alpha1.tar.xz
 	moc-2.6-alpha1.tar.asc
+	moc-2.6-alpha1.tar.md5
+	moc-2.6-alpha1.tar.xz
 
-and would verify the tarball thusly:
+would check the integrity of the download:
+
+	md5sum -c moc-2.6-alpha1.tar.md5
+
+and then verify the tarball thusly:
 
 	xzcat moc-2.6-alpha1.tar.xz | gpg --verify moc-2.6-alpha1.tar.asc -
 

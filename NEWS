@@ -6,6 +6,7 @@
 	* Changed build behaviours:
 	  - 'make dist': now defaults to XZ compression
 	  - curl-config: replaced by pkg-config
+	  - New GCC-5 and 6 warnings addressed
 	* Changed minimum support and release requirements:
 	  - POSIX.1: introduced minimum requirement of IEEE 1003.1-2001
 	  - C Compiler: introduced minimum requirement of ISO 9899:1999
@@ -17,6 +18,9 @@
 	  - ALSA: raised minimum requirement to version 1.0.11
 	* New and changed library requirements:
 	  - POPT library: MOC now requires libpopt
+	* Documentation:
+	  - Improved wording of some error messages
+	  - Added environment variables section to the manpage
 	* Removed functionality:
 	  - Transitional code from the previous release
 	  - autogen.sh in favour of autoreconf(1)
@@ -33,6 +37,27 @@
 	* Changes to supported formats and codecs:
 	  - VQF: now supported via FFmpeg/LibAV
 	  - TTA: now supported via FFmpeg/LibAV
+	* Miscellaneous
+	  - Improved logging from ALSA sound driver and library
+	  - Warn of TagLib version requirement rising to 1.5
+
+2.5.1  [2016-02-24]
+	* Significant bug fixes:
+	  - Corrected the setting of linked libraries for Berkeley DB
+	  - Fixed ALSA volume setting problem (Tomasz Golinski)
+	  - Fixed clearing of stream status message on error
+	  - Resolved FFmpeg/LibAV's downmixing API issues (Andreas Cadhalpun)
+	  - Removed duplicate logging of fatal error messages
+	* Miscellaneous:
+	  - Adapted to FFmpeg 3.0 API
+	  - Warn of FFmpeg/LibAV version requirement rising to 1.0/10.0
+	  - Warn of pending POSIX.1-2001 compliance requirement
+	  - Fixed several warnings and errors on OpenBSD (Brent Cook)
+	  - Fixed various (and potential) segfaults (Daniel T. Borelli,
+	    Hendrik Iben, Rastislav Barlik)
+	  - Fixed various resource leakages
+	  - Silenced various compiler warnings
+	  - Added instructions on building with autoreconf
 
 2.5.0 - "Consolidation"  [2014-08-13]
 	* Autotools and packaging changes:

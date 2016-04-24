@@ -4,17 +4,20 @@ changes or notifing about bugs:
 Alexis Ballier:
 	* Adapt to FFmpeg's changed include directory layout.
 
+Rastislav Barlik:
+	* Fixed segfault on deleted equalizer file.
+
 Daniel T. Borelli:
 	* Added support for key to switch on/off the display of percent played.
 	* Added a configuration option to set the initial percent played state.
 	* Fixed miscellaneous coding errors.
 	* Assisted with testing.
 
-Gregory Maxwell:
-	* Provided patch for off_t in io_* functions.
-
 Morten Grunnet Buhl:
 	* Provided Yellow/Red theme.
+
+Andreas Cadhalpun:
+	* Resolved the deprecated 'request_channels' puzzle.
 
 Nuno Cardoso:
 	* Options in a hash table.
@@ -22,6 +25,9 @@ Nuno Cardoso:
 
 Josh Coalson:
 	* Fixes for compilation with FLAC 1.1.3.
+
+Brent Cook:
+	* Various OpenBSD-related patches.
 
 Niels Aan de Brugh:
 	* Improved error detection for terminal height limits.
@@ -48,6 +54,8 @@ Tomasz Golinski:
 	* Provided signficant information on DTS, AAC and other formats.
 	* Also contributed much time in the refinement of feature ideas.
 	* Provided 24-bit format conversion bug fixes.
+	* Fixed volume control problem.
+	* Provided check for valid output channels and formats.
 
 Juho Hämäläinen:
 	* Added -Q (--format) FORMAT_STRING option to display file information.
@@ -60,6 +68,8 @@ Hendrik Iben:
 	* Added software mixer.
 	* Added parametric equalizer.
 	* Merged parametric equalizer and mono-mixing code.
+	* Fixed miscellaneous coding errors.
+	* Fixed logging of deleted filenames.
 	* Assisted with testing.
 
 Daniel Kalør:
@@ -106,6 +116,9 @@ Jacek Lehmann:
 Tero Marttila:
 	* Changed minimum screen height to 7 lines.
 
+Gregory Maxwell:
+	* Provided patch for off_t in io_* functions.
+
 Alex Merenstein:
 	* Fixed theme menu cursor placement.
 	* Fixed new attributes application during theme switching.
@@ -146,6 +159,9 @@ Ted Phelps:
 
 Petr Pisar:
 	* Provided patch upon which the initial locale support was based.
+
+Jonathan Poelen:
+	* Removed redundant call to file_type().
 
 Alexander Polakov:
 	* Fixed miscoloured frame when switching themes.
@@ -205,6 +221,9 @@ Antonio Trande:
 Marc Tschiesche:
 	* Provided highlighted playlist numbers and file times.
 
+Zhiming Wang:
+	* Assisted with testing on OSX.
+
 Jenny Wong:
 	* Provided minor memory corruption patch.
 
@@ -215,7 +234,7 @@ Marien Zwart:
 	* Fixed segfault when trying to play a file using FFmpeg.
 	* Migrated to newer FFmpeg API.
 
-"firejox"
+"firejox":
 	* Fixed screen upsets due to UTF-8 character handing.
 
 "fluxid":
