@@ -1,4 +1,4 @@
-2.6 - "Usability"
+2.6 - "Usability"  [alpha2: 2016-04-24]
 	* Autotools and packaging changes:
 	  - Dropped version micro number for development versions
 	  - Upgraded autoconf-archive macros to 2014-02-28 release
