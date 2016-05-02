@@ -2386,13 +2386,13 @@ static void xterm_set_title (const int state, const char *title)
 
 		switch (state) {
 			case STATE_PLAY:
-				soft_write (1, "[play]", sizeof("[play]")-1);
+				soft_write (1, ">", sizeof(">")-1);
 				break;
 			case STATE_STOP:
-				soft_write (1, "[stop]", sizeof("[stop]")-1);
+				soft_write (1, "[]", sizeof("[]")-1);
 				break;
 			case STATE_PAUSE:
-				soft_write (1, "[pause]", sizeof("[pause]")-1);
+				soft_write (1, "||", sizeof("||")-1);
 				break;
 		}
 
@@ -2447,13 +2447,13 @@ static void screen_set_title (const int state, const char *title)
 
 		switch (state) {
 			case STATE_PLAY:
-				soft_write (1, "[play]", sizeof("[play]")-1);
+				soft_write (1, ">", sizeof(">")-1);
 				break;
 			case STATE_STOP:
-				soft_write (1, "[stop]", sizeof("[stop]")-1);
+				soft_write (1, "[]", sizeof("[]")-1);
 				break;
 			case STATE_PAUSE:
-				soft_write (1, "[pause]", sizeof("[pause]")-1);
+				soft_write (1, "||", sizeof("||")-1);
 				break;
 		}
 
