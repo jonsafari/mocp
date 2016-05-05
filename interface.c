@@ -4189,9 +4189,9 @@ void interface_cmdline_set (int server_sock, char *arg, const int val)
 		send_str_to_srv (tok);
 
 		if(val == 2)
-			send_int_to_srv (!options_get_int(tok));
+			send_bool_to_srv (!options_get_bool(tok));
 		else
-			send_int_to_srv (val);
+			send_bool_to_srv (val);
 
 		tok = strtok_r (NULL, ",", &last);
 	}
