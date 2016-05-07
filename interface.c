@@ -4168,11 +4168,11 @@ void interface_cmdline_set (int server_sock, char *arg, const int val)
 
 	while(tok) {
 
-		if(!strncmp (tok, "Shuffle", 8) || !strncmp (tok,"s",2))
+		if(!strcasecmp (tok, "Shuffle") || !strcasecmp (tok, "s"))
 			tok = "Shuffle";
-		else if(!strncmp (tok, "AutoNext", 9) || !strncmp (tok, "n",2))
+		else if(!strcasecmp (tok, "AutoNext") || !strcasecmp (tok, "n"))
 			tok = "AutoNext";
-		else if(!strncmp (tok, "Repeat", 7) || !strncmp (tok, "r", 2))
+		else if(!strcasecmp (tok, "Repeat") || !strcasecmp (tok, "r"))
 			tok = "Repeat";
 		else {
 			fprintf (stderr, "Unknown option '%s'\n", tok);
