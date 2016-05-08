@@ -7,35 +7,6 @@ AM_INIT_AUTOMAKE([dist-xz no-dist-gzip])
 
 AC_PREREQ([2.64])
 
-dnl Capture configuration options for this build.
-AC_DEFINE_UNQUOTED([CONFIGURATION], ["$ac_configure_args"],
-                   [Define to the configuration used to build MOC.])
-
-dnl Capture SVN revision number for this build.
-AC_PATH_PROG(SVNVERSION, [svnversion])
-if test -n "$SVNVERSION"
-then
-	SVNREVN=`$SVNVERSION -n $srcdir`
-	SVNREVN=`expr "$SVNREVN" : '\([[^:]]*\)'`
-	if test "x$SVNREVN" = "xexported"
-	then
-		unset SVNREVN
-	else
-		echo -n $SVNREVN > REVISION
-		EXTRA_DISTS="$EXTRA_DISTS REVISION"
-	fi
-fi
-if test -z "$SVNREVN" && test -f $srcdir/REVISION
-then
-	SVNREVN=`cat $srcdir/REVISION`
-	EXTRA_DISTS="$EXTRA_DISTS REVISION"
-fi
-if test -n "$SVNREVN"
-then
-	AC_DEFINE_UNQUOTED([PACKAGE_REVISION], ["$SVNREVN"],
-	                   [The SVN revision of this build.])
-fi
-
 AC_CANONICAL_HOST
 AC_PROG_CC_C99
 AC_PROG_CXX
@@ -408,6 +379,35 @@ then
 		 CFLAGS="$CFLAGS $CURL_CFLAGS"
 		 COMPILE_CURL="yes"],
 		[true])
+fi
+
+dnl Capture configuration options for this build.
+AC_DEFINE_UNQUOTED([CONFIGURATION], ["$ac_configure_args"],
+                   [Define to the configuration used to build MOC.])
+
+dnl Capture SVN revision number for this build.
+AC_PATH_PROG(SVNVERSION, [svnversion])
+if test -n "$SVNVERSION"
+then
+	SVNREVN=`$SVNVERSION -n $srcdir`
+	SVNREVN=`expr "$SVNREVN" : '\([[^:]]*\)'`
+	if test "x$SVNREVN" = "xexported"
+	then
+		unset SVNREVN
+	else
+		echo -n $SVNREVN > REVISION
+		EXTRA_DISTS="$EXTRA_DISTS REVISION"
+	fi
+fi
+if test -z "$SVNREVN" && test -f $srcdir/REVISION
+then
+	SVNREVN=`cat $srcdir/REVISION`
+	EXTRA_DISTS="$EXTRA_DISTS REVISION"
+fi
+if test -n "$SVNREVN"
+then
+	AC_DEFINE_UNQUOTED([PACKAGE_REVISION], ["$SVNREVN"],
+	                   [The SVN revision of this build.])
 fi
 
 AC_SUBST(EXTRA_LIBS)
