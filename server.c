@@ -694,7 +694,6 @@ static void server_shutdown ()
 {
 	logit ("Server exiting...");
 	audio_exit ();
-	tags_cache_save (tags_cache, create_file_name("tags_cache"));
 	tags_cache_free (tags_cache);
 	tags_cache = NULL;
 	unlink (socket_name());

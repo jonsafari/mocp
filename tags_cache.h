@@ -19,7 +19,6 @@ void tags_cache_clear_up_to (struct tags_cache *c, const char *file,
 
 /* Cache DB manipulation functions: */
 void tags_cache_load (struct tags_cache *c, const char *cache_dir);
-void tags_cache_save (struct tags_cache *c, const char *cache_dir);
 void tags_cache_add_request (struct tags_cache *c, const char *file,
                                         int tags_sel, int client_id);
 struct file_tags *tags_cache_get_immediate (struct tags_cache *c,
