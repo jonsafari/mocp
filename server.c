@@ -69,6 +69,9 @@ static pthread_t server_tid;
 /* Pipe used to wake up the server from select() from another thread. */
 static int wake_up_pipe[2];
 
+/* Socket used to accept incoming client connections. */
+static int server_sock = -1;
+
 /* Set to 1 when a signal arrived causing the program to exit. */
 static volatile int server_quit = 0;
 
@@ -315,13 +318,14 @@ static void log_pthread_stack_size ()
 }
 
 /* Initialize the server - return fd of the listening socket or -1 on error */
-int server_init (int debugging, int foreground)
+void server_init (int debugging, int foreground)
 {
 	struct sockaddr_un sock_name;
-	int server_sock;
 	pid_t pid;
 
 	logit ("Starting MOC Server");
+
+	assert (server_sock == -1);
 
 	pid = check_pid_file ();
 	if (pid && valid_pid(pid)) {
@@ -355,7 +359,8 @@ int server_init (int debugging, int foreground)
 	/* Create a socket.
 	 * For reasons why AF_UNIX is the correct constant to use in both
 	 * cases, see the commentary the SVN log for commit r9999. */
-	if ((server_sock = socket (AF_UNIX, SOCK_STREAM, 0)) == -1)
+	server_sock = socket (AF_UNIX, SOCK_STREAM, 0);
+	if (server_sock == -1)
 		fatal ("Can't create socket: %s", xstrerror (errno));
 	sock_name.sun_family = AF_UNIX;
 	strcpy (sock_name.sun_path, socket_name());
@@ -392,7 +397,7 @@ int server_init (int debugging, int foreground)
 		redirect_output (stderr);
 	}
 
-	return server_sock;
+	return;
 }
 
 /* Send EV_DATA and the integer value. Return 0 on error. */
@@ -1702,12 +1707,14 @@ static void close_clients ()
 }
 
 /* Handle incoming connections */
-void server_loop (int list_sock)
+void server_loop ()
 {
 	struct sockaddr_un client_name;
 	socklen_t name_len = sizeof (client_name);
 
 	logit ("MOC server started, pid: %d", getpid());
+
+	assert (server_sock != -1);
 
 	log_circular_start ();
 
@@ -1717,24 +1724,24 @@ void server_loop (int list_sock)
 
 		FD_ZERO (&fds_read);
 		FD_ZERO (&fds_write);
-		FD_SET (list_sock, &fds_read);
+		FD_SET (server_sock, &fds_read);
 		FD_SET (wake_up_pipe[0], &fds_read);
 		add_clients_fds (&fds_read, &fds_write);
 
 		res = 0;
 		if (!server_quit)
-			res = select (max_fd(list_sock)+1, &fds_read,
+			res = select (max_fd(server_sock)+1, &fds_read,
 					&fds_write, NULL, NULL);
 
 		if (res == -1 && errno != EINTR && !server_quit)
 			fatal ("select() failed: %s", xstrerror (errno));
 
 		if (!server_quit && res >= 0) {
-			if (FD_ISSET(list_sock, &fds_read)) {
+			if (FD_ISSET(server_sock, &fds_read)) {
 				int client_sock;
 
 				debug ("accept()ing connection...");
-				client_sock = accept (list_sock,
+				client_sock = accept (server_sock,
 					(struct sockaddr *)&client_name,
 					&name_len);
 
@@ -1768,7 +1775,8 @@ void server_loop (int list_sock)
 
 	close_clients ();
 	clients_cleanup ();
-	close (list_sock);
+	close (server_sock);
+	server_sock = -1;
 	server_shutdown ();
 }
 

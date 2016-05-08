@@ -173,7 +173,6 @@ static void sig_chld (int sig LOGIT_ONLY)
 /* Run client and the server if needed. */
 static void start_moc (const struct parameters *params, lists_t_strs *args)
 {
-	int list_sock;
 	int server_sock = -1;
 
 	if (!params->foreground && (server_sock = server_connect()) == -1) {
@@ -190,7 +189,7 @@ static void start_moc (const struct parameters *params, lists_t_strs *args)
 		switch (fork()) {
 			case 0: /* child - start server */
 				set_me_server ();
-				list_sock = server_init (params->debug, params->foreground);
+				server_init (params->debug, params->foreground);
 				rc = write (notify_pipe[1], &i, sizeof(i));
 				if (rc < 0)
 					fatal ("write() to notify pipe failed: %s",
@@ -198,7 +197,7 @@ static void start_moc (const struct parameters *params, lists_t_strs *args)
 				close (notify_pipe[0]);
 				close (notify_pipe[1]);
 				signal (SIGCHLD, sig_chld);
-				server_loop (list_sock);
+				server_loop ();
 				options_free ();
 				decoder_cleanup ();
 				io_cleanup ();
@@ -223,8 +222,8 @@ static void start_moc (const struct parameters *params, lists_t_strs *args)
 		fatal ("Server is already running!");
 	else if (params->foreground && params->only_server) {
 		set_me_server ();
-		list_sock = server_init (params->debug, params->foreground);
-		server_loop (list_sock);
+		server_init (params->debug, params->foreground);
+		server_loop ();
 	}
 
 	if (!params->only_server) {
