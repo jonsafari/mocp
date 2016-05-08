@@ -20,12 +20,6 @@
 # include "config.h"
 #endif
 
-/* for lrintf() */
-#define _ISOC9X_SOURCE  1
-#define _ISOC99_SOURCE  1
-#define __USE_ISOC9X    1
-#define __USE_ISOC99    1
-
 #include <assert.h>
 #include <stdlib.h>
 #include <math.h>
@@ -58,13 +52,8 @@ static void float_to_u8 (const float *in, unsigned char *out,
 			out[i] = UINT8_MAX;
 		else if (f <= INT32_MIN)
 			out[i] = 0;
-		else {
-#ifdef HAVE_LRINTF
+		else
 			out[i] = (unsigned int)((lrintf(f) >> 24) - INT8_MIN);
-#else
-			out[i] = (unsigned int)(((int)f >> 24) - INT8_MIN);
-#endif
-		}
 	}
 }
 
@@ -82,13 +71,8 @@ static void float_to_s8 (const float *in, char *out, const size_t samples)
 			out[i] = INT8_MAX;
 		else if (f <= INT32_MIN)
 			out[i] = INT8_MIN;
-		else {
-#ifdef HAVE_LRINTF
+		else
 			out[i] = lrintf(f) >> 24;
-#else
-			out[i] = (int)f >> 24;
-#endif
-		}
 	}
 }
 
@@ -108,13 +92,8 @@ static void float_to_u16 (const float *in, unsigned char *out,
 			*out_val = UINT16_MAX;
 		else if (f <= INT32_MIN)
 			*out_val = 0;
-		else {
-#ifdef HAVE_LRINTF
+		else
 			*out_val = (unsigned int)((lrintf(f) >> 16) - INT16_MIN);
-#else
-			*out_val = (unsigned int)(((int)f >> 16) - INT16_MIN);
-#endif
-		}
 	}
 }
 
@@ -133,13 +112,8 @@ static void float_to_s16 (const float *in, char *out, const size_t samples)
 			*out_val = INT16_MAX;
 		else if (f <= INT32_MIN)
 			*out_val = INT16_MIN;
-		else {
-#ifdef HAVE_LRINTF
+		else
 			*out_val = lrintf(f) >> 16;
-#else
-			*out_val = ((int)f >> 16);
-#endif
-		}
 	}
 }
 
@@ -164,13 +138,8 @@ static void float_to_u32 (const float *in, unsigned char *out,
 			*out_val = U32_MAX << 8;
 		else if (f <= S32_MIN)
 			*out_val = 0;
-		else {
-#ifdef HAVE_LRINTF
+		else
 			*out_val = (uint32_t)(lrintf(f) - S32_MIN) << 8;
-#else
-			*out_val = (uint32_t)((int32_t)f - S32_MIN) << 8;
-#endif
-		}
 	}
 }
 
@@ -193,13 +162,8 @@ static void float_to_s32 (const float *in, char *out, const size_t samples)
 			*out_val = S32_MAX << 8;
 		else if (f <= S32_MIN)
 			*out_val = S32_MIN * 256;
-		else {
-#ifdef HAVE_LRINTF
+		else
 			*out_val = lrintf(f) << 8;
-#else
-			*out_val = (int32_t)f << 8;
-#endif
-		}
 	}
 }
 

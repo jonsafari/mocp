@@ -105,19 +105,6 @@ AC_RUN_IFELSE(
 
 AC_DEFINE([_FILE_OFFSET_BITS], 64, [Use 64bit IO])
 
-AC_HEADER_STDC
-AC_HEADER_STDBOOL
-
-dnl required C99 language standard headers
-AC_CHECK_HEADERS([assert.h errno.h inttypes.h limits.h locale.h \
-                  signal.h stdint.h string.h time.h wchar.h],,
-		 AC_MSG_ERROR([Required C99 header files are not present.]))
-
-dnl required POSIX.1-2001 standard headers
-AC_CHECK_HEADERS([dirent.h fcntl.h pwd.h regex.h sys/select.h sys/socket.h \
-                  sys/stat.h sys/time.h sys/types.h sys/wait.h unistd.h],,
-		 AC_MSG_ERROR([Required POSIX.1-2001 header files are not present.]))
-
 dnl required X/Open SUS standard headers
 AC_CHECK_HEADERS([strings.h sys/un.h],,
 		 AC_MSG_ERROR([Required X/Open SUS header files are not present.]))
@@ -171,14 +158,7 @@ AC_CHECK_HEADERS([librcc.h],
 fi
 
 AC_C_CONST
-AC_C_FLEXIBLE_ARRAY_MEMBER
-AC_C_INLINE
-AC_TYPE_OFF_T
-AC_TYPE_PID_T
-AC_TYPE_SIZE_T
-AC_TYPE_SSIZE_T
 AC_TYPE_INTPTR_T
-AC_C99_FUNC_LRINTF
 AX_CFLAGS_GCC_OPTION(-Wall)
 AX_CFLAGS_GCC_OPTION(-W)
 
@@ -321,17 +301,6 @@ else
 fi
 
 AC_FUNC_MALLOC
-AC_FUNC_STAT
-
-dnl required C99 language standard functions
-AC_CHECK_FUNCS([freopen getenv mbsrtowcs mbstowcs memmove \
-                strchr strerror strftime strrchr strspn],,
-	       AC_MSG_ERROR([Required C99 functions are not present.]))
-
-dnl required POSIX.1-2001 standard functions
-AC_CHECK_FUNCS([accept access bind connect execvp fork getcwd geteuid kill \
-                listen lockf recv select send setsid socket unlink],,
-	       AC_MSG_ERROR([Required POSIX.1-2001 functions are not present.]))
 
 dnl required POSIX (TMR/TSF/XSI) functions
 AC_CHECK_FUNCS([localtime_r nanosleep strcasecmp \
@@ -351,16 +320,6 @@ AC_CHECK_FUNCS([clock_gettime], ,
 		[AC_CHECK_FUNCS([gettimeofday],
 			[AC_MSG_WARN([Using the obsolete gettimeofday(2) function.])],
 			[AC_MSG_ERROR([No suitable current time function found.])])])])
-
-AC_CHECK_FUNC([sin], ,
-              [AC_CHECK_LIB([m], [sin], ,
-                            AC_MSG_ERROR([No sin() function found.]))
-               EXTRA_LIBS="$EXTRA_LIBS -lm"])
-
-AC_CHECK_FUNC([sinh], ,
-              [AC_CHECK_LIB([m], [sinh], ,
-                            AC_MSG_ERROR([No sinh() function found.]))
-               EXTRA_LIBS="$EXTRA_LIBS -lm"])
 
 dnl strcasestr(3) is a GNU extension
 AC_CHECK_DECLS([strcasestr], , , [[#include "${srcdir}/compiler.h"]
@@ -412,9 +371,7 @@ if test "x$ax_cv_curses" = "xyes"
 then
 	CURSES_LIB_NO_L=`echo $CURSES_LIB | $AWK '{print substr($0, 3, 99)}'`
 	AC_CHECK_LIB([$CURSES_LIB_NO_L], [set_escdelay],
-		AC_DEFINE([HAVE_SET_ESCDELAY], 1, [Define if you have set_escdelay.]),
-		[AC_CHECK_FUNC([setenv], ,
-			AC_MSG_ERROR([Required function setenv not found.]))])
+		AC_DEFINE([HAVE_SET_ESCDELAY], 1, [Define if you have set_escdelay.]))
 	EXTRA_LIBS="$EXTRA_LIBS $CURSES_LIB"
 else
 	AC_MSG_ERROR([You need curses/ncurses library and header files.])

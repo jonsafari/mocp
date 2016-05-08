@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include <errno.h>
+#include <math.h>
 #include <time.h>
 #include <unistd.h>
 #include <wctype.h>
@@ -832,12 +833,6 @@ static void side_menu_set_title (struct side_menu *m, const char *title)
 	m->title = xstrdup (title);
 }
 
-/* Similar function is only available in C99, so do it here. */
-static int xround (const float f)
-{
-	return f - (int)f > 0.5 ? (int)(f + 1.0) : (int)f;
-}
-
 /* Parse one layout coordinate from "0,2,54%,1" and put it in val.
  * Max is the maximum value of the field.  It's also used when processing
  * percent values.
@@ -857,9 +852,8 @@ static bool parse_layout_coordinate (const char *fmt, int *val, const int max)
 		return false;
 
 	if (*e == '%')
-		*val = xround (max * v / 100.0);
-	else
-		*val = v;
+		v = lroundf (max * v / 100.0);
+	*val = v;
 
 	if (!RANGE(0, *val, max)) {
 		logit ("Coordinate out of range - %d is not in (0, %d)", *val, max);

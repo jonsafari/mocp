@@ -49,7 +49,7 @@ struct decoder_s_preference {
 	int decoders;                         /* number of decoders */
 	int decoder_list[PLUGINS_NUM];        /* decoder indices */
 	char *subtype;                        /* MIME subtype or NULL */
-	char type[FLEXIBLE_ARRAY_MEMBER];     /* MIME type or filename extn */
+	char type[];                          /* MIME type or filename extn */
 };
 typedef struct decoder_s_preference decoder_t_preference;
 static decoder_t_preference *preferences = NULL;

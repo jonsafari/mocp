@@ -31,11 +31,6 @@
         ((sizeof *(p)) - sizeof((p)->sun_path) + strlen ((p)->sun_path))
 #endif
 
-/* isblank() is a GNU extension */
-#ifndef isblank
-#define isblank(c) ((c) == ' ' || (c) == '\t')
-#endif
-
 /* Maximum path length, we don't consider exceptions like mounted NFS */
 #ifndef PATH_MAX
 # if defined(_POSIX_PATH_MAX)
@@ -49,22 +44,6 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
-
-#if HAVE_STDBOOL_H
-# include <stdbool.h>
-#else
-# if ! HAVE__BOOL
-#  ifdef __cplusplus
-typedef bool _Bool;
-#  else
-typedef unsigned char _Bool;
-#  endif
-# endif
-# define bool _Bool
-# define false 0
-# define true 1
-# define __bool_true_false_are_defined 1
 #endif
 
 #if !HAVE_DECL_STRCASESTR && !defined(__cplusplus)
