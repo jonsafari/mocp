@@ -346,7 +346,10 @@ fi
 CC="$PTHREAD_CC"
 CFLAGS="$PTHREAD_CFLAGS $CFLAGS"
 EXTRA_LIBS="$EXTRA_LIBS $PTHREAD_LIBS"
-AC_CHECK_FUNCS([getrlimit pthread_attr_getstacksize])
+AC_CHECK_FUNCS([getrlimit])
+AC_CHECK_LIB([pthread], [pthread_attr_getstacksize],
+	[AC_DEFINE([HAVE_PTHREAD_ATTR_GETSTACKSIZE], 1,
+		[Define if you have pthread_attr_getstacksize(3).])])
 
 dnl __attribute__
 AX_C___ATTRIBUTE__
