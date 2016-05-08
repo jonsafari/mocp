@@ -311,13 +311,12 @@ AC_CHECK_FUNCS([sched_get_priority_max syslog])
 AX_CHECK_UNAME_SYSCALL
 
 dnl OSX doesn't provide clock_gettime(3) so fall back to gettimeofday(2).
-AC_CHECK_FUNCS([clock_gettime], ,
-	[AC_SEARCH_LIBS([clock_gettime], [rt],
-		[AC_DEFINE([HAVE_CLOCK_GETTIME], 1,
-		           [Define if you have clock_gettime(3)])],
-		[AC_CHECK_FUNCS([gettimeofday],
-			[AC_MSG_WARN([Using the obsolete gettimeofday(2) function.])],
-			[AC_MSG_ERROR([No suitable current time function found.])])])])
+AC_CHECK_LIB([rt], [clock_gettime],
+	[AC_DEFINE([HAVE_CLOCK_GETTIME], 1,
+		[Define if you have clock_gettime(3)])],
+	[AC_CHECK_FUNCS([gettimeofday],
+		[AC_MSG_WARN([Using the obsolete gettimeofday(2) function.])],
+		[AC_MSG_ERROR([No suitable current time function found.])])])
 
 dnl strcasestr(3) is a GNU extension
 AC_CHECK_DECLS([strcasestr], , , [[#include "${srcdir}/compiler.h"]
