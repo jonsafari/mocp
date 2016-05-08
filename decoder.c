@@ -16,6 +16,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <strings.h>
+#include <ctype.h>
 #include <stdarg.h>
 #include <errno.h>
 #include <assert.h>
@@ -221,9 +222,33 @@ char *file_type_name (const char *file)
 		return NULL;
 
 	memset (buf, 0, sizeof (buf));
-	plugins[i].decoder->get_name (file, buf);
+	if (plugins[i].decoder->get_name)
+		plugins[i].decoder->get_name (file, buf);
 
-	assert (buf[0]);
+	/* Attempt a default name if we have nothing else. */
+	if (!buf[0]) {
+		char *ext;
+
+		ext = ext_pos (file);
+		if (ext) {
+			size_t len;
+
+			len = strlen (ext);
+			switch (len) {
+				default:
+					buf[2] = toupper (ext[len - 1]);
+				case 2:
+					buf[1] = toupper (ext[1]);
+				case 1:
+					buf[0] = toupper (ext[0]);
+				case 0:
+					break;
+			}
+		}
+	}
+
+	if (!buf[0])
+		return NULL;
 
 	return buf;
 }

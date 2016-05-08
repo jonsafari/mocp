@@ -22,8 +22,6 @@
 #include "config.h"
 #endif
 
-#include <ctype.h> // for toupper
-#include <string.h>
 #include <strings.h>
 #include <limits.h>
 #include <assert.h>
@@ -246,19 +244,6 @@ static int modplug_get_duration (void *void_data)
   return data->length/1000;
 }
 
-static void modplug_get_name (const char *file, char buf[4])
-{
-  size_t ix;
-  char *ext;
-
-  ext = ext_pos (file);
-  strncpy (buf, ext, 3);
-  if (strlen (ext) > 3)
-    buf[2] = ext[strlen (ext) - 1];
-  for (ix = 0; ix < strlen (buf); ix += 1)
-    buf[ix] = toupper (buf[ix]);
-}
-
 static int modplug_our_format_ext(const char *ext)
 {
   // Do not include non-module formats in this list (even if
@@ -317,7 +302,7 @@ static struct decoder modplug_decoder =
   modplug_get_error,
   modplug_our_format_ext,
   NULL,
-  modplug_get_name,
+  NULL,
   NULL,
   NULL,
   NULL

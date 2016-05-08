@@ -202,22 +202,14 @@ static void sndfile_get_name (const char *file, char buf[4])
 	char *ext;
 
 	ext = ext_pos (file);
-	if (!strcasecmp (ext, "au") || !strcasecmp (ext, "snd"))
-		strcpy (buf, "AU");
-	else if (!strcasecmp (ext, "wav"))
-		strcpy (buf, "WAV");
-	else if (!strcasecmp (ext, "w64"))
-		strcpy (buf, "W64");
-	else if (!strcasecmp (ext, "aif") || !strcasecmp (ext, "aiff"))
-		strcpy (buf, "AIF");
-	else if (!strcasecmp (ext, "8svx"))
-		strcpy (buf, "SVX");
-	else if (!strcasecmp (ext, "sph"))
-		strcpy (buf, "SPH");
-	else if (!strcasecmp (ext, "sf"))
-		strcpy (buf, "IRC");
-	else if (!strcasecmp (ext, "voc"))
-		strcpy (buf, "VOC");
+	if (ext) {
+		if (!strcasecmp (ext, "snd"))
+			strcpy (buf, "AU");
+		else if (!strcasecmp (ext, "8svx"))
+			strcpy (buf, "SVX");
+		else if (!strcasecmp (ext, "sf"))
+			strcpy (buf, "IRC");
+	}
 }
 
 static int sndfile_our_format_ext (const char *ext)

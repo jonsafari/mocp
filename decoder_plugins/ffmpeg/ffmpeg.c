@@ -1457,19 +1457,6 @@ static int ffmpeg_get_duration (void *prv_data)
 	                              / data->stream->time_base.den;
 }
 
-static void ffmpeg_get_name (const char *file, char buf[4])
-{
-	unsigned int ix;
-	char *ext;
-
-	ext = ext_pos (file);
-	strncpy (buf, ext, 3);
-	if (strlen (ext) > 3)
-		buf[2] = ext[strlen (ext) - 1];
-	for (ix = 0; ix < strlen (buf); ix += 1)
-		buf[ix] = toupper (buf[ix]);
-}
-
 static int ffmpeg_our_format_ext (const char *ext)
 {
 	return (lists_strs_exists (supported_extns, ext)) ? 1 : 0;
@@ -1498,7 +1485,7 @@ static struct decoder ffmpeg_decoder = {
 	ffmpeg_get_error,
 	ffmpeg_our_format_ext,
 	NULL,
-	ffmpeg_get_name,
+	NULL,
 	NULL,
 	NULL,
 	ffmpeg_get_avg_bitrate
