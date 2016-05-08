@@ -24,6 +24,7 @@
 #include <math.h>
 #include <time.h>
 #include <unistd.h>
+#include <ctype.h>
 #include <wctype.h>
 #include <wchar.h>
 

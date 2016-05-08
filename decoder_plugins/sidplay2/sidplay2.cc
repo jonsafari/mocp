@@ -17,10 +17,13 @@
 
 #include <pthread.h>
 #include <assert.h>
+#include <string.h>
 #include <strings.h>
 
 #include "common.h"
 #include "sidplay2.h"
+#include "log.h"
+#include "options.h"
 
 static SID_EXTERN::sidplay2 *players [POOL_SIZE];
 
