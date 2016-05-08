@@ -136,15 +136,21 @@ void xsleep (size_t ticks, size_t ticks_per_sec)
 
 	if (ticks > 0) {
 		int rc;
-		uint64_t nsecs = ticks;
-		struct timespec delay;
+		struct timespec delay = {.tv_sec = ticks};
 
-		assert(nsecs < UINT64_MAX / UINT64_C(1000000000));
+		if (ticks_per_sec > 1) {
+			uint64_t nsecs;
 
-		nsecs *= UINT64_C(1000000000);
-		nsecs /= ticks_per_sec;
-		delay.tv_sec = nsecs / UINT64_C(1000000000);
-		delay.tv_nsec = nsecs % UINT64_C(1000000000);
+			delay.tv_sec /= ticks_per_sec;
+			nsecs = ticks % ticks_per_sec;
+
+			if (nsecs > 0) {
+				assert (nsecs < UINT64_MAX / UINT64_C(1000000000));
+
+				delay.tv_nsec = nsecs * UINT64_C(1000000000);
+				delay.tv_nsec /= ticks_per_sec;
+			}
+		}
 
 		do {
 			rc = nanosleep (&delay, &delay);
