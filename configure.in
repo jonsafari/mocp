@@ -176,13 +176,11 @@ if test "x$enable_cache" != "xno"
 then
 	save_CFLAGS="$CFLAGS"
 	CFLAGS=
-	AX_PATH_BDB([4.1], [
-		       EXTRA_LIBS="$EXTRA_LIBS $BDB_LIBS"
-		       LDFLAGS="$LDFLAGS $BDB_LDFLAGS"
-		       CPPFLAGS="$CPPFLAGS $BDB_CPPFLAGS"
-		       ],
-		       AC_MSG_ERROR([BerkeleyDB (libdb) not found.]))
+	AX_PATH_BDB([4.1], [], AC_MSG_ERROR([BerkeleyDB (libdb) not found.]))
+	CPPFLAGS="$CPPFLAGS $BDB_CPPFLAGS"
 	CFLAGS="$save_CFLAGS"
+	LDFLAGS="$LDFLAGS $BDB_LDFLAGS"
+	EXTRA_LIBS="$EXTRA_LIBS $BDB_LIBS"
 	AC_CHECK_TYPES([u_int], , , [[#include "${srcdir}/compiler.h"]
 	                             [#include <sys/types.h>]
 	                             [#include <db.h>]])
