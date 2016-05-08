@@ -36,8 +36,9 @@
 	* New and changed command line options:
 	  - echo-args: Show POPT-interpreted command line arguments
 	* Changes to supported formats and codecs:
-	  - VQF: now supported via FFmpeg/LibAV
+	  - All formats provided by Sndfile are now supported
 	  - TTA: now supported via FFmpeg/LibAV
+	  - VQF: now supported via FFmpeg/LibAV
 	* Miscellaneous
 	  - Improved logging from ALSA sound driver and library
 	  - Warn of TagLib version requirement rising to 1.5

@@ -31,6 +31,7 @@
 #include "server.h"
 #include "log.h"
 #include "files.h"
+#include "lists.h"
 
 /* TODO:
  * - sndfile is not thread-safe: use a mutex?
@@ -44,6 +45,53 @@ struct sndfile_data
 	struct decoder_error error;
 	bool timing_broken;
 };
+
+static lists_t_strs *supported_extns = NULL;
+
+static void load_extn_list ()
+{
+	const int counts[] = {SFC_GET_SIMPLE_FORMAT_COUNT,
+	                      SFC_GET_FORMAT_MAJOR_COUNT};
+	const int formats[] = {SFC_GET_SIMPLE_FORMAT,
+	                       SFC_GET_FORMAT_MAJOR};
+
+	supported_extns = lists_strs_new (16);
+
+	for (size_t ix = 0; ix < ARRAY_SIZE(counts); ix += 1) {
+		int limit;
+		SF_FORMAT_INFO format_info;
+
+		sf_command (NULL, counts[ix], &limit, sizeof (limit));
+		for (int iy = 0 ; iy < limit ; iy += 1) {
+			format_info.format = iy ;
+			sf_command (NULL, formats[ix], &format_info, sizeof (format_info));
+			if (!lists_strs_exists (supported_extns, format_info.extension))
+				lists_strs_append (supported_extns, format_info.extension);
+		}
+	}
+
+	/* These are synonyms of supported extensions. */
+	if (lists_strs_exists (supported_extns, "aiff"))
+		lists_strs_append (supported_extns, "aif");
+	if (lists_strs_exists (supported_extns, "au"))
+		lists_strs_append (supported_extns, "snd");
+	if (lists_strs_exists (supported_extns, "wav")) {
+		lists_strs_append (supported_extns, "nist");
+		lists_strs_append (supported_extns, "sph");
+	}
+	if (lists_strs_exists (supported_extns, "iff"))
+		lists_strs_append (supported_extns, "svx");
+}
+
+static void sndfile_init ()
+{
+	load_extn_list ();
+}
+
+static void sndfile_destroy ()
+{
+	lists_strs_free (supported_extns);
+}
 
 /* Return true iff libsndfile's frame count is unknown or miscalculated. */
 static bool is_timing_broken (int fd, struct sndfile_data *data)
@@ -214,16 +262,7 @@ static void sndfile_get_name (const char *file, char buf[4])
 
 static int sndfile_our_format_ext (const char *ext)
 {
-	return !strcasecmp (ext, "au")
-		|| !strcasecmp (ext, "snd")
-		|| !strcasecmp (ext, "wav")
-		|| !strcasecmp (ext, "w64")
-		|| !strcasecmp (ext, "aif")
-		|| !strcasecmp (ext, "aiff")
-		|| !strcasecmp (ext, "8svx")
-		|| !strcasecmp (ext, "sph")
-		|| !strcasecmp (ext, "sf")
-		|| !strcasecmp (ext, "voc");
+	return lists_strs_exists (supported_extns, ext);
 }
 
 static void sndfile_get_error (void *prv_data, struct decoder_error *error)
@@ -235,8 +274,8 @@ static void sndfile_get_error (void *prv_data, struct decoder_error *error)
 
 static struct decoder sndfile_decoder = {
 	DECODER_API_VERSION,
-	NULL,
-	NULL,
+	sndfile_init,
+	sndfile_destroy,
 	sndfile_open,
 	NULL,
 	NULL,
