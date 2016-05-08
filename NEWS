@@ -26,6 +26,7 @@
 	  - autogen.sh in favour of autoreconf(1)
 	  - Deprecated ffmpeg-config support
 	  - Warning of changed executable name
+	  - Removed "Search Next" interface command
 	* Changed functionality:
 	  - Decoupled mono-mixing from softmixer
 	* Added functionality:

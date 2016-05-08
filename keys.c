@@ -408,14 +408,6 @@ static struct command commands[] = {
 		1
 	},
 	{
-		KEY_CMD_NEXT_SEARCH,
-		"next_search",
-		"Find the next matching item",
-		CON_ENTRY_SEARCH,
-		{ CTRL('g'), CTRL('n'), -1 },
-		2
-	},
-	{
 		KEY_CMD_CANCEL,
 		"cancel",
 		"Exit from an entry",
