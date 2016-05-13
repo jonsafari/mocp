@@ -26,7 +26,7 @@ struct fifo_buf
 	int size;                           /* Size of the buffer */
 	int pos;                            /* Current position */
 	int fill;                           /* Current fill */
-	char buf[FLEXIBLE_ARRAY_MEMBER];    /* The buffer content */
+	char buf[];                         /* The buffer content */
 };
 
 /* Initialize and return a new fifo_buf structure of the size requested. */

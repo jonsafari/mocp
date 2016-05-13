@@ -18,7 +18,6 @@
 #include "config.h"
 #endif
 
-#include <ctype.h> // for toupper
 #include <string.h>
 #include <strings.h>
 #include <assert.h>

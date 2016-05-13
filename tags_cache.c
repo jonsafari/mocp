@@ -896,15 +896,6 @@ void tags_cache_clear_up_to (struct tags_cache *c, const char *file,
 	UNLOCK (c->mutex);
 }
 
-void tags_cache_save (struct tags_cache *c ASSERT_ONLY,
-                      const char *cache_dir ASSERT_ONLY)
-{
-	//TODO: to remove
-
-	assert (c != NULL);
-	assert (cache_dir != NULL);
-}
-
 #if defined(HAVE_DB_H) && !defined(NDEBUG)
 static void db_err_cb (const DB_ENV *unused ATTR_UNUSED, const char *errpfx,
                                                          const char *msg)

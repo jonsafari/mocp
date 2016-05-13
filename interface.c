@@ -3682,7 +3682,6 @@ void interface_end ()
 		send_int_to_srv (CMD_QUIT);
 	else
 		send_int_to_srv (CMD_DISCONNECT);
-	close (srv_sock);
 	srv_sock = -1;
 
 	windows_end ();

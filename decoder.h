@@ -212,10 +212,10 @@ struct decoder
 	/** Get a 3-chars format name for a file.
 	 *
 	 * Get an abbreviated format name (up to 3 chars) for a file.
+	 * This function is optional.
 	 *
 	 * \param file File for which we want the format name.
-	 * \param buf Buffer where the format name and ending zero-byte
-	 * must be put.
+	 * \param buf Buffer where the nul-terminated format name may be put.
 	 */
 	void (*get_name)(const char *file, char buf[4]);
 

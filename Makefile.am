@@ -80,7 +80,7 @@ EXTRA_mocp_SOURCES = \
 		     jack.c \
 		     jack.h
 man_MANS = mocp.1
-mocp_LDADD = @EXTRA_OBJS@ -lltdl
+mocp_LDADD = @EXTRA_OBJS@ -lltdl -lm
 mocp_DEPENDENCIES = @EXTRA_OBJS@
 mocp_LDFLAGS = @EXTRA_LIBS@ $(RCC_LIBS) -export-dynamic
 EXTRA_DIST = README_equalizer mocp.1 THANKS keymap.example Doxyfile \

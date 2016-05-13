@@ -17,7 +17,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
-#include <ctype.h>
 
 #include "common.h"
 #include "options.h"

@@ -17,6 +17,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+#include <ctype.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
@@ -73,7 +74,7 @@ struct parameters
 	int enqueue;
 	int clear;
 	int play;
-	int dont_run_iface;
+	int allow_iface;
 	int stop;
 	int exit;
 	int pause;
@@ -173,12 +174,23 @@ static void sig_chld (int sig LOGIT_ONLY)
 /* Run client and the server if needed. */
 static void start_moc (const struct parameters *params, lists_t_strs *args)
 {
-	int list_sock;
-	int server_sock = -1;
+	int server_sock;
 
-	if (!params->foreground && (server_sock = server_connect()) == -1) {
-		int notify_pipe[2];
+	if (params->foreground) {
+		set_me_server ();
+		server_init (params->debug, params->foreground);
+		server_loop ();
+		return;
+	}
+
+	server_sock = server_connect ();
+
+	if (server_sock != -1 && params->only_server)
+		fatal ("Server is already running!");
+
+	if (server_sock == -1) {
 		int i = 0;
+		int notify_pipe[2];
 		ssize_t rc;
 
 		printf ("Running the server...\n");
@@ -188,65 +200,51 @@ static void start_moc (const struct parameters *params, lists_t_strs *args)
 			fatal ("pipe() failed: %s", xstrerror (errno));
 
 		switch (fork()) {
-			case 0: /* child - start server */
-				set_me_server ();
-				list_sock = server_init (params->debug, params->foreground);
-				rc = write (notify_pipe[1], &i, sizeof(i));
-				if (rc < 0)
-					fatal ("write() to notify pipe failed: %s",
-					        xstrerror (errno));
-				close (notify_pipe[0]);
-				close (notify_pipe[1]);
-				signal (SIGCHLD, sig_chld);
-				server_loop (list_sock);
-				options_free ();
-				decoder_cleanup ();
-				io_cleanup ();
-				files_cleanup ();
-				rcc_cleanup ();
-				common_cleanup ();
-				exit (EXIT_SUCCESS);
-			case -1:
-				fatal ("fork() failed: %s", xstrerror (errno));
-			default:
-				close (notify_pipe[1]);
-				if (read(notify_pipe[0], &i, sizeof(i)) != sizeof(i))
-					fatal ("Server exited!");
-				close (notify_pipe[0]);
-				if ((server_sock = server_connect()) == -1) {
-					perror ("server_connect()");
-					fatal ("Can't connect to the server!");
-				}
+		case 0: /* child - start server */
+			set_me_server ();
+			server_init (params->debug, params->foreground);
+			rc = write (notify_pipe[1], &i, sizeof(i));
+			if (rc < 0)
+				fatal ("write() to notify pipe failed: %s", xstrerror (errno));
+			close (notify_pipe[0]);
+			close (notify_pipe[1]);
+			signal (SIGCHLD, sig_chld);
+			server_loop ();
+			options_free ();
+			decoder_cleanup ();
+			io_cleanup ();
+			files_cleanup ();
+			rcc_cleanup ();
+			common_cleanup ();
+			exit (EXIT_SUCCESS);
+		case -1:
+			fatal ("fork() failed: %s", xstrerror (errno));
+		default:
+			close (notify_pipe[1]);
+			if (read(notify_pipe[0], &i, sizeof(i)) != sizeof(i))
+				fatal ("Server exited!");
+			close (notify_pipe[0]);
+			server_sock = server_connect ();
+			if (server_sock == -1) {
+				perror ("server_connect()");
+				fatal ("Can't connect to the server!");
+			}
 		}
 	}
-	else if (!params->foreground && params->only_server)
-		fatal ("Server is already running!");
-	else if (params->foreground && params->only_server) {
-		set_me_server ();
-		list_sock = server_init (params->debug, params->foreground);
-		server_loop (list_sock);
-	}
 
-	if (!params->only_server) {
+	if (params->only_server)
+		send_int (server_sock, CMD_DISCONNECT);
+	else {
 		signal (SIGPIPE, SIG_IGN);
 		if (!ping_server (server_sock))
 			fatal ("Can't connect to the server!");
 
-		if (!params->dont_run_iface) {
-			init_interface (server_sock, params->debug, args);
-			interface_loop ();
-			interface_end ();
-			server_sock = -1;
-		}
+		init_interface (server_sock, params->debug, args);
+		interface_loop ();
+		interface_end ();
 	}
 
-	if (!params->foreground && params->only_server)
-		send_int (server_sock, CMD_DISCONNECT);
-
-	if (server_sock != -1) {
-		close (server_sock);
-		server_sock = -1;
-	}
+	close (server_sock);
 }
 
 /* Send commands requested in params to the server. */
@@ -1016,7 +1014,7 @@ static void process_options (poptContext ctx, lists_t_strs *deferred)
 			options_ignore_config ("StartInMusicDir");
 			break;
 		case CL_NOIFACE:
-			params.dont_run_iface = 1;
+			params.allow_iface = 0;
 			break;
 		case CL_THEME:
 			options_set_str ("ForceTheme", arg);
@@ -1047,7 +1045,7 @@ static void process_options (poptContext ctx, lists_t_strs *deferred)
 				if (!jump_type[1])
 					if (*jump_type == '%' || tolower (*jump_type) == 's') {
 						params.jump_type = tolower (*jump_type);
-						params.dont_run_iface = 1;
+						params.allow_iface = 0;
 						break;
 					}
 			//TODO: Add message explaining the error
@@ -1055,7 +1053,7 @@ static void process_options (poptContext ctx, lists_t_strs *deferred)
 			exit (EXIT_FAILURE);
 		case CL_GETINFO:
 			params.get_formatted_info = 1;
-			params.dont_run_iface = 1;
+			params.allow_iface = 0;
 			break;
 		default:
 			show_usage (ctx);
@@ -1235,6 +1233,7 @@ int main (int argc, const char *argv[])
 		fatal ("Could not determine user's home directory!");
 
 	memset (&params, 0, sizeof(params));
+	params.allow_iface = 1;
 	options_init ();
 	deferred_overrides = lists_strs_new (4);
 
@@ -1247,8 +1246,8 @@ int main (int argc, const char *argv[])
 	args = process_command_line (deferred_overrides);
 	log_popt_command_line ();
 
-	if (params.dont_run_iface && params.only_server)
-		fatal ("-c, -a and -p options can't be used with --server!");
+	if (!params.allow_iface && params.only_server)
+		fatal ("Server command options can't be used with --server!");
 
 	if (!params.config_file)
 		params.config_file = create_file_name ("config");
@@ -1265,10 +1264,10 @@ int main (int argc, const char *argv[])
 	decoder_init (params.debug);
 	srand (time(NULL));
 
-	if (!params.only_server && params.dont_run_iface)
-		server_command (&params, args);
-	else
+	if (params.allow_iface)
 		start_moc (&params, args);
+	else
+		server_command (&params, args);
 
 	lists_strs_free (args);
 	options_free ();

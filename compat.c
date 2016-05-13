@@ -13,20 +13,12 @@
 # include "config.h"
 #endif
 
-#include <string.h>
-#include <errno.h>
-#include <assert.h>
-
-#ifndef HAVE_CLOCK_GETTIME
-# include <sys/time.h>
-#endif
-
-#include "common.h"
-#include "log.h"
-
 /* Various functions which some systems lack. */
 
 #ifndef HAVE_STRCASESTR
+#include <string.h>
+#include <ctype.h>
+
 /* Case insensitive version of strstr(). */
 char *strcasestr (const char *haystack, const char *needle)
 {
@@ -58,6 +50,11 @@ char *strcasestr (const char *haystack, const char *needle)
 
 /* OSX doesn't provide clock_gettime(3) so fall back to gettimeofday(2). */
 #ifndef HAVE_CLOCK_GETTIME
+#include <sys/time.h>
+#include <assert.h>
+
+#include "common.h"
+
 int clock_gettime (int clk_id ASSERT_ONLY, struct timespec *ts)
 {
 	int result;
@@ -71,4 +68,10 @@ int clock_gettime (int clk_id ASSERT_ONLY, struct timespec *ts)
 
 	return result;
 }
+#endif
+
+/* This is required to prevent an "empty translation unit" warning
+   if neither strcasestr() nor clock_gettime() get defined. */
+#if defined(HAVE_STRCASESTR) && defined(HAVE_CLOCK_GETTIME)
+int compat_is_empty;
 #endif

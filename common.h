@@ -10,7 +10,7 @@
 
 #include <stdlib.h>
 #include <stdarg.h>
-#include <ctype.h>
+#include <stdbool.h>
 #include <limits.h>
 
 #include "compat.h"
