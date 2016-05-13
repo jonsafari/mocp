@@ -853,7 +853,7 @@ static bool parse_layout_coordinate (const char *fmt, int *val, const int max)
 		return false;
 
 	if (*e == '%')
-		v = lroundf (max * v / 100.0);
+		v = lroundf (max * v / 100.0 - 0.1);
 	*val = v;
 
 	if (!RANGE(0, *val, max)) {
