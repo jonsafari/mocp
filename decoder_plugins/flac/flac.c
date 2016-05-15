@@ -280,7 +280,11 @@ static void *flac_open_internal (const char *file, const int buffered)
 	}
 
 	data->ok = 1;
-	data->avg_bitrate = data->bits_per_sample * data->sample_rate;
+	if (data->length > 0) {
+		off_t file_size = io_file_size (data->stream);
+		if (file_size > 0)
+			data->avg_bitrate = file_size * 8 / data->length;
+	}
 
 	return data;
 }
