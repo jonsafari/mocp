@@ -280,7 +280,17 @@ static void *flac_open_internal (const char *file, const int buffered)
 	}
 
 	data->ok = 1;
-	data->avg_bitrate = data->bits_per_sample * data->sample_rate;
+
+	if (data->length > 0) {
+		off_t data_size = io_file_size (data->stream);
+		if (data_size > 0) {
+			FLAC__uint64 pos;
+
+			if (FLAC__stream_decoder_get_decode_position (data->decoder, &pos))
+				data_size -= pos;
+			data->avg_bitrate = data_size * 8 / data->length;
+		}
+	}
 
 	return data;
 }
