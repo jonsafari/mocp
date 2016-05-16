@@ -81,6 +81,8 @@ static void load_extn_list ()
 	}
 	if (lists_strs_exists (supported_extns, "iff"))
 		lists_strs_append (supported_extns, "svx");
+	if (lists_strs_exists (supported_extns, "oga"))
+		lists_strs_append (supported_extns, "ogg");
 }
 
 static void sndfile_init ()

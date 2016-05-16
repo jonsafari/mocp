@@ -649,10 +649,11 @@ void options_init ()
 	                 "wv(wavpack,*,ffmpeg):"
 	                 "audio/aac(aac):audio/aacp(aac):audio/m4a(ffmpeg):"
 	                 "audio/wav(sndfile,*):"
-	                 "ogg(vorbis,ffmpeg):oga(vorbis,ffmpeg):ogv(ffmpeg):"
+	                 "ogg(vorbis,*,ffmpeg):oga(vorbis,*,ffmpeg):ogv(ffmpeg):"
+	                 "application/ogg(vorbis):audio/ogg(vorbis):"
+	                 "flac(flac,*,ffmpeg):"
 	                 "opus(ffmpeg):"
-	                 "spx(speex):"
-	                 "application/ogg(vorbis):audio/ogg(vorbis)",
+	                 "spx(speex)",
 	                 CHECK_FUNCTION);
 
 	add_symb ("ResampleMethod", "Linear",
