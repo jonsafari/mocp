@@ -225,10 +225,8 @@ static void load_audio_extns (lists_t_strs *list)
 		lists_strs_append (list, "ogg");
 		if (avcodec_find_decoder (AV_CODEC_ID_VORBIS))
 			lists_strs_append (list, "oga");
-  #if !defined(HAVE_LIBAV) || LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(55,6,0)
 		if (avcodec_find_decoder (AV_CODEC_ID_OPUS))
 			lists_strs_append (list, "opus");
-  #endif
 		if (avcodec_find_decoder (AV_CODEC_ID_THEORA))
 			lists_strs_append (list, "ogv");
 	}
@@ -481,16 +479,10 @@ static bool is_seek_broken (struct ffmpeg_data *data)
 		return true;
 	}
 
-	/* ASF/MP2 (.wma): Seeking ends playing. */
+	/* ASF/MP2 (.wma): Seeks outside of file. */
 	if (!strcmp (data->ic->iformat->name, "asf") &&
 	    data->codec->id == AV_CODEC_ID_MP2)
 		return true;
-
-#if 0
-	/* AU (.au): Seeking ends playing. */
-	if (!strcmp (data->ic->iformat->name, "au"))
-		return true;
-#endif
 
 #if !SEEK_IN_DECODER
 	/* FLV (.flv): av_seek_frame always returns an error (even on success).
@@ -498,18 +490,6 @@ static bool is_seek_broken (struct ffmpeg_data *data)
 	 *             probably not for real ones) because the player doesn't
 	 *             get to see them. */
 	if (!strcmp (data->ic->iformat->name, "flv"))
-		return true;
-#endif
-
-#if 0
-	/* WV (.wv): Seeking ends playing. */
-	if (!strcmp (data->ic->iformat->name, "wv"))
-		return true;
-#endif
-
-#if 0
-	/* SV8 (.mpc/.mpc8): Audacious says the musepack8 codec is also broken. */
-	if (data->codec->id == AV_CODEC_ID_MUSEPACK8)
 		return true;
 #endif
 
