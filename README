@@ -95,8 +95,8 @@ provide the libraries needed to support them:
           (http://sidplay2.sourceforge.net/)
   - Speex - libspeex version 1.0 (http://www.speex.org/), and
           - libogg version 1.0 (http://www.xiph.org/ogg/)
-  - WMA, RealAudio (.ra), MP4 - FFmpeg version 0.7 (http://www.ffmpeg.org/), or
-                              - LibAV version 0.7 (http://www.libav.org/)
+  - WMA, RealAudio (.ra), MP4 - FFmpeg version 1.0 (http://www.ffmpeg.org/), or
+                              - LibAV version 10.0 (http://www.libav.org/)
   - WAVE, AU, AIFF, SVX, SPH, IRC, VOC - libsndfile version 1.0
                                          (http://www.mega-nerd.com/libsndfile/)
   - wavpack - libwavpack version 4.31 (http://www.wavpack.com/)

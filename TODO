@@ -74,13 +74,11 @@ Known Bugs:
 Transitional Code Removal:
 
 * Remove TagLib version 1.5 requirement warning.
-* Remove FFmpeg/LibAV raised requirement warning.
 
 
 Pending 2.6 Changes:
 
 * Require at least TagLib version 1.5.
-* Raise minimum FFmpeg/LibAV requirement to 1.0/10.0.
 
 
 Pending 2.7 Changes:
