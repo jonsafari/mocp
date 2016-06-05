@@ -148,6 +148,17 @@ static void ffmpeg_log_cb (void *unused ATTR_UNUSED, int level,
 		return;
 
 	msg = format_msg_va (fmt, vl);
+
+#if defined(HAVE_FFMPEG) && LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(56,33,101)
+	/* Drop this message because it is issued repeatedly and is pointless. */
+	const char skipping[] = "Skipping 0 bytes of junk";
+
+	if (!strncmp (skipping, msg, sizeof (skipping) - 1)) {
+		free (msg);
+		return;
+	}
+#endif
+
 	len = strlen (msg);
 	for (len = strlen (msg); len > 0 && msg[len - 1] == '\n'; len -= 1)
 		msg[len - 1] = 0x00;
