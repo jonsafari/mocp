@@ -523,6 +523,40 @@ static int ffmpeg_io_read_cb (void *s, uint8_t *buf, int count)
 	return io_read ((struct io_stream *)s, buf, (size_t)count);
 }
 
+static struct ffmpeg_data *ffmpeg_make_data (void)
+{
+	struct ffmpeg_data *data;
+
+	data = (struct ffmpeg_data *)xmalloc (sizeof (struct ffmpeg_data));
+
+	data->ic = NULL;
+	data->stream = NULL;
+	data->enc = NULL;
+	data->codec = NULL;
+	data->remain_buf = NULL;
+	data->remain_buf_len = 0;
+	data->delay = false;
+	data->eof = false;
+	data->eos = false;
+	data->okay = false;
+	decoder_error_init (&data->error);
+	data->fmt = 0;
+	data->sample_width = 0;
+	data->bitrate = 0;
+	data->avg_bitrate = 0;
+#if SEEK_IN_DECODER
+	data->seek_req = false;
+	data->seek_sec = 0;
+#endif
+	data->seek_broken = false;
+	data->timing_broken = false;
+#if SEEK_IN_DECODER && defined(DEBUG)
+	data->thread_id = 0;
+#endif
+
+	return data;
+}
+
 static void *ffmpeg_open_internal (const char *file, struct io_stream *stream)
 {
 	struct ffmpeg_data *data;
@@ -533,28 +567,7 @@ static void *ffmpeg_open_internal (const char *file, struct io_stream *stream)
 	/* Either a file or a stream, but not both or neither. */
 	assert ((file && !stream) || (!file && stream));
 
-	data = (struct ffmpeg_data *)xmalloc (sizeof (struct ffmpeg_data));
-	data->okay = false;
-	data->ic = NULL;
-	data->stream = NULL;
-	data->enc = NULL;
-	data->codec = NULL;
-	data->sample_width = 0;
-	data->bitrate = 0;
-	data->avg_bitrate = 0;
-	data->remain_buf = NULL;
-	data->remain_buf_len = 0;
-	data->delay = false;
-	data->eof = false;
-	data->eos = false;
-#if SEEK_IN_DECODER
-	data->seek_req = false;
-	data->seek_sec = 0;
-#endif
-	data->seek_broken = false;
-	data->timing_broken = false;
-
-	decoder_error_init (&data->error);
+	data = ffmpeg_make_data ();
 
 	if (stream) {
 		AVIOContext *ac = avio_alloc_context (NULL, 0, 0, stream,
