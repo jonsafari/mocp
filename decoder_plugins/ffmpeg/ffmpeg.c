@@ -197,6 +197,8 @@ static void load_audio_extns (lists_t_strs *list)
 		{"ape", "ape"},
 		{"au", "au"},
 		{"ay", "libgme"},
+		{"dff", "dsf"},
+		{"dsf", "dsf"},
 		{"dts", "dts"},
 		{"eac3", "eac3"},
 		{"fla", "flac"},

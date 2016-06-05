@@ -37,6 +37,7 @@
 	  - echo-args: Show POPT-interpreted command line arguments
 	* Changes to supported formats and codecs:
 	  - All formats provided by Sndfile are now supported
+	  - DSD: now supported via FFmpeg/LibAV (.dff and .dsf files)
 	  - TTA: now supported via FFmpeg/LibAV
 	  - VQF: now supported via FFmpeg/LibAV
 	* Miscellaneous
