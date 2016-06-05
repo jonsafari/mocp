@@ -24,6 +24,7 @@
 #endif
 
 #include <stdlib.h>
+#include <stdio.h>
 #include <pthread.h>
 #include <string.h>
 #include <strings.h>
@@ -73,6 +74,8 @@ struct ffmpeg_data
 	bool eos;               /* end of sound seen */
 	bool okay;              /* was this stream successfully opened? */
 
+	char *filename;
+	struct io_stream *iostream;
 	struct decoder_error error;
 	long fmt;
 	int sample_width;
@@ -223,7 +226,9 @@ static void load_audio_extns (lists_t_strs *list)
 		{"vgz", "libgme"},
 		{"vqf", "vqf"},
 		{"wav", "wav"},
+#if defined(LIBAV) || LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(54,59,103)
 		{"w64", "w64"},
+#endif
 		{"wma", "asf"},
 		{"wv", "wv"},
 		{NULL, NULL}
@@ -520,7 +525,31 @@ static void set_downmixing (struct ffmpeg_data *data)
 
 static int ffmpeg_io_read_cb (void *s, uint8_t *buf, int count)
 {
+	if (!buf || count == 0)
+		return 0;
+
 	return io_read ((struct io_stream *)s, buf, (size_t)count);
+}
+
+static int64_t ffmpeg_io_seek_cb (void *s, int64_t offset, int whence)
+{
+	int w;
+	int64_t result = -1;
+
+	w = whence & ~AVSEEK_FORCE;
+
+	switch (w) {
+	case SEEK_SET:
+	case SEEK_CUR:
+	case SEEK_END:
+		result = io_seek ((struct io_stream *)s, offset, w);
+		break;
+	case AVSEEK_SIZE:
+		result = io_file_size ((struct io_stream *)s);
+		break;
+	}
+
+	return result;
 }
 
 static struct ffmpeg_data *ffmpeg_make_data (void)
@@ -539,6 +568,8 @@ static struct ffmpeg_data *ffmpeg_make_data (void)
 	data->eof = false;
 	data->eos = false;
 	data->okay = false;
+	data->filename = NULL;
+	data->iostream = NULL;
 	decoder_error_init (&data->error);
 	data->fmt = 0;
 	data->sample_width = 0;
@@ -557,46 +588,34 @@ static struct ffmpeg_data *ffmpeg_make_data (void)
 	return data;
 }
 
-static void *ffmpeg_open_internal (const char *file, struct io_stream *stream)
+static void *ffmpeg_open_internal (struct ffmpeg_data *data)
 {
-	struct ffmpeg_data *data;
 	int err;
-	const char *extn;
+	const char *extn = NULL;
 	unsigned int audio_ix;
 
-	/* Either a file or a stream, but not both or neither. */
-	assert ((file && !stream) || (!file && stream));
+	data->ic = avformat_alloc_context ();
+	if (!data->ic)
+		fatal ("Can't allocate format context!");
 
-	data = ffmpeg_make_data ();
+	/* data->ic->pb is freed by FFmpeg on close. */
+	data->ic->pb = avio_alloc_context (NULL, 0, 0, data->iostream,
+	                                   ffmpeg_io_read_cb, NULL,
+	                                   ffmpeg_io_seek_cb);
+	if (!data->ic->pb)
+		fatal ("Can't allocate avio context!");
 
-	if (stream) {
-		AVIOContext *ac = avio_alloc_context (NULL, 0, 0, stream,
-		                                      ffmpeg_io_read_cb, NULL, NULL);
-		if (!ac)
-			fatal ("Can't allocate avio context!");
-
-		data->ic = avformat_alloc_context ();
-		if (!data->ic)
-			fatal ("Can't allocate format context!");
-
-		/* data->ic->pb is freed by FFmpeg on close. */
-		data->ic->pb = ac;
-	}
-
-	err = avformat_open_input (&data->ic, file, NULL, NULL);
+	err = avformat_open_input (&data->ic, NULL, NULL, NULL);
 	if (err < 0) {
 		ffmpeg_log_repeats (NULL);
-		decoder_error (&data->error, ERROR_FATAL, 0,
-	                   stream ? "Can't open stream"
-		                      : "Can't open file");
+		decoder_error (&data->error, ERROR_FATAL, 0, "Can't open audio");
 		return data;
 	}
 
 	/* When FFmpeg and LibAV misidentify a file's codec (and they do)
 	 * then hopefully this will save MOC from wanton destruction. */
-	extn = NULL;
-	if (file) {
-		extn = ext_pos (file);
+	if (data->filename) {
+		extn = ext_pos (data->filename);
 		if (extn && !strcasecmp (extn, "wav")
 		         && strcmp (data->ic->iformat->name, "wav")) {
 			decoder_error (&data->error, ERROR_FATAL, 0,
@@ -619,9 +638,7 @@ static void *ffmpeg_open_internal (const char *file, struct io_stream *stream)
 
 	audio_ix = find_first_audio (data->ic);
 	if (audio_ix == data->ic->nb_streams) {
-		decoder_error (&data->error, ERROR_FATAL, 0,
-		               stream ? "No audio in stream"
-		                      : "No audio in file");
+		decoder_error (&data->error, ERROR_FATAL, 0, "No audio in source");
 		goto end;
 	}
 
@@ -630,17 +647,15 @@ static void *ffmpeg_open_internal (const char *file, struct io_stream *stream)
 
 	data->codec = avcodec_find_decoder (data->enc->codec_id);
 	if (!data->codec) {
-		decoder_error (&data->error, ERROR_FATAL, 0,
-		               stream ? "No codec for this stream"
-		                      : "No codec for this file");
+		decoder_error (&data->error, ERROR_FATAL, 0, "No codec for this audio");
 		goto end;
 	}
 
-	if (file) {
+	if (data->filename) {
 		const char *fn;
 
-		fn = strrchr (file, '/');
-		fn = fn ? fn + 1 : file;
+		fn = strrchr (data->filename, '/');
+		fn = fn ? fn + 1 : data->filename;
 		debug ("FFmpeg thinks '%s' is format(codec) '%s(%s)'",
 		        fn, data->ic->iformat->name, data->codec->name);
 	}
@@ -665,9 +680,7 @@ static void *ffmpeg_open_internal (const char *file, struct io_stream *stream)
 
 	if (avcodec_open2 (data->enc, data->codec, NULL) < 0)
 	{
-		decoder_error (&data->error, ERROR_FATAL, 0,
-		               stream ? "No codec for this stream"
-		                      : "No codec for this file");
+		decoder_error (&data->error, ERROR_FATAL, 0, "No codec for this audio");
 		goto end;
 	}
 
@@ -689,8 +702,12 @@ static void *ffmpeg_open_internal (const char *file, struct io_stream *stream)
 
 	if (data->timing_broken && extn && !strcasecmp (extn, "wav")) {
 		ffmpeg_log_repeats (NULL);
+#if defined(LIBAV) || LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(54,59,103)
 		decoder_error (&data->error, ERROR_FATAL, 0,
 		                   "Broken WAV file; use W64!");
+#else
+		decoder_error (&data->error, ERROR_FATAL, 0, "Broken WAV file!");
+#endif
 		avcodec_close (data->enc);
 		goto end;
 	}
@@ -714,12 +731,30 @@ end:
 
 static void *ffmpeg_open (const char *file)
 {
-	return ffmpeg_open_internal (file, NULL);
+	struct ffmpeg_data *data;
+
+	data = ffmpeg_make_data ();
+
+	data->filename = xstrdup (file);
+	data->iostream = io_open (file, 1);
+	if (!io_ok (data->iostream)) {
+		decoder_error (&data->error, ERROR_FATAL, 0,
+		               "Can't open file: %s", io_strerror (data->iostream));
+		return data;
+	}
+
+	return ffmpeg_open_internal (data);
 }
 
 static void *ffmpeg_open_stream (struct io_stream *stream)
 {
-	return ffmpeg_open_internal (NULL, stream);
+	struct ffmpeg_data *data;
+
+	data = ffmpeg_make_data ();
+
+	data->iostream = stream;
+
+	return ffmpeg_open_internal (data);
 }
 
 static int ffmpeg_can_decode (struct io_stream *stream)
@@ -1146,8 +1181,25 @@ static void ffmpeg_close (void *prv_data)
 	}
 
 	ffmpeg_log_repeats (NULL);
+
+	if (data->iostream) {
+		io_close (data->iostream);
+		data->iostream = NULL;
+	}
+
 	decoder_error_clear (&data->error);
+	free (data->filename);
 	free (data);
+}
+
+static struct io_stream *ffmpeg_get_iostream (void *prv_data)
+{
+	struct ffmpeg_data *data;
+
+	assert (prv_data);
+
+	data = (struct ffmpeg_data *)prv_data;
+	return data->iostream;
 }
 
 static int ffmpeg_get_bitrate (void *prv_data)
@@ -1222,7 +1274,7 @@ static struct decoder ffmpeg_decoder = {
 	ffmpeg_our_format_mime,
 	NULL,
 	NULL,
-	NULL,
+	ffmpeg_get_iostream,
 	ffmpeg_get_avg_bitrate
 };
 
