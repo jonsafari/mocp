@@ -35,6 +35,8 @@
 	  - Introduced MOCP_OPTS environment variable
 	* New and changed command line options:
 	  - echo-args: Show POPT-interpreted command line arguments
+	* New and changed audio decoders:
+	  - Added reading from Internet streams to FFmpeg decoder
 	* Changes to supported formats and codecs:
 	  - All formats provided by Sndfile are now supported
 	  - DSD: now supported via FFmpeg/LibAV (.dff and .dsf files)

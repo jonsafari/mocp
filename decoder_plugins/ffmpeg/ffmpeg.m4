@@ -42,6 +42,8 @@ then
 		CFLAGS="$CFLAGS $ffmpeg_CFLAGS"
 		save_LIBS="$LIBS"
 		LIBS="$LIBS $ffmpeg_LIBS"
+		AC_CHECK_MEMBERS([struct AVProbeData.mime_type], [], [],
+	                     [#include <libavformat/avformat.h>])
 		AC_CHECK_HEADERS([libavutil/channel_layout.h])
 		AC_SEARCH_LIBS(av_packet_alloc, avcodec,
 			[AC_DEFINE([HAVE_AV_PACKET_FNS], 1,
