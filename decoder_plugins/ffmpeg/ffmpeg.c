@@ -65,6 +65,8 @@ struct ffmpeg_data
 	AVCodecContext *enc;
 	AVCodec *codec;
 
+	int avbuf_size;
+	unsigned char *avbuf;
 	char *remain_buf;
 	int remain_buf_len;
 
@@ -518,8 +520,16 @@ static void set_downmixing (struct ffmpeg_data *data)
 	data->enc->request_channel_layout = AV_CH_LAYOUT_STEREO;
 }
 
-static void *ffmpeg_open (const char *file)
-{
+static int ffmpeg_io_read (void *s, uint8_t *buf, int count) {
+	return (int) io_read((struct io_stream *) s, buf, (size_t) count);
+}
+static off_t ffmpeg_io_seek (void *s, off_t offset, int whence) {
+	return io_seek((struct io_stream *) s, offset, whence);
+}
+
+// if stream == NULL, presumed to be acting on a file.
+// Otherwise presumed to be acting on an io_stream.
+static void * ffmpeg_open_internal (const char *file, struct io_stream *stream) {
 	struct ffmpeg_data *data;
 	int err;
 	const char *fn, *extn;
@@ -534,6 +544,14 @@ static void *ffmpeg_open (const char *file)
 	data->sample_width = 0;
 	data->bitrate = 0;
 	data->avg_bitrate = 0;
+
+	// for io_streams:
+	// ffmpeg 2.0.1 will free avbuf itself, causing a double-free.
+	// So for now, just don't give ffmpeg a buffer.
+	// https://lists.ffmpeg.org/pipermail/libav-user/2012-December/003257.html
+	data->avbuf_size = 0;
+	data->avbuf = NULL;
+
 	data->remain_buf = NULL;
 	data->remain_buf_len = 0;
 	data->delay = false;
@@ -548,10 +566,19 @@ static void *ffmpeg_open (const char *file)
 
 	decoder_error_init (&data->error);
 
+	if (stream != NULL) {
+		AVIOContext *ac = avio_alloc_context(data->avbuf,
+				data->avbuf_size, 0, stream, ffmpeg_io_read, NULL, ffmpeg_io_seek);
+		data->ic = avformat_alloc_context();
+		data->ic->pb = ac;
+	}
+
 	err = avformat_open_input (&data->ic, file, NULL, NULL);
 	if (err < 0) {
 		ffmpeg_log_repeats (NULL);
-		decoder_error (&data->error, ERROR_FATAL, 0, "Can't open file");
+			decoder_error (&data->error, ERROR_FATAL, 0,
+					(stream != NULL) ? "Can't open io_stream"
+									 : "Can't open file");
 		return data;
 	}
 
@@ -579,7 +606,8 @@ static void *ffmpeg_open (const char *file)
 	audio_ix = find_first_audio (data->ic);
 	if (audio_ix == data->ic->nb_streams) {
 		decoder_error (&data->error, ERROR_FATAL, 0,
-				"No audio stream in file");
+				(stream != NULL) ?  "No audio stream in io_stream"
+								: "No audio stream in file");
 		goto end;
 	}
 
@@ -589,7 +617,8 @@ static void *ffmpeg_open (const char *file)
 	data->codec = avcodec_find_decoder (data->enc->codec_id);
 	if (!data->codec) {
 		decoder_error (&data->error, ERROR_FATAL, 0,
-				"No codec for this file");
+				(stream != NULL) ? "No codec for this io_stream"
+								 : "No codec for this file");
 		goto end;
 	}
 
@@ -616,7 +645,9 @@ static void *ffmpeg_open (const char *file)
 	if (avcodec_open2 (data->enc, data->codec, NULL) < 0)
 	{
 		decoder_error (&data->error, ERROR_FATAL, 0,
-				"No codec for this file");
+				(stream != NULL) ?
+					"No codec for this io_stream" :
+					"No codec for this file");
 		goto end;
 	}
 
@@ -656,9 +687,32 @@ static void *ffmpeg_open (const char *file)
 	return data;
 
 end:
+	// data->ic->pb is freed in avformat_close_input()
 	avformat_close_input (&data->ic);
 	ffmpeg_log_repeats (NULL);
 	return data;
+}
+static void *ffmpeg_open (const char *file)
+{
+	return ffmpeg_open_internal(file, NULL);
+}
+
+static void * ffmpeg_open_stream (struct io_stream *stream)
+{
+	return ffmpeg_open_internal("<stream>", stream);
+}
+
+static int ffmpeg_can_decode (struct io_stream* stream)
+{
+	char buf[8096 + AVPROBE_PADDING_SIZE] = {0};
+	int res = io_peek (stream, buf, sizeof (buf));
+	if (res < 0) {
+		error ("Stream error: %s", io_strerror (stream));
+		return 0;
+	}
+	AVProbeData data = {"(stream)", (unsigned char*)buf, sizeof(buf) - AVPROBE_PADDING_SIZE};
+	AVInputFormat* fmt = av_probe_input_format (&data, 1);
+	return fmt != NULL;
 }
 
 static void put_in_remain_buf (struct ffmpeg_data *data, const char *buf,
@@ -1054,6 +1108,7 @@ static void ffmpeg_close (void *prv_data)
 
 	if (data->okay) {
 		avcodec_close (data->enc);
+		// data->ic->pb is freed in avformat_close_input()
 		avformat_close_input (&data->ic);
 		free_remain_buf (data);
 	}
@@ -1102,6 +1157,12 @@ static int ffmpeg_our_format_ext (const char *ext)
 	return (lists_strs_exists (supported_extns, ext)) ? 1 : 0;
 }
 
+static int ffmpeg_our_format_mime (const char *mime_type)
+{
+	// does this need to be freed?
+	return (av_guess_format(NULL, NULL, mime_type) != NULL) ? 1 : 0;
+}
+
 static void ffmpeg_get_error (void *prv_data, struct decoder_error *error)
 {
 	struct ffmpeg_data *data = (struct ffmpeg_data *)prv_data;
@@ -1114,8 +1175,8 @@ static struct decoder ffmpeg_decoder = {
 	ffmpeg_init,
 	ffmpeg_destroy,
 	ffmpeg_open,
-	NULL,
-	NULL,
+	ffmpeg_open_stream,
+	ffmpeg_can_decode,
 	ffmpeg_close,
 	ffmpeg_decode,
 	ffmpeg_seek,
@@ -1124,7 +1185,7 @@ static struct decoder ffmpeg_decoder = {
 	ffmpeg_get_duration,
 	ffmpeg_get_error,
 	ffmpeg_our_format_ext,
-	NULL,
+	ffmpeg_our_format_mime,
 	NULL,
 	NULL,
 	NULL,
