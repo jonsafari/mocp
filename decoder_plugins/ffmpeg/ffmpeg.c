@@ -227,9 +227,7 @@ static void load_audio_extns (lists_t_strs *list)
 		{"vgz", "libgme"},
 		{"vqf", "vqf"},
 		{"wav", "wav"},
-#if defined(LIBAV) || LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(54,59,103)
 		{"w64", "w64"},
-#endif
 		{"wma", "asf"},
 		{"wv", "wv"},
 		{NULL, NULL}
@@ -498,18 +496,20 @@ static bool is_seek_broken (struct ffmpeg_data *data)
 		return true;
 	}
 
-	/* ASF/MP2 (.wma): Seeks outside of file. */
-	if (!strcmp (data->ic->iformat->name, "asf") &&
-	    data->codec->id == AV_CODEC_ID_MP2)
-		return true;
-
 #if !SEEK_IN_DECODER
 	/* FLV (.flv): av_seek_frame always returns an error (even on success).
 	 *             Seeking from the decoder works for false errors (but
 	 *             probably not for real ones) because the player doesn't
 	 *             get to see them. */
-	if (!strcmp (data->ic->iformat->name, "flv"))
-		return true;
+# ifdef HAVE_FFMPEG
+	if (avcodec_version () < AV_VERSION_INT(55,8,100))
+# else
+	if (avcodec_version () < AV_VERSION_INT(55,57,1))
+# endif
+	{
+		if (!strcmp (data->ic->iformat->name, "flv"))
+			return true;
+	}
 #endif
 
 	return false;
@@ -707,12 +707,8 @@ static void *ffmpeg_open_internal (struct ffmpeg_data *data)
 
 	if (data->timing_broken && extn && !strcasecmp (extn, "wav")) {
 		ffmpeg_log_repeats (NULL);
-#if defined(LIBAV) || LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(54,59,103)
 		decoder_error (&data->error, ERROR_FATAL, 0,
 		                   "Broken WAV file; use W64!");
-#else
-		decoder_error (&data->error, ERROR_FATAL, 0, "Broken WAV file!");
-#endif
 		avcodec_close (data->enc);
 		goto end;
 	}
