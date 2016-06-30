@@ -62,6 +62,7 @@
 struct ffmpeg_data
 {
 	AVFormatContext *ic;
+	AVIOContext *pb;
 	AVStream *stream;
 	AVCodecContext *enc;
 	AVCodec *codec;
@@ -559,6 +560,7 @@ static struct ffmpeg_data *ffmpeg_make_data (void)
 	data = (struct ffmpeg_data *)xmalloc (sizeof (struct ffmpeg_data));
 
 	data->ic = NULL;
+	data->pb = NULL;
 	data->stream = NULL;
 	data->enc = NULL;
 	data->codec = NULL;
@@ -598,12 +600,15 @@ static void *ffmpeg_open_internal (struct ffmpeg_data *data)
 	if (!data->ic)
 		fatal ("Can't allocate format context!");
 
-	/* data->ic->pb is freed by FFmpeg on close. */
 	data->ic->pb = avio_alloc_context (NULL, 0, 0, data->iostream,
 	                                   ffmpeg_io_read_cb, NULL,
 	                                   ffmpeg_io_seek_cb);
 	if (!data->ic->pb)
 		fatal ("Can't allocate avio context!");
+
+	/* Save AVIO context pointer so we can workaround an FFmpeg
+	 * memory leak later in ffmpeg_close(). */
+	data->pb = data->ic->pb;
 
 	err = avformat_open_input (&data->ic, NULL, NULL, NULL);
 	if (err < 0) {
@@ -1173,8 +1178,15 @@ static void ffmpeg_close (void *prv_data)
 {
 	struct ffmpeg_data *data = (struct ffmpeg_data *)prv_data;
 
+	/* We need to delve into the AVIOContext struct to free the
+	 * buffer FFmpeg leaked if avformat_open_input() failed.  Do
+	 * not be tempted to call avio_close() here; it will segfault. */
+	if (data->pb) {
+		av_freep (&data->pb->buffer);
+		av_freep (&data->pb);
+	}
+
 	if (data->okay) {
-		av_freep (&data->ic->pb->buffer);
 		avcodec_close (data->enc);
 		avformat_close_input (&data->ic);
 		free_remain_buf (data);
