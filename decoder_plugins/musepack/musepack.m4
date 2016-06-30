@@ -6,17 +6,13 @@ AC_ARG_WITH(musepack, AS_HELP_STRING([--without-musepack],
 if test "x$with_musepack" != "xno"
 then
 	dnl taken from gstreamer
-	AC_CHECK_HEADER([mpcdec/mpcdec.h], [
-			 have_musepack="yes"
-			 AC_DEFINE(MPC_IS_OLD_API, 1, [Define if the old MusePack API is used])
-			 MUSEPACK_LIBS="-lmpcdec"
-			 AC_SUBST(MUSEPACK_LIBS)
-			 ], [AC_CHECK_HEADER([mpc/mpcdec.h], [
-			     have_musepack="yes"
-			     MUSEPACK_LIBS="-lmpcdec"
-			     AC_SUBST(MUSEPACK_LIBS)
-			     ], [have_musepack="no"])
-			 ])
+	AC_CHECK_HEADER([mpc/mpcdec.h],
+		[have_musepack="yes"],
+		[AC_CHECK_HEADER([mpcdec/mpcdec.h],
+			[have_musepack="yes"
+			 UPGRADE_MUSEPACK="yes"
+			 AC_DEFINE(MPC_IS_OLD_API, 1, [Define if the old MusePack API is used])],
+			[have_musepack="no"])])
 
 	if test "x$have_musepack" = "xyes"
 	then

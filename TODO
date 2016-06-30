@@ -74,11 +74,13 @@ Known Bugs:
 Transitional Code Removal:
 
 * Remove TagLib version 1.5 requirement warning.
+* Remove Musepack libmpc (instead of libmpcdec) requirement warning.
 
 
 Pending 2.6 Changes:
 
 * Require at least TagLib version 1.5.
+* Require Musepack libmpc (instead of libmpcdec).
 
 
 Pending 2.7 Changes:

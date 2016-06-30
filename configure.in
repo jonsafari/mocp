@@ -449,6 +449,13 @@ then
 	echo
 fi
 
+if test "x$UPGRADE_MUSEPACK" = "xyes"
+then
+	echo "WARNING: MOC will soon require Musepack libmpc (rather than libmpcdec);"
+	echo "         plan to upgrade your Musepack soon."
+	echo
+fi
+
 if test "x$DECODER_PLUGINS" = "x"
 then
 	echo "WARNING: No decoder plugins are to be compiled;"
