@@ -83,6 +83,12 @@ static void load_extn_list ()
 		lists_strs_append (supported_extns, "svx");
 	if (lists_strs_exists (supported_extns, "oga"))
 		lists_strs_append (supported_extns, "ogg");
+	if (lists_strs_exists (supported_extns, "sf"))
+		lists_strs_append (supported_extns, "ircam");
+	if (lists_strs_exists (supported_extns, "mat")) {
+		lists_strs_append (supported_extns, "mat4");
+		lists_strs_append (supported_extns, "mat5");
+	}
 }
 
 static void sndfile_init ()
@@ -257,8 +263,12 @@ static void sndfile_get_name (const char *file, char buf[4])
 			strcpy (buf, "AU");
 		else if (!strcasecmp (ext, "8svx"))
 			strcpy (buf, "SVX");
-		else if (!strcasecmp (ext, "sf"))
+		else if (!strcasecmp (ext, "oga"))
+			strcpy (buf, "OGG");
+		else if (!strcasecmp (ext, "sf") || !strcasecmp (ext, "icram"))
 			strcpy (buf, "IRC");
+		else if (!strcasecmp (ext, "mat4") || !strcasecmp (ext, "mat5"))
+			strcpy (buf, "MAT");
 	}
 }
 
