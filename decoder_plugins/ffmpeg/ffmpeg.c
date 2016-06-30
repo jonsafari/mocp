@@ -537,6 +537,10 @@ static int64_t ffmpeg_io_seek_cb (void *s, int64_t offset, int whence)
 	int w;
 	int64_t result = -1;
 
+	/* Warning: Do not blindly accept the avio.h comments for AVSEEK_FORCE
+	 *          and AVSEEK_SIZE; they are incorrect for later FFmpeg/LibAV
+	 *          versions. */
+
 	w = whence & ~AVSEEK_FORCE;
 
 	switch (w) {
