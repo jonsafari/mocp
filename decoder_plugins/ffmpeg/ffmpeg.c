@@ -369,8 +369,12 @@ static void ffmpeg_init ()
 	load_video_extns (supported_extns);
 
 	rc = av_lockmgr_register (locking_cb);
-	if (rc < 0)
-		fatal ("Lock manager initialisation failed");
+	if (rc < 0) {
+		char buf[128];
+
+		av_strerror (rc, buf, sizeof (buf));
+		fatal ("Lock manager initialisation failed: %s", buf);
+	}
 }
 
 static void ffmpeg_destroy ()
@@ -395,15 +399,21 @@ static void ffmpeg_info (const char *file_name,
 
 	err = avformat_open_input (&ic, file_name, NULL, NULL);
 	if (err < 0) {
+		char buf[128];
+
 		ffmpeg_log_repeats (NULL);
-		logit ("avformat_open_input() failed (%d)", err);
+		av_strerror (err, buf, sizeof (buf));
+		logit ("avformat_open_input() failed: %s", buf);
 		return;
 	}
 
 	err = avformat_find_stream_info (ic, NULL);
 	if (err < 0) {
+		char buf[128];
+
 		ffmpeg_log_repeats (NULL);
-		logit ("avformat_find_stream_info() failed (%d)", err);
+		av_strerror (err, buf, sizeof (buf));
+		logit ("avformat_find_stream_info() failed: %s", buf);
 		goto end;
 	}
 
@@ -616,8 +626,12 @@ static void *ffmpeg_open_internal (struct ffmpeg_data *data)
 
 	err = avformat_open_input (&data->ic, NULL, NULL, NULL);
 	if (err < 0) {
+		char buf[128];
+
 		ffmpeg_log_repeats (NULL);
-		decoder_error (&data->error, ERROR_FATAL, 0, "Can't open audio");
+		av_strerror (err, buf, sizeof (buf));
+		decoder_error (&data->error, ERROR_FATAL, 0,
+		               "Can't open audio: %s", buf);
 		return data;
 	}
 
@@ -640,8 +654,11 @@ static void *ffmpeg_open_internal (struct ffmpeg_data *data)
 		/* Depending on the particular FFmpeg/LibAV version in use, this
 		 * may misreport experimental codecs.  Given we don't know the
 		 * codec at this time, we will have to live with it. */
+		char buf[128];
+
+		av_strerror (err, buf, sizeof (buf));
 		decoder_error (&data->error, ERROR_FATAL, 0,
-				"Could not find codec parameters (err %d)", err);
+				"Could not find codec parameters: %s", buf);
 		goto end;
 	}
 
@@ -925,7 +942,11 @@ static AVPacket *get_packet (struct ffmpeg_data *data)
 		data->eof = true;
 
 	if (!data->eof && rc < 0) {
-		decoder_error (&data->error, ERROR_FATAL, 0, "Error in the stream!");
+		char buf[128];
+
+		av_strerror (rc, buf, sizeof (buf));
+		decoder_error (&data->error, ERROR_FATAL, 0,
+		               "Error in the stream: %s", buf);
 		return NULL;
 	}
 
@@ -1051,8 +1072,11 @@ static bool seek_in_stream (struct ffmpeg_data *data, int sec)
 
 	rc = av_seek_frame (data->ic, data->stream->index, seek_ts, flags);
 	if (rc < 0) {
+		char buf[128];
+
 		ffmpeg_log_repeats (NULL);
-		logit ("Seek error %d", rc);
+		av_strerror (rc, buf, sizeof (buf));
+		logit ("Seek error: %s", buf);
 		return false;
 	}
 
