@@ -53,21 +53,10 @@ static snd_mixer_t *mixer_handle = NULL;
 static snd_mixer_elem_t *mixer_elem1 = NULL;
 static snd_mixer_elem_t *mixer_elem2 = NULL;
 static snd_mixer_elem_t *mixer_elem_curr = NULL;
-static long mixer1_min = -1, mixer1_max = -1;
-static long mixer2_min = -1, mixer2_max = -1;
 
-/* Volume for first and second mixer in range 1-100 despite the actual device
- * resolution. */
+/* Percentage volume setting for first and second mixer. */
 static int volume1 = -1;
 static int volume2 = -1;
-
-/* Real volume setting as we last read them. */
-static int real_volume1 = -1;
-static int real_volume2 = -1;
-
-/* Scale the mixer value to 0-100 range for first and second channel */
-#define scale_volume1(v) ((v) - mixer1_min) * 100 / (mixer1_max - mixer1_min)
-#define scale_volume2(v) ((v) - mixer2_min) * 100 / (mixer2_max - mixer2_min)
 
 #ifndef NDEBUG
 static void alsa_log_cb (const char *unused1 ATTR_UNUSED,
@@ -218,49 +207,55 @@ static void handle_mixer_events (snd_mixer_t *mixer_handle)
 
 static int alsa_read_mixer_raw (snd_mixer_elem_t *elem)
 {
-	if (mixer_handle) {
-		long volume = 0;
-		int nchannels = 0;
-		int i;
-		int err;
+	int rc, nchannels = 0, volume = 0;
+	snd_mixer_selem_channel_id_t chan_id;
 
-		assert (elem != NULL);
+	if (!mixer_handle)
+		return -1;
 
-		handle_mixer_events (mixer_handle);
+	assert (elem);
 
-		for (i = 0; i < SND_MIXER_SCHN_LAST; i++)
-			if (snd_mixer_selem_has_playback_channel (elem, i)) {
-				long vol;
+	handle_mixer_events (mixer_handle);
 
-				nchannels++;
-				err = snd_mixer_selem_get_playback_volume (elem, i, &vol);
-				if (err < 0) {
-					error ("Can't read mixer: %s",
-							snd_strerror(err));
-					return -1;
+	for (chan_id = 0; chan_id < SND_MIXER_SCHN_LAST; chan_id += 1) {
+		if (snd_mixer_selem_has_playback_channel (elem, chan_id)) {
+			long vol;
 
-				}
-				/*logit ("Vol %d: %ld", i, vol);*/
-				volume += vol;
+			nchannels += 1;
+			rc = snd_mixer_selem_get_playback_volume (elem, chan_id, &vol);
+			if (rc < 0) {
+				error ("Can't read mixer: %s", snd_strerror (rc));
+				return -1;
 			}
 
-		if (nchannels > 0)
-			volume /= nchannels;
-		else {
-			logit ("Mixer has no channels");
-			volume = -1;
+			assert (RANGE(0, vol, 100));
+
+#if 0
+			{
+				static int prev_vol[SND_MIXER_SCHN_LAST] = {0};
+
+				if (vol != prev_vol[chan_id]) {
+					prev_vol[chan_id] = vol;
+					debug ("Vol %d: %ld", chan_id, vol);
+				}
+			}
+#endif
+
+			volume += vol;
 		}
-
-		/*logit ("Max: %ld, Min: %ld", mixer_max, mixer_min);*/
-		return volume;
-
 	}
-	else
+
+	if (nchannels == 0) {
+		logit ("Mixer has no channels");
 		return -1;
+	}
+
+	volume /= nchannels;
+
+	return volume;
 }
 
-static snd_mixer_elem_t *alsa_init_mixer_channel (const char *name,
-		long *vol_min, long *vol_max)
+static snd_mixer_elem_t *alsa_init_mixer_channel (const char *name)
 {
 	snd_mixer_selem_id_t *sid;
 	snd_mixer_elem_t *elem = NULL;
@@ -275,12 +270,12 @@ static snd_mixer_elem_t *alsa_init_mixer_channel (const char *name,
 		error ("Mixer device has no playback volume (%s).", name);
 		elem = NULL;
 	}
-	else {
-		snd_mixer_selem_get_playback_volume_range (elem, vol_min,
-				vol_max);
-		logit ("Opened mixer (%s), volume range: %ld-%ld", name,
-				*vol_min, *vol_max);
+	else if (snd_mixer_selem_set_playback_volume_range (elem, 0, 100) < 0) {
+		error ("Cannot set playback volume range (%s).", name);
+		elem = NULL;
 	}
+	else
+		logit ("Opened mixer (%s)", name);
 
 	snd_mixer_selem_id_free (sid);
 
@@ -321,30 +316,28 @@ static int alsa_init (struct output_driver_caps *caps)
 	}
 
 	if (mixer_handle) {
-		mixer_elem1 = alsa_init_mixer_channel (
-				options_get_str ("ALSAMixer1"),
-				&mixer1_min, &mixer1_max);
-		mixer_elem2 = alsa_init_mixer_channel (
-				options_get_str ("ALSAMixer2"),
-				&mixer2_min, &mixer2_max);
+		mixer_elem1 = alsa_init_mixer_channel (options_get_str ("ALSAMixer1"));
+		mixer_elem2 = alsa_init_mixer_channel (options_get_str ("ALSAMixer2"));
 	}
 
 	mixer_elem_curr = mixer_elem1 ? mixer_elem1 : mixer_elem2;
 
 	if (mixer_elem_curr) {
-		if (mixer_elem1 && (real_volume1
-					= alsa_read_mixer_raw(mixer_elem1))
-				!= -1)
-			volume1 = scale_volume1 (real_volume1);
+		int vol;
+
+		if (mixer_elem1 && (vol = alsa_read_mixer_raw (mixer_elem1)) != -1) {
+			assert (RANGE(0, vol, 100));
+			volume1 = vol;
+		}
 		else {
 			mixer_elem1 = NULL;
 			mixer_elem_curr = mixer_elem2;
 		}
 
-		if (mixer_elem2 && (real_volume2
-					= alsa_read_mixer_raw(mixer_elem2))
-				!= -1)
-			volume2 = scale_volume2 (real_volume2);
+		if (mixer_elem2 && (vol = alsa_read_mixer_raw (mixer_elem2)) != -1) {
+			assert (RANGE(0, vol, 100));
+			volume2 = vol;
+		}
 		else {
 			mixer_elem2 = NULL;
 			mixer_elem_curr = mixer_elem1;
@@ -645,59 +638,42 @@ static int alsa_play (const char *buff, const size_t size)
 
 static int alsa_read_mixer ()
 {
-	int curr_real_vol = alsa_read_mixer_raw (mixer_elem_curr);
-	int *real_vol;
-	int *vol;
+	int actual_vol, *vol;
 
-	if (mixer_elem_curr == mixer_elem1) {
-		real_vol = &real_volume1;
+	actual_vol = alsa_read_mixer_raw (mixer_elem_curr);
+
+	assert (RANGE(0, actual_vol, 100));
+
+	if (mixer_elem_curr == mixer_elem1)
 		vol = &volume1;
-	}
-	else {
-		real_vol = &real_volume2;
+	else
 		vol = &volume2;
+
+	if (*vol != actual_vol) {
+		*vol = actual_vol;
+		logit ("Mixer volume has changed since we last read it.");
 	}
 
-	if (*real_vol != curr_real_vol) {
-		*real_vol = curr_real_vol;
-		*vol = (vol == &volume1) ? scale_volume1(*real_vol)
-			: scale_volume2(*real_vol);
-		logit ("Mixer volume has changes since we last read it.");
-	}
-
-	return *vol;
+	return actual_vol;
 }
 
 static void alsa_set_mixer (int vol)
 {
+	assert (RANGE(0, vol, 100));
+
 	if (mixer_handle) {
-		int err;
-		long vol_alsa;
-		long mixer_max, mixer_min;
-		int *real_vol;
+		int rc;
 
-		if (mixer_elem_curr == mixer_elem1) {
+		if (mixer_elem_curr == mixer_elem1)
 			volume1 = vol;
-			mixer_max = mixer1_max;
-			mixer_min = mixer1_min;
-			real_vol = &real_volume1;
-		}
-		else {
-			volume2 = vol;
-			mixer_max = mixer2_max;
-			mixer_min = mixer2_min;
-			real_vol = &real_volume2;
-		}
-
-		vol_alsa = vol * (mixer_max - mixer_min) / 100 + mixer_min;
-
-		debug ("Setting vol to %ld", vol_alsa);
-
-		if ((err = snd_mixer_selem_set_playback_volume_all(
-						mixer_elem_curr, vol_alsa)) < 0)
-			error ("Can't set mixer: %s", snd_strerror(err));
 		else
-			*real_vol = vol_alsa;
+			volume2 = vol;
+
+		debug ("Setting vol to %d", vol);
+
+		rc = snd_mixer_selem_set_playback_volume_all (mixer_elem_curr, vol);
+		if (rc < 0)
+			error ("Can't set mixer: %s", snd_strerror (rc));
 	}
 }
 
