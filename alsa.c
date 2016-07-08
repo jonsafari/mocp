@@ -58,6 +58,53 @@ static snd_mixer_elem_t *mixer_elem_curr = NULL;
 static int volume1 = -1;
 static int volume2 = -1;
 
+/* Map ALSA's mask to MOC's format (and visa versa). */
+static const struct {
+	snd_pcm_format_t mask;
+	long format;
+} format_masks[] = {
+	{SND_PCM_FORMAT_S8, SFMT_S8},
+	{SND_PCM_FORMAT_U8, SFMT_U8},
+	{SND_PCM_FORMAT_S16, SFMT_S16},
+	{SND_PCM_FORMAT_U16, SFMT_U16},
+	{SND_PCM_FORMAT_S32, SFMT_S32},
+	{SND_PCM_FORMAT_U32, SFMT_U32}
+};
+
+/* Given an ALSA mask, return a MOC format or zero if unknown. */
+static inline long mask_to_format (const snd_pcm_format_mask_t *mask)
+{
+	long result = 0;
+
+	for (size_t ix = 0; ix < ARRAY_SIZE(format_masks); ix += 1) {
+		if (snd_pcm_format_mask_test (mask, format_masks[ix].mask))
+			result |= format_masks[ix].format;
+	}
+
+#if 0
+	if (snd_pcm_format_mask_test (mask, SND_PCM_FORMAT_S24))
+		result |= SFMT_S32; /* conversion needed */
+#endif
+
+	return result;
+}
+
+/* Given a MOC format, return an ALSA mask.
+ * Return SND_PCM_FORMAT_UNKNOWN if unknown. */
+static inline snd_pcm_format_t format_to_mask (long format)
+{
+	snd_pcm_format_t result = SND_PCM_FORMAT_UNKNOWN;
+
+	for (size_t ix = 0; ix < ARRAY_SIZE(format_masks); ix += 1) {
+		if (format_masks[ix].format == format) {
+			result = format_masks[ix].mask;
+			break;
+		}
+	}
+
+	return result;
+}
+
 #ifndef NDEBUG
 static void alsa_log_cb (const char *unused1 ATTR_UNUSED,
                          int unused2 ATTR_UNUSED,
@@ -145,24 +192,7 @@ static int fill_capabilities (struct output_driver_caps *caps)
 		return 0;
 	}
 	snd_pcm_hw_params_get_format_mask (hw_params, format_mask);
-
-	caps->formats = SFMT_NE;
-	if (snd_pcm_format_mask_test(format_mask, SND_PCM_FORMAT_S8))
-		caps->formats |= SFMT_S8;
-	if (snd_pcm_format_mask_test(format_mask, SND_PCM_FORMAT_U8))
-		caps->formats |= SFMT_U8;
-	if (snd_pcm_format_mask_test(format_mask, SND_PCM_FORMAT_S16))
-		caps->formats |= SFMT_S16;
-	if (snd_pcm_format_mask_test(format_mask, SND_PCM_FORMAT_U16))
-		caps->formats |= SFMT_U16;
-#if 0
-	if (snd_pcm_format_mask_test(format_mask, SND_PCM_FORMAT_S24))
-		caps->formats |= SFMT_S32; /* conversion needed */
-#endif
-	if (snd_pcm_format_mask_test(format_mask, SND_PCM_FORMAT_S32))
-		caps->formats |= SFMT_S32;
-	if (snd_pcm_format_mask_test(format_mask, SND_PCM_FORMAT_U32))
-		caps->formats |= SFMT_U32;
+	caps->formats = mask_to_format (format_mask) | SFMT_NE;
 
 	snd_pcm_format_mask_free (format_mask);
 	snd_pcm_hw_params_free (hw_params);
@@ -371,30 +401,11 @@ static int alsa_open (struct sound_params *sound_params)
 	char fmt_name[128];
 	const char *device;
 
-	switch (sound_params->fmt & SFMT_MASK_FORMAT) {
-		case SFMT_S8:
-			params.format = SND_PCM_FORMAT_S8;
-			break;
-		case SFMT_U8:
-			params.format = SND_PCM_FORMAT_U8;
-			break;
-		case SFMT_S16:
-			params.format = SND_PCM_FORMAT_S16;
-			break;
-		case SFMT_U16:
-			params.format = SND_PCM_FORMAT_U16;
-			break;
-		case SFMT_S32:
-			params.format = SND_PCM_FORMAT_S32;
-			break;
-		case SFMT_U32:
-			params.format = SND_PCM_FORMAT_U32;
-			break;
-		default:
-			error ("Unknown sample format: %s",
-					sfmt_str(sound_params->fmt, fmt_name, sizeof(fmt_name)));
-			params.format = SND_PCM_FORMAT_UNKNOWN;
-			return 0;
+	params.format = format_to_mask (sound_params->fmt & SFMT_MASK_FORMAT);
+	if (params.format == SND_PCM_FORMAT_UNKNOWN) {
+		error ("Unknown sample format: %s",
+		        sfmt_str (sound_params->fmt, fmt_name, sizeof (fmt_name)));
+		return 0;
 	}
 
 	device = options_get_str ("ALSADevice");
