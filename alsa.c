@@ -137,6 +137,38 @@ static void alsa_shutdown ()
 #endif
 }
 
+static snd_pcm_hw_params_t *alsa_open_device (const char *device)
+{
+	snd_pcm_hw_params_t *result;
+	int rc;
+
+	rc = snd_pcm_open (&handle, device, SND_PCM_STREAM_PLAYBACK,
+	                                    SND_PCM_NONBLOCK);
+	if (rc < 0) {
+		error ("Can't open audio: %s", snd_strerror (rc));
+		return NULL;
+	}
+
+	rc = snd_pcm_hw_params_malloc (&result);
+	if (rc < 0) {
+		error ("Can't allocate alsa hardware parameters structure: %s",
+		        snd_strerror (rc));
+		snd_pcm_close (handle);
+		return NULL;
+	}
+
+	rc = snd_pcm_hw_params_any (handle, result);
+	if (rc < 0) {
+		error ("Can't initialize hardware parameters structure: %s",
+		        snd_strerror (rc));
+		snd_pcm_hw_params_free (result);
+		snd_pcm_close (handle);
+		return NULL;
+	}
+
+	return result;
+}
+
 /* Fill caps with the device capabilities. Return 0 on error. */
 static int fill_capabilities (struct output_driver_caps *caps)
 {
@@ -145,27 +177,9 @@ static int fill_capabilities (struct output_driver_caps *caps)
 	int err;
 	unsigned int val;
 
-	if ((err = snd_pcm_open(&handle, options_get_str("AlsaDevice"),
-					SND_PCM_STREAM_PLAYBACK,
-					SND_PCM_NONBLOCK)) < 0) {
-		error ("Can't open audio: %s", snd_strerror(err));
+	hw_params = alsa_open_device (options_get_str ("ALSADevice"));
+	if (!hw_params)
 		return 0;
-	}
-
-	if ((err = snd_pcm_hw_params_malloc(&hw_params)) < 0) {
-		error ("Can't allocate alsa hardware parameters structure: %s",
-				snd_strerror(err));
-		snd_pcm_close (handle);
-		return 0;
-	}
-
-	if ((err = snd_pcm_hw_params_any (handle, hw_params)) < 0) {
-		error ("Can't initialize hardware parameters structure: %s",
-				snd_strerror(err));
-		snd_pcm_hw_params_free (hw_params);
-		snd_pcm_close (handle);
-		return 0;
-	}
 
 	if ((err = snd_pcm_hw_params_get_channels_min (hw_params, &val)) < 0) {
 		error ("Can't get the minimum number of channels: %s",
@@ -411,25 +425,9 @@ static int alsa_open (struct sound_params *sound_params)
 	device = options_get_str ("ALSADevice");
 	logit ("Opening ALSA device: %s", device);
 
-	if ((err = snd_pcm_open(&handle, device,
-					SND_PCM_STREAM_PLAYBACK,
-					SND_PCM_NONBLOCK)) < 0) {
-		error ("Can't open audio: %s", snd_strerror(err));
+	hw_params = alsa_open_device (device);
+	if (!hw_params)
 		return 0;
-	}
-
-	if ((err = snd_pcm_hw_params_malloc(&hw_params)) < 0) {
-		error ("Can't allocate alsa hardware parameters structure: %s",
-				snd_strerror(err));
-		return 0;
-	}
-
-	if ((err = snd_pcm_hw_params_any (handle, hw_params)) < 0) {
-		error ("Can't initialize hardware parameters structure: %s",
-				snd_strerror(err));
-		snd_pcm_hw_params_free (hw_params);
-		return 0;
-	}
 
 	if ((err = snd_pcm_hw_params_set_access (handle, hw_params, SND_PCM_ACCESS_RW_INTERLEAVED)) < 0) {
 		error ("Can't set alsa access type: %s", snd_strerror(err));
