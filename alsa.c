@@ -33,6 +33,21 @@
 
 #define BUFFER_MAX_USEC	300000
 
+/* Check that ALSA's and MOC's byte/sample/frame conversions agree. */
+#ifndef NDEBUG
+# define ALSA_CHECK(fn,val) \
+	 do { \
+		long v = val; \
+		ssize_t ssz = snd_pcm_##fn (handle, 1); \
+		if (ssz < 0) \
+			debug ("CHECK: snd_pcm_%s() failed: %s", #fn, snd_strerror (ssz)); \
+		else if (v != ssz) \
+			debug ("CHECK: snd_pcm_%s() = %zd (vs %ld)", #fn, ssz, v); \
+	} while (0)
+#else
+# define ALSA_CHECK(...) do {} while (0)
+#endif
+
 static snd_pcm_t *handle = NULL;
 
 static struct
@@ -592,6 +607,9 @@ static int alsa_open (struct sound_params *sound_params)
 		        snd_strerror (rc));
 		goto err;
 	}
+
+	ALSA_CHECK (samples_to_bytes, bytes_per_sample);
+	ALSA_CHECK (frames_to_bytes, bytes_per_frame);
 
 	logit ("ALSA device opened");
 
