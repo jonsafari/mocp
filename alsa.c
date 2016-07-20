@@ -25,6 +25,8 @@
 
 #define DEBUG
 
+#define STRERROR_FN alsa_strerror
+
 #include "common.h"
 #include "server.h"
 #include "audio.h"
@@ -40,7 +42,7 @@
 		long v = val; \
 		ssize_t ssz = snd_pcm_##fn (handle, 1); \
 		if (ssz < 0) \
-			debug ("CHECK: snd_pcm_%s() failed: %s", #fn, snd_strerror (ssz)); \
+			debug ("CHECK: snd_pcm_%s() failed: %s", #fn, alsa_strerror (ssz)); \
 		else if (v != ssz) \
 			debug ("CHECK: snd_pcm_%s() = %zd (vs %ld)", #fn, ssz, v); \
 	} while (0)
@@ -73,6 +75,22 @@ static snd_mixer_elem_t *mixer_elem_curr = NULL;
 /* Percentage volume setting for first and second mixer. */
 static int volume1 = -1;
 static int volume2 = -1;
+
+/* ALSA-provided error code to description function wrapper. */
+static inline char *alsa_strerror (int errnum)
+{
+	char *result;
+
+	if (errnum < 0)
+		errnum = -errnum;
+
+	if (errnum < SND_ERROR_BEGIN)
+		result = xstrerror (errnum);
+	else
+		result = xstrdup (snd_strerror (errnum));
+
+	return result;
+}
 
 /* Map ALSA's mask to MOC's format (and visa versa). */
 static const struct {
@@ -151,21 +169,19 @@ static snd_pcm_hw_params_t *alsa_open_device (const char *device)
 	rc = snd_pcm_open (&handle, device, SND_PCM_STREAM_PLAYBACK,
 	                                    SND_PCM_NONBLOCK);
 	if (rc < 0) {
-		error ("Can't open audio: %s", snd_strerror (rc));
+		error_errno ("Can't open audio", rc);
 		goto err1;
 	}
 
 	rc = snd_pcm_hw_params_malloc (&result);
 	if (rc < 0) {
-		error ("Can't allocate ALSA hardware parameters structure: %s",
-		        snd_strerror (rc));
+		error_errno ("Can't allocate hardware parameters structure", rc);
 		goto err2;
 	}
 
 	rc = snd_pcm_hw_params_any (handle, result);
 	if (rc < 0) {
-		error ("Can't initialize hardware parameters structure: %s",
-		        snd_strerror (rc));
+		error_errno ("Can't initialize hardware parameters structure", rc);
 		goto err3;
 	}
 
@@ -201,23 +217,21 @@ static int fill_capabilities (struct output_driver_caps *caps)
 
 		rc = snd_pcm_hw_params_get_channels_min (hw_params, &val);
 		if (rc < 0) {
-			error ("Can't get the minimum number of channels: %s",
-			        snd_strerror (rc));
+			error_errno ("Can't get the minimum number of channels", rc);
 			break;
 		}
 		caps->min_channels = val;
 
 		rc = snd_pcm_hw_params_get_channels_max (hw_params, &val);
 		if (rc < 0) {
-			error ("Can't get the maximum number of channels: %s",
-			        snd_strerror (rc));
+			error_errno ("Can't get the maximum number of channels", rc);
 			break;
 		}
 		caps->max_channels = val;
 
 		rc = snd_pcm_format_mask_malloc (&format_mask);
 		if (rc < 0) {
-			error ("Can't allocate format mask: %s", snd_strerror (rc));
+			error_errno ("Can't allocate format mask", rc);
 			break;
 		}
 		snd_pcm_hw_params_get_format_mask (hw_params, format_mask);
@@ -245,8 +259,7 @@ static void handle_mixer_events (snd_mixer_t *mixer_handle)
 
 		count = snd_mixer_poll_descriptors_count (mixer_handle);
 		if (count < 0) {
-			logit ("snd_mixer_poll_descriptors_count() failed: %s",
-			        snd_strerror (count));
+			log_errno ("snd_mixer_poll_descriptors_count() failed", count);
 			break;
 		}
 
@@ -254,8 +267,7 @@ static void handle_mixer_events (snd_mixer_t *mixer_handle)
 
 		rc = snd_mixer_poll_descriptors (mixer_handle, fds, count);
 		if (rc < 0) {
-			logit ("snd_mixer_poll_descriptors() failed: %s",
-			        snd_strerror (rc));
+			log_errno ("snd_mixer_poll_descriptors() failed", rc);
 			break;
 		}
 
@@ -272,7 +284,7 @@ static void handle_mixer_events (snd_mixer_t *mixer_handle)
 
 		rc = snd_mixer_handle_events (mixer_handle);
 		if (rc < 0)
-			logit ("snd_mixer_handle_events() failed: %s", snd_strerror (rc));
+			log_errno ("snd_mixer_handle_events() failed", rc);
 	} while (0);
 
 	free (fds);
@@ -300,7 +312,7 @@ static int alsa_read_mixer_raw (snd_mixer_elem_t *elem)
 			nchannels += 1;
 			rc = snd_mixer_selem_get_playback_volume (elem, chan_id, &vol);
 			if (rc < 0) {
-				error ("Can't read mixer: %s", snd_strerror (rc));
+				error_errno ("Can't read mixer", rc);
 				return -1;
 			}
 
@@ -380,7 +392,7 @@ static void alsa_close_mixer ()
 
 		rc = snd_mixer_close (mixer_handle);
 		if (rc < 0)
-			logit ("Can't close mixer: %s", snd_strerror (rc));
+			log_errno ("Can't close mixer", rc);
 
 		mixer_handle = NULL;
 	}
@@ -394,25 +406,25 @@ static void alsa_open_mixer (const char *device)
 
 	rc = snd_mixer_open (&mixer_handle, 0);
 	if (rc < 0) {
-		error ("Can't open ALSA mixer: %s", snd_strerror (rc));
+		error_errno ("Can't open ALSA mixer", rc);
 		goto err;
 	}
 
 	rc = snd_mixer_attach (mixer_handle, device);
 	if (rc < 0) {
-		error ("Can't attach mixer: %s", snd_strerror (rc));
+		error_errno ("Can't attach mixer", rc);
 		goto err;
 	}
 
 	rc = snd_mixer_selem_register (mixer_handle, NULL, NULL);
 	if (rc < 0) {
-		error ("Can't register mixer: %s", snd_strerror (rc));
+		error_errno ("Can't register mixer", rc);
 		goto err;
 	}
 
 	rc = snd_mixer_load (mixer_handle);
 	if (rc < 0) {
-		error ("Can't load mixer: %s", snd_strerror (rc));
+		error_errno ("Can't load mixer", rc);
 		goto err;
 	}
 
@@ -522,13 +534,13 @@ static int alsa_open (struct sound_params *sound_params)
 	rc = snd_pcm_hw_params_set_access (handle, hw_params,
 	                                   SND_PCM_ACCESS_RW_INTERLEAVED);
 	if (rc < 0) {
-		error ("Can't set ALSA access type: %s", snd_strerror (rc));
+		error_errno ("Can't set ALSA access type", rc);
 		goto err;
 	}
 
 	rc = snd_pcm_hw_params_set_format (handle, hw_params, params.format);
 	if (rc < 0) {
-		error ("Can't set sample format: %s", snd_strerror (rc));
+		error_errno ("Can't set sample format", rc);
 		goto err;
 	}
 
@@ -538,7 +550,7 @@ static int alsa_open (struct sound_params *sound_params)
 	params.rate = sound_params->rate;
 	rc = snd_pcm_hw_params_set_rate_near (handle, hw_params, &params.rate, 0);
 	if (rc < 0) {
-		error ("Can't set sample rate: %s", snd_strerror (rc));
+		error_errno ("Can't set sample rate", rc);
 		goto err;
 	}
 
@@ -547,7 +559,7 @@ static int alsa_open (struct sound_params *sound_params)
 	rc = snd_pcm_hw_params_set_channels (handle, hw_params,
 	                                     sound_params->channels);
 	if (rc < 0) {
-		error ("Can't set number of channels: %s", snd_strerror (rc));
+		error_errno ("Can't set number of channels", rc);
 		goto err;
 	}
 
@@ -555,7 +567,7 @@ static int alsa_open (struct sound_params *sound_params)
 
 	rc = snd_pcm_hw_params_get_buffer_time_max (hw_params, &buffer_time, 0);
 	if (rc < 0) {
-		error ("Can't get maximum buffer time: %s", snd_strerror (rc));
+		error_errno ("Can't get maximum buffer time", rc);
 		goto err;
 	}
 
@@ -565,20 +577,20 @@ static int alsa_open (struct sound_params *sound_params)
 	rc = snd_pcm_hw_params_set_period_time_near (handle, hw_params,
 	                                             &period_time, 0);
 	if (rc < 0) {
-		error ("Can't set period time: %s", snd_strerror (rc));
+		error_errno ("Can't set period time", rc);
 		goto err;
 	}
 
 	rc = snd_pcm_hw_params_set_buffer_time_near (handle, hw_params,
 	                                             &buffer_time, 0);
 	if (rc < 0) {
-		error ("Can't set buffer time: %s", snd_strerror (rc));
+		error_errno ("Can't set buffer time", rc);
 		goto err;
 	}
 
 	rc = snd_pcm_hw_params (handle, hw_params);
 	if (rc < 0) {
-		error ("Can't set audio parameters: %s", snd_strerror (rc));
+		error_errno ("Can't set audio parameters", rc);
 		goto err;
 	}
 
@@ -603,8 +615,7 @@ static int alsa_open (struct sound_params *sound_params)
 
 	rc = snd_pcm_prepare (handle);
 	if (rc < 0) {
-		error ("Can't prepare audio interface for use: %s",
-		        snd_strerror (rc));
+		error_errno ("Can't prepare audio interface for use", rc);
 		goto err;
 	}
 
@@ -666,7 +677,7 @@ static int play_buf_chunks ()
 				logit ("snd_pcm_wait() failed");
 			break;
 		default:
-			error ("Can't play: %s", snd_strerror (rc));
+			error_errno ("Can't play", rc);
 			return -1;
 		}
 	}
@@ -785,7 +796,7 @@ static void alsa_set_mixer (int vol)
 
 	rc = snd_mixer_selem_set_playback_volume_all (mixer_elem_curr, vol);
 	if (rc < 0)
-		error ("Can't set mixer: %s", snd_strerror (rc));
+		error_errno ("Can't set mixer", rc);
 }
 
 static int alsa_get_buff_fill ()
@@ -801,7 +812,7 @@ static int alsa_get_buff_fill ()
 
 		rc = snd_pcm_delay (handle, &delay);
 		if (rc < 0) {
-			logit ("snd_pcm_delay() failed: %s", snd_strerror (rc));
+			log_errno ("snd_pcm_delay() failed", rc);
 			break;
 		}
 
@@ -826,13 +837,13 @@ static int alsa_reset ()
 
 		rc = snd_pcm_drop (handle);
 		if (rc < 0) {
-			error ("Can't reset the device: %s", snd_strerror (rc));
+			error_errno ("Can't reset the device", rc);
 			break;
 		}
 
 		rc = snd_pcm_prepare (handle);
 		if (rc < 0) {
-			error ("Can't prepare after reset: %s", snd_strerror (rc));
+			error_errno ("Can't prepare after reset", rc);
 			break;
 		}
 
