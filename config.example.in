@@ -265,6 +265,9 @@
 # Enable the conversion of the xterm title from UTF-8 to the local encoding.
 #NonUTFXterm = no
 
+# Should MOC precache files to assist gapless playback?
+#Precache = yes
+
 # Remember the playlist after exit?
 #SavePlaylist = yes
 

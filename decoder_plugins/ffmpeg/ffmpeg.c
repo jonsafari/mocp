@@ -24,28 +24,19 @@
 #endif
 
 #include <stdlib.h>
+#include <stdio.h>
 #include <pthread.h>
 #include <string.h>
 #include <strings.h>
 #include <assert.h>
 #include <stdint.h>
 
-/* This warning reset suppresses a deprecation warning message for
- * av_metadata_set()'s use of an AVMetadata parameter.  Although it
- * only occurs in FFmpeg release 0.7, the non-linear versioning of
- * that library makes it impossible to limit the suppression to that
- * particular release as it seems to have been introduced in avformat
- * version 53.1.0 and resolved in version 52.108.0. */
-GCC_DIAG_OFF(deprecated-declarations)
 #include <libavformat/avformat.h>
-GCC_DIAG_ON(deprecated-declarations)
 #include <libavutil/mathematics.h>
-#ifdef HAVE_AV_GET_CHANNEL_LAYOUT_NB_CHANNELS
-# if HAVE_LIBAVUTIL_CHANNEL_LAYOUT_H
-#  include <libavutil/channel_layout.h>
-# else
-#  include <libavutil/audioconvert.h>
-# endif
+#if HAVE_LIBAVUTIL_CHANNEL_LAYOUT_H
+# include <libavutil/channel_layout.h>
+#else
+# include <libavutil/audioconvert.h>
 #endif
 
 /* FFmpeg also likes common names, without that, our common.h and log.h
@@ -68,101 +59,13 @@ GCC_DIAG_ON(deprecated-declarations)
  * result erroneous current time values. */
 #define SEEK_IN_DECODER 0
 
-#if !HAVE_DECL_CODEC_ID_MP2 && HAVE_DECL_AV_CODEC_ID_MP2
-#define CODEC_ID_MP2 AV_CODEC_ID_MP2
-#endif
-
-#if !HAVE_DECL_CODEC_ID_OPUS && HAVE_DECL_AV_CODEC_ID_OPUS
-#define CODEC_ID_OPUS AV_CODEC_ID_OPUS
-#endif
-
-#if !HAVE_DECL_CODEC_ID_SPEEX && HAVE_DECL_AV_CODEC_ID_SPEEX
-#define CODEC_ID_SPEEX AV_CODEC_ID_SPEEX
-#endif
-
-#if !HAVE_DECL_CODEC_ID_THEORA && HAVE_DECL_AV_CODEC_ID_THEORA
-#define CODEC_ID_THEORA AV_CODEC_ID_THEORA
-#endif
-
-#if !HAVE_DECL_CODEC_ID_VORBIS && HAVE_DECL_AV_CODEC_ID_VORBIS
-#define CODEC_ID_VORBIS AV_CODEC_ID_VORBIS
-#endif
-
-#if !HAVE_DECL_CODEC_ID_PCM_S8
-#define CODEC_ID_PCM_S8 AV_CODEC_ID_PCM_S8
-#endif
-
-#if !HAVE_DECL_CODEC_ID_PCM_S8_PLANAR && HAVE_DECL_AV_CODEC_ID_PCM_S8_PLANAR
-#define CODEC_ID_PCM_S8_PLANAR AV_CODEC_ID_PCM_S8_PLANAR
-#endif
-
-#if !HAVE_DECL_CODEC_ID_PCM_U8
-#define CODEC_ID_PCM_U8 AV_CODEC_ID_PCM_U8
-#endif
-
-#if !HAVE_DECL_CODEC_ID_PCM_S16LE
-#define CODEC_ID_PCM_S16LE AV_CODEC_ID_PCM_S16LE
-#endif
-
-#if !HAVE_DECL_CODEC_ID_PCM_S16LE_PLANAR && HAVE_DECL_AV_CODEC_ID_PCM_S16LE_PLANAR
-#define CODEC_ID_PCM_S16LE_PLANAR AV_CODEC_ID_PCM_S16LE_PLANAR
-#endif
-
-#if !HAVE_DECL_CODEC_ID_PCM_S16BE
-#define CODEC_ID_PCM_S16BE AV_CODEC_ID_PCM_S16BE
-#endif
-
-#if !HAVE_DECL_CODEC_ID_PCM_U16LE
-#define CODEC_ID_PCM_U16LE AV_CODEC_ID_PCM_U16LE
-#endif
-
-#if !HAVE_DECL_CODEC_ID_PCM_U16BE
-#define CODEC_ID_PCM_U16BE AV_CODEC_ID_PCM_U16BE
-#endif
-
-#if !HAVE_DECL_CODEC_ID_PCM_S24LE
-#define CODEC_ID_PCM_S24LE AV_CODEC_ID_PCM_S24LE
-#endif
-
-#if !HAVE_DECL_CODEC_ID_PCM_S24BE
-#define CODEC_ID_PCM_S24BE AV_CODEC_ID_PCM_S24BE
-#endif
-
-#if !HAVE_DECL_CODEC_ID_PCM_U24LE
-#define CODEC_ID_PCM_U24LE AV_CODEC_ID_PCM_U24LE
-#endif
-
-#if !HAVE_DECL_CODEC_ID_PCM_U24BE
-#define CODEC_ID_PCM_U24BE AV_CODEC_ID_PCM_U24BE
-#endif
-
-#if !HAVE_DECL_CODEC_ID_PCM_S32LE
-#define CODEC_ID_PCM_S32LE AV_CODEC_ID_PCM_S32LE
-#endif
-
-#if !HAVE_DECL_CODEC_ID_PCM_S32BE
-#define CODEC_ID_PCM_S32BE AV_CODEC_ID_PCM_S32BE
-#endif
-
-#if !HAVE_DECL_CODEC_ID_PCM_U32LE
-#define CODEC_ID_PCM_U32LE AV_CODEC_ID_PCM_U32LE
-#endif
-
-#if !HAVE_DECL_CODEC_ID_PCM_U32BE
-#define CODEC_ID_PCM_U32BE AV_CODEC_ID_PCM_U32BE
-#endif
-
 struct ffmpeg_data
 {
 	AVFormatContext *ic;
+	AVIOContext *pb;
 	AVStream *stream;
 	AVCodecContext *enc;
 	AVCodec *codec;
-
-#ifndef HAVE_AVCODEC_DECODE_AUDIO4
-	int avbuf_size;
-	char *avbuf;
-#endif
 
 	char *remain_buf;
 	int remain_buf_len;
@@ -172,6 +75,8 @@ struct ffmpeg_data
 	bool eos;               /* end of sound seen */
 	bool okay;              /* was this stream successfully opened? */
 
+	char *filename;
+	struct io_stream *iostream;
 	struct decoder_error error;
 	long fmt;
 	int sample_width;
@@ -246,16 +151,18 @@ static void ffmpeg_log_cb (void *unused ATTR_UNUSED, int level,
 	if (level > av_log_get_level ())
 		return;
 
-#if LIBAVCODEC_VERSION_MAJOR == 52
-	/* Drop this message because it is issued repeatedly and is pointless. */
-	const char diverting[] =
-	           "Diverting av_*_packet function calls to libavcodec.";
+	msg = format_msg_va (fmt, vl);
 
-	if (!strncmp (diverting, fmt, sizeof (diverting) - 1))
+#if defined(HAVE_FFMPEG) && LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(56,33,101)
+	/* Drop this message because it is issued repeatedly and is pointless. */
+	const char skipping[] = "Skipping 0 bytes of junk";
+
+	if (!strncmp (skipping, msg, sizeof (skipping) - 1)) {
+		free (msg);
 		return;
+	}
 #endif
 
-	msg = format_msg_va (fmt, vl);
 	len = strlen (msg);
 	for (len = strlen (msg); len > 0 && msg[len - 1] == '\n'; len -= 1)
 		msg[len - 1] = 0x00;
@@ -294,6 +201,8 @@ static void load_audio_extns (lists_t_strs *list)
 		{"ape", "ape"},
 		{"au", "au"},
 		{"ay", "libgme"},
+		{"dff", "dsf"},
+		{"dsf", "dsf"},
 		{"dts", "dts"},
 		{"eac3", "eac3"},
 		{"fla", "flac"},
@@ -331,23 +240,18 @@ static void load_audio_extns (lists_t_strs *list)
 
 	if (av_find_input_format ("ogg")) {
 		lists_strs_append (list, "ogg");
-		if (avcodec_find_decoder (CODEC_ID_VORBIS))
+		if (avcodec_find_decoder (AV_CODEC_ID_VORBIS))
 			lists_strs_append (list, "oga");
-#if HAVE_DECL_CODEC_ID_OPUS || HAVE_DECL_AV_CODEC_ID_OPUS
-  /* The Opus support in LibAV libraries is feeling better now. */
-  #if !defined(HAVE_LIBAV) || LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(55,6,0)
-		if (avcodec_find_decoder (CODEC_ID_OPUS))
+		if (avcodec_find_decoder (AV_CODEC_ID_OPUS))
 			lists_strs_append (list, "opus");
-  #endif
-#endif
-		if (avcodec_find_decoder (CODEC_ID_THEORA))
+		if (avcodec_find_decoder (AV_CODEC_ID_THEORA))
 			lists_strs_append (list, "ogv");
 	}
 
 	/* In theory, FFmpeg supports Speex if built with libspeex enabled.
 	 * In practice, it breaks badly. */
 #if 0
-	if (avcodec_find_decoder (CODEC_ID_SPEEX))
+	if (avcodec_find_decoder (AV_CODEC_ID_SPEEX))
 		lists_strs_append (list, "spx");
 #endif
 }
@@ -356,6 +260,7 @@ static void load_video_extns (lists_t_strs *list)
 {
 	int ix;
 	const struct extn_list video_extns[] = {
+		{"avi", "avi"},
 		{"flv", "flv"},
 		{"mkv", "matroska"},
 		{"mp4", "mp4"},
@@ -368,15 +273,6 @@ static void load_video_extns (lists_t_strs *list)
 	for (ix = 0; video_extns[ix].extn; ix += 1) {
 		if (av_find_input_format (video_extns[ix].format))
 			lists_strs_append (list, video_extns[ix].extn);
-	}
-
-	/* AVI works from FFmpeg/LibAV release 0.6 onwards.  However, given
-	 * their inconsistant version numbering, it's impossible to determine
-	 * which version is 0.6 for both libraries.  So we simply go with the
-	 * highest. */
-	if (avformat_version () >= AV_VERSION_INT(52,64,2)) {
-		if (av_find_input_format ("avi"))
-			lists_strs_append (list, "avi");
 	}
 }
 
@@ -473,8 +369,12 @@ static void ffmpeg_init ()
 	load_video_extns (supported_extns);
 
 	rc = av_lockmgr_register (locking_cb);
-	if (rc < 0)
-		fatal ("Lock manager initialisation failed");
+	if (rc < 0) {
+		char buf[128];
+
+		av_strerror (rc, buf, sizeof (buf));
+		fatal ("Lock manager initialisation failed: %s", buf);
+	}
 }
 
 static void ffmpeg_destroy ()
@@ -494,29 +394,28 @@ static void ffmpeg_info (const char *file_name,
 {
 	int err;
 	AVFormatContext *ic = NULL;
+	AVDictionaryEntry *entry;
+	AVDictionary *md;
 
 	err = avformat_open_input (&ic, file_name, NULL, NULL);
 	if (err < 0) {
+		char buf[128];
+
 		ffmpeg_log_repeats (NULL);
-		logit ("avformat_open_input() failed (%d)", err);
+		av_strerror (err, buf, sizeof (buf));
+		logit ("avformat_open_input() failed: %s", buf);
 		return;
 	}
 
-#ifdef HAVE_AVFORMAT_FIND_STREAM_INFO
 	err = avformat_find_stream_info (ic, NULL);
 	if (err < 0) {
+		char buf[128];
+
 		ffmpeg_log_repeats (NULL);
-		logit ("avformat_find_stream_info() failed (%d)", err);
+		av_strerror (err, buf, sizeof (buf));
+		logit ("avformat_find_stream_info() failed: %s", buf);
 		goto end;
 	}
-#else
-	err = av_find_stream_info (ic);
-	if (err < 0) {
-		ffmpeg_log_repeats (NULL);
-		logit ("av_find_stream_info() failed (%d)", err);
-		goto end;
-	}
-#endif
 
 	if (!is_timing_broken (ic) && tags_sel & TAGS_TIME) {
 		info->time = -1;
@@ -526,12 +425,6 @@ static void ffmpeg_info (const char *file_name,
 
 	if (!(tags_sel & TAGS_COMMENTS))
 		goto end;
-
-#if defined(HAVE_AV_DICT_GET)
-	AVDictionary *md;
-#else
-	AVMetadata *md;
-#endif
 
 	md = ic->metadata;
 	if (md == NULL) {
@@ -547,10 +440,6 @@ static void ffmpeg_info (const char *file_name,
 		goto end;
 	}
 
-#if defined(HAVE_AV_DICT_GET)
-
-	AVDictionaryEntry *entry;
-
 	entry = av_dict_get (md, "track", NULL, 0);
 	if (entry && entry->value && entry->value[0])
 		info->track = atoi (entry->value);
@@ -564,81 +453,9 @@ static void ffmpeg_info (const char *file_name,
 	if (entry && entry->value && entry->value[0])
 		info->album = xstrdup (entry->value);
 
-#else
-
-	AVMetadataTag *tag;
-
-	tag = av_metadata_get (md, "track", NULL, 0);
-	if (tag && tag->value && tag->value[0])
-		info->track = atoi (tag->value);
-	tag = av_metadata_get (md, "title", NULL, 0);
-	if (tag && tag->value && tag->value[0])
-		info->title = xstrdup (tag->value);
-	tag = av_metadata_get (md, "artist", NULL, 0);
-	if (tag && tag->value && tag->value[0])
-		info->artist = xstrdup (tag->value);
-	tag = av_metadata_get (md, "album", NULL, 0);
-	if (tag && tag->value && tag->value[0])
-		info->album = xstrdup (tag->value);
-
-#endif
-
 end:
-#ifdef HAVE_AVFORMAT_CLOSE_INPUT
 	avformat_close_input (&ic);
-#else
-	av_close_input_file (ic);
-#endif
 	ffmpeg_log_repeats (NULL);
-}
-
-/* Once upon a time FFmpeg didn't set AVCodecContext.sample_format. */
-static long fmt_from_codec (struct ffmpeg_data *data)
-{
-	long result = 0;
-
-	if (avcodec_version () < AV_VERSION_INT(52,66,0)) {
-		if (!strcmp (data->ic->iformat->name, "wav")) {
-			switch (data->enc->codec_id) {
-			case CODEC_ID_PCM_S8:
-#if HAVE_DECL_CODEC_ID_PCM_S8_PLANAR || HAVE_DECL_AV_CODEC_ID_PCM_S8_PLANAR
-			case CODEC_ID_PCM_S8_PLANAR:
-#endif
-				result = SFMT_S8;
-				break;
-			case CODEC_ID_PCM_U8:
-				result = SFMT_U8;
-				break;
-			case CODEC_ID_PCM_S16LE:
-#if HAVE_DECL_CODEC_ID_PCM_S16LE_PLANAR || HAVE_DECL_AV_CODEC_ID_PCM_S16LE_PLANAR
-			case CODEC_ID_PCM_S16LE_PLANAR:
-#endif
-			case CODEC_ID_PCM_S16BE:
-				result = SFMT_S16;
-				break;
-			case CODEC_ID_PCM_U16LE:
-			case CODEC_ID_PCM_U16BE:
-				result = SFMT_U16;
-				break;
-			case CODEC_ID_PCM_S24LE:
-			case CODEC_ID_PCM_S24BE:
-			case CODEC_ID_PCM_S32LE:
-			case CODEC_ID_PCM_S32BE:
-				result = SFMT_S32;
-				break;
-			case CODEC_ID_PCM_U24LE:
-			case CODEC_ID_PCM_U24BE:
-			case CODEC_ID_PCM_U32LE:
-			case CODEC_ID_PCM_U32BE:
-				result = SFMT_U32;
-				break;
-			default:
-				result = 0;
-			}
-		}
-	}
-
-	return result;
 }
 
 static long fmt_from_sample_fmt (struct ffmpeg_data *data)
@@ -647,27 +464,19 @@ static long fmt_from_sample_fmt (struct ffmpeg_data *data)
 
 	switch (data->enc->sample_fmt) {
 	case AV_SAMPLE_FMT_U8:
-#if HAVE_DECL_AV_SAMPLE_FMT_U8P
 	case AV_SAMPLE_FMT_U8P:
-#endif
 		result = SFMT_U8;
 		break;
 	case AV_SAMPLE_FMT_S16:
-#if HAVE_DECL_AV_SAMPLE_FMT_S16P
 	case AV_SAMPLE_FMT_S16P:
-#endif
 		result = SFMT_S16;
 		break;
 	case AV_SAMPLE_FMT_S32:
-#if HAVE_DECL_AV_SAMPLE_FMT_S32P
 	case AV_SAMPLE_FMT_S32P:
-#endif
 		result = SFMT_S32;
 		break;
 	case AV_SAMPLE_FMT_FLT:
-#if HAVE_DECL_AV_SAMPLE_FMT_FLTP
 	case AV_SAMPLE_FMT_FLTP:
-#endif
 		result = SFMT_FLOAT;
 		break;
 	default:
@@ -677,19 +486,6 @@ static long fmt_from_sample_fmt (struct ffmpeg_data *data)
 	return result;
 }
 
-#if 0
-/* The AVInputFormat.read_seek field was deprecated then later undeprecated
- * again, so we humbly ask the compiler to forgive the interim deprecation. */
-GCC_DIAG_OFF(deprecated-declarations)
-static bool deprecated_read_seek (struct ffmpeg_data *data)
-{
-	if (!data->ic->iformat->read_seek)
-		return true;
-	return false;
-}
-GCC_DIAG_ON(deprecated-declarations)
-#endif
-
 /* Try to figure out if seeking is broken for this format.
  * The aim here is to try and ensure that seeking either works
  * properly or (because of FFmpeg breakages) is disabled. */
@@ -698,7 +494,7 @@ static bool is_seek_broken (struct ffmpeg_data *data)
 #if 0
 	/* FFmpeg's alternate strategy for formats which don't
 	 * support seeking natively seems to be... unreliable. */
-	if (deprecated_read_seek (data)) {
+	if (!data->ic->iformat->read_seek) {
 		debug ("Seek broken by AVInputFormat.read_seek");
 		return true;
 	}
@@ -710,158 +506,165 @@ static bool is_seek_broken (struct ffmpeg_data *data)
 		return true;
 	}
 
-	/* ASF/MP2 (.wma): Seeking ends playing. */
-	if (!strcmp (data->ic->iformat->name, "asf") &&
-	    data->codec->id == CODEC_ID_MP2)
-		return true;
-
-#if 0
-	/* AU (.au): Seeking ends playing. */
-	if (!strcmp (data->ic->iformat->name, "au"))
-		return true;
-#endif
-
-	/* FLAC (.flac): Seeking results in a loop.  We don't know exactly
-	 * when this was fixed, but it was working by ffmpeg-0.7.1. */
-	if (avformat_version () < AV_VERSION_INT(52,110,0)) {
-		if (!strcmp (data->ic->iformat->name, "flac"))
-			return true;
-	}
-
 #if !SEEK_IN_DECODER
 	/* FLV (.flv): av_seek_frame always returns an error (even on success).
 	 *             Seeking from the decoder works for false errors (but
 	 *             probably not for real ones) because the player doesn't
 	 *             get to see them. */
-	if (!strcmp (data->ic->iformat->name, "flv"))
-		return true;
-#endif
-
-#if 0
-	/* WV (.wv): Seeking ends playing. */
-	if (!strcmp (data->ic->iformat->name, "wv"))
-		return true;
-#endif
-
-#if 0
-	/* SV8 (.mpc/.mpc8): Audacious says the musepack8 codec is also broken. */
-	if (data->codec->id == CODEC_ID_MUSEPACK8)
-		return true;
+# ifdef HAVE_FFMPEG
+	if (avcodec_version () < AV_VERSION_INT(55,8,100))
+# else
+	if (avcodec_version () < AV_VERSION_INT(55,57,1))
+# endif
+	{
+		if (!strcmp (data->ic->iformat->name, "flv"))
+			return true;
+	}
 #endif
 
 	return false;
 }
 
-#ifdef HAVE_STRUCT_AVCODECCONTEXT_REQUEST_CHANNELS
-/* This warning reset suppresses a deprecation warning message
- * for the AVCodecContext's 'request_channels' field. */
-GCC_DIAG_OFF(deprecated-declarations)
-static inline void set_request_channels (AVCodecContext *enc, int channels)
-{
-	enc->request_channels = channels;
-}
-GCC_DIAG_ON(deprecated-declarations)
-#endif
-
 /* Downmix multi-channel audios to stereo. */
 static void set_downmixing (struct ffmpeg_data *data)
 {
-#ifdef HAVE_AV_GET_CHANNEL_LAYOUT_NB_CHANNELS
 	if (av_get_channel_layout_nb_channels (data->enc->channel_layout) <= 2)
 		return;
-#else
-	if (data->enc->channels <= 2)
-		return;
-#endif
 
-#ifdef HAVE_STRUCT_AVCODECCONTEXT_REQUEST_CHANNELS
-	set_request_channels (data->enc, 2);
-#else
 	data->enc->request_channel_layout = AV_CH_LAYOUT_STEREO;
-#endif
 }
 
-static void *ffmpeg_open (const char *file)
+static int ffmpeg_io_read_cb (void *s, uint8_t *buf, int count)
+{
+	if (!buf || count == 0)
+		return 0;
+
+	return io_read ((struct io_stream *)s, buf, (size_t)count);
+}
+
+static int64_t ffmpeg_io_seek_cb (void *s, int64_t offset, int whence)
+{
+	int w;
+	int64_t result = -1;
+
+	/* Warning: Do not blindly accept the avio.h comments for AVSEEK_FORCE
+	 *          and AVSEEK_SIZE; they are incorrect for later FFmpeg/LibAV
+	 *          versions. */
+
+	w = whence & ~AVSEEK_FORCE;
+
+	switch (w) {
+	case SEEK_SET:
+	case SEEK_CUR:
+	case SEEK_END:
+		result = io_seek ((struct io_stream *)s, offset, w);
+		break;
+	case AVSEEK_SIZE:
+		result = io_file_size ((struct io_stream *)s);
+		break;
+	}
+
+	return result;
+}
+
+static struct ffmpeg_data *ffmpeg_make_data (void)
 {
 	struct ffmpeg_data *data;
-	int err;
-	const char *fn, *extn;
-	unsigned int audio_ix;
 
 	data = (struct ffmpeg_data *)xmalloc (sizeof (struct ffmpeg_data));
-	data->okay = false;
+
 	data->ic = NULL;
+	data->pb = NULL;
 	data->stream = NULL;
 	data->enc = NULL;
 	data->codec = NULL;
-	data->sample_width = 0;
-	data->bitrate = 0;
-	data->avg_bitrate = 0;
-
-#if !defined(HAVE_AVCODEC_DECODE_AUDIO4) && defined(HAVE_POSIX_MEMALIGN)
-	/* The sample buffer should be 16 byte aligned (because of SSE); a
-	 * segmentation fault may occur otherwise.  We allocate it dynamically
-	 * (to avoid overflowing OpenBSD's default pthread stack size) and once
-	 * at open (to avoid delays on each decode call).
-	 *
-	 * See: avcodec.h in ffmpeg
-	 */
-	data->avbuf_size = AVCODEC_MAX_AUDIO_FRAME_SIZE * 3 / 2;
-	err = posix_memalign ((void **)&data->avbuf, 16, data->avbuf_size);
-	if (err)
-		fatal ("Can't allocate memory!");
-#endif
-
 	data->remain_buf = NULL;
 	data->remain_buf_len = 0;
 	data->delay = false;
 	data->eof = false;
 	data->eos = false;
+	data->okay = false;
+	data->filename = NULL;
+	data->iostream = NULL;
+	decoder_error_init (&data->error);
+	data->fmt = 0;
+	data->sample_width = 0;
+	data->bitrate = 0;
+	data->avg_bitrate = 0;
 #if SEEK_IN_DECODER
 	data->seek_req = false;
 	data->seek_sec = 0;
 #endif
 	data->seek_broken = false;
 	data->timing_broken = false;
+#if SEEK_IN_DECODER && defined(DEBUG)
+	data->thread_id = 0;
+#endif
 
-	decoder_error_init (&data->error);
+	return data;
+}
 
-	err = avformat_open_input (&data->ic, file, NULL, NULL);
+static void *ffmpeg_open_internal (struct ffmpeg_data *data)
+{
+	int err;
+	const char *extn = NULL;
+	unsigned int audio_ix;
+
+	data->ic = avformat_alloc_context ();
+	if (!data->ic)
+		fatal ("Can't allocate format context!");
+
+	data->ic->pb = avio_alloc_context (NULL, 0, 0, data->iostream,
+	                                   ffmpeg_io_read_cb, NULL,
+	                                   ffmpeg_io_seek_cb);
+	if (!data->ic->pb)
+		fatal ("Can't allocate avio context!");
+
+	/* Save AVIO context pointer so we can workaround an FFmpeg
+	 * memory leak later in ffmpeg_close(). */
+	data->pb = data->ic->pb;
+
+	err = avformat_open_input (&data->ic, NULL, NULL, NULL);
 	if (err < 0) {
+		char buf[128];
+
 		ffmpeg_log_repeats (NULL);
-		decoder_error (&data->error, ERROR_FATAL, 0, "Can't open file");
+		av_strerror (err, buf, sizeof (buf));
+		decoder_error (&data->error, ERROR_FATAL, 0,
+		               "Can't open audio: %s", buf);
 		return data;
 	}
 
 	/* When FFmpeg and LibAV misidentify a file's codec (and they do)
 	 * then hopefully this will save MOC from wanton destruction. */
-	extn = ext_pos (file);
-	if (extn && !strcasecmp (extn, "wav")
-	         && strcmp (data->ic->iformat->name, "wav")) {
-		decoder_error (&data->error, ERROR_FATAL, 0,
-		               "Format possibly misidentified as '%s' by FFmpeg/LibAV",
-		               data->ic->iformat->name);
-		goto end;
+	if (data->filename) {
+		extn = ext_pos (data->filename);
+		if (extn && !strcasecmp (extn, "wav")
+		         && strcmp (data->ic->iformat->name, "wav")) {
+			decoder_error (&data->error, ERROR_FATAL, 0,
+			               "Format possibly misidentified "
+			               "as '%s' by FFmpeg/LibAV",
+			               data->ic->iformat->name);
+			goto end;
+		}
 	}
 
-#ifdef HAVE_AVFORMAT_FIND_STREAM_INFO
 	err = avformat_find_stream_info (data->ic, NULL);
-#else
-	err = av_find_stream_info (data->ic);
-#endif
 	if (err < 0) {
 		/* Depending on the particular FFmpeg/LibAV version in use, this
 		 * may misreport experimental codecs.  Given we don't know the
 		 * codec at this time, we will have to live with it. */
+		char buf[128];
+
+		av_strerror (err, buf, sizeof (buf));
 		decoder_error (&data->error, ERROR_FATAL, 0,
-				"Could not find codec parameters (err %d)", err);
+				"Could not find codec parameters: %s", buf);
 		goto end;
 	}
 
 	audio_ix = find_first_audio (data->ic);
 	if (audio_ix == data->ic->nb_streams) {
-		decoder_error (&data->error, ERROR_FATAL, 0,
-				"No audio stream in file");
+		decoder_error (&data->error, ERROR_FATAL, 0, "No audio in source");
 		goto end;
 	}
 
@@ -870,15 +673,21 @@ static void *ffmpeg_open (const char *file)
 
 	data->codec = avcodec_find_decoder (data->enc->codec_id);
 	if (!data->codec) {
-		decoder_error (&data->error, ERROR_FATAL, 0,
-				"No codec for this file");
+		decoder_error (&data->error, ERROR_FATAL, 0, "No codec for this audio");
 		goto end;
 	}
 
-	fn = strrchr (file, '/');
-	fn = fn ? fn + 1 : file;
-	debug ("FFmpeg thinks '%s' is format(codec) '%s(%s)'",
-	        fn, data->ic->iformat->name, data->codec->name);
+	if (data->filename) {
+		const char *fn;
+
+		fn = strrchr (data->filename, '/');
+		fn = fn ? fn + 1 : data->filename;
+		debug ("FFmpeg thinks '%s' is format(codec) '%s(%s)'",
+		        fn, data->ic->iformat->name, data->codec->name);
+	}
+	else
+		debug ("FFmpeg thinks stream is format(codec) '%s(%s)'",
+		        data->ic->iformat->name, data->codec->name);
 
 	/* This may or may not work depending on the particular version of
 	 * FFmpeg/LibAV in use.  For some versions this will be caught in
@@ -895,20 +704,13 @@ static void *ffmpeg_open (const char *file)
 	if (data->codec->capabilities & CODEC_CAP_TRUNCATED)
 		data->enc->flags |= CODEC_FLAG_TRUNCATED;
 
-#ifdef HAVE_AVCODEC_OPEN2
 	if (avcodec_open2 (data->enc, data->codec, NULL) < 0)
-#else
-	if (avcodec_open (data->enc, data->codec) < 0)
-#endif
 	{
-		decoder_error (&data->error, ERROR_FATAL, 0,
-				"No codec for this file");
+		decoder_error (&data->error, ERROR_FATAL, 0, "No codec for this audio");
 		goto end;
 	}
 
-	data->fmt = fmt_from_codec (data);
-	if (data->fmt == 0)
-		data->fmt = fmt_from_sample_fmt (data);
+	data->fmt = fmt_from_sample_fmt (data);
 	if (data->fmt == 0) {
 		decoder_error (&data->error, ERROR_FATAL, 0,
 		               "Cannot get sample size from unknown sample format: %s",
@@ -944,13 +746,62 @@ static void *ffmpeg_open (const char *file)
 	return data;
 
 end:
-#ifdef HAVE_AVFORMAT_CLOSE_INPUT
 	avformat_close_input (&data->ic);
-#else
-	av_close_input_file (data->ic);
-#endif
 	ffmpeg_log_repeats (NULL);
 	return data;
+}
+
+static void *ffmpeg_open (const char *file)
+{
+	struct ffmpeg_data *data;
+
+	data = ffmpeg_make_data ();
+
+	data->filename = xstrdup (file);
+	data->iostream = io_open (file, 1);
+	if (!io_ok (data->iostream)) {
+		decoder_error (&data->error, ERROR_FATAL, 0,
+		               "Can't open file: %s", io_strerror (data->iostream));
+		return data;
+	}
+
+	return ffmpeg_open_internal (data);
+}
+
+static void *ffmpeg_open_stream (struct io_stream *stream)
+{
+	struct ffmpeg_data *data;
+
+	data = ffmpeg_make_data ();
+
+	data->iostream = stream;
+
+	return ffmpeg_open_internal (data);
+}
+
+static int ffmpeg_can_decode (struct io_stream *stream)
+{
+	int res;
+	AVProbeData probe_data;
+	AVInputFormat *fmt;
+	char buf[8096 + AVPROBE_PADDING_SIZE] = {0};
+
+	res = io_peek (stream, buf, sizeof (buf));
+	if (res < 0) {
+		error ("Stream error: %s", io_strerror (stream));
+		return 0;
+	}
+
+	probe_data.filename = NULL;
+	probe_data.buf = (unsigned char*)buf;
+	probe_data.buf_size = sizeof (buf) - AVPROBE_PADDING_SIZE;
+#ifdef HAVE_STRUCT_AVPROBEDATA_MIME_TYPE
+	probe_data.mime_type = NULL;
+#endif
+
+	fmt = av_probe_input_format (&probe_data, 1);
+
+	return fmt != NULL;
 }
 
 static void put_in_remain_buf (struct ffmpeg_data *data, const char *buf,
@@ -1035,10 +886,17 @@ static inline AVPacket *new_packet (struct ffmpeg_data *data)
 
 	assert (data->stream);
 
-	pkt = (AVPacket *)xmalloc (sizeof (AVPacket));
+#if HAVE_AV_PACKET_FNS
+	pkt = av_packet_alloc ();
+#else
+	pkt = (AVPacket *)av_malloc (sizeof (AVPacket));
+	if (!pkt)
+		fatal ("av_malloc() failed to allocate memory");
 	av_init_packet (pkt);
 	pkt->data = NULL;
 	pkt->size = 0;
+#endif
+
 	pkt->stream_index = data->stream->index;
 
 	return pkt;
@@ -1046,15 +904,12 @@ static inline AVPacket *new_packet (struct ffmpeg_data *data)
 
 static inline void free_packet (AVPacket *pkt)
 {
-	assert (pkt);
-
-#if HAVE_AV_PACKET_UNREF
-	av_packet_unref (pkt);
+#if HAVE_AV_PACKET_FNS
+	av_packet_free (&pkt);
 #else
 	av_free_packet (pkt);
+	av_free (pkt);
 #endif
-
-	free (pkt);
 }
 
 /* Read a packet from the file or empty packet if flushing delayed
@@ -1081,13 +936,17 @@ static AVPacket *get_packet (struct ffmpeg_data *data)
 	free_packet (pkt);
 
 	/* FFmpeg has (at least) two ways of indicating EOF.  (Awesome!) */
-	if (rc == (int)AVERROR_EOF)
+	if (rc == AVERROR_EOF)
 		data->eof = true;
 	if (data->ic->pb && data->ic->pb->eof_reached)
 		data->eof = true;
 
 	if (!data->eof && rc < 0) {
-		decoder_error (&data->error, ERROR_FATAL, 0, "Error in the stream!");
+		char buf[128];
+
+		av_strerror (rc, buf, sizeof (buf));
+		decoder_error (&data->error, ERROR_FATAL, 0,
+		               "Error in the stream: %s", buf);
 		return NULL;
 	}
 
@@ -1098,62 +957,7 @@ static AVPacket *get_packet (struct ffmpeg_data *data)
 	return NULL;
 }
 
-#ifndef HAVE_AVCODEC_DECODE_AUDIO4
-/* Decode samples from packet data using pre-avcodec_decode_audio4(). */
-static int decode_packet (struct ffmpeg_data *data, AVPacket *pkt,
-                          char *buf, int buf_len)
-{
-	int filled = 0, len, data_size, copied;
-
-#ifndef HAVE_POSIX_MEMALIGN
-	/* The sample buffer should be 16 byte aligned (because SSE), a segmentation
-	 * fault may occur otherwise.
-	 *
-	 * See: avcodec.h in ffmpeg
-	 */
-	char avbuf[(AVCODEC_MAX_AUDIO_FRAME_SIZE * 3) / 2] ATTR_ALIGNED(16);
-
-	data->avbuf_size = sizeof(avbuf);
-	data->avbuf = avbuf;
-#endif
-
-	do {
-		data_size = data->avbuf_size;
-		len = avcodec_decode_audio3 (data->enc, (int16_t *)data->avbuf,
-		                             &data_size, pkt);
-
-		if (len < 0) {
-			/* skip frame */
-			decoder_error (&data->error, ERROR_STREAM, 0,
-			               "Error in the stream!");
-			break;
-		}
-
-		debug ("Decoded %dB", data_size);
-
-		pkt->data += len;
-		pkt->size -= len;
-
-		if (data->eof && data_size == 0) {
-			data->eos = true;
-			break;
-		}
-
-		copied = copy_or_buffer (data, data->avbuf, data_size, buf, buf_len);
-
-		buf += copied;
-		filled += copied;
-		buf_len -= copied;
-
-		debug ("Copying %dB (%dB filled)", copied, filled);
-	} while (pkt->size > 0);
-
-	return filled;
-}
-#endif
-
-#ifdef HAVE_AVCODEC_DECODE_AUDIO4
-/* Decode samples from packet data using avcodec_decode_audio4(). */
+/* Decode samples from packet data. */
 static int decode_packet (struct ffmpeg_data *data, AVPacket *pkt,
                           char *buf, int buf_len)
 {
@@ -1161,7 +965,7 @@ static int decode_packet (struct ffmpeg_data *data, AVPacket *pkt,
 	char *packed;
 	AVFrame *frame;
 
-#ifdef HAVE_AV_FRAME_ALLOC
+#ifdef HAVE_AV_FRAME_FNS
 	frame = av_frame_alloc ();
 #else
 	frame = avcodec_alloc_frame ();
@@ -1222,23 +1026,14 @@ static int decode_packet (struct ffmpeg_data *data, AVPacket *pkt,
 			free (packed);
 	} while (pkt->size > 0);
 
-#ifdef HAVE_AV_FRAME_UNREF
-	av_frame_unref (frame);
-#else
-	avcodec_get_frame_defaults (frame);
-#endif
-
-#if defined(HAVE_AV_FRAME_FREE)
+#ifdef HAVE_AV_FRAME_FNS
 	av_frame_free (&frame);
-#elif defined(HAVE_AVCODEC_FREE_FRAME)
-	avcodec_free_frame (&frame);
 #else
-	av_freep (&frame);
+	avcodec_free_frame (&frame);
 #endif
 
 	return filled;
 }
-#endif
 
 #if SEEK_IN_DECODER
 static bool seek_in_stream (struct ffmpeg_data *data)
@@ -1277,8 +1072,11 @@ static bool seek_in_stream (struct ffmpeg_data *data, int sec)
 
 	rc = av_seek_frame (data->ic, data->stream->index, seek_ts, flags);
 	if (rc < 0) {
+		char buf[128];
+
 		ffmpeg_log_repeats (NULL);
-		logit ("Seek error %d", rc);
+		av_strerror (rc, buf, sizeof (buf));
+		logit ("Seek error: %s", buf);
 		return false;
 	}
 
@@ -1404,23 +1202,40 @@ static void ffmpeg_close (void *prv_data)
 {
 	struct ffmpeg_data *data = (struct ffmpeg_data *)prv_data;
 
+	/* We need to delve into the AVIOContext struct to free the
+	 * buffer FFmpeg leaked if avformat_open_input() failed.  Do
+	 * not be tempted to call avio_close() here; it will segfault. */
+	if (data->pb) {
+		av_freep (&data->pb->buffer);
+		av_freep (&data->pb);
+	}
+
 	if (data->okay) {
 		avcodec_close (data->enc);
-#ifdef HAVE_AVFORMAT_CLOSE_INPUT
 		avformat_close_input (&data->ic);
-#else
-		av_close_input_file (data->ic);
-#endif
 		free_remain_buf (data);
 	}
 
-#if !defined(HAVE_AVCODEC_DECODE_AUDIO4) && defined(HAVE_POSIX_MEMALIGN)
-	free (data->avbuf);
-#endif
-
 	ffmpeg_log_repeats (NULL);
+
+	if (data->iostream) {
+		io_close (data->iostream);
+		data->iostream = NULL;
+	}
+
 	decoder_error_clear (&data->error);
+	free (data->filename);
 	free (data);
+}
+
+static struct io_stream *ffmpeg_get_iostream (void *prv_data)
+{
+	struct ffmpeg_data *data;
+
+	assert (prv_data);
+
+	data = (struct ffmpeg_data *)prv_data;
+	return data->iostream;
 }
 
 static int ffmpeg_get_bitrate (void *prv_data)
@@ -1462,6 +1277,14 @@ static int ffmpeg_our_format_ext (const char *ext)
 	return (lists_strs_exists (supported_extns, ext)) ? 1 : 0;
 }
 
+static int ffmpeg_our_format_mime (const char *mime_type)
+{
+	AVOutputFormat *fmt;
+
+	fmt = av_guess_format (NULL, NULL, mime_type);
+	return fmt ? 1 : 0;
+}
+
 static void ffmpeg_get_error (void *prv_data, struct decoder_error *error)
 {
 	struct ffmpeg_data *data = (struct ffmpeg_data *)prv_data;
@@ -1474,8 +1297,8 @@ static struct decoder ffmpeg_decoder = {
 	ffmpeg_init,
 	ffmpeg_destroy,
 	ffmpeg_open,
-	NULL,
-	NULL,
+	ffmpeg_open_stream,
+	ffmpeg_can_decode,
 	ffmpeg_close,
 	ffmpeg_decode,
 	ffmpeg_seek,
@@ -1484,22 +1307,14 @@ static struct decoder ffmpeg_decoder = {
 	ffmpeg_get_duration,
 	ffmpeg_get_error,
 	ffmpeg_our_format_ext,
+	ffmpeg_our_format_mime,
 	NULL,
 	NULL,
-	NULL,
-	NULL,
+	ffmpeg_get_iostream,
 	ffmpeg_get_avg_bitrate
 };
 
 struct decoder *plugin_init ()
 {
-#if defined(HAVE_AVCODEC_DECODE_AUDIO4)
-	logit ("Using avcodec_decode_audio4()");
-#elif defined(HAVE_POSIX_MEMALIGN)
-	logit ("Using posix_memalign()");
-#else
-	logit ("Using stack-based avbuf");
-#endif
-
 	return &ffmpeg_decoder;
 }

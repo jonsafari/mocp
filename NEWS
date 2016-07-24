@@ -10,7 +10,7 @@
 	* Changed minimum support and release requirements:
 	  - POSIX.1: introduced minimum requirement of IEEE 1003.1-2001
 	  - C Compiler: introduced minimum requirement of ISO 9899:1999
-	  - FFmpeg/LibAV: raised minimum requirement to release 0.7
+	  - FFmpeg/LibAV: raised minimum requirement to release 1.0/10.0
 	  - FLAC: raised minimum requirement to release 1.1.3
 	  - Berkeley DB: raised minimum requirement to release 4.1
 	  - libcurl: raised minimum requirement to version 7.15.1
@@ -35,8 +35,11 @@
 	  - Introduced MOCP_OPTS environment variable
 	* New and changed command line options:
 	  - echo-args: Show POPT-interpreted command line arguments
+	* New and changed audio decoders:
+	  - Added reading from Internet streams to FFmpeg decoder
 	* Changes to supported formats and codecs:
 	  - All formats provided by Sndfile are now supported
+	  - DSD: now supported via FFmpeg/LibAV (.dff and .dsf files)
 	  - TTA: now supported via FFmpeg/LibAV
 	  - VQF: now supported via FFmpeg/LibAV
 	* Miscellaneous

@@ -226,6 +226,7 @@ Zhiming Wang:
 
 Jenny Wong:
 	* Provided minor memory corruption patch.
+	* Introduced FFmpeg to Internet streams.
 
 Marien Zwart:
 	* Assisted with testing.

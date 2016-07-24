@@ -221,20 +221,19 @@ off_t io_seek (struct io_stream *s, off_t offset, int whence)
 	LOCK (s->io_mtx);
 	switch (whence) {
 		case SEEK_SET:
-			if (LIMIT(offset, s->size))
-				new_pos = offset;
+			new_pos = offset;
 			break;
 		case SEEK_CUR:
-			if (LIMIT(s->pos + offset, s->size))
-				new_pos = s->pos + offset;
+			new_pos = s->pos + offset;
 			break;
 		case SEEK_END:
-			if (offset == 0 || LIMIT(s->size + offset, s->size))
-				new_pos = s->size + offset;
+			new_pos = s->size + offset;
 			break;
 		default:
 			fatal ("Bad whence value: %d", whence);
 	}
+
+	new_pos = CLAMP(0, new_pos, s->size);
 
 	if (s->buffered)
 		res = io_seek_buffered (s, new_pos);

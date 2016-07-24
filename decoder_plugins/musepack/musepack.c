@@ -373,17 +373,23 @@ static int musepack_decode (void *prv_data, char *buf, int buf_len,
 	do {
 		frame.buffer = decode_buf;
 		err = mpc_demux_decode (data->demux, &frame);
-		if (err != MPC_STATUS_OK) {
-			if (frame.bits == -1) {
-				decoder_error (&data->error, ERROR_FATAL, 0,
-						"Error in the stream!");
-				return 0;
-			}
 
-			decoder_error (&data->error, ERROR_STREAM, 0, "Broken frame.");
+		if (err == MPC_STATUS_OK && frame.bits == -1) {
+			debug ("EOF");
+			return 0;
 		}
 
-	} while (err != MPC_STATUS_OK);
+		if (err == MPC_STATUS_OK)
+			continue;
+
+		if (frame.bits == -1) {
+			decoder_error (&data->error, ERROR_FATAL, 0,
+			               "Error in the stream!");
+			return 0;
+		}
+
+		decoder_error (&data->error, ERROR_STREAM, 0, "Broken frame.");
+	} while (err != MPC_STATUS_OK || frame.samples == 0);
 
 	mpc_demux_get_info (data->demux, &data->info);
 	bytes_from_decoder = frame.samples * sizeof(MPC_SAMPLE_FORMAT) * data->info.channels;
