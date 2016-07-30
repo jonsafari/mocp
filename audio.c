@@ -578,8 +578,7 @@ void audio_play (const char *fname)
 			curr_playing = -1;
 	}
 
-	rc = pthread_create (&playing_thread, NULL, play_thread,
-	                     curr_playing != -1 ? NULL : (void *)fname);
+	rc = pthread_create (&playing_thread, NULL, play_thread, NULL);
 	if (rc != 0)
 		error_errno ("Can't create thread", rc);
 	play_thread_running = 1;
