@@ -28,8 +28,9 @@ extern "C" {
 
 #ifdef __cplusplus
 
-// debug is used by this library too...
+// debug and error are used by this library too...
 #undef debug
+#undef error
 
 #include <sidplay/sidplay2.h>
 #include <sidplay/SidTune.h>

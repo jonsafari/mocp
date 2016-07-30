@@ -93,10 +93,14 @@
 #endif
 
 #ifdef NDEBUG
+#define error(...) \
+	internal_error (NULL, 0, NULL, ## __VA_ARGS__)
 #define fatal(...) \
 	internal_fatal (NULL, 0, NULL, ## __VA_ARGS__)
 #define ASSERT_ONLY ATTR_UNUSED
 #else
+#define error(...) \
+	internal_error (__FILE__, __LINE__, __func__, ## __VA_ARGS__)
 #define fatal(...) \
 	internal_fatal (__FILE__, __LINE__, __func__, ## __VA_ARGS__)
 #define ASSERT_ONLY
@@ -124,9 +128,10 @@ char *xstrdup (const char *s);
 void xsleep (size_t ticks, size_t ticks_per_sec);
 char *xstrerror (int errnum);
 
+void internal_error (const char *file, int line, const char *function,
+                     const char *format, ...) ATTR_PRINTF(4, 5);
 void internal_fatal (const char *file, int line, const char *function,
                      const char *format, ...) ATTR_NORETURN ATTR_PRINTF(4, 5);
-void error (const char *format, ...) ATTR_PRINTF(1, 2);
 void set_me_server ();
 char *str_repl (char *target, const char *oldstr, const char *newstr);
 char *trim (const char *src, size_t len);

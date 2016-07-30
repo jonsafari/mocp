@@ -812,9 +812,10 @@ static int req_jump_to (struct client *cli)
 }
 
 /* Report an error logging it and sending a message to the client. */
-void server_error (const char *msg)
+void server_error (const char *file, int line, const char *function,
+                   const char *msg)
 {
-	logit ("ERROR: %s", msg);
+	internal_logit (file, line, function, "ERROR: %s", msg);
 	add_event_all (EV_SRV_ERROR, msg);
 }
 
