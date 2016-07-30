@@ -75,7 +75,7 @@ static ssize_t io_read_mmap (struct io_stream *s, const int dont_move,
 		s->size = file_stat.st_size;
 		s->mem = NULL;
 
-		if (!RANGE(1, s->size, (off_t)SIZE_MAX)) {
+		if (s->size < 1 || (uint64_t)s->size > SIZE_MAX) {
 			logit ("File size unsuitable for mmap()");
 			return -1;
 		}
@@ -157,8 +157,6 @@ static ssize_t io_internal_read (struct io_stream *s, const int dont_move,
 #ifdef HAVE_MMAP
 static off_t io_seek_mmap (struct io_stream *s, const off_t where)
 {
-	assert (LIMIT(where, s->size));
-
 	return (s->mem_pos = where);
 }
 #endif
@@ -459,7 +457,8 @@ static void io_open_file (struct io_stream *s, const char *file)
 		s->size = file_stat.st_size;
 
 #ifdef HAVE_MMAP
-		if (options_get_bool ("UseMMap") && RANGE(1, s->size, (off_t)SIZE_MAX)) {
+		if (options_get_bool ("UseMMap") &&
+		    s->size > 0 && (uint64_t)s->size <= SIZE_MAX) {
 			s->mem = mmap (0, (size_t)s->size, PROT_READ, MAP_SHARED, s->fd, 0);
 			if (s->mem == MAP_FAILED) {
 				s->mem = NULL;
