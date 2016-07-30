@@ -147,23 +147,25 @@ static ssize_t io_internal_read (struct io_stream *s, const int dont_move,
 	assert (s != NULL);
 	assert (buf != NULL);
 
+	switch (s->source) {
+	case IO_SOURCE_FD:
+		res = io_read_fd (s, dont_move, buf, count);
+		break;
 #ifdef HAVE_MMAP
-	if (s->source == IO_SOURCE_MMAP)
+	case IO_SOURCE_MMAP:
 		res = io_read_mmap (s, dont_move, buf, count);
-	else
+		break;
 #endif
 #ifdef HAVE_CURL
-	if (s->source == IO_SOURCE_CURL) {
+	case IO_SOURCE_CURL:
 		if (dont_move)
 			fatal ("You can't peek data directly from CURL!");
 		res = io_curl_read (s, buf, count);
-	}
-	else
+		break;
 #endif
-	if (s->source == IO_SOURCE_FD)
-		res = io_read_fd (s, dont_move, buf, count);
-	else
+	default:
 		fatal ("Unknown io_stream->source: %d", s->source);
+	}
 
 	return res;
 }
@@ -184,17 +186,22 @@ static off_t io_seek_buffered (struct io_stream *s, const off_t where)
 {
 	off_t res = -1;
 
+	assert (s->source != IO_SOURCE_CURL);
+
 	logit ("Seeking...");
 
-#ifdef HAVE_MMAP
-	if (s->source == IO_SOURCE_MMAP)
-		res = io_seek_mmap (s, where);
-	else
-#endif
-	if (s->source == IO_SOURCE_FD)
+	switch (s->source) {
+	case IO_SOURCE_FD:
 		res = io_seek_fd (s, where);
-	else
+		break;
+#ifdef HAVE_MMAP
+	case IO_SOURCE_MMAP:
+		res = io_seek_mmap (s, where);
+		break;
+#endif
+	default:
 		fatal ("Unknown io_stream->source: %d", s->source);
+	}
 
 	LOCK (s->buf_mtx);
 	fifo_buf_clear (s->buf);
@@ -210,12 +217,20 @@ static off_t io_seek_unbuffered (struct io_stream *s, const off_t where)
 {
 	off_t res = -1;
 
+	assert (s->source != IO_SOURCE_CURL);
+
+	switch (s->source) {
 #ifdef HAVE_MMAP
-	if (s->source == IO_SOURCE_MMAP)
+	case IO_SOURCE_MMAP:
 		res = io_seek_mmap (s, where);
+		break;
 #endif
-	if (s->source == IO_SOURCE_FD)
+	case IO_SOURCE_FD:
 		res = io_seek_fd (s, where);
+		break;
+	default:
+		fatal ("Unknown io_stream->source: %d", s->source);
+	}
 
 	return res;
 }
@@ -309,21 +324,25 @@ void io_close (struct io_stream *s)
 			logit ("IO read thread exited");
 		}
 
+		switch (s->source) {
+		case IO_SOURCE_FD:
+			close (s->fd);
+			break;
 #ifdef HAVE_MMAP
-		if (s->source == IO_SOURCE_MMAP) {
+		case IO_SOURCE_MMAP:
 			if (s->mem && munmap (s->mem, (size_t)s->size))
 				log_errno ("munmap() failed", errno);
 			close (s->fd);
-		}
+			break;
 #endif
-
 #ifdef HAVE_CURL
-		if (s->source == IO_SOURCE_CURL)
+		case IO_SOURCE_CURL:
 			io_curl_close (s);
+			break;
 #endif
-
-		if (s->source == IO_SOURCE_FD)
-			close (s->fd);
+		default:
+			fatal ("Unknown io_stream->source: %d", s->source);
+		}
 
 		s->opened = 0;
 
