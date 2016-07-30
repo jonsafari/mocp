@@ -51,6 +51,33 @@
 #endif
 
 #ifdef HAVE_MMAP
+static void *io_mmap_file (const struct io_stream *s)
+{
+	void *result = NULL;
+
+	do {
+		if (s->size < 1 || (uint64_t)s->size > SIZE_MAX) {
+			logit ("File size unsuitable for mmap()");
+			break;
+		}
+
+		const size_t sz = (size_t)s->size;
+
+		result = mmap (0, sz, PROT_READ, MAP_SHARED, s->fd, 0);
+		if (result == MAP_FAILED) {
+			log_errno ("mmap() failed", errno);
+			result = NULL;
+			break;
+		}
+
+		logit ("mmap()ed %zu bytes", sz);
+	} while (0);
+
+	return result;
+}
+#endif
+
+#ifdef HAVE_MMAP
 static ssize_t io_read_mmap (struct io_stream *s, const int dont_move,
 		void *buf, size_t count)
 {
@@ -73,25 +100,12 @@ static ssize_t io_read_mmap (struct io_stream *s, const int dont_move,
 		}
 
 		s->size = file_stat.st_size;
-		s->mem = NULL;
-
-		if (s->size < 1 || (uint64_t)s->size > SIZE_MAX) {
-			logit ("File size unsuitable for mmap()");
+		s->mem = io_mmap_file (s);
+		if (!s->mem)
 			return -1;
-		}
 
-		s->mem = mmap (0, (size_t)s->size, PROT_READ, MAP_SHARED, s->fd, 0);
-		if (s->mem == MAP_FAILED) {
-			s->mem = NULL;
-			log_errno ("mmap() failed", errno);
-			return -1;
-		}
-
-		logit ("mmap()ed %"PRId64" bytes", s->size);
-		if (s->mem_pos > s->size) {
+		if (s->mem_pos > s->size)
 			logit ("File shrunk");
-			return 0;
-		}
 	}
 
 	if (s->mem_pos >= s->size)
@@ -446,37 +460,37 @@ static void io_open_file (struct io_stream *s, const char *file)
 
 	s->source = IO_SOURCE_FD;
 
-	if ((s->fd = open(file, O_RDONLY)) == -1)
-		s->errno_val = errno;
-	else if (fstat(s->fd, &file_stat) == -1) {
-		s->errno_val = errno;
-		close(s->fd);
-	}
-	else {
+	do {
+		s->fd = open (file, O_RDONLY);
+		if (s->fd == -1) {
+			s->errno_val = errno;
+			break;
+		}
+
+		if (fstat (s->fd, &file_stat) == -1) {
+			s->errno_val = errno;
+			close (s->fd);
+			break;
+		}
 
 		s->size = file_stat.st_size;
+		s->opened = 1;
 
 #ifdef HAVE_MMAP
-		if (options_get_bool ("UseMMap") &&
-		    s->size > 0 && (uint64_t)s->size <= SIZE_MAX) {
-			s->mem = mmap (0, (size_t)s->size, PROT_READ, MAP_SHARED, s->fd, 0);
-			if (s->mem == MAP_FAILED) {
-				s->mem = NULL;
-				log_errno ("mmap() failed", errno);
-			}
-			else {
-				logit ("mmap()ed %"PRId64" bytes", s->size);
-				s->source = IO_SOURCE_MMAP;
-				s->mem_pos = 0;
-			}
-		}
-		else {
+		if (!options_get_bool ("UseMMap")) {
 			logit ("Not using mmap()");
+			s->mem = NULL;
+			break;
 		}
-#endif
 
-		s->opened = 1;
-	}
+		s->mem = io_mmap_file (s);
+		if (!s->mem)
+			break;
+
+		s->source = IO_SOURCE_MMAP;
+		s->mem_pos = 0;
+#endif
+	} while (0);
 }
 
 /* Open the file. */
