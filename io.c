@@ -399,7 +399,8 @@ static void *io_read_thread (void *data)
 
 		read_buf_fill = io_internal_read (s, 0, read_buf, sizeof(read_buf));
 		UNLOCK (s->io_mtx);
-		debug ("Read %d bytes", read_buf_fill);
+		if (read_buf_fill > 0)
+			debug ("Read %d bytes", read_buf_fill);
 
 		LOCK (s->buf_mtx);
 
