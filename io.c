@@ -86,7 +86,7 @@ static ssize_t io_read_mmap (struct io_stream *s, const int dont_move,
 
 	assert (s->mem != NULL);
 
-	if (fstat(s->fd, &file_stat) == -1) {
+	if (fstat (s->fd, &file_stat) == -1) {
 		log_errno ("fstat() failed", errno);
 		return -1;
 	}
@@ -247,17 +247,17 @@ off_t io_seek (struct io_stream *s, off_t offset, int whence)
 
 	LOCK (s->io_mtx);
 	switch (whence) {
-		case SEEK_SET:
-			new_pos = offset;
-			break;
-		case SEEK_CUR:
-			new_pos = s->pos + offset;
-			break;
-		case SEEK_END:
-			new_pos = s->size + offset;
-			break;
-		default:
-			fatal ("Bad whence value: %d", whence);
+	case SEEK_SET:
+		new_pos = offset;
+		break;
+	case SEEK_CUR:
+		new_pos = s->pos + offset;
+		break;
+	case SEEK_END:
+		new_pos = s->size + offset;
+		break;
+	default:
+		fatal ("Bad whence value: %d", whence);
 	}
 
 	new_pos = CLAMP(0, new_pos, s->size);
@@ -315,7 +315,6 @@ void io_close (struct io_stream *s)
 	logit ("Closing stream...");
 
 	if (s->opened) {
-
 		if (s->buffered) {
 			io_abort (s);
 
@@ -454,12 +453,12 @@ static void *io_read_thread (void *data)
 				}
 				pthread_cond_broadcast (&s->buf_fill_cond);
 				read_buf_pos += put;
+				continue;
 			}
-			else {
-				debug ("The buffer is full, waiting.");
-				pthread_cond_wait (&s->buf_free_cond, &s->buf_mtx);
-				debug ("Some space in the buffer was freed");
-			}
+
+			debug ("The buffer is full, waiting.");
+			pthread_cond_wait (&s->buf_free_cond, &s->buf_mtx);
+			debug ("Some space in the buffer was freed");
 		}
 
 		UNLOCK (s->buf_mtx);
@@ -641,11 +640,11 @@ static ssize_t io_read_buffered (struct io_stream *s, void *buf, size_t count)
 					count - received);
 			debug ("Read %zd bytes so far", received);
 			pthread_cond_signal (&s->buf_free_cond);
+			continue;
 		}
-		else {
-			debug ("Buffer empty, waiting...");
-			pthread_cond_wait (&s->buf_fill_cond, &s->buf_mtx);
-		}
+
+		debug ("Buffer empty, waiting...");
+		pthread_cond_wait (&s->buf_fill_cond, &s->buf_mtx);
 	}
 
 	debug ("done");
