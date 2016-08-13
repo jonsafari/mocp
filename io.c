@@ -51,6 +51,33 @@
 #endif
 
 #ifdef HAVE_MMAP
+static void *io_mmap_file (const struct io_stream *s)
+{
+	void *result = NULL;
+
+	do {
+		if (s->size < 1 || (uint64_t)s->size > SIZE_MAX) {
+			logit ("File size unsuitable for mmap()");
+			break;
+		}
+
+		const size_t sz = (size_t)s->size;
+
+		result = mmap (0, sz, PROT_READ, MAP_SHARED, s->fd, 0);
+		if (result == MAP_FAILED) {
+			log_errno ("mmap() failed", errno);
+			result = NULL;
+			break;
+		}
+
+		logit ("mmap()ed %zu bytes", sz);
+	} while (0);
+
+	return result;
+}
+#endif
+
+#ifdef HAVE_MMAP
 static ssize_t io_read_mmap (struct io_stream *s, const int dont_move,
 		void *buf, size_t count)
 {
@@ -59,7 +86,7 @@ static ssize_t io_read_mmap (struct io_stream *s, const int dont_move,
 
 	assert (s->mem != NULL);
 
-	if (fstat(s->fd, &file_stat) == -1) {
+	if (fstat (s->fd, &file_stat) == -1) {
 		log_errno ("fstat() failed", errno);
 		return -1;
 	}
@@ -73,25 +100,12 @@ static ssize_t io_read_mmap (struct io_stream *s, const int dont_move,
 		}
 
 		s->size = file_stat.st_size;
-		s->mem = NULL;
-
-		if (!RANGE(1, s->size, (off_t)SIZE_MAX)) {
-			logit ("File size unsuitable for mmap()");
+		s->mem = io_mmap_file (s);
+		if (!s->mem)
 			return -1;
-		}
 
-		s->mem = mmap (0, (size_t)s->size, PROT_READ, MAP_SHARED, s->fd, 0);
-		if (s->mem == MAP_FAILED) {
-			s->mem = NULL;
-			log_errno ("mmap() failed", errno);
-			return -1;
-		}
-
-		logit ("mmap()ed %"PRId64" bytes", s->size);
-		if (s->mem_pos > s->size) {
+		if (s->mem_pos > s->size)
 			logit ("File shrunk");
-			return 0;
-		}
 	}
 
 	if (s->mem_pos >= s->size)
@@ -133,23 +147,25 @@ static ssize_t io_internal_read (struct io_stream *s, const int dont_move,
 	assert (s != NULL);
 	assert (buf != NULL);
 
+	switch (s->source) {
+	case IO_SOURCE_FD:
+		res = io_read_fd (s, dont_move, buf, count);
+		break;
 #ifdef HAVE_MMAP
-	if (s->source == IO_SOURCE_MMAP)
+	case IO_SOURCE_MMAP:
 		res = io_read_mmap (s, dont_move, buf, count);
-	else
+		break;
 #endif
 #ifdef HAVE_CURL
-	if (s->source == IO_SOURCE_CURL) {
+	case IO_SOURCE_CURL:
 		if (dont_move)
 			fatal ("You can't peek data directly from CURL!");
 		res = io_curl_read (s, buf, count);
-	}
-	else
+		break;
 #endif
-	if (s->source == IO_SOURCE_FD)
-		res = io_read_fd (s, dont_move, buf, count);
-	else
+	default:
 		fatal ("Unknown io_stream->source: %d", s->source);
+	}
 
 	return res;
 }
@@ -157,8 +173,6 @@ static ssize_t io_internal_read (struct io_stream *s, const int dont_move,
 #ifdef HAVE_MMAP
 static off_t io_seek_mmap (struct io_stream *s, const off_t where)
 {
-	assert (LIMIT(where, s->size));
-
 	return (s->mem_pos = where);
 }
 #endif
@@ -172,17 +186,22 @@ static off_t io_seek_buffered (struct io_stream *s, const off_t where)
 {
 	off_t res = -1;
 
+	assert (s->source != IO_SOURCE_CURL);
+
 	logit ("Seeking...");
 
-#ifdef HAVE_MMAP
-	if (s->source == IO_SOURCE_MMAP)
-		res = io_seek_mmap (s, where);
-	else
-#endif
-	if (s->source == IO_SOURCE_FD)
+	switch (s->source) {
+	case IO_SOURCE_FD:
 		res = io_seek_fd (s, where);
-	else
+		break;
+#ifdef HAVE_MMAP
+	case IO_SOURCE_MMAP:
+		res = io_seek_mmap (s, where);
+		break;
+#endif
+	default:
 		fatal ("Unknown io_stream->source: %d", s->source);
+	}
 
 	LOCK (s->buf_mtx);
 	fifo_buf_clear (s->buf);
@@ -198,12 +217,20 @@ static off_t io_seek_unbuffered (struct io_stream *s, const off_t where)
 {
 	off_t res = -1;
 
+	assert (s->source != IO_SOURCE_CURL);
+
+	switch (s->source) {
 #ifdef HAVE_MMAP
-	if (s->source == IO_SOURCE_MMAP)
+	case IO_SOURCE_MMAP:
 		res = io_seek_mmap (s, where);
+		break;
 #endif
-	if (s->source == IO_SOURCE_FD)
+	case IO_SOURCE_FD:
 		res = io_seek_fd (s, where);
+		break;
+	default:
+		fatal ("Unknown io_stream->source: %d", s->source);
+	}
 
 	return res;
 }
@@ -220,17 +247,17 @@ off_t io_seek (struct io_stream *s, off_t offset, int whence)
 
 	LOCK (s->io_mtx);
 	switch (whence) {
-		case SEEK_SET:
-			new_pos = offset;
-			break;
-		case SEEK_CUR:
-			new_pos = s->pos + offset;
-			break;
-		case SEEK_END:
-			new_pos = s->size + offset;
-			break;
-		default:
-			fatal ("Bad whence value: %d", whence);
+	case SEEK_SET:
+		new_pos = offset;
+		break;
+	case SEEK_CUR:
+		new_pos = s->pos + offset;
+		break;
+	case SEEK_END:
+		new_pos = s->size + offset;
+		break;
+	default:
+		fatal ("Bad whence value: %d", whence);
 	}
 
 	new_pos = CLAMP(0, new_pos, s->size);
@@ -288,7 +315,6 @@ void io_close (struct io_stream *s)
 	logit ("Closing stream...");
 
 	if (s->opened) {
-
 		if (s->buffered) {
 			io_abort (s);
 
@@ -297,21 +323,25 @@ void io_close (struct io_stream *s)
 			logit ("IO read thread exited");
 		}
 
+		switch (s->source) {
+		case IO_SOURCE_FD:
+			close (s->fd);
+			break;
 #ifdef HAVE_MMAP
-		if (s->source == IO_SOURCE_MMAP) {
+		case IO_SOURCE_MMAP:
 			if (s->mem && munmap (s->mem, (size_t)s->size))
 				log_errno ("munmap() failed", errno);
 			close (s->fd);
-		}
+			break;
 #endif
-
 #ifdef HAVE_CURL
-		if (s->source == IO_SOURCE_CURL)
+		case IO_SOURCE_CURL:
 			io_curl_close (s);
+			break;
 #endif
-
-		if (s->source == IO_SOURCE_FD)
-			close (s->fd);
+		default:
+			fatal ("Unknown io_stream->source: %d", s->source);
+		}
 
 		s->opened = 0;
 
@@ -369,7 +399,8 @@ static void *io_read_thread (void *data)
 
 		read_buf_fill = io_internal_read (s, 0, read_buf, sizeof(read_buf));
 		UNLOCK (s->io_mtx);
-		debug ("Read %d bytes", read_buf_fill);
+		if (read_buf_fill > 0)
+			debug ("Read %d bytes", read_buf_fill);
 
 		LOCK (s->buf_mtx);
 
@@ -423,12 +454,12 @@ static void *io_read_thread (void *data)
 				}
 				pthread_cond_broadcast (&s->buf_fill_cond);
 				read_buf_pos += put;
+				continue;
 			}
-			else {
-				debug ("The buffer is full, waiting.");
-				pthread_cond_wait (&s->buf_free_cond, &s->buf_mtx);
-				debug ("Some space in the buffer was freed");
-			}
+
+			debug ("The buffer is full, waiting.");
+			pthread_cond_wait (&s->buf_free_cond, &s->buf_mtx);
+			debug ("Some space in the buffer was freed");
 		}
 
 		UNLOCK (s->buf_mtx);
@@ -448,36 +479,37 @@ static void io_open_file (struct io_stream *s, const char *file)
 
 	s->source = IO_SOURCE_FD;
 
-	if ((s->fd = open(file, O_RDONLY)) == -1)
-		s->errno_val = errno;
-	else if (fstat(s->fd, &file_stat) == -1) {
-		s->errno_val = errno;
-		close(s->fd);
-	}
-	else {
+	do {
+		s->fd = open (file, O_RDONLY);
+		if (s->fd == -1) {
+			s->errno_val = errno;
+			break;
+		}
+
+		if (fstat (s->fd, &file_stat) == -1) {
+			s->errno_val = errno;
+			close (s->fd);
+			break;
+		}
 
 		s->size = file_stat.st_size;
+		s->opened = 1;
 
 #ifdef HAVE_MMAP
-		if (options_get_bool ("UseMMap") && RANGE(1, s->size, (off_t)SIZE_MAX)) {
-			s->mem = mmap (0, (size_t)s->size, PROT_READ, MAP_SHARED, s->fd, 0);
-			if (s->mem == MAP_FAILED) {
-				s->mem = NULL;
-				log_errno ("mmap() failed", errno);
-			}
-			else {
-				logit ("mmap()ed %"PRId64" bytes", s->size);
-				s->source = IO_SOURCE_MMAP;
-				s->mem_pos = 0;
-			}
-		}
-		else {
+		if (!options_get_bool ("UseMMap")) {
 			logit ("Not using mmap()");
+			s->mem = NULL;
+			break;
 		}
-#endif
 
-		s->opened = 1;
-	}
+		s->mem = io_mmap_file (s);
+		if (!s->mem)
+			break;
+
+		s->source = IO_SOURCE_MMAP;
+		s->mem_pos = 0;
+#endif
+	} while (0);
 }
 
 /* Open the file. */
@@ -609,11 +641,11 @@ static ssize_t io_read_buffered (struct io_stream *s, void *buf, size_t count)
 					count - received);
 			debug ("Read %zd bytes so far", received);
 			pthread_cond_signal (&s->buf_free_cond);
+			continue;
 		}
-		else {
-			debug ("Buffer empty, waiting...");
-			pthread_cond_wait (&s->buf_fill_cond, &s->buf_mtx);
-		}
+
+		debug ("Buffer empty, waiting...");
+		pthread_cond_wait (&s->buf_fill_cond, &s->buf_mtx);
 	}
 
 	debug ("done");

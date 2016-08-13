@@ -41,7 +41,8 @@
 
 static int im_server = 0; /* Am I the server? */
 
-void error (const char *format, ...)
+void internal_error (const char *file, int line, const char *function,
+                     const char *format, ...)
 {
 	va_list va;
 	char *msg;
@@ -51,7 +52,7 @@ void error (const char *format, ...)
 	va_end (va);
 
 	if (im_server)
-		server_error (msg);
+		server_error (file, line, function, msg);
 	else
 		interface_error (msg);
 
