@@ -337,16 +337,29 @@ AC_SEARCH_LIBS([poptGetContext], [popt], ,
                AC_MSG_ERROR([POPT (libpopt) not found.]))
 
 dnl ncurses
+dnl This 'unset' circumvents a notified bug in AX_WITH_CURSES when
+dnl _PKG_CONFIG succeeds but a stale 'pkg_failed' value is checked.
+dnl It can be removed once an updated 'ax_with_curses.m4' is committed.
+unset pkg_failed
 AX_WITH_CURSES
-if test "x$ax_cv_curses" = "xyes"
+if test "x$ax_cv_curses" != "xyes"
 then
-	CURSES_LIB_NO_L=`echo $CURSES_LIB | $AWK '{print substr($0, 3, 99)}'`
-	AC_CHECK_LIB([$CURSES_LIB_NO_L], [set_escdelay],
-		AC_DEFINE([HAVE_SET_ESCDELAY], 1, [Define if you have set_escdelay.]))
-	EXTRA_LIBS="$EXTRA_LIBS $CURSES_LIB"
-else
 	AC_MSG_ERROR([You need curses/ncurses library and header files.])
 fi
+EXTRA_LIBS="$EXTRA_LIBS $CURSES_LIBS"
+dnl Remove -D_GNU_SOURCE as it causes problems when defined mid-configure.
+for flag in $CURSES_CFLAGS
+do
+	if test "x$flag" != "x-D_GNU_SOURCE"
+	then
+		CPPFLAGS="$CPPFLAGS $flag"
+	fi
+done
+AC_RUN_LOG([: The test below is actually for set_escdelay in curses library.])
+AC_RUN_LOG([: Using 'm' avoids unpacking CURSES_LIBS.])
+AC_CHECK_LIB([m], [set_escdelay],
+	AC_DEFINE([HAVE_SET_ESCDELAY], 1, [Define if you have set_escdelay.]),
+	[], [$CURSES_LIBS])
 
 dnl samplerate
 AC_ARG_WITH(samplerate, AS_HELP_STRING([--without-samplerate],
