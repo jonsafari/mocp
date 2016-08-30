@@ -477,7 +477,7 @@ static void update_mixer_value ()
 	int val;
 
 	val = get_mixer_value ();
-	iface_set_mixer_value MAX(val, 0);
+	iface_set_mixer_value (MAX(val, 0));
 }
 
 static void update_mixer_name ()
