@@ -3521,13 +3521,13 @@ void init_interface (const int sock, const int logging, lists_t_strs *args)
 	get_server_options ();
 	update_mixer_name ();
 
-	signal (SIGQUIT, sig_quit);
-	signal (SIGTERM, sig_quit);
-	signal (SIGHUP, sig_quit);
-	signal (SIGINT, sig_interrupt);
+	xsignal (SIGQUIT, sig_quit);
+	xsignal (SIGTERM, sig_quit);
+	xsignal (SIGHUP, sig_quit);
+	xsignal (SIGINT, sig_interrupt);
 
 #ifdef SIGWINCH
-	signal (SIGWINCH, sig_winch);
+	xsignal (SIGWINCH, sig_winch);
 #endif
 
 	if (!lists_strs_empty (args)) {

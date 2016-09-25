@@ -219,7 +219,7 @@ static void start_moc (const struct parameters *params, lists_t_strs *args)
 	if (params->only_server)
 		send_int (server_sock, CMD_DISCONNECT);
 	else {
-		signal (SIGPIPE, SIG_IGN);
+		xsignal (SIGPIPE, SIG_IGN);
 		if (!ping_server (server_sock))
 			fatal ("Can't connect to the server!");
 
@@ -239,7 +239,7 @@ static void server_command (struct parameters *params, lists_t_strs *args)
 	if ((sock = server_connect()) == -1)
 		fatal ("The server is not running!");
 
-	signal (SIGPIPE, SIG_IGN);
+	xsignal (SIGPIPE, SIG_IGN);
 	if (!ping_server (sock))
 		fatal ("Can't connect to the server!");
 

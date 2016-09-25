@@ -27,6 +27,7 @@
 #include <sys/types.h>
 #include <pwd.h>
 #include <pthread.h>
+#include <signal.h>
 #include <errno.h>
 #ifdef HAVE_SYSLOG
 #include <syslog.h>
@@ -207,6 +208,19 @@ char *xstrerror (int errnum)
 	return xstrdup (err_str);
 }
 #endif
+
+/* A signal(2) which is both thread safe and POSIXly well defined. */
+void xsignal (int signum, void (*func)(int))
+{
+	struct sigaction act;
+
+	act.sa_handler = func;
+	act.sa_flags = 0;
+	sigemptyset (&act.sa_mask);
+
+	if (sigaction(signum, &act, 0) == -1)
+		fatal ("sigaction() failed: %s", xstrerror (errno));
+}
 
 void set_me_server ()
 {

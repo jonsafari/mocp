@@ -276,19 +276,6 @@ static void wake_up_server ()
 		log_errno ("Can't wake up the server: (write() failed)", errno);
 }
 
-/* Thread-safe signal() version */
-static void thread_signal (const int signum, void (*func)(int))
-{
-	struct sigaction act;
-
-	act.sa_handler = func;
-	act.sa_flags = 0;
-	sigemptyset (&act.sa_mask);
-
-	if (sigaction(signum, &act, 0) == -1)
-		fatal ("sigaction() failed: %s", xstrerror (errno));
-}
-
 static void redirect_output (FILE *stream)
 {
 	FILE *rc;
@@ -398,12 +385,12 @@ void server_init (int debugging, int foreground)
 	tags_cache_load (tags_cache, create_file_name("cache"));
 
 	server_tid = pthread_self ();
-	thread_signal (SIGTERM, sig_exit);
-	thread_signal (SIGINT, foreground ? sig_exit : SIG_IGN);
-	thread_signal (SIGHUP, SIG_IGN);
-	thread_signal (SIGQUIT, sig_exit);
-	thread_signal (SIGPIPE, SIG_IGN);
-	thread_signal (SIGCHLD, sig_chld);
+	xsignal (SIGTERM, sig_exit);
+	xsignal (SIGINT, foreground ? sig_exit : SIG_IGN);
+	xsignal (SIGHUP, SIG_IGN);
+	xsignal (SIGQUIT, sig_exit);
+	xsignal (SIGPIPE, SIG_IGN);
+	xsignal (SIGCHLD, sig_chld);
 
 	write_pid_file ();
 

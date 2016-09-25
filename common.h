@@ -127,6 +127,7 @@ void *xrealloc (void *ptr, const size_t size);
 char *xstrdup (const char *s);
 void xsleep (size_t ticks, size_t ticks_per_sec);
 char *xstrerror (int errnum);
+void xsignal (int signum, void (*func)(int));
 
 void internal_error (const char *file, int line, const char *function,
                      const char *format, ...) ATTR_PRINTF(4, 5);
