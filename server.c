@@ -14,6 +14,8 @@
 #endif
 
 #include <stdio.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 #include <sys/socket.h>
 #include <sys/select.h>
 #ifdef HAVE_GETRLIMIT
@@ -120,6 +122,20 @@ static pid_t check_pid_file ()
 	fclose (file);
 
 	return pid;
+}
+
+static void sig_chld (int sig LOGIT_ONLY)
+{
+	int saved_errno;
+	pid_t rc;
+
+	log_signal (sig);
+
+	saved_errno = errno;
+	do {
+		rc = waitpid (-1, NULL, WNOHANG);
+	} while (rc > 0);
+	errno = saved_errno;
 }
 
 static void sig_exit (int sig)
@@ -387,6 +403,7 @@ void server_init (int debugging, int foreground)
 	thread_signal (SIGHUP, SIG_IGN);
 	thread_signal (SIGQUIT, sig_exit);
 	thread_signal (SIGPIPE, SIG_IGN);
+	thread_signal (SIGCHLD, sig_chld);
 
 	write_pid_file ();
 
