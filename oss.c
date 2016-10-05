@@ -105,6 +105,13 @@ static int set_capabilities (struct output_driver_caps *caps)
 	if (format_mask & AFMT_S16_BE)
 		caps->formats |= SFMT_S16 | SFMT_BE;
 
+#if defined(AFMT_S32_LE) && defined(AFMT_S32_BE)
+	if (format_mask & AFMT_S32_LE)
+		caps->formats |= SFMT_S32 | SFMT_LE;
+	if (format_mask & AFMT_S32_BE)
+		caps->formats |= SFMT_S32 | SFMT_BE;
+#endif
+
 	if (!caps->formats) {
 		/* Workaround for vmix that lies that it doesn't support any
 		 * format. */
@@ -273,6 +280,14 @@ static int oss_set_params ()
 			else
 				req_format = AFMT_S16_BE;
 			break;
+#if defined(AFMT_S32_LE) && defined(AFMT_S32_BE)
+		case SFMT_S32:
+			if (params.fmt & SFMT_LE)
+				req_format = AFMT_S32_LE;
+			else
+				req_format = AFMT_S32_BE;
+			break;
+#endif
 		default:
 			error ("Format %s is not supported by the device",
 			        sfmt_str (params.fmt, fmt_name, sizeof (fmt_name)));

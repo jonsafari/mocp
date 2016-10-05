@@ -20,7 +20,6 @@
 #include <ctype.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/wait.h>
 #include <sys/time.h>
 #include <sys/socket.h>
 #include <sys/un.h>
@@ -157,20 +156,6 @@ static void check_moc_dir ()
 	}
 }
 
-static void sig_chld (int sig LOGIT_ONLY)
-{
-	int saved_errno;
-	pid_t rc;
-
-	log_signal (sig);
-
-	saved_errno = errno;
-	do {
-		rc = waitpid (-1, NULL, WNOHANG);
-	} while (rc > 0);
-	errno = saved_errno;
-}
-
 /* Run client and the server if needed. */
 static void start_moc (const struct parameters *params, lists_t_strs *args)
 {
@@ -208,7 +193,6 @@ static void start_moc (const struct parameters *params, lists_t_strs *args)
 				fatal ("write() to notify pipe failed: %s", xstrerror (errno));
 			close (notify_pipe[0]);
 			close (notify_pipe[1]);
-			signal (SIGCHLD, sig_chld);
 			server_loop ();
 			options_free ();
 			decoder_cleanup ();
@@ -235,7 +219,7 @@ static void start_moc (const struct parameters *params, lists_t_strs *args)
 	if (params->only_server)
 		send_int (server_sock, CMD_DISCONNECT);
 	else {
-		signal (SIGPIPE, SIG_IGN);
+		xsignal (SIGPIPE, SIG_IGN);
 		if (!ping_server (server_sock))
 			fatal ("Can't connect to the server!");
 
@@ -255,7 +239,7 @@ static void server_command (struct parameters *params, lists_t_strs *args)
 	if ((sock = server_connect()) == -1)
 		fatal ("The server is not running!");
 
-	signal (SIGPIPE, SIG_IGN);
+	xsignal (SIGPIPE, SIG_IGN);
 	if (!ping_server (sock))
 		fatal ("Can't connect to the server!");
 
