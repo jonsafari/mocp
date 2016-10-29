@@ -713,7 +713,7 @@ static void alsa_close ()
 	 * here; there are two bugs in ALSA which make it a bad idea (see
 	 * the SVN commit log for r2550).  Instead we sleep for the duration
 	 * of the still unplayed samples. */
-	if (snd_pcm_delay (handle, &delay) == 0)
+	if (snd_pcm_delay (handle, &delay) == 0 && delay > 0)
 		xsleep (delay, params.rate);
 	snd_pcm_close (handle);
 	logit ("ALSA device closed");
