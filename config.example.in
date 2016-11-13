@@ -161,6 +161,20 @@
 #ALSAMixer1 = PCM
 #ALSAMixer2 = Master
 
+# Under some circumstances on 32-bit systems, audio played continously
+# for long periods of time may begin to stutter.  Setting this option to
+# 'yes' will force MOC to avoid ALSA's dmix resampling and prevent this
+# stutter.  But it also has other implications:
+#
+# - You may experience unacceptably high CPU load.
+# - ALSA's resampler plug-ins will not be used.
+# - The resampling may be of lower quality than ALSA would provide.
+# - You may need to try different "ResampleMethod" option settings.
+# - The "ForceSampleRate" option may be ineffective.
+# - If libsamplerate is not configured, many audios may be unplayable.
+#
+#ALSAStutterDefeat = no
+
 # Save software mixer state?
 # If enabled, a file 'softmixer' will be created in '~/.moc/' storing the
 # mixersetting set when the server is shut down.

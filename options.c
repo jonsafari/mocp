@@ -588,6 +588,7 @@ void options_init ()
 	add_str  ("ALSADevice", "default", CHECK_NONE);
 	add_str  ("ALSAMixer1", "PCM", CHECK_NONE);
 	add_str  ("ALSAMixer2", "Master", CHECK_NONE);
+	add_bool ("ALSAStutterDefeat", false);
 
 	add_bool ("Softmixer_SaveState", true);
 	add_bool ("Equalizer_SaveState", true);
@@ -813,6 +814,23 @@ int options_check_list (const char *name, const char *val)
 	}
 
 	lists_strs_free (list);
+
+	return result;
+}
+
+/* Return 1 if the named option was defaulted. */
+int options_was_defaulted (const char *name)
+{
+	int opt, result = 0;
+
+	assert (name);
+
+	opt = find_option (name, OPTION_ANY);
+	if (opt == -1)
+		return 0;
+
+	if (!options[opt].set_in_config && !options[opt].ignore_in_config)
+		result = 1;
 
 	return result;
 }

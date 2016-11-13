@@ -66,9 +66,6 @@ Known Bugs:
   - The duration of some AAC audios is incorrectly reported.  This problem
     arises from the limitations of the format, but MOC now makes much more
     accurate guesses.
-* Bugs of unknown origin:
-  - After many hours of playing an Internet stream, the audio can begin
-    to stutter.  [node/692]
 
 
 Transitional Code Removal:
@@ -86,6 +83,7 @@ Pending 2.6 Changes:
 Pending 2.7 Changes:
 
 * Remove FreeBSD program crash bug if no one has confirmed it still exists.
+* Remove 'ALSAStutterDefeat' start-up warning.
 
 
 Future Wishlist (items marked with $ are bigger changes requiring more time):

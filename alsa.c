@@ -499,6 +499,17 @@ static int alsa_init (struct output_driver_caps *caps)
 	if (result == 0)
 		goto err;
 
+	if (sizeof (long) < 8 && options_was_defaulted ("ALSAStutterDefeat")) {
+		fprintf (stderr,
+		         "\n"
+		         "Warning: Your system may be vulnerable to stuttering audio.\n"
+		         "         You should read the example configuration file comments\n"
+		         "         for the 'ALSAStutterDefeat' option and set it accordingly.\n"
+		         "         Setting the option will remove this warning.\n"
+		         "\n");
+		xsleep (5, 1);
+	}
+
 	if (0) {
 	err:
 		alsa_shutdown ();
@@ -546,6 +557,14 @@ static int alsa_open (struct sound_params *sound_params)
 
 	bytes_per_sample = sfmt_Bps (sound_params->fmt);
 	logit ("Set sample width: %d bytes", bytes_per_sample);
+
+	if (options_get_bool ("ALSAStutterDefeat")) {
+		rc = snd_pcm_hw_params_set_rate_resample (handle, hw_params, 0);
+		if (rc == 0)
+			logit ("ALSA resampling disabled");
+		else
+			log_errno ("Unable to disable ALSA resampling", rc);
+	}
 
 	params.rate = sound_params->rate;
 	rc = snd_pcm_hw_params_set_rate_near (handle, hw_params, &params.rate, 0);
