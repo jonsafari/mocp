@@ -37,6 +37,8 @@ typedef unsigned long int u_long;
 
 #define DEBUG
 
+#define STRERROR_FN bdb_strerror
+
 #include "common.h"
 #include "server.h"
 #include "playlist.h"
@@ -115,6 +117,19 @@ struct cache_record
 	time_t atime;			/* Time of last access. */
 	struct file_tags *tags;
 };
+
+/* BerkleyDB-provided error code to description function wrapper. */
+static inline char *bdb_strerror (int errnum)
+{
+	char *result;
+
+	if (errnum > 0)
+		result = xstrerror (errnum);
+	else
+		result = xstrdup (db_strerror (errnum));
+
+	return result;
+}
 
 static void request_queue_init (struct request_queue *q)
 {
@@ -482,8 +497,7 @@ static void tags_cache_gc (struct tags_cache *c)
 	}
 
 	if (ret != DB_NOTFOUND)
-		logit ("Searching for element to remove failed (cursor): %s",
-				db_strerror (ret));
+		log_errno ("Searching for element to remove failed (cursor)", ret);
 
 #if DB_VERSION_MAJOR == 4 && DB_VERSION_MINOR < 6
 	cur->c_close (cur);
@@ -551,7 +565,7 @@ static void tags_cache_add (struct tags_cache *c, const char *file,
 
 	ret = c->db->put (c->db, NULL, key, &data, 0);
 	if (ret)
-		error ("DB put error: %s", db_strerror (ret));
+		error_errno ("DB put error", ret);
 
 	tags_cache_sync (c);
 
@@ -597,7 +611,7 @@ static void *locked_read_add (struct tags_cache *c, const char *file,
 
 	ret = c->db->get (c->db, NULL, key, serialized_cache_rec, 0);
 	if (ret && ret != DB_NOTFOUND)
-		logit ("Cache DB get error: %s", db_strerror (ret));
+		log_errno ("Cache DB get error", ret);
 
 	/* If this entry is already present in the cache, we have 3 options:
 	 * we must read different tags (TAGS_*) or the tags are outdated
@@ -823,7 +837,7 @@ static void *locked_add_request (struct tags_cache *c, const char *file,
 		return NULL;
 
 	if (db_ret) {
-		error ("Cache DB search error: %s", db_strerror (db_ret));
+		error_errno ("Cache DB search error", db_ret);
 		return NULL;
 	}
 
@@ -921,7 +935,7 @@ static void db_msg_cb (const DB_ENV *unused ATTR_UNUSED, const char *msg)
 #if defined(HAVE_DB_H) && !defined(NDEBUG)
 static void db_panic_cb (DB_ENV *unused ATTR_UNUSED, int errval)
 {
-	logit ("BDB said: %s", db_strerror (errval));
+	log_errno ("BDB said", errval);
 }
 #endif
 
@@ -1152,7 +1166,7 @@ void tags_cache_load (struct tags_cache *c DB_ONLY,
 
 	ret = db_env_create (&c->db_env, 0);
 	if (ret) {
-		error ("Can't create DB environment: %s", db_strerror (ret));
+		error_errno ("Can't create DB environment", ret);
 		goto err;
 	}
 
@@ -1175,13 +1189,13 @@ void tags_cache_load (struct tags_cache *c DB_ONLY,
 
 	ret = c->db_env->lock_id (c->db_env, &c->locker);
 	if (ret) {
-		error ("Failed to get DB locker: %s", db_strerror (ret));
+		error_errno ("Failed to get DB locker", ret);
 		goto err;
 	}
 
 	ret = db_create (&c->db, c->db_env, 0);
 	if (ret) {
-		error ("Failed to create cache db: %s", db_strerror (ret));
+		error_errno ("Failed to create cache db", ret);
 		goto err;
 	}
 
@@ -1196,8 +1210,7 @@ void tags_cache_load (struct tags_cache *c DB_ONLY,
 	ret = c->db->open (c->db, NULL, TAGS_DB, NULL, DB_BTREE,
 	                                DB_CREATE | DB_THREAD, 0);
 	if (ret) {
-		error ("Failed to open (or create) tags cache db: %s",
-		        db_strerror (ret));
+		error_errno ("Failed to open (or create) tags cache db", ret);
 		goto err;
 	}
 

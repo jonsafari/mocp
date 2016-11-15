@@ -46,6 +46,8 @@
 
 #define DEBUG
 
+#define STRERROR_FN ffmpeg_strerror
+
 #include "common.h"
 #include "audio.h"
 #include "decoder.h"
@@ -170,6 +172,19 @@ static void ffmpeg_log_cb (void *unused ATTR_UNUSED, int level,
 	ffmpeg_log_repeats (msg);
 }
 #endif
+
+/* FFmpeg-provided error code to description function wrapper. */
+static inline char *ffmpeg_strerror (int errnum)
+{
+	char *result;
+
+	ffmpeg_log_repeats (NULL);
+	result = xmalloc (256);
+	av_strerror (errnum, result, 256);
+	result[255] = 0;
+
+	return result;
+}
 
 /* Find the first audio stream and return its index, or nb_streams if
  * none found. */
@@ -399,21 +414,13 @@ static void ffmpeg_info (const char *file_name,
 
 	err = avformat_open_input (&ic, file_name, NULL, NULL);
 	if (err < 0) {
-		char buf[128];
-
-		ffmpeg_log_repeats (NULL);
-		av_strerror (err, buf, sizeof (buf));
-		logit ("avformat_open_input() failed: %s", buf);
+		log_errno ("avformat_open_input() failed", err);
 		return;
 	}
 
 	err = avformat_find_stream_info (ic, NULL);
 	if (err < 0) {
-		char buf[128];
-
-		ffmpeg_log_repeats (NULL);
-		av_strerror (err, buf, sizeof (buf));
-		logit ("avformat_find_stream_info() failed: %s", buf);
+		log_errno ("avformat_find_stream_info() failed", err);
 		goto end;
 	}
 
@@ -626,12 +633,10 @@ static void *ffmpeg_open_internal (struct ffmpeg_data *data)
 
 	err = avformat_open_input (&data->ic, NULL, NULL, NULL);
 	if (err < 0) {
-		char buf[128];
-
-		ffmpeg_log_repeats (NULL);
-		av_strerror (err, buf, sizeof (buf));
+		char *buf = ffmpeg_strerror (err);
 		decoder_error (&data->error, ERROR_FATAL, 0,
 		               "Can't open audio: %s", buf);
+		free (buf);
 		return data;
 	}
 
@@ -654,11 +659,10 @@ static void *ffmpeg_open_internal (struct ffmpeg_data *data)
 		/* Depending on the particular FFmpeg/LibAV version in use, this
 		 * may misreport experimental codecs.  Given we don't know the
 		 * codec at this time, we will have to live with it. */
-		char buf[128];
-
-		av_strerror (err, buf, sizeof (buf));
+		char *buf = ffmpeg_strerror (err);
 		decoder_error (&data->error, ERROR_FATAL, 0,
 				"Could not find codec parameters: %s", buf);
+		free (buf);
 		goto end;
 	}
 
@@ -942,11 +946,10 @@ static AVPacket *get_packet (struct ffmpeg_data *data)
 		data->eof = true;
 
 	if (!data->eof && rc < 0) {
-		char buf[128];
-
-		av_strerror (rc, buf, sizeof (buf));
+		char *buf = ffmpeg_strerror (rc);
 		decoder_error (&data->error, ERROR_FATAL, 0,
 		               "Error in the stream: %s", buf);
+		free (buf);
 		return NULL;
 	}
 
@@ -1072,11 +1075,7 @@ static bool seek_in_stream (struct ffmpeg_data *data, int sec)
 
 	rc = av_seek_frame (data->ic, data->stream->index, seek_ts, flags);
 	if (rc < 0) {
-		char buf[128];
-
-		ffmpeg_log_repeats (NULL);
-		av_strerror (rc, buf, sizeof (buf));
-		logit ("Seek error: %s", buf);
+		log_errno ("Seek error", rc);
 		return false;
 	}
 
