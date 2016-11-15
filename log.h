@@ -27,9 +27,9 @@ extern "C" {
 #ifndef NDEBUG
 #define log_errno(format, errnum) \
 	do { \
-		char *err = STRERROR_FN (errnum); \
-		logit (format ": %s", err); \
-		free (err); \
+		char *err##__LINE__ = STRERROR_FN (errnum); \
+		logit (format ": %s", err##__LINE__); \
+		free (err##__LINE__); \
 	} while (0)
 #else
 # define log_errno(...) do {} while (0)

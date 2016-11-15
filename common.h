@@ -112,9 +112,9 @@
 
 #define error_errno(format, errnum) \
 	do { \
-		char *err = STRERROR_FN (errnum); \
-		error (format ": %s", err); \
-		free (err); \
+		char *err##__LINE__ = STRERROR_FN (errnum); \
+		error (format ": %s", err##__LINE__); \
+		free (err##__LINE__); \
 	} while (0)
 
 #ifdef __cplusplus
