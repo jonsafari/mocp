@@ -283,7 +283,7 @@ char *file_type_name (const char *file);
  *
  * Fills decoder error variable with an error. It can be used like printf().
  *
- * \param error Pointer to the decoder error variable to fill.
+ * \param error Pointer to the decoder_error object to fill.
  * \param type Type of the error.
  * \param add_errno If this value is non-zero, a space and a string
  * describing system error for errno equal to the value of add_errno
@@ -298,6 +298,8 @@ void decoder_error (struct decoder_error *error,
  *
  * Clear decoder_error structure. Set the system type to ERROR_OK and
  * the error message to NULL. Frees all memory used by the error's fields.
+ *
+ * \param error Pointer to the decoder_error object to be cleared.
  */
 void decoder_error_clear (struct decoder_error *error);
 
@@ -316,8 +318,7 @@ void decoder_error_copy (struct decoder_error *dst,
  * Returns the error text from the decoder_error variable.  NULL may be
  * returned if decoder_error() has not been called.
  *
- * \param dst Destination.
- * \param src Source.
+ * \param error Pointer to the source decoder_error object.
  *
  * \return The address of the error text or NULL.
  */
@@ -327,6 +328,8 @@ const char *decoder_error_text (const struct decoder_error *error);
  *
  * Initialize decoder_error variable and set the error to ERROR_OK with no
  * message.
+ *
+ * \param error Pointer to the decoder_error object to be initialised.
  */
 void decoder_error_init (struct decoder_error *error);
 

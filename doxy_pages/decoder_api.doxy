@@ -215,7 +215,7 @@ It is also preferred that you use xmalloc(), xrealloc(), xstrdup() functions
 from common.h instead of those without x.  They check if allocation of memory
 succeeds, so you don't need to do that.
 
-\section decoder_plugin_useful_api Testing and Debugging
+\section decoder_plugin_useful_testing Testing and Debugging
 
 There is a script in the 'tools' subdirectory which will help you to test
 your decoder.  It checks that the samples which arrive at MOC's player
