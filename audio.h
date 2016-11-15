@@ -122,7 +122,7 @@ struct hw_funcs
 	 * If so, get_rate() should return the actual rate.
 	 *
 	 * \param sound_params Pointer to the sound_params structure holding
-	 * the required poarameters.
+	 * the required parameters.
 	 * \return 1 on success and 0 otherwise.
 	 */
 	int (*open) (struct sound_params *sound_params);

@@ -49,13 +49,13 @@ struct iface_key
 	/* Type of the key */
 	enum
 	{
-		IFACE_KEY_CHAR,		/* Regular char */
-		IFACE_KEY_FUNCTION	/* Function key (arrow, F12, etc. */
+		IFACE_KEY_CHAR,	    /* Regular char */
+		IFACE_KEY_FUNCTION  /* Function key (arrow, F12, etc.) */
 	} type;
 
 	union {
-		wchar_t ucs;	/* IFACE_KEY_CHAR */
-		int func;	/* IFACE_KEY_FUNCTION */
+		wchar_t ucs;        /* IFACE_KEY_CHAR */
+		int func;           /* IFACE_KEY_FUNCTION */
 	} key;
 };
 

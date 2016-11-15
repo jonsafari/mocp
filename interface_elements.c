@@ -868,7 +868,7 @@ static bool parse_layout_coordinate (const char *fmt, int *val, const int max)
 static bool parse_layout (struct main_win_layout *l, lists_t_strs *fmt)
 {
 	int ix;
-	bool result;
+	bool result = false;
 	lists_t_strs *format;
 
 	assert (l != NULL);
@@ -882,7 +882,6 @@ static bool parse_layout (struct main_win_layout *l, lists_t_strs *fmt)
 	l->menus[1] = l->menus[0];
 	l->menus[2] = l->menus[0];
 
-	result = false;
 	format = lists_strs_new (6);
 	for (ix = 0; ix < lists_strs_size (fmt); ix += 1) {
 		const char *menu, *name;
@@ -3888,7 +3887,8 @@ void iface_get_key (struct iface_key *k)
 {
 	wint_t ch;
 
-	if ((ch = wgetch(main_win.win)) == (wint_t)ERR)
+	ch = wgetch (main_win.win);
+	if (ch == (wint_t)ERR)
 		interface_fatal ("wgetch() failed!");
 
 	if (ch < 32 && ch != '\n' && ch != '\t' && ch != KEY_ESCAPE) {

@@ -140,7 +140,6 @@ Future Wishlist (items marked with $ are bigger changes requiring more time):
 
 Maybe Never:
 
-* Say about ignored options that affects server when the server is not being
-  run.
+* Report ignored server-specific options when the server is not being run.
 * Funny ASCII equalizer.
 * Mouse support.  [node/743]

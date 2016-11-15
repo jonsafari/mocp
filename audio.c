@@ -470,7 +470,6 @@ static void *play_thread (void *unused ATTR_UNUSED)
 		}
 		else
 			go_to_another_file ();
-
 	}
 
 	prev_state = state;

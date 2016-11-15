@@ -439,8 +439,8 @@ static void tags_cache_remove_rec (struct tags_cache *c, const char *fname)
 
 	ret = c->db->del (c->db, NULL, &key, 0);
 	if (ret)
-		logit ("Can't remove item for %s from the cache: %s", fname,
-				db_strerror (ret));
+		logit ("Can't remove item for %s from the cache: %s",
+				fname, db_strerror (ret));
 }
 #endif
 

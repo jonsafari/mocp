@@ -113,7 +113,7 @@ static int set_capabilities (struct output_driver_caps *caps)
 #endif
 
 	if (!caps->formats) {
-		/* Workaround for vmix that lies that it doesn't support any
+		/* Workaround for vmix which lies that it doesn't support any
 		 * format. */
 		error ("The driver claims that no format known to me is "
 		       "supported. I will assume that SFMT_S8 and "
@@ -388,7 +388,7 @@ static void oss_set_mixer (int vol)
 #endif
 	{
 		vol = CLAMP(0, vol, 100);
-		vol = vol | (vol << 8);
+		vol |= vol << 8;
 #ifdef OSSv3_MIXER
 		if (ioctl (mixer_fd, MIXER_WRITE(mixer_channel_current), &vol) == -1)
 #else

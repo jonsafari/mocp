@@ -203,10 +203,9 @@ static int wav_decode (void *prv_data, char *buf, int buf_len,
 	struct wavpack_data *data = (struct wavpack_data *)prv_data;
 	int ret, i, s_num, iBps, oBps;
 
-	int8_t * buf8 = (int8_t *)buf;
-	int16_t * buf16 = (int16_t *)buf;
-	int32_t * buf32 = (int32_t *)buf;
-
+	int8_t *buf8 = (int8_t *)buf;
+	int16_t *buf16 = (int16_t *)buf;
+	int32_t *buf32 = (int32_t *)buf;
 
 	iBps = data->channels * WavpackGetBytesPerSample (data->wpc);
 	oBps = (iBps == 6) ? 8 : iBps;

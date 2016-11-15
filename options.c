@@ -76,21 +76,27 @@ static unsigned int hash (const char * str)
  * If there is no such option return -1. */
 static int find_option (const char *name, enum option_type type)
 {
-	unsigned int h=hash(name),i,init_pos=h%OPTIONS_MAX;
+	unsigned int h = hash (name), i, init_pos = h % OPTIONS_MAX;
 
-	for(i=init_pos;i<OPTIONS_MAX;i++)
-		if(options[i].type==OPTION_FREE)
+	for (i = init_pos; i < OPTIONS_MAX; i += 1) {
+		if (options[i].type == OPTION_FREE)
 			return -1;
-		else if(h == options[i].hash && type & options[i].type)
-			if(!strcasecmp(name, options[i].name))
-		    	return i;
 
-	for(i=0;i<init_pos;i++)
-		if(options[i].type==OPTION_FREE)
+		if (h == options[i].hash && type & options[i].type) {
+			if (!strcasecmp (name, options[i].name))
+				return i;
+		}
+	}
+
+	for (i = 0; i < init_pos; i += 1) {
+		if (options[i].type == OPTION_FREE)
 			return -1;
-		else if(h == options[i].hash && type & options[i].type)
-			if(!strcasecmp(name, options[i].name))
+
+		if (h == options[i].hash && type & options[i].type) {
+			if (!strcasecmp (name, options[i].name))
 		    	return i;
+		}
+	}
 
 	return -1;
 }
@@ -102,15 +108,17 @@ static int find_free (unsigned int h)
 	unsigned int i;
 
 	assert (options_num < OPTIONS_MAX);
-	h%=OPTIONS_MAX;
+	h %= OPTIONS_MAX;
 
-	for(i=h;i<OPTIONS_MAX;i++)
-		if(options[i].type==OPTION_FREE)
+	for (i = h; i < OPTIONS_MAX; i += 1) {
+		if (options[i].type == OPTION_FREE)
 			return i;
+	}
 
-	for(i=0;i<h;i++)
-		if(options[i].type==OPTION_FREE)
+	for (i = 0; i < h; i += 1) {
+		if (options[i].type == OPTION_FREE)
 			return i;
+	}
 
 	return -1;
 }

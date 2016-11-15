@@ -689,7 +689,10 @@
 
 # Run the OnStop command (full path, no arguments) when MOC changes state
 # to stopped (i.e., when user stopped playing or changes a song).
-#OnStop = "/home/jack/.moc/myscript_on_stop"
+#
+# Example:    OnStop = "/home/jack/.moc/myscript_on_stop"
+#
+#OnStop =
 
 # This option determines which song to play after finishing all the songs
 # in the queue.  Setting this to 'yes' causes MOC to play the song which
