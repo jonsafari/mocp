@@ -281,7 +281,6 @@ AC_CHECK_FUNCS([localtime_r nanosleep strcasecmp \
 dnl optional functions
 AC_FUNC_STRERROR_R
 AC_CHECK_FUNCS([sched_get_priority_max syslog])
-AX_CHECK_UNAME_SYSCALL
 
 dnl OSX doesn't provide clock_gettime(3) so fall back to gettimeofday(2).
 AC_CHECK_LIB([rt], [clock_gettime],

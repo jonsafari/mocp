@@ -23,6 +23,7 @@
 #include <sys/time.h>
 #include <sys/socket.h>
 #include <sys/un.h>
+#include <sys/utsname.h>
 #include <unistd.h>
 #include <signal.h>
 #include <errno.h>
@@ -30,10 +31,6 @@
 #include <locale.h>
 #include <assert.h>
 #include <popt.h>
-
-#ifdef HAVE_UNAME_SYSCALL
-#include <sys/utsname.h>
-#endif
 
 #include "common.h"
 #include "server.h"
@@ -319,10 +316,8 @@ static void server_command (struct parameters *params, lists_t_strs *args)
 
 static void show_version ()
 {
-#ifdef HAVE_UNAME_SYSCALL
 	int rc;
 	struct utsname uts;
-#endif
 
 	putchar ('\n');
 	printf ("          This is : %s\n", PACKAGE_NAME);
@@ -366,12 +361,10 @@ static void show_version ()
 #endif
 	putchar ('\n');
 
-#ifdef HAVE_UNAME_SYSCALL
 	rc = uname (&uts);
 	if (rc == 0)
 		printf ("       Running on : %s %s %s\n", uts.sysname, uts.release,
 	                                                           uts.machine);
-#endif
 
 	printf ("           Author : Damian Pietras\n");
 	printf ("         Homepage : %s\n", PACKAGE_URL);
@@ -1200,7 +1193,7 @@ int main (int argc, const char *argv[])
 	logit ("Configured:%s", CONFIGURATION);
 #endif
 
-#if !defined(NDEBUG) && defined(HAVE_UNAME_SYSCALL)
+#if !defined(NDEBUG)
 	{
 		int rc;
 		struct utsname uts;
