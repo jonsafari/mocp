@@ -4,7 +4,7 @@
     stable version maintenance releases.]
 
 
-2.6 - "Usability"  [alpha2: 2016-04-24]
+2.6 - "Usability"  [alpha3: 2016-11-16]
 	* Autotools and packaging changes:
 	  - Dropped version micro number for development versions
 	  - Upgraded autoconf-archive macros to 2014-02-28 release
@@ -58,7 +58,7 @@
 	  - Improved logging from ALSA sound driver and library
 	  - Fixed displayed ALSA volume percentage drift
 
-2.5.2  [2016-XX-XX]
+2.5.2  [2016-11-16]
 	* New configuration file options:
 	  - ALSAStutterDefeat: avoid the ALSA bug which causes stuttering
 	* Significant bug fixes:
