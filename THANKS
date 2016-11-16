@@ -12,6 +12,7 @@ Daniel T. Borelli:
 	* Added a configuration option to set the initial percent played state.
 	* Fixed miscellaneous coding errors.
 	* Assisted with testing.
+	* Provided basis for fixing foreground mode unreaped children.
 
 Morten Grunnet Buhl:
 	* Provided Yellow/Red theme.
@@ -102,6 +103,9 @@ Adam Kowalski:
 Florian Kriener:
 	* Provided title building code.
 	* Corrected many typos and fixed many bugs.
+
+Vladimir Krylov:
+	* Added 24-bit support to the OSS sound driver.
 
 Maciej Kubiak:
 	* Suggestions and bug reports.
@@ -235,6 +239,9 @@ Marien Zwart:
 	* Fixed segfault when trying to play a file using FFmpeg.
 	* Migrated to newer FFmpeg API.
 
+"exc":
+	* Pointed to an ALSA optimisation with joined channels.
+
 "firejox":
 	* Fixed screen upsets due to UTF-8 character handing.
 
@@ -243,6 +250,7 @@ Marien Zwart:
 
 "GenghisKhan":
 	* Reported bugs and significantly helped debugging them.
+	* Greatly assisted with debugging the ALSA stutter bug.
 
 "meh":
 	* Provided code to prefer reading ID3 tags v2 over v1.
@@ -253,8 +261,14 @@ Marien Zwart:
 "thotypous":
 	* Provided code to allow use of the OSSv4 per-application mixer API.
 
+"tokapix":
+	* Provided additional proving of the ALSA stutter bug fix.
+
 "tyranix":
 	* Provided new command 'Y' to prune unreadable files from the playlist.
+
+"vectis":
+	* Assisted with debugging the ALSA stutter bug.
 
 "zaphod":
 	* Some strcpy() to strncpy() changes.

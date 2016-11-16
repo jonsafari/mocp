@@ -1,3 +1,9 @@
+   [Note that all relevant maintenance applied to the stable version has
+    also been applied to the development version.  You should review the
+    development version changes in conjunction with those of the current
+    stable version maintenance releases.]
+
+
 2.6 - "Usability"  [alpha2: 2016-04-24]
 	* Autotools and packaging changes:
 	  - Dropped version micro number for development versions
@@ -7,6 +13,7 @@
 	  - 'make dist': now defaults to XZ compression
 	  - curl-config: replaced by pkg-config
 	  - New GCC-5 and 6 warnings addressed
+	  - Removed checks for POSIX.1 and C99 mandated headers and functions
 	* Changed minimum support and release requirements:
 	  - POSIX.1: introduced minimum requirement of IEEE 1003.1-2001
 	  - C Compiler: introduced minimum requirement of ISO 9899:1999
@@ -29,14 +36,19 @@
 	  - Removed "Search Next" interface command
 	* Changed functionality:
 	  - Decoupled mono-mixing from softmixer
+	  - Made command line toggling arguments case insensitive
 	* Added functionality:
 	  - Introduced in-memory circular logging buffer
 	  - Introduced MOCP_POPTRC environment variable
 	  - Introduced MOCP_OPTS environment variable
+	  - Add 24-bit support to the OSS sound driver (Vladimir Krylov)
 	* New and changed command line options:
 	  - echo-args: Show POPT-interpreted command line arguments
 	* New and changed audio decoders:
-	  - Added reading from Internet streams to FFmpeg decoder
+	  - All sndfile-supported extensions are now available
+	  - Added .mat[45] extensions as aliases for .mat in sndfile decoder
+	  - Added .ircam extension as alias for .sf in sndfile decoder
+	  - Added reading from Internet streams to FFmpeg decoder (Jenny Wong)
 	* Changes to supported formats and codecs:
 	  - All formats provided by Sndfile are now supported
 	  - DSD: now supported via FFmpeg/LibAV (.dff and .dsf files)
@@ -44,7 +56,25 @@
 	  - VQF: now supported via FFmpeg/LibAV
 	* Miscellaneous
 	  - Improved logging from ALSA sound driver and library
+	  - Fixed displayed ALSA volume percentage drift
+
+2.5.2  [2016-XX-XX]
+	* New configuration file options:
+	  - ALSAStutterDefeat: avoid the ALSA bug which causes stuttering
+	* Significant bug fixes:
+	  - Fixed error during configure on busybox systems
+	  - Fixed calculation of average bitrate in FLAC decoder
+	  - Fixed unintentional disabling of MMAP support
+	  - Fixed build failure on split ncurses/tinfo systems
+	  - Fixed unreaped children when running in foreground mode
+	  - Fixed freeze on Nokia devices if audios play to completion
+	  - Circumvented ALSA stutter bug
+	  - Added missing 'Precache' option to example config file
+	* Miscellaneous:
+	  - Improved the accuracy of the average bitrate for FLAC
+	  - Mitigated out-of-file seeking for several formats
 	  - Warn of TagLib version requirement rising to 1.5
+	  - Warn of Musepack library changing to libmpc (from libmpcdec)
 
 2.5.1  [2016-02-24]
 	* Significant bug fixes:
