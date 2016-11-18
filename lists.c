@@ -296,7 +296,7 @@ char *lists_strs_cat (const lists_t_strs *list)
 /* Return a "snapshot" of the given string list.  The returned memory is a
  * null-terminated list of pointers to the given list's strings copied into
  * memory allocated after the pointer list.  This list is suitable for passing
- * to functions which take such a list as an argument (e.g., evecv()).
+ * to functions which take such a list as an argument (e.g., execv()).
  * Invoking free() on the returned pointer also frees the strings. */
 char **lists_strs_save (const lists_t_strs *list)
 {

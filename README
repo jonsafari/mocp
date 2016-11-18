@@ -151,24 +151,24 @@ How Do I Verify the Authenticity of the Tarball?
 If you downloaded the official MOC distribution you should have the
 following files:
 
-	moc-2.6-alpha2.tar.asc
-	moc-2.6-alpha2.tar.md5
-	moc-2.6-alpha2.tar.xz
+	moc-2.6-alpha3.tar.asc
+	moc-2.6-alpha3.tar.md5
+	moc-2.6-alpha3.tar.xz
 
 would check the integrity of the download:
 
-	md5sum -c moc-2.6-alpha2.tar.md5
+	md5sum -c moc-2.6-alpha3.tar.md5
 
 and then verify the tarball thusly:
 
-	xzcat moc-2.6-alpha2.tar.xz | gpg --verify moc-2.6-alpha2.tar.asc -
+	xzcat moc-2.6-alpha3.tar.xz | gpg --verify moc-2.6-alpha3.tar.asc -
 
 The signature file (*.asc) was made against the uncompressed tarball,
 so if the tarball you have has been recompressed using a tool other
 than XZ then uncompress it using the appropriate tool then verify that:
 
-	gunzip moc-2.6-alpha2.tar.gz
-	gpg --verify moc-2.6-alpha2.tar.asc
+	gunzip moc-2.6-alpha3.tar.gz
+	gpg --verify moc-2.6-alpha3.tar.asc
 
 If the tool can output to stdout (and most can) then you can also verify
 verify it in a single step similar to the way in which the XZ tarball

@@ -1,7 +1,7 @@
 /*
  * The purpose of this header is to provide common functions and macros
  * used throughout MOC code.  It also provides (x-prefixed) functions
- * which enhance or adapt their respective system functions with error
+ * which augment or adapt their respective system functions with error
  * checking and the like.
  */
 
@@ -60,10 +60,10 @@
 #endif
 
 #define CONFIG_DIR      ".moc"
-#define LOCK(mutex)	pthread_mutex_lock (&mutex)
-#define UNLOCK(mutex)	pthread_mutex_unlock (&mutex)
-#define ARRAY_SIZE(x)	(sizeof(x)/sizeof(x[0]))
-#define ssizeof(x)		((ssize_t) sizeof(x))
+#define LOCK(mutex)     pthread_mutex_lock (&mutex)
+#define UNLOCK(mutex)   pthread_mutex_unlock (&mutex)
+#define ARRAY_SIZE(x)   (sizeof(x)/sizeof(x[0]))
+#define ssizeof(x)      ((ssize_t) sizeof(x))
 
 /* Maximal string length sent/received. */
 #define MAX_SEND_STRING	4096
@@ -112,9 +112,9 @@
 
 #define error_errno(format, errnum) \
 	do { \
-		char *err = STRERROR_FN (errnum); \
-		error (format ": %s", err); \
-		free (err); \
+		char *err##__LINE__ = STRERROR_FN (errnum); \
+		error (format ": %s", err##__LINE__); \
+		free (err##__LINE__); \
 	} while (0)
 
 #ifdef __cplusplus

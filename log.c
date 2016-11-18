@@ -163,6 +163,7 @@ void internal_logit (const char *file LOGIT_ONLY,
                      const char *format LOGIT_ONLY, ...)
 {
 #ifndef NDEBUG
+	int saved_errno = errno;
 	char *msg;
 	va_list va;
 
@@ -198,6 +199,8 @@ void internal_logit (const char *file LOGIT_ONLY,
 
 end:
 	UNLOCK(logging_mtx);
+
+	errno = saved_errno;
 #endif
 }
 

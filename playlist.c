@@ -697,8 +697,8 @@ void plist_cat (struct plist *a, struct plist *b)
 	for (i = 0; i < b->num; i++) {
 		assert (b->items[i].file != NULL);
 
-		if (!plist_deleted(b, i)
-				&& plist_find_fname(a, b->items[i].file) == -1)
+		if (!plist_deleted (b, i) &&
+		    plist_find_fname (a, b->items[i].file) == -1)
 			plist_add_from_item (a, &b->items[i]);
 	}
 }
@@ -777,9 +777,8 @@ void plist_shuffle (struct plist *plist)
 {
 	int i;
 
-	for (i = 0; i < plist->num; i++)
-		plist_swap (plist, i,
-				(rand()/(float)RAND_MAX) * (plist->num - 1));
+	for (i = 0; i < plist->num; i += 1)
+		plist_swap (plist, i, (rand () / (float)RAND_MAX) * (plist->num - 1));
 
 	rb_tree_clear (plist->search_tree);
 
@@ -846,9 +845,10 @@ void plist_remove_common_items (struct plist *a, struct plist *b)
 	assert (a != NULL);
 	assert (b != NULL);
 
-	for (i = 0; i < a->num; i++)
+	for (i = 0; i < a->num; i += 1) {
 		if (plist_find_fname(b, a->items[i].file) != -1)
 			plist_delete (a, i);
+	}
 }
 
 void plist_discard_tags (struct plist *plist)

@@ -1788,8 +1788,7 @@ static void add_dir_plist ()
 	enum file_type type;
 
 	if (iface_in_plist_menu()) {
-		error ("Can't add to the playlist a file from the "
-				"playlist.");
+		error ("Can't add to the playlist a file from the playlist.");
 		return;
 	}
 
@@ -4149,12 +4148,12 @@ void interface_cmdline_adj_volume (int server_sock, const char *arg)
 {
 	srv_sock = server_sock;
 
-	if(arg[0] == '+')
-		adjust_mixer(atoi(arg + 1));
-	else if(arg[0] == '-')
-		adjust_mixer(atoi(arg)); /* atoi can handle -  */
+	if (arg[0] == '+')
+		adjust_mixer (atoi (arg + 1));
+	else if (arg[0] == '-')
+		adjust_mixer (atoi (arg)); /* atoi can handle '-' */
 	else if (arg[0] != 0)
-		set_mixer(atoi(arg));
+		set_mixer (atoi (arg));
 }
 
 void interface_cmdline_set (int server_sock, char *arg, const int val)
@@ -4163,22 +4162,22 @@ void interface_cmdline_set (int server_sock, char *arg, const int val)
 	char *last = NULL;
 	char *tok;
 
-	tok = strtok_r(arg, ",", &last);
+	tok = strtok_r (arg, ",", &last);
 
-	while(tok) {
+	while (tok) {
 
-		if(!strcasecmp (tok, "Shuffle") || !strcasecmp (tok, "s"))
+		if (!strcasecmp (tok, "Shuffle") || !strcasecmp (tok, "s"))
 			tok = "Shuffle";
-		else if(!strcasecmp (tok, "AutoNext") || !strcasecmp (tok, "n"))
+		else if (!strcasecmp (tok, "AutoNext") || !strcasecmp (tok, "n"))
 			tok = "AutoNext";
-		else if(!strcasecmp (tok, "Repeat") || !strcasecmp (tok, "r"))
+		else if (!strcasecmp (tok, "Repeat") || !strcasecmp (tok, "r"))
 			tok = "Repeat";
 		else {
 			fprintf (stderr, "Unknown option '%s'\n", tok);
 			break;
 		}
 
-		if(val == 2) {
+		if (val == 2) {
 			send_int_to_srv (CMD_GET_OPTION);
 			send_str_to_srv (tok);
 			options_set_bool (tok, get_data_bool());
@@ -4187,7 +4186,7 @@ void interface_cmdline_set (int server_sock, char *arg, const int val)
 		send_int_to_srv (CMD_SET_OPTION);
 		send_str_to_srv (tok);
 
-		if(val == 2)
+		if (val == 2)
 			send_bool_to_srv (!options_get_bool(tok));
 		else
 			send_bool_to_srv (val);

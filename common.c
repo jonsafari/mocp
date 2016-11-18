@@ -45,6 +45,7 @@ static int im_server = 0; /* Am I the server? */
 void internal_error (const char *file, int line, const char *function,
                      const char *format, ...)
 {
+	int saved_errno = errno;
 	va_list va;
 	char *msg;
 
@@ -58,6 +59,8 @@ void internal_error (const char *file, int line, const char *function,
 		interface_error (msg);
 
 	free (msg);
+
+	errno = saved_errno;
 }
 
 /* End program with a message. Use when an error occurs and we can't recover.
@@ -190,6 +193,7 @@ char *xstrerror (int errnum)
 /* Return error message in malloc() buffer (for strerror_r(3)). */
 char *xstrerror (int errnum)
 {
+	int saved_errno = errno;
 	char *err_str, err_buf[256];
 
 #ifdef STRERROR_R_CHAR_P
@@ -204,6 +208,8 @@ char *xstrerror (int errnum)
 	}
 	err_str = err_buf;
 #endif
+
+	errno = saved_errno;
 
 	return xstrdup (err_str);
 }
