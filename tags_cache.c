@@ -32,12 +32,11 @@ typedef unsigned short u_short;
 typedef unsigned int u_int;
 typedef unsigned long int u_long;
 # endif
-#include <db.h>
+# include <db.h>
+# define STRERROR_FN bdb_strerror
 #endif
 
 #define DEBUG
-
-#define STRERROR_FN bdb_strerror
 
 #include "common.h"
 #include "server.h"
@@ -119,6 +118,7 @@ struct cache_record
 };
 
 /* BerkleyDB-provided error code to description function wrapper. */
+#ifdef HAVE_DB_H
 static inline char *bdb_strerror (int errnum)
 {
 	char *result;
@@ -130,6 +130,7 @@ static inline char *bdb_strerror (int errnum)
 
 	return result;
 }
+#endif
 
 static void request_queue_init (struct request_queue *q)
 {
