@@ -282,13 +282,30 @@ dnl optional functions
 AC_FUNC_STRERROR_R
 AC_CHECK_FUNCS([sched_get_priority_max syslog])
 
-dnl OSX doesn't provide clock_gettime(3) so fall back to gettimeofday(2).
-AC_CHECK_LIB([rt], [clock_gettime],
-	[AC_DEFINE([HAVE_CLOCK_GETTIME], 1,
-		[Define if you have clock_gettime(3)])],
-	[AC_CHECK_FUNCS([gettimeofday],
+dnl OSX / MacOS doesn't provide clock_gettime(3) prior to darwin-16.0.0
+dnl so fall back to gettimeofday(2).
+case "$host_os" in
+[*darwin[1-9].*] | [*darwin1[0-5].*])
+	HAVE_CLOCK_GETTIME="no"
+	;;
+*darwin*)
+	HAVE_CLOCK_GETTIME="yes"
+	;;
+*)
+	AC_CHECK_LIB([rt], [clock_gettime],
+		[HAVE_CLOCK_GETTIME="yes"],
+		[HAVE_CLOCK_GETTIME="no"])
+	;;
+esac
+
+if test "$HAVE_CLOCK_GETTIME" = "yes"
+then
+	AC_DEFINE([HAVE_CLOCK_GETTIME], 1, [Define if you have clock_gettime(3)])
+else
+	AC_CHECK_FUNCS([gettimeofday],
 		[AC_MSG_WARN([Using the obsolete gettimeofday(2) function.])],
-		[AC_MSG_ERROR([No suitable current time function found.])])])
+		[AC_MSG_ERROR([No suitable current time function found.])])
+fi
 
 dnl strcasestr(3) is a GNU extension
 AC_CHECK_DECLS([strcasestr], , , [[#include "${srcdir}/compiler.h"]

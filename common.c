@@ -361,6 +361,23 @@ char *create_file_name (const char *file)
 	return fname;
 }
 
+int get_realtime (struct timespec *ts)
+{
+	int result;
+#ifdef HAVE_CLOCK_GETTIME
+	result = clock_gettime (CLOCK_REALTIME, ts);
+#else
+	struct timeval tv;
+
+	result = gettimeofday (&tv, NULL);
+	if (result == 0) {
+		ts->tv_sec = tv.tv_sec;
+		ts->tv_nsec = tv.tv_usec * 1000L;
+	}
+#endif
+    return result;
+}
+
 /* Convert time in second to min:sec text format. buff must be 6 chars long. */
 void sec_to_min (char *buff, const int seconds)
 {

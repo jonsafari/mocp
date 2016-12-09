@@ -2581,8 +2581,8 @@ static time_t rounded_time ()
 	struct timespec exact_time;
 	time_t curr_time;
 
-	if (clock_gettime (CLOCK_REALTIME, &exact_time) == -1)
-		interface_fatal ("clock_gettime() failed: %s", xstrerror (errno));
+	if (get_realtime (&exact_time) == -1)
+		interface_fatal ("get_realtime() failed: %s", xstrerror (errno));
 
 	curr_time = exact_time.tv_sec;
 	if (exact_time.tv_nsec > 500000000L)

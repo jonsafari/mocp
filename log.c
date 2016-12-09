@@ -106,7 +106,7 @@ static void locked_logit (const char *file, const int line,
 	if (logging_state == LOGGING && !logfp)
 		return;
 
-	clock_gettime (CLOCK_REALTIME, &utc_time);
+	get_realtime (&utc_time);
 	tv_sec = utc_time.tv_sec;
 	localtime_r (&tv_sec, &tm_time);
 	strftime (time_str, sizeof (time_str), "%b %e %T", &tm_time);

@@ -48,28 +48,6 @@ char *strcasestr (const char *haystack, const char *needle)
 }
 #endif
 
-/* OSX doesn't provide clock_gettime(3) so fall back to gettimeofday(2). */
-#ifndef HAVE_CLOCK_GETTIME
-#include <sys/time.h>
-#include <assert.h>
-
-#include "common.h"
-
-int clock_gettime (int clk_id ASSERT_ONLY, struct timespec *ts)
-{
-	int result;
-	struct timeval tv;
-
-	assert (clk_id == CLOCK_REALTIME);
-
-	result = gettimeofday (&tv, NULL);
-	ts->tv_sec = tv.tv_sec;
-	ts->tv_nsec = tv.tv_usec * 1000L;
-
-	return result;
-}
-#endif
-
 /* This is required to prevent an "empty translation unit" warning
    if neither strcasestr() nor clock_gettime() get defined. */
 #if defined(HAVE_STRCASESTR) && defined(HAVE_CLOCK_GETTIME)
