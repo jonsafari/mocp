@@ -15,6 +15,8 @@
 
 #include "compat.h"
 
+struct timespec;
+
 #ifdef HAVE_FUNC_ATTRIBUTE_FORMAT
 # define ATTR_PRINTF(x,y) __attribute__ ((format (printf, x, y)))
 #else
@@ -140,6 +142,7 @@ char *format_msg (const char *format, ...);
 char *format_msg_va (const char *format, va_list va);
 bool is_valid_symbol (const char *candidate);
 char *create_file_name (const char *file);
+int get_realtime (struct timespec *ts);
 void sec_to_min (char *buff, const int seconds);
 const char *get_home ();
 void common_cleanup ();

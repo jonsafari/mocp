@@ -50,12 +50,6 @@ extern "C" {
 char *strcasestr (const char *haystack, const char *needle);
 #endif
 
-#ifndef HAVE_CLOCK_GETTIME
-#define CLOCK_REALTIME 0
-struct timespec;
-int clock_gettime (int clk_id, struct timespec *ts);
-#endif
-
 #ifdef __cplusplus
 }
 #endif
