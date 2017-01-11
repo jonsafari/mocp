@@ -1235,7 +1235,12 @@ int main (int argc, const char *argv[])
 		fatal ("Server command options can't be used with --server!");
 
 	if (!params.no_config_file) {
-		if (!params.config_file)
+		if (params.config_file) {
+			if (!can_read_file (params.config_file))
+				fatal ("Configuration file is not readable: %s",
+				        params.config_file);
+		}
+		else
 			params.config_file = create_file_name ("config");
 		options_parse (params.config_file);
 	}
