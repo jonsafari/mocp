@@ -396,11 +396,9 @@ int plist_load (struct plist *plist, const char *fname, const char *cwd,
 	return num;
 }
 
-/* Save plist in m3u format. Strip paths by strip_path bytes.
- * If save_serial is not 0, the playlist serial is saved in a
- * comment. */
-static int plist_save_m3u (struct plist *plist, const char *fname,
-		const int strip_path, const int save_serial)
+/* Save the playlist into the file in m3u format.  If save_serial is not 0,
+ * the playlist serial is saved in a comment. */
+int plist_save (struct plist *plist, const char *fname, const int save_serial)
 {
 	FILE *file = NULL;
 	int i, ret, result = 0;
@@ -444,8 +442,7 @@ static int plist_save_m3u (struct plist *plist, const char *fname,
 
 			/* file */
 			if (ret >= 0)
-				ret = fprintf (file, "%s\r\n",
-				                     plist->items[i].file + strip_path);
+				ret = fprintf (file, "%s\r\n", plist->items[i].file);
 
 			if (ret < 0) {
 				error_errno ("Error writing playlist", errno);
@@ -465,17 +462,4 @@ err:
 	if (file)
 		fclose (file);
 	return result;
-}
-
-/* Save the playlist into the file. Return 0 on error. If cwd is NULL, use
- * absolute paths. */
-int plist_save (struct plist *plist, const char *file, const char *cwd,
-		const int save_serial)
-{
-	char common_path[PATH_MAX+1];
-
-	/* FIXME: check if it possible to just add some directories to make
-	 * relative path working. */
-	return plist_save_m3u (plist, file, cwd && !strcmp(common_path, cwd) ?
-			strlen(common_path) : 0, save_serial);
 }
