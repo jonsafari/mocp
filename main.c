@@ -1021,7 +1021,6 @@ static void process_options (poptContext ctx, lists_t_strs *deferred)
 			options_ignore_config ("ASCIILines");
 			break;
 		case CL_JUMP:
-			arg = poptGetOptArg (ctx);
 			params.jump_to = get_num_param (arg, &jump_type);
 			if (*jump_type)
 				if (!jump_type[1])
