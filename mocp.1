@@ -87,6 +87,11 @@ Clear the playlist.
 Start playing from the first item on the playlist.
 .LP
 .TP
+\fB\-l\fP, \fB\-\-playit\fP
+Play files given on the command line without modifying the clients'
+playlists.
+.LP
+.TP
 \fB\-f\fP, \fB\-\-next\fP
 Request playing the next song from the server's playlist.
 .LP
@@ -128,10 +133,14 @@ for in \fB/usr/share/moc/themes/\fP (depends on installation prefix),
 .LP
 .TP
 \fB\-C\fP \fIFILE\fP, \fB\-\-config\fP \fIFILE\fP
-Use the specified configuration file instead of the default.  As this
-file can specify commands which invoke other applications MOC will refuse
-to start if it is not owned by either root or the current user, or if it is
-writable by anyone other than its owner.
+Use the specified configuration file (which must be readable) instead of the
+default.  As this file can specify commands which invoke other applications
+MOC will refuse to start if it is not owned by either root or the current
+user, or if it is writable by anyone other than its owner.
+.LP
+.TP
+\fB\-\-no\-config\fP
+Do not read any configuration file but use the built-in defaults.
 .LP
 .TP
 \fB\-O\fP \fINAME\fP[\fB+\fP]\fB=\fP\fIVALUE\fP, \
@@ -213,6 +222,10 @@ Alias of \fB\-a\fP for backward compatibility.
 .TP
 \fB\-h\fP, \fB\-\-help\fP
 Print a list of options with short descriptions and exit.
+.LP
+.TP
+\fB\-\-usage\fP
+Print a synopsis of the mocp command and exit.
 .LP
 .TP
 \fB\-V\fP, \fB\-\-version\fP

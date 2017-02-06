@@ -63,6 +63,7 @@ static struct {
 struct parameters
 {
 	char *config_file;
+	int no_config_file;
 	int debug;
 	int only_server;
 	int foreground;
@@ -487,7 +488,11 @@ static struct poptOption general_opts[] = {
 	{"music-dir", 'm', POPT_ARG_NONE, NULL, CL_MUSICDIR,
 			"Start in MusicDir", NULL},
 	{"config", 'C', POPT_ARG_STRING, &params.config_file, CL_HANDLED,
-			"Use the specified config file instead of the default", "FILE"},
+			"Use the specified config file instead of the default"
+			" (conflicts with '--no-config')", "FILE"},
+	{"no-config", 0, POPT_ARG_NONE, &params.no_config_file, CL_HANDLED,
+			"Use program defaults rather than any config file"
+			" (conflicts with '--config')", NULL},
 	{"set-option", 'O', POPT_ARG_STRING, NULL, CL_SETOPTION,
 			"Override the configuration option NAME with VALUE", "'NAME=VALUE'"},
 	{"foreground", 'F', POPT_ARG_NONE, &params.foreground, CL_HANDLED,
@@ -1016,7 +1021,6 @@ static void process_options (poptContext ctx, lists_t_strs *deferred)
 			options_ignore_config ("ASCIILines");
 			break;
 		case CL_JUMP:
-			arg = poptGetOptArg (ctx);
 			params.jump_to = get_num_param (arg, &jump_type);
 			if (*jump_type)
 				if (!jump_type[1])
@@ -1059,6 +1063,9 @@ static void process_options (poptContext ctx, lists_t_strs *deferred)
 		else
 			fatal ("%s (aliased by %s): %s", opt, alias, reason);
 	}
+
+	if (params.config_file && params.no_config_file)
+		fatal ("Conflicting --config and --no-config options given!");
 }
 
 /* Process the command line options and arguments. */
@@ -1226,9 +1233,16 @@ int main (int argc, const char *argv[])
 	if (!params.allow_iface && params.only_server)
 		fatal ("Server command options can't be used with --server!");
 
-	if (!params.config_file)
-		params.config_file = create_file_name ("config");
-	options_parse (params.config_file);
+	if (!params.no_config_file) {
+		if (params.config_file) {
+			if (!can_read_file (params.config_file))
+				fatal ("Configuration file is not readable: %s",
+				        params.config_file);
+		}
+		else
+			params.config_file = create_file_name ("config");
+		options_parse (params.config_file);
+	}
 
 	process_deferred_overrides (deferred_overrides);
 	lists_strs_free (deferred_overrides);
