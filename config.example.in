@@ -72,8 +72,9 @@
 #MusicDir =
 
 # Start in the music directory by default?  If set to 'no', start
-# in the current directory by default.  A single directory on
-# the command line takes precedence.
+# in the directory being viewed when the was client last active or,
+# as a last resort, the directory in which the client is being started.
+# A single directory on the command line takes precedence.
 #StartInMusicDir = no
 
 # The number of lines which are retained in an in-memory circular logging
