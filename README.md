@@ -12,6 +12,31 @@ What Is It?
 MOC (music on console) is a console audio player for Linux/Unix designed to be
 powerful and easy to use.
 
+This is an unofficial mirror, with a few small asthetic tweaks.  It syncs with 
+the subversion upstream every few weeks.
+MOC makes it easy to use multimedia keys on your keyboard.  For example, in 
+Fluxbox you can add the following to your `.fluxbox/keys` file (after using `xev`
+to discover key numbers):
+
+```bash
+# Play/pause
+179 :Exec mocp --toggle-pause
+# Skip to next song
+225 :Exec mocp --next
+# Go to previous song
+Mod1 225 :Exec mocp --previous
+# Move forward a few seconds: ALT + >
+Mod1 60 :Exec mocp --seek +5
+# Move backward a few seconds: ALT + <
+Mod1 59 :Exec mocp --seek -5
+# Go to MOCP tab (should be first tab)
+128 :Tab 1
+# Toggle shuffle
+152 :Exec mocp --toggle shuffle
+``` 
+
+The rest of the upstream README is as follows:
+
 You just need to select a file from some directory using the menu similar to
 Midnight Commander, and MOC will start playing all files in this directory
 beginning from the chosen file.  There is no need to create playlists as in
