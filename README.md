@@ -12,7 +12,7 @@ What Is It?
 MOC (music on console) is a console audio player for Linux/Unix designed to be
 powerful and easy to use.
 
-This is an unofficial mirror, with a few small asthetic tweaks.  It syncs with 
+This is an unofficial mirror, with a few small aesthetic tweaks.  It syncs with 
 the subversion upstream every few weeks.
 MOC makes it easy to use multimedia keys on your keyboard.  For example, in 
 Fluxbox you can add the following to your `.fluxbox/keys` file (after using `xev`
