@@ -35,6 +35,28 @@ Mod1 59 :Exec mocp --seek -5
 152 :Exec mocp --toggle shuffle
 ``` 
 
+Prerequisites
+-------------
+On Debian/Ubuntu systems, you minimally need the following packages:
+```Bash
+sudo apt-get install gcc autoconf libtool gettext libdb-dev libpopt-dev
+```
+I recommend the following packages as well:
+```Bash
+sudo apt-get install libcurl4-openssl-dev libogg-dev libvorbis-dev libflac-dev libopus-dev libid3tag0-dev libsndfile1-dev libfaad-dev libavcodec-dev
+```
+
+Compilation
+-----------
+```Bash
+autoreconf -if
+./configure
+make -j 2
+sudo make install
+```
+
+Original Text
+-------------
 The rest of the upstream README is as follows:
 
 You just need to select a file from some directory using the menu similar to
