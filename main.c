@@ -687,38 +687,63 @@ static void prepend_mocp_opts (poptContext ctx)
 	}
 }
 
+static const struct poptOption specials[] = {POPT_AUTOHELP
+                                             POPT_AUTOALIAS
+                                             POPT_TABLEEND};
+
+/* Return true iff 'opt' is a POPT AutoHelp option. */
+static inline bool is_autohelp (const struct poptOption *opt)
+{
+	const struct poptOption *autohelp = &specials[0];
+
+	return opt->argInfo == autohelp->argInfo && opt->arg == autohelp->arg;
+}
+
+/* Return true iff 'opt' is a POPT AutoAlias option. */
+static inline bool is_autoalias (const struct poptOption *opt)
+{
+	const struct poptOption *autoalias = &specials[1];
+
+	return opt->argInfo == autoalias->argInfo && opt->arg == autoalias->arg;
+}
+
+/* Return true iff 'opt' is the POPT end-of-table marker. */
+static inline bool is_tableend (const struct poptOption *opt)
+{
+	const struct poptOption *tableend = &specials[2];
+
+	return opt->longName == tableend->longName &&
+	       opt->shortName == tableend->shortName &&
+	       opt->arg == tableend->arg;
+}
+
 /* Return a copy of the POPT option table structure which is suitable
  * for rendering the POPT expansions of the command line. */
 #ifndef OPENWRT
 struct poptOption *clone_popt_options (struct poptOption *opts)
 {
-	size_t count, ix, iy = 0;
+	size_t tally, ix, iy = 0;
 	struct poptOption *result;
-	const struct poptOption specials[] = {POPT_AUTOHELP
-	                                      POPT_AUTOALIAS
-	                                      POPT_TABLEEND};
 
 	assert (opts);
 
-	for (count = 1;
-	     memcmp (&opts[count - 1], &specials[2], sizeof (struct poptOption));
-	     count += 1);
+	for (tally = 1; !is_tableend (&opts[tally - 1]); tally += 1);
 
-	result = xcalloc (count, sizeof (struct poptOption));
+	result = xcalloc (tally, sizeof (struct poptOption));
 
-	for (ix = 0; ix < count; ix += 1) {
+	for (ix = 0; ix < tally; ix += 1) {
 		if (opts[ix].argInfo == POPT_ARG_CALLBACK)
 			continue;
 
-		if (!memcmp (&opts[ix], &specials[0], sizeof (struct poptOption)))
+		if (is_autohelp (&opts[ix]))
 			continue;
 
-		if (!memcmp (&opts[ix], &specials[1], sizeof (struct poptOption)))
+		if (is_autoalias (&opts[ix]))
 			continue;
 
 		memcpy (&result[iy], &opts[ix], sizeof (struct poptOption));
 
-		if (!memcmp (&opts[ix], &specials[2], sizeof (struct poptOption)))
+		if (is_tableend (&opts[ix]))
 			continue;
 
 		if (opts[ix].argInfo == POPT_ARG_INCLUDE_TABLE) {
@@ -757,11 +782,10 @@ struct poptOption *clone_popt_options (struct poptOption *opts)
 void free_popt_clone (struct poptOption *opts)
 {
 	int ix;
-	const struct poptOption table_end = POPT_TABLEEND;
 
 	assert (opts);
 
-	for (ix = 0; memcmp (&opts[ix], &table_end, sizeof (table_end)); ix += 1) {
+	for (ix = 0; !is_tableend (&opts[ix]); ix += 1) {
 		if (opts[ix].argInfo == POPT_ARG_INCLUDE_TABLE)
 			free_popt_clone (opts[ix].arg);
 	}
@@ -776,7 +800,6 @@ void free_popt_clone (struct poptOption *opts)
 struct poptOption *find_popt_option (struct poptOption *opts, int wanted)
 {
 	int ix = 0;
-	const struct poptOption table_end = POPT_TABLEEND;
 
 	assert (opts);
 	assert (LIMIT(wanted, popt_next_val));
@@ -784,7 +807,7 @@ struct poptOption *find_popt_option (struct poptOption *opts, int wanted)
 	while (1) {
 		struct poptOption *result;
 
-		if (!memcmp (&opts[ix], &table_end, sizeof (table_end)))
+		if (is_tableend (&opts[ix]))
 			break;
 
 		assert (opts[ix].argInfo != POPT_ARG_CALLBACK);
