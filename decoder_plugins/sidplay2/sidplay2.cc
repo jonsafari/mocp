@@ -234,6 +234,7 @@ extern "C" void *sidplay2_open(const char *file)
 
   decoder_error_init(&s2d->error);
   s2d->tune=NULL;
+  s2d->sublengths = NULL;
   s2d->length = 0;
 
   SidTuneMod *st = new SidTuneMod(file);
