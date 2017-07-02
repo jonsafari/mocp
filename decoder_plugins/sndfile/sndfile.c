@@ -146,6 +146,7 @@ static void *sndfile_open (const char *file)
 
 	decoder_error_init (&data->error);
 	memset (&data->snd_info, 0, sizeof(data->snd_info));
+	data->sndfile = NULL;
 	data->timing_broken = false;
 
 	fd = open (file, O_RDONLY);

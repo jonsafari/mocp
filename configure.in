@@ -44,12 +44,6 @@ AC_SUBST([plugindir])
 PLUGIN_LDFLAGS='-module -avoid-version'
 AC_SUBST([PLUGIN_LDFLAGS])
 
-case "$host_vendor" in
-	openwrt)
-		AC_DEFINE([OPENWRT], 1, [Define if your distribution is OpenWRT])
-		;;
-esac
-
 case "$host_os" in
 	linux*)
 		AC_DEFINE([LINUX], 1, [Define if your system is GNU/Linux])
