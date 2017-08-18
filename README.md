@@ -39,13 +39,13 @@ Prerequisites
 -------------
 On Debian/Ubuntu systems, you minimally need the following packages:
 ```Bash
-sudo apt-get install gcc autoconf libtool gettext libdb-dev libpopt-dev
+sudo apt-get install gcc autoconf libtool gettext libdb-dev libpopt-dev libncursesw5-dev
 ```
 I recommend the following packages as well:
 ```Bash
 sudo apt-get install libasound2-dev libcurl4-openssl-dev libogg-dev libvorbis-dev libflac-dev libopus-dev libid3tag0-dev libsndfile1-dev libfaad-dev libavcodec-dev libsamplerate0-dev librcc-dev
 ```
-**Optional**: FFmpeg adds many, many more file formats, including AAC, Opus, MP4, and WMA. First add www.deb-multimedia.org to your apt-get sources.  Then get FFmpeg:
+**Optional**: FFmpeg adds many, many more file formats, including AAC, Opus, MP4, and WMA. You may need to first add www.deb-multimedia.org to your apt-get sources.  Then get FFmpeg:
 ```Bash
 sudo apt-get install libavformat-dev
 ```
