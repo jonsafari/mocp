@@ -19,14 +19,22 @@ dnl decoder uses it...
 		if test "x$sidutils_OK" = "xyes"; then
 			s2lib=`$PKG_CONFIG --variable=builders libsidplay2 2>/dev/null`
 			if test "x$s2lib" != "x"; then
-				sidplay2_LDFLAGS="-L$s2lib -lresid-builder"
-				AC_SUBST(sidplay2_LDFLAGS)
-				AC_SUBST(sidplay2_LIBS)
-				AC_SUBST(sidplay2_CFLAGS)
-				AC_SUBST(sidutils_LIBS)
-				AC_SUBST(sidutils_CFLAGS)
-				want_sidplay2="yes"
-				DECODER_PLUGINS="$DECODER_PLUGINS sidplay2"
+				AC_LANG_PUSH([C++])
+				save_CXXFLAGS="$CXXFLAGS"
+				CXXFLAGS="$CXXFLAGS $sidplay2_CFLAGS"
+				AC_CHECK_HEADER([sidplay/builders/resid.h], [resid_OK="yes"])
+				CXXFLAGS="$save_CXXFLAGS"
+				AC_LANG_POP([C++])
+				if test "x$resid_OK" = "xyes"; then
+					sidplay2_LDFLAGS="-L$s2lib -lresid-builder"
+					AC_SUBST(sidplay2_LDFLAGS)
+					AC_SUBST(sidplay2_LIBS)
+					AC_SUBST(sidplay2_CFLAGS)
+					AC_SUBST(sidutils_LIBS)
+					AC_SUBST(sidutils_CFLAGS)
+					want_sidplay2="yes"
+					DECODER_PLUGINS="$DECODER_PLUGINS sidplay2"
+				fi
 			fi
 		fi
 	fi
