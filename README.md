@@ -14,26 +14,9 @@ powerful and easy to use.
 
 This is an unofficial mirror, with a few small aesthetic tweaks.  It syncs with 
 the subversion upstream every few weeks.
-MOC makes it easy to use multimedia keys on your keyboard.  For example, in 
-Fluxbox you can add the following to your `.fluxbox/keys` file (after using `xev`
-to discover key numbers):
+MOC makes it easy to use multimedia keys on your keyboard, which is discussed below.  
 
-```bash
-# Play/pause
-179 :Exec mocp --toggle-pause
-# Skip to next song
-225 :Exec mocp --next
-# Go to previous song
-Mod1 225 :Exec mocp --previous
-# Move forward a few seconds: ALT + >
-Mod1 60 :Exec mocp --seek +5
-# Move backward a few seconds: ALT + <
-Mod1 59 :Exec mocp --seek -5
-# Go to MOCP tab (should be first tab)
-128 :Tab 1
-# Toggle shuffle
-152 :Exec mocp --toggle shuffle
-``` 
+
 
 Prerequisites
 -------------
@@ -58,6 +41,41 @@ autoreconf -if
 make -j 2
 sudo make install
 ```
+
+
+Keyboard Shortcuts
+------------------
+For Xfce, go to `Settings -> Keyboard -> Application Shortcuts`, then add shortcuts with
+commands like `mocp --next` and others listed in `mocp --help`.  I find that the most
+useful keyboard shortcuts are for the following:
+
+* `mocp --toggle-pause` - Play/pause
+* `mocp --toggle shuffle` - Enable/disable shuffle
+* `mocp --next` - Skip to the next song
+* `mocp --previous` - Go to the previous song
+* `mocp --seek +5` - Jump 5 seconds forward
+* `mocp --seek -5` - Jump 5 seconds back
+
+In Fluxbox you can add the following to your `.fluxbox/keys` file (after using `xev`
+to discover key numbers):
+
+```bash
+# Play/pause
+179 :Exec mocp --toggle-pause
+# Skip to next song
+225 :Exec mocp --next
+# Go to previous song
+Mod1 225 :Exec mocp --previous
+# Move forward a few seconds: ALT + >
+Mod1 60 :Exec mocp --seek +5
+# Move backward a few seconds: ALT + <
+Mod1 59 :Exec mocp --seek -5
+# Go to MOCP tab (should be first tab)
+128 :Tab 1
+# Toggle shuffle
+152 :Exec mocp --toggle shuffle
+``` 
+
 
 Original Text
 -------------
