@@ -39,7 +39,7 @@ directory of the playlist, or of the symlink being used to reference it.)
 .SH OPTIONS
 If an option can also be set in the configuration file the command line
 overrides it (but see the \fB\-O\fP option for the list-valued
-configuration options exception).
+configuration file options exception).
 .LP
 .TP
 \fB\-D\fP, \fB\-\-debug\fP
@@ -145,7 +145,7 @@ Do not read any configuration file but use the built-in defaults.
 .TP
 \fB\-O\fP \fINAME\fP[\fB+\fP]\fB=\fP\fIVALUE\fP, \
 \fB\-\-set\-option\fP \fINAME\fP[\fB+\fP]\fB=\fP\fIVALUE\fP
-Override configuration option NAME with VALUE.  This option can be
+Override configuration file option NAME with VALUE.  This option can be
 repeated as many times as needed and the option name is not case sensitive.
 Most option values are set before the configuration file is processed (which
 allows the new values to be picked up by substitutions); however, list-valued
@@ -428,7 +428,7 @@ or they are writable by anyone other than their owner.
 .TP
 .B TERM \fPand\fB WINDOW
 Used by MOC to distinguish between X-terminals, screen(1) and console
-terminals.  MOC uses the configuration options \fBXTerms\fP and
+terminals.  MOC uses the configuration file options \fBXTerms\fP and
 \fBScreenTerms\fP to help make this determination.
 .LP
 .SH FILES
