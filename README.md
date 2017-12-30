@@ -16,8 +16,6 @@ This is an unofficial mirror, with a few small aesthetic tweaks.  It syncs with
 the subversion upstream every few weeks.
 MOC makes it easy to use multimedia keys on your keyboard, which is discussed below.  
 
-
-
 Prerequisites
 -------------
 On Debian/Ubuntu systems, you minimally need the following packages:
@@ -41,7 +39,6 @@ autoreconf -if
 make -j 2
 sudo make install
 ```
-
 
 Keyboard Shortcuts
 ------------------

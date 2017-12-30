@@ -2,10 +2,12 @@
 # 'config' and placed in the ~/.moc directory.  As this file can specify
 # commands which invoke other applications, MOC will refuse to start if it
 # is not owned by either root or the current user, or if it is writable by
-# anyone other than its owner.  All options are given with their default
-# values, and therefore commented.
+# anyone other than its owner.
 
-# Comments begin with '#'.
+# Comments begin with '#'.  All options are given with their default
+# values, and therefore commented.  If you change the value from the
+# default you must uncomment the line to have the new value take effect.
+#
 # You can use quotes and escape ('\') in parameters.
 #
 # You can have variable values substituted by enclosing the variable name
