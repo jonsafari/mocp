@@ -431,6 +431,9 @@ void server_init (int debugging, int foreground)
 		redirect_output (stderr);
 	}
 
+	logit ("Running OnServerStart");
+	run_extern_cmd ("OnServerStart");
+
 	return;
 }
 
@@ -705,6 +708,8 @@ static void server_shutdown ()
 	audio_exit ();
 	tags_cache_free (tags_cache);
 	tags_cache = NULL;
+	logit ("Running OnServerStop");
+	run_extern_cmd ("OnServerStop");
 	unlink (socket_name());
 	unlink (create_file_name(PID_FILE));
 	close (wake_up_pipe[0]);

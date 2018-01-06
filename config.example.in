@@ -697,6 +697,12 @@
 #
 #OnStop =
 
+# Run the OnServerStart or OnServerStop commands (full path, no arguments)
+# when MOC server is started or terminated respectively.  The server will
+# not wait for the commands to complete before continuing.
+#OnServerStart =
+#OnServerStop =
+
 # This option determines which song to play after finishing all the songs
 # in the queue.  Setting this to 'yes' causes MOC to play the song which
 # follows the song being played before queue playing started. If set to
