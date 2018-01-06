@@ -320,6 +320,36 @@ static void log_pthread_stack_size ()
 #endif
 }
 
+/* Handle running external command on requested event. */
+static void run_extern_cmd (const char *event)
+{
+	char *command;
+
+	command = xstrdup (options_get_str (event));
+
+	if (command) {
+		char *args[2], *err;
+
+		args[0] = xstrdup (command);
+		args[1] = NULL;
+
+		switch (fork ()) {
+		case 0:
+			execve (command, args, environ);
+			exit (EXIT_FAILURE);
+		case -1:
+			err = xstrerror (errno);
+			logit ("Error when running %s command '%s': %s",
+			        event, command, err);
+			free (err);
+			break;
+		}
+
+		free (command);
+		free (args[0]);
+	}
+}
+
 /* Initialize the server - return fd of the listening socket or -1 on error */
 void server_init (int debugging, int foreground)
 {
@@ -565,36 +595,6 @@ static void on_song_change ()
 	last_file = curr_file;
 }
 
-/* Handle running external command on Stop event. */
-static void on_stop ()
-{
-	char *command;
-
-	command = xstrdup (options_get_str("OnStop"));
-
-	if (command) {
-		char *args[2], *err;
-
-		args[0] = xstrdup (command);
-		args[1] = NULL;
-
-		switch (fork()) {
-			case 0:
-				execve (command, args, environ);
-				exit (EXIT_FAILURE);
-			case -1:
-				err = xstrerror (errno);
-				logit ("Error when running OnStop command '%s': %s",
-				        command, err);
-				free (err);
-				break;
-		}
-
-		free (command);
-		free (args[0]);
-	}
-}
-
 /* Return true iff 'event' is a playlist event. */
 static inline bool is_plist_event (const int event)
 {
@@ -622,7 +622,7 @@ static void add_event_all (const int event, const void *data)
 				on_song_change ();
 				break;
 			case STATE_STOP:
-				on_stop ();
+				run_extern_cmd ("OnStop");
 				break;
 		}
 	}
