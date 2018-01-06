@@ -336,7 +336,8 @@ static void run_extern_cmd (const char *event)
 		switch (fork ()) {
 		case 0:
 			execve (command, args, environ);
-			exit (EXIT_FAILURE);
+			fatal ("Error when running %s command '%s': %s",
+			        event, command, xstrerror (errno));
 		case -1:
 			err = xstrerror (errno);
 			logit ("Error when running %s command '%s': %s",
@@ -588,7 +589,8 @@ static void on_song_change ()
 	case 0:
 		args = lists_strs_save (arg_list);
 		execve (args[0], args, environ);
-		exit (EXIT_FAILURE);
+		fatal ("Error when running OnSongChange command '%s': %s",
+		        args[0], xstrerror (errno));
 	case -1:
 		log_errno ("Failed to fork()", errno);
 	}
