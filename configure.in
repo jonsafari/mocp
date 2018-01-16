@@ -402,7 +402,11 @@ then
 		 AC_DEFINE([HAVE_CURL], 1, [Define if you have libcurl])
 		 EXTRA_LIBS="$EXTRA_LIBS $CURL_LIBS"
 		 CFLAGS="$CFLAGS $CURL_CFLAGS"
-		 COMPILE_CURL="yes"],
+		 COMPILE_CURL="yes"
+		 if ! $PKG_CONFIG --atleast-version 7.15.4 libcurl
+		 then
+			UPGRADE_LIBCURL="yes"
+		 fi],
 		[true])
 fi
 
@@ -478,6 +482,13 @@ if test "x$UPGRADE_MUSEPACK" = "xyes"
 then
 	echo "WARNING: MOC will soon require Musepack libmpc (rather than libmpcdec);"
 	echo "         plan to upgrade your Musepack soon."
+	echo
+fi
+
+if test "x$UPGRADE_LIBCURL" = "xyes"
+then
+	echo "WARNING: MOC will soon require libcurl version 7.15.4 or later;"
+	echo "         plan to upgrade your cURL library soon."
 	echo
 fi
 
