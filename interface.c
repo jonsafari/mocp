@@ -3150,6 +3150,7 @@ static void toggle_playlist_full_paths (void)
 static void menu_key (const struct iface_key *k)
 {
     enum key_cmd cmd = get_key_cmd (CON_MENU, k);
+
 	if (iface_in_help ())
 		iface_handle_help_key (k);
 	else if (iface_in_lyrics ()
@@ -3166,8 +3167,6 @@ static void menu_key (const struct iface_key *k)
 	else if (iface_in_theme_menu ())
 		theme_menu_key (k);
 	else if (!iface_key_is_resize (k)) {
-		/* enum key_cmd cmd = get_key_cmd (CON_MENU, k); */
-
 		switch (cmd) {
 			case KEY_CMD_QUIT_CLIENT:
 				want_quit = QUIT_CLIENT;
