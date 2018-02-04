@@ -80,10 +80,13 @@ lists_t_strs *lyrics_load_file (const char *filename)
 	return result;
 }
 
-/* Given an audio's file name, load lyrics from the default lyrics file name. */
+/* Given an audio's file name, load lyrics from the default lyrics file name. 
+ * Also try with .txt extension if extensionless file not found.
+ */
 void lyrics_autoload (const char *filename)
 {
 	char *lyrics_filename, *extn;
+	char *lyrics_filename_dottxt;
 
 	assert (!raw_lyrics);
 	assert (lyrics_message);
@@ -107,7 +110,15 @@ void lyrics_autoload (const char *filename)
 	extn = ext_pos (lyrics_filename);
 	if (extn) {
 		*--extn = '\0';
-		raw_lyrics = lyrics_load_file (lyrics_filename);
+        if (file_exists(lyrics_filename)) {
+            raw_lyrics = lyrics_load_file (lyrics_filename);
+        }
+        else {
+            lyrics_filename = xrealloc(lyrics_filename, strlen(lyrics_filename) + 5);
+            extn = lyrics_filename + strlen(lyrics_filename) - 1;
+            strcpy(lyrics_filename + strlen(lyrics_filename), ".txt");
+            raw_lyrics = lyrics_load_file (lyrics_filename);
+        }
 	}
 	else
 		lyrics_message = "[No lyrics file!]";

@@ -3149,17 +3149,24 @@ static void toggle_playlist_full_paths (void)
 /* Handle key. */
 static void menu_key (const struct iface_key *k)
 {
+    enum key_cmd cmd = get_key_cmd (CON_MENU, k);
+
 	if (iface_in_help ())
 		iface_handle_help_key (k);
-	else if (iface_in_lyrics ())
+	else if (iface_in_lyrics ()
+        && cmd != KEY_CMD_STOP         
+        && cmd != KEY_CMD_PAUSE         
+        && cmd != KEY_CMD_SEEK_FORWARD         
+        && cmd != KEY_CMD_SEEK_BACKWARD
+        && cmd != KEY_CMD_SEEK_FORWARD_5
+        && cmd != KEY_CMD_SEEK_BACKWARD_5
+    )
 		iface_handle_lyrics_key (k);
 	else if (iface_in_entry ())
 		entry_key (k);
 	else if (iface_in_theme_menu ())
 		theme_menu_key (k);
 	else if (!iface_key_is_resize (k)) {
-		enum key_cmd cmd = get_key_cmd (CON_MENU, k);
-
 		switch (cmd) {
 			case KEY_CMD_QUIT_CLIENT:
 				want_quit = QUIT_CLIENT;
