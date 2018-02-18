@@ -389,6 +389,10 @@ AC_CHECK_HEADERS([librcc.h],
                                 AC_SUBST([RCC_LIBS])
                                 COMPILE_RCC=yes])
                  ])
+    if ! $PKG_CONFIG --atleast-version 0.2.10 librcc
+    then
+        UPGRADE_LIBRCC="yes"
+    fi
 fi
 
 dnl curl
@@ -482,6 +486,13 @@ if test "x$UPGRADE_MUSEPACK" = "xyes"
 then
 	echo "WARNING: MOC will soon require Musepack libmpc (rather than libmpcdec);"
 	echo "         plan to upgrade your Musepack soon."
+	echo
+fi
+
+if test "x$UPGRADE_LIBRCC" = "xyes"
+then
+	echo "WARNING: MOC will soon require librcc version 0.2.10 or later;"
+	echo "         plan to upgrade your RCC library soon."
 	echo
 fi
 
