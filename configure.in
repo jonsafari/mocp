@@ -100,28 +100,6 @@ AC_TRY_LINK([
 
 AC_C_BIGENDIAN
 
-dnl Require with iconv for charset translation.
-AM_ICONV
-if test "x$am_cv_func_iconv" != xyes; then
-	AC_MSG_ERROR([No iconv library found.])
-fi
-EXTRA_LIBS="$EXTRA_LIBS $LIBICONV"
-
-dnl librcc
-COMPILE_RCC=no
-AC_ARG_WITH(rcc, AS_HELP_STRING([--without-rcc],
-                                [Compile without LIBRCC support]))
-if test "x$with_rcc" != "xno"
-then
-AC_CHECK_HEADERS([librcc.h],
-                 [AC_DEFINE([HAVE_RCC], 1, [Define if you have librcc.h])
-                  AC_CHECK_LIB(rcc, rccInit,
-                               [RCC_LIBS="-lrcc"
-                                AC_SUBST([RCC_LIBS])
-                                COMPILE_RCC=yes])
-                 ])
-fi
-
 AC_C_CONST
 AC_TYPE_INTPTR_T
 AX_CFLAGS_GCC_OPTION(-Wall)
@@ -391,6 +369,32 @@ fi
 dnl Decoder plugins
 m4_include(decoder_plugins/decoders.m4)
 
+dnl Require with iconv for charset translation.
+AM_ICONV
+if test "x$am_cv_func_iconv" != xyes; then
+	AC_MSG_ERROR([No iconv library found.])
+fi
+EXTRA_LIBS="$EXTRA_LIBS $LIBICONV"
+
+dnl librcc
+COMPILE_RCC=no
+AC_ARG_WITH(rcc, AS_HELP_STRING([--without-rcc],
+                                [Compile without LIBRCC support]))
+if test "x$with_rcc" != "xno"
+then
+AC_CHECK_HEADERS([librcc.h],
+                 [AC_DEFINE([HAVE_RCC], 1, [Define if you have librcc.h])
+                  AC_CHECK_LIB(rcc, rccInit,
+                               [RCC_LIBS="-lrcc"
+                                AC_SUBST([RCC_LIBS])
+                                COMPILE_RCC=yes])
+                 ])
+    if ! $PKG_CONFIG --atleast-version 0.2.10 librcc
+    then
+        UPGRADE_LIBRCC="yes"
+    fi
+fi
+
 dnl curl
 COMPILE_CURL="no"
 AC_ARG_WITH(curl, AS_HELP_STRING([--without-curl],
@@ -402,7 +406,11 @@ then
 		 AC_DEFINE([HAVE_CURL], 1, [Define if you have libcurl])
 		 EXTRA_LIBS="$EXTRA_LIBS $CURL_LIBS"
 		 CFLAGS="$CFLAGS $CURL_CFLAGS"
-		 COMPILE_CURL="yes"],
+		 COMPILE_CURL="yes"
+		 if ! $PKG_CONFIG --atleast-version 7.15.4 libcurl
+		 then
+			UPGRADE_LIBCURL="yes"
+		 fi],
 		[true])
 fi
 
@@ -478,6 +486,20 @@ if test "x$UPGRADE_MUSEPACK" = "xyes"
 then
 	echo "WARNING: MOC will soon require Musepack libmpc (rather than libmpcdec);"
 	echo "         plan to upgrade your Musepack soon."
+	echo
+fi
+
+if test "x$UPGRADE_LIBRCC" = "xyes"
+then
+	echo "WARNING: MOC will soon require librcc version 0.2.10 or later;"
+	echo "         plan to upgrade your RCC library soon."
+	echo
+fi
+
+if test "x$UPGRADE_LIBCURL" = "xyes"
+then
+	echo "WARNING: MOC will soon require libcurl version 7.15.4 or later;"
+	echo "         plan to upgrade your cURL library soon."
 	echo
 fi
 

@@ -190,7 +190,7 @@ done
 
 # Allow for log file parameter.
 LOG="${1:-mocp_server_log}"
-[[ "$LOG" = "-" ]] && LOG=/dev/fd/0
+[[ "$LOG" = "-" ]] && LOG=/dev/stdin
 
 # Output formatting.
 $SILENT || echo
@@ -205,7 +205,7 @@ do
 
   # Extract MOC revision header.
   [[ "$REPLY" =~ "This is Music On Console" ]] && \
-      REVN="$(echo "$REPLY" | sed 's/^.*Music/Music/')"
+      REVN="$(expr "$REPLY" : '.*\(Music .*\)')"
 
   # Check for Tremor decoder.
   [[ "$REPLY" =~ Loaded\ [0-9]+\ decoders:.*vorbis\(tremor\) ]] && \
@@ -213,21 +213,20 @@ do
 
   # Extract file's full pathname.
   [[ "$REPLY" =~ "Playing item" ]] && \
-     FILE="$(echo "$REPLY" | sed 's/^.* item [0-9]*: \(.*\)$/\1/')"
+     FILE="$(expr "$REPLY" : '.* item [0-9]*: \(.*\)')"
 
   # Ignore all non-MD5 lines.
   [[ "$REPLY" =~ "MD5" ]] || continue
 
   # Extract fields of interest.
-  NAME="$(echo "$REPLY" | sed 's/^.*MD5(\([^)]*\)) = .*$/\1/')"
-  REST="$(echo "$REPLY" | sed 's/^.*MD5([^)]*) = \(.*\)$/\1/')"
-  SUM=$(echo $REST | cut -f1 -d' ')
-  LEN=$(echo $REST | cut -f2 -d' ')
-  DEC=$(echo $REST | cut -f3 -d' ')
-  $TREMOR && [[ "$DEC" = "vorbis" ]] && DEC=tremor
-  FMT=$(echo $REST | cut -f4 -d' ')
-  CHANS=$(echo $REST | cut -f5 -d' ')
-  RATE=$(echo $REST | cut -f6 -d' ')
+  NAME="$(expr "$REPLY" : '.*MD5(\([^)]*\))')"
+  set -- $(expr "$REPLY" : '.*MD5([^)]*) = \(.*\)')
+  SUM=$1
+  LEN=$2
+  $TREMOR && [[ "$3" = "vorbis" ]] && DEC=tremor || DEC=$3
+  FMT=$4
+  CHANS=$5
+  RATE=$6
 
   # Check that we have the full pathname and it's not a dangling symlink.
   [[ "$NAME" = "$(basename "$FILE")" ]] || die Filename mismatch
@@ -239,7 +238,7 @@ do
       IGNORE_LEN=false
       IGNORE_SUM=false
       $DEC
-      SUM2=$(echo "$SUM2" | cut -f1 -d' ')
+      SUM2=$(expr "$SUM2" : '\([^ ]*\)')
       ;;
   modplug|musepack|sidplay2|timidity|tremor|wavpack)
       $IGNORE && continue
@@ -259,10 +258,11 @@ do
 
   # Compare results.
   BADFMT=false
-  $EXTRA && [[ "${NAME:0:9}" = "sinewave-" ]] && {
-    FMT2=$(echo $NAME | cut -f2 -d'-' | sed "s/24/32/")
-    CHANS2=$(echo $NAME | cut -f3 -d'-')
-    RATE2=$(echo $NAME | cut -f4 -d'-' | cut -f1 -d'.')
+  $EXTRA && [[ "$NAME" == "sinewave-*" ]] && {
+    set -- $(echo $NAME | tr '.-' ' ')
+    FMT2=${2/24/32/}
+    CHANS2=$3
+    RATE2=$4
     [[ "$FMT" = "$FMT2" ]] || BADFMT=true
     [[ "$CHANS" = "$CHANS2" ]] || BADFMT=true
     [[ "$RATE" = "$RATE2" ]] || BADFMT=true
