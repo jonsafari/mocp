@@ -73,6 +73,10 @@ Mod1 59 :Exec mocp --seek -5
 152 :Exec mocp --toggle shuffle
 ``` 
 
+Remote Controls
+---------------
+It's really easy to use a remote control with MOC.  You can use any remote that appears to your computer as a keyboard, like [this one](https://smile.amazon.com/dp/B01MSX306Z) or similar ones.  Then setup keyboard shortcuts as described above for each button you want to use to control MOC.
+
 
 Original Text
 -------------
