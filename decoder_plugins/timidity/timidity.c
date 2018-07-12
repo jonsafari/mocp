@@ -142,7 +142,7 @@ static int timidity_decode (void *void_data, char *buf, int buf_len,
   sound_params->rate = midioptions.rate;
   sound_params->fmt = (midioptions.format==MID_AUDIO_S16LSB)?(SFMT_S16 | SFMT_LE):SFMT_S8;
 
-  return mid_song_read_wave(data->midisong, buf, buf_len);
+  return mid_song_read_wave(data->midisong, (void *)buf, buf_len);
 }
 
 static int timidity_get_bitrate (void *unused ATTR_UNUSED)
