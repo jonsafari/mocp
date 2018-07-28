@@ -234,15 +234,12 @@ char *file_type_name (const char *file)
 			size_t len;
 
 			len = strlen (ext);
-			switch (len) {
-				default:
+			for (size_t ix = 0; ix < len; ix += 1) {
+				if (ix > 1) {
 					buf[2] = toupper (ext[len - 1]);
-				case 2:
-					buf[1] = toupper (ext[1]);
-				case 1:
-					buf[0] = toupper (ext[0]);
-				case 0:
 					break;
+				}
+				buf[ix] = toupper (ext[ix]);
 			}
 		}
 	}
