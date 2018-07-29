@@ -56,6 +56,16 @@
 #include "files.h"
 #include "lists.h"
 
+#ifndef AV_CODEC_CAP_DELAY
+# define AV_CODEC_CAP_DELAY CODEC_CAP_DELAY
+# define AV_CODEC_CAP_EXPERIMENTAL CODEC_CAP_EXPERIMENTAL
+# define AV_CODEC_CAP_TRUNCATED CODEC_CAP_TRUNCATED
+#endif
+
+#ifndef AV_CODEC_FLAG_TRUNCATED
+# define AV_CODEC_FLAG_TRUNCATED CODEC_FLAG_TRUNCATED
+#endif
+
 /* Set SEEK_IN_DECODER to 1 if you'd prefer seeking to be delay until
  * the next time ffmpeg_decode() is called.  This will provide seeking
  * in formats for which FFmpeg falsely reports seek errors, but could
@@ -736,7 +746,7 @@ static void *ffmpeg_open_internal (struct ffmpeg_data *data)
 	 * FFmpeg/LibAV in use.  For some versions this will be caught in
 	 * *_find_stream_info() above and misreported as an unfound codec
 	 * parameters error. */
-	if (data->codec->capabilities & CODEC_CAP_EXPERIMENTAL) {
+	if (data->codec->capabilities & AV_CODEC_CAP_EXPERIMENTAL) {
 		decoder_error (&data->error, ERROR_FATAL, 0,
 				"The codec is experimental and may damage MOC: %s",
 				data->codec->name);
@@ -744,8 +754,8 @@ static void *ffmpeg_open_internal (struct ffmpeg_data *data)
 	}
 
 	set_downmixing (data);
-	if (data->codec->capabilities & CODEC_CAP_TRUNCATED)
-		data->enc->flags |= CODEC_FLAG_TRUNCATED;
+	if (data->codec->capabilities & AV_CODEC_CAP_TRUNCATED)
+		data->enc->flags |= AV_CODEC_FLAG_TRUNCATED;
 
 	if (avcodec_open2 (data->enc, data->codec, NULL) < 0)
 	{
@@ -763,7 +773,7 @@ static void *ffmpeg_open_internal (struct ffmpeg_data *data)
 
 	data->sample_width = sfmt_Bps (data->fmt);
 
-	if (data->codec->capabilities & CODEC_CAP_DELAY)
+	if (data->codec->capabilities & AV_CODEC_CAP_DELAY)
 		data->delay = true;
 	data->seek_broken = is_seek_broken (data);
 	data->timing_broken = is_timing_broken (data->ic);
