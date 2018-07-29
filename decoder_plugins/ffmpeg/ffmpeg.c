@@ -543,10 +543,16 @@ static void set_downmixing (struct ffmpeg_data *data)
 
 static int ffmpeg_io_read_cb (void *s, uint8_t *buf, int count)
 {
-	if (!buf || count == 0)
-		return 0;
+	int len;
 
-	return io_read ((struct io_stream *)s, buf, (size_t)count);
+	if (!buf || count <= 0)
+		return AVERROR(EINVAL);
+
+	len = io_read ((struct io_stream *)s, buf, (size_t)count);
+	if (len == 0)
+		len = AVERROR_EOF;
+
+	return len;
 }
 
 static int64_t ffmpeg_io_seek_cb (void *s, int64_t offset, int whence)
