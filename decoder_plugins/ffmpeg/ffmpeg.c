@@ -196,7 +196,15 @@ static unsigned int find_first_audio (AVFormatContext *ic)
 	assert (ic);
 
 	for (result = 0; result < ic->nb_streams; result += 1) {
-		if (ic->streams[result]->codec->codec_type == AVMEDIA_TYPE_AUDIO)
+		enum AVMediaType codec_type;
+
+#ifdef HAVE_STRUCT_AVSTREAM_CODECPAR
+		codec_type = ic->streams[result]->codecpar->codec_type;
+#else
+		codec_type = ic->streams[result]->codec->codec_type;
+#endif
+
+		if (codec_type == AVMEDIA_TYPE_AUDIO)
 			break;
 	}
 
@@ -690,12 +698,21 @@ static void *ffmpeg_open_internal (struct ffmpeg_data *data)
 		goto end;
 	}
 
+#ifdef HAVE_STRUCT_AVSTREAM_CODECPAR
+	err = avcodec_parameters_to_context (data->enc, data->stream->codecpar);
+	if (err < 0) {
+		decoder_error (&data->error, ERROR_FATAL, 0,
+		               "Failed to copy codec parameters");
+		goto end;
+	}
+#else
 	err = avcodec_copy_context (data->enc, data->stream->codec);
 	if (err < 0) {
 		decoder_error (&data->error, ERROR_FATAL, 0,
 		               "Failed to copy codec context");
 		goto end;
 	}
+#endif
 
 	data->codec = avcodec_find_decoder (data->enc->codec_id);
 	if (!data->codec) {

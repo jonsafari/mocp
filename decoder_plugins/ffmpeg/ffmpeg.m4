@@ -54,6 +54,8 @@ then
 		AC_SEARCH_LIBS(avcodec_free_context, avcodec,
 			[AC_DEFINE([HAVE_AVCODEC_FREE_CONTEXT], 1,
 				[Define to 1 if you have the `avcodec_free_context' function.])])
+		AC_CHECK_MEMBERS([struct AVStream.codecpar], [], [],
+	                     [#include <libavformat/avformat.h>])
         CPPFLAGS="$save_CPPFLAGS"
         CFLAGS="$save_CFLAGS"
         LIBS="$save_LIBS"
