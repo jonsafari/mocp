@@ -682,7 +682,20 @@ static void *ffmpeg_open_internal (struct ffmpeg_data *data)
 	}
 
 	data->stream = data->ic->streams[audio_ix];
-	data->enc = data->stream->codec;
+
+	data->enc = avcodec_alloc_context3 (NULL);
+	if (!data->enc) {
+		decoder_error (&data->error, ERROR_FATAL, 0,
+		               "Failed to allocate codec context");
+		goto end;
+	}
+
+	err = avcodec_copy_context (data->enc, data->stream->codec);
+	if (err < 0) {
+		decoder_error (&data->error, ERROR_FATAL, 0,
+		               "Failed to copy codec context");
+		goto end;
+	}
 
 	data->codec = avcodec_find_decoder (data->enc->codec_id);
 	if (!data->codec) {
@@ -728,7 +741,6 @@ static void *ffmpeg_open_internal (struct ffmpeg_data *data)
 		decoder_error (&data->error, ERROR_FATAL, 0,
 		               "Cannot get sample size from unknown sample format: %s",
 		               av_get_sample_fmt_name (data->enc->sample_fmt));
-		avcodec_close (data->enc);
 		goto end;
 	}
 
@@ -743,7 +755,6 @@ static void *ffmpeg_open_internal (struct ffmpeg_data *data)
 		ffmpeg_log_repeats (NULL);
 		decoder_error (&data->error, ERROR_FATAL, 0,
 		                   "Broken WAV file; use W64!");
-		avcodec_close (data->enc);
 		goto end;
 	}
 
@@ -759,6 +770,12 @@ static void *ffmpeg_open_internal (struct ffmpeg_data *data)
 	return data;
 
 end:
+#ifdef HAVE_AVCODEC_FREE_CONTEXT
+	avcodec_free_context (&data->enc);
+#else
+	avcodec_close (data->enc);
+	av_freep (&data->enc);
+#endif
 	avformat_close_input (&data->ic);
 	ffmpeg_log_repeats (NULL);
 	return data;
@@ -1088,7 +1105,7 @@ static bool seek_in_stream (struct ffmpeg_data *data, int sec)
 		return false;
 	}
 
-	avcodec_flush_buffers (data->stream->codec);
+	avcodec_flush_buffers (data->enc);
 
 	return true;
 }
@@ -1219,7 +1236,12 @@ static void ffmpeg_close (void *prv_data)
 	}
 
 	if (data->okay) {
+#ifdef HAVE_AVCODEC_FREE_CONTEXT
+		avcodec_free_context (&data->enc);
+#else
 		avcodec_close (data->enc);
+		av_freep (&data->enc);
+#endif
 		avformat_close_input (&data->ic);
 		free_remain_buf (data);
 	}
