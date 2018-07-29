@@ -30,6 +30,7 @@
 #include <strings.h>
 #include <assert.h>
 #include <stdint.h>
+#include <errno.h>
 
 #include <libavformat/avformat.h>
 #include <libavutil/mathematics.h>
@@ -551,6 +552,8 @@ static int ffmpeg_io_read_cb (void *s, uint8_t *buf, int count)
 	len = io_read ((struct io_stream *)s, buf, (size_t)count);
 	if (len == 0)
 		len = AVERROR_EOF;
+	else if (len < 0)
+		len = AVERROR(EIO);
 
 	return len;
 }
