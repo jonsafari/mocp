@@ -66,6 +66,14 @@ struct timespec;
 # define GCC_DIAG_ON(x)
 #endif
 
+#ifdef HAVE_FORMAT_TRUNCATION_WARNING
+# define SUPPRESS_FORMAT_TRUNCATION_WARNING GCC_DIAG_OFF(format-truncation)
+# define UNSUPPRESS_FORMAT_TRUNCATION_WARNING GCC_DIAG_ON(format-truncation)
+#else
+# define SUPPRESS_FORMAT_TRUNCATION_WARNING
+# define UNSUPPRESS_FORMAT_TRUNCATION_WARNING
+#endif
+
 #define CONFIG_DIR      ".moc"
 #define LOCK(mutex)     pthread_mutex_lock (&mutex)
 #define UNLOCK(mutex)   pthread_mutex_unlock (&mutex)

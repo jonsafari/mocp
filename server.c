@@ -540,8 +540,8 @@ static void on_song_change ()
 				break;
 			case 'n':
 				if (curr_tags->track >= 0) {
-					str = (char *) xmalloc (sizeof (char) * 4);
-					snprintf (str, 4, "%d", curr_tags->track);
+					str = (char *) xmalloc (sizeof (char) * 16);
+					snprintf (str, 16, "%d", curr_tags->track);
 					lists_strs_push (arg_list, str);
 				}
 				else
@@ -552,8 +552,8 @@ static void on_song_change ()
 				break;
 			case 'D':
 				if (curr_tags->time >= 0) {
-					str = (char *) xmalloc (sizeof (char) * 10);
-					snprintf (str, 10, "%d", curr_tags->time);
+					str = (char *) xmalloc (sizeof (char) * 16);
+					snprintf (str, 16, "%d", curr_tags->time);
 					lists_strs_push (arg_list, str);
 				}
 				else
@@ -561,7 +561,7 @@ static void on_song_change ()
 				break;
 			case 'd':
 				if (curr_tags->time >= 0) {
-					str = (char *) xmalloc (sizeof (char) * 12);
+					str = (char *) xmalloc (sizeof (char) * 32);
 					sec_to_min (str, curr_tags->time);
 					lists_strs_push (arg_list, str);
 				}

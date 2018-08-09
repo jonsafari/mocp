@@ -833,7 +833,7 @@ static void fill_cb (struct io_stream *unused1 ATTR_UNUSED, size_t fill,
 		size_t unused2 ATTR_UNUSED, void *unused3 ATTR_UNUSED)
 {
 	if (prebuffering) {
-		char msg[32];
+		char msg[64];
 
 		sprintf (msg, "Prebuffering %zu/%d KB", fill / 1024U,
 		              options_get_int("Prebuffering"));

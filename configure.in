@@ -106,9 +106,15 @@ AX_CFLAGS_GCC_OPTION(-Wall)
 AX_CFLAGS_GCC_OPTION(-W)
 
 dnl Overly-enthusiastic warning suppression.
+save_CFLAGS="$CFLAGS"
 AX_CFLAGS_GCC_OPTION([-Wgnu-zero-variadic-macro-arguments], ,
                      AC_DEFINE([HAVE_VARIADIC_MACRO_WARNING], 1,
                                [Define if compiler recognises warning option]))
+AX_CFLAGS_GCC_OPTION([-Werror=unknown-warning-option])
+AX_CFLAGS_GCC_OPTION([-Wformat-truncation], ,
+                     AC_DEFINE([HAVE_FORMAT_TRUNCATION_WARNING], 1,
+                               [Define if compiler recognises warning option]))
+CFLAGS="$save_CFLAGS"
 
 PKG_PROG_PKG_CONFIG([0.20])
 
