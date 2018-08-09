@@ -7,6 +7,11 @@
 extern "C" {
 #endif
 
+/* Suppress overly-enthusiastic GNU variadic macro extensions warning. */
+#if defined(__clang__) && HAVE_VARIADIC_MACRO_WARNING
+# pragma clang diagnostic ignored "-Wgnu-zero-variadic-macro-arguments"
+#endif
+
 #ifdef DEBUG
 # define debug logit
 #else

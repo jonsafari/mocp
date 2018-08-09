@@ -105,6 +105,11 @@ AC_TYPE_INTPTR_T
 AX_CFLAGS_GCC_OPTION(-Wall)
 AX_CFLAGS_GCC_OPTION(-W)
 
+dnl Overly-enthusiastic warning suppression.
+AX_CFLAGS_GCC_OPTION([-Wgnu-zero-variadic-macro-arguments], ,
+                     AC_DEFINE([HAVE_VARIADIC_MACRO_WARNING], 1,
+                               [Define if compiler recognises warning option]))
+
 PKG_PROG_PKG_CONFIG([0.20])
 
 if test "x$PKG_CONFIG" = "x"
