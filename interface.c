@@ -3755,13 +3755,9 @@ static void add_recursively (struct plist *plist, lists_t_strs *args)
 
 		arg = lists_strs_at (args, ix);
 
-		if (!is_url (arg) && arg[0] != '/') {
-			if (arg[0] == '/')
-				strcpy (path, "/");
-			else {
-				strncpy (path, cwd, sizeof (path));
-				path[sizeof (path) - 1] = 0;
-			}
+		if (arg[0] != '/' && !is_url (arg)) {
+			strncpy (path, cwd, sizeof (path));
+			path[sizeof (path) - 1] = 0;
 			resolve_path (path, sizeof (path), arg);
 		}
 		else {
