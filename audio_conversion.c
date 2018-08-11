@@ -521,19 +521,11 @@ static float *resample_sound (struct audio_conversion *conv, const float *buf,
 	resample_data.output_frames = resample_data.input_frames
 		* resample_data.src_ratio;
 
-	if (conv->resample_buf) {
-		conv->resample_buf = (float *)xrealloc (conv->resample_buf,
-				sizeof(float) * resample_data.input_frames
-				* nchannels);
-		new_input_start = conv->resample_buf
-			+ conv->resample_buf_nsamples;
-	}
-	else {
-		conv->resample_buf = (float *)xmalloc (sizeof(float)
-				* resample_data.input_frames
-				* nchannels);
-		new_input_start = conv->resample_buf;
-	}
+	assert (conv->resample_buf || conv->resample_buf_nsamples == 0);
+	conv->resample_buf = xrealloc (conv->resample_buf,
+	                               sizeof(float) * nchannels *
+	                               resample_data.input_frames);
+	new_input_start = conv->resample_buf + conv->resample_buf_nsamples;
 
 	output = (float *)xmalloc (sizeof(float) * resample_data.output_frames
 				* nchannels);
