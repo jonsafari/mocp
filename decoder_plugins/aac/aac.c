@@ -264,9 +264,7 @@ static void *aac_open_internal (struct io_stream *stream, const char *fname)
 	int n;
 
 	/* init private struct */
-	data = (struct aac_data *)xmalloc (sizeof(struct aac_data));
-	memset (data, 0, sizeof(struct aac_data));
-	data->ok = 0;
+	data = xcalloc (1, sizeof *data);
 	data->decoder = NeAACDecOpen();
 
 	/* set decoder config */
