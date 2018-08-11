@@ -44,8 +44,7 @@ int is_plist_file (const char *name)
 	return 0;
 }
 
-static void make_path (char *buf, const int buf_size,
-		const char *cwd, char *path)
+static void make_path (char *buf, size_t buf_size, const char *cwd, char *path)
 {
 	if (file_type(path) == F_URL) {
 		strncpy (buf, path, buf_size);

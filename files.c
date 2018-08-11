@@ -266,12 +266,12 @@ void switch_titles_tags (struct plist *plist)
 
 /* Add file to the directory path in buf resolving '../' and removing './'. */
 /* buf must be absolute path. */
-void resolve_path (char *buf, const int size, const char *file)
+void resolve_path (char *buf, size_t size, const char *file)
 {
 	int rc;
 	char *f; /* points to the char in *file we process */
 	char path[2*PATH_MAX]; /* temporary path */
-	int len = 0; /* number of characters in the buffer */
+	size_t len = 0; /* number of characters in the buffer */
 
 	assert (buf[0] == '/');
 
