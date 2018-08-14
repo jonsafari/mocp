@@ -1,5 +1,5 @@
-#ifndef SNDIO_H
-#define SNDIO_H
+#ifndef SNDIO_OUT_H
+#define SNDIO_OUT_H
 
 #include "audio.h"
 
