@@ -103,7 +103,7 @@ AC_C_BIGENDIAN
 AC_C_CONST
 AC_TYPE_INTPTR_T
 AX_CFLAGS_GCC_OPTION(-Wall)
-AX_CFLAGS_GCC_OPTION(-W)
+AX_CFLAGS_GCC_OPTION(-Wextra)
 
 dnl Overly-enthusiastic warning suppression.
 save_CFLAGS="$CFLAGS"
