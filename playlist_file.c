@@ -44,8 +44,7 @@ int is_plist_file (const char *name)
 	return 0;
 }
 
-static void make_path (char *buf, const int buf_size,
-		const char *cwd, char *path)
+static void make_path (char *buf, size_t buf_size, const char *cwd, char *path)
 {
 	if (file_type(path) == F_URL) {
 		strncpy (buf, path, buf_size);
@@ -321,7 +320,7 @@ static int plist_load_pls (struct plist *plist, const char *fname,
 	for (i = 1; i <= nitems; i++) {
 		int time, last_added;
 		char *pls_file, *pls_title, *pls_length;
-		char key[16], path[2 * PATH_MAX];
+		char key[32], path[2 * PATH_MAX];
 
 		sprintf (key, "File%ld", i);
 		pls_file = read_ini_value (file, "playlist", key);

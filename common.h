@@ -15,6 +15,11 @@
 
 #include "compat.h"
 
+/* Suppress overly-enthusiastic GNU variadic macro extensions warning. */
+#if defined(__clang__) && HAVE_VARIADIC_MACRO_WARNING
+# pragma clang diagnostic ignored "-Wgnu-zero-variadic-macro-arguments"
+#endif
+
 struct timespec;
 
 #ifdef HAVE_FUNC_ATTRIBUTE_FORMAT
@@ -59,6 +64,14 @@ struct timespec;
 #else
 # define GCC_DIAG_OFF(x)
 # define GCC_DIAG_ON(x)
+#endif
+
+#ifdef HAVE_FORMAT_TRUNCATION_WARNING
+# define SUPPRESS_FORMAT_TRUNCATION_WARNING GCC_DIAG_OFF(format-truncation)
+# define UNSUPPRESS_FORMAT_TRUNCATION_WARNING GCC_DIAG_ON(format-truncation)
+#else
+# define SUPPRESS_FORMAT_TRUNCATION_WARNING
+# define UNSUPPRESS_FORMAT_TRUNCATION_WARNING
 #endif
 
 #define CONFIG_DIR      ".moc"

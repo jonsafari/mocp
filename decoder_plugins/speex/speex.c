@@ -369,12 +369,7 @@ static void get_comments (struct spx_data *data, struct file_tags *tags)
 
 			if (temp_len < len + 1) {
 				temp_len = len + 1;
-				if (temp)
-					temp = xrealloc (temp, sizeof(char) *
-							temp_len);
-				else
-					temp = xmalloc (sizeof(char) *
-							temp_len);
+				temp = xrealloc (temp, temp_len);
 			}
 
 			strncpy (temp, c, len);

@@ -16,7 +16,7 @@ void files_cleanup ();
 int read_directory (const char *directory, lists_t_strs *dirs,
 		lists_t_strs *playlists, struct plist *plist);
 int read_directory_recurr (const char *directory, struct plist *plist);
-void resolve_path (char *buf, const int size, const char *file);
+void resolve_path (char *buf, size_t size, const char *file);
 char *ext_pos (const char *file);
 enum file_type file_type (const char *file);
 char *file_mime_type (const char *file);

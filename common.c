@@ -119,8 +119,10 @@ void *xrealloc (void *ptr, const size_t size)
 {
 	void *p;
 
-	if ((p = realloc(ptr, size)) == NULL && size != 0)
+	p = realloc (ptr, size);
+	if (!p && size != 0)
 		fatal ("Can't allocate memory!");
+
 	return p;
 }
 
@@ -378,7 +380,8 @@ int get_realtime (struct timespec *ts)
     return result;
 }
 
-/* Convert time in second to min:sec text format. buff must be 6 chars long. */
+/* Convert time in second to min:sec text format.
+   'buff' must be at least 32 chars long. */
 void sec_to_min (char *buff, const int seconds)
 {
 	assert (seconds >= 0);
@@ -391,12 +394,12 @@ void sec_to_min (char *buff, const int seconds)
 		min = seconds / 60;
 		sec = seconds % 60;
 
-		snprintf (buff, 6, "%02d:%02d", min, sec);
+		snprintf (buff, 32, "%02d:%02d", min, sec);
 	}
 	else if (seconds < 10000 * 60)
 
 		/* the time is less than 9999 minutes */
-		snprintf (buff, 6, "%4dm", seconds/60);
+		snprintf (buff, 32, "%4dm", seconds/60);
 	else
 		strcpy (buff, "!!!!!");
 }

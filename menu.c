@@ -116,9 +116,7 @@ static void draw_item (const struct menu *menu, const struct menu_item *mi,
 
 	if (menu->show_time && menu->show_format
 			&& (*mi->time || *mi->format))
-		xwprintw (menu->win, "[%5s|%3s]",
-				mi->time ? mi->time : "	 ",
-				mi->format);
+		xwprintw (menu->win, "[%5s|%3s]", mi->time, mi->format);
 	else if (menu->show_time && mi->time[0])
 		xwprintw (menu->win, "[%5s]", mi->time);
 	else if (menu->show_format && mi->format[0])

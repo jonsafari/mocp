@@ -785,16 +785,11 @@ void free_popt_clone (struct poptOption *opts)
  * 'val' field matches 'wanted'.  */
 struct poptOption *find_popt_option (struct poptOption *opts, int wanted)
 {
-	int ix = 0;
-
 	assert (opts);
 	assert (LIMIT(wanted, popt_next_val));
 
-	while (1) {
+	for (size_t ix = 0; !is_tableend (&opts[ix]); ix += 1) {
 		struct poptOption *result;
-
-		if (is_tableend (&opts[ix]))
-			break;
 
 		assert (opts[ix].argInfo != POPT_ARG_CALLBACK);
 
@@ -806,6 +801,7 @@ struct poptOption *find_popt_option (struct poptOption *opts, int wanted)
 			result = find_popt_option (opts[ix].arg, wanted);
 			if (result)
 				return result;
+			break;
 		case POPT_ARG_STRING:
 		case POPT_ARG_INT:
 		case POPT_ARG_LONG:
@@ -813,7 +809,6 @@ struct poptOption *find_popt_option (struct poptOption *opts, int wanted)
 		case POPT_ARG_DOUBLE:
 		case POPT_ARG_VAL:
 		case POPT_ARG_NONE:
-			ix += 1;
 			break;
 		default:
 			fatal ("Unknown POPT option table argInfo type: %d",

@@ -2954,14 +2954,14 @@ static char *custom_cmd_substitute (const char *arg)
 		case 'n':
 			file = iface_get_curr_file ();
 			tags = get_tags (file);
-			result = (char *) xmalloc (sizeof (char) * 10);
-			snprintf (result, 10, "%d", tags->track);
+			result = (char *) xmalloc (sizeof (char) * 16);
+			snprintf (result, 16, "%d", tags->track);
 			break;
 		case 'm':
 			file = iface_get_curr_file ();
 			tags = get_tags (file);
-			result = (char *) xmalloc (sizeof (char) * 10);
-			snprintf (result, 10, "%d", tags->time);
+			result = (char *) xmalloc (sizeof (char) * 16);
+			snprintf (result, 16, "%d", tags->time);
 			break;
 		case 'f':
 			result = iface_get_curr_file ();
@@ -2983,14 +2983,14 @@ static char *custom_cmd_substitute (const char *arg)
 			break;
 		case 'N':
 			if (curr_file.tags && curr_file.tags->track != -1) {
-				result = (char *) xmalloc (sizeof (char) * 10);
-				snprintf (result, 10, "%d", curr_file.tags->track);
+				result = (char *) xmalloc (sizeof (char) * 16);
+				snprintf (result, 16, "%d", curr_file.tags->track);
 			}
 			break;
 		case 'M':
 			if (curr_file.tags && curr_file.tags->time != -1) {
-				result = (char *) xmalloc (sizeof (char) * 10);
-				snprintf (result, 10, "%d", curr_file.tags->time);
+				result = (char *) xmalloc (sizeof (char) * 16);
+				snprintf (result, 16, "%d", curr_file.tags->time);
 			}
 			break;
 		case 'F':
@@ -2999,14 +2999,14 @@ static char *custom_cmd_substitute (const char *arg)
 			break;
 		case 'S':
 			if (curr_file.file && curr_file.block_file) {
-				result = (char *) xmalloc (sizeof (char) * 10);
-				snprintf (result, 10, "%d", curr_file.block_start);
+				result = (char *) xmalloc (sizeof (char) * 16);
+				snprintf (result, 16, "%d", curr_file.block_start);
 			}
 			break;
 		case 'E':
 			if (curr_file.file && curr_file.block_file) {
-				result = (char *) xmalloc (sizeof (char) * 10);
-				snprintf (result, 10, "%d", curr_file.block_end);
+				result = (char *) xmalloc (sizeof (char) * 16);
+				snprintf (result, 16, "%d", curr_file.block_end);
 			}
 			break;
 		default:
@@ -3755,13 +3755,9 @@ static void add_recursively (struct plist *plist, lists_t_strs *args)
 
 		arg = lists_strs_at (args, ix);
 
-		if (!is_url (arg) && arg[0] != '/') {
-			if (arg[0] == '/')
-				strcpy (path, "/");
-			else {
-				strncpy (path, cwd, sizeof (path));
-				path[sizeof (path) - 1] = 0;
-			}
+		if (arg[0] != '/' && !is_url (arg)) {
+			strncpy (path, cwd, sizeof (path));
+			path[sizeof (path) - 1] = 0;
 			resolve_path (path, sizeof (path), arg);
 		}
 		else {
@@ -3937,9 +3933,9 @@ void interface_cmdline_file_info (const int server_sock)
 		puts ("State: STOP");
 	else {
 		int left;
-		char curr_time_str[6];
-		char time_left_str[6];
-		char time_str[6];
+		char curr_time_str[32];
+		char time_left_str[32];
+		char time_str[32];
 		char *title;
 
 		if (curr_file.state == STATE_PLAY)
@@ -4225,13 +4221,13 @@ void interface_cmdline_formatted_info (const int server_sock,
 		char *rate;
 	} info_t;
 
-	char curr_time_str[6];
-	char time_left_str[6];
-	char time_str[6];
-	char time_sec_str[5];
-	char curr_time_sec_str[5];
-	char file_bitrate_str[4];
-	char file_rate_str[3];
+	char curr_time_str[32];
+	char time_left_str[32];
+	char time_str[32];
+	char time_sec_str[16];
+	char curr_time_sec_str[16];
+	char file_bitrate_str[16];
+	char file_rate_str[16];
 
 	char *fmt, *str;
 	info_t str_info;
@@ -4324,11 +4320,14 @@ void interface_cmdline_formatted_info (const int server_sock,
 		str_info.album = curr_file.tags->album ? curr_file.tags->album : NULL;
 
 		if (curr_file.tags->time != -1)
-			snprintf(time_sec_str, 5, "%d", curr_file.tags->time);
+			snprintf(time_sec_str, sizeof(file_rate_str),
+			         "%d", curr_file.tags->time);
 
-		snprintf(curr_time_sec_str, 5, "%d", curr_file.curr_time);
-		snprintf(file_bitrate_str, 4, "%d", MAX(curr_file.bitrate, 0));
-		snprintf(file_rate_str, 3, "%d", curr_file.rate);
+		snprintf(curr_time_sec_str, sizeof(file_rate_str),
+		         "%d", curr_file.curr_time);
+		snprintf(file_bitrate_str, sizeof(file_rate_str),
+		         "%d", MAX(curr_file.bitrate, 0));
+		snprintf(file_rate_str, sizeof(file_rate_str), "%d", curr_file.rate);
 	}
 
 	/* string with formatting tags */
