@@ -4132,10 +4132,10 @@ void iface_error (const char *msg)
 /* Handle screen resizing. */
 void iface_resize ()
 {
-	check_term_size (&main_win, &info_win);
-	validate_layouts ();
 	endwin ();
 	refresh ();
+	check_term_size (&main_win, &info_win);
+	validate_layouts ();
 	main_win_resize (&main_win);
 	info_win_resize (&info_win);
 	iface_refresh_screen ();
