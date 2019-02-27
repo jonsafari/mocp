@@ -1190,7 +1190,7 @@ static bool seek_in_stream (struct ffmpeg_data *data, int sec)
 	                           data->stream->time_base.num);
 
 	if (data->stream->start_time != (int64_t)AV_NOPTS_VALUE) {
-		if (seek_ts > INT64_MAX - data->stream->start_time) {
+		if (seek_ts > INT64_MAX - MAX(0, data->stream->start_time)) {
 			logit ("Seek value too large");
 			return false;
 		}
