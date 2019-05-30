@@ -3896,6 +3896,10 @@ void iface_get_key (struct iface_key *k)
 	if (ch == (wint_t)ERR)
 		interface_fatal ("wgetch() failed!");
 
+	/* Handle keypad ENTER as newline. */
+	if (ch == KEY_ENTER)
+		ch = '\n';
+
 	if (ch < 32 && ch != '\n' && ch != '\t' && ch != KEY_ESCAPE) {
 		/* Unprintable, generally control sequences */
 		k->type = IFACE_KEY_FUNCTION;
