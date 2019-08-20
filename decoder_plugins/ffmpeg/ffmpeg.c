@@ -256,6 +256,7 @@ static void load_audio_extns (lists_t_strs *list)
 		{"ra", "rm"},
 		{"sap", "libgme"},
 		{"spc", "libgme"},
+		{"tak", "tak"},
 		{"tta", "tta"},
 		{"vgm", "libgme"},
 		{"vgz", "libgme"},
