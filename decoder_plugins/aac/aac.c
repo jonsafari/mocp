@@ -216,7 +216,8 @@ static int aac_count_time (struct aac_data *data)
 	buffer_flush (data);
 
 	/* Guess track length by decoding the middle 50 frames which have
-	 * more than 25% of samples having absolute values greater than 16. */
+	 * more than 25% of non-zero samples having absolute values greater
+	 * than 16. */
 	while (frames < 50) {
 		if (buffer_fill_frame (data) <= 0)
 			break;
@@ -228,7 +229,7 @@ static int aac_count_time (struct aac_data *data)
 			unsigned int ix, zeroes = 0;
 
 			for (ix = 0; ix < frame_info.samples; ix += 1) {
-				if (RANGE(-16, sample_buf[ix], 16))
+				if (sample_buf[ix] != 0 && RANGE(-16, sample_buf[ix], 16))
 					zeroes += 1;
 			}
 
