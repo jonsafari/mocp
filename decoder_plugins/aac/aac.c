@@ -249,7 +249,7 @@ static int aac_count_time (struct aac_data *data)
 		return -1;
 
 	samples /= frames;
-	samples /= data->channels;
+	samples /= MIN(2, data->channels);
 	bytes /= frames;
 
 	return ((file_size / bytes) * samples) / data->sample_rate;
@@ -314,7 +314,15 @@ static void *aac_open_internal (struct io_stream *stream, const char *fname)
 		return data;
 	}
 
-	logit ("sample rate %dHz, channels %d", data->sample_rate, data->channels);
+	if (data->channels == 6) {
+		logit ("sample rate %dHz, channels %d (downmixed to stereo)",
+		        data->sample_rate, data->channels);
+		data->channels = 2;
+	}
+	else
+		logit ("sample rate %dHz, channels %d", data->sample_rate,
+		                                        data->channels);
+
 	if (!data->sample_rate || !data->channels) {
 		decoder_error (&data->error, ERROR_FATAL, 0,
 				"Invalid AAC sound parameters");
