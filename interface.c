@@ -3146,6 +3146,32 @@ static void toggle_playlist_full_paths (void)
 	update_iface_menu (IFACE_MENU_PLIST, playlist);
 }
 
+/* Delete the current active file */
+static void delete_curr_file ()
+{
+	char *file;
+
+	file = curr_file.file;
+
+	if (!file)
+		return;
+
+	if (remove(file) == 0) {
+		interface_message ("File deleted successfully.");
+	} else {
+		error("Unable to delete the file, try again.");
+	}
+
+	cmd_next ();
+
+	reread_dir ();
+
+	send_int_to_srv (CMD_LOCK);
+	remove_file_from_playlist (file);
+	send_int_to_srv (CMD_UNLOCK);
+}
+
+
 /* Handle key. */
 static void menu_key (const struct iface_key *k)
 {
@@ -3447,6 +3473,9 @@ static void menu_key (const struct iface_key *k)
 				break;
 			case KEY_CMD_QUEUE_CLEAR:
 				cmd_clear_queue ();
+				break;
+			case KEY_CMD_DELETE_CURRENT_FILE:
+				delete_curr_file ();
 				break;
 			default:
 				abort ();
