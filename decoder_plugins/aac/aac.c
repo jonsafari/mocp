@@ -216,7 +216,8 @@ static int aac_count_time (struct aac_data *data)
 	buffer_flush (data);
 
 	/* Guess track length by decoding the middle 50 frames which have
-	 * more than 25% of samples having absolute values greater than 16. */
+	 * more than 25% of non-zero samples having absolute values greater
+	 * than 16. */
 	while (frames < 50) {
 		if (buffer_fill_frame (data) <= 0)
 			break;
@@ -228,7 +229,7 @@ static int aac_count_time (struct aac_data *data)
 			unsigned int ix, zeroes = 0;
 
 			for (ix = 0; ix < frame_info.samples; ix += 1) {
-				if (RANGE(-16, sample_buf[ix], 16))
+				if (sample_buf[ix] != 0 && RANGE(-16, sample_buf[ix], 16))
 					zeroes += 1;
 			}
 
@@ -255,7 +256,8 @@ static int aac_count_time (struct aac_data *data)
 	return ((file_size / bytes) * samples) / data->sample_rate;
 }
 
-static void *aac_open_internal (struct io_stream *stream, const char *fname)
+static struct aac_data *aac_open_internal (struct io_stream *stream,
+                                           const char *fname, bool timing_only)
 {
 	struct aac_data *data;
 	NeAACDecConfigurationPtr neaac_cfg;
@@ -270,7 +272,7 @@ static void *aac_open_internal (struct io_stream *stream, const char *fname)
 	/* set decoder config */
 	neaac_cfg = NeAACDecGetCurrentConfiguration(data->decoder);
 	neaac_cfg->outputFormat = FAAD_FMT_16BIT;	/* force 16 bit audio */
-	neaac_cfg->downMatrix = 1;			/* 5.1 -> stereo */
+	neaac_cfg->downMatrix = !timing_only;		/* 5.1 -> stereo */
 	neaac_cfg->dontUpSampleImplicitSBR = 0;		/* upsample, please! */
 	NeAACDecSetConfiguration(data->decoder, neaac_cfg);
 
@@ -314,7 +316,17 @@ static void *aac_open_internal (struct io_stream *stream, const char *fname)
 		return data;
 	}
 
-	logit ("sample rate %dHz, channels %d", data->sample_rate, data->channels);
+	if (!timing_only) {
+		if (data->channels == 6) {
+			logit ("sample rate %dHz, channels %d (downmixed to stereo)",
+			        data->sample_rate, data->channels);
+			data->channels = 2;
+		}
+		else
+			logit ("sample rate %dHz, channels %d",
+			        data->sample_rate, data->channels);
+	}
+
 	if (!data->sample_rate || !data->channels) {
 		decoder_error (&data->error, ERROR_FATAL, 0,
 				"Invalid AAC sound parameters");
@@ -341,12 +353,11 @@ static void aac_close (void *prv_data)
 	free (data);
 }
 
-
 static void *aac_open (const char *file)
 {
 	struct aac_data *data;
 
-	data = aac_open_internal (NULL, file);
+	data = aac_open_internal (NULL, file, true);
 
 	if (data->ok) {
 		int duration = -1;
@@ -358,7 +369,8 @@ static void *aac_open (const char *file)
 		if (duration > 0 && file_size != -1)
 			avg_bitrate = file_size / duration * 8;
 		aac_close (data);
-		data = aac_open_internal (NULL, file);
+
+		data = aac_open_internal (NULL, file, false);
 		data->duration = duration;
 		data->avg_bitrate = avg_bitrate;
 	}
@@ -370,7 +382,7 @@ static void *aac_open_stream (struct io_stream *stream)
 {
 	assert (stream != NULL);
 
-	return aac_open_internal (stream, NULL);
+	return aac_open_internal (stream, NULL, false);
 }
 
 static char *get_tag (struct id3_tag *tag, const char *what)
@@ -425,7 +437,7 @@ static void aac_info (const char *file_name,
 	if (tags_sel & TAGS_TIME) {
 		struct aac_data *data;
 
-		data = aac_open_internal (NULL, file_name);
+		data = aac_open_internal (NULL, file_name, true);
 
 		if (data->ok)
 			info->time = aac_count_time (data);
