@@ -105,7 +105,8 @@ enum key_cmd
 	KEY_CMD_LYRICS,
 	KEY_CMD_QUEUE_TOGGLE_FILE,
 	KEY_CMD_QUEUE_CLEAR,
-	KEY_CMD_WRONG
+	KEY_CMD_WRONG,
+	KEY_CMD_DELETE_CURRENT_FILE
 };
 
 /* Key context is the place where the user presses a key. A key can have

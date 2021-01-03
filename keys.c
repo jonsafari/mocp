@@ -830,6 +830,14 @@ static struct command commands[] = {
 		CON_MENU,
 		{ 'Z', -1 },
 		1
+	},
+	{
+		KEY_CMD_DELETE_CURRENT_FILE,
+		"delete_file",
+		"Delete the current file from directory",
+		CON_MENU,
+		{ '`', -1 },
+		1
 	}
 };
 
