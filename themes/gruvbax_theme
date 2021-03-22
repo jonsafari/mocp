@@ -1,0 +1,35 @@
+# made by shukla.prashant689@gmail.com
+# best viewed on shaded or black terminal
+
+background              = default       default
+frame                   = yellow        default
+window_title            = red           default bold
+directory               = yellow        default
+selected_directory      = black         cyan
+playlist                = black         cyan 
+selected_playlist       = red           default
+file                    = cyan          default bold
+selected_file           = black         cyan bold
+marked_file             = green         default bold
+marked_selected_file    = black         cyan bold
+info                    = red           default
+status                  = red           default
+title                   = yellow        default bold
+state                   = red           default
+current_time            = cyan          default
+time_left               = red           default
+total_time              = yellow        default
+time_total_frames       = red           default
+sound_parameters        = red           default
+legend                  = white         default
+disabled                = yellow        default
+enabled                 = green         default
+empty_mixer_bar         = green         default
+filled_mixer_bar        = black         green
+empty_time_bar          = green         default
+filled_time_bar         = black         green
+entry                   = yellow        default
+entry_title             = red           default
+error                   = red           default bold
+message                 = yellow        default
+plist_time              = red           default
