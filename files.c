@@ -85,6 +85,7 @@ void files_cleanup ()
 inline int is_url (const char *str)
 {
 	return !strncasecmp (str, "http://", sizeof ("http://") - 1)
+		|| !strncasecmp (str, "https://", sizeof ("https://") - 1)
 		|| !strncasecmp (str, "ftp://", sizeof ("ftp://") - 1);
 }
 
