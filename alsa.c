@@ -50,6 +50,9 @@
 # define ALSA_CHECK(...) do {} while (0)
 #endif
 
+static const long MIN_VOLUME = 0;
+static const long MAX_VOLUME = 150;
+
 static snd_pcm_t *handle = NULL;
 
 static struct
@@ -316,7 +319,7 @@ static int alsa_read_mixer_raw (snd_mixer_elem_t *elem)
 				return -1;
 			}
 
-			assert (RANGE(0, vol, 100));
+			assert (RANGE(MIN_VOLUME, vol, MAX_VOLUME));
 
 #if 0
 			{
