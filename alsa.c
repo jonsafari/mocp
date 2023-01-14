@@ -50,8 +50,8 @@
 # define ALSA_CHECK(...) do {} while (0)
 #endif
 
-static const int MIN_VOLUME = 0;
-static const int MAX_VOLUME = 150;
+static const long MIN_VOLUME = 0;
+static const long MAX_VOLUME = 150;
 
 static snd_pcm_t *handle = NULL;
 
